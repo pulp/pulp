@@ -32,7 +32,7 @@ class RepoGroupManager(object):
             raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
 
     def update_repo_group(self, group_id, **updates):
-        validate_existing_repo_group(group_id)
+        collection = validate_existing_repo_group(group_id)
         keywords = updates.keys()
         valid_keywords = ('display_name', 'description', 'notes')
         invalid_keywords = []
@@ -42,7 +42,6 @@ class RepoGroupManager(object):
             invalid_keywords.append(kw)
         if invalid_keywords:
             raise pulp_exceptions.InvalidValue(invalid_keywords)
-        collection = RepoGroup.get_collection()
         collection.update({'id': group_id}, {'$set': updates}, safe=True)
 
     def delete_repo_group(self, group_id):
@@ -52,15 +51,13 @@ class RepoGroupManager(object):
     # repo membership ----------------------------------------------------------
 
     def add_repo_to_group(self, group_id, repo_id):
-        validate_existing_repo_group(group_id)
-        collection = RepoGroup.get_collection()
+        collection = validate_existing_repo_group(group_id)
         collection.update({'id': group_id, 'repo_ids': {'$ne': repo_id}},
                           {'$push': {'repo_ids': repo_id}},
                           safe=True)
 
     def remove_repo_from_group(self, group_id, repo_id):
-        validate_existing_repo_group(group_id)
-        collection = RepoGroup.get_collection()
+        collection = validate_existing_repo_group(group_id)
         collection.update({'id': group_id, 'repo_ids': {'$eq': repo_id}},
                           {'$pull': {'repo_ids': repo_id}},
                           safe=True)
@@ -71,5 +68,5 @@ def validate_existing_repo_group(group_id):
     collection = RepoGroup.get_collection()
     repo_group = collection.find_one({'id': group_id})
     if repo_group is not None:
-        return
+        return collection
     raise pulp_exceptions.MissingResource(repo_group=group_id)
