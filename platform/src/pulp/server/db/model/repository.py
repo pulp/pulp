@@ -17,7 +17,7 @@ import traceback as traceback_module
 import pulp.common.dateutils as dateutils
 from pulp.server.db.model.base import Model
 
-# -- classes -----------------------------------------------------------------
+# -- repository classes --------------------------------------------------------
 
 class Repo(Model):
     """
@@ -493,3 +493,30 @@ class RepoPublishResult(Model):
 
         self.summary = None
         self.details = None
+
+# repository group classes -----------------------------------------------------
+
+class RepoGroup(Model):
+
+    def __init__(self, id, display_name, repo_ids=(), description=None, notes=None):
+        super(RepoGroup, self).__init__()
+
+        self.id = id
+        self.display_name = display_name
+        self.repo_ids = list(repo_ids)
+        self.description = description
+        self.notes = notes or {}
+        self.scratchpad = {}
+
+
+class RepoGroupDistributor(Model):
+    def __init__(self, repo_group_id, id, distributor_type_id, config, auto_publish):
+        super(RepoGroupDistributor, self).__init__()
+
+        self.repo_group_id = repo_group_id
+        self.id = id
+        self.distributor_type_id = distributor_type_id
+        self.config = config
+        self.auto_publish = auto_publish
+
+
