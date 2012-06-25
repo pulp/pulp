@@ -249,7 +249,7 @@ class PulpTest(unittest.TestCase):
         async._queue.all_tasks.return_value = []
 
     def teardown_async(self):
-        async._queue = None
+        async._queue.reset_mock()
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
@@ -265,14 +265,14 @@ class PulpTest(unittest.TestCase):
 
 class PulpAsyncTest(PulpTest):
 
-    def tearDown(self):
-        PulpTest.tearDown(self)
-        async._queue._cancel_dispatcher()
-        async._queue = None
-
     def setup_async(self):
         async.config.config = self.config
         async.initialize()
+
+    def teardown_async(self):
+        if async._queue:
+            async._queue._cancel_dispatcher()
+        async._queue = None
 
 
 class PulpWebserviceTest(PulpAsyncTest):
