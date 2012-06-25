@@ -48,7 +48,7 @@ class SetupException(Exception):
     def __init__(self, error_code):
         super(SetupException, self).__init__()
         self.error_code = error_code
-        
+
 def run_script(script_name):
     # Some of the selinux scripts invoke make and assume they will be run in the target dir
     # Therefore...ensuring we are in SELINUX_DIR prior to execution
@@ -66,33 +66,32 @@ def run_command(cmd):
         raise SetupException(ret_val)
     return ret_val
 
-def add_context(pattern, path, context_type):
-    file_pattern = pattern % path
-    cmd = "/usr/sbin/semanage fcontext -a -t %s '%s'" % (context_type, file_pattern)
-    run_command(cmd)
-    cmd  = "/sbin/restorecon -R %s" % (path)
-    run_command(cmd)
+def restorecon(path):
+    run_command("/sbin/restorecon -R %s" % (path))
 
-def remove_context(pattern, path):
-    try:
-        file_pattern = pattern % path
-        cmd = "/usr/sbin/semanage fcontext -d '%s'" % (file_pattern)
-        run_command(cmd)
-        cmd  = "/sbin/restorecon -R %s" % (path)
-        run_command(cmd)
-    except SetupException, e:
-        # Ignore exceptions and continue to try to remove other contexts
-        pass
-        
 def add_labels():
+    cmd = "/usr/sbin/semanage -i - << _EOF\n"
+    paths = []
     for context_type in LABELS:
         for pattern, path in LABELS[context_type]:
-            ret_val = add_context(pattern, path, context_type)
+            cmd += "fcontext -a -t %s '%s'\n" % (context_type, pattern%path)
+            paths.append(path)
+    cmd += "_EOF\n"
+    run_command(cmd)
+    for p in paths:
+        restorecon(p)
 
 def remove_labels():
+    cmd = "/usr/sbin/semanage -i - << _EOF\n"
+    paths = []
     for context_type in LABELS:
         for pattern, path in LABELS[context_type]:
-            ret_val = remove_context(pattern, path)
+            cmd += "fcontext -d '%s'\n" % (pattern % path)
+            paths.append(path)
+    cmd += "_EOF\n"
+    run_command(cmd)
+    for p in paths:
+        restorecon(p)
 
 def install(opts):
     try:
