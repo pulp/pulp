@@ -498,25 +498,31 @@ class RepoPublishResult(Model):
 
 class RepoGroup(Model):
 
-    def __init__(self, id, display_name, repo_ids=(), description=None, notes=None):
+    unique_indices = ('id',)
+    search_indices = ('display_name', 'repo_ids')
+
+    def __init__(self, id, display_name=None, description=None, repo_ids=None, notes=None):
         super(RepoGroup, self).__init__()
 
         self.id = id
         self.display_name = display_name
-        self.repo_ids = list(repo_ids)
         self.description = description
+        self.repo_ids = repo_ids or None
         self.notes = notes or {}
         self.scratchpad = {}
 
 
 class RepoGroupDistributor(Model):
-    def __init__(self, repo_group_id, id, distributor_type_id, config, auto_publish):
+
+    unique_indices = (('repo_group_id', 'id'),)
+    search_indices = ('distributor_type_id', 'repo_group_id', 'id')
+
+    def __init__(self, id, distributor_type_id, repo_group_id, config, auto_publish):
         super(RepoGroupDistributor, self).__init__()
 
-        self.repo_group_id = repo_group_id
         self.id = id
         self.distributor_type_id = distributor_type_id
+        self.repo_group_id = repo_group_id
         self.config = config
         self.auto_publish = auto_publish
-
 
