@@ -46,7 +46,7 @@ class ProfileManager(object):
         if p is None:
             p = UnitProfile(consumer_id, content_type, profile)
         else:
-            p.profile = profile
+            p['profile'] = profile
         collection = UnitProfile.get_collection()
         collection.save(p, safe=True)
         return p
@@ -72,7 +72,7 @@ class ProfileManager(object):
         @type id: str
         """
         collection = UnitProfile.get_collection()
-        query = dict(consumer_id=consumer_id)
+        query = dict(consumer_id=id)
         for profile in collection.find(query):
             collection.remove(profile, sefe=True)
 
