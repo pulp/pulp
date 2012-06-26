@@ -30,6 +30,11 @@ class MockDistributor:
     @classmethod
     def metadata(cls):
         return {'types': ['mock_type']}
+    
+class MockProfiler:
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
 
 # -- test cases ---------------------------------------------------------------
 
@@ -43,6 +48,7 @@ class PluginManagerTests(base.PulpServerTests):
         # Configure content manager
         plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})
         plugin_loader._LOADER.add_distributor('MockDistributor', MockDistributor, {})
+        plugin_loader._LOADER.add_profiler('MockProfiler', MockProfiler, {})
 
         # Create the manager instance to test
         self.manager = plugin_manager.PluginManager()
@@ -53,6 +59,7 @@ class PluginManagerTests(base.PulpServerTests):
         # Reset content manager
         plugin_loader._LOADER.remove_importer('MockImporter')
         plugin_loader._LOADER.remove_distributor('MockDistributor')
+        plugin_loader._LOADER.remove_profiler('MockDistributor')
 
     def test_types(self):
         """
@@ -145,6 +152,33 @@ class PluginManagerTests(base.PulpServerTests):
 
         # Test
         found = self.manager.distributors()
+
+        # Verify
+        self.assertTrue(isinstance(found, list))
+        self.assertEqual(0, len(found))
+
+    def test_profilers(self):
+        """
+        Tests retrieving all profilers.
+        """
+
+        # Test
+        found = self.manager.profilers()
+
+        # Verify
+        self.assertEqual(1, len(found))
+        self.assertEqual('MockProfiler', found[0]['id'])
+
+    def test_profilers_no_profilers(self):
+        """
+        Tests an empty list is returned when no profilers are present.
+        """
+
+        # Setup
+        plugin_loader._LOADER.remove_profiler('MockProfiler')
+
+        # Test
+        found = self.manager.profilers()
 
         # Verify
         self.assertTrue(isinstance(found, list))

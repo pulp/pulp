@@ -73,3 +73,20 @@ class PluginManager:
             merged['id'] = d
             result.append(merged)
         return result
+    
+    def profilers(self):
+        """
+        Returns the names and versions of all profilers loaded in the server.
+        If no profilers are found, an empty list is returned.
+
+        @return: list of tuples indicating profilers name and version
+        @rtype:  list of tuples (str, list of int)
+        """
+
+        profiler_dicts = plugin_loader.list_profilers()
+        result = []
+        for d in profiler_dicts:
+            merged = profiler_dicts[d]
+            merged['id'] = d
+            result.append(merged)
+        return result

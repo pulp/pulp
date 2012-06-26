@@ -97,27 +97,27 @@ class UnitProfile(Model):
     Represents an install content unit profile.
     @ivar consumer_id: A consumer ID.
     @type consumer_id: str
-    @ivar type_id: The profile (unit) type ID.
-    @type type_id: str
+    @ivar content_type: The profile (unit) type ID.
+    @type content_type: str
     @ivar profile: The stored profile.
     @type profile: dict
     """
 
     collection_name = 'consumer_unit_profiles'
-    unique_indices = ('consumer_id', 'type_id')
+    unique_indices = ('consumer_id', 'content_type')
 
-    def __init__(self, consumer_id, type_id, profile):
+    def __init__(self, consumer_id, content_type, profile):
         """
         @param consumer_id: A consumer ID.
         @type consumer_id: str
-        @param type_id: The profile (unit) type ID.
-        @type type_id: str
+        @param content_type: The profile (unit) type ID.
+        @type content_type: str
         @param profile: The stored profile.
         @type profile: dict
         """
         super(UnitProfile, self).__init__()
         self.consumer_id = consumer_id
-        self.type_id = type_id
+        self.content_type = content_type
         self.profile = profile
 
 

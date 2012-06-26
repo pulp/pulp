@@ -29,34 +29,34 @@ class ProfileManager(object):
     Manage consumer installed content unit profiles.
     """
 
-    def update(self, consumer_id, type_id, profile):
+    def update(self, consumer_id, content_type, profile):
         """
         Update a unit profile.
         Created if not already exists.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
-        @param type_id: The profile (content) type ID.
-        @type type_id: str
+        @param content_type: The profile (content) type ID.
+        @type content_type: str
         @param profile: The unit profile
         @type profile: object
         """
         manager = factory.consumer_manager()
         manager.get_consumer(consumer_id)
-        p = self.get_profile(consumer_id, type_id)
+        p = self.get_profile(consumer_id, content_type)
         if p is None:
-            p = UnitProfile(consumer_id, type_id, profile)
+            p = UnitProfile(consumer_id, content_type, profile)
         else:
             p.profile = profile
         collection.save(p, safe=True)
         return p
 
-    def delete(self, consumer_id, type_id):
+    def delete(self, consumer_id, content_type):
         """
         Clear the unit profile.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
-        @param type_id: The profile type ID.
-        @type type_id: str
+        @param content_type: The profile (content) type ID.
+        @type content_type: str
         """
         pass
 
@@ -69,16 +69,16 @@ class ProfileManager(object):
         """
         pass
 
-    def get_profile(self, id, type_id):
+    def get_profile(self, id, content_type):
         """
-        Find all profiles by Consumer ID.
+        Get a profile by Consumer ID and content type ID.
         @param id: A consumer ID.
         @type id: str
-        @param type_id: A type ID.
-        @type type_id: str
+        @param content_type: The profile (content) type ID.
+        @type content_type: str
         @return: The requested profile.
         @rtype: object
         """
         collection = UnitProfile.get_collection()
-        query = dict(consumer_id=id, type_id=type_id)
+        query = dict(consumer_id=id, content_type=content_type)
         return collection.find_one(query)

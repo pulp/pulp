@@ -217,15 +217,15 @@ class ProfilerConduitException(Exception):
 
 class ProfilerConduit:
 
-    def get_profile(self, consumer_id, type_id):
+    def get_profile(self, consumer_id, content_type):
         """
         Get a unit profile by consumer ID.
 
         @param consumer_id: A consumer ID.
         @type consumer_id: str
 
-        @param type_id: A profile (content) type ID.
-        @type type_id: str
+        @param content_type: A profile (content) type ID.
+        @type content_type: str
 
         @return: The requested profile.
         @rtype: dict
@@ -234,7 +234,7 @@ class ProfilerConduit:
         """
         try:
             manager = manager_factory.consumer_profile_manager()
-            return manager.find_by_consumer(consumer_id, type_id)
+            return manager.find_by_consumer(consumer_id, content_type)
         except Exception, e:
             _LOG.exception(_('Error fetching profile for consumer [%(c)s]') % {'c' : consumer_id})
             raise ProfilerConduitException(e), None, sys.exc_info()[2]
