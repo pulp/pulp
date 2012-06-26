@@ -58,6 +58,16 @@ class ProfileManagerTests(base.PulpServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
+        
+    def test_missing_consumer(self):
+        # Test
+        manager = factory.consumer_profile_manager()
+        self.assertRaises(
+            MissingResource,
+            manager.update,
+            self.CONSUMER_ID,
+            self.TYPE_1,
+            self.PROFILE_1)
 
     def test_update(self):
         # Setup
