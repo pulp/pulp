@@ -53,7 +53,7 @@ class ProfileManager(object):
 
     def delete(self, consumer_id, content_type):
         """
-        Clear the unit profile.
+        Delete a profile by consumer and content type.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param content_type: The profile (content) type ID.
@@ -68,7 +68,7 @@ class ProfileManager(object):
         """
         Notification that a consumer has been deleted.
         Associated profiles are removed.
-        @param id: A consumer ID.
+        @param id: uniquely identifies the consumer.
         @type id: str
         """
         collection = UnitProfile.get_collection()
@@ -76,16 +76,16 @@ class ProfileManager(object):
         for profile in collection.find(query):
             collection.remove(profile, sefe=True)
 
-    def get_profile(self, id, content_type):
+    def get_profile(self, consumer_id, content_type):
         """
-        Get a profile by Consumer ID and content type ID.
-        @param id: A consumer ID.
-        @type id: str
+        Get a profile by consumer ID and content type ID.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
         @param content_type: The profile (content) type ID.
         @type content_type: str
         @return: The requested profile.
         @rtype: object
         """
         collection = UnitProfile.get_collection()
-        query = dict(consumer_id=id, content_type=content_type)
+        query = dict(consumer_id=consumer_id, content_type=content_type)
         return collection.find_one(query)

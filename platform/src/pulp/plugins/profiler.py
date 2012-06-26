@@ -54,11 +54,11 @@ class Profiler(object):
         @param profile: The reported profile.
         @type profile: dict
 
-        @param config: The profiler configuration.
-        @type config: dict
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -81,9 +81,12 @@ class Profiler(object):
 
         @param options: Install options; based on unit type.
         @type options: dict
+        
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -110,8 +113,11 @@ class Profiler(object):
         @param options: Update options; based on unit type.
         @type options: dict
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -137,9 +143,12 @@ class Profiler(object):
 
         @param options: Update options; based on unit type.
         @type options: dict
+        
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
