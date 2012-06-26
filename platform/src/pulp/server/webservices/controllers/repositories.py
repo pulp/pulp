@@ -151,6 +151,8 @@ class RepoResource(JSONController):
         if repo is None:
             raise exceptions.MissingResource(id)
 
+        repo.update(serialization.link.current_link_obj())
+
         if 'details' in query_params and query_params['details']:
             repo = _merge_importers_and_distributors((repo,))[0]
 

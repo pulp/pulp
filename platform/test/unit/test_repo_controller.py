@@ -64,6 +64,8 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(200, status)
         self.assertEqual(2, len(body))
         self.assertTrue('importers' not in body[0])
+        self.assertTrue('_href' in body[0])
+        self.assertTrue(body[0]['_href'].endswith('repositories/dummy-1/'))
 
     def test_get_no_repos(self):
         """
@@ -198,6 +200,8 @@ class RepoResourceTests(RepoControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.assertEqual('repo-1', body['id'])
+        self.assertTrue('_href' in body)
+        self.assertTrue(body['_href'].endswith('repositories/repo-1/'))
 
     @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_by_id')
     @mock.patch.object(repositories, '_merge_importers_and_distributors')
