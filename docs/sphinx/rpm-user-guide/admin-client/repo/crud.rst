@@ -62,6 +62,14 @@ Synchronization
   verified against the metadata's expectation. Valid values to this option are
   ``true`` and ``false``.
 
+``--remove-old``
+  If true, as the repository is synchronized old rpms will be removed. Valid values 
+  to this option are ``true`` and ``false``.
+
+``--retain-old-count``
+  Count indicating how many old rpm versions to retain; defaults to 0. This count
+  only takes effect when ``--remove-old`` option is set to ``true``.
+
 Publishing
 ^^^^^^^^^^
 
