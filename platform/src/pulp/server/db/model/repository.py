@@ -17,7 +17,7 @@ import traceback as traceback_module
 import pulp.common.dateutils as dateutils
 from pulp.server.db.model.base import Model
 
-# -- classes -----------------------------------------------------------------
+# -- repository classes --------------------------------------------------------
 
 class Repo(Model):
     """
@@ -40,6 +40,11 @@ class Repo(Model):
                  actual content of the repo
     @type notes: dict
 
+    @ivar content_unit_count: number of units associated with this repo. This is
+                              different than the number of associations, since a
+                              unit may be associated multiple times.
+    @type content_unit_count: int
+
     @ivar metadata: arbitrary data that describes the contents of the repo;
                     the values may change as the contents of the repo change,
                     either set by the user or by an importer or distributor
@@ -49,7 +54,7 @@ class Repo(Model):
     collection_name = 'repos'
     unique_indices = ('id',)
 
-    def __init__(self, id, display_name, description=None, notes=None):
+    def __init__(self, id, display_name, description=None, notes=None, content_unit_count=0):
         super(Repo, self).__init__()
 
         self.id = id
@@ -57,6 +62,7 @@ class Repo(Model):
         self.description = description
         self.notes = notes or {}
         self.scratchpad = {} # default to dict in hopes the plugins will just add/remove from it
+        self.content_unit_count = content_unit_count
 
         # Timeline
         # TODO: figure out how to track repo modified states
@@ -493,3 +499,42 @@ class RepoPublishResult(Model):
 
         self.summary = None
         self.details = None
+
+# repository group classes -----------------------------------------------------
+
+class RepoGroup(Model):
+    """
+    Represents a group of repositories for doing batch queries and operations
+    """
+
+    unique_indices = ('id',)
+    search_indices = ('display_name', 'repo_ids')
+
+    def __init__(self, id, display_name=None, description=None, repo_ids=None, notes=None):
+        super(RepoGroup, self).__init__()
+
+        self.id = id
+        self.display_name = display_name
+        self.description = description
+        self.repo_ids = repo_ids or None
+        self.notes = notes or {}
+        self.scratchpad = {}
+
+
+class RepoGroupDistributor(Model):
+    """
+    Represents group-wide distributors.
+    """
+
+    unique_indices = (('repo_group_id', 'id'),)
+    search_indices = ('distributor_type_id', 'repo_group_id', 'id')
+
+    def __init__(self, id, distributor_type_id, repo_group_id, config, auto_publish):
+        super(RepoGroupDistributor, self).__init__()
+
+        self.id = id
+        self.distributor_type_id = distributor_type_id
+        self.repo_group_id = repo_group_id
+        self.config = config
+        self.auto_publish = auto_publish
+

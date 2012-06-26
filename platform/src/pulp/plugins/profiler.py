@@ -17,7 +17,7 @@ class Profiler(object):
     in order for Pulp to identify them during plugin discovery.
     """
 
-    # plugin lifecycle ---------------------------------------------------------
+    # -- plugin lifecycle ------------------------------------------------------
 
     @classmethod
     def metadata(cls):
@@ -37,5 +37,96 @@ class Profiler(object):
 
         @return: description of the profiler's capabilities
         @rtype:  dict
+        """
+        raise NotImplementedError()
+
+    # -- translations ----------------------------------------------------------
+
+    def update_profile(self, consumer_id, profile, config, conduit):
+        """
+        Notification that the consumer has reported the installed unit
+        profile.  The profiler has this opportunity to translate the
+        reported profile.
+
+        @param consumer_id: The ID of the consumer reporting the profile.
+        @type consumer_id: str
+
+        @param profile: The reported profile.
+        @type profile: dict
+
+        @param config: The profiler configuration.
+        @type config: dict
+
+        @param conduit: The server API.
+        @type conduit: L{ProfilerConduit}
+
+        @return: The translated profile.
+        @rtype: dict
+        """
+        raise NotImplementedError()
+
+    def install_units(self, consumer_id, units, options, config, conduit):
+        """
+        Translate the specified content units to be installed.
+        The specified content units are intented to be installed on the
+        specified consumer.  It is requested that the profiler translate
+        the units as needed.
+
+        @param consumer_id: The ID of the consumer.
+        @type consumer_id: str
+
+        @param units: A list of content units to be installed.
+        @type units: list of:
+            { type_id:<str>, unit_key:<dict> }
+
+        @param options: Install options; based on unit type.
+        @type options: dict
+
+        @return: The translated units
+        @rtype: list
+        """
+        raise NotImplementedError()
+
+    def update_units(self, consumer_id, units, options, config, conduit):
+        """
+        Translate the specified content units to be updated.
+        The specified content units are intented to be updated on the
+        specified consumer.  It is requested that the profiler translate
+        the units as needed.
+
+        @param consumer_id: The ID of the consumer.
+        @type consumer_id: str
+
+        @param units: A list of content units to be updated.
+        @type units: list of:
+            { type_id:<str>, unit_key:<dict> }
+
+        @param options: Update options; based on unit type.
+        @type options: dict
+
+        @return: The translated units
+        @rtype: list
+        """
+        raise NotImplementedError()
+
+    def uninstall_units(self, consumer_id, units, options, config, conduit):
+        """
+        Translate the specified content units to be uninstalled.
+        The specified content units are intented to be uninstalled on the
+        specified consumer.  It is requested that the profiler translate
+        the units as needed.
+
+        @param consumer_id: The ID of the consumer.
+        @type consumer_id: str
+
+        @param units: A list of content units to be uninstalled.
+        @type units: list of:
+            { type_id:<str>, unit_key:<dict> }
+
+        @param options: Update options; based on unit type.
+        @type options: dict
+
+        @return: The translated units
+        @rtype: list
         """
         raise NotImplementedError()

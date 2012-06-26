@@ -13,6 +13,18 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
+%if 0%{?rhel} == 5
+%define pulp_selinux 0
+%else
+%define pulp_selinux 1
+%endif
+
+%if %{pulp_selinux}
+#SELinux
+%define selinux_variants mls strict targeted
+%define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
+%define moduletype apps
+%endif
 
 # ---- Pulp Platform -----------------------------------------------------------
 
@@ -41,6 +53,13 @@ Pulp provides replication, access, and accounting for software repositories.
 pushd src
 %{__python} setup.py build
 popd
+%if %{pulp_selinux}
+# SELinux Configuration
+cd selinux/server
+perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!0.0.0!$VER!g;' pulp-server.te
+./build.sh
+cd -
+%endif
 
 %install
 rm -rf %{buildroot}
@@ -109,6 +128,17 @@ cp etc/rc.d/init.d/* %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
+
+%if %{pulp_selinux}
+# Install SELinux policy modules
+cd selinux/server
+./install.sh %{buildroot}%{_datadir}
+mkdir -p %{buildroot}%{_datadir}/pulp/selinux/server
+cp enable.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp uninstall.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cd -
+%endif
 
 %clean
 rm -rf %{buildroot}
@@ -328,7 +358,57 @@ on a defined interval.
 %{_libdir}/gofer/plugins/pulp.*
 %doc
 
+# --- Selinux ---------------------------------------------------------------------
 
+%if %{pulp_selinux}
+%package        selinux
+Summary:        Pulp SELinux policy for pulp components.
+Group:          Development/Languages
+BuildRequires:  rpm-python
+BuildRequires:  make
+BuildRequires:  checkpolicy
+BuildRequires:  selinux-policy-devel
+BuildRequires:  hardlink
+
+%if "%{selinux_policyver}" != ""
+Requires: selinux-policy >= %{selinux_policyver}
+%endif
+Requires(post): policycoreutils-python
+Requires(post): selinux-policy-targeted
+Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
+Requires(postun): /usr/sbin/semodule
+
+%description    selinux
+SELinux policy for Pulp's components
+
+%post selinux
+# Enable SELinux policy modules
+if /usr/sbin/selinuxenabled ; then
+ %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+
+# restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
+# Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
+%posttrans selinux
+if /usr/sbin/selinuxenabled ; then
+ %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
+fi
+
+%preun selinux
+# Clean up after package removal
+if [ $1 -eq 0 ]; then
+%{_datadir}/pulp/selinux/server/uninstall.sh
+%{_datadir}/pulp/selinux/server/relabel.sh
+fi
+exit 0
+
+%files selinux
+%defattr(-,root,root,-)
+%doc selinux/server/pulp-server.fc selinux/server/pulp-server.if selinux/server/pulp-server.te
+%{_datadir}/pulp/selinux/server/*
+%{_datadir}/selinux/*/pulp-server.pp
+%{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
+
+%endif
 
 %changelog
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.307-1

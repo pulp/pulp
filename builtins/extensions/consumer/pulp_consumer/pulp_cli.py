@@ -259,8 +259,8 @@ class HistoryCommand(PulpCliCommand):
         self.add_option(PulpCliOption('--event-type', _(d), required=False))
         self.add_option(PulpCliOption('--limit', 'limits displayed history entries to the given amount (must be greater than zero)', required=False))
         self.add_option(PulpCliOption('--sort', 'indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp', required=False))
-        self.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date (format: yyyy-mm-dd)', required=False))
-        self.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date (format: yyyy-mm-dd)', required=False))
+        self.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)', required=False))
+        self.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)', required=False))
 
     def history(self, **kwargs):
         consumer_id = load_consumer_id(self.context)

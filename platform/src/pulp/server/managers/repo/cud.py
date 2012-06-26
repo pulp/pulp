@@ -24,6 +24,8 @@ import re
 import shutil
 import sys
 
+import pymongo
+
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -298,6 +300,28 @@ class RepoManager(object):
         repo_coll.save(repo, safe=True)
 
         return repo
+
+    @staticmethod
+    def update_unit_count(repo_id, delta):
+        """
+        Updates the total count of units associated with the repo.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param delta: amount by which to change the total count
+        @type  delta: int
+        """
+        spec = {'id' : repo_id}
+        operation = {'$inc' : {'content_unit_count': delta}}
+        repo_coll = Repo.get_collection()
+
+        if delta:
+            try:
+                repo_coll.update(spec, operation, safe=True)
+            except pymongo.errors.OperationFailure:
+                message = 'There was a problem updating repository %s' % repo_id
+                raise PulpExecutionException(message), None, sys.exc_info()[2]
 
     def update_repo_and_plugins(self, repo_id, repo_delta, importer_config,
                                 distributor_configs):

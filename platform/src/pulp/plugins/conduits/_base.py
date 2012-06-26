@@ -205,3 +205,36 @@ class BaseDistributorConduit:
         except Exception, e:
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+
+# -- profiler -----------------------------------------------------------------
+
+class ProfilerConduitException(Exception):
+    """
+    General exception that wraps any exception coming out of the Pulp server.
+    """
+    pass
+
+class ProfilerConduit:
+
+    def get_profile(self, consumer_id, content_type):
+        """
+        Get a unit profile by consumer ID.
+
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+
+        @param content_type: A profile (content) type ID.
+        @type content_type: str
+
+        @return: The requested profile.
+        @rtype: dict
+
+        @raise ProfilerConduitException: On error.
+        """
+        try:
+            manager = manager_factory.consumer_profile_manager()
+            return manager.find_by_consumer(consumer_id, content_type)
+        except Exception, e:
+            _LOG.exception(_('Error fetching profile for consumer [%(c)s]') % {'c' : consumer_id})
+            raise ProfilerConduitException(e), None, sys.exc_info()[2]

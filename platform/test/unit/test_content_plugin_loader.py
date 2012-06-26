@@ -25,6 +25,7 @@ import base
 from pulp.plugins import loader
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
+from pulp.plugins.profiler import Profiler
 
 # test data and data generation api --------------------------------------------
 
@@ -177,6 +178,11 @@ class BogusImporter(Importer):
     @classmethod
     def metadata(cls):
         return {'types': ['excellent_type']}
+    
+class GoodProfiler(Importer):
+    @classmethod
+    def metadata(cls):
+        return {'types': ['good_type']}
 
 # unit tests -------------------------------------------------------------------
 
@@ -300,6 +306,25 @@ class LoaderDirectOperationsTests(LoaderTest):
         self.loader.remove_importer(name)
         self.assertRaises(loader.PluginNotFound,
                           self.loader.get_importer_by_id,
+                          name)
+
+    def test_profiler(self):
+        name = 'elmer'
+        types = GoodProfiler.metadata()['types']
+        self.loader.add_profiler(name, GoodProfiler, {})
+
+        cls = self.loader.get_profiler_by_id(name)[0]
+        self.assertTrue(cls is GoodProfiler)
+
+        cls = self.loader.get_profilers_by_type(types[0])[0][0]
+        self.assertTrue(cls is GoodProfiler)
+
+        profilers = self.loader.get_loaded_profilers()
+        self.assertTrue(name in profilers)
+
+        self.loader.remove_profiler(name)
+        self.assertRaises(loader.PluginNotFound,
+                          self.loader.get_profiler_by_id,
                           name)
 
 

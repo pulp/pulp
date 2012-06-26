@@ -14,6 +14,7 @@
 
 import base
 import mock_plugins
+import mock
 
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -27,6 +28,7 @@ import pulp.server.managers.repo.unit_association as association_manager
 from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.content.cud as content_cud_manager
+import pulp.server.managers.factory as manager_factory
 
 # constants --------------------------------------------------------------------
 
@@ -53,11 +55,14 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
     def tearDown(self):
         super(RepoUnitAssociationManagerTests, self).tearDown()
         mock_plugins.reset()
+        manager_factory.reset()
 
     def setUp(self):
         super(RepoUnitAssociationManagerTests, self).setUp()
         database.update_database([TYPE_1_DEF, TYPE_2_DEF, MOCK_TYPE_DEF])
         mock_plugins.install()
+        # so we don't try to refresh the unit count on non-existing repos
+        manager_factory._CLASSES[manager_factory.TYPE_REPO] = mock.MagicMock()
 
         self.manager = association_manager.RepoUnitAssociationManager()
         self.repo_manager = repo_manager.RepoManager()
@@ -368,3 +373,124 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['resource_id'])
+
+    def test_associate_by_id_calls_update_unit_count(self):
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.update_unit_count.assert_called_once_with('repo-1', 1)
+
+    def test_associate_by_id_does_not_call_update_unit_count(self):
+        """
+        This would be the case when doing a bulk update.
+        """
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin', False)
+        mock_manager = manager_factory.repo_manager()
+        self.assertFalse(mock_manager.update_unit_count.called)
+
+    def test_associate_non_unique_by_id(self):
+        """
+        non-unique call should not increment the count
+        """
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.update_unit_count.reset_mock()
+
+        # creates a non-unique association for which the count should not be
+        # incremented
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin2')
+        self.assertEqual(mock_manager.update_unit_count.called, False)
+
+    def test_associate_all_by_ids_calls_update_unit_count(self):
+        IDS = ('foo', 'bar', 'baz')
+
+        self.manager.associate_all_by_ids(
+            'repo-1', 'type-1', IDS, OWNER_TYPE_USER, 'admin')
+
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.update_unit_count.assert_called_once_with(
+            'repo-1', len(IDS))
+
+    def test_associate_all_non_unique(self):
+        """
+        Makes sure when two identical associations are requested, they only
+        get counted once.
+        """
+        IDS = ('foo', 'bar', 'foo')
+
+        self.manager.associate_all_by_ids(
+            'repo-1', 'type-1', IDS, OWNER_TYPE_USER, 'admin')
+
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.update_unit_count.assert_called_once_with(
+            'repo-1', 2)
+
+    def test_unassociate_by_id_calls_update_unit_count(self):
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.reset_mock()
+        self.manager.unassociate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        mock_manager.update_unit_count.assert_called_once_with('repo-1', -1)
+
+    def test_unassociate_by_id_non_unique(self):
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin1')
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin2')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.reset_mock()
+
+        # removes an association, but leaves a similar one behind, so the count
+        # should not change
+        self.manager.unassociate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin1')
+        self.assertFalse(mock_manager.update_unit_count.called)
+
+    def test_unassociate_by_id_does_not_call_update_unit_count(self):
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.reset_mock()
+        self.manager.unassociate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin', False)
+        self.assertFalse(mock_manager.update_unit_count.called)
+
+    def test_unassociate_all_by_ids_calls_update_unit_count(self):
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-2', OWNER_TYPE_USER, 'admin')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.reset_mock()
+        self.manager.unassociate_all_by_ids(
+            'repo-1', 'type-1', ('unit-1', 'unit-2'), OWNER_TYPE_USER, 'admin')
+        mock_manager.update_unit_count.assert_called_once_with('repo-1', -2)
+
+    def test_unassociate_all_non_unique(self):
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin1')
+        self.manager.associate_unit_by_id(
+            'repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin2')
+        mock_manager = manager_factory.repo_manager()
+        mock_manager.reset_mock()
+
+        # removes an association, but leaves a similar one behind, so the count
+        # should not change
+        self.manager.unassociate_all_by_ids(
+            'repo-1', 'type-1', ('unit-1',), OWNER_TYPE_USER, 'admin')
+        self.assertFalse(mock_manager.update_unit_count.called)
+
+    @mock.patch('pymongo.cursor.Cursor.count', return_value=1)
+    def test_association_exists_true(self, mock_count):
+        self.assertTrue(self.manager.association_exists('repo-1', 'unit-1', 'type-1'))
+        self.assertEqual(mock_count.call_count, 1)
+
+    @mock.patch('pymongo.cursor.Cursor.count', return_value=0)
+    def test_association_exists_false(self, mock_count):
+        self.assertFalse(self.manager.association_exists('repo-1', 'type-1', 'unit-1'))
+        self.assertEqual(mock_count.call_count, 1)

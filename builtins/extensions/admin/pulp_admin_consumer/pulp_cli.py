@@ -96,8 +96,8 @@ class AdminConsumerSection(PulpCliSection):
         history_command.add_option(PulpCliOption('--event-type', d, required=False))
         history_command.add_option(PulpCliOption('--limit', 'limits displayed history entries to the given amount (must be greater than zero)', required=False))
         history_command.add_option(PulpCliOption('--sort', 'indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp', required=False))
-        history_command.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date (format: yyyy-mm-dd)', required=False))
-        history_command.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date (format: yyyy-mm-dd)', required=False))
+        history_command.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)', required=False))
+        history_command.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)', required=False))
         self.add_command(history_command)
 
 

@@ -312,8 +312,29 @@ class Binding(JSONController):
         """
         # update model
         manager = managers.consumer_bind_manager()
-        bind = manager.unbind(consumer_id, repo_id, distributor_id)
-        return self.ok(bind)
+
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
+                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
+                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            consumer_id,
+            repo_id,
+            distributor_id,
+        ]
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+                action_tag('unbind')]
+        call_request = CallRequest(manager.unbind,
+                                   args=args,
+                                   resources=resources,
+                                   tags=tags)
+        return execution.execute_ok(self, call_request)
 
 
 class Content(JSONController):
@@ -459,12 +480,10 @@ class ConsumerHistory(JSONController):
             limit = int(limit[0])
 
         if start_date:
-            start_date = dateutils.parse_datetime(start_date[0] + '-00-00-00')
-            start_date = dateutils.to_local_datetime(start_date)
+            start_date = start_date[0]
 
         if end_date:
-            end_date = dateutils.parse_datetime(end_date[0] + '-23-59-59')
-            end_date = dateutils.to_local_datetime(end_date)
+            end_date = end_date[0]
             
         if event_type:
             event_type = event_type[0]

@@ -469,6 +469,19 @@ class PluginLoader(object):
         @rtype: tuple (L{Profiler}, dict)
         """
         return self.__profilers.get_plugin_by_id(id)
+    
+    def get_profilers_by_type(self, content_type):
+        """
+        @param content_type: content type
+        @type content_type: str
+        @return: list of tuples of profiler (class, configuration)
+        @rtype: list [(L{Profiler}, dict), ...]
+        """
+        profilers = []
+        ids = self.__profilers.get_plugin_ids_by_type(content_type)
+        for id in ids:
+            profilers.append(self.get_profiler_by_id(id))
+        return profilers
 
     # plugin query api
 

@@ -23,28 +23,32 @@ RPM_SUPPORT_DIR = os.path.join(BASE_DIR, "rpm-support")
 
 LABELS = {
         "httpd_config_t": [
-                "%s(/.*)?" % (os.path.join(RPM_SUPPORT_DIR, "etc/httpd")),
+                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "etc/httpd")),
         ],
         "pulp_cert_t": [
-                "%s(/.*)?" % (os.path.join(PLATFORM_DIR, "etc/pki/pulp")),
+                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/pki/pulp")),
         ],
         "httpd_sys_content_t": [
-                "%s(/.*)?" % (os.path.join(PLATFORM_DIR, "etc/pulp")),
-                "%s(/.*)?" % (os.path.join(RPM_SUPPORT_DIR, "etc/pulp")),
-                "%s(/.*)?" % (os.path.join(PLATFORM_DIR, "srv/pulp")),
+                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/pulp")),
+                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/httpd")),
+                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "srv/pulp")),
+                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "etc/pulp")),
         ],
         "lib_t": [
-                "%s(/.*)?" % (os.path.join(PLATFORM_DIR, "src")),
-                "%s(/.*)?" % (os.path.join(RPM_SUPPORT_DIR, "src")),
-                "%s(/.*)?" % (os.path.join(RPM_SUPPORT_DIR, "plugins")),
-        ]
+                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "src")),
+                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "src")),
+                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "plugins")),
+        ],
+        "etc_t": [
+                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/gofer")),
+        ],
 }
 
 class SetupException(Exception):
     def __init__(self, error_code):
         super(SetupException, self).__init__()
         self.error_code = error_code
-        
+
 def run_script(script_name):
     # Some of the selinux scripts invoke make and assume they will be run in the target dir
     # Therefore...ensuring we are in SELINUX_DIR prior to execution
@@ -62,27 +66,32 @@ def run_command(cmd):
         raise SetupException(ret_val)
     return ret_val
 
-def add_context(file_pattern, context_type):
-    cmd = "/usr/sbin/semanage fcontext -a -t %s '%s'" % (context_type, file_pattern)
-    return run_command(cmd)
+def restorecon(path):
+    run_command("/sbin/restorecon -R %s" % (path))
 
-def remove_context(pattern):
-    try:
-        cmd = "/usr/sbin/semanage fcontext -d '%s'" % (pattern)
-        return run_command(cmd)
-    except SetupException, e:
-        # Ignore exceptions and continue to try to remove other contexts
-        pass
-        
 def add_labels():
+    cmd = "/usr/sbin/semanage -i - << _EOF\n"
+    paths = []
     for context_type in LABELS:
-        for pattern in LABELS[context_type]:
-            ret_val = add_context(pattern, context_type)
+        for pattern, path in LABELS[context_type]:
+            cmd += "fcontext -a -t %s '%s'\n" % (context_type, pattern%path)
+            paths.append(path)
+    cmd += "_EOF\n"
+    run_command(cmd)
+    for p in paths:
+        restorecon(p)
 
 def remove_labels():
+    cmd = "/usr/sbin/semanage -i - << _EOF\n"
+    paths = []
     for context_type in LABELS:
-        for pattern in LABELS[context_type]:
-            ret_val = remove_context(pattern)
+        for pattern, path in LABELS[context_type]:
+            cmd += "fcontext -d '%s'\n" % (pattern % path)
+            paths.append(path)
+    cmd += "_EOF\n"
+    run_command(cmd)
+    for p in paths:
+        restorecon(p)
 
 def install(opts):
     try:
@@ -102,7 +111,9 @@ def uninstall(opts):
         run_script("relabel.sh")
         return os.EX_OK
     except Exception, e:
-        return e.error_code
+        if hasattr(e, "error_code"):
+            return e.error_code
+        raise
 
 def parse_cmdline():
     """

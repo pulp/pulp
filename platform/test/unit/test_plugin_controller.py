@@ -67,6 +67,10 @@ class PluginControllerTests(base.PulpWebserviceTests):
         self.assertEqual(200, status)
 
         self.assertEqual(2, len(body))
+        # the order isn't guaranteed, so we adjust here if necessary
+        if body[0]['id'] == 'type-2':
+            body.reverse()
+
         self.assertEqual(body[0]['_href'], '/v2/plugins/types/type-1/')
         self.assertEqual(body[0]['id'], 'type-1')
         self.assertEqual(body[0]['display_name'], 'Type 1')

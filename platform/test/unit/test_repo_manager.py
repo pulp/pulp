@@ -17,6 +17,7 @@ import unittest
 
 import base
 import mock_plugins
+import mock
 
 import pulp.plugins.loader as plugin_loader
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
@@ -444,6 +445,39 @@ class RepoManagerTests(base.PulpServerTests):
         """
         self.assertRaises(exceptions.MissingResource, self.manager.get_repo_scratchpad, 'foo')
         self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', 'bar')
+
+    def test_update_unit_count_missing_repo(self):
+        self.assertRaises(exceptions.PulpExecutionException,
+            self.manager.update_unit_count, 'foo', '2')
+
+    @mock.patch.object(Repo, 'get_collection')
+    def test_update_unit_count(self, mock_get_collection):
+        mock_update = mock.MagicMock()
+        mock_get_collection.return_value.update = mock_update
+
+        ARGS = ('repo-123', 7)
+        EXPECT = ({'id': 'repo-123'}, {'$inc': {'content_unit_count': 7}})
+
+        self.manager.update_unit_count(*ARGS)
+        mock_update.assert_called_once_with(*EXPECT, safe=True)
+
+    def test_update_unit_count_with_db(self):
+        """
+        This test interacts with the database to ensure that the call to
+        "update" uses valid syntax as interpreted by mongo and has the effect
+        we expect.
+        """
+        REPO_ID = 'repo-123'
+        # create repo, verify count of 0
+        self.manager.create_repo(REPO_ID)
+        repo = Repo.get_collection().find_one({'id' : REPO_ID})
+        self.assertEqual(repo['content_unit_count'], 0)
+
+        # increase unit count, verify result
+        self.manager.update_unit_count(REPO_ID, 3)
+        repo = Repo.get_collection().find_one({'id' : REPO_ID})
+        self.assertEqual(repo['content_unit_count'], 3)
+
 
 class UtilityMethodsTests(unittest.TestCase):
 
