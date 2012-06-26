@@ -220,7 +220,7 @@ class YumImporter(Importer):
             if key == 'remove_old':
                 remove_old = config.get('remove_old')
                 if remove_old is not None and not isinstance(remove_old, bool) :
-                    msg = _("newest should be a boolean; got %s instead" % remove_old)
+                    msg = _("remove_old should be a boolean; got %s instead" % remove_old)
                     _LOG.error(msg)
                     return False, msg
 

@@ -364,6 +364,8 @@ def add_repo_options(command, is_update):
     sync_group.add_option(PulpCliOption('--skip-types', 'comma-separated list of types to omit when synchronizing, if not specified all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
     sync_group.add_option(PulpCliOption('--verify-size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--verify-checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
+    sync_group.add_option(PulpCliOption('--remove-old', 'if "true", removes old packages from the repo; defaults to false', required=False))
+    sync_group.add_option(PulpCliOption('--retain-old-count', 'controls how many old package versions to retain; default to 0', required=False))
 
     # Proxy Options
     proxy_group.add_option(PulpCliOption('--proxy-url', 'URL to the proxy server to use', required=False))
@@ -406,7 +408,7 @@ def args_to_importer_config(kwargs):
     importer_config = _prep_config(kwargs, IMPORTER_CONFIG_KEYS)
 
     # Parsing of true/false
-    boolean_arguments = ('ssl_verify', 'verify_size', 'verify_checksum', 'newest')
+    boolean_arguments = ('ssl_verify', 'verify_size', 'verify_checksum', 'newest', 'remove_old')
     convert_boolean_arguments(boolean_arguments, importer_config)
 
     # Read in the contents of any files that were specified
@@ -418,6 +420,11 @@ def args_to_importer_config(kwargs):
         skip_as_list = _convert_skip_types(importer_config['skip'])
         importer_config['skip'] = skip_as_list
 
+    if 'num_old_packages' in importer_config:
+        if importer_config['num_old_packages'] is None:
+            importer_config['num_old_packages'] = 0
+        else:
+            importer_config['num_old_packages'] = int(importer_config['num_old_packages'])
     LOG.debug('Importer configuration options')
     LOG.debug(importer_config)
     return importer_config
