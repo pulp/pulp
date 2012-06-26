@@ -16,7 +16,7 @@ import base
 from pulp.server.db.model.event import EventListener
 from pulp.server.event import data as event_data
 from pulp.server.event import rest_api
-from pulp.server.exceptions import InvalidValue
+from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory as manager_factory
 
 # -- test cases ---------------------------------------------------------------
@@ -34,7 +34,7 @@ class EventListenerManager(base.PulpServerTests):
 
     def test_create(self):
         # Test
-        created = self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+        created = self.manager.create(rest_api.TYPE_ID, None, [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Verify
         self.assertEqual(created['notifier_type_id'], rest_api.TYPE_ID)
@@ -48,6 +48,14 @@ class EventListenerManager(base.PulpServerTests):
         # Test
         try:
             self.manager.create(rest_api.TYPE_ID, {}, ['foo'])
+            self.fail()
+        except InvalidValue, e:
+            self.assertEqual(e.property_names, ['event_types'])
+
+    def test_create_no_event_types(self):
+        # Test
+        try:
+            self.manager.create(rest_api.TYPE_ID, {}, None)
             self.fail()
         except InvalidValue, e:
             self.assertEqual(e.property_names, ['event_types'])
@@ -73,7 +81,43 @@ class EventListenerManager(base.PulpServerTests):
 
     def test_delete_invalid_id(self):
         # Test
-        self.manager.delete('foo') # should not error
+        try:
+            self.manager.delete('foo')
+            self.fail()
+        except MissingResource, e:
+            self.assertEqual(e.resources['event_listener_id'], 'foo')
+
+    def test_update(self):
+        # Setup
+        orig_config = {'k1' : 'v1', 'k2' : 'v2', 'k3' : 'v3'}
+        created = self.manager.create(rest_api.TYPE_ID, orig_config, [event_data.TYPE_REPO_SYNC_STARTED])
+
+        # Test
+        updated = self.manager.update(created['_id'], {'k1' : 'vX', 'k2' : None}, [event_data.TYPE_REPO_SYNC_FINISHED])
+
+        # Verify
+        expected_config = {'k1' : 'vX', 'k3' : 'v3'}
+        self.assertEqual(updated['notifier_config'], expected_config)
+        self.assertEqual(updated['event_types'], [event_data.TYPE_REPO_SYNC_FINISHED])
+
+    def test_update_invalid_listener(self):
+        # Test
+        try:
+            self.manager.update('foo', {}, [event_data.TYPE_REPO_SYNC_STARTED])
+            self.fail()
+        except MissingResource, e:
+            self.assertEqual(e.resources['event_listener_id'], 'foo')
+
+    def test_update_invalid_types(self):
+        # Setup
+        created = self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+
+        # Test
+        try:
+            self.manager.update(created['_id'], {}, [])
+            self.fail()
+        except InvalidValue, e:
+            self.assertEqual(e.property_names, ['event_types'])
 
     def test_list(self):
         # Setup
