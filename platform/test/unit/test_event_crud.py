@@ -21,15 +21,15 @@ from pulp.server.managers import factory as manager_factory
 
 # -- test cases ---------------------------------------------------------------
 
-class EventListenerManager(base.PulpServerTests):
+class EventListenerManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        super(EventListenerManager, self).setUp()
+        super(EventListenerManagerTests, self).setUp()
 
         self.manager = manager_factory.event_listener_manager()
 
     def clean(self):
-        super(EventListenerManager, self).clean()
+        super(EventListenerManagerTests, self).clean()
         EventListener.get_collection().remove()
 
     def test_create(self):

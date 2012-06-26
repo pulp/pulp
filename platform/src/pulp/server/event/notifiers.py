@@ -24,9 +24,8 @@ import pulp.server.event.rest_api as rest_api
 
 # -- constants ----------------------------------------------------------------
 
-NOTIFIER_FUNCTIONS = {
-    rest_api.TYPE_ID : rest_api.handle_event,
-}
+# Set in the reset() method
+NOTIFIER_FUNCTIONS = None
 
 # -- public -------------------------------------------------------------------
 
@@ -56,3 +55,17 @@ def get_notifier_function(type_id):
     @rtype:  callable
     """
     return NOTIFIER_FUNCTIONS[type_id]
+
+def reset():
+    """
+    Initializes the mappings between notifier ID and method to invoke. This
+    will automatically be called when the module is first loaded and should
+    only need to be called again in unit test cleanup.
+    """
+    global NOTIFIER_FUNCTIONS
+    NOTIFIER_FUNCTIONS = {
+        rest_api.TYPE_ID : rest_api.handle_event,
+    }
+
+# Perform the initial populating of the notifier functions on module load
+reset()
