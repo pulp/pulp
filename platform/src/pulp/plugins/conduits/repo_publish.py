@@ -20,7 +20,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits._base import BaseDistributorConduit, DistributorConduitException
+from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin
 import pulp.plugins.conduits._common as common_utils
 import pulp.plugins.types.database as types_db
 from pulp.plugins.model import PublishReport
@@ -33,7 +33,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoPublishConduit(BaseDistributorConduit):
+class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
     """
     Used to communicate back into the Pulp server while a distributor is
     publishing a repo. Instances of this call should *not* be cached between
@@ -54,7 +54,8 @@ class RepoPublishConduit(BaseDistributorConduit):
         @param distributor_id: identifies the distributor being published
         @type  distributor_id: str
         """
-        BaseDistributorConduit.__init__(self, repo_id, distributor_id)
+        RepoScratchPadMixin.__init__(self, repo_id)
+        DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
 
         self.repo_id = repo_id
         self.distributor_id = distributor_id
