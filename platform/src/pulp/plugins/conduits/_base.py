@@ -16,6 +16,8 @@ import logging
 import sys
 
 import pulp.server.managers.factory as manager_factory
+import pulp.plugins.conduits._common as conduit_utils
+import pulp.plugins.types.database as typedb
 
 # -- constants ----------------------------------------------------------------
 
@@ -215,7 +217,10 @@ class ProfilerConduitException(Exception):
     """
     pass
 
-class ProfilerConduit:
+class ProfilerBaseConduit:
+    pass
+
+class ProfilerConduit(ProfilerBaseConduit):
 
     def get_profile(self, consumer_id, content_type):
         """
@@ -234,7 +239,51 @@ class ProfilerConduit:
         """
         try:
             manager = manager_factory.consumer_profile_manager()
-            return manager.find_by_consumer(consumer_id, content_type)
+            return manager.get_profile(consumer_id, content_type)
         except Exception, e:
             _LOG.exception(_('Error fetching profile for consumer [%(c)s]') % {'c' : consumer_id})
+            raise ProfilerConduitException(e), None, sys.exc_info()[2]
+
+    def get_bindings(self, consumer_id):
+        """
+        Get a list of bound repository IDs.
+
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+
+        @return: A list of bound repository IDs.
+        @rtype: list
+        """
+        manager = manager_factory.consumer_bind_manager()
+        bindings = manager.find_by_consumer(consumer_id)
+        return [b['repo_id'] for b in bindings]
+
+    def get_units(self, repo_id, criteria=None):
+        """
+        Returns the collection of content units associated with the
+        specified repository IDs.
+
+        @param repo_id: A repo ID.
+        @type repo_id: list
+
+        @param criteria: used to scope the returned results or the data within
+        @type  criteria: L{Criteria}
+
+        @return: list of unit instances
+        @rtype:  list of L{AssociatedUnit}
+        """
+        try:
+            result = []
+            manager = manager_factory.repo_unit_association_query_manager()
+            units = manager.get_units_across_types(repo_id, criteria=criteria)
+            typedefs = dict([(u['unit_type_id'],{}) for u in units])
+            for type_id in typedefs.keys():
+                typedefs[type_id] = typedb.type_definition(type_id)
+            for unit in units:
+                type_id = unit['unit_type_id']
+                u = conduit_utils.to_plugin_unit(unit, typedefs[type_id])
+                result.append(u)
+            return result
+        except Exception, e:
+            _LOG.exception('Error getting units for repository [%s]' % repo_id)
             raise ProfilerConduitException(e), None, sys.exc_info()[2]

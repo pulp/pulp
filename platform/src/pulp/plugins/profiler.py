@@ -82,6 +82,12 @@ class Profiler(object):
         @param options: Install options; based on unit type.
         @type options: dict
 
+        @param conduit: The server API.
+        @type conduit: L{ProfilerConduit}
+
+        @return: The translated profile.
+        @rtype: dict
+
         @return: The translated units
         @rtype: list
         """
@@ -104,6 +110,12 @@ class Profiler(object):
         @param options: Update options; based on unit type.
         @type options: dict
 
+        @param conduit: The server API.
+        @type conduit: L{ProfilerConduit}
+
+        @return: The translated profile.
+        @rtype: dict
+
         @return: The translated units
         @rtype: list
         """
@@ -125,6 +137,12 @@ class Profiler(object):
 
         @param options: Update options; based on unit type.
         @type options: dict
+
+        @param conduit: The server API.
+        @type conduit: L{ProfilerConduit}
+
+        @return: The translated profile.
+        @rtype: dict
 
         @return: The translated units
         @rtype: list

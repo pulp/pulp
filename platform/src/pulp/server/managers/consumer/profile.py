@@ -47,6 +47,7 @@ class ProfileManager(object):
             p = UnitProfile(consumer_id, content_type, profile)
         else:
             p.profile = profile
+        collection = UnitProfile.get_collection()
         collection.save(p, safe=True)
         return p
 
@@ -58,7 +59,10 @@ class ProfileManager(object):
         @param content_type: The profile (content) type ID.
         @type content_type: str
         """
-        pass
+        profile = self.get_profile(consumer_id, content_type)
+        if profile is not None:
+            collection = UnitProfile.get_collection()
+            collection.remove(profile, safe=True)
 
     def consumer_deleted(self, id):
         """
@@ -67,7 +71,10 @@ class ProfileManager(object):
         @param id: A consumer ID.
         @type id: str
         """
-        pass
+        collection = UnitProfile.get_collection()
+        query = dict(consumer_id=consumer_id)
+        for profile in collection.find(query):
+            collection.remove(profile, sefe=True)
 
     def get_profile(self, id, content_type):
         """

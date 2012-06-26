@@ -316,6 +316,19 @@ def get_profiler_by_id(id):
     cls, cfg = _LOADER.get_profiler_by_id(id)
     return (cls(), cfg)
 
+def get_profiler_by_type(type_id):
+    """
+    Get a profiler instance that supports the specified content type.
+    @param type_id: content type
+    @type type_id: str
+    @return: tuple of L{Profiler} instance and dictionary configuration
+    @rtype: tuple (L{Profiler}, dict)
+    @raise: L{PluginNotFound} if no profiler corresponds to the id
+    """
+    assert _is_initialized()
+    cls, cfg = _LOADER.get_profiler_by_type(type_id)
+    return (cls(), cfg)
+
 # loader class -----------------------------------------------------------------
 
 class PluginLoader(object):
@@ -470,18 +483,21 @@ class PluginLoader(object):
         """
         return self.__profilers.get_plugin_by_id(id)
     
-    def get_profilers_by_type(self, content_type):
+    def get_profiler_by_type(self, content_type):
         """
+        Get profiler by type.
+        There should only be one profiler per type.
         @param content_type: content type
         @type content_type: str
-        @return: list of tuples of profiler (class, configuration)
-        @rtype: list [(L{Profiler}, dict), ...]
+        @return: tuple of profiler (class, configuration)
+        @rtype: L{Profiler}
         """
-        profilers = []
+        profiler = None
         ids = self.__profilers.get_plugin_ids_by_type(content_type)
         for id in ids:
-            profilers.append(self.get_profiler_by_id(id))
-        return profilers
+            profiler = self.get_profiler_by_id(id)
+            break
+        return profiler
 
     # plugin query api
 
