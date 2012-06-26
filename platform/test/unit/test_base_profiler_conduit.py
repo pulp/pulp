@@ -26,7 +26,7 @@ from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
 from pulp.plugins import loader as plugin_loader
-from pulp.plugins.conduits._base import ProfilerConduit, ProfilerConduitException
+from pulp.plugins.conduits.profiler import ProfilerConduit, ProfilerConduitException
 
 # -- test cases ---------------------------------------------------------------
 
