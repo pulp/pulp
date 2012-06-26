@@ -365,7 +365,7 @@ def add_repo_options(command, is_update):
     sync_group.add_option(PulpCliOption('--verify-size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--verify-checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--remove-old', 'if "true", removes old packages from the repo; defaults to false', required=False))
-    sync_group.add_option(PulpCliOption('--retain-old-count', 'controls how many old package versions to retain; default to 0', required=False))
+    sync_group.add_option(PulpCliOption('--retain-old-count', 'count indicating how many old rpm versions to retain; defaults to 0; This count only takes effect when remove-old option is set to true.', required=False))
 
     # Proxy Options
     proxy_group.add_option(PulpCliOption('--proxy-url', 'URL to the proxy server to use', required=False))
