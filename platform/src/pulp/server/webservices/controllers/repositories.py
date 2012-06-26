@@ -28,7 +28,6 @@ from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
-from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -39,8 +38,44 @@ from pulp.server.webservices.serialization.unit_criteria import unit_association
 
 _LOG = logging.getLogger(__name__)
 
-# -- repo controllers ---------------------------------------------------------
+# -- functions ----------------------------------------------------------------
+def _merge_importers_and_distributors(repos):
+    """
+    Takes a list of Repo objects and adds their corresponding RepoImporter
+    and RepoDistributor objects in lists under the 'importers' and
+    'distributors' attributes.
 
+    @param repos: list of Repo instances that should have importers and
+                  distributors added.
+    @type  repos  list of Repo instances
+
+    @return the same list that was passed in, just for convenience. The list
+            itself is not modified- only its members are modified in-place.
+    @rtype  list of Repo instances
+    """
+    # Load the importer/distributor information into each repository
+    importer_manager = manager_factory.repo_importer_manager()
+    distributor_manager = manager_factory.repo_distributor_manager()
+
+    repo_ids = tuple(repo['id'] for repo in repos)
+
+    # make it cheap to access each repo by id
+    repo_dict = dict((repo['id'], repo) for repo in repos)
+
+    # guarantee that at least an empty list will be present
+    for repo in repos:
+        repo['importers'] = []
+        repo['distributors'] = []
+
+    for importer in importer_manager.find_by_repo_list(repo_ids):
+        repo_dict[importer.repo_id]['importers'].append(importer)
+
+    for distributor in distributor_manager.find_by_repo_list(repo_ids):
+        repo_dict[distributor.repo_id]['distributors'].append(distributor)
+
+    return repos
+
+# -- repo controllers ---------------------------------------------------------
 class RepoCollection(JSONController):
 
     # Scope: Collection
@@ -49,26 +84,19 @@ class RepoCollection(JSONController):
 
     @auth_required(READ)
     def GET(self):
-        repo_query_manager = manager_factory.repo_query_manager()
-        all_repos = repo_query_manager.find_all()
+        """
+        looks for a query parameter "details" to have any value that evaluates
+        to True, and if so, adds importers and distributors to the results
+        """
+        query_params = web.input()
+        query_manager = manager_factory.repo_query_manager()
+        all_repos = query_manager.find_all()
 
-        # Load the importer/distributor information into each repository
-        importer_manager = manager_factory.repo_importer_manager()
-        distributor_manager = manager_factory.repo_distributor_manager()
-        unit_query_manager = manager_factory.repo_unit_association_query_manager()
+        if 'details' in query_params and query_params['details']:
+            _merge_importers_and_distributors(all_repos)
 
-        for r in all_repos:
-            importers = importer_manager.get_importers(r['id'])
-            r['importers'] = importers
-
-            distributors = distributor_manager.get_distributors(r['id'])
-            r['distributors'] = distributors
-
-            criteria = Criteria(unit_fields=[], association_fields=[], remove_duplicates=True)
-            units = unit_query_manager.get_units_across_types(r['id'], criteria)
-            r['content_unit_count'] = len(units)
-
-            r.update(serialization.link.child_link_obj(r['id']))
+        for repo in all_repos:
+            repo.update(serialization.link.child_link_obj(repo['id']))
 
         # Return the repos or an empty list; either way it's a 200
         return self.ok(all_repos)
@@ -116,28 +144,15 @@ class RepoResource(JSONController):
 
     @auth_required(READ)
     def GET(self, id):
+        query_params = web.input()
         query_manager = manager_factory.repo_query_manager()
-
         repo = query_manager.find_by_id(id)
 
         if repo is None:
             raise exceptions.MissingResource(id)
 
-        # Load the importer/distributor information into the repository
-        importer_manager = manager_factory.repo_importer_manager()
-        distributor_manager = manager_factory.repo_distributor_manager()
-
-        importers = importer_manager.get_importers(id)
-        repo['importers'] = importers
-
-        distributors = distributor_manager.get_distributors(id)
-        repo['distributors'] = distributors
-
-        # Load the unit count into the repo
-        unit_query_manager = manager_factory.repo_unit_association_query_manager()
-        criteria = Criteria(unit_fields=[], association_fields=[], remove_duplicates=True)
-        units = unit_query_manager.get_units_across_types(id, criteria)
-        repo['content_unit_count'] = len(units)
+        if 'details' in query_params and query_params['details']:
+            repo = _merge_importers_and_distributors((repo,))[0]
 
         return self.ok(repo)
 

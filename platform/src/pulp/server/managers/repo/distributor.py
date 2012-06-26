@@ -78,6 +78,22 @@ class RepoDistributorManager(object):
         distributors = list(RepoDistributor.get_collection().find({'repo_id' : repo_id}))
         return distributors
 
+    @staticmethod
+    def find_by_repo_list(repo_id_list):
+        """
+        Returns serialized versions of all distributors for given repos. Any
+        IDs that do not refer to valid repos are ignored and will not
+        raise an error.
+
+        @param repo_id_list: list of distributor IDs to fetch
+        @type  repo_id_list: list of str
+
+        @return: list of serialized distributors
+        @rtype:  list of dict
+        """
+        spec = {'repo_id' : {'$in' : repo_id_list}}
+        return list(RepoDistributor.get_collection().find(spec))
+
     def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
                         auto_publish, distributor_id=None):
         """
