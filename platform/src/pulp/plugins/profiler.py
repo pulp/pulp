@@ -57,13 +57,8 @@ class Profiler(object):
         @param config: plugin configuration
         @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-<<<<<<< HEAD
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
-=======
-        @param conduit: The server API.
-        @type conduit: L{InstallUnitConduit}
->>>>>>> Broke out conduit functionality into mixin paradigm
 
         @return: The translated profile.
         @rtype: dict
