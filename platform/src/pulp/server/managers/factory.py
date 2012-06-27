@@ -37,6 +37,7 @@ TYPE_CONTENT                = 'content-manager'
 TYPE_CONTENT_ORPHAN         = 'content-orphan-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
+TYPE_DEPENDENCIES           = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
@@ -141,6 +142,12 @@ def content_upload_manager():
     @rtype: L{pulp.server.managers.content.upload.ContentUploadManager}
     """
     return get_manager(TYPE_CONTENT_UPLOAD)
+
+def dependencies_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.dependency.DependenciesManager}
+    """
+    return get_manager(TYPE_DEPENDENCIES)
 
 def event_fire_manager():
     """
@@ -249,6 +256,7 @@ def initialize():
     from pulp.server.managers.event.fire import EventFireManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
+    from pulp.server.managers.repo.dependency import DependencyManager
     from pulp.server.managers.repo.importer import RepoImporterManager
     from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
@@ -272,8 +280,9 @@ def initialize():
         TYPE_CONTENT_ORPHAN: OrphanManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
-        TYPE_EVENT_FIRE : EventFireManager,
-        TYPE_EVENT_LISTENER : EventListenerManager,
+        TYPE_DEPENDENCIES: DependencyManager,
+        TYPE_EVENT_FIRE: EventFireManager,
+        TYPE_EVENT_LISTENER: EventListenerManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
@@ -284,8 +293,8 @@ def initialize():
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_SCHEDULE: ScheduleManager,
-        TYPE_USER : UserManager,
-        TYPE_USER_GC : GCUserManager,
+        TYPE_USER: UserManager,
+        TYPE_USER_GC: GCUserManager,
     }
     _CLASSES.update(builtins)
 

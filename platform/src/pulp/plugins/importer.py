@@ -293,7 +293,7 @@ class Importer(object):
         @type  units: list of L{pulp.server.content.plugins.data.Unit}
 
         @param dependency_conduit: used to query into the server
-        @type  dependency_conduit: L{pulp.server.content.conduits.dependency.DependencyConduit}
+        @type  dependency_conduit: L{pulp.server.content.conduits.dependency.DependencyResolutionConduit}
 
         @param config: plugin configuration
         @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
