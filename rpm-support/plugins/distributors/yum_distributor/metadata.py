@@ -72,7 +72,7 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     repo_dir = repo.working_dir
     checksum_type = get_repo_checksum_type(repo, publish_conduit, config)
-    metadata_types = config.get('skip_content_types') or {}
+    metadata_types = config.get('skip') or {}
     metadata_types = convert_content_to_metadata_type(metadata_types)
     if 'group' not in metadata_types:
         groups_xml_path = None
