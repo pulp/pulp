@@ -67,8 +67,6 @@ class Criteria(Model):
                 return
             for key, value in spec.items():
                 if key == '$not' and isinstance(value, basestring):
-                    # XXX is this the right kind of compilation?
-                    # shouldn't we be supporting Perl-compatible regexs?
                     spec[key] = re.compile(value)
                 _compile_regexs_for_not(value)
 
