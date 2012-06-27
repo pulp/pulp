@@ -21,9 +21,6 @@ import pymongo
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.base import Model
 
-
-_VALID_SORT_DIRECTIONS = (pymongo.ASCENDING, pymongo.DESCENDING)
-
 # criteria model ---------------------------------------------------------------
 
 class Criteria(Model):
