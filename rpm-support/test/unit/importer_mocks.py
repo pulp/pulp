@@ -14,7 +14,7 @@
 import os
 import mock
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
-from pulp.plugins.conduits.unit_add import UnitAddConduit
+from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Unit
@@ -65,7 +65,7 @@ def get_upload_conduit(type_id=None, unit_key=None, metadata=None, relative_path
                 ret_units = False
         return []
 
-    upload_conduit = mock.Mock(spec=UnitAddConduit)
+    upload_conduit = mock.Mock(spec=UploadConduit)
     upload_conduit.init_unit.side_effect = side_effect
 
     upload_conduit.get_units = mock.Mock()
