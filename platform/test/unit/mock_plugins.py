@@ -51,7 +51,7 @@ class MockProfiler(mock.Mock):
 
     @classmethod
     def metadata(cls):
-        return {'types' : ['mock-type', 'type-1']}
+        return {'types' : ['mock-type', 'type-1', 'rpm']}
 
 
 
@@ -107,6 +107,11 @@ def install():
         'mock-importer' : MOCK_IMPORTER
     }
 
+    global PROFILER_MAPPINGS
+    PROFILER_MAPPINGS = {
+        'rpm' : MOCK_PROFILER
+    }
+
     # Return the mock instance; eventually can enhance this to support
     # multiple IDs and instances
     def mock_get_distributor_by_id(id):
@@ -122,7 +127,7 @@ def install():
         return IMPORTER_MAPPINGS[id], {}
 
     def mock_get_profiler_by_type(type):
-        if id not in PROFILER_MAPPINGS:
+        if type not in PROFILER_MAPPINGS:
             raise plugin_loader.PluginNotFound()
 
         return PROFILER_MAPPINGS[type], {}
@@ -144,7 +149,10 @@ def install():
     MOCK_DISTRIBUTOR_2.validate_config.return_value = True
     MOCK_DISTRIBUTOR_2.publish_repo.return_value = PublishReport(True, 'Summary of the publish', 'Details of the publish')
 
-    MOCK_PROFILER.update_profile.return_value = dict(units=['A', 'B'])
+    MOCK_PROFILER.update_profile = lambda i,p,c,x: p
+    MOCK_PROFILER.install_units = lambda i,u,o,c,x: sorted(u)
+    MOCK_PROFILER.update_units = lambda i,u,o,c,x: sorted(u)
+    MOCK_PROFILER.uninstall_units = lambda i,u,o,c,x: sorted(u)
 
 
 def reset():

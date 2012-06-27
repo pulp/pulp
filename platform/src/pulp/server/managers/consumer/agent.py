@@ -17,6 +17,9 @@
 Contains agent management classes
 """
 from pulp.server.managers import factory as managers
+from pulp.plugins import loader as plugins
+from pulp.plugins.profiler import Profiler
+from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.server.agent import PulpAgent
 from logging import getLogger
 
@@ -77,6 +80,13 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
+        conduit = ProfilerConduit()
+        collated = Units(units)
+        for typeid, units in collated.items():
+            profiler, cfg = self.__profiler(typeid)
+            units = profiler.install_units(id, units, options, cfg, conduit)
+            collated[typeid] = units
+        units = collated.join()
         agent = PulpAgent(consumer)
         agent.content.install(units, options)
 
@@ -93,6 +103,13 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
+        conduit = ProfilerConduit()
+        collated = Units(units)
+        for typeid, units in collated.items():
+            profiler, cfg = self.__profiler(typeid)
+            units = profiler.update_units(id, units, options, cfg, conduit)
+            collated[typeid] = units
+        units = collated.join()
         agent = PulpAgent(consumer)
         agent.content.update(units, options)
 
@@ -109,6 +126,13 @@ class AgentManager(object):
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
+        conduit = ProfilerConduit()
+        collated = Units(units)
+        for typeid, units in collated.items():
+            profiler, cfg = self.__profiler(typeid)
+            units = profiler.uninstall_units(id, units, options, cfg, conduit)
+            collated[typeid] = units
+        units = collated.join()
         agent = PulpAgent(consumer)
         agent.content.uninstall(units, options)
 
@@ -119,3 +143,46 @@ class AgentManager(object):
         @type id: str
         """
         _LOG.info(id)
+
+    def __profiler(self, typeid):
+        """
+        Find the profiler.
+        Returns the Profiler base class when not matched.
+        @param typeid: The content type ID.
+        @type typeid: str
+        @return: (profiler, cfg)
+        @rtype: tuple
+        """
+        try:
+            plugin = plugins.get_profiler_by_type(typeid)
+        except plugins.PluginNotFound:
+            plugin = (Profiler(), {})
+        return plugin
+
+
+class Units(dict):
+    """
+    Collated content units
+    """
+
+    def __init__(self, units):
+        """
+        Unit is: {type_id:<str>, unit_key:<dict>}
+        @param units: A list of content units.
+        @type units: list
+        """
+        for unit in units:
+            typeid = unit['type_id']
+            lst = self.get(typeid)
+            if lst is None:
+                lst = []
+                self[typeid] = lst
+            lst.append(unit)
+
+    def join(self):
+        """
+        Flat (uncollated) list of units.
+        @return: A list of units.
+        @rtype: list
+        """
+        return [j for i in self.values() for j in i]

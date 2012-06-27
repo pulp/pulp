@@ -63,7 +63,7 @@ class Profiler(object):
         @return: The translated profile.
         @rtype: dict
         """
-        raise NotImplementedError()
+        return profile
 
     def install_units(self, consumer_id, units, options, config, conduit):
         """
@@ -94,7 +94,7 @@ class Profiler(object):
         @return: The translated units
         @rtype: list
         """
-        raise NotImplementedError()
+        return units
 
     def update_units(self, consumer_id, units, options, config, conduit):
         """
@@ -125,7 +125,7 @@ class Profiler(object):
         @return: The translated units
         @rtype: list
         """
-        raise NotImplementedError()
+        return units
 
     def uninstall_units(self, consumer_id, units, options, config, conduit):
         """
@@ -156,4 +156,4 @@ class Profiler(object):
         @return: The translated units
         @rtype: list
         """
-        raise NotImplementedError()
+        return units

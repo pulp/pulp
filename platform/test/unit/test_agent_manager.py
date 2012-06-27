@@ -101,9 +101,16 @@ class AgentManagerTests(base.PulpServerTests):
         # Setup
         self.populate()
         # Test
-        unit_key = dict(name='python-gofer', version='0.66')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [
+            {'type_id':'rpm',
+             'unit_key':{'name':'zsh', 'version':'1.0'}},
+            {'type_id':'rpm',
+             'unit_key':{'name':'bar', 'version':'1.0'}},
+            {'type_id':'rpm',
+             'unit_key':{'name':'abc', 'version':'1.0'}},
+            {'type_id':'unsupported',
+             'unit_key':{'name':'xxx', 'version':'1.0'}},
+        ]
         options = dict(importkeys=True)
         manager = factory.consumer_agent_manager()
         manager.install_content(self.CONSUMER_ID, units, options)
