@@ -24,13 +24,15 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
         return PublishReport(False, summary, details)
 
     def get_units(criteria=None):
-        ret_units = True
-        if criteria and hasattr(criteria, "type_ids"):
-            if type_id and type_id not in criteria.type_ids:
-                ret_units = False
-        if ret_units and existing_units:
-            return existing_units
-        return []
+        ret_val = []
+        if existing_units:
+            for u in existing_units:
+                if criteria:
+                    if u.type_id in criteria.type_ids:
+                        ret_val.append(u)
+                else:
+                    ret_val.append(u)
+        return ret_val
 
     def get_repo_scratchpad():
         scratchpad = None

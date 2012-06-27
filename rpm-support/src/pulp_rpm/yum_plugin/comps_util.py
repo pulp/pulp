@@ -151,18 +151,18 @@ def dict_to_yum_category(obj, category_id=None):
 
 def form_comps_xml_from_units(groups, categories):
     """
-    @param groups dict of package_group units
+    @param groups list of package_group units
     @type groups: {str:pulp.server.content.plugins.model.Unit}
 
-    @param categories dict of package_category units
+    @param categories list of package_category units
     @type categories: {str:pulp.server.content.plugins.model.Unit}
 
     @return xml formated representation of comps info
     @rtype: str
     """
     # Translate each unit to an instance of a yum Group/Category
-    yum_groups = map(unit_to_yum_group, groups.values())
-    yum_categories = map(unit_to_yum_category, categories.values())
+    yum_groups = map(unit_to_yum_group, groups)
+    yum_categories = map(unit_to_yum_category, categories)
     return form_comps_xml(yum_categories, yum_groups)
 
 

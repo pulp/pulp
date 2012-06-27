@@ -19,10 +19,10 @@ import shutil
 import time
 import traceback
 
-from pulp_rpm.yum_plugin import util
 from pulp.plugins.distributor import Distributor
+from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp_rpm.yum_plugin import comps_util, util
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
-
 from yum_distributor import metadata
 
 
@@ -31,12 +31,15 @@ from yum_distributor import metadata
 _LOG = logging.getLogger(__name__)
 _ = gettext.gettext
 
-YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
+DISTRO_TYPE_ID="distribution"
+DRPM_TYPE_ID="drpm"
+ERRATA_TYPE_ID="erratum"
+PKG_GROUP_TYPE_ID="package_group"
+PKG_CATEGORY_TYPE_ID="package_category"
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
-DRPM_TYPE_ID="drpm"
-DISTRO_TYPE_ID="distribution"
-ERRATA_TYPE_ID="erratum"
+YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
+
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
                         "https_ca", "gpgkey", "generate_metadata",
@@ -378,6 +381,7 @@ class YumDistributor(Distributor):
             "packages":           {"state": "NOT_STARTED"},
             "distribution":       {"state": "NOT_STARTED"},
             "metadata":           {"state": "NOT_STARTED"},
+            "packagegroups":      {"state": "NOT_STARTED"},
             "publish_http":       {"state": "NOT_STARTED"},
             "publish_https":      {"state": "NOT_STARTED"},
             }
@@ -427,9 +431,19 @@ class YumDistributor(Distributor):
 
         if self.canceled:
             return publish_conduit.build_failure_report(summary, details)
+        groups_xml_path = None
+        existing_cats = []
+        existing_groups = []
+        if 'packagegroup' not in skip_list:
+            criteria = Criteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+            existing_units = publish_conduit.get_units(criteria)
+            existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
+            existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
+            groups_xml_path = self.write_comps_xml(repo, existing_groups, existing_cats)
         metadata_start_time = time.time()
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
-        metadata_status, metadata_errors = metadata.generate_metadata(repo, publish_conduit, config, progress_callback)
+        metadata_status, metadata_errors = metadata.generate_metadata(
+                repo, publish_conduit, config, progress_callback, groups_xml_path)
         metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
@@ -481,6 +495,8 @@ class YumDistributor(Distributor):
         summary["num_distribution_units_attempted"] = len(distro_units)
         summary["num_distribution_units_published"] = len(distro_units) - len(distro_errors)
         summary["num_distribution_units_errors"] = len(distro_errors)
+        summary["num_package_groups_published"] = len(existing_groups)
+        summary["num_package_categories_published"] = len(existing_cats)
         summary["relative_path"] = relpath
         if metadata_status is False and not len(metadata_errors):
             summary["skip_metadata_update"] = True
@@ -796,6 +812,38 @@ class YumDistributor(Distributor):
                 payload['global_auth_key'] = open(global_auth_key).read()
                 payload['global_auth_ca'] = open(global_auth_ca).read()
         return payload
+
+    def write_comps_xml(self, repo, existing_groups, existing_cats):
+        """
+        Generates a xml file commonly called a 'comps.xml'
+        Contains information from the package groups and package categories
+        associated with this repo
+
+        @param repo: metadata describing the repository
+        @type repo: L{pulp.plugins.data.Repository}
+
+        @param existing_groups: package group units in this repo
+        @type existing_groups: [Unit]
+
+        @param existing_cats: package category units in this repo
+        @type existing_cats: [Unit]
+
+        @return path to comps.xml or None if no groups/cat info is available
+        @rtype: str
+        """
+        if not existing_groups and not existing_cats:
+            # No groups/cats info 
+            return None
+        comps_xml = comps_util.form_comps_xml_from_units(existing_groups, existing_cats)
+        if not comps_xml:
+            return None
+        out_path = os.path.join(repo.working_dir, "comps.xml")
+        f = open(out_path, "w")
+        try:
+            f.write(comps_xml)
+        finally:
+            f.close()
+        return out_path
 
 def load_config(config_file=CONFIG_REPO_AUTH):
     config = SafeConfigParser()
