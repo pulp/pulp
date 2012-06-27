@@ -97,10 +97,11 @@ def _validate_sort(sort):
         for entry in sort:
             if not isinstance(entry[0], basestring):
                 raise TypeError()
+            flag = str(entry[1]).lower()
             direction = None
-            if entry[1].lower() in ('ascending', '1'):
+            if flag in ('ascending', '1'):
                 direction = pymongo.ASCENDING
-            if entry[1].lower() in ('descending', '-1'):
+            if flag in ('descending', '-1'):
                 direction = pymongo.DESCENDING
             if direction is None:
                 raise ValueError()
