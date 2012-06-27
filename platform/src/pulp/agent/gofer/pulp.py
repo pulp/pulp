@@ -60,7 +60,7 @@ class Bundle(BundleImpl):
     """
 
     def __init__(self):
-        BundleImpl.__init__(self, cfg.messaging.clientcert)
+        BundleImpl.__init__(self, cfg.rest.clientcert)
         
 
 class PulpBindings(Bindings):
@@ -139,7 +139,7 @@ class RegistrationMonitor:
         Start path monitor to track changes in the
         pulp identity certificate.
         """
-        path = '/etc/pki/pulp/consumer/cert.pem'
+        path = cfg.rest.clientcert
         cls.pmon.add(path, cls.changed)
         cls.pmon.start()
 
@@ -156,6 +156,26 @@ class RegistrationMonitor:
         bundle = Bundle()
         myid = bundle.cn()
         plugin.setuuid(myid)
+
+
+class Rebind:
+    """
+    Provides (Re)bind on agent start.
+    Ensures that bindings are synchronized with server.
+    """
+
+    @action(days=0x8E94)
+    def rebind(self):
+        """
+        (Re)bind on agent statup.
+        """
+        bundle = Bundle()
+        myid = bundle.cn()
+        if myid:
+            consumer = Consumer()
+            consumer.rebind()
+        else:
+            log.info('rebind skipped, not registered')
 
 #
 # API
@@ -200,7 +220,6 @@ class Consumer:
             raise Exception('bind failed, http:%d', http.response_code)
 
     @remote(secret=secret)
-    @action(days=0x8E94)
     def rebind(self):
         """
         (Re)bind to all repositories.
@@ -211,6 +230,7 @@ class Consumer:
         bindings = PulpBindings()
         bundle = Bundle()
         myid = bundle.cn()
+        bindings = PulpBindings()
         http = bindings.bind.find_by_id(myid)
         if http.response_code == 200:
             report = dispatcher.rebind(http.response_body)
