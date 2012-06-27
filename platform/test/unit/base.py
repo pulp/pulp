@@ -173,9 +173,6 @@ class PulpWebserviceTests(PulpServerTests):
 
     @classmethod
     def tearDownClass(cls):
-        user_api = UserApi()
-        user_api.delete('ws-user')
-
         http.request_info = PulpWebserviceTests.ORIG_HTTP_REQUEST_INFO
 
     def setUp(self):
@@ -191,6 +188,12 @@ class PulpWebserviceTests(PulpServerTests):
         user_api = UserApi()
         user_api.create('ws-user', password='ws-user')
         user_api.update('ws-user', {'roles' : authorization.super_user_role})
+
+    def tearDown(self):
+        super(PulpWebserviceTests, self).tearDown()
+
+        user_api = UserApi()
+        user_api.delete('ws-user')
 
     def setup_async(self):
         dispatch_factory.initialize()
