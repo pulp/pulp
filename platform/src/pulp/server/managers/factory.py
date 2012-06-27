@@ -193,7 +193,7 @@ def repo_unit_association_manager():
 
 def repo_unit_association_query_manager():
     """
-    @rtype: L{pulp.server.managers.repo.unit_association_qiery.RepoUnitAssociationQueryManager}
+    @rtype: L{pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager}
     """
     return get_manager(TYPE_REPO_ASSOCIATION_QUERY)
 
