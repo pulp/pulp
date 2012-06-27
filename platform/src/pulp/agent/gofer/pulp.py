@@ -158,10 +158,9 @@ class RegistrationMonitor:
         plugin.setuuid(myid)
 
 
-class Rebind:
+class Synchronization:
     """
-    Provides (Re)bind on agent start.
-    Ensures that bindings are synchronized with server.
+    Misc actions used to synchronize with the server.
     """
 
     @action(days=0x8E94)
@@ -169,13 +168,30 @@ class Rebind:
         """
         (Re)bind on agent statup.
         """
-        bundle = Bundle()
-        myid = bundle.cn()
-        if myid:
+        if self.registered():
             consumer = Consumer()
             consumer.rebind()
         else:
-            log.info('rebind skipped, not registered')
+            log.info('not registered, rebind skipped')
+            
+    @action(minutes=cfg.profile.minutes)
+    def profile(self):
+        """
+        Report the unit profile(s).
+        """
+        if self.registered():
+            profile = Profile()
+            profile.send()
+        else:
+            log.info('not registered, profile report skipped')
+            
+    def registered(self):
+        """
+        Get registration status.
+        """
+        bundle = Bundle()
+        myid = bundle.cn()
+        return (myid is not None)
 
 #
 # API
@@ -312,7 +328,6 @@ class Profile:
     """
 
     @remote(secret=secret)
-    @action(minutes=cfg.profile.minutes)
     def send(self):
         """
         Send the content profile(s) to the server.
@@ -320,7 +335,15 @@ class Profile:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
+        bundle = Bundle()
+        myid = bundle.cn()
+        bindings = PulpBindings()
         report = dispatcher.profile()
-        # TODO: send profiles
         log.info('profile: %s' % report)
+        for typeid, report in report.details.items():
+            if not report['status']:
+                continue
+            details = report['details']
+            http = bindings.profile.send(myid, typeid, details)
+            log.info('profile (%s), reported: %d', typeid, http.response_code)
         return report.dict()
