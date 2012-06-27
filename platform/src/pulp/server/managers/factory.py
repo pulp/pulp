@@ -50,6 +50,7 @@ TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
 TYPE_SCHEDULE               = 'schedule-manager'
 TYPE_USER                   = 'user-manager'
+TYPE_USER_GC                = 'gc-user-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
@@ -219,6 +220,12 @@ def user_manager():
     """
     return get_manager(TYPE_USER)
 
+def gc_user_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.user.GCUserManager}
+    """
+    return get_manager(TYPE_USER_GC)
+
 # -- other --------------------------------------------------------------------
 
 def initialize():
@@ -227,6 +234,7 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
+    from pulp.server.managers.auth.user import GCUserManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
@@ -277,6 +285,7 @@ def initialize():
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_SCHEDULE: ScheduleManager,
         TYPE_USER : UserManager,
+        TYPE_USER_GC : GCUserManager,
     }
     _CLASSES.update(builtins)
 
