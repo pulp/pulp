@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.307
+Version: 0.0.308
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -216,6 +216,23 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Jun 28 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.308-1
+- Fix missed conversion to new Config object. (jortel@redhat.com)
+- YumDistributor: Adding publish of package groups/categories
+  (jmatthews@redhat.com)
+- 835667 - Fix all help text for boolean attributes to indicate default
+  (jason.dobies@redhat.com)
+- handle changes in consumer.conf. (jortel@redhat.com)
+- Fixed for renamed class (jason.dobies@redhat.com)
+- fix skip key lookup in metadata (pkilambi@redhat.com)
+- adding test to validate newest option (pkilambi@redhat.com)
+- updating docs and help to include new options (pkilambi@redhat.com)
+- Add --remove-old and --retain-old-count options to repo create/update
+  (pkilambi@redhat.com)
+- YumImporter: Log exception when importer fails (jmatthews@redhat.com)
+- Module name correction and missing import, task_utils is no more
+  (jslagle@redhat.com)
+
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.307-1
 - 
 
