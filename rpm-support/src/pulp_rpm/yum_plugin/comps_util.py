@@ -45,7 +45,14 @@ def yum_group_to_model_group(obj):
     grp['optional_package_names'].extend(obj.optional_packages.keys())
     grp['default_package_names'] = []
     grp['default_package_names'].extend(obj.default_packages.keys())
-    grp['conditional_package_names'] = obj.conditional_packages
+    # Becareful of issue with package names that contain a dot in their name:
+    # Example pymongo exception seen from CentOS repos
+    #  InvalidDocument: key 'openoffice.org-langpack-en' must not contain '.'
+    #  Seen when a conditional_package_name had data of
+    #   <packagereq requires="openoffice.org-core" type="conditional">openoffice.org-langpack-en</packagereq>
+    grp['conditional_package_names'] = []
+    for pkg_name in obj.conditional_packages:
+        grp['conditional_package_names'].append((pkg_name, obj.conditional_packages[pkg_name]))
     grp['translated_name'] = obj.translated_name
     grp['translated_description'] = obj.translated_description
     return grp
@@ -108,9 +115,8 @@ def dict_to_yum_group(obj, group_id=None):
         grp.optional_packages[pkgname] = 1
     for pkgname in obj['default_package_names']:
         grp.default_packages[pkgname] = 1
-    for pkgname in obj['conditional_package_names']:
-        grp.conditional_packages[pkgname] = \
-                obj['conditional_package_names'][pkgname]
+    for pkgname, values in obj['conditional_package_names']:
+        grp.conditional_packages[pkgname] = values
     return grp
 
 def unit_to_yum_category(cat_unit):

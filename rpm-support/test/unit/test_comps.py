@@ -19,6 +19,11 @@ import sys
 import tempfile
 import unittest
 import yum
+from pulp.plugins.model import Repository, Unit
+from pulp_rpm.yum_plugin import comps_util, util
+from pulp.server.db import connection
+
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
@@ -26,13 +31,12 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 import distributor_mocks
 import importer_mocks
 import rpm_support_base
-from pulp_rpm.yum_plugin import comps_util, util
 from yum_distributor.distributor import YumDistributor
 from yum_importer import comps
 from yum_importer.comps import ImporterComps, PKG_GROUP_METADATA, PKG_CATEGORY_METADATA,\
                                 PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID
 from yum_importer.importer import YumImporter
-from pulp.plugins.model import Repository, Unit
+
 
 class TestComps(rpm_support_base.PulpRPMTests):
 
@@ -72,8 +76,9 @@ class TestComps(rpm_support_base.PulpRPMTests):
         metadata["langonly"] = "1"
         metadata["display_order"] = 1
         metadata["mandatory_package_names"] = ["test_mand_pkg_name_%s" % (random_int)]
-        metadata["conditional_package_names"] = \
-                {"test_pkg_name_cond_1":"value%s"%(random_int)}
+        metadata["conditional_package_names"] = [
+                    ("test_pkg_name_cond_1",["value%s"%(random.random()), "value_%s" % (random.random())])
+                ]
         metadata["optional_package_names"] = ["test_opt_pkg_name_%s" % (random_int)]
         metadata["default_package_names"] = ["test_default_pkg_name_%s" % (random_int)]
         metadata["translated_description"] = {}
@@ -439,9 +444,18 @@ class TestComps(rpm_support_base.PulpRPMTests):
                 self.assertTrue(pkg_name in eg.metadata["optional_package_names"])
             for pkg_name in g.default_packages:
                 self.assertTrue(pkg_name in eg.metadata["default_package_names"])
+            #
+            # Below is related to pymongo not liking dots in a pkg_name
+            # We are storing conditional_package_names as a list of tuples, (name, values)
+            # convert to a dictionary to make it easier to compare against yum's data
+            #
+            cond_lookup = {}
+            for expected_name, expected_values in eg.metadata["conditional_package_names"]:
+                cond_lookup[expected_name] = expected_values
             for pkg_name in g.conditional_packages:
-                self.assertEqual(g.conditional_packages[pkg_name], 
-                        eg.metadata["conditional_package_names"][pkg_name])
+                # We are converting our expected value to a str below to match the behavior
+                # we see from yum
+                self.assertEqual(g.conditional_packages[pkg_name], str(cond_lookup[pkg_name]))
         for c in yc.categories:
             ec = None
             if c.categoryid == "cat_a":
@@ -458,4 +472,28 @@ class TestComps(rpm_support_base.PulpRPMTests):
             for grpid in c._groups:
                 self.assertTrue(grpid in ec.metadata["packagegroupids"])
         # Verify the pkg group/category info is correct
+
+    def test_comps_import_with_dots_in_pkg_names(self):
+        # Test we are able to save problematic package groups/categories to mongo
+        db = connection.database()
+        dummy_collection_name = "unit_test_dummy_data"
+        dummy_collection = getattr(db, dummy_collection_name)
+
+        # Import from a CentOS 6 comps.xml containing:
+        # http://mirror.centos.org/centos/6/os/x86_64/repodata/3a27232698a261aa4022fd270797a3006aa8b8a346cbd6a31fae1466c724d098-c6-x86_64-comps.xml
+        # <packagereq requires="openoffice.org-core" type="conditional">openoffice.org-langpack-en</packagereq>
+        # We were seeing exceptions like below:
+        #    InvalidDocument: key 'openoffice.org-langpack-en' must not contain '.'
+        success = False
+        try:
+            repo_src_dir = os.path.join(self.data_dir, "test_comps_import_with_dots_in_pkg_names")
+            avail_groups, avail_cats = comps.get_available(repo_src_dir)
+            for grp in avail_groups.values():
+                dummy_collection.save(grp, safe=True)
+            for cat in avail_cats.values():
+                dummy_collection.save(cat, safe=True)
+            success = True
+        finally:
+            db.drop_collection(dummy_collection_name)
+        self.assertTrue(success)
 

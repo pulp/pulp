@@ -39,8 +39,8 @@ def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
 
     sync_conduit = mock.Mock(spec=RepoSyncConduit)
     sync_conduit.init_unit.side_effect = side_effect
-    sync_conduit.get_units = mock.Mock()
     sync_conduit.get_units.side_effect = get_units
+
     return sync_conduit
 
 def get_import_conduit(source_units=None):
