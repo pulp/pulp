@@ -121,14 +121,14 @@ class PulpCollection(Collection):
         @return: pymongo cursor for the given query
         @rtype:  L{pymongo.cursor.Cursor}
         """
-        cursor = self.find(criteria.spec, fields=criteria.fields)
-        if criteria.sort is not None:
-            for entry in criteria.sort:
+        cursor = self.find(criteria['spec'], fields=criteria['fields'])
+        if criteria['sort'] is not None:
+            for entry in criteria['sort']:
                 cursor.sort(*entry)
-        if criteria.skip is not None:
-            cursor.skip(criteria.skip)
-        if criteria.limit is not None:
-            cursor.limit(criteria.limit)
+        if criteria['skip'] is not None:
+            cursor.skip(criteria['skip'])
+        if criteria['limit'] is not None:
+            cursor.limit(criteria['limit'])
         return cursor
 
 # -- public --------------------------------------------------------------------
