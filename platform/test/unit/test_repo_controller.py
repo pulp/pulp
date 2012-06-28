@@ -955,6 +955,36 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
         # Verify
         self.assertEqual(400, status)
 
+class DependencyResolutionTests(RepoControllersTests):
+
+    @mock.patch('pulp.server.managers.repo.dependency.DependencyManager.resolve_dependencies_by_criteria')
+    def test_post(self, mock_resolve_method):
+        # Setup
+        mock_resolve_method.return_value = ['foo']
+
+        # Test
+        status, body = self.post('/v2/repositories/repo/actions/resolve_dependencies/')
+
+        # Verify
+        self.assertEqual(200, status)
+
+        self.assertEqual(1, mock_resolve_method.call_count)
+
+    @mock.patch('pulp.server.managers.repo.dependency.DependencyManager.resolve_dependencies_by_criteria')
+    def test_post_bad_criteria(self, mock_resolve_method):
+        # Setup
+        mock_resolve_method.return_value = ['foo']
+        body = {
+            'criteria' : 'bar'
+        }
+
+        # Test
+        status, body = self.post('/v2/repositories/repo/actions/resolve_dependencies/', params=body)
+
+        # Verify
+        self.assertEqual(400, status)
+        self.assertEqual(0, mock_resolve_method.call_count)
+
 class RepoAssociateTests(RepoControllersTests):
 
     def setUp(self):

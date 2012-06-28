@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # Python
+from datetime import timedelta
 import logging
 import sys
 from gettext import gettext as _
@@ -814,6 +815,35 @@ class RepoImportUpload(JSONController):
 
         return execution.execute_ok(self, call_request)
 
+class RepoResolveDependencies(JSONController):
+
+    # Scope: Actions
+    # POST:  Resolve and return dependencies for one or more units
+
+    def POST(self, repo_id):
+        # Params
+        params = self.params()
+        query = params.get('criteria', {})
+        options = params.get('options', {})
+
+        try:
+            criteria = unit_association_criteria(query)
+        except:
+            _LOG.exception('Error parsing association criteria [%s]' % query)
+            raise exceptions.PulpDataException(), None, sys.exc_info()[2]
+
+        # Coordinator configuration
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                action_tag('resolve_dependencies')]
+
+        dependency_manager = manager_factory.dependency_manager()
+        call_request = CallRequest(dependency_manager.resolve_dependencies_by_criteria,
+                                   [repo_id, criteria, options],
+                                   resources=resources, tags=tags, archive=True)
+
+        return execution.execute_sync_ok(self, call_request, timeout=timedelta(seconds=60))
+
 class RepoUnitAdvancedSearch(JSONController):
 
     # Scope: Search
@@ -873,6 +903,7 @@ urls = (
     '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
     '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
     '/([^/]+)/actions/import_upload/$', 'RepoImportUpload', # resource action
+    '/([^/]+)/actions/resolve_dependencies/$', 'RepoResolveDependencies', # resource action
 
     '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
 )
