@@ -11,3 +11,4 @@ do
   cd $SUBPROJECT
   tito tag --accept-auto-changelog && git push && git push --tags
   cd $GIT_ROOT
+done
