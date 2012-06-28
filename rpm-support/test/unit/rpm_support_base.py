@@ -22,6 +22,7 @@ from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
+from pulp.common.config import Config
 
 class PulpRPMTests(unittest.TestCase):
     """
@@ -52,7 +53,7 @@ class PulpClientTests(unittest.TestCase):
 
         self.config = SafeConfigParser()
         config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-client.conf')
-        self.config.read(config_filename)
+        self.config = Config(config_filename)
 
         self.server_mock = mock.Mock()
         self.pulp_connection = PulpConnection('', server_wrapper=self.server_mock)
