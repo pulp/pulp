@@ -358,7 +358,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.manager.associate_from_repo('missing', dest_repo_id)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('missing' == e.resources['resource_id'])
+            self.assertTrue('missing' == e.resources['repo_id'])
 
     def test_associate_from_repo_missing_destination(self):
         # Setup
@@ -372,7 +372,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.manager.associate_from_repo(source_repo_id, 'missing')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('missing' == e.resources['resource_id'])
+            self.assertTrue('missing' == e.resources['repo_id'])
 
     def test_associate_by_id_calls_update_unit_count(self):
         self.manager.associate_unit_by_id(

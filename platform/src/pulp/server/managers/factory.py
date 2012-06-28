@@ -37,7 +37,7 @@ TYPE_CONTENT                = 'content-manager'
 TYPE_CONTENT_ORPHAN         = 'content-orphan-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
-TYPE_DEPENDENCIES           = 'dependencies-manager'
+TYPE_DEPENDENCY           = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
@@ -143,11 +143,11 @@ def content_upload_manager():
     """
     return get_manager(TYPE_CONTENT_UPLOAD)
 
-def dependencies_manager():
+def dependency_manager():
     """
-    @rtype: L{pulp.server.managers.repo.dependency.DependenciesManager}
+    @rtype: L{pulp.server.managers.repo.dependency.DependencyManager}
     """
-    return get_manager(TYPE_DEPENDENCIES)
+    return get_manager(TYPE_DEPENDENCY)
 
 def event_fire_manager():
     """
@@ -280,7 +280,7 @@ def initialize():
         TYPE_CONTENT_ORPHAN: OrphanManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
-        TYPE_DEPENDENCIES: DependencyManager,
+        TYPE_DEPENDENCY: DependencyManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
         TYPE_PLUGIN_MANAGER: PluginManager,

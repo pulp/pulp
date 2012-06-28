@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 #!/usr/bin/python
 #
 # Copyright (c) 2011 Red Hat, Inc.
@@ -19,8 +21,9 @@ import base
 import mock_plugins
 import mock
 
+from   pulp.common.util import encode_unicode
 import pulp.plugins.loader as plugin_loader
-from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
+from   pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -38,7 +41,6 @@ class RepoManagerTests(base.PulpServerTests):
 
         # Create the manager instance to test
         self.manager = repo_manager.RepoManager()
-
 
     def tearDown(self):
         super(RepoManagerTests, self).tearDown()
@@ -222,6 +224,19 @@ class RepoManagerTests(base.PulpServerTests):
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    def test_create_i18n(self):
+        # Setup
+        i18n_text = 'Brasília'
+
+        # Test
+        self.manager.create_repo('repo-i18n', display_name=i18n_text, description=i18n_text)
+
+        # Verify
+        repo = Repo.get_collection().find_one({'id' : 'repo-i18n'})
+        self.assertTrue(repo is not None)
+        self.assertEqual(encode_unicode(repo['display_name']), i18n_text)
+        self.assertEqual(encode_unicode(repo['description']), i18n_text)
 
     def test_delete_repo(self):
         """

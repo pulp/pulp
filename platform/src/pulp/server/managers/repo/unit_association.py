@@ -208,13 +208,8 @@ class RepoUnitAssociationManager(object):
         repo_query_manager = manager_factory.repo_query_manager()
         importer_manager = manager_factory.repo_importer_manager()
 
-        source_repo = repo_query_manager.find_by_id(source_repo_id)
-        if source_repo is None:
-            raise exceptions.MissingResource(source_repo_id)
-
-        dest_repo = repo_query_manager.find_by_id(dest_repo_id)
-        if dest_repo is None:
-            raise exceptions.MissingResource(dest_repo_id)
+        source_repo = repo_query_manager.get_repository(source_repo_id)
+        dest_repo = repo_query_manager.get_repository(dest_repo_id)
 
         # This will raise MissingResource if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.

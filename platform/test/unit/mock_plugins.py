@@ -32,7 +32,6 @@ _ORIG_GET_DISTRIBUTOR_BY_ID = None
 _ORIG_GET_IMPORTER_BY_ID = None
 _ORIG_GET_PROFILER_BY_TYPE = None
 
-
 # -- plugin classes -----------------------------------------------------------
 
 class MockImporter(mock.Mock):
@@ -52,9 +51,6 @@ class MockProfiler(mock.Mock):
     @classmethod
     def metadata(cls):
         return {'types' : ['mock-type', 'type-1', 'rpm']}
-
-
-
 
 # -- mock instances -----------------------------------------------------------
 
@@ -153,7 +149,6 @@ def install():
     MOCK_PROFILER.install_units = lambda i,u,o,c,x: sorted(u)
     MOCK_PROFILER.update_units = lambda i,u,o,c,x: sorted(u)
     MOCK_PROFILER.uninstall_units = lambda i,u,o,c,x: sorted(u)
-
 
 def reset():
     """
