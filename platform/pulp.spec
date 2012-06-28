@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.307
+Version: 0.0.308
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -412,6 +412,72 @@ exit 0
 %endif
 
 %changelog
+* Thu Jun 28 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.308-1
+- wrap profiler exceptions in a PulpExecutionException. (jortel@redhat.com)
+- Involve profiler in unit install flow. (jortel@redhat.com)
+- Fix unresolved merge conflict. (jortel@redhat.com)
+- update agent to use new binding to report package profiles.
+  (jortel@redhat.com)
+- handle changes in consumer.conf. (jortel@redhat.com)
+- IDE lookup works better if you spell the @rtype package correctly
+  (jason.dobies@redhat.com)
+- Basics of the dependency manager and conduit (jason.dobies@redhat.com)
+- I have no idea how our unit tests ever ran before this change
+  (jason.dobies@redhat.com)
+- Fixed reference to removed class (jason.dobies@redhat.com)
+- V2 Users model changes, manager functions and rest api with unit tests
+  (skarmark@redhat.com)
+- removed unused constant (jason.connor@gmail.com)
+- compensate for order that is already an integer (jason.connor@gmail.com)
+- custom PulpCollection query method that utilizes the Criteria model
+  (jason.connor@gmail.com)
+- preliminary implementation of Criteria model (jason.connor@gmail.com)
+- added validation to group delete for a more informative delete operation
+  (jason.connor@gmail.com)
+- removed auto publish from group distributors (jason.connor@gmail.com)
+- add profile controller and unit tests. (jortel@redhat.com)
+- Removed duplicate conduit and reference to pointless base class
+  (jason.dobies@redhat.com)
+- Broke out conduit functionality into mixin paradigm (jason.dobies@redhat.com)
+- updated epydocs. (jortel@redhat.com)
+- add missing consumer test. (jortel@redhat.com)
+- Add profiler manager unit tests. (jortel@redhat.com)
+- test renamed. (jortel@redhat.com)
+- split profiler conduit into separate module. (jortel@redhat.com)
+- Expand ProfilerConduit; add conduit unit tests. (jortel@redhat.com)
+- Merge branch 'master' into event (jason.dobies@redhat.com)
+- Implementation of the event fire manager (jason.dobies@redhat.com)
+- Merge branch 'master' into event (jason.dobies@redhat.com)
+- Finished up event CRUD manager (jason.dobies@redhat.com)
+- SELinux spec update add missing 'fi' in %%post (jmatthews@redhat.com)
+- Add profiler tests to plugin loader & manager; Don't think ProfilerManager is
+  needed. (jortel@redhat.com)
+- Initial profiler API, conduit, managers and model. (jortel@redhat.com)
+- US21173: Adding a 'content_unit_count' attribute to the Repo model and the
+  logic to keep it up to date as units become associated and disassociated.
+  Also added lots of tests. (mhrivnak@redhat.com)
+- This test was failing sometimes because mongo was returning data in an order
+  we didn't expect. This small change puts the data into the expected order
+  before any assertions happen. (mhrivnak@redhat.com)
+- removed superfluous double instantiation of repo group pymongo collection
+  objects (jason.connor@gmail.com)
+- initial implementation of repo group manager (jason.connor@gmail.com)
+- added docstrings (jason.connor@gmail.com)
+- added unique and search indices to db models (jason.connor@gmail.com)
+- added models for repo groups and group-wide distributors
+  (jason.connor@gmail.com)
+- adding selinux packaging to pulp spec (pkilambi@redhat.com)
+- SELinux: Removing old developer setup scripts (jmatthews@redhat.com)
+- 827201 - fixing consumer_history to use start_date and end_date filters in
+  iso8601 format and history tests (skarmark@redhat.com)
+- 827211 - Running unbind through coordinator to keep any of the required
+  resources from being deleted in the middle of the operation
+  (skarmark@redhat.com)
+- Merge branch 'master' into event (jason.dobies@redhat.com)
+- Implementation of the listener CRUD and notification structure
+  (jason.dobies@redhat.com)
+- SELinux: Update labels to account for layout changes (jmatthews@redhat.com)
+
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.307-1
 - The server needs to explicitly create the plugins/* dirs
   (jason.dobies@redhat.com)
