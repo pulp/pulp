@@ -16,7 +16,7 @@ import sys
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db.model.repository import RepoGroup
+from pulp.server.db.model.repository import Repo, RepoGroup
 
 
 class RepoGroupManager(object):
@@ -61,6 +61,29 @@ class RepoGroupManager(object):
         collection.update({'id': group_id, 'repo_ids': {'$eq': repo_id}},
                           {'$pull': {'repo_ids': repo_id}},
                           safe=True)
+
+    def associate(self, group_id, criteria):
+        group_collection = validate_existing_repo_group(group_id)
+        repo_collection = Repo.get_collection()
+        cursor = repo_collection.query(criteria)
+        repo_ids = [r['id'] for r in cursor]
+        if not repo_ids:
+            # jconnor: is this an error?
+            return
+        group_collection.update({'id': group_id},
+                                {'$addToSet': {'repo_ids': repo_ids}},
+                                safe=True)
+
+    def unassociate(self, group_id, criteria):
+        group_collection = validate_existing_repo_group(group_id)
+        repo_collection = Repo.get_collection()
+        cursor = repo_collection.query(criteria)
+        repo_ids = [r['id'] for r in cursor]
+        if not repo_ids:
+            return
+        group_collection.update({'id': group_id},
+                                {'$pull': {'repo_ids': {'$in': repo_ids}}},
+                                safe=True)
 
 # utility functions ------------------------------------------------------------
 
