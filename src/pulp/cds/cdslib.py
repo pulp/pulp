@@ -389,7 +389,9 @@ class CdsLib(object):
 
         # Transform the list of repo dicts into just a list of relative URLs; this will
         # make the existence of a repo checking much simpler.
-        sync_repo_relative_urls = [r['relative_path'] for r in repos]
+        # Prefix the URL with repos since locally the relative URLs are prefixed
+        # with it.
+        sync_repo_relative_urls = [os.path.join('repos', r['relative_path']) for r in repos]
 
         # Determine the repos that are no longer supposed to be syncced
         delete_us_relative_urls = [r for r in existing_repo_relative_urls if r not in sync_repo_relative_urls]
