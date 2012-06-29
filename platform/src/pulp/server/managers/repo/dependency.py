@@ -64,7 +64,7 @@ class DependencyManager(object):
         @type  units: list
 
         @param options: dict of options to pass the importer to drive the resolution
-        @type  options: dict
+        @type  options: dict or None
 
         @return: list of units in SON format
         @rtype:  list
@@ -115,6 +115,19 @@ class DependencyManager(object):
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Parse the results back into SON representations of the units
-        deps = [conduit_common_utils.to_pulp_unit(t) for t in transfer_deps]
+
+        # Pull out the unit keys and collate them by type
+        units_by_type_def = {}
+        for t in transfer_deps:
+            unit_list = units_by_type_def.setdefault(t.type_id, [])
+            unit_list.append(t.unit_key)
+
+        # For each type, retrieve all units by their keys
+        content_query_manager = manager_factory.content_query_manager()
+        deps = []
+
+        for type_id, keys_list in units_by_type_def.items():
+            son_units = content_query_manager.get_multiple_units_by_keys_dicts(type_id, keys_list)
+            deps += son_units
 
         return deps

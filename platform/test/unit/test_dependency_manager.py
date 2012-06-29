@@ -66,11 +66,18 @@ class DependencyManagerTests(base.PulpServerTests):
     def test_resolve_dependencies_by_unit(self):
         # Setup
         transfer_deps = [
-            Unit('mock-type', {'k1' : 'v1'}, {}, 'p1'),
-            Unit('mock-type', {'k2' : 'v2'}, {}, 'p2'),
+            Unit('type-1', {'key-1' : 'v1'}, {}, 'p1'),
+            Unit('type-1', {'key-1' : 'v2'}, {}, 'p2'),
         ]
 
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = transfer_deps
+
+        unit_id_1 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'v1'})
+        unit_id_2 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'v2'})
+
+        association_manager = manager_factory.repo_unit_association_manager()
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1, 'user', 'admin')
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2, 'user', 'admin')
 
         # Test
         deps = self.manager.resolve_dependencies_by_units(self.repo_id, [], {})
@@ -78,9 +85,9 @@ class DependencyManagerTests(base.PulpServerTests):
         # Verify
         self.assertEqual(2, len(deps))
 
-        deps.sort(key=lambda x : x['_storage_path'])
-        self.assertEqual(deps[0]['_storage_path'], 'p1')
-        self.assertEqual(deps[1]['_storage_path'], 'p2')
+        deps.sort(key=lambda x : x['key-1'])
+        self.assertEqual(deps[0]['key-1'], 'v1')
+        self.assertEqual(deps[1]['key-1'], 'v2')
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.resolve_dependencies.call_count)
 
@@ -104,22 +111,26 @@ class DependencyManagerTests(base.PulpServerTests):
     def test_resolve_dependencies_by_criteria(self):
         # Setup
         transfer_deps = [
-            Unit('mock-type', {'k1' : 'v1'}, {}, 'p1'),
+            Unit('type-1', {'key-1' : 'dep-1'}, {}, 'p1'),
         ]
 
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = transfer_deps
 
-        unit_id = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'unit-id-1'})
+        unit_id_1 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'unit-id-1'})
+        unit_id_2 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'dep-1'})
 
         association_manager = manager_factory.repo_unit_association_manager()
-        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id, 'user', 'admin')
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1, 'user', 'admin')
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2, 'user', 'admin')
 
-        criteria = Criteria(type_ids=['type-1'])
+        criteria = Criteria(type_ids=['type-1'], unit_filters={'key-1' : 'unit-id-1'})
 
         # Test
         deps = self.manager.resolve_dependencies_by_criteria(self.repo_id, criteria, {})
 
         # Verify
+        self.assertEqual(1, len(deps))
+
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.resolve_dependencies.call_count)
 
         args = mock_plugins.MOCK_IMPORTER.resolve_dependencies.call_args[0]
