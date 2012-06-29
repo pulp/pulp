@@ -746,6 +746,9 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         self.assertFalse(caught_exception)
 
     def test_errors_with_local_sync(self):
+        if os.getuid() == 0:
+            # skip if running as root
+            return
         global updated_progress
         updated_progress = None
 
