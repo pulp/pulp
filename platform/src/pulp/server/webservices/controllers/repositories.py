@@ -825,12 +825,18 @@ class RepoResolveDependencies(JSONController):
         params = self.params()
         query = params.get('criteria', {})
         options = params.get('options', {})
+        timeout = params.get('timeout', 60)
 
         try:
             criteria = unit_association_criteria(query)
         except:
             _LOG.exception('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
+
+        try:
+            timeout = int(timeout)
+        except ValueError:
+            raise exceptions.InvalidValue(['timeout']), None, sys.exc_info()[2]
 
         # Coordinator configuration
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_READ_OPERATION}}
@@ -842,7 +848,7 @@ class RepoResolveDependencies(JSONController):
                                    [repo_id, criteria, options],
                                    resources=resources, tags=tags, archive=True)
 
-        return execution.execute_sync_ok(self, call_request, timeout=timedelta(seconds=60))
+        return execution.execute_sync_ok(self, call_request, timeout=timedelta(seconds=timeout))
 
 class RepoUnitAdvancedSearch(JSONController):
 
