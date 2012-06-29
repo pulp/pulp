@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.308
+Version: 0.0.309
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -216,6 +216,15 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
+- YumImporter/Distributor update 2 tests to not run if invoked as root  - Tests
+  are unable to cause a read error if run as root, so skipping when invoked as
+  root (jmatthews@redhat.com)
+- Update for package groups to handle unicode data (jmatthews@redhat.com)
+- 836367 - Problem seen when syncing a repo that contains a
+  conditional_package_name with a dot in package name (jmatthews@redhat.com)
+- Updated Config instance for rpm related client tests (jmatthews@redhat.com)
+
 * Thu Jun 28 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.308-1
 - Fix missed conversion to new Config object. (jortel@redhat.com)
 - YumDistributor: Adding publish of package groups/categories
