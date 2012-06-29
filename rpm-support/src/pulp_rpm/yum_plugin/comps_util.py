@@ -169,19 +169,19 @@ def form_comps_xml_from_units(groups, categories):
     # Translate each unit to an instance of a yum Group/Category
     yum_groups = map(unit_to_yum_group, groups)
     yum_categories = map(unit_to_yum_category, categories)
-    return form_comps_xml(yum_categories, yum_groups)
+    return form_comps_xml(yum_groups, yum_categories)
 
 
-def form_comps_xml(yum_categories, yum_groups):
+def form_comps_xml(yum_groups, yum_categories):
     """
     Form the XML representation of a 'comps.xml' from Group/Category objects
+
+    @param yum_groups:  List of yum package groups
+    @type yum_groups: [yum.comps.Group]
 
     @param yum_categories: List of yum package categories
     @type yum_categories: [yum.comps.Category]
 
-    @param yum_groups:  List of yum package groups
-    @type yum_groups: [yum.comps.Group]
-    
     @return: string representing XML data for passed in Categories/Groups
     @rtype: str
     """

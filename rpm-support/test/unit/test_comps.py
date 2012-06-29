@@ -497,3 +497,26 @@ class TestComps(rpm_support_base.PulpRPMTests):
             db.drop_collection(dummy_collection_name)
         self.assertTrue(success)
 
+    def test_write_comps_with_centos6_comps_xml(self):
+            repo = mock.Mock(spec=Repository)
+            repo.id = "test_write_comps_with_i18n_data"
+            repo.working_dir = self.working_dir
+            sync_conduit = importer_mocks.get_sync_conduit()
+            repo_src_dir = os.path.join(self.data_dir, "test_comps_import_with_dots_in_pkg_names")
+            # Simulate a sync with CentOS 6 comps.xml data
+            # The test data contains issues such as:
+            #  1) conditional_package_names that contain a '.' in the key name
+            #     InvalidDocument: key 'openoffice.org-langpack-en' must not contain '.'
+            #  2) unicode strings which are not being encoded correctly during write
+            #     UnicodeEncodeError: 'ascii' codec can't encode characters in position 334-341: ordinal not in range(128)
+            avail_groups, avail_cats = comps.get_available(repo_src_dir)
+            groups, group_units = comps.get_new_group_units(avail_groups, {}, sync_conduit, repo)
+            cats, cat_units = comps.get_new_category_units(avail_cats, {}, sync_conduit, repo)
+            yum_distributor = YumDistributor()
+            comps_xml_out_path = yum_distributor.write_comps_xml(repo, group_units.values(), cat_units.values())
+            self.assertEqual(comps_xml_out_path, os.path.join(repo.working_dir, "comps.xml"))
+            yc = yum.comps.Comps()
+            yc.add(comps_xml_out_path)
+            self.assertTrue(len(group_units), len(yc.groups))
+            self.assertTrue(len(cat_units), len(yc.categories))
+

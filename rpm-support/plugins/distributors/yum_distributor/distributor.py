@@ -840,7 +840,14 @@ class YumDistributor(Distributor):
         out_path = os.path.join(repo.working_dir, "comps.xml")
         f = open(out_path, "w")
         try:
-            f.write(comps_xml)
+            try:
+                data = comps_xml
+                if isinstance(data, unicode):
+                    data = data.encode('utf-8')
+                f.write(data)
+            except Exception, e:
+                _LOG.exception("Unable to write comps.xml for repo: %s with %s groups and %s categories" % (repo.id, len(existing_groups), len(existing_cats)))
+                raise
         finally:
             f.close()
         return out_path
