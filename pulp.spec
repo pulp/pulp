@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.10
+Version:        1.1.11
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.1.11-1
+- 836640 - The storage of the relative URL changed so we need to update the
+  relative URL checking to match that (jason.dobies@redhat.com)
+
 * Mon May 21 2012 Jeff Ortel <jortel@redhat.com> 1.1.10-1
 - 821041 - packagegroup install of custom groups seems to be failing
   (jmatthews@redhat.com)
