@@ -79,7 +79,9 @@ class UserManager(object):
         roles = roles or None
 
         # Encode plain-text password
-        hashed_password = password_util.hash_password(password)
+        hashed_password = None
+        if password:
+            hashed_password = password_util.hash_password(password)
 
         # Creation
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)

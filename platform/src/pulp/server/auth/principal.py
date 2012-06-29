@@ -27,7 +27,7 @@ class SystemPrincipal(User):
     LOGIN = u'SYSTEM'
 
     def __init__(self):
-        User.__init__(self, self.LOGIN, self.ID, self.LOGIN, self.LOGIN)
+        User.__init__(self, login=self.LOGIN, password=self.LOGIN)
 
     def __unicode__(self):
         return self.LOGIN

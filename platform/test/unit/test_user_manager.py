@@ -15,7 +15,6 @@
 import base
 
 from pulp.server.auth import principal
-from pulp.server.api.user import UserApi
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
@@ -52,10 +51,10 @@ class UserManagerTests(base.PulpServerTests):
     def test_generate_user_certificate(self):
 
         # Setup
-        user_api = UserApi()
+        user_manager = UserManager()
 
         # TODO: Fix this when UserManager can create users
-        admin_user = user_api.create('test-admin')
+        admin_user = user_manager.create_user('test-admin')
         principal.set_principal(admin_user) # pretend the user is logged in
 
         # Test
@@ -68,8 +67,8 @@ class UserManagerTests(base.PulpServerTests):
         cn = certificate.subject()['CN']
         username, id = cert_generator.decode_admin_user(cn)
 
-        self.assertEqual(username, admin_user.login)
-        self.assertEqual(id, admin_user.id)
+        self.assertEqual(username, admin_user['login'])
+        self.assertEqual(id, admin_user['id'])
 
     def test_create(self):
         # Setup
