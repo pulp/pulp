@@ -223,15 +223,9 @@ def schedule_manager():
 
 def user_manager():
     """
-    @rtype: L{pulp.server.managers.user.UserManager}
+    @rtype: L{pulp.server.managers.auth.user.UserManager}
     """
     return get_manager(TYPE_USER)
-
-def gc_user_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.user.GCUserManager}
-    """
-    return get_manager(TYPE_USER_GC)
 
 # -- other --------------------------------------------------------------------
 
@@ -241,7 +235,7 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
-    from pulp.server.managers.auth.user import GCUserManager
+    from pulp.server.managers.auth.user import UserManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
@@ -265,7 +259,6 @@ def initialize():
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
     from pulp.server.managers.schedule.cud import ScheduleManager
-    from pulp.server.managers.user import UserManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
@@ -294,7 +287,6 @@ def initialize():
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_SCHEDULE: ScheduleManager,
         TYPE_USER: UserManager,
-        TYPE_USER_GC: GCUserManager,
     }
     _CLASSES.update(builtins)
 

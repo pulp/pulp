@@ -19,7 +19,7 @@ update, and deletion on a Pulp user.
 import logging
 import re
 
-from pulp.server.db.model.gc_auth import User
+from pulp.server.db.model.auth import User
 from pulp.server.auth import cert_generator, principal
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 
@@ -33,12 +33,12 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes ------------------------------------------------------------------
 
-class GCUserManager(object):
+class UserManager(object):
     """
     Performs user related functions relating to CRUD operations.
     """
 
-    def create_user(self, login, password, name=None, roles=None):
+    def create_user(self, login, password=None, name=None, roles=None):
         """
         Creates a new Pulp user and adds it to specified to roles.
 

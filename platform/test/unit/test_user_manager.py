@@ -19,11 +19,9 @@ from pulp.server.api.user import UserApi
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
-from pulp.server.managers.user import UserManager
-from pulp.server.managers.auth.user import GCUserManager
+from pulp.server.managers.auth.user import UserManager
 
-from pulp.server.db.model.auth import User as User
-from pulp.server.db.model.gc_auth import User as GC_User
+from pulp.server.db.model.auth import User
 import pulp.server.exceptions as exceptions
 
 
@@ -40,7 +38,6 @@ class UserManagerTests(base.PulpServerTests):
         sn.reset()
 
         self.manager = UserManager()
-        self.gc_user_manager = GCUserManager()
 
     def tearDown(self):
         super(UserManagerTests, self).tearDown()
@@ -51,7 +48,6 @@ class UserManagerTests(base.PulpServerTests):
         base.PulpServerTests.clean(self)
 
         User.get_collection().remove()
-        GC_User.get_collection().remove()
 
     def test_generate_user_certificate(self):
 
@@ -81,13 +77,13 @@ class UserManagerTests(base.PulpServerTests):
         clear_txt_pass = 'some password'
 
         # Test
-        user = self.gc_user_manager.create_user(login, clear_txt_pass,
+        user = self.manager.create_user(login, clear_txt_pass,
                                                 name = "King of the World",
                                                 roles = ['test-role'])
 
         # Verify
         self.assertTrue(user is not None)
-        user = self.gc_user_manager.find_by_login(login)
+        user = self.manager.find_by_login(login)
         self.assertTrue(user is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
@@ -95,11 +91,11 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'dupe-test'
         clear_txt_pass = 'some password'
-        user = self.gc_user_manager.create_user(login, clear_txt_pass)
+        user = self.manager.create_user(login, clear_txt_pass)
 
         # Test and verify
         try:
-            user = self.gc_user_manager.create_user(login, clear_txt_pass)
+            user = self.manager.create_user(login, clear_txt_pass)
             self.fail('User with an existing login did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(login in e)
@@ -110,10 +106,10 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.gc_user_manager.create_user(login, password)
+        user = self.manager.create_user(login, password)
 
         # Test
-        users = self.gc_user_manager.find_all()
+        users = self.manager.find_all()
 
         # Verify
         assert(len(users) == 1)
@@ -123,28 +119,28 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.gc_user_manager.create_user(login, password)
+        user = self.manager.create_user(login, password)
 
         # test
-        self.gc_user_manager.delete_user(login)
+        self.manager.delete_user(login)
 
         # Verify
-        user = self.gc_user_manager.find_by_login(login)
+        user = self.manager.find_by_login(login)
         assert(user is None)
 
     def test_update_password(self):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.gc_user_manager.create_user(login, password)
+        user = self.manager.create_user(login, password)
 
         # Test
         changed_password = 'some other password'
         d = dict(password=changed_password)
-        user = self.gc_user_manager.update_user(login, delta=d)
+        user = self.manager.update_user(login, delta=d)
 
         # Verify
-        user = self.gc_user_manager.find_by_login(login)
+        user = self.manager.find_by_login(login)
         self.assertTrue(user is not None)
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(changed_password, user['password'])

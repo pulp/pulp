@@ -45,7 +45,7 @@ class UsersCollection(JSONController):
     @auth_required(READ)
     def GET(self):
 
-        manager = managers.gc_user_manager()
+        manager = managers.user_manager()
         users = manager.find_all()
 
         return self.ok(users)
@@ -61,7 +61,7 @@ class UsersCollection(JSONController):
         roles = user_data.get('roles', None)
 
         # Creation
-        manager = managers.gc_user_manager()
+        manager = managers.user_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_CREATE_OPERATION}}
         args = [login, password, name, roles]
         weight = pulp_config.config.getint('tasks', 'create_weight')
@@ -85,7 +85,7 @@ class UserResource(JSONController):
     @auth_required(READ)
     def GET(self, login):
 
-        manager = managers.gc_user_manager()
+        manager = managers.user_manager()
         user = manager.find_by_login(login)
 
         return self.ok(user)
@@ -94,7 +94,7 @@ class UserResource(JSONController):
     @auth_required(DELETE)
     def DELETE(self, login):
 
-        manager = managers.gc_user_manager()
+        manager = managers.user_manager()
 
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
@@ -114,7 +114,7 @@ class UserResource(JSONController):
         delta = user_data.get('delta', None)
 
         # Perform update
-        manager = managers.gc_user_manager()
+        manager = managers.user_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('update')]

@@ -19,7 +19,7 @@ import logging
 
 import oauth2
 
-from pulp.server.api.user import UserApi
+from pulp.server.managers.auth.user import UserManager
 from pulp.server.auth import cert_generator, ldap_connection
 from pulp.server.auth.authorization import consumer_users_role
 from pulp.server.auth.cert_generator import verify_cert
@@ -28,7 +28,7 @@ from pulp.server.auth.password_util import check_password
 from pulp.server.config import config
 from pulp.server.exceptions import PulpException
 
-_user_api = UserApi()
+_user_manager = UserManager()
 
 _log = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def _check_username_password_ldap(username, password=None):
         user = ldap_server.authenticate_user(ldap_base, username, password,
                                              filter=ldap_filter)
     else:
-        user = _user_api.user(username)
+        user = _user_manager.find_by_login(username)
     if user is None:
         return None
     return user
@@ -95,7 +95,7 @@ def _check_username_password_local(username, password=None):
     @rtype: L{pulp.server.db.model.User} instance or None
     @return: user corresponding to the credentials
     """
-    user = _user_api.user(username)
+    user = _user_manager.find_by_login(username)
     if user is None:
         _log.error('User [%s] specified in certificate was not found in the system' %
                    username)
