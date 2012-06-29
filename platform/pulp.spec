@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.308
+Version: 0.0.309
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -412,6 +412,17 @@ exit 0
 %endif
 
 %changelog
+* Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
+- Wired up unit copy to be able to copy dependencies too
+  (jason.dobies@redhat.com)
+- Fixing broken user auth related unit tests (skarmark@redhat.com)
+- User functionality in v2, cleaning up v1 user apis and fixing unit tests
+  (skarmark@redhat.com)
+- Made the task timeout configurable in the request (jason.dobies@redhat.com)
+- Added dependency resolution REST API (jason.dobies@redhat.com)
+- Implementation and unit tests for dependency resolution manager
+  (jason.dobies@redhat.com)
+
 * Thu Jun 28 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.308-1
 - wrap profiler exceptions in a PulpExecutionException. (jortel@redhat.com)
 - Involve profiler in unit install flow. (jortel@redhat.com)
