@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.308
+Version: 0.0.309
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -87,6 +87,9 @@ client capabilites.
 
 
 %changelog
+* Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
+- 
+
 * Thu Jun 28 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.308-1
 - 827201 - fixing consumer_history to use start_date and end_date filters in
   iso8601 format and history tests (skarmark@redhat.com)
