@@ -42,10 +42,11 @@ TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
 TYPE_REPO                   = 'repo-manager'
-TYPE_REPO_IMPORTER          = 'repo-importer-manager'
-TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
+TYPE_REPO_GROUP             = 'repo-group-manager'
+TYPE_REPO_IMPORTER          = 'repo-importer-manager'
+TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH           = 'repo-publish-manager'
 TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
@@ -214,6 +215,12 @@ def repo_sync_manager():
     """
     return get_manager(TYPE_REPO_SYNC)
 
+def repo_group_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.group.RepoGroupManager}
+    """
+    return get_manager(TYPE_REPO_GROUP)
+
 def schedule_manager():
     """
     @rtype: L{pulp.server.manager.schedule.cud.ScheduleManager}
@@ -257,6 +264,7 @@ def initialize():
     from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
+    from pulp.server.managers.repo.group import RepoGroupManager
     from pulp.server.managers.schedule.cud import ScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
@@ -284,6 +292,7 @@ def initialize():
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
+        TYPE_REPO_GROUP: RepoGroupManager,
         TYPE_SCHEDULE: ScheduleManager,
         TYPE_USER: UserManager,
     }
