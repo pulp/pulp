@@ -14,6 +14,11 @@
 import sys
 import os
 import copy
+try:
+    from urlparse import parse_qs
+except ImportError:
+    # this was moved to the urlparse module in python 2.6
+    from cgi import parse_qs
 
 import mock
 
@@ -64,7 +69,7 @@ class TestRepoExtension(base_builtins.PulpClientTests):
         self.assertEqual(self.server_mock.request.call_count, 1)
         call_args = self.server_mock.request.call_args[0]
         self.assertEqual(call_args[0], 'GET')
-        self.assertTrue(call_args[1].endswith('/repositories/'))
+        self.assertTrue(call_args[1].endswith('/repositories/?importers=True'))
 
     def test_list_without_importers(self):
         self.server_mock.request = mock.MagicMock(return_value = (200, ()))
@@ -82,7 +87,7 @@ class TestRepoExtension(base_builtins.PulpClientTests):
         self.assertEqual(self.server_mock.request.call_count, 1)
         call_args = self.server_mock.request.call_args[0]
         self.assertEqual(call_args[0], 'GET')
-        self.assertTrue(call_args[1].endswith('/repositories/'))
+        self.assertTrue(call_args[1].endswith('/repositories/?distributors=True'))
 
     def test_list_without_distributors(self):
         self.server_mock.request = mock.MagicMock(return_value = (200, ()))
@@ -92,4 +97,19 @@ class TestRepoExtension(base_builtins.PulpClientTests):
         call_args = self.server_mock.request.call_args[0]
         self.assertEqual(call_args[0], 'GET')
         self.assertTrue(call_args[1].endswith('/repositories/'))
+
+    def test_list_with_importers_and_distributors(self):
+        self.server_mock.request = mock.MagicMock(return_value = (200, ()))
+        self.repo_section.list(summary=True, importers=True, distributors=True)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        call_args = self.server_mock.request.call_args[0]
+        self.assertEqual(call_args[0], 'GET')
+        self.assertTrue(call_args[1].find('/repositories/?') >= 0)
+
+        query_string = call_args[1][call_args[1].find('?') + 1:]
+        query_params = parse_qs(query_string)
+        for param in ('importers', 'distributors'):
+            self.assertTrue(param in query_params)
+            self.assertTrue(query_params[param][0])
 
