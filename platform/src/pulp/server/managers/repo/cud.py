@@ -209,7 +209,7 @@ class RepoManager(object):
             except Exception, e:
                 _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
                 error_tuples.append( (_('Distributor Delete Error'), e.args))
-                
+
         # Clean up binds
         bind_manager = manager_factory.consumer_bind_manager()
         bind_manager.repo_deleted(repo_id)
@@ -242,6 +242,10 @@ class RepoManager(object):
         except Exception, e:
             _LOG.exception('Error updating one or more database collections while removing repo [%s]' % repo_id)
             error_tuples.append( (_('Database Removal Error'), e.args))
+
+        # remove the repo from any groups it was a member of
+        group_manager = manager_factory.repo_group_manager()
+        group_manager.remove_repo_from_groups(repo_id)
 
         if len(error_tuples) > 0:
             raise PulpExecutionException(error_tuples)
