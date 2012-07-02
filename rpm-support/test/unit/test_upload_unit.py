@@ -22,6 +22,8 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 import importer_mocks
+from yum_importer import comps
+from yum_importer.comps import PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID
 from yum_importer.importer import YumImporter
 from pulp_rpm.yum_plugin import util
 
@@ -59,10 +61,8 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         file_path = "%s/%s" % (self.data_dir, "incisura-7.1.4-1.elfake.noarch.rpm")
         metadata = {'filename' : "incisura-7.1.4-1.elfake.noarch.rpm", 'checksum' : 'e0e98e76e4e06dad65a82b0111651d7aca5b00fe'}
         unit_key = {'name' : 'incisura', 'version' : '7.1.4', 'release' : '1', 'arch' : 'noarch', 'checksum' : 'e0e98e76e4e06dad65a82b0111651d7aca5b00fe', 'checksumtype' : 'sha1'}
-        print file_path
         type_id = "rpm"
         status, summary, details = importer._upload_unit(repo, type_id, unit_key, metadata, file_path, upload_conduit, config)
-        print status, summary, details
         self.assertTrue(status)
         self.assertTrue(summary is not None)
         self.assertTrue(details is not None)
@@ -86,4 +86,47 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         status, summary, details = importer._upload_unit(repo, type_id, unit_key, metadata, file_path, upload_conduit, config)
         self.assertTrue(status)
         self.assertEqual(summary['state'], 'FINISHED')
-        print status, summary, details
+
+    def get_pkg_group_or_category(self, repo, type_id):
+        repo_src_dir = os.path.join(self.data_dir, "test_comps_import_with_dots_in_pkg_names")
+        sync_conduit = importer_mocks.get_sync_conduit()
+        avail_groups, avail_cats = comps.get_available(repo_src_dir)
+        if type_id == PKG_GROUP_TYPE_ID:
+            groups, group_units = comps.get_new_group_units(avail_groups, {}, sync_conduit, repo)
+            self.assertTrue(len(group_units) > 0)
+            return group_units.values()[0]
+        elif type_id == PKG_CATEGORY_TYPE_ID:
+            cats, cat_units = comps.get_new_category_units(avail_cats, {}, sync_conduit, repo)
+            self.assertTrue(len(cat_units) > 0)
+            return cat_units.values()[0]
+        else:
+            return None
+
+    def test_upload_package_group_and_category(self):
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_upload_package_group"
+        upload_conduit = importer_mocks.get_upload_conduit(pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config()
+        importer = YumImporter()
+        file_path = None
+        type_id = PKG_GROUP_TYPE_ID
+        unit = self.get_pkg_group_or_category(repo, type_id)
+        status, summary, details = importer._upload_unit(repo, type_id, unit.unit_key, unit.metadata, file_path, upload_conduit, config)
+        self.assertTrue(status)
+        self.assertEqual(summary['state'], 'FINISHED')
+
+    def test_upload_package_group(self):
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_upload_package_group"
+        upload_conduit = importer_mocks.get_upload_conduit(pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config()
+        importer = YumImporter()
+        file_path = None
+        type_id = PKG_CATEGORY_TYPE_ID
+        unit = self.get_pkg_group_or_category(repo, type_id)
+        status, summary, details = importer._upload_unit(repo, type_id, unit.unit_key, unit.metadata, file_path, upload_conduit, config)
+        self.assertTrue(status)
+        self.assertEqual(summary['state'], 'FINISHED')
+
