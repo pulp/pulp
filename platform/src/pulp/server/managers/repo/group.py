@@ -30,6 +30,8 @@ class RepoGroupManager(object):
             collection.insert(repo_group, safe=True)
         except DuplicateKeyError:
             raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
+        group = collection.find_one({'id': group_id})
+        return group
 
     def update_repo_group(self, group_id, **updates):
         collection = validate_existing_repo_group(group_id)
@@ -43,6 +45,8 @@ class RepoGroupManager(object):
         if invalid_keywords:
             raise pulp_exceptions.InvalidValue(invalid_keywords)
         collection.update({'id': group_id}, {'$set': updates}, safe=True)
+        group = collection.find_one({'id': group_id})
+        return group
 
     def delete_repo_group(self, group_id):
         collection = validate_existing_repo_group(group_id)
@@ -68,7 +72,6 @@ class RepoGroupManager(object):
         cursor = repo_collection.query(criteria)
         repo_ids = [r['id'] for r in cursor]
         if not repo_ids:
-            # jconnor: is this an error?
             return
         group_collection.update({'id': group_id},
                                 {'$addToSet': {'repo_ids': repo_ids}},
