@@ -111,6 +111,7 @@ class StatusRenderer(object):
         self.metadata_last_state = STATE_NOT_STARTED
         self.download_last_state = STATE_NOT_STARTED
         self.errata_last_state = STATE_NOT_STARTED
+        self.comps_last_state = STATE_NOT_STARTED
 
         # Publish Steps
         self.packages_last_state = STATE_NOT_STARTED
@@ -123,6 +124,7 @@ class StatusRenderer(object):
         self.metadata_spinner = self.prompt.create_spinner()
         self.download_bar = self.prompt.create_progress_bar()
         self.errata_spinner = self.prompt.create_spinner()
+        self.comps_spinner = self.prompt.create_spinner()
 
         self.packages_bar = self.prompt.create_progress_bar()
         self.distributions_bar = self.prompt.create_progress_bar()
@@ -146,6 +148,7 @@ class StatusRenderer(object):
             self.render_metadata_step(progress_report)
             self.render_download_step(progress_report)
             self.render_errata_step(progress_report)
+            self.render_comps_step(progress_report)
 
         # Publish Steps
         if 'yum_distributor' in progress_report:
@@ -404,6 +407,23 @@ class StatusRenderer(object):
 
             self.prompt.write(_('... failed'))
             self.distributions_last_state = STATE_FAILED
+
+    def render_comps_step(self, progress_report):
+        # Example Data:
+        # "comps": {
+        #    "state": "FINISHED",
+        #    "num_available_groups": 0,
+        #    "num_available_categories": 0,
+        #    "num_orphaned_groups": 0,
+        #    "num_orphaned_categories": 0,
+        #    "num_new_groups": 0,
+        #    "num_new_categories": 0,
+        # }
+        
+        current_state = progress_report['importer']['comps']['state']
+        def update_func(new_state):
+            self.comps_last_state = new_state
+        self._render_general_spinner_step(self.comps_spinner, current_state, self.comps_last_state, _('Importing package groups/categories...'), update_func)
 
     def render_generate_metadata_step(self, progress_report):
 
