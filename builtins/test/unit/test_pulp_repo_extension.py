@@ -15,6 +15,8 @@ import sys
 import os
 import copy
 
+import mock
+
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),
     '../../extensions/admin/'))
 
@@ -56,22 +58,38 @@ class TestRepoExtension(base_builtins.PulpClientTests):
         self.assertTrue(len(self.recorder.lines) > 4)
 
     def test_list_with_importers(self):
-        self.server_mock.request.return_value = (200, (self.REPO1,))
+        self.server_mock.request = mock.MagicMock(return_value = (200, ()))
         self.repo_section.list(summary=True, importers=True, distributors=False)
-        self.assertTrue('Id: imp-1\n' in self.recorder.lines)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        call_args = self.server_mock.request.call_args[0]
+        self.assertEqual(call_args[0], 'GET')
+        self.assertTrue(call_args[1].endswith('/repositories/'))
 
     def test_list_without_importers(self):
-        self.server_mock.request.return_value = (200, (self.REPO1,))
+        self.server_mock.request = mock.MagicMock(return_value = (200, ()))
         self.repo_section.list(summary=True, importers=False, distributors=False)
-        self.assertTrue('Id: imp-1\n' not in self.recorder.lines)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        call_args = self.server_mock.request.call_args[0]
+        self.assertEqual(call_args[0], 'GET')
+        self.assertTrue(call_args[1].endswith('/repositories/'))
 
     def test_list_with_distributors(self):
-        self.server_mock.request.return_value = (200, (self.REPO1,))
+        self.server_mock.request = mock.MagicMock(return_value = (200, ()))
         self.repo_section.list(summary=True, importers=False, distributors=True)
-        self.assertTrue('Id: dist-1\n' in self.recorder.lines)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        call_args = self.server_mock.request.call_args[0]
+        self.assertEqual(call_args[0], 'GET')
+        self.assertTrue(call_args[1].endswith('/repositories/'))
 
     def test_list_without_distributors(self):
-        self.server_mock.request.return_value = (200, (self.REPO1,))
+        self.server_mock.request = mock.MagicMock(return_value = (200, ()))
         self.repo_section.list(summary=True, importers=False, distributors=False)
-        self.assertTrue('Id: dist-1\n' not in self.recorder.lines)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        call_args = self.server_mock.request.call_args[0]
+        self.assertEqual(call_args[0], 'GET')
+        self.assertTrue(call_args[1].endswith('/repositories/'))
 

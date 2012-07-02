@@ -24,9 +24,9 @@ class RepositoryAPI(PulpAPI):
         super(RepositoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/"
         
-    def repositories(self):
+    def repositories(self, query_parameters=()):
         path = self.base_path
-        return self.server.GET(path)
+        return self.server.GET(path, query_parameters)
     
     def create(self, id, display_name, description, notes):
         path = self.base_path
