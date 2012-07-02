@@ -500,6 +500,20 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jul 02 2012 James Slagle <jslagle@redhat.com> 0.0.263-20
+- Bump release (jslagle@redhat.com)
+- rhui test cases where failing.. pulling updates under test/ from v1
+  (weshayutin@gmail.com)
+- Restore needed line from logging unit test config file. Line was deleted from
+  a previous merge (jmatthews@redhat.com)
+- Update playpen mongo script to use pulp_database (jmatthews@redhat.com)
+- New client_hostname property for a CDS (jslagle@redhat.com)
+- 796292 - adding simple check for None return from package lookup
+  (jconnor@redhat.com)
+- added return value for all async look up calls (jconnor@redhat.com)
+- adding empty list return value for async._queue.find restting the queue to
+  None in teardown (jconnor@redhat.com)
+
 * Wed Mar 21 2012 James Slagle <jslagle@redhat.com> 0.0.263-19
 - 805616 drop indexes from repo.packagegroups and repo.packagegroupcategories
   to avoid index on description field (jslagle@redhat.com)
