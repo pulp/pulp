@@ -106,6 +106,22 @@ class RepoSection(PulpCliSection):
             self.prompt.write('Repository [%s] does not exist on the server' % id, tag='not-found')
 
     def list(self, **kwargs):
+        """
+        :param summary: If True, equivalent to setting fields='id,display-name'.
+                        If False, no effect.
+        :type  summary: bool
+
+        :param fields:  comma-separated field names as a string, specifying
+                        which fields will be returned. This is a required
+                        parameter unless you pass summary=True.
+        :type fields:   str
+
+        :param importers:   If any value that evaluates to True, include the
+                            repo's importers in the output.
+
+        :param distributors:    If any value that evaluates to True, include
+                                the repo's distributors in the output.
+        """
 
         # This needs to be revisited. For the sake of time, the repo list in
         # rpm_repo will be hacked up for yum repositories specifically. Later

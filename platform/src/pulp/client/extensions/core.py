@@ -151,7 +151,7 @@ class PulpPrompt(Prompt):
 
         A description is a longer block of arbitrary text to display to the
         user. Multiple paragraphs should be rendered using multiple calls to
-        this method instead of concatenting them manually with newline characters.
+        this method instead of concatenating them manually with newline characters.
 
         For testing verification, this call will result in one instance of
         TAG_PARAGRAPH being recorded.
@@ -231,7 +231,7 @@ class PulpPrompt(Prompt):
         Thus the data does not need to be pre-stripped of unwanted fields, this
         call will skip them.
 
-        The order argument is a list of keys in the order theyg should be
+        The order argument is a list of keys in the order they should be
         rendered. Any keys not in the given list but that have passed the filter
         test described above will be rendered in alphabetical order following
         the ordered items.

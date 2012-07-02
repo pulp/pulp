@@ -19,7 +19,8 @@ import base_builtins
 
 from pulp.client.extensions.exceptions import NotFoundException, PulpServerException
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin/')
+sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),
+    '../../extensions/admin/'))
 from pulp_tasks import pulp_cli
 
 # -- constants ----------------------------------------------------------------
@@ -66,6 +67,9 @@ class AllTasksTests(base_builtins.PulpClientTests):
         # Test
         self.all_tasks_section.list()
 
+        # Verify correct output
+        self.assertTrue('No tasks found\n' in self.recorder.lines)
+
     def test_list(self):
         # Setup
         self.server_mock.request.return_value = (200, [copy.copy(EXAMPLE_CALL_REPORT)])
@@ -76,7 +80,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
         # Verify - As long as the parsing in the above call didn't fail, this
         # test is happy. Quick check to make sure at least something was displayed
         # to the user.
-        self.assertTrue(len(self.recorder.lines) > 0)
+        self.assertTrue('No tasks found\n' not in self.recorder.lines)
 
     def test_details(self):
         # Setup
