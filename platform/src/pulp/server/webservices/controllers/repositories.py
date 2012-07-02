@@ -40,11 +40,20 @@ from pulp.server.webservices.serialization.unit_criteria import unit_association
 _LOG = logging.getLogger(__name__)
 
 # -- functions ----------------------------------------------------------------
-def _merge_importers_and_distributors(repos):
+
+def _merge_related_objects(name, manager, repos):
     """
-    Takes a list of Repo objects and adds their corresponding RepoImporter
-    and RepoDistributor objects in lists under the 'importers' and
-    'distributors' attributes.
+    Takes a list of Repo objects and adds their corresponding related objects
+    in a list under the attribute given in 'name'. Uses the given manager to
+    access the related objects by passing the list of IDs for the given repos.
+    This is most commonly used for RepoImporter or RepoDistributor objects in
+    lists under the 'importers' and 'distributors' attributes.
+
+    @param name: name of the field, such as 'importers' or 'distributors'.
+    @type  name: str
+
+    @param manager: manager class for the object type. must implement a method
+                    'find_by_repo_list' that takes a list of repo ids.
 
     @param repos: list of Repo instances that should have importers and
                   distributors added.
@@ -54,10 +63,6 @@ def _merge_importers_and_distributors(repos):
             itself is not modified- only its members are modified in-place.
     @rtype  list of Repo instances
     """
-    # Load the importer/distributor information into each repository
-    importer_manager = manager_factory.repo_importer_manager()
-    distributor_manager = manager_factory.repo_distributor_manager()
-
     repo_ids = tuple(repo['id'] for repo in repos)
 
     # make it cheap to access each repo by id
@@ -65,14 +70,10 @@ def _merge_importers_and_distributors(repos):
 
     # guarantee that at least an empty list will be present
     for repo in repos:
-        repo['importers'] = []
-        repo['distributors'] = []
+        repo[name] = []
 
-    for importer in importer_manager.find_by_repo_list(repo_ids):
-        repo_dict[importer.repo_id]['importers'].append(importer)
-
-    for distributor in distributor_manager.find_by_repo_list(repo_ids):
-        repo_dict[distributor.repo_id]['distributors'].append(distributor)
+    for item in manager.find_by_repo_list(repo_ids):
+        repo_dict[item.repo_id][name].append(item)
 
     return repos
 
@@ -86,15 +87,23 @@ class RepoCollection(JSONController):
     @auth_required(READ)
     def GET(self):
         """
-        looks for a query parameter "details" to have any value that evaluates
-        to True, and if so, adds importers and distributors to the results
+        Looks for query parameters 'importers' and 'distributors', and will add
+        the corresponding fields to the each repository returned. Query
+        parameter 'details' is equivalent to passing both 'importers' and
+        'distributors'.
         """
         query_params = web.input()
         query_manager = manager_factory.repo_query_manager()
         all_repos = query_manager.find_all()
 
-        if 'details' in query_params and query_params['details']:
-            _merge_importers_and_distributors(all_repos)
+        if query_params.get('details', False):
+            query_params['importers'] = True
+            query_params['distributors'] = True
+
+        if query_params.get('importers', False):
+            _merge_related_objects('importers', manager_factory.repo_importer_manager(), all_repos)
+        if query_params.get('distributors', False):
+            _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), all_repos)
 
         for repo in all_repos:
             repo.update(serialization.link.child_link_obj(repo['id']))
@@ -145,6 +154,11 @@ class RepoResource(JSONController):
 
     @auth_required(READ)
     def GET(self, id):
+        """
+        Looks for query parameters 'importers' and 'distributors', and will add
+        the corresponding fields to the repository returned. Query parameter
+        'details' is equivalent to passing both 'importers' and 'distributors'.
+        """
         query_params = web.input()
         query_manager = manager_factory.repo_query_manager()
         repo = query_manager.find_by_id(id)
@@ -154,8 +168,14 @@ class RepoResource(JSONController):
 
         repo.update(serialization.link.current_link_obj())
 
-        if 'details' in query_params and query_params['details']:
-            repo = _merge_importers_and_distributors((repo,))[0]
+        if query_params.get('details', False):
+            query_params['importers'] = True
+            query_params['distributors'] = True
+
+        if query_params.get('importers', False):
+            repo = _merge_related_objects('importers', manager_factory.repo_importer_manager(), (repo,))[0]
+        if query_params.get('distributors', False):
+            repo = _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), (repo,))[0]
 
         return self.ok(repo)
 

@@ -65,7 +65,7 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(2, len(body))
         self.assertTrue('importers' not in body[0])
         self.assertTrue('_href' in body[0])
-        self.assertTrue(body[0]['_href'].endswith('repositories/dummy-1/'))
+        self.assertTrue(body[0]['_href'].find('repositories/dummy-') >= 0)
 
     def test_get_no_repos(self):
         """
@@ -79,39 +79,24 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
 
-    @mock.patch.object(manager_factory, 'repo_importer_manager')
-    @mock.patch.object(manager_factory, 'repo_distributor_manager')
-    def test_merge_importers_and_distributors(
-            self, mock_get_distributor_manager, mock_get_importer_manager):
+    def test_merge_related_objects(self):
         REPOS = [Repo('dummy-1', 'dummy')]
         IMPORTERS = [RepoImporter('dummy-1', 'importer-1', '1', {})]
-        DISTRIBUTORS = [RepoDistributor('dummy-1', 'distributor-1', '1', {}, False)]
 
         # mock out these managers so we don't hit the DB
         mock_importer_manager = mock.MagicMock()
-        mock_importer_manager.find_by_repo_list = mock.MagicMock(
-            return_value = IMPORTERS)
-        mock_get_importer_manager.return_value = mock_importer_manager
-
-        mock_distributor_manager = mock.MagicMock()
-        mock_distributor_manager.find_by_repo_list = mock.MagicMock(
-            return_value = DISTRIBUTORS)
-        mock_get_distributor_manager.return_value = mock_distributor_manager
-
-        ret = repositories._merge_importers_and_distributors(REPOS)
+        mock_importer_manager.find_by_repo_list.return_value = IMPORTERS
+        ret = repositories._merge_related_objects('importers', mock_importer_manager, REPOS)
 
         self.assertTrue('importers' in ret[0])
         self.assertEqual(len(ret[0]['importers']), 1)
         self.assertEqual(ret[0]['importers'][0]['id'], IMPORTERS[0]['id'])
-        self.assertTrue('distributors' in ret[0])
-        self.assertEqual(len(ret[0]['distributors']), 1)
-        self.assertEqual(ret[0]['distributors'][0]['id'], DISTRIBUTORS[0]['id'])
 
     @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_all')
-    @mock.patch.object(repositories, '_merge_importers_and_distributors')
+    @mock.patch.object(repositories, '_merge_related_objects')
     def test_get_details(self, mock_merge_method, mock_find_all):
         """
-        Make sure the GET method calls _merge_importers_and_distributors
+        Make sure the GET method calls _merge_related_objects
         """
         mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
         mock_find_all.return_value = [Repo('repo-1', 'Repo 1')]
@@ -120,11 +105,11 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertTrue(mock_merge_method.called)
 
     @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_all')
-    @mock.patch.object(repositories, '_merge_importers_and_distributors')
+    @mock.patch.object(repositories, '_merge_related_objects')
     def test_get_without_details(
             self, mock_merge_method, mock_find_all):
         """
-        Make sure the GET method does not call _merge_importers_and_distributors
+        Make sure the GET method does not call _merge_related_objects
         """
         mock_find_all.return_value = [Repo('repo-1', 'Repo 1')]
         status, body = self.get('/v2/repositories/')
@@ -204,26 +189,54 @@ class RepoResourceTests(RepoControllersTests):
         self.assertTrue(body['_href'].endswith('repositories/repo-1/'))
 
     @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_by_id')
-    @mock.patch.object(repositories, '_merge_importers_and_distributors')
+    @mock.patch.object(repositories, '_merge_related_objects')
     def test_get_details(self, mock_merge_method, mock_find_by_id):
         """
-        Make sure the GET method calls _merge_importers_and_distributors
+        Make sure the GET method calls _merge_related_objects
         """
         mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
         status, body = self.get('/v2/repositories/repo-1/?details=1')
         self.assertEqual(200, status)
-        self.assertTrue(mock_merge_method.called)
+        self.assertEqual(mock_merge_method.call_count, 2)
 
     @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_by_id')
-    @mock.patch.object(repositories, '_merge_importers_and_distributors')
+    @mock.patch.object(repositories, '_merge_related_objects')
     def test_get_without_details(self, mock_merge_method, mock_find_by_id):
         """
-        Make sure the GET method does not call _merge_importers_and_distributors
+        Make sure the GET method does not call _merge_related_objects
         """
         mock_find_by_id.return_value = Repo('repo-1', 'Repo 1')
         status, body = self.get('/v2/repositories/repo-1/')
         self.assertEqual(200, status)
-        self.assertFalse(mock_merge_method.called)
+        self.assertEqual(mock_merge_method.call_count, 0)
+
+    @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_by_id')
+    @mock.patch.object(repositories, '_merge_related_objects')
+    def test_get_with_importers(self, mock_merge_method, mock_find_by_id):
+        """
+        Make sure the GET method calls _merge_related_objects
+        """
+        mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
+        status, body = self.get('/v2/repositories/repo-1/?importers=1')
+        self.assertEqual(200, status)
+        self.assertEqual(mock_merge_method.call_count, 1)
+        call_args = mock_merge_method.call_args[0]
+        self.assertEqual(call_args[0], 'importers')
+        self.assertTrue(hasattr(call_args[1], 'find_by_repo_list'))
+
+    @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_by_id')
+    @mock.patch.object(repositories, '_merge_related_objects')
+    def test_get_with_distributors(self, mock_merge_method, mock_find_by_id):
+        """
+        Make sure the GET method calls _merge_related_objects
+        """
+        mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
+        status, body = self.get('/v2/repositories/repo-1/?distributors=1')
+        self.assertEqual(200, status)
+        self.assertEqual(mock_merge_method.call_count, 1)
+        call_args = mock_merge_method.call_args[0]
+        self.assertEqual(call_args[0], 'distributors')
+        self.assertTrue(hasattr(call_args[1], 'find_by_repo_list'))
 
     def test_get_missing_repo(self):
         """
