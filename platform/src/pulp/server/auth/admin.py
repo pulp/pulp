@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.server import config
-from pulp.server.api.user import UserApi
+from pulp.server.managers.auth.user import UserManager
 from pulp.server.auth import authorization
 
 
@@ -27,9 +27,9 @@ def ensure_admin():
     if super_users:
         return
     default_login = config.config.get('server', 'default_login')
-    user_api = UserApi()
-    admin = user_api.user(default_login)
+    user_manager = UserManager()
+    admin = user_manager.find_by_login(default_login)
     if admin is None:
         default_password = config.config.get('server', 'default_password')
-        admin = user_api.create(default_login, default_password)
+        admin = user_manager.create_user(login=default_login, password=default_password)
     authorization.add_user_to_role(authorization.super_user_role, default_login)

@@ -27,7 +27,7 @@ r = Code(
     "  return total;"
     "}")
 
-result = db.things.map_reduce(m,r)
+result = db.things.map_reduce(m,r, "example")
 for doc in result.find():
     print doc
 

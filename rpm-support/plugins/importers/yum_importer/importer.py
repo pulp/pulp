@@ -263,20 +263,20 @@ class YumImporter(Importer):
         """
         @param source_repo: metadata describing the repository containing the
                units to import
-        @type  source_repo: L{pulp.server.content.plugins.data.Repository}
+        @type  source_repo: L{pulp.plugins.data.Repository}
 
         @param dest_repo: metadata describing the repository to import units
                into
-        @type  dest_repo: L{pulp.server.content.plugins.data.Repository}
+        @type  dest_repo: L{pulp.plugins.data.Repository}
 
         @param import_conduit: provides access to relevant Pulp functionality
-        @type  import_conduit: L{pulp.server.content.conduits.unit_import.ImportUnitConduit}
+        @type  import_conduit: L{pulp.plugins.conduits.unit_import.ImportUnitConduit}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.plugins.plugins.config.PluginCallConfiguration}
 
         @param units: optional list of pre-filtered units to import
-        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+        @type  units: list of L{pulp.plugins.data.Unit}
         """
         if not units:
             # If no units are passed in, assume we will use all units from source repo
@@ -309,10 +309,10 @@ class YumImporter(Importer):
     def remove_units(self, repo, units, remove_conduit):
         """
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.plugins.data.Repository}
 
         @param units: list of objects describing the units to import in this call
-        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+        @type  units: list of L{pulp.plugins.data.Unit}
 
         @param remove_conduit: provides access to relevant Pulp functionality
         @type  remove_conduit: ?

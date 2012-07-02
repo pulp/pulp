@@ -74,7 +74,7 @@ def _get_yum_repomd(path, temp_path=None):
 
 def get_repomd_filetype_path(path, filetype):
     """
-    @param path: path to repo
+    @param path: path to repomd.xml
     @param filetype: metadata type to query, example "group", "primary", etc
     @return: Path for filetype, or None
     """

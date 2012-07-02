@@ -360,12 +360,12 @@ def add_repo_options(command, is_update):
     basic_group.add_option(PulpCliOption('--auto-publish', _(d), required=False))
 
     # Synchronization Options
-    sync_group.add_option(PulpCliOption('--only-newest', 'if "true", only the newest version of a given package is downloaded', required=False))
+    sync_group.add_option(PulpCliOption('--only-newest', 'if "true", only the newest version of a given package is downloaded; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--skip-types', 'comma-separated list of types to omit when synchronizing, if not specified all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
     sync_group.add_option(PulpCliOption('--verify-size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--verify-checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--remove-old', 'if "true", removes old packages from the repo; defaults to false', required=False))
-    sync_group.add_option(PulpCliOption('--retain-old-count', 'count indicating how many old rpm versions to retain; defaults to 0; This count only takes effect when remove-old option is set to true.', required=False))
+    sync_group.add_option(PulpCliOption('--retain-old-count', 'count indicating how many old rpm versions to retain; defaults to 0; this count only takes effect when remove-old option is set to true.', required=False))
 
     # Proxy Options
     proxy_group.add_option(PulpCliOption('--proxy-url', 'URL to the proxy server to use', required=False))
@@ -379,7 +379,7 @@ def add_repo_options(command, is_update):
 
     # SSL Options
     ssl_group.add_option(PulpCliOption('--feed-ca-cert', 'full path to the CA certificate that should be used to verify the external repo server\'s SSL certificate', required=False))
-    ssl_group.add_option(PulpCliOption('--verify-feed-ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert', required=False))
+    ssl_group.add_option(PulpCliOption('--verify-feed-ssl', 'if "true", the feed\'s SSL certificate will be verified against the feed_ca_cert; defaults to false', required=False))
     ssl_group.add_option(PulpCliOption('--feed-cert', 'full path to the certificate to use for authentication when accessing the external feed', required=False))
     ssl_group.add_option(PulpCliOption('--feed-key', 'full path to the private key for feed_cert', required=False))
 
@@ -389,7 +389,7 @@ def add_repo_options(command, is_update):
     publish_group.add_option(PulpCliOption('--serve-https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False))
     publish_group.add_option(PulpCliOption('--checksum-type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg-key', 'GPG key used to sign and verify packages in the repository', required=False))
-    publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed', required=False))
+    publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed; defaults to false', required=False))
 
     # Publish Security Options
     repo_auth_group.add_option(PulpCliOption('--host-ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))

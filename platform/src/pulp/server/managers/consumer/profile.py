@@ -29,6 +29,19 @@ class ProfileManager(object):
     Manage consumer installed content unit profiles.
     """
 
+    def create(self, consumer_id, content_type, profile):
+        """
+        Create a unit profile.
+        Updated if already exists.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param content_type: The profile (content) type ID.
+        @type content_type: str
+        @param profile: The unit profile
+        @type profile: object
+        """
+        return self.update(consumer_id, content_type, profile)
+
     def update(self, consumer_id, content_type, profile):
         """
         Update a unit profile.
@@ -46,39 +59,59 @@ class ProfileManager(object):
         if p is None:
             p = UnitProfile(consumer_id, content_type, profile)
         else:
-            p.profile = profile
+            p['profile'] = profile
+        collection = UnitProfile.get_collection()
         collection.save(p, safe=True)
         return p
 
     def delete(self, consumer_id, content_type):
         """
-        Clear the unit profile.
+        Delete a profile by consumer and content type.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param content_type: The profile (content) type ID.
         @type content_type: str
         """
-        pass
+        profile = self.get_profile(consumer_id, content_type)
+        if profile is not None:
+            collection = UnitProfile.get_collection()
+            collection.remove(profile, safe=True)
 
     def consumer_deleted(self, id):
         """
         Notification that a consumer has been deleted.
         Associated profiles are removed.
-        @param id: A consumer ID.
+        @param id: uniquely identifies the consumer.
         @type id: str
         """
-        pass
+        collection = UnitProfile.get_collection()
+        for p in self.get_profiles(id):
+            collection.remove(p, sefe=True)
 
-    def get_profile(self, id, content_type):
+    def get_profile(self, consumer_id, content_type):
         """
-        Get a profile by Consumer ID and content type ID.
-        @param id: A consumer ID.
-        @type id: str
+        Get a profile by consumer ID and content type ID.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
         @param content_type: The profile (content) type ID.
         @type content_type: str
         @return: The requested profile.
         @rtype: object
         """
         collection = UnitProfile.get_collection()
-        query = dict(consumer_id=id, content_type=content_type)
+        query = dict(consumer_id=consumer_id, content_type=content_type)
         return collection.find_one(query)
+
+    def get_profiles(self, consumer_id):
+        """
+        Get all profiles associated with a consumer.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @return: A list of profiles:
+            {consumer_id:<str>, content_type:<str>, profile:<dict>}
+        @rtype: list
+        """
+        collection = UnitProfile.get_collection()
+        query = dict(consumer_id=consumer_id)
+        cursor = collection.find(query)
+        return list(cursor)

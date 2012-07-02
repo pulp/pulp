@@ -97,13 +97,22 @@ class BindingsAPI(PulpAPI):
     
     def bind(self, id, repo_id, distributor_id):
         path = self.BASE_PATH % id
-        data = {'repo_id' : repo_id, 
-                'distributor_id' : distributor_id}
+        data = {'repo_id' : repo_id, 'distributor_id' : distributor_id}
         return self.server.POST(path, data)
     
     def unbind(self, id, repo_id, distributor_id):
         path = self.BASE_PATH % id + "%s/" % repo_id + "%s/" % distributor_id
         return self.server.DELETE(path)
+
+
+class ProfilesAPI(PulpAPI):
+
+    BASE_PATH = '/v2/consumers/%s/profiles/'
+
+    def send(self, id, content_type, profile):
+        path = self.BASE_PATH % id
+        data = { 'content_type':content_type, 'profile':profile }
+        return self.server.POST(path, data)
 
 
 class ConsumerHistoryAPI(PulpAPI):

@@ -274,3 +274,32 @@ class Importer(object):
         @rtype:  L{pulp.server.content.plugins.model.SyncReport}
         """
         raise NotImplementedError()
+
+    def resolve_dependencies(self, repo, units, dependency_conduit, config):
+        """
+        Given a list of units, the importer will determine what other units in
+        the repository represent their dependencies.
+
+        The actual definition of what a "dependency" is depends on the content
+        types in play. They may be dependencies for the unit to run or in the
+        case of an aggregate unit (such as a group construct), a list of the
+        units referenced by it.
+
+        @param repo: describes the repository in which to search for dependencies
+        @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+        @param units: list of units to find dependencies for; entries in the list
+               are of type
+        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+
+        @param dependency_conduit: used to query into the server
+        @type  dependency_conduit: L{pulp.server.content.conduits.dependency.DependencyResolutionConduit}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @return: list of relevant units retrieved from the conduit calls; empty
+                 list if no dependencies are found
+        @rtype:  list of L{pulp.server.content.plugins.data.Unit}
+        """
+        raise NotImplementedError()

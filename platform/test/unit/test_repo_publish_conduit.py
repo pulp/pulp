@@ -20,7 +20,7 @@ import base
 import mock_plugins
 
 from pulp.common import dateutils
-from pulp.plugins.conduits._base import DistributorConduitException
+from pulp.plugins.conduits.mixins import DistributorConduitException
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.model import Unit, PublishReport
 import pulp.plugins.types.database as types_database

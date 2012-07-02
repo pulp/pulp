@@ -316,7 +316,7 @@ class LoaderDirectOperationsTests(LoaderTest):
         cls = self.loader.get_profiler_by_id(name)[0]
         self.assertTrue(cls is GoodProfiler)
 
-        cls = self.loader.get_profilers_by_type(types[0])[0][0]
+        cls = self.loader.get_profiler_by_type(types[0])[0]
         self.assertTrue(cls is GoodProfiler)
 
         profilers = self.loader.get_loaded_profilers()

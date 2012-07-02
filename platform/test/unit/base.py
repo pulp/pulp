@@ -31,7 +31,7 @@ except ImportError:
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
 
-from pulp.server.api.user import UserApi # deprecated, will be removed
+from pulp.server.managers.auth.user import UserManager
 
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import  PulpConnection
@@ -173,9 +173,6 @@ class PulpWebserviceTests(PulpServerTests):
 
     @classmethod
     def tearDownClass(cls):
-        user_api = UserApi()
-        user_api.delete('ws-user')
-
         http.request_info = PulpWebserviceTests.ORIG_HTTP_REQUEST_INFO
 
     def setUp(self):
@@ -188,9 +185,16 @@ class PulpWebserviceTests(PulpServerTests):
 
         # The built in PulpTest clean will automatically delete users between
         # test runs, so we can't just create the user in the class level setup.
-        user_api = UserApi()
-        user_api.create('ws-user', password='ws-user')
-        user_api.update('ws-user', {'roles' : authorization.super_user_role})
+        user_manager = UserManager()
+        roles = []
+        roles.append(authorization.super_user_role)
+        user_manager.create_user(login='ws-user', password='ws-user', roles=roles)
+
+    def tearDown(self):
+        super(PulpWebserviceTests, self).tearDown()
+
+        user_manager = UserManager()
+        user_manager.delete_user(login='ws-user')
 
     def setup_async(self):
         dispatch_factory.initialize()

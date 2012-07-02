@@ -22,25 +22,26 @@ from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
+from pulp.common.config import Config
+from pulp.server import config
+from pulp.server.db import connection
+from pulp.server.logs import start_logging, stop_logging
 
 class PulpRPMTests(unittest.TestCase):
     """
     Base unit test class for all rpm synchronization related unit tests.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        stop_logging()
+        config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-pulp.conf')
+        config.config.read(config_filename)
+        start_logging()
+        connection.initialize()
+
     def setUp(self):
         super(PulpRPMTests, self).setUp()
-
-        self.config = SafeConfigParser()
-        config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-pulp.conf')
-        self.config.read(config_filename)
-        self.log_config_filename = self.config.get('logs', 'config')
-        self.configure_logging(self.log_config_filename)
-
-    def configure_logging(self, log_config_file):
-        logging.Logger.manager.loggerDict = {}
-        logging.config.fileConfig(log_config_file)
-        for key in logging.root.manager.loggerDict.keys():
-            logging.root.manager.loggerDict[key].disabled = 0
 
 class PulpClientTests(unittest.TestCase):
     """
@@ -52,7 +53,7 @@ class PulpClientTests(unittest.TestCase):
 
         self.config = SafeConfigParser()
         config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-client.conf')
-        self.config.read(config_filename)
+        self.config = Config(config_filename)
 
         self.server_mock = mock.Mock()
         self.pulp_connection = PulpConnection('', server_wrapper=self.server_mock)

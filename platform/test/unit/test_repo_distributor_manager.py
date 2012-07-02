@@ -43,6 +43,8 @@ class RepoManagerTests(base.PulpServerTests):
     def clean(self):
         super(RepoManagerTests, self).clean()
 
+        mock_plugins.MOCK_DISTRIBUTOR.reset_mock()
+
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
 

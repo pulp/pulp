@@ -20,7 +20,7 @@ import mock_agent
 
 import pulp.plugins.loader as plugin_loader
 from pulp.server.managers import factory
-from pulp.server.db.model.consumer import Consumer, Bind
+from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
 
 
@@ -261,7 +261,7 @@ class ContentTest(base.PulpWebserviceTests):
         # Verify
         self.assertEquals(status, 200)
 
-    def _test_update(self):
+    def test_update(self):
         # Setup
         self.populate()
         # Test
@@ -294,3 +294,123 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 200)
+
+
+class TestProfiles(base.PulpWebserviceTests):
+
+    CONSUMER_ID = 'test-consumer'
+    TYPE_1 = 'type-1'
+    TYPE_2 = 'type-2'
+    PROFILE_1 = {'name':'zsh', 'version':'1.0'}
+    PROFILE_2 = {'name':'ksh', 'version':'2.0', 'arch':'x86_64'}
+
+    def setUp(self):
+        base.PulpWebserviceTests.setUp(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+
+    def populate(self):
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+
+    def sort(self, profiles):
+        _sorted = []
+        d = dict([(p['content_type'],p) for p in profiles])
+        for k in sorted(d.keys()):
+            _sorted.append(d[k])
+        return _sorted
+
+    def test_post(self):
+        # Setup
+        self.populate()
+        # Test
+        path = '/v2/consumers/%s/profiles/' % self.CONSUMER_ID
+        body = dict(content_type=self.TYPE_1, profile=self.PROFILE_1)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEqual(status, 201)
+        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(body['content_type'], self.TYPE_1)
+        self.assertEqual(body['profile'], self.PROFILE_1)
+        manager = factory.consumer_profile_manager()
+        profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_1)
+        for key in ('consumer_id', 'content_type', 'profile'):
+            self.assertEqual(body[key], profile[key])
+
+    def test_put(self):
+        # Setup
+        self.populate()
+        path = '/v2/consumers/%s/profiles/' % self.CONSUMER_ID
+        body = dict(content_type=self.TYPE_1, profile=self.PROFILE_1)
+        status, body = self.post(path, body)
+        self.assertEqual(status, 201)
+        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(body['content_type'], self.TYPE_1)
+        self.assertEqual(body['profile'], self.PROFILE_1)
+        # Test
+        path = '/v2/consumers/%s/profiles/%s/' % (self.CONSUMER_ID, self.TYPE_1)
+        body = dict(profile=self.PROFILE_2)
+        status, body = self.put(path, body)
+        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(body['content_type'], self.TYPE_1)
+        self.assertEqual(body['profile'], self.PROFILE_2)
+        manager = factory.consumer_profile_manager()
+        profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_1)
+        for key in ('consumer_id', 'content_type', 'profile'):
+            self.assertEqual(body[key], profile[key])
+        self.assertEquals(profile['profile'], self.PROFILE_2)
+
+    def test_delete(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
+        profiles = manager.get_profiles(self.CONSUMER_ID)
+        self.assertEquals(len(profiles), 2)
+        # Test
+        path = '/v2/consumers/%s/profiles/%s/' % (self.CONSUMER_ID, self.TYPE_1)
+        status, body = self.delete(path)
+        profiles = manager.get_profiles(self.CONSUMER_ID)
+        self.assertEquals(len(profiles), 1)
+        profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_2)
+        self.assertTrue(profile is not None)
+
+    def test_get_all(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
+        # Test
+        path = '/v2/consumers/%s/profiles/' % self.CONSUMER_ID
+        status, body = self.get(path)
+        # Verify
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body), 2)
+        body = self.sort(body)
+        self.assertEqual(body[0]['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(body[0]['content_type'], self.TYPE_1)
+        self.assertEqual(body[0]['profile'], self.PROFILE_1)
+        self.assertEqual(body[1]['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(body[1]['content_type'], self.TYPE_2)
+        self.assertEqual(body[1]['profile'], self.PROFILE_2)
+
+    def test_get_by_type(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
+        # Test
+        path = '/v2/consumers/%s/profiles/%s/' % (self.CONSUMER_ID, self.TYPE_1)
+        status, body = self.get(path)
+        self.assertEqual(status, 200)
+        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(body['content_type'], self.TYPE_1)
+        self.assertEqual(body['profile'], self.PROFILE_1)

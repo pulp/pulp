@@ -43,10 +43,10 @@ from gettext import gettext as _
 import logging
 import sys
 
-from   pulp.plugins.conduits._base import ImporterConduitException
-from   pulp.plugins.conduits.unit_add import UnitAddConduit
+from   pulp.plugins.conduits.mixins import ImporterConduitException, AddUnitMixin, RepoScratchPadMixin, ImporterScratchPadMixin, GetRepoUnitsMixin
 from   pulp.plugins.model import SyncReport
 import pulp.server.dispatch.factory as dispatch_factory
+import pulp.server.managers.factory as manager_factory
 from   pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
 # -- constants ---------------------------------------------------------------
@@ -55,7 +55,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoSyncConduit(UnitAddConduit):
+class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin, GetRepoUnitsMixin):
     """
     Used to communicate back into the Pulp server while an importer performs
     a repo sync. Instances of this class should *not* be cached between repo
@@ -69,9 +69,14 @@ class RepoSyncConduit(UnitAddConduit):
     """
 
     def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
-        UnitAddConduit.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
+        RepoScratchPadMixin.__init__(self, repo_id)
+        ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
+        AddUnitMixin.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
+        GetRepoUnitsMixin.__init__(self, repo_id)
 
         self.progress_report = {}
+
+        self._association_manager = manager_factory.repo_unit_association_manager()
 
         self._removed_count = 0
 
@@ -126,7 +131,7 @@ class RepoSyncConduit(UnitAddConduit):
         """
 
         try:
-            self._association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.importer_id)
+            self._association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.association_owner_id)
             self._removed_count += 1
         except Exception, e:
             _LOG.exception(_('Content unit unassociation failed'))

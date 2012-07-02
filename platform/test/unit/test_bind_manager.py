@@ -19,7 +19,7 @@ import pulp.plugins.loader as plugin_loader
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import MissingResource
-import pulp.server.managers.factory as factory
+from pulp.server.managers import factory
 
 # -- test cases ---------------------------------------------------------------
 

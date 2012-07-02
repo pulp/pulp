@@ -31,6 +31,7 @@ import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
+from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
 
@@ -172,7 +173,8 @@ class RepoUnitAssociationManager(object):
             manager_factory.repo_manager().update_unit_count(
                 repo_id, unique_count)
 
-    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None):
+    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None,
+                            with_dependencies=False):
         """
         Creates associations in a repository based on the contents of a source
         repository. Units from the source repository can be filtered by
@@ -201,20 +203,21 @@ class RepoUnitAssociationManager(object):
                          from the source repository
         @type  criteria: L{Criteria}
 
+        @param with_dependencies: if true, the source repository will be queried
+               for dependencies on matching units and those will be copied as well
+        @type  with_dependencies: bool
+
         @raise MissingResource: if either of the specified repositories don't exist
         """
 
         # Validation
         repo_query_manager = manager_factory.repo_query_manager()
         importer_manager = manager_factory.repo_importer_manager()
+        dependency_manager = manager_factory.dependency_manager()
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
 
-        source_repo = repo_query_manager.find_by_id(source_repo_id)
-        if source_repo is None:
-            raise exceptions.MissingResource(source_repo_id)
-
-        dest_repo = repo_query_manager.find_by_id(dest_repo_id)
-        if dest_repo is None:
-            raise exceptions.MissingResource(dest_repo_id)
+        source_repo = repo_query_manager.get_repository(source_repo_id)
+        dest_repo = repo_query_manager.get_repository(dest_repo_id)
 
         # This will raise MissingResource if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
@@ -232,12 +235,31 @@ class RepoUnitAssociationManager(object):
             criteria.unit_fields = None
 
             # Retrieve the units to be associated
-            association_query_manager = manager_factory.repo_unit_association_query_manager()
             associate_us = association_query_manager.get_units(source_repo_id, criteria=criteria)
 
             # If units were supposed to be filtered but none matched, we're done
             if len(associate_us) is 0:
                 return
+
+        # If the dependencies are to be copied too, retrieve those now
+        if with_dependencies:
+            dep_units = dependency_manager.resolve_dependencies_by_units(source_repo_id, associate_us, None)
+
+            # dep_units will be just the units themselves, but associate_us is
+            # the unit associations. Retrieve the associations here to resolve
+            # the difference.
+
+            unit_ids_by_type = {}
+            for u in dep_units:
+                type_units = unit_ids_by_type.setdefault(u['_content_type_id'], [])
+                type_units.append(u['_id'])
+
+            for type_id in unit_ids_by_type.keys():
+                spec = {'unit_id' : {'$in' : unit_ids_by_type[type_id]}}
+                criteria = Criteria(association_filters=spec)
+                dep_associations = association_query_manager.get_units_by_type(source_repo_id, type_id, criteria)
+
+                associate_us += dep_associations
 
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units
@@ -408,7 +430,11 @@ class RepoUnitAssociationManager(object):
         @return: True if unique else False
         @rtype:  bool
         """
-        spec = locals()
+        spec = {
+            'repo_id' : repo_id,
+            'unit_id' : unit_id,
+            'unit_type_id' : unit_type_id,
+        }
         unit_coll = RepoContentUnit.get_collection()
 
         existing_count = unit_coll.find(spec).count()

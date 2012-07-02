@@ -11,9 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
 from pulp.plugins.model import AssociatedUnit
-
 
 def to_pulp_unit(plugin_unit):
     """
@@ -47,6 +45,11 @@ def to_plugin_unit(pulp_unit, type_def):
     @return: plugin unit representation of the given unit
     @rtype:  L{pulp.server.content.plugins.data.AssociatedUnit}
     """
+
+    # Copy so we don't mangle the original unit
+    # pymongo on RHEL6 doesn't seem to like deepcopy, so do this instead
+    pulp_unit = dict(pulp_unit)
+    pulp_unit['metadata'] = dict(pulp_unit['metadata'])
 
     key_list = type_def['unit_key']
 

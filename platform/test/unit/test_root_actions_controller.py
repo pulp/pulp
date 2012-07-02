@@ -13,7 +13,7 @@
 
 import base
 
-from pulp.server.api.user import UserApi
+from pulp.server.managers.auth.user import UserManager
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.certificate import Certificate
 
@@ -22,9 +22,8 @@ class UserCertificateControllerTests(base.PulpWebserviceTests):
     def test_get(self):
         # Setup
 
-        # TODO: Fix this when UserManager lookup
-        user_api = UserApi()
-        user = user_api.user('ws-user')
+        user_manager = UserManager()
+        user = user_manager.find_by_login(login='ws-user')
 
         # Test
         status, body = self.post('/v2/actions/login/')
