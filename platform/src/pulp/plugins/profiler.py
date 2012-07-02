@@ -54,16 +54,16 @@ class Profiler(object):
         @param profile: The reported profile.
         @type profile: dict
 
-        @param config: The profiler configuration.
-        @type config: dict
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
         """
-        raise NotImplementedError()
+        return profile
 
     def install_units(self, consumer_id, units, options, config, conduit):
         """
@@ -81,9 +81,12 @@ class Profiler(object):
 
         @param options: Install options; based on unit type.
         @type options: dict
+        
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -91,7 +94,7 @@ class Profiler(object):
         @return: The translated units
         @rtype: list
         """
-        raise NotImplementedError()
+        return units
 
     def update_units(self, consumer_id, units, options, config, conduit):
         """
@@ -110,8 +113,11 @@ class Profiler(object):
         @param options: Update options; based on unit type.
         @type options: dict
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -119,7 +125,7 @@ class Profiler(object):
         @return: The translated units
         @rtype: list
         """
-        raise NotImplementedError()
+        return units
 
     def uninstall_units(self, consumer_id, units, options, config, conduit):
         """
@@ -137,9 +143,12 @@ class Profiler(object):
 
         @param options: Update options; based on unit type.
         @type options: dict
+        
+        @param config: plugin configuration
+        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
 
-        @param conduit: The server API.
-        @type conduit: L{ProfilerConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -147,4 +156,4 @@ class Profiler(object):
         @return: The translated units
         @rtype: list
         """
-        raise NotImplementedError()
+        return units

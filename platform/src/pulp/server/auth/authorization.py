@@ -19,14 +19,14 @@ from gettext import gettext as _
 
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
-from pulp.server.api.user import UserApi
+from pulp.server.managers.auth.user import UserManager
 from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
 
 _permission_api = PermissionAPI()
 _role_api = RoleAPI()
-_user_api = UserApi()
+_user_manager = UserManager()
 
 
 class PulpAuthorizationError(PulpException):
@@ -121,7 +121,7 @@ def _get_user(user_name):
     @return: user instance
     @raise L{PulpAuthorizationError}: if no user with name exists
     """
-    user = _user_api.user(user_name)
+    user = _user_manager.find_by_login(login=user_name)
     if user is None:
         raise PulpAuthorizationError(_('no such user: %s') % user_name)
     return user
@@ -169,7 +169,7 @@ def _get_users_belonging_to_role(role):
     @return: list of users that are members of the given role
     """
     users = []
-    for user in _user_api.users():
+    for user in _user_manager.find_all():
         if role['name'] in user['roles']:
             users.append(user)
     return users
@@ -468,7 +468,7 @@ def delete_role(role_name):
             _permission_api.revoke(resource, user, user_ops)
     for user in users:
         user['roles'].remove(role_name)
-        _user_api.update(user['login'], Delta(user, 'roles'))
+        _user_manager.update_user(user['login'], Delta(user, 'roles'))
     _role_api.delete(role)
     return True
 
@@ -489,7 +489,7 @@ def add_user_to_role(role_name, user_name):
     if role_name in user['roles']:
         return False
     user['roles'].append(role_name)
-    _user_api.update(user['login'], Delta(user, 'roles'))
+    _user_manager.update_user(user['login'], Delta(user, 'roles'))
     for resource, operations in role['permissions'].items():
         _permission_api.grant(resource, user, operations)
     return True
@@ -515,7 +515,7 @@ def remove_user_from_role(role_name, user_name):
     if role_name not in user['roles']:
         return False
     user['roles'].remove(role_name)
-    _user_api.update(user['login'], Delta(user, 'roles'))
+    _user_manager.update_user(user['login'], Delta(user, 'roles'))
     for resource, operations in role['permissions'].items():
         other_roles = _get_other_roles(role, user['roles'])
         user_ops = _operations_not_granted_by_roles(resource,

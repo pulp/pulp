@@ -45,7 +45,7 @@ class RepoGroupManager(object):
         collection.update({'id': group_id}, {'$set': updates}, safe=True)
 
     def delete_repo_group(self, group_id):
-        collection = RepoGroup.get_collection()
+        collection = validate_existing_repo_group(group_id)
         collection.remove({'id': group_id}, safe=True)
 
     # repo membership ----------------------------------------------------------

@@ -238,6 +238,9 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         self.assertEqual(a, source_path)
 
     def test_create_dirs(self):
+        if os.geteuid() == 0:
+            # skip if run as root
+            return
         target_dir = os.path.join(self.temp_dir, "a", "b", "c", "d", "e")
         distributor = YumDistributor()
         self.assertFalse(os.path.exists(target_dir))

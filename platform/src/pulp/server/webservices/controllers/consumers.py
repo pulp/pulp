@@ -298,7 +298,7 @@ class Binding(JSONController):
     def DELETE(self, consumer_id, repo_id, distributor_id):
         """
         Delete a bind association between the specified
-        consumer and repo-distributor.  Designed to be itempotent.
+        consumer and repo-distributor.  Designed to be idempotent.
         @param consumer_id: A consumer ID.
         @type consumer_id: str
         @param repo_id: A repo ID.
@@ -310,9 +310,7 @@ class Binding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        # update model
         manager = managers.consumer_bind_manager()
-
         resources = {
             dispatch_constants.RESOURCE_CONSUMER_TYPE:
                 {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
@@ -326,10 +324,12 @@ class Binding(JSONController):
             repo_id,
             distributor_id,
         ]
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('unbind')]
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag('unbind')
+        ]
         call_request = CallRequest(manager.unbind,
                                    args=args,
                                    resources=resources,
@@ -492,6 +492,153 @@ class ConsumerHistory(JSONController):
                                     sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
+
+class Profiles(JSONController):
+    """
+    Consumer I{profiles} represents the collection of
+    objects used to associate consumers and installed content
+    unit profiles.
+    """
+
+    @auth_required(READ)
+    def GET(self, consumer_id):
+        """
+        Get all profiles associated with a consumer.
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
+        @return: A list of profiles:
+          profile is: {consumer_id:<str>, content_type:<str>, profile:<dict>}
+        @return: list
+        """
+        manager = managers.consumer_profile_manager()
+        profiles = manager.get_profiles(consumer_id)
+        profiles = [Profile.serialized(p) for p in profiles]
+        return self.ok(profiles)
+
+    @auth_required(CREATE)
+    def POST(self, consumer_id):
+        """
+        Associate a profile with a consumer by content type ID.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @return: The created model object:
+            {consumer_id:<str>, content_type:<str>, profile:<dict>}
+        @rtype: dict
+        """
+        body = self.params()
+        content_type = body.get('content_type')
+        profile = body.get('profile')
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            consumer_id,
+            content_type,
+            profile,
+        ]
+        manager = managers.consumer_profile_manager()
+        call_request = CallRequest(
+            manager.create,
+            args,
+            resources=resources,
+            weight=0)
+        link = serialization.link.child_link_obj(consumer_id, content_type)
+        result = execution.execute_sync_created(self, call_request, link)
+        return result
+
+
+class Profile(JSONController):
+    """
+    Consumer I{profiles} represents the collection of
+    objects used to associate consumers and installed content
+    unit profiles.
+    """
+
+    @classmethod
+    def serialized(cls, profile):
+        serialized = dict(profile)
+        link = serialization.link.child_link_obj(
+            profile['consumer_id'],
+            profile['content_type'])
+        return serialized
+
+    @auth_required(READ)
+    def GET(self, consumer_id, content_type):
+        """
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
+        """
+        manager = managers.consumer_profile_manager()
+        profile = manager.get_profile(consumer_id, content_type)
+        return self.ok(self.serialized(profile))
+
+    @auth_required(UPDATE)
+    def PUT(self, consumer_id, content_type):
+        """
+        Update the association of a profile with a consumer by content type ID.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @param content_type: A content unit type ID.
+        @type content_type: str
+        @return: The updated model object:
+            {consumer_id:<str>, content_type:<str>, profile:<dict>}
+        @rtype: dict
+        """
+        body = self.params()
+        profile = body.get('profile')
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            consumer_id,
+            content_type,
+            profile,
+        ]
+        manager = managers.consumer_profile_manager()
+        call_request = CallRequest(
+            manager.update,
+            args,
+            resources=resources,
+            weight=0)
+        link = serialization.link.child_link_obj(consumer_id, content_type)
+        result = execution.execute_sync_created(self, call_request, link)
+        return result
+
+    @auth_required(DELETE)
+    def DELETE(self, consumer_id, content_type):
+        """
+        Delete an association between the specified
+        consumer and profile.  Designed to be idempotent.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @param content_type: The content type ID.
+        @type content_type: str
+        @return: The deleted model object:
+            {consumer_id:<str>, content_type:<str>, profile:<dict>}
+            Or, None if bind does not exist.
+        @rtype: dict
+        """
+        manager = managers.consumer_profile_manager()
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+        args = [
+            consumer_id,
+            content_type,
+        ]
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+        ]
+        call_request = CallRequest(manager.delete,
+                                   args=args,
+                                   resources=resources,
+                                   tags=tags)
+        return execution.execute_ok(self, call_request)
+
+
 # -- web.py application -------------------------------------------------------
 
 
@@ -501,6 +648,8 @@ urls = (
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
+    '/([^/]+)/profiles/$', 'Profiles',
+    '/([^/]+)/profiles/([^/]+)/$', 'Profile',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
     '/([^/]+)/history/$', 'ConsumerHistory',  
 )

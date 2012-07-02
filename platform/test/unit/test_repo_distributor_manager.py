@@ -15,6 +15,8 @@
 import base
 import mock_plugins
 
+import mock
+
 from pulp.plugins.model import Repository
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -40,6 +42,8 @@ class RepoManagerTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoManagerTests, self).clean()
+
+        mock_plugins.MOCK_DISTRIBUTOR.reset_mock()
 
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -701,4 +705,9 @@ class RepoManagerTests(base.PulpServerTests):
                           self.distributor_manager.remove_publish_schedule,
                           repo_id, distributor_id, schedule_id)
 
-
+    @mock.patch.object(RepoDistributor, 'get_collection')
+    def test_find_by_repo_list(self, mock_get_collection):
+        EXPECT = {'repo_id': {'$in': ['repo-1']}}
+        self.distributor_manager.find_by_repo_list(['repo-1'])
+        self.assertTrue(mock_get_collection.return_value.find.called)
+        mock_get_collection.return_value.find.assert_called_once_with(EXPECT)

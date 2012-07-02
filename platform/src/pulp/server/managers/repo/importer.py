@@ -63,6 +63,22 @@ class RepoImporterManager(object):
         importers = list(RepoImporter.get_collection().find({'repo_id' : repo_id}))
         return importers
 
+    @staticmethod
+    def find_by_repo_list(repo_id_list):
+        """
+        Returns serialized versions of all importers for given repos. Any
+        IDs that do not refer to valid repos are ignored and will not
+        raise an error.
+
+        @param repo_id_list: list of importer IDs to fetch
+        @type  repo_id_list: list of str
+
+        @return: list of serialized importers
+        @rtype:  list of dict
+        """
+        spec = {'repo_id' : {'$in' : repo_id_list}}
+        return list(RepoImporter.get_collection().find(spec))
+
     def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
         Configures an importer to be used for the given repository.

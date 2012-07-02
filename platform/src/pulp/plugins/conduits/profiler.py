@@ -22,13 +22,12 @@ import sys
 from pulp.server.managers import factory as managers
 from pulp.plugins.conduits import _common
 from pulp.plugins.types import database as typedb
-from pulp.plugins.conduits._base import BaseProfilerConduit, \
-    ProfilerConduitException
+from pulp.plugins.conduits.mixins import ProfilerConduitException
 
 _LOG = logging.getLogger(__name__)
 
 
-class ProfilerConduit(BaseProfilerConduit):
+class ProfilerConduit(object):
 
     def get_profile(self, consumer_id, content_type):
         """

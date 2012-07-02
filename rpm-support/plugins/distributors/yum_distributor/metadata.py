@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -23,7 +23,7 @@ import time
 from pulp_rpm.yum_plugin import util
 from pulp.common.util import encode_unicode, decode_unicode
 
-log = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 __yum_lock = threading.Lock()
 
 # In memory lookup table for createrepo processes
@@ -47,7 +47,7 @@ def set_progress(type_id, status, progress_callback):
     if progress_callback:
         progress_callback(type_id, status)
 
-def generate_metadata(repo, publish_conduit, config, progress_callback=None):
+def generate_metadata(repo, publish_conduit, config, progress_callback=None, groups_xml_path=None):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
@@ -60,6 +60,9 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
       @param progress_callback: callback to report progress info to publish_conduit
       @type  progress_callback: function
 
+      @param groups_xml_path: path to the package groups/package category comps info
+      @type groups_xml_path: str
+
       @return True on success, False on error
       @rtype bool
     """
@@ -67,22 +70,26 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
     if not config.get('generate_metadata'):
         metadata_progress_status = {"state" : "SKIPPED"}
         set_progress("metadata", metadata_progress_status, progress_callback)
-        log.info('skip metadata generation for repo %s' % repo.id)
+        _LOG.info('skip metadata generation for repo %s' % repo.id)
         return False, []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     repo_dir = repo.working_dir
     checksum_type = get_repo_checksum_type(repo, publish_conduit, config)
-    metadata_types = config.get('skip_content_types') or {}
-    metadata_types = convert_content_to_metadata_type(metadata_types)
-    if 'group' not in metadata_types:
+    skip_metadata_types = config.get('skip') or {}
+    skip_metadata_types = convert_content_to_metadata_type(skip_metadata_types)
+    if 'group' in skip_metadata_types:
+        _LOG.debug("Skipping 'group' info")
         groups_xml_path = None
     else:
-        groups_xml_path = __get_groups_xml_info(repo_dir)
-    log.info("Running createrepo, this may take a few minutes to complete.")
+        # If groups_xml_path is specified than used passed in value
+        # If no value for groups_xml_path, fallback to whatever is in repomd.xml
+        if groups_xml_path is None:
+            groups_xml_path = __get_groups_xml_info(repo_dir)
+    _LOG.info("Running createrepo with groups file <%s>, this may take a few minutes to complete." % (groups_xml_path))
     start = time.time()
     try:
         set_progress("metadata", metadata_progress_status, progress_callback)
-        create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type, metadata_types=metadata_types)
+        create_repo(repo_dir, groups=groups_xml_path, checksum_type=checksum_type, skip_metadata_types=skip_metadata_types)
     except CreateRepoError, cre:
         metadata_progress_status = {"state" : "FAILED"}
         set_progress("metadata", metadata_progress_status, progress_callback)
@@ -94,7 +101,7 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None):
         errors.append(ce)
         return False, errors
     end = time.time()
-    log.info("Createrepo finished in %s seconds" % (end - start))
+    _LOG.info("Createrepo finished in %s seconds" % (end - start))
     metadata_progress_status = {"state" : "FINISHED"}
     set_progress("metadata", metadata_progress_status, progress_callback)
     return True, []
@@ -115,7 +122,6 @@ def get_repo_checksum_type(repo, publish_conduit, config):
     """
     DEFAULT_CHECKSUM = "sha256"
     checksum_type = config.get('checksum_type')
-    print checksum_type
     if checksum_type:
         return checksum_type
     scratchpad_data = publish_conduit.get_repo_scratchpad()
@@ -131,7 +137,7 @@ def __get_groups_xml_info(repo_dir):
     repodata_file = encode_unicode(repodata_file)
     if os.path.isfile(repodata_file):
         ftypes = util.get_repomd_filetypes(repodata_file)
-        log.debug("repodata has filetypes of %s" % (ftypes))
+        _LOG.debug("repodata has filetypes of %s" % (ftypes))
         if "group" in ftypes:
             comps_ftype = util.get_repomd_filetype_path(
                     repodata_file, "group")
@@ -161,9 +167,9 @@ def modify_repo(repodata_dir, new_file, remove=False):
         cmd = "modifyrepo %s %s" % (new_file, repodata_dir)
     status, out = commands.getstatusoutput(cmd)
     if status != 0:
-        log.error("modifyrepo on %s failed" % repodata_dir)
+        _LOG.error("modifyrepo on %s failed" % repodata_dir)
         raise ModifyRepoError(out)
-    log.info("modifyrepo with %s on %s finished" % (new_file, repodata_dir))
+    _LOG.info("modifyrepo with %s on %s finished" % (new_file, repodata_dir))
     return status, out
 
 def _create_repo(dir, groups=None, checksum_type="sha256"):
@@ -182,16 +188,16 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
     except:
         cmd = shlex.split(cmd)
 
-    log.info("started repo metadata update: %s" % (cmd))
+    _LOG.info("started repo metadata update: %s" % (cmd))
     handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return handle
 
-def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
+def create_repo(dir, groups=None, checksum_type="sha256", skip_metadata_types=[]):
     handle = None
     # Lock the lookup and launch of a new createrepo process
     # Lock is released once createrepo is launched
     if not os.path.exists(dir):
-        log.warning("create_repo invoked on a directory which doesn't exist:  %s" % dir)
+        _LOG.warning("create_repo invoked on a directory which doesn't exist:  %s" % dir)
     CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
     try:
         if CREATE_REPO_PROCESS_LOOKUP.has_key(dir):
@@ -202,10 +208,10 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
         backup_repo_dir = None
         current_repo_dir = encode_unicode(current_repo_dir)
         if os.path.exists(current_repo_dir):
-            log.info("metadata found; taking backup.")
+            _LOG.info("metadata found; taking backup.")
             backup_repo_dir = os.path.join(dir, "repodata.old")
             if os.path.exists(backup_repo_dir):
-                log.debug("clean up any stale dirs")
+                _LOG.debug("clean up any stale dirs")
                 shutil.rmtree(backup_repo_dir)
             shutil.copytree(current_repo_dir, backup_repo_dir)
             os.system("chmod -R u+wX %s" % (backup_repo_dir))
@@ -213,7 +219,7 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
         if not handle:
             raise CreateRepoError("Unable to execute createrepo on %s" % (dir))
         os.system("chmod -R ug+wX %s" % (dir))
-        log.info("Createrepo process with pid %s running on directory %s" % (handle.pid, dir))
+        _LOG.info("Createrepo process with pid %s running on directory %s" % (handle.pid, dir))
         CREATE_REPO_PROCESS_LOOKUP[dir] = handle
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
@@ -228,19 +234,19 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
                 if os.path.exists(cleanup_dir):
                     shutil.rmtree(cleanup_dir)
             except Exception, e:
-                log.warn(e)
-                log.warn("Unable to remove temporary createrepo dir: %s" % (cleanup_dir))
+                _LOG.exception(e)
+                _LOG.warn("Unable to remove temporary createrepo dir: %s" % (cleanup_dir))
             if handle.returncode == -9:
-                log.warn("createrepo on %s was killed" % (dir))
+                _LOG.warn("createrepo on %s was killed" % (dir))
                 raise CancelException()
             else:
-                log.error("createrepo on %s failed with returncode <%s>" % (dir, handle.returncode))
-                log.error("createrepo stdout:\n%s" % (out_msg))
-                log.error("createrepo stderr:\n%s" % (err_msg))
+                _LOG.error("createrepo on %s failed with returncode <%s>" % (dir, handle.returncode))
+                _LOG.error("createrepo stdout:\n%s" % (out_msg))
+                _LOG.error("createrepo stderr:\n%s" % (err_msg))
                 raise CreateRepoError(err_msg)
-        log.info("createrepo on %s finished" % (dir))
+        _LOG.info("createrepo on %s finished" % (dir))
         if not backup_repo_dir:
-            log.info("Nothing further to check; we got our fresh metadata")
+            _LOG.info("Nothing further to check; we got our fresh metadata")
             return
         #check if presto metadata exist in the backup
         repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
@@ -250,8 +256,8 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
             if ftype in base_ftypes:
                 # no need to process these again
                 continue
-            if ftype in metadata_types and not metadata_types[ftype]:
-                log.info("mdtype %s part of skip metadata; skipping" % ftype)
+            if ftype in skip_metadata_types and not skip_metadata_types[ftype]:
+                _LOG.info("mdtype %s part of skip metadata; skipping" % ftype)
                 continue
             filetype_path = os.path.join(backup_repo_dir, os.path.basename(util.get_repomd_filetype_path(repodata_file, ftype)))
             # modifyrepo uses filename as mdtype, rename to type.<ext>
@@ -264,7 +270,7 @@ def create_repo(dir, groups=None, checksum_type="sha256", metadata_types=[]):
                 renamed_filetype_path = '.'.join(renamed_filetype_path.split('.')[:-1])
                 open(renamed_filetype_path, 'w').write(data.encode("UTF-8"))
             if os.path.isfile(renamed_filetype_path):
-                log.info("Modifying repo for %s metadata" % ftype)
+                _LOG.info("Modifying repo for %s metadata" % ftype)
                 modify_repo(current_repo_dir, renamed_filetype_path)
     finally:
         if backup_repo_dir:
@@ -288,11 +294,11 @@ def cancel_createrepo(repo_dir):
             try:
                 os.kill(handle.pid, signal.SIGKILL)
             except Exception, e:
-                log.info(e)
+                _LOG.exception(e)
                 return False
             return True
         else:
-            log.info("No createrepo process found for <%s>" % repo_dir)
+            _LOG.info("No createrepo process found for <%s>" % repo_dir)
             return False
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
@@ -304,7 +310,7 @@ def get_createrepo_pid(repo_dir):
             handle = CREATE_REPO_PROCESS_LOOKUP[repo_dir]
             return handle.pid
         else:
-            log.info("No createrepo process found for <%s>" % repo_dir)
+            _LOG.info("No createrepo process found for <%s>" % repo_dir)
             return None
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()

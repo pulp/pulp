@@ -17,7 +17,7 @@ import mock
 import base
 import mock_plugins
 
-from pulp.plugins.conduits._base import ImporterConduitException
+from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.model import SyncReport
 import pulp.plugins.types.database as types_database
@@ -265,10 +265,10 @@ class RepoSyncConduitTests(base.PulpServerTests):
     # The following tests make sure error conditions are always wrapped in a
     # RepoSyncConduitException
 
-    def test_get_units_with_error(self):
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
+    def test_get_units_with_error(self, mock_get_method):
         # Setup
-        self.conduit._association_query_manager = mock.Mock()
-        self.conduit._association_query_manager.get_units_across_types.side_effect = Exception()
+        mock_get_method.side_effect = Exception()
 
         # Test
         try:
@@ -277,10 +277,10 @@ class RepoSyncConduitTests(base.PulpServerTests):
         except ImporterConduitException, e:
             print(e) # for coverage
 
-    def test_init_unit_with_error(self):
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
+    def test_init_unit_with_error(self, mock_request_method):
         # Setup
-        self.conduit._content_query_manager = mock.Mock()
-        self.conduit._content_query_manager.request_content_unit_file_path.side_effect = Exception()
+        mock_request_method.side_effect = Exception()
 
         # Test
         self.assertRaises(ImporterConduitException, self.conduit.init_unit, 't', {}, {}, 'p')

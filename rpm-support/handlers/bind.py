@@ -15,7 +15,7 @@ import os
 from iniparse import INIConfig
 from pulp.agent.lib.handler import BindHandler
 from pulp.agent.lib.report import BindReport, CleanReport
-from pulp.gc_client.lib import repolib
+from pulp_rpm.common import repolib
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -24,7 +24,7 @@ log = getLogger(__name__)
 # TODO: Pass-in instead of hard code
 class ConsumerConfig(INIConfig):
     def __init__(self):
-        path = '/etc/pulp/consumer/v2_consumer.conf'
+        path = '/etc/pulp/consumer/consumer.conf'
         fp = open(path)
         try:
             INIConfig.__init__(self, fp)

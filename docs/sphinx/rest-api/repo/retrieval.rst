@@ -11,8 +11,8 @@ and :term:`distributors <distributor>` associated with it.
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/`
 | :permission:`read`
-| :param_list:`get` None; the repository ID is included in the URL itself. There are
-  no supported query parameters.
+| :param_list:`get` include the key "details" with any value that evaluates to
+  True to have importers and distributors included in the results.
 | :response_list:`_`
 
 * :response_code:`200,if the repository exists`
@@ -67,15 +67,15 @@ and :term:`distributors <distributor>` associated with it.
 Retrieve all Repositories
 -------------------------
 
-Returns information on all repositories in the Pulp server. Eventually this call
-will support query parameters to limit the results and provide searching capabilities.
-It is worth noting that this call will never return a 404; an empty list is returned
-in the case where there are no repositories.
+Returns information on all repositories in the Pulp server. It is worth noting
+that this call will never return a 404; an empty list is returned in the case
+where there are no repositories.
 
 | :method:`get`
 | :path:`/v2/repositories/`
 | :permission:`read`
-| :param_list:`get` Currently none, all repositories are returned.
+| :param_list:`get` include the key "details" with any value that evaluates to
+  True to have importers and distributors included in the results.
 | :response_list:`_`
 
 * :response_code:`200,containing the list of repositories`

@@ -104,7 +104,9 @@ class UnitProfile(Model):
     """
 
     collection_name = 'consumer_unit_profiles'
-    unique_indices = ('consumer_id', 'content_type')
+    unique_indices = (
+        ('consumer_id', 'content_type'),
+    )
 
     def __init__(self, consumer_id, content_type, profile):
         """

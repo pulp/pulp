@@ -60,7 +60,7 @@ class Bundle(BundleImpl):
     """
 
     def __init__(self):
-        BundleImpl.__init__(self, cfg.messaging.clientcert)
+        BundleImpl.__init__(self, cfg.rest.clientcert)
         
 
 class PulpBindings(Bindings):
@@ -139,7 +139,7 @@ class RegistrationMonitor:
         Start path monitor to track changes in the
         pulp identity certificate.
         """
-        path = '/etc/pki/pulp/consumer/cert.pem'
+        path = cfg.rest.clientcert
         cls.pmon.add(path, cls.changed)
         cls.pmon.start()
 
@@ -156,6 +156,42 @@ class RegistrationMonitor:
         bundle = Bundle()
         myid = bundle.cn()
         plugin.setuuid(myid)
+
+
+class Synchronization:
+    """
+    Misc actions used to synchronize with the server.
+    """
+
+    @action(days=0x8E94)
+    def rebind(self):
+        """
+        (Re)bind on agent statup.
+        """
+        if self.registered():
+            consumer = Consumer()
+            consumer.rebind()
+        else:
+            log.info('not registered, rebind skipped')
+            
+    @action(minutes=cfg.profile.minutes)
+    def profile(self):
+        """
+        Report the unit profile(s).
+        """
+        if self.registered():
+            profile = Profile()
+            profile.send()
+        else:
+            log.info('not registered, profile report skipped')
+            
+    def registered(self):
+        """
+        Get registration status.
+        """
+        bundle = Bundle()
+        myid = bundle.cn()
+        return (myid is not None)
 
 #
 # API
@@ -200,7 +236,6 @@ class Consumer:
             raise Exception('bind failed, http:%d', http.response_code)
 
     @remote(secret=secret)
-    @action(days=0x8E94)
     def rebind(self):
         """
         (Re)bind to all repositories.
@@ -211,6 +246,7 @@ class Consumer:
         bindings = PulpBindings()
         bundle = Bundle()
         myid = bundle.cn()
+        bindings = PulpBindings()
         http = bindings.bind.find_by_id(myid)
         if http.response_code == 200:
             report = dispatcher.rebind(http.response_body)
@@ -292,7 +328,6 @@ class Profile:
     """
 
     @remote(secret=secret)
-    @action(minutes=cfg.profile.minutes)
     def send(self):
         """
         Send the content profile(s) to the server.
@@ -300,7 +335,15 @@ class Profile:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
+        bundle = Bundle()
+        myid = bundle.cn()
+        bindings = PulpBindings()
         report = dispatcher.profile()
-        # TODO: send profiles
         log.info('profile: %s' % report)
+        for typeid, report in report.details.items():
+            if not report['status']:
+                continue
+            details = report['details']
+            http = bindings.profile.send(myid, typeid, details)
+            log.info('profile (%s), reported: %d', typeid, http.response_code)
         return report.dict()

@@ -746,6 +746,9 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         self.assertFalse(caught_exception)
 
     def test_errors_with_local_sync(self):
+        if os.getuid() == 0:
+            # skip if running as root
+            return
         global updated_progress
         updated_progress = None
 
@@ -936,3 +939,28 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         self.assertEquals(summary["num_not_synced_rpms"], 0)
         self.assertEquals(summary["num_orphaned_rpms"], 0)
         self.assertEquals(details["size_total"], 6868)
+
+    def test_newest_pkg_sync(self):
+        feed_url = "http://jmatthews.fedorapeople.org/repo_multiple_versions/"
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_repo_newest"
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, pkg_dir=self.pkg_dir)
+
+        # newest set to True test
+        config = importer_mocks.get_basic_config(feed_url=feed_url, newest=True)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        self.assertTrue(status)
+        self.assertEquals(summary["num_synced_new_rpms"], 1)
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 1)
+
+        # newest set to False test
+        config = importer_mocks.get_basic_config(feed_url=feed_url, newest=False)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        self.assertTrue(status)
+        self.assertEquals(summary["num_synced_new_rpms"], 12)
+        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
+        self.assertEquals(len(pkgs), 12)

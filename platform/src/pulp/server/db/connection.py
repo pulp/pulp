@@ -113,6 +113,23 @@ class PulpCollection(Collection):
     def __setstate__(self, state):
         return get_collection(state['name'])
 
+    def query(self, criteria):
+        """
+        Run a query with a Pulp custom query object
+        @param criteria: Criteria object specifying the query to run
+        @type  criteria: L{pulp.server.db.model.criteria.Criteria}
+        @return: pymongo cursor for the given query
+        @rtype:  L{pymongo.cursor.Cursor}
+        """
+        cursor = self.find(criteria.spec, fields=criteria.fields)
+        if criteria.sort is not None:
+            for entry in criteria.sort:
+                cursor.sort(*entry)
+        if criteria.skip is not None:
+            cursor.skip(criteria.skip)
+        if criteria.limit is not None:
+            cursor.limit(criteria.limit)
+        return cursor
 
 # -- public --------------------------------------------------------------------
 

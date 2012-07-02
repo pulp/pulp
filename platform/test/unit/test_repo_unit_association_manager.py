@@ -18,7 +18,7 @@ import mock
 
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Repository
+from pulp.plugins.model import Repository, Unit
 from pulp.plugins.types import database, model
 from pulp.server.db.model.repository import RepoContentUnit, Repo, RepoImporter
 import pulp.server.exceptions as exceptions
@@ -265,6 +265,46 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(1, len(kwargs['units']))
         self.assertEqual(kwargs['units'][0].id, 'unit-2')
 
+    def test_associate_from_repo_with_dependencies(self):
+        # Setup
+        source_repo_id = 'source-repo'
+        dest_repo_id = 'dest-repo'
+
+        self.repo_manager.create_repo(source_repo_id)
+        self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
+
+        self.repo_manager.create_repo(dest_repo_id)
+        self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
+
+        dep_transfer_units = [
+            Unit('mock-type', {'key-1' : 'unit-x'}, {}, 'p1'),
+        ]
+        mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = dep_transfer_units
+
+        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1'})
+        self.content_manager.add_content_unit('mock-type', 'unit-2', {'key-1' : 'unit-2'})
+        self.content_manager.add_content_unit('mock-type', 'unit-3', {'key-1' : 'unit-3'})
+        self.content_manager.add_content_unit('mock-type', 'unit-x', {'key-1' : 'unit-x'})
+
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-2', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-x', OWNER_TYPE_USER, 'admin')
+
+        # Test
+        criteria = Criteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
+        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria, with_dependencies=True)
+
+        # Verify
+        self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
+
+        kwargs = mock_plugins.MOCK_IMPORTER.import_units.call_args[1]
+        self.assertEqual(2, len(kwargs['units'])) # 1 matching criteria, 1 deps
+
+        sorted_transfer_units = sorted(kwargs['units'], key=lambda x : x.unit_key['key-1'])
+        self.assertEqual(sorted_transfer_units[0].unit_key['key-1'], 'unit-2')
+        self.assertEqual(sorted_transfer_units[1].unit_key['key-1'], 'unit-x')
+
     def test_associate_from_repo_dest_has_no_importer(self):
         # Setup
         source_repo_id = 'source-repo'
@@ -358,7 +398,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.manager.associate_from_repo('missing', dest_repo_id)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('missing' == e.resources['resource_id'])
+            self.assertTrue('missing' == e.resources['repo_id'])
 
     def test_associate_from_repo_missing_destination(self):
         # Setup
@@ -372,7 +412,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.manager.associate_from_repo(source_repo_id, 'missing')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('missing' == e.resources['resource_id'])
+            self.assertTrue('missing' == e.resources['repo_id'])
 
     def test_associate_by_id_calls_update_unit_count(self):
         self.manager.associate_unit_by_id(
