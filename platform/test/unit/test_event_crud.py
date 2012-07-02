@@ -85,7 +85,25 @@ class EventListenerManagerTests(base.PulpServerTests):
             self.manager.delete('foo')
             self.fail()
         except MissingResource, e:
-            self.assertEqual(e.resources['event_listener_id'], 'foo')
+            self.assertEqual(e.resources['event_listener'], 'foo')
+
+    def test_get(self):
+        # Setup
+        created = self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+
+        # Test
+        gotten = self.manager.get(created['_id'])
+
+        # Verify
+        self.assertEqual(gotten['notifier_type_id'], rest_api.TYPE_ID)
+
+    def test_get_missing_listener(self):
+        # Test
+        try:
+            self.manager.get('foo')
+            self.fail()
+        except MissingResource, e:
+            self.assertEqual(e.resources['event_listener'], 'foo')
 
     def test_update(self):
         # Setup

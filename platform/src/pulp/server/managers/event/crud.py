@@ -14,7 +14,10 @@
 """
 Handles the CRUD for event listeners.
 """
+from bson.errors import InvalidId
+import sys
 
+from pulp.server.compat import ObjectId
 from pulp.server.db.model.event import EventListener
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.event import notifiers
@@ -71,6 +74,33 @@ class EventListenerManager(object):
 
         return created
 
+    def get(self, event_listener_id):
+        """
+        Retrieves the given event listener if it exists. If not, an exception
+        is raised.
+
+        @param event_listener_id: listener to retrieve
+        @type  event_listener_id: str
+
+        @return: listener instance from the database
+        @rtype:  dict
+
+        @raise MissingResource: if no listener exists at the given ID
+        """
+        collection = EventListener.get_collection()
+
+        try:
+            id = ObjectId(event_listener_id)
+        except InvalidId:
+            raise MissingResource(event_listener=event_listener_id), None, sys.exc_info()[2]
+
+        listener = collection.find_one({'_id' : id})
+
+        if listener is None:
+            raise MissingResource(event_listener=event_listener_id)
+        else:
+            return listener
+
     def delete(self, event_listener_id):
         """
         Deletes the event listener with the given ID. No exception is raised
@@ -78,14 +108,21 @@ class EventListenerManager(object):
 
         @param event_listener_id: database ID for the event listener
         @type  event_listener_id: str
+
+        @raise MissingResource: if no listener exists at the given ID
         """
         collection = EventListener.get_collection()
 
-        existing = collection.find_one(event_listener_id)
-        if not existing:
-            raise MissingResource(event_listener_id=event_listener_id)
+        try:
+            id = ObjectId(event_listener_id)
+        except InvalidId:
+            raise MissingResource(event_listener=event_listener_id), None, sys.exc_info()[2]
 
-        collection.remove({'_id' : event_listener_id})
+        existing = collection.find_one({'_id' : id})
+        if not existing:
+            raise MissingResource(event_listener=event_listener_id)
+
+        collection.remove({'_id' : ObjectId(event_listener_id)})
 
     def update(self, event_listener_id, notifier_config=None, event_types=None):
         """
@@ -121,19 +158,21 @@ class EventListenerManager(object):
 
         _validate_event_types(event_types)
 
-        # Munge the existing configuration
-        munged_config = dict(existing['notifier_config'])
+        # Munge the existing configuration if it was specified
+        if notifier_config:
+            munged_config = dict(existing['notifier_config'])
 
-        remove_us = [k for k in notifier_config.keys() if notifier_config[k] is None]
-        for k in remove_us:
-            munged_config.pop(k, None)
-            notifier_config.pop(k)
+            remove_us = [k for k in notifier_config.keys() if notifier_config[k] is None]
+            for k in remove_us:
+                munged_config.pop(k, None)
+                notifier_config.pop(k)
 
-        munged_config.update(notifier_config)
-        existing['notifier_config'] = munged_config
+            munged_config.update(notifier_config)
+            existing['notifier_config'] = munged_config
 
         # Update the event list
-        existing['event_types'] = event_types
+        if event_types:
+            existing['event_types'] = event_types
 
         # Update the database
         collection.save(existing, safe=True)
