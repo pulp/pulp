@@ -54,17 +54,21 @@ class RepoGroupManager(object):
 
     # repo membership ----------------------------------------------------------
 
-    def add_repo_to_group(self, group_id, repo_id):
-        collection = validate_existing_repo_group(group_id)
-        collection.update({'id': group_id, 'repo_ids': {'$ne': repo_id}},
-                          {'$push': {'repo_ids': repo_id}},
-                          safe=True)
-
-    def remove_repo_from_group(self, group_id, repo_id):
-        collection = validate_existing_repo_group(group_id)
-        collection.update({'id': group_id, 'repo_ids': {'$eq': repo_id}},
-                          {'$pull': {'repo_ids': repo_id}},
-                          safe=True)
+    def remove_repo_from_groups(self, repo_id, group_ids=None):
+        """
+        Remove a repo from the list of repo groups provided. If no repo groups
+        are specified, remove the repo from all repo groups its currently in.
+        (idempotent: useful when deleting repositories)
+        @param repo_id: unique id of the repo to remove from repo groups
+        @type  repo_id: str
+        @param group_ids: list of repo group ids to remove the repo from
+        @type  group_ids: list of None
+        """
+        spec = {}
+        if group_ids is not None:
+            spec = {'id': {'$in': group_ids}}
+        collection = RepoGroup.get_collection()
+        collection.update(spec, {'$pull': {'repo_ids': repo_id}}, multi=True, safe=True)
 
     def associate(self, group_id, criteria):
         group_collection = validate_existing_repo_group(group_id)
