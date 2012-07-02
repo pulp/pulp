@@ -109,7 +109,7 @@ class RepoGroupAssociateAction(JSONController):
         criteria = Criteria.from_json_doc(self.params())
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                action_tag(['repo_group_associate'])]
+                action_tag('repo_group_associate')]
         call_request = CallRequest(manager.associate,
                                    [repo_group_id, criteria],
                                    tags=tags)
@@ -125,7 +125,7 @@ class RepoGroupUnassociateAction(JSONController):
         criteria = Criteria.from_json_doc(self.params())
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                action_tag(['repo_group_unassociate'])]
+                action_tag('repo_group_unassociate')]
         call_request = CallRequest(manager.unassociate,
                                    [repo_group_id, criteria],
                                    tags=tags)
