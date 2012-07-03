@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.310
+Version: 0.0.311
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -417,6 +417,12 @@ exit 0
 %endif
 
 %changelog
+* Tue Jul 03 2012 wes hayutin <whayutin@redhat.com> 0.0.311-1
+- 837406 need to add yum groups to pulp spec for rhel5 to build
+  (whayutin@redhat.com)
+- test_repo_manager fails on rhel5 due to the way the data is passed to magic
+  mock (whayutin@redhat.com)
+
 * Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
 - Unit tests for event listener update (jason.dobies@redhat.com)
 - Added event listener REST APIs (jason.dobies@redhat.com)
