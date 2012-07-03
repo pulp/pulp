@@ -73,7 +73,7 @@ def _merge_related_objects(name, manager, repos):
         repo[name] = []
 
     for item in manager.find_by_repo_list(repo_ids):
-        repo_dict[item.repo_id][name].append(item)
+        repo_dict[item['repo_id']][name].append(item)
 
     return repos
 

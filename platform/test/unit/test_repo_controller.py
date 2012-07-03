@@ -80,8 +80,8 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(0, len(body))
 
     def test_merge_related_objects(self):
-        REPOS = [Repo('dummy-1', 'dummy')]
-        IMPORTERS = [RepoImporter('dummy-1', 'importer-1', '1', {})]
+        REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
+        IMPORTERS = [{'repo_id' : 'dummy-1', 'id' : 'importer-1', 'importer_type_id' : 1}]
 
         # mock out these managers so we don't hit the DB
         mock_importer_manager = mock.MagicMock()
