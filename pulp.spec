@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        20%{?dist}
+Release:        21%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,6 +500,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Jul 03 2012 James Slagle <jslagle@redhat.com> 0.0.263-21
+- Remove %%{dist} from Requires lines (jslagle@redhat.com)
+
 * Mon Jul 02 2012 James Slagle <jslagle@redhat.com> 0.0.263-20
 - Bump release (jslagle@redhat.com)
 - rhui test cases where failing.. pulling updates under test/ from v1
