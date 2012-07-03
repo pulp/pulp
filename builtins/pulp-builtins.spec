@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.309
+Version: 0.0.310
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -88,6 +88,12 @@ client capabilites.
 
 
 %changelog
+* Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
+- Added pulp_upload extension to pulp-dev and the spec
+  (jason.dobies@redhat.com)
+- moving the common unit upload logic out of the rpm plugin into the builtins
+  tree (dradez@redhat.com)
+
 * Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
 - 
 
