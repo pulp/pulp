@@ -118,3 +118,42 @@ class EventResourceControllerTests(base.PulpWebserviceTests):
 
         # Verify
         self.assertEqual(404, status)
+
+    def test_update_only_config(self):
+        # Setup
+        manager = manager_factory.event_listener_manager()
+        created = manager.create(rest_api.TYPE_ID, {'a' : 'a', 'b' : 'b'}, [event_data.TYPE_REPO_SYNC_STARTED])
+
+        # Test
+        new_config = {'a' : 'x', 'c' : 'c'}
+        body = {
+            'notifier_config' : new_config,
+        }
+
+        status, body = self.put('/v2/events/%s/' % created['id'], body)
+
+        # Verify
+        self.assertEqual(200, status)
+
+        updated = EventListener.get_collection().find_one({'_id' : ObjectId(created['_id'])})
+        expected_config = {'a' : 'x', 'b' : 'b', 'c' : 'c'}
+        self.assertEqual(updated['notifier_config'], expected_config)
+
+    def test_update_only_event_types(self):
+        # Setup
+        manager = manager_factory.event_listener_manager()
+        created = manager.create(rest_api.TYPE_ID, {'a' : 'a', 'b' : 'b'}, [event_data.TYPE_REPO_SYNC_STARTED])
+
+        # Test
+        new_event_types = [event_data.TYPE_REPO_SYNC_FINISHED]
+        body = {
+            'event_types' : new_event_types,
+        }
+
+        status, body = self.put('/v2/events/%s/' % created['id'], body)
+
+        # Verify
+        self.assertEqual(200, status)
+
+        updated = EventListener.get_collection().find_one({'_id' : ObjectId(created['_id'])})
+        self.assertEqual(updated['event_types'], new_event_types)

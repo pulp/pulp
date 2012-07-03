@@ -113,14 +113,7 @@ class EventListenerManager(object):
         """
         collection = EventListener.get_collection()
 
-        try:
-            id = ObjectId(event_listener_id)
-        except InvalidId:
-            raise MissingResource(event_listener=event_listener_id), None, sys.exc_info()[2]
-
-        existing = collection.find_one({'_id' : id})
-        if not existing:
-            raise MissingResource(event_listener=event_listener_id)
+        self.get(event_listener_id) # check for MissingResource
 
         collection.remove({'_id' : ObjectId(event_listener_id)})
 
@@ -152,14 +145,10 @@ class EventListenerManager(object):
         collection = EventListener.get_collection()
 
         # Validation
-        existing = collection.find_one(event_listener_id)
-        if not existing:
-            raise MissingResource(event_listener_id=event_listener_id)
-
-        _validate_event_types(event_types)
+        existing = self.get(event_listener_id) # will raise MissingResource
 
         # Munge the existing configuration if it was specified
-        if notifier_config:
+        if notifier_config is not None:
             munged_config = dict(existing['notifier_config'])
 
             remove_us = [k for k in notifier_config.keys() if notifier_config[k] is None]
@@ -171,14 +160,15 @@ class EventListenerManager(object):
             existing['notifier_config'] = munged_config
 
         # Update the event list
-        if event_types:
+        if event_types is not None:
+            _validate_event_types(event_types)
             existing['event_types'] = event_types
 
         # Update the database
         collection.save(existing, safe=True)
 
         # Reload to return
-        existing = collection.find_one(event_listener_id)
+        existing = collection.find_one({'_id' : ObjectId(event_listener_id)})
         return existing
 
     def list(self):

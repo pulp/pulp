@@ -124,7 +124,7 @@ class EventListenerManagerTests(base.PulpServerTests):
             self.manager.update('foo', {}, [event_data.TYPE_REPO_SYNC_STARTED])
             self.fail()
         except MissingResource, e:
-            self.assertEqual(e.resources['event_listener_id'], 'foo')
+            self.assertEqual(e.resources['event_listener'], 'foo')
 
     def test_update_invalid_types(self):
         # Setup
