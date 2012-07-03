@@ -30,15 +30,15 @@ from pulp_rpm.yum_plugin import util
 from pulp.plugins.model import Repository
 import rpm_support_base
 
-class TestRPMs(rpm_support_base.PulpRPMTests):
+class TestUploadUnit(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
-        super(TestRPMs, self).setUp()
+        super(TestUploadUnit, self).setUp()
         self.saved_verify_exists = util.verify_exists
         self.init()
 
     def tearDown(self):
-        super(TestRPMs, self).tearDown()
+        super(TestUploadUnit, self).tearDown()
         util.verify_exists = self.saved_verify_exists
         self.clean()
 

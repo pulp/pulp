@@ -24,8 +24,7 @@ from yum.repos import RepoStorage
 
 log = logging.getLogger(__name__)
 
-CACHE_DIR="/var/lib/pulp/cache/"
-
+CACHE_DIR="/tmp/pulp/cache"
 
 class DepSolver:
     def __init__(self, repos, pkgs=[]):
@@ -40,8 +39,8 @@ class DepSolver:
          Load the repos into repostore to query package dependencies
         """
         for repo in self.repos:
-            self.yrepo = yum.yumRepo.YumRepository(repo['id'])
-            self.yrepo.baseurl = ["file://%s" % str(repo['importer_working_dir'])]
+            self.yrepo = yum.yumRepo.YumRepository(repo.id) # repo['id'])
+            self.yrepo.baseurl = ["file://%s" % str(repo.importer_working_dir)]  #repo['importer_working_dir'])]
             self.yrepo.basecachedir = CACHE_DIR
             self._repostore.add(self.yrepo)
 
@@ -98,7 +97,7 @@ class DepSolver:
             to_solve = []
             for dep, pkgs in found.items():
                 for pkg in pkgs:
-                    name, version, epoch, release, arch = pkg
+                    name, version, epoch, release, arch, checksumtype, checksum = pkg
                     ndep = "%s-%s-%s.%s" % (name, version, release, arch)
                     solved = list(set(solved))
                     if ndep not in solved:
@@ -153,9 +152,11 @@ class DepSolver:
         for req, rlist in reqlist.items():
             found[req] = []
             for r in rlist:
-                dep = [r.name, r.version, r.epoch, r.release, r.arch]
-                if dep not in found[req]:
-                    found[req].append(dep)
+                checksums = r.checksums
+                for (checksumtype, checksum, num) in checksums:
+                    dep = (r.name, r.epoch, r.version, r.release, r.arch, checksumtype, checksum)
+                    if dep not in found[req]:
+                        found[req].append(dep)
         return found, notfound
 
     def printable_result(self, results):
@@ -209,7 +210,9 @@ if __name__ == '__main__':
     repos = [{'id' : 'testrepo', 'importer_working_dir' : '/var/lib/pulp/working/testrepo/importers/yum_importer/testrepo/'}]
     dsolve = DepSolver(repos, pkgs=['pulp-server'])
     results = dsolve.getDependencylist()
-    print dsolve.printable_result(results)
+    print dsolve.processResults(results)
+    #print dsolve.printable_result(results)
     results = dsolve.getRecursiveDepList()
-    print dsolve.printable_result(results)
+    print dsolve.processResults(results)
+    #print dsolve.printable_result(results)
     dsolve.cleanup()

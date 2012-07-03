@@ -152,7 +152,7 @@ def form_rpm_metadata(rpm):
     return metadata
 
 def form_lookup_key(rpm):
-    rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm["arch"], rpm["checksumtype"], rpm["checksum"])
+    rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm['release'], rpm["arch"], rpm["checksumtype"], rpm["checksum"])
     return rpm_key
 
 def form_report(report):
