@@ -12,7 +12,8 @@ and :term:`distributors <distributor>` associated with it.
 | :path:`/v2/repositories/<repo_id>/`
 | :permission:`read`
 | :param_list:`get` include the key "details" with any value that evaluates to
-  True to have importers and distributors included in the results.
+  True to have importers and distributors included in the results. alternatively
+  use the keys "importers" or "distributors" to get one or the other.
 | :response_list:`_`
 
 * :response_code:`200,if the repository exists`
