@@ -24,11 +24,11 @@ from yum_importer.comps import ImporterComps, PKG_GROUP_TYPE_ID, PKG_CATEGORY_TY
 from yum_importer.distribution import DISTRO_TYPE_ID
 from yum_importer.drpm import DRPM_TYPE_ID
 from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID, link_errata_rpm_units
-from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID
-
+from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID, get_existing_units
+from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import SyncReport
-from pulp_rpm.yum_plugin import util
+from pulp_rpm.yum_plugin import util, depsolver
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
@@ -477,6 +477,54 @@ class YumImporter(Importer):
             details['errors'].append(msg)
             summary['state'] = 'FAILED'
             return False, summary, details
+        summary['state'] = 'FINISHED'
+        return True, summary, details
+
+    def resolve_dependencies(self, repo, units, dependency_conduit, config):
+        _LOG.info("Resolve Dependencies Invoked")
+        try:
+            status, summary, details = self._resolve_dependencies(repo, units, dependency_conduit, config)
+            if status:
+                report = SyncReport(True, 0, 0, 0, summary, details)
+            else:
+                report = SyncReport(False, 0, 0, 0, summary, details)
+        except Exception, e:
+            _LOG.error("Caught Exception: %s" % (e))
+            summary = {}
+            summary["error"] = str(e)
+            report = SyncReport(False, 0, 0, 0, summary, None)
+        return report
+
+    def _resolve_dependencies(self, repo, units, dependency_conduit, config):
+        summary = {}
+        details = {'errors' : []}
+        pkglist =  []
+        for unit in units:
+            if unit.type_id == 'rpm':
+                print "%s-%s-%s.%s" % (unit.unit_key['name'], unit.unit_key['version'], unit.unit_key['release'], unit.unit_key['arch'])
+                pkglist.append("%s-%s-%s.%s" % (unit.unit_key['name'], unit.unit_key['version'], unit.unit_key['release'], unit.unit_key['arch']))
+        dsolve = depsolver.DepSolver([repo], pkgs=pkglist)
+        if config.get('recursive'):
+            results = dsolve.getRecursiveDepList()
+        else:
+            results = dsolve.getDependencylist()
+        solved, unsolved = dsolve.processResults(results)
+        dep_pkgs_map = {}
+        _LOG.info(" results from depsolver %s" % results)
+        criteria = Criteria(type_ids=[RPM_TYPE_ID])
+        existing_units = get_existing_units(dependency_conduit, criteria)
+        for dep, pkgs in solved.items():
+            dep_pkgs_map[dep] = []
+            for pkg in pkgs:
+                if not existing_units.has_key(pkg):
+                    continue
+                epkg = existing_units[pkg]
+                dep_pkgs_map[dep].append(epkg)
+        _LOG.debug("deps packages suggested %s" % solved)
+        summary['resolved'] = dep_pkgs_map
+        summary['unresolved'] = unsolved
+        details['printable_dependency_result'] = dsolve.printable_result(results)
+        dsolve.cleanup()
         summary['state'] = 'FINISHED'
         return True, summary, details
 
