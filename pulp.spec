@@ -39,9 +39,9 @@ Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson >= 2.0.9
-Requires: python-oauth2 >= 1.5.170-2.pulp%{?dist}
+Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
-Requires: python-isodate >= 0.4.4-3.pulp%{?dist}
+Requires: python-isodate >= 0.4.4-3.pulp
 Requires: python-BeautifulSoup
 Requires: grinder >= 0.0.136
 Requires: httpd
@@ -51,7 +51,7 @@ Requires: python-ldap
 Requires: python-gofer >= 0.64
 Requires: crontabs
 Requires: acl
-Requires: mod_wsgi >= 3.3-1.pulp%{?dist}
+Requires: mod_wsgi >= 3.3-1.pulp
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
@@ -155,7 +155,7 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.64
 Requires:       grinder >= 0.0.136
 Requires:       httpd
-Requires:       mod_wsgi >= 3.3-1.pulp%{?dist}
+Requires:       mod_wsgi >= 3.3-1.pulp
 Requires:       mod_ssl
 %if 0%{?rhel} == 5
 Requires: m2crypto
