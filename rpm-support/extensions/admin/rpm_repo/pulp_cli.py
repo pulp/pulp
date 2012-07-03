@@ -256,14 +256,16 @@ class YumRepoListCommand(PulpCliCommand):
         self.prompt.render_title('Repositories')
 
         show_details = kwargs['details']
-
-        repo_list = self.context.server.repo.repositories().response_body
+        query_params = {}
 
         # Summary mode is default
         filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
 
         if show_details:
             filters += ['auto_publish', 'sync_config', 'publish_config']
+            query_params['details'] = True
+
+        repo_list = self.context.server.repo.repositories(query_params).response_body
 
         # Process each repository to clean up/restructure various data
         for r in repo_list:
