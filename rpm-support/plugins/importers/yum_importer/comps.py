@@ -334,14 +334,7 @@ class ImporterComps(object):
         repo_dir = "%s/%s" % (repo.working_dir, repo.id)
         progress = {
                 "state":"IN_PROGRESS", 
-                "num_available_groups":0,
-                "num_available_categories":0,
-                "num_existing_groups": 0,
-                "num_existing_categories": 0,
-                "num_orphaned_groups": 0,
-                "num_orphaned_categories": 0,
-                "num_new_groups": 0,
-                "num_new_categories": 0}
+                }
         set_progress(progress)
 
         start = time.time()
@@ -378,12 +371,7 @@ class ImporterComps(object):
 
         progress = {
                 "state":"FINISHED", 
-                "num_available_groups":len(available_groups),
-                "num_available_categories":len(available_categories),
-                "num_orphaned_groups": len(orphaned_group_units),
-                "num_orphaned_categories": len(orphaned_category_units),
-                "num_new_groups": len(new_groups),
-                "num_new_categories": len(new_categories)}
+                }
         set_progress(progress)
 
         summary = dict()

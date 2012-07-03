@@ -343,7 +343,8 @@ class YumImporter(Importer):
         progress_status = {
                 "metadata": {"state": "NOT_STARTED"},
                 "content": {"state": "NOT_STARTED"},
-                "errata": {"state": "NOT_STARTED"}
+                "errata": {"state": "NOT_STARTED"},
+                "comps": {"state": "NOT_STARTED"},
                 }
         def progress_callback(type_id, status):
             if type_id == "content":
@@ -366,7 +367,7 @@ class YumImporter(Importer):
         return (rpm_status and errata_status and comps_status), summary, details
 
     def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
-        _LOG.info("Upload Unit Invoked")
+        _LOG.info("Upload Unit Invoked: repo.id <%s> type_id <%s>, unit_key <%s>" % (repo.id, type_id, unit_key))
         try:
             status, summary, details = self._upload_unit(repo, type_id, unit_key, metadata, file_path, conduit, config)
             if status:
@@ -374,7 +375,7 @@ class YumImporter(Importer):
             else:
                 report = SyncReport(False, int(summary['num_units_saved']), 0, 0, summary, details)
         except Exception, e:
-            _LOG.error("Caught Exception: %s" % (e))
+            _LOG.exception("Caught Exception: %s" % (e))
             summary = {}
             summary["error"] = str(e)
             report = SyncReport(False, 0, 0, 0, summary, None)
@@ -382,72 +383,101 @@ class YumImporter(Importer):
 
     def _upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
         _LOG.info("Invoking upload_unit with file_path: %s; metadata: %s; unit_key: %s; type_id: %s" % (file_path, metadata, unit_key, type_id))
+        if type_id == RPM_TYPE_ID:
+            return self._upload_unit_rpm(repo, unit_key, metadata, file_path, conduit, config)
+        elif type_id == ERRATA_TYPE_ID:
+            return self._upload_unit_erratum(repo, unit_key, metadata, conduit, config) 
+        elif type_id in (PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID):
+            return self._upload_unit_pkg_group_or_category(repo, type_id, unit_key, metadata, conduit, config)
+        else:
+            return False, {}, {}
+
+    def _upload_unit_rpm(self, repo, unit_key, metadata, file_path, conduit, config):
         summary = {}
         details = {'errors' : []}
-        if type_id == 'rpm':
-            summary['filename'] = metadata['filename']
-            summary['num_units_processed'] = len([file_path])
-            summary['num_units_saved'] = 0
-            if not os.path.exists(file_path):
-                msg = "File path [%s] missing" % file_path
-                _LOG.error(msg)
-                details['errors'].append(msg)
-                return False, summary, details
-            relative_path = "%s/%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
-                                                          unit_key['release'], unit_key['arch'], unit_key['checksum'], metadata['filename'])
-            u = conduit.init_unit(type_id, unit_key, metadata, relative_path)
-            new_path = u.storage_path
-            try:
-                if os.path.exists(new_path):
-                    existing_checksum = util.get_file_checksum(filename=new_path, hashtype=unit_key['checksumtype'])
-                    if existing_checksum != unit_key['checksum']:
-                        # checksums dont match, remove existing file
-                        os.remove(new_path)
-                    else:
-                        _LOG.info("Existing file is the same ")
-                if not os.path.isdir(os.path.dirname(new_path)):
-                    os.makedirs(os.path.dirname(new_path))
-                # copy the unit to the final path
-                shutil.copy(file_path, new_path)
-            except (IOError, OSError), e:
-                msg = "Error copying upload file to final location [%s]; Error %s" % (new_path, e)
-                details['errors'].append(msg)
-                _LOG.error(msg)
-                return False, summary, details
+        summary['filename'] = metadata['filename']
+        summary['num_units_processed'] = len([file_path])
+        summary['num_units_saved'] = 0
+        if not os.path.exists(file_path):
+            msg = "File path [%s] missing" % file_path
+            _LOG.error(msg)
+            details['errors'].append(msg)
+            return False, summary, details
+        relative_path = "%s/%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
+                                                        unit_key['release'], unit_key['arch'], unit_key['checksum'], metadata['filename'])
+        u = conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, relative_path)
+        new_path = u.storage_path
+        try:
+            if os.path.exists(new_path):
+                existing_checksum = util.get_file_checksum(filename=new_path, hashtype=unit_key['checksumtype'])
+                if existing_checksum != unit_key['checksum']:
+                    # checksums dont match, remove existing file
+                    os.remove(new_path)
+                else:
+                    _LOG.info("Existing file is the same ")
+            if not os.path.isdir(os.path.dirname(new_path)):
+                os.makedirs(os.path.dirname(new_path))
+            # copy the unit to the final path
+            shutil.copy(file_path, new_path)
+        except (IOError, OSError), e:
+            msg = "Error copying upload file to final location [%s]; Error %s" % (new_path, e)
+            details['errors'].append(msg)
+            _LOG.error(msg)
+            return False, summary, details
+        conduit.save_unit(u)
+        summary['num_units_processed'] = len([file_path])
+        summary['num_units_saved'] = len([file_path])
+        _LOG.info("unit %s successfully saved" % u)
+        # symlink content to repo working directory
+        symlink_path = "%s/%s/%s" % (repo.working_dir, repo.id, metadata['filename'])
+        try:
+            if os.path.islink(symlink_path):
+                os.unlink(symlink_path)
+            if not os.path.isdir(os.path.dirname(symlink_path)):
+                os.makedirs(os.path.dirname(symlink_path))
+            os.symlink(new_path, symlink_path)
+            _LOG.info("Successfully symlinked to final location %s" % symlink_path)
+        except (IOError, OSError), e:
+            msg = "Error creating a symlink to repo working directory; Error %s" % e
+            _LOG.error(msg)
+            details['errors'].append(msg)
+        summary["state"] = "FINISHED"
+        if len(details['errors']):
+            summary['num_errors'] = len(details['errors'])
+            summary["state"] = "FAILED"
+            return False, summary, details
+        _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
+        return True, summary, details
+            
+    def _upload_unit_erratum(self, repo, unit_key, metadata, conduit, config): 
+        summary = {}
+        details = {'errors' : []}
+        try:
+            u = conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
             conduit.save_unit(u)
-            summary['num_units_processed'] = len([file_path])
-            summary['num_units_saved'] = len([file_path])
-            _LOG.info("unit %s successfully saved" % u)
-            # symlink content to repo working directory
-            symlink_path = "%s/%s/%s" % (repo.working_dir, repo.id, metadata['filename'])
-            try:
-                if os.path.islink(symlink_path):
-                    os.unlink(symlink_path)
-                if not os.path.isdir(os.path.dirname(symlink_path)):
-                    os.makedirs(os.path.dirname(symlink_path))
-                os.symlink(new_path, symlink_path)
-                _LOG.info("Successfully symlinked to final location %s" % symlink_path)
-            except (IOError, OSError), e:
-                msg = "Error creating a symlink to repo working directory; Error %s" % e
-                _LOG.error(msg)
-                details['errors'].append(msg)
-            summary["state"] = "FINISHED"
-            if len(details['errors']):
-                summary['num_errors'] = len(details['errors'])
-                summary["state"] = "FAILED"
-                return False, summary, details
-            _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
-        elif type_id == "erratum":
-            try:
-                u = conduit.init_unit(type_id, unit_key, metadata, None)
-                conduit.save_unit(u)
-                link_errata_rpm_units(conduit, {unit_key['id']: u})
-            except Exception, e:
-                msg = "Error uploading errata unit %s; Error %s" % (unit_key['id'], e)
-                _LOG.error(msg)
-                details['errors'].append(msg)
-                summary['state'] = 'FAILED'
-            summary['state'] = 'FINISHED'
+            link_errata_rpm_units(conduit, {unit_key['id']: u})
+        except Exception, e:
+            msg = "Error uploading errata unit %s; Error %s" % (unit_key['id'], e)
+            _LOG.error(msg)
+            details['errors'].append(msg)
+            summary['state'] = 'FAILED'
+            return False, summary, details
+        summary['state'] = 'FINISHED'
+        return True, summary, details
+
+    def _upload_unit_pkg_group_or_category(self, repo, type_id, unit_key, metadata, conduit, config):
+        summary = {}
+        details = {'errors' : []}
+        try:
+            u = conduit.init_unit(type_id, unit_key, metadata, None)
+            conduit.save_unit(u)
+        except Exception, e:
+            msg = "Error uploading %s unit %s; Error %s" % (type_id, unit_key['id'], e)
+            _LOG.error(msg)
+            details['errors'].append(msg)
+            summary['state'] = 'FAILED'
+            return False, summary, details
+        summary['state'] = 'FINISHED'
         return True, summary, details
 
     def cancel_sync_repo(self):

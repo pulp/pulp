@@ -24,15 +24,20 @@ TYPE_SRPM = 'srpm'
 TYPE_DRPM = 'drpm'
 TYPE_ERRATUM = 'erratum'
 TYPE_DISTRIBUTION = 'distribution'
+TYPE_PACKAGE_GROUP = 'package_group'
+TYPE_PACKAGE_CATEGORY = 'package_category'
 
 # Intentionally does not include distributions; they should be looked up specifically
-ALL_TYPES = (TYPE_RPM, TYPE_SRPM, TYPE_DRPM, TYPE_ERRATUM)
+ALL_TYPES = (TYPE_RPM, TYPE_SRPM, TYPE_DRPM, TYPE_ERRATUM, TYPE_PACKAGE_GROUP, TYPE_PACKAGE_CATEGORY)
 
 # List of all fields that the user can elect to display for each supported type
 FIELDS_RPM = ('arch', 'buildhost', 'checksum', 'checksumtype', 'description',
               'epoch', 'filename', 'license', 'name', 'provides', 'release',
               'requires', 'vendor', 'version')
 FIELDS_ERRATA = ('id', 'title', 'summary', 'severity', 'type', 'description')
+FIELDS_PACKAGE_GROUP = ('id', 'name', 'description', 'mandatory_package_names', 'conditional_package_names', \
+                        'optional_package_names', 'default_package_names', 'user_visible')
+FIELDS_PACKAGE_CATEGORY = ('id', 'name', 'description', 'packagegroupids')
 
 # Used when generating the --fields help text so it can be customized by type
 FIELDS_BY_TYPE = {
@@ -40,6 +45,8 @@ FIELDS_BY_TYPE = {
     TYPE_SRPM : FIELDS_RPM,
     TYPE_DRPM : FIELDS_RPM,
     TYPE_ERRATUM : FIELDS_ERRATA,
+    TYPE_PACKAGE_GROUP : FIELDS_PACKAGE_GROUP,
+    TYPE_PACKAGE_CATEGORY : FIELDS_PACKAGE_CATEGORY,
 }
 
 # Ordering of metadata fields in each type. Keep in mind these are the display
@@ -47,6 +54,8 @@ FIELDS_BY_TYPE = {
 # list from the server is dictated by the --ascending/--descending options.
 ORDER_RPM = ['name', 'epoch', 'version', 'release', 'arch']
 ORDER_ERRATA = ['id', 'tite', 'summary', 'severity', 'type', 'description']
+ORDER_PACKAGE_GROUP = ['id', 'name', 'description', 'default_package_names', 'mandatory_package_names', 'optional_package_names', 'conditional_package_names', 'user_visible']
+ORDER_PACKAGE_CATEGORY = ['id', 'name', 'description', 'packagegroupids']
 
 # Used to lookup the right order list based on type
 ORDER_BY_TYPE = {
@@ -54,6 +63,8 @@ ORDER_BY_TYPE = {
     TYPE_SRPM : ORDER_RPM,
     TYPE_DRPM : ORDER_RPM,
     TYPE_ERRATUM : ORDER_ERRATA,
+    TYPE_PACKAGE_GROUP : ORDER_PACKAGE_GROUP,
+    TYPE_PACKAGE_CATEGORY : ORDER_PACKAGE_CATEGORY,
 }
 
 # Format to use when displaying the details of a single erratum
@@ -109,6 +120,9 @@ def initialize(context):
     drpm_command = GeneralUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
     errata_command = ErrataCommand(context, 'errata', _('search errata in a repository'))
     distro_command = DistributionCommand(context, 'distribution', _('list distributions in a repository'))
+    package_group_command = GeneralUnitSearchCommand(context, 'package_group', _('search for package groups in a repository'), _('Package Group Units'), [TYPE_PACKAGE_GROUP])
+    package_category_command = GeneralUnitSearchCommand(context, 'package_category', _('search for package categories (groups of package groups) in a repository'), 
+            _('Package Category Units'), [TYPE_PACKAGE_CATEGORY])
 
     units_section.add_command(all_command)
     units_section.add_command(rpm_command)
@@ -116,6 +130,8 @@ def initialize(context):
     units_section.add_command(drpm_command)
     units_section.add_command(errata_command)
     units_section.add_command(distro_command)
+    units_section.add_command(package_group_command)
+    units_section.add_command(package_category_command)
 
 # -- commands -----------------------------------------------------------------
 

@@ -474,7 +474,9 @@ class RepoManagerTests(base.PulpServerTests):
         EXPECT = ({'id': 'repo-123'}, {'$inc': {'content_unit_count': 7}})
 
         self.manager.update_unit_count(*ARGS)
-        mock_update.assert_called_once_with(*EXPECT, safe=True)
+        #mock_update.assert_called_once_with(*EXPECT, safe=True)
+        # if the data passed to mock is a var in this case the test fails.. weird..
+        mock_update.assert_called_once_with({'id': 'repo-123'}, {'$inc': {'content_unit_count': 7}}, safe=True)
 
     def test_update_unit_count_with_db(self):
         """
