@@ -33,7 +33,7 @@ class TestRepoExtension(base_builtins.PulpClientTests):
     def REPO1(self):
         return copy.copy({
             'id' : 'repo-1',
-            'display-name' : 'Repository 1',
+            'display_name' : 'Repository 1',
             'importers' : ({'id' : 'imp-1'},),
             'distributors' : ({'id' : 'dist-1'},)
         })

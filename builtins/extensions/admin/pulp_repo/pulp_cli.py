@@ -132,7 +132,7 @@ class RepoSection(PulpCliSection):
 
         # Default flags to render_document_list
         filters = None
-        order = ['id', 'display-name', 'description', 'content_unit_count']
+        order = ['id', 'display_name', 'description', 'content_unit_count']
 
         if kwargs['summary'] is True:
             filters = ['id', 'display-name']
