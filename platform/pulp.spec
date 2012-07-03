@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.309
+Version: 0.0.310
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -412,6 +412,15 @@ exit 0
 %endif
 
 %changelog
+* Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
+- Unit tests for event listener update (jason.dobies@redhat.com)
+- Added event listener REST APIs (jason.dobies@redhat.com)
+- fixing error in user update when updating roles which was causing admin
+  permission error in the latest qe build (skarmark@redhat.com)
+- Fixed incorrect state comparison (jason.dobies@redhat.com)
+- Removed deepcopy call which was hosing up pymongo on RHEL6
+  (jason.dobies@redhat.com)
+
 * Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
 - Wired up unit copy to be able to copy dependencies too
   (jason.dobies@redhat.com)
