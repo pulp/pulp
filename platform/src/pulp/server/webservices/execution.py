@@ -31,7 +31,7 @@ def execute(call_request):
     call_report = coordinator.execute_call(call_request)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise ConflictingOperation(call_report.reasons)
-    if call_report.response in dispatch_constants.CALL_INCOMPLETE_STATES:
+    if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
         raise OperationPostponed(call_report)
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback

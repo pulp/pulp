@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.309
+Version: 0.0.310
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -216,6 +216,11 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
+- Adding depsolver module for rpm importer plugin (pkilambi@redhat.com)
+- moving the common unit upload logic out of the rpm plugin into the builtins
+  tree (dradez@redhat.com)
+
 * Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
 - YumImporter/Distributor update 2 tests to not run if invoked as root  - Tests
   are unable to cause a read error if run as root, so skipping when invoked as

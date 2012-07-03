@@ -156,7 +156,7 @@ class UserManager(object):
                 user['name'] = delta['name']
 
         if 'roles' in delta:
-            if delta['roles'] is not None and not isinstance(delta['roles'], dict):
+            if delta['roles'] is not None and not isinstance(delta['roles'], list):
                 invalid_values.append('roles')
             else:
                 user['roles'] = delta['roles']
