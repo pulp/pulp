@@ -250,6 +250,9 @@ class YumRepoListCommand(PulpCliCommand):
         self.add_option(PulpCliFlag('--details', 'if specified, extra information on the repository will be displayed'))
 
     def list(self, **kwargs):
+        """
+        @param details: if True, include importer and distributor info
+        """
         self.prompt.render_title('Repositories')
 
         show_details = kwargs['details']
@@ -288,7 +291,7 @@ class YumRepoListCommand(PulpCliCommand):
                             r['sync_config'][key] = _('Yes')
 
                     # We don't want to display the proxy password in plain text, so
-                    # if it's present swap it out with astericks
+                    # if it's present swap it out with asterisks
                     if 'proxy_pass' in r['sync_config']:
                         r['sync_config']['proxy_pass'] = '*' * len(r['sync_config']['proxy_pass'])
 
