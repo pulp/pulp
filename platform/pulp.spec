@@ -56,7 +56,7 @@ popd
 %if %{pulp_selinux}
 # SELinux Configuration
 cd selinux/server
-perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!0.0.0!$VER!g;' pulp-server.te
+sed -i "s/policy_module(pulp-server,[0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server,%{version})/" pulp-server.te
 ./build.sh
 cd -
 %endif
