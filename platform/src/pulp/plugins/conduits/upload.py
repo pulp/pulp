@@ -11,11 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.plugins.conduits.mixins import AddUnitMixin
+from pulp.plugins.conduits.mixins import AddUnitMixin, GetRepoUnitsMixin
 
-class UploadConduit(AddUnitMixin):
+class UploadConduit(AddUnitMixin, GetRepoUnitsMixin):
 
     def __init__(self, repo_id, importer_id, association_owner_type,
                  association_owner_id):
         AddUnitMixin.__init__(self, repo_id, importer_id,
                               association_owner_type, association_owner_id)
+        GetRepoUnitsMixin.__init__(self, repo_id)
