@@ -102,7 +102,7 @@ class UploadResourceTests(BaseUploadTest):
 
         # Verify
         self.assertEqual(200, status)
-        self.assertEqual({}, body)
+        self.assertEqual(None, body)
 
         upload_file = self.upload_manager._upload_file_path(upload_id)
         self.assertTrue(not os.path.exists(upload_file))
@@ -126,7 +126,9 @@ class UploadSegmentResourceTests(BaseUploadTest):
             data = f.read(chunk_size)
             if data:
                 url = '/v2/content/uploads/%s/%s/' % (upload_id, offset)
-                self.put(url, data, serialize_json=False)
+                ret = self.put(url, data, serialize_json=False)
+                self.assertEqual(ret[0], 200)
+                self.assertEqual(ret[1], None)
             else:
                 break
             offset += chunk_size
