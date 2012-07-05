@@ -1,8 +1,9 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%define pulp_tag pulp_1.0
 
 Name: grinder
-Version: 0.0.142
-Release: 1%{?dist}
+Version: 0.0.144
+Release: 1%{pulp_tag}%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
@@ -59,8 +60,16 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
-- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+* Thu Jul 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.144-1pulp_1.0
+- 828447 - fix permissions on grinder tmpdir (pkilambi@redhat.com)
+
+* Tue Jun 05 2012 John Matthews <jmatthews@redhat.com> 0.0.143-1pulp_1.0
+- Changing .spec so tito will keep the pulp_1.0 tag in subsequent tagging
+  operations (jmatthews@redhat.com)
+- Change release to include 'pulp_1.0' to avoid version/release conflicts in
+  brew (jmatthews@redhat.com)
+- Adding a low speed limit threshold to recognize a hung connection and abort
+  (jmatthews@redhat.com)
 
 * Wed Mar 21 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.142-1
 - 805543 - adding an optional arg to force fetch files; this is useful for
