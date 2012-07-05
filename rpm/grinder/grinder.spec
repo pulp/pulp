@@ -61,6 +61,19 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Jul 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.144-1pulp_1.0
+- updating grinder to include fix for #828447 (pkilambi@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.142-1].
+  (pkilambi@redhat.com)
+- bumping grinder to 0.142; updating src (pkilambi@redhat.com)
+- Grinder 0.141 (jmatthews@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.141-1].
+  (jmatthews@redhat.com)
+- Bump to grinder 0.141 (jmatthews@redhat.com)
+- Automatic commit of package [grinder] minor release [0.0.139-1].
+  (jortel@redhat.com)
+- rel-eng: add grinder under rpm/. (jortel@redhat.com)
+
+* Thu Jul 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.0.144-1pulp_1.0
 - 828447 - fix permissions on grinder tmpdir (pkilambi@redhat.com)
 
 * Tue Jun 05 2012 John Matthews <jmatthews@redhat.com> 0.0.143-1pulp_1.0
