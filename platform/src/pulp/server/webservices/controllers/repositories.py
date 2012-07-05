@@ -187,6 +187,23 @@ class RepoAdvancedSearch(JSONController):
         Searches based on a Criteria object. Requires a posted parameter
         'criteria' which has a data structure that can be turned into a
         Criteria instance.
+
+        @param criteria:    Required. data structure that can be turned into
+                            an instance of the Criteria model.
+        @type  criteria:    dict
+
+        @param importers:   Optional. iff evaluates to True, will include
+                            each repo's related importers on the 'importers'
+                            attribute.
+        @type  imports:     bool
+
+        @param distributors:    Optional. iff evaluates to True, will include
+                                each repo's related distributors on the
+                                'importers' attribute.
+        @type  distributors:    bool
+
+        @return:    list of matching repositories
+        @rtype:     list
         """
         try:
             criteria_param = self.params()['criteria']
