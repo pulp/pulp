@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.310
+Version: 0.0.311
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -148,6 +148,7 @@ rm -rf %{buildroot}
 
 %package server
 Summary: The pulp platform server
+Group: Development/Languages
 Requires: python-%{name}-common = %{version}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
@@ -171,6 +172,7 @@ Requires: mongodb-server
 Requires: qpid-cpp-server
 # RHEL5
 %if 0%{?rhel} == 5
+Group: Development/Languages
 Requires: m2crypto
 Requires: python-uuid
 Requires: python-ssl
@@ -294,6 +296,7 @@ for content, bind and system specific operations.
 
 %package admin-client
 Summary: Admin tool to administer the pulp server
+Group: Development/Languages
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
@@ -319,6 +322,7 @@ synching, and to kick off remote actions on consumers.
 
 %package consumer-client
 Summary: Consumer tool to administer the pulp consumer.
+Group: Development/Languages
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
@@ -342,6 +346,7 @@ A tool used to administer a pulp consumer.
 
 %package agent
 Summary: The Pulp agent
+Group: Development/Languages
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
 Requires: gofer >= 0.70
@@ -412,6 +417,12 @@ exit 0
 %endif
 
 %changelog
+* Tue Jul 03 2012 wes hayutin <whayutin@redhat.com> 0.0.311-1
+- 837406 need to add yum groups to pulp spec for rhel5 to build
+  (whayutin@redhat.com)
+- test_repo_manager fails on rhel5 due to the way the data is passed to magic
+  mock (whayutin@redhat.com)
+
 * Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
 - Unit tests for event listener update (jason.dobies@redhat.com)
 - Added event listener REST APIs (jason.dobies@redhat.com)

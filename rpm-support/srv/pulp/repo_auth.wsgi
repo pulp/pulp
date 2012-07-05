@@ -10,7 +10,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.repo_auth import oid_validation, identity_validation, auth_enabled_validation
+from pulp_rpm.repo_auth import oid_validation, identity_validation, auth_enabled_validation
 
 # -- constants --------------------------------------------------------------------
 
