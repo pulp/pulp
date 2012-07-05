@@ -507,6 +507,8 @@ class RepoGroup(Model):
     Represents a group of repositories for doing batch queries and operations
     """
 
+    collection_name = 'repo_groups'
+
     unique_indices = ('id',)
     search_indices = ('display_name', 'repo_ids')
 
