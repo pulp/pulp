@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Jul 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.5-1
+- updating grinder to include fix for #828447 (pkilambi@redhat.com)
+
+* Thu Jul 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.5-1
 - 828447 - fix permissions on grinder tmpdir (pkilambi@redhat.com)
 
 * Thu Jun 14 2012 John Matthews <jmatthews@redhat.com> 0.1.4-1
