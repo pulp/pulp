@@ -518,7 +518,7 @@ class RepoGroup(Model):
         self.id = id
         self.display_name = display_name
         self.description = description
-        self.repo_ids = repo_ids or None
+        self.repo_ids = repo_ids or []
         self.notes = notes or {}
         self.scratchpad = {}
 
