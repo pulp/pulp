@@ -26,6 +26,8 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.repository import Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -77,12 +79,47 @@ def _merge_related_objects(name, manager, repos):
 
     return repos
 
+
 # -- repo controllers ---------------------------------------------------------
 class RepoCollection(JSONController):
 
     # Scope: Collection
     # GET:   Retrieve all repositories in the system
     # POST:  Repository Create
+
+    @staticmethod
+    def _process_repos(repos, importers=False, distributors=False):
+        """
+        Apply standard processing to a collection of repositories being returned
+        to a client.  Adds the object link and optionally adds related importers
+        and distributors.
+
+        @param repos: collection of repositories
+        @type  repos: list, tuple
+
+        @param importers:   iff True, adds related importers under the
+                            attribute "importers".
+        @type  importers:   bool
+
+        @param distributors:    iff True, adds related distributors under the
+                                attribute "distributors".
+        @type  distributors:    bool
+
+        @return the same list that was passed in, just for convenience. The list
+                itself is not modified- only its members are modified in-place.
+        @rtype  list of Repo instances
+        """
+        if importers:
+            _merge_related_objects(
+                'importers', manager_factory.repo_importer_manager(), repos)
+        if distributors:
+            _merge_related_objects(
+                'distributors', manager_factory.repo_distributor_manager(), repos)
+
+        for repo in repos:
+            repo.update(serialization.link.child_link_obj(repo['id']))
+
+        return repos
 
     @auth_required(READ)
     def GET(self):
@@ -100,13 +137,11 @@ class RepoCollection(JSONController):
             query_params['importers'] = True
             query_params['distributors'] = True
 
-        if query_params.get('importers', False):
-            _merge_related_objects('importers', manager_factory.repo_importer_manager(), all_repos)
-        if query_params.get('distributors', False):
-            _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), all_repos)
-
-        for repo in all_repos:
-            repo.update(serialization.link.child_link_obj(repo['id']))
+        self._process_repos(
+            all_repos,
+            query_params.get('importers', False),
+            query_params.get('distributors', False)
+        )
 
         # Return the repos or an empty list; either way it's a 200
         return self.ok(all_repos)
@@ -143,6 +178,29 @@ class RepoCollection(JSONController):
         repo = execution.execute_sync(call_request)
         repo.update(serialization.link.child_link_obj(id))
         return self.created(id, repo)
+
+
+class RepoAdvancedSearch(JSONController):
+    @auth_required(READ)
+    def POST(self):
+        """
+        Searches based on a Criteria object. Requires a posted parameter
+        'criteria' which has a data structure that can be turned into a
+        Criteria instance.
+        """
+        try:
+            criteria_param = self.params()['criteria']
+        except KeyError:
+            raise exceptions.MissingValue(['criteria'])
+        criteria = Criteria.from_json_doc(criteria_param)
+        repos = list(Repo.get_collection().query(criteria))
+
+        RepoCollection._process_repos(
+            repos,
+            self.params().get('importers', False),
+            self.params().get('distributors', False)
+        )
+        return self.ok(repos)
 
 
 class RepoResource(JSONController):
@@ -927,7 +985,8 @@ class RepoUnitAdvancedSearch(JSONController):
 # These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
     '/', 'RepoCollection', # collection
-    '/([^/]+)/$', 'RepoResource', # resourcce
+    '/search/$', 'RepoAdvancedSearch', # resource search
+    '/([^/]+)/$', 'RepoResource', # resource
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
     '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
