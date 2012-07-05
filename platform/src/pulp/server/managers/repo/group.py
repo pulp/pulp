@@ -92,6 +92,24 @@ class RepoGroupManager(object):
                                 {'$pull': {'repo_ids': {'$in': repo_ids}}},
                                 safe=True)
 
+    # notes --------------------------------------------------------------------
+
+    def add_notes(self, group_id, notes):
+        group_collection = validate_existing_repo_group(group_id)
+        set_doc = dict(('notes.' + k, v) for k, v in notes.items())
+        group_collection.update({'id': group_id}, {'$set': set_doc}, safe=True)
+
+    def remove_notes(self, group_id, keys):
+        group_collection = validate_existing_repo_group(group_id)
+        unset_doc = dict(('notes.' + k, 1) for k in keys)
+        group_collection.update({'id': group_id}, {'$unset': unset_doc}, safe=True)
+
+    def set_note(self, group_id, key, value):
+        self.add_notes(group_id, {key: value})
+
+    def unset_note(self, group_id, key):
+        self.remove_notes(group_id, [key])
+
 # utility functions ------------------------------------------------------------
 
 def validate_existing_repo_group(group_id):
