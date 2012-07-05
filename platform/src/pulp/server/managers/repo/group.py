@@ -78,7 +78,7 @@ class RepoGroupManager(object):
         if not repo_ids:
             return
         group_collection.update({'id': group_id},
-                                {'$addToSet': {'repo_ids': repo_ids}},
+                                {'$addToSet': {'repo_ids': {'$each': repo_ids}}},
                                 safe=True)
 
     def unassociate(self, group_id, criteria):
