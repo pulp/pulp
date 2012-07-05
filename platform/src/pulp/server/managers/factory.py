@@ -37,7 +37,7 @@ TYPE_CONTENT                = 'content-manager'
 TYPE_CONTENT_ORPHAN         = 'content-orphan-manager'
 TYPE_CONTENT_QUERY          = 'content-query-manager'
 TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
-TYPE_DEPENDENCY           = 'dependencies-manager'
+TYPE_DEPENDENCY             = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
@@ -51,7 +51,6 @@ TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
 TYPE_SCHEDULE               = 'schedule-manager'
 TYPE_USER                   = 'user-manager'
-TYPE_USER_GC                = 'gc-user-manager'
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults

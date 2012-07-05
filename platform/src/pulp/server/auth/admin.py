@@ -14,7 +14,7 @@
 from pulp.server import config
 from pulp.server.auth import authorization
 
-import pulp.server.managers.factory as managers
+from pulp.server.managers import factory as managers
 
 
 def ensure_admin():
