@@ -283,7 +283,7 @@ class UploadManager(object):
         if tracker is None:
             raise MissingUploadRequestException()
 
-        if not tracker.is_finished_uploading:
+        if tracker.source_filename and not tracker.is_finished_uploading:
             raise IncompleteUploadException()
 
         response = self.bindings.uploads.import_upload(upload_id, tracker.repo_id,

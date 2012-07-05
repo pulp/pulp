@@ -386,7 +386,7 @@ class YumImporter(Importer):
         if type_id == RPM_TYPE_ID:
             return self._upload_unit_rpm(repo, unit_key, metadata, file_path, conduit, config)
         elif type_id == ERRATA_TYPE_ID:
-            return self._upload_unit_erratum(repo, unit_key, metadata, conduit, config) 
+            return self._upload_unit_erratum(repo, unit_key, metadata, conduit, config)
         elif type_id in (PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID):
             return self._upload_unit_pkg_group_or_category(repo, type_id, unit_key, metadata, conduit, config)
         else:
@@ -449,12 +449,13 @@ class YumImporter(Importer):
         _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
         return True, summary, details
             
-    def _upload_unit_erratum(self, repo, unit_key, metadata, conduit, config): 
-        summary = {}
+    def _upload_unit_erratum(self, repo, unit_key, metadata, conduit, config):
+        summary = {'num_units_saved' : 0}
         details = {'errors' : []}
         try:
             u = conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
             conduit.save_unit(u)
+            summary['num_units_saved'] += 1
             link_errata_rpm_units(conduit, {unit_key['id']: u})
         except Exception, e:
             msg = "Error uploading errata unit %s; Error %s" % (unit_key['id'], e)
