@@ -71,6 +71,13 @@ class RepoGroupManager(object):
         collection.update(spec, {'$pull': {'repo_ids': repo_id}}, multi=True, safe=True)
 
     def associate(self, group_id, criteria):
+        """
+        Associate a set of repos to the group that match the passed in criteria.
+        @param group_id: unique id of the group to associate repos to
+        @type  group_id: str
+        @param criteria: Criteria instance representing the set of repos to associate
+        @type  criteria: L{pulp.server.db.model.criteria.Criteria}
+        """
         group_collection = validate_existing_repo_group(group_id)
         repo_collection = Repo.get_collection()
         cursor = repo_collection.query(criteria)
@@ -82,6 +89,13 @@ class RepoGroupManager(object):
                                 safe=True)
 
     def unassociate(self, group_id, criteria):
+        """
+        Unassociate a set of repos from the group that match the passed in criteria.
+        @param group_id: unique id of the group to unassociate repos from
+        @type  group_id: str
+        @param criteria: Criteria instance representing the set of repos to unassociate
+        @type  criteria: L{pulp.server.db.model.criteria.Criteria}
+        """
         group_collection = validate_existing_repo_group(group_id)
         repo_collection = Repo.get_collection()
         cursor = repo_collection.query(criteria)
@@ -89,7 +103,9 @@ class RepoGroupManager(object):
         if not repo_ids:
             return
         group_collection.update({'id': group_id},
-                                {'$pull': {'repo_ids': {'$in': repo_ids}}},
+                                # for some reason, pymongo 1.9 doesn't like this
+                                #{'$pull': {'repo_ids': {'$in': repo_ids}}},
+                                {'$pullAll': {'repo_ids': repo_ids}},
                                 safe=True)
 
     # notes --------------------------------------------------------------------
@@ -113,6 +129,16 @@ class RepoGroupManager(object):
 # utility functions ------------------------------------------------------------
 
 def validate_existing_repo_group(group_id):
+    """
+    Validate the existence of a repo group, given its id.
+    Returns the repo group db collection upon successful validation,
+    raises an exception upon failure
+    @param group_id: unique id of the repo group to validate
+    @type  group_id: str
+    @return: repo group db collection
+    @rtype:  L{pulp.server.db.connection.PulpCollection}
+    @raise:  L{pulp.server.exceptions.MissingResource}
+    """
     collection = RepoGroup.get_collection()
     repo_group = collection.find_one({'id': group_id})
     if repo_group is not None:
