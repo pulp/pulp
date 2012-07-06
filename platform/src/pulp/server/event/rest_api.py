@@ -63,10 +63,11 @@ def _send_post(notifier_config, body):
                'Content-Type': 'application/json'}
 
     # Parse the URL for the pieces we need
-    url = notifier_config['url']
-    if not url:
+    if 'url' not in notifier_config or not notifier_config['url']:
         LOG.warn('REST API notifier configured without a URL; cannot fire event')
         return
+
+    url = notifier_config['url']
 
     try:
         scheme, empty, server, path = url.split('/', 3)
