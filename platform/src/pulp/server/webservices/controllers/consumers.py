@@ -330,7 +330,7 @@ class Binding(JSONController):
                                    args=args,
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        return self.ok(execution.execute(call_request))
 
 
 class Content(JSONController):
@@ -632,7 +632,7 @@ class Profile(JSONController):
                                    args=args,
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        return self.ok(execution.execute(call_request))
 
 
 # -- web.py application -------------------------------------------------------

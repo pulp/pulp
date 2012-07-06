@@ -40,6 +40,11 @@ def execute(call_request):
 
 def execute_ok(controller, call_request):
     """
+    DEPRECATED! This method has been deprecated. Please use 'execute' instead.
+                The only change you will need to make is to handle calling ok()
+                from within the controller, instead of expecting this method to
+                do it for you.
+
     Execute a call request via the coordinator.
     @param controller: web services rest controller
     @type  controller: pulp.server.webservices.controller.base.JSONController
@@ -47,16 +52,7 @@ def execute_ok(controller, call_request):
     @type  call_request: pulp.server.dispatch.call.CallRequest
     @return: http server response
     """
-    coordinator = dispatch_factory.coordinator()
-    call_report = coordinator.execute_call(call_request)
-    if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-        raise ConflictingOperation(call_report.reasons)
-    # covers postponed and accepted
-    if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
-        raise OperationPostponed(call_report)
-    if call_report.state is dispatch_constants.CALL_ERROR_STATE:
-        raise call_report.exception, None, call_report.traceback
-    return controller.ok(call_report.result)
+    return controller.ok(execute(call_request))
 
 
 def execute_created(controller, call_request, location):
