@@ -105,18 +105,24 @@ def dict_to_yum_group(obj, group_id=None):
     grp.display_order = obj['display_order']
     grp.default = obj['default']
     grp.langonly = obj['langonly']
-    for key in obj['translated_name']:
-        grp.translated_name[key] = obj['translated_name'][key]
-    for key in obj['translated_description']:
-        grp.translated_description[key] = obj['translated_description'][key]
-    for pkgname in obj['mandatory_package_names']:
-        grp.mandatory_packages[pkgname] = 1 
-    for pkgname in obj['optional_package_names']:
-        grp.optional_packages[pkgname] = 1
-    for pkgname in obj['default_package_names']:
-        grp.default_packages[pkgname] = 1
-    for pkgname, values in obj['conditional_package_names']:
-        grp.conditional_packages[pkgname] = values
+    if obj.has_key('translated_name') and obj['translated_name']:
+        for key in obj['translated_name']:
+            grp.translated_name[key] = obj['translated_name'][key]
+    if obj.has_key('translated_description') and obj['translated_description']:
+        for key in obj['translated_description']:
+            grp.translated_description[key] = obj['translated_description'][key]
+    if obj.has_key('mandatory_package_names') and obj['mandatory_package_names']:
+        for pkgname in obj['mandatory_package_names']:
+            grp.mandatory_packages[pkgname] = 1 
+    if obj.has_key('optional_package_names') and obj['optional_package_names']:
+        for pkgname in obj['optional_package_names']:
+            grp.optional_packages[pkgname] = 1
+    if obj.has_key('default_package_names') and obj['default_package_names']:
+        for pkgname in obj['default_package_names']:
+            grp.default_packages[pkgname] = 1
+    if obj.has_key('conditional_package_names') and obj['conditional_package_names']:
+        for pkg_name, value in obj['conditional_package_names']:
+            grp.conditional_packages[pkg_name] = value
     return grp
 
 def unit_to_yum_category(cat_unit):
