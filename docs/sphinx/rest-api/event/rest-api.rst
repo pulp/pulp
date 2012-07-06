@@ -8,8 +8,30 @@ be the contents of the event (and thus vary by type).
 Configuration
 -------------
 
+The REST API notifier is used by specifying the notifier type as ``rest-api``.
+
 The following configuration values are supported when using the REST API
 notifier:
 
 ``url``
-  Full URL to invoke to send the event information. This is required
+  Required. Full URL to invoke to send the event information.
+
+``username``
+  If specified, this value will be passed as basic authentication
+  credentials when the REST API is invoked.
+
+``password``
+  If specified, this value will be passed as basic authentication
+  credentials when the REST API is invoked.
+
+Body
+----
+
+The body of an inbound event notification will be a JSON document containing
+two keys:
+
+``event_type``
+  Indicates the type of event that is being sent.
+
+``payload``
+  JSON document describing the event. This will vary based on the type of event.

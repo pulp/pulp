@@ -12,7 +12,7 @@ Event Types
 .. toctree::
    :maxdepth: 2
 
-   events
+   repo-action-events
 
 Notifiers
 ---------
