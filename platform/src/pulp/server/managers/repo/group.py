@@ -48,6 +48,18 @@ class RepoGroupManager(object):
         return group
 
     def update_repo_group(self, group_id, **updates):
+        """
+        Update an existing repo group.
+        Valid keyword arguments are:
+         * display_name
+         * description
+         * notes
+        @param group_id: unique id of the repo group to update
+        @type group_id: str
+        @param updates: keyword arguments of attributes to update
+        @return: SON representation of the updated repo group
+        @rtype:  L{bson.SON}
+        """
         collection = validate_existing_repo_group(group_id)
         keywords = updates.keys()
         valid_keywords = ('display_name', 'description', 'notes')
@@ -63,6 +75,11 @@ class RepoGroupManager(object):
         return group
 
     def delete_repo_group(self, group_id):
+        """
+        Delete a repo group.
+        @param group_id: unique id of the repo group to delete
+        @type group_id: str
+        """
         collection = validate_existing_repo_group(group_id)
         collection.remove({'id': group_id}, safe=True)
 
