@@ -122,7 +122,7 @@ class PulpCliCommand(Command):
         :type  allow_multiple: bool
         
         :param default: The default value for optional options
-        :type  default: None
+        :type  default: object
 
         :return: instance representing the option
         :rtype:  PulpCliOption

@@ -156,6 +156,20 @@ class TaskQueueControlFlowTests(TaskQueueTests):
             self.fail(traceback.format_exc())
         self.assertFalse(call_request is None)
 
+    def test_queued_call_with_unicode_args(self):
+        args = [u'©üàº']
+        kwargs = {'display_name': u'Brasília'}
+        task = self.gen_task()
+        task.args = args
+        task.kwargs = kwargs
+        collection = QueuedCall.get_collection()
+        try:
+            self.queue.enqueue(task)
+        except:
+            self.fail(traceback.format_exc())
+        queued_call = collection.find({'_id': task.queued_call_id})
+        self.assertFalse(queued_call is None)
+
     def test_multi_enqueue(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()

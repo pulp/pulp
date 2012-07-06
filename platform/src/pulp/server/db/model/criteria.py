@@ -25,13 +25,13 @@ from pulp.server.db.model.base import Model
 
 class Criteria(Model):
 
-    collection_name = 'criteria'
+    #collection_name = 'criteria'
 
     def __init__(self, filters=None, sort=None, limit=None, skip=None, fields=None):
         super(Criteria, self).__init__()
 
         assert isinstance(filters, (dict, NoneType))
-        assert isinstance(sort, (tuple, NoneType))
+        assert isinstance(sort, (list, tuple, NoneType))
         assert isinstance(limit, (int, NoneType))
         assert isinstance(skip, (int, NoneType))
         assert isinstance(fields, (list, NoneType))
@@ -54,6 +54,11 @@ class Criteria(Model):
             raise pulp_exceptions.InvalidValue(doc.keys())
         return cls(filters, sort, limit, skip, fields)
 
+    @classmethod
+    def from_query_params(cls, params):
+        # pagination
+        pass
+
     @property
     def spec(self):
         if self.filters is None:
@@ -67,8 +72,6 @@ class Criteria(Model):
                 return
             for key, value in spec.items():
                 if key == '$not' and isinstance(value, basestring):
-                    # XXX is this the right kind of compilation?
-                    # shouldn't we be supporting Perl-compatible regexs?
                     spec[key] = re.compile(value)
                 _compile_regexs_for_not(value)
 
