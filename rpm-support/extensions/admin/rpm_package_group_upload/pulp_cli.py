@@ -58,22 +58,26 @@ class CreatePackageGroupCommand(PulpCliCommand):
         d = 'description of this package group'
         self.create_option('--description', _(d), aliases=['-d'], required=True)
 
-        d = 'conditional package names in this package group, specified as "key:value1,value2,..."'
-        self.create_option('--cond-names', _(d), allow_multiple=True, required=False)
+        d = 'conditional package name to include in this package group, specified as "key:value1,value2,..."; multiple may '\
+            'be indicated by specifying the argument multiple times'
+        self.create_option('--cond-name', _(d), allow_multiple=True, required=False)
 
-        d = 'mandatory package names in this package group'
-        self.create_option('--mand-names', _(d), allow_multiple=True, required=False)
+        d = 'mandatory package name to include in this package group; multiple may '\
+            'be indicated by specifying the argument multiple times'
+        self.create_option('--mand-name', _(d), allow_multiple=True, required=False)
 
-        d = 'optional package names in this package group'
-        self.create_option('--opt-names', _(d), allow_multiple=True, required=False)
+        d = 'optional package name to include in this package group; multiple may '\
+            'be indicated by specifying the argument multiple times'
+        self.create_option('--opt-name', _(d), allow_multiple=True, required=False)
 
-        d = 'default package names in this package group'
-        self.create_option('--default-names', _(d), aliases=['-p'], allow_multiple=True, required=False)
+        d = 'default package name to include in this package group; multiple may ' \
+            'be indicated by specifying the argument multiple times'
+        self.create_option('--default-name', _(d), aliases=['-p'], allow_multiple=True, required=False)
 
         d = 'display order for this package group'
         self.create_option('--display-order', _(d), allow_multiple=False, required=False, default=0)
 
-        d = 'langonly for this package group'
+        d = 'sets the "langonly" attribute for this package group'
         self.create_option('--langonly', _(d), allow_multiple=False, required=False)
 
         d = 'set "default" flag on package group to True'
@@ -97,15 +101,15 @@ class CreatePackageGroupCommand(PulpCliCommand):
         # format is key:value1,value2,...
         #
         cond_names = {}
-        cond_names_raw = kwargs['cond-names']
+        cond_names_raw = kwargs['cond-name']
         if cond_names_raw:
             for entry in cond_names_raw:
                 key, values = entry.split(":")
                 cond_names[key] = values.split(",")
 
-        mand_names = kwargs['mand-names']
-        opt_names = kwargs['opt-names']
-        default_names = kwargs['default-names']
+        mand_names = kwargs['mand-name']
+        opt_names = kwargs['opt-name']
+        default_names = kwargs['default-name']
         display_order = kwargs['display-order']
         default = kwargs['default']
         langonly = kwargs['langonly']
@@ -129,10 +133,13 @@ class CreatePackageGroupCommand(PulpCliCommand):
 
         # Display the list of found RPMs
         if kwargs['v']:
-            self.prompt.write(_('Package group to be created:'))
-            self.prompt.write('unit_key = <%s>' % (unit_key))
-            self.prompt.render_spacer()
-            self.prompt.write('metadata = <%s>' % (metadata))
+            self.prompt.write(_('Package Group Details:'))
+
+            combined = dict()
+            combined.update(unit_key)
+            combined.update(metadata)
+
+            self.prompt.render_document(combined, order=['id', 'repo_id'], indent=2)
             self.prompt.render_spacer()
 
         # Initialize all uploads
@@ -192,17 +199,15 @@ class CreatePackageCategoryCommand(PulpCliCommand):
 
         # Display the list of found RPMs
         if kwargs['v']:
-            self.prompt.write(_('Package category to be created:'))
-            display_unit_key = "unit_key constructed as:  "
-            for key in unit_key:
-                display_unit_key += "%s:%s " % (key, unit_key[key])
-            display_metadata = "metadata constructed as:  "
-            for key in metadata:
-                display_metadata += "%s:%s " % (key, metadata[key])
-            self.prompt.write('%s' % (display_unit_key))
+            self.prompt.write(_('Package Category Details:'))
+
+            combined = dict()
+            combined.update(unit_key)
+            combined.update(metadata)
+
+            self.prompt.render_document(combined, order=['id', 'repo_id'], indent=2)
             self.prompt.render_spacer()
-            self.prompt.write('%s' % (display_metadata))
-            self.prompt.render_spacer()
+
 
         # Initialize all uploads
         upload_manager = _upload_manager(self.context)
