@@ -106,12 +106,10 @@ class RepoSyncManager(object):
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
 
-        # Fire an event to indicate the sync is starting
+        # Fire an events around the call
         fire_manager = manager_factory.event_fire_manager()
         fire_manager.fire_repo_sync_started(repo_id)
-
-        # Perform the sync
-        sync_result = self._do_sync(repo, repo_importer, importer_instance, transfer_repo, conduit, call_config)
+        sync_result = self._do_sync(repo, importer_instance, transfer_repo, conduit, call_config)
         fire_manager.fire_repo_sync_finished(sync_result)
 
         if sync_result['result'] == RepoSyncResult.RESULT_FAILED:
@@ -126,7 +124,7 @@ class RepoSyncManager(object):
             _LOG.exception('Exception automatically publishing distributors for repo [%s]' % repo_id)
             raise
 
-    def _do_sync(self, repo, repo_importer, importer_instance, transfer_repo, conduit, call_config):
+    def _do_sync(self, repo, importer_instance, transfer_repo, conduit, call_config):
         """
         Once all of the preparation for a sync has taken place, this call
         will perform the sync, making the necessary database updates. It returns
@@ -143,7 +141,6 @@ class RepoSyncManager(object):
         # Perform the sync
         sync_start_timestamp = _now_timestamp()
         try:
-            importer_coll.save(repo_importer, safe=True)
             sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             # I really wish python 2.4 supported except and finally together

@@ -56,7 +56,7 @@ class EventFireManager(object):
         payload = {'repo_id' : repo_id, 'distributor_id' : distributor_id}
         self._do_fire(e.Event(e.TYPE_REPO_PUBLISH_STARTED, payload))
 
-    def fire_repo_publish_finished(self, repo_id, publish_result):
+    def fire_repo_publish_finished(self, publish_result):
         """
         Fires an event indicating the given repository has completed a publish.
         The success/failure of the publish, timestamp information, and publish report
