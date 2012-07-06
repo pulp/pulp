@@ -61,7 +61,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         self.assertEqual(ret[0], 200)
         self.assertEqual(mock_query.call_count, 1)
         query_arg = mock_query.call_args[0][0]
-        self.assertIsInstance(query_arg, criteria.Criteria)
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
         # one call each for criteria, importers, and distributors
         self.assertEqual(mock_params.call_count, 3)
 
@@ -130,7 +130,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         ret = self.post('/v2/repositories/search/')
         self.assertEqual(ret[0], 400)
         value = ret[1]
-        self.assertIsInstance(value, dict)
+        self.assertTrue(isinstance(value, dict))
         self.assertTrue('missing_property_names' in value)
         self.assertEqual(value['missing_property_names'], [u'criteria'])
 
