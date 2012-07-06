@@ -95,6 +95,7 @@ class ConsumerResource(JSONController):
         
         bind_manager = managers.consumer_bind_manager()
         consumer['bindings'] = bind_manager.find_by_consumer(consumer['id'])
+        consumer.update(serialization.link.current_link_obj())
            
         return self.ok(consumer)
 
@@ -128,7 +129,9 @@ class ConsumerResource(JSONController):
                                    [id, delta],
                                    resources=resources,
                                    tags=tags)
-        return self.ok(execution.execute(call_request))
+        consumer = execution.execute(call_request)
+        consumer.update(serialization.link.current_link_obj())
+        return self.ok(consumer)
 
 
 class Bindings(JSONController):

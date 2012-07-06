@@ -123,13 +123,16 @@ class ConsumerResourceTests(ConsumerControllersTests):
 
         # Setup
         self.consumer_manager.register('consumer-1')
+        PATH = '/v2/consumers/consumer-1/'
 
         # Test
-        status, body = self.get('/v2/consumers/consumer-1/')
+        status, body = self.get(PATH)
 
         # Verify
         self.assertEqual(200, status)
         self.assertEqual('consumer-1', body['id'])
+        self.assertTrue('_href' in body)
+        self.assertTrue(body['_href'].endswith(PATH))
 
     def test_get_missing_consumer(self):
         """
@@ -177,16 +180,18 @@ class ConsumerResourceTests(ConsumerControllersTests):
 
         # Setup
         self.consumer_manager.register('turkey', display_name='hungry')
+        PATH = '/v2/consumers/turkey/'
 
         req_body = {'delta' : {'display-name' : 'thanksgiving'}}
 
         # Test
-        status, body = self.put('/v2/consumers/turkey/', params=req_body)
+        status, body = self.put(PATH, params=req_body)
 
         # Verify
         self.assertEqual(200, status)
 
         self.assertEqual(body['display_name'], req_body['delta']['display-name'])
+        self.assertTrue(body['_href'].endswith(PATH))
 
         consumer = Consumer.get_collection().find_one({'id' : 'turkey'})
         self.assertEqual(consumer['display_name'], req_body['delta']['display-name'])
