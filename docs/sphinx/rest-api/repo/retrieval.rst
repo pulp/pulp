@@ -128,8 +128,8 @@ where there are no repositories.
   }
  ]
 
-Retrieve Repositories By Search
--------------------------
+Advanced Search For Repositories
+--------------------------------
 
 Returns information on repositories in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
@@ -138,8 +138,7 @@ list is returned in the case where there are no repositories.
 | :method:`post`
 | :path:`/v2/repositories/search/`
 | :permission:`read`
-| :param_list:`post` include the key "criteria" whose value is a mapping
-structure as defined in pulp.server.db.model.Criteria
+| :param_list:`post` include the key "criteria" whose value is a mapping structure as defined in pulp.server.db.model.Criteria
 | :response_list:`_`
 
 * :response_code:`200,containing the list of repositories`
