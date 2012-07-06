@@ -46,6 +46,7 @@ class EventFireManager(object):
         @param sync_result: DB object describing the sync result
         @type  sync_result: dict
         """
+        sync_result.pop('_id', None)
         self._do_fire(e.Event(e.TYPE_REPO_SYNC_FINISHED, sync_result))
 
     def fire_repo_publish_started(self, repo_id, distributor_id):
@@ -62,6 +63,7 @@ class EventFireManager(object):
         The success/failure of the publish, timestamp information, and publish report
         provided by the distributor are all included in the publish_result.
         """
+        publish_result.pop('_id', None)
         self._do_fire(e.Event(e.TYPE_REPO_PUBLISH_FINISHED, publish_result))
 
     # -- private --------------------------------------------------------------
