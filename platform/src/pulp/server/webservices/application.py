@@ -92,6 +92,13 @@ def _initialize_pulp():
     # check our db version and other support
     check_version()
 
+    # pulp generic content initialization
+    manager_factory.initialize()
+    plugin_loader.initialize()
+
+    # new async dispatch initialization
+    dispatch_factory.initialize()
+
     # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
@@ -104,12 +111,6 @@ def _initialize_pulp():
         STACK_TRACER = StacktraceDumper()
         STACK_TRACER.start()
 
-    # pulp generic content initialization
-    manager_factory.initialize()
-    plugin_loader.initialize()
-
-    # new async dispatch initialization
-    dispatch_factory.initialize()
 
 
 def wsgi_application():

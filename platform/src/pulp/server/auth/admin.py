@@ -14,7 +14,7 @@
 from pulp.server import config
 from pulp.server.auth import authorization
 
-from pulp.server.managers import factory as managers
+from pulp.server.managers.auth.user import UserManager
 
 
 def ensure_admin():
@@ -28,7 +28,7 @@ def ensure_admin():
     if super_users:
         return
     default_login = config.config.get('server', 'default_login')
-    user_manager = managers.user_manager()
+    user_manager = UserManager()
     admin = user_manager.find_by_login(default_login)
     if admin is None:
         default_password = config.config.get('server', 'default_password')
