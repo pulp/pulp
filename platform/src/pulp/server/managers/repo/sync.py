@@ -82,7 +82,6 @@ class RepoSyncManager(object):
 
         repo_coll = Repo.get_collection()
         importer_coll = RepoImporter.get_collection()
-        sync_result_coll = RepoSyncResult.get_collection()
 
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
@@ -107,10 +106,41 @@ class RepoSyncManager(object):
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
 
+        # Fire an events around the call
+        fire_manager = manager_factory.event_fire_manager()
+        fire_manager.fire_repo_sync_started(repo_id)
+        sync_result = self._do_sync(repo, importer_instance, transfer_repo, conduit, call_config)
+        fire_manager.fire_repo_sync_finished(sync_result)
+
+        if sync_result['result'] == RepoSyncResult.RESULT_FAILED:
+            raise PulpExecutionException(_('Importer indicated a failed response'))
+
+        # Request any auto-distributors publish (if we're here, the sync was successful)
+        publish_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_PUBLISH)
+        try:
+            sync_progress_report = conduit.progress_report
+            publish_manager.auto_publish_for_repo(repo_id, sync_progress_report)
+        except Exception:
+            _LOG.exception('Exception automatically publishing distributors for repo [%s]' % repo_id)
+            raise
+
+    def _do_sync(self, repo, importer_instance, transfer_repo, conduit, call_config):
+        """
+        Once all of the preparation for a sync has taken place, this call
+        will perform the sync, making the necessary database updates. It returns
+        the sync result instance (already saved to the database). This call
+        does not have any behavior based on the success/failure of the sync;
+        it is up to the caller to raise an exception in the event of a failed
+        sync if that behavior is desired.
+        """
+
+        importer_coll = RepoImporter.get_collection()
+        sync_result_coll = RepoSyncResult.get_collection()
+        repo_id = repo['id']
+
         # Perform the sync
         sync_start_timestamp = _now_timestamp()
         try:
-            importer_coll.save(repo_importer, safe=True)
             sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             # I really wish python 2.4 supported except and finally together
@@ -156,40 +186,10 @@ class RepoSyncManager(object):
             result_code = RepoSyncResult.RESULT_SUCCESS
 
         result = RepoSyncResult.expected_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
-                                               sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
-                                               removed_count, summary, details, result_code)
+                                                sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
+                                                removed_count, summary, details, result_code)
         sync_result_coll.save(result, safe=True)
-
-        if result_code == RepoSyncResult.RESULT_FAILED:
-            raise PulpExecutionException(_('Importer indicated a failed response'))
-
-        # Request any auto-distributors publish (if we're here, the sync was successful)
-        publish_manager = manager_factory.get_manager(manager_factory.TYPE_REPO_PUBLISH)
-        try:
-            sync_progress_report = conduit.progress_report
-            publish_manager.auto_publish_for_repo(repo_id, sync_progress_report)
-        except Exception:
-            _LOG.exception('Exception automatically publishing distributors for repo [%s]' % repo_id)
-            raise
-
-    def get_repo_storage_directory(self, repo_id):
-        """
-        Returns the directory in which repositories can be stored as they are
-        synchronized. The directory will be created if it does not exist.
-
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @return: full path to the directory in which an importer can store the
-                 given repository as it is synchronized
-        @rtype:  str
-        """
-
-        dir = os.path.join(REPO_STORAGE_DIR, repo_id)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
-
-        return dir
+        return result
 
     def sync_history(self, repo_id, limit=None):
         """
@@ -222,6 +222,27 @@ class RepoSyncManager(object):
         cursor.sort('completed', pymongo.DESCENDING)
 
         return list(cursor)
+
+    # -- utility --------------------------------------------------------------
+
+    def get_repo_storage_directory(self, repo_id):
+        """
+        Returns the directory in which repositories can be stored as they are
+        synchronized. The directory will be created if it does not exist.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @return: full path to the directory in which an importer can store the
+                 given repository as it is synchronized
+        @rtype:  str
+        """
+
+        dir = os.path.join(REPO_STORAGE_DIR, repo_id)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        return dir
 
 def _now_timestamp():
     """

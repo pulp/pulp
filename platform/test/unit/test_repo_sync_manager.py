@@ -13,6 +13,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
+import mock
 import os
 import shutil
 
@@ -84,7 +85,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Reset the state of the mock's tracker variables
         MockRepoPublishManager.reset()
 
-    def test_sync(self):
+    @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_sync_started')
+    @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_sync_finished')
+    def test_sync(self, mock_finished, mock_started):
         """
         Tests sync under normal conditions where everything is configured
         correctly. No importer config is specified.
@@ -133,6 +136,12 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertTrue(history[0]['error_message'] is None)
         self.assertTrue(history[0]['exception'] is None)
         self.assertTrue(history[0]['traceback'] is None)
+
+        self.assertEqual(1, mock_started.call_count)
+        self.assertEqual('repo-1', mock_started.call_args[0][0])
+
+        self.assertEqual(1, mock_finished.call_count)
+        self.assertEqual('repo-1', mock_finished.call_args[0][0]['repo_id'])
 
     def test_sync_with_graceful_fail(self):
         # Setup

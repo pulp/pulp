@@ -17,11 +17,18 @@ Contains DTOs to describe events.
 
 # -- constants ----------------------------------------------------------------
 
-# Many more will be added as this functionality is flushed out
+# Many more types will be added as this functionality is flushed out
+
+TYPE_REPO_PUBLISH_STARTED = 'repo-publish-started'
+TYPE_REPO_PUBLISH_FINISHED = 'repo-publish-finished'
+
 TYPE_REPO_SYNC_STARTED = 'repo-sync-started'
 TYPE_REPO_SYNC_FINISHED = 'repo-sync-finished'
 
-ALL_EVENT_TYPES = (TYPE_REPO_SYNC_STARTED, TYPE_REPO_SYNC_FINISHED)
+# Please keep the following in alphabetical order
+# (feel free to change this if there's a simpler way)
+ALL_EVENT_TYPES = (TYPE_REPO_PUBLISH_FINISHED, TYPE_REPO_PUBLISH_STARTED,
+                   TYPE_REPO_SYNC_FINISHED, TYPE_REPO_SYNC_STARTED,)
 
 # -- classes ------------------------------------------------------------------
 
