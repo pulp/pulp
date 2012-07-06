@@ -23,11 +23,11 @@ from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
 
-import pulp.server.managers.factory as managers
+from pulp.server.managers.auth.user import UserManager
 
 _permission_api = PermissionAPI()
 _role_api = RoleAPI()
-_user_manager = managers.user_manager()
+_user_manager = UserManager()
 
 
 class PulpAuthorizationError(PulpException):

@@ -31,6 +31,7 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers import factory as manager_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 
 # -- constants ----------------------------------------------------------------
@@ -67,7 +68,6 @@ class RepoPublishManager(object):
 
         repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
-        publish_result_coll = RepoPublishResult.get_collection()
 
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
@@ -90,6 +90,18 @@ class RepoPublishManager(object):
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'], publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(repo_distributor['distributor_type_id'], repo_id, mkdir=True)
+
+        # Fire events describing the publish state
+        fire_manager = manager_factory.event_fire_manager()
+        fire_manager.fire_repo_publish_started(repo_id, distributor_id)
+        result = self._do_publish(repo, distributor_id, distributor_instance, transfer_repo, conduit, call_config)
+        fire_manager.fire_repo_publish_finished(result)
+
+    def _do_publish(self, repo, distributor_id, distributor_instance, transfer_repo, conduit, call_config):
+
+        distributor_coll = RepoDistributor.get_collection()
+        publish_result_coll = RepoPublishResult.get_collection()
+        repo_id = repo['id']
 
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
@@ -133,8 +145,9 @@ class RepoPublishManager(object):
             result_code = RepoPublishResult.RESULT_SUCCESS
 
         result = RepoPublishResult.expected_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
-                                                  publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
+                                                   publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
         publish_result_coll.save(result, safe=True)
+        return result
 
     def auto_publish_for_repo(self, repo_id, base_progress_report):
         """

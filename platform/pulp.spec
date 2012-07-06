@@ -56,7 +56,7 @@ popd
 %if %{pulp_selinux}
 # SELinux Configuration
 cd selinux/server
-perl -i -pe 'BEGIN { $VER = join ".", grep /^\d+$/, split /\./, "%{version}.%{release}"; } s!0.0.0!$VER!g;' pulp-server.te
+sed -i "s/policy_module(pulp-server,[0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server,%{version})/" pulp-server.te
 ./build.sh
 cd -
 %endif
@@ -158,7 +158,7 @@ Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.1.3-1
+Requires: grinder >= 0.1.5-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl

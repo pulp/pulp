@@ -131,7 +131,7 @@ class UploadResource(JSONController):
         upload_manager = factory.content_upload_manager()
         upload_manager.delete_upload(upload_id)
 
-        return self.ok({})
+        return self.ok(None)
 
 class UploadSegmentResource(JSONController):
 
@@ -153,7 +153,7 @@ class UploadSegmentResource(JSONController):
         data = self.data()
         upload_manager.save_data(upload_id, offset, data)
 
-        return self.ok({})
+        return self.ok(None)
 
 # content orphans controller classes -------------------------------------------
 

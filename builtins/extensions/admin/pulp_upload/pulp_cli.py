@@ -244,19 +244,19 @@ def _perform_upload(context, upload_manager, upload_ids):
     for upload_id in upload_ids:
         try:
             tracker = upload_manager.get_upload(upload_id)
+            if tracker.source_filename:
+                # Upload the bits
+                context.prompt.write(_('Uploading: %(n)s') % {'n' : os.path.basename(tracker.source_filename)})
+                bar = context.prompt.create_progress_bar()
 
-            # Upload the bits
-            context.prompt.write(_('Uploading: %(n)s') % {'n' : os.path.basename(tracker.source_filename)})
-            bar = context.prompt.create_progress_bar()
+                def progress_callback(item, total):
+                    msg = _('%(i)s/%(t)s bytes')
+                    bar.render(item, total, msg % {'i' : item, 't' : total})
 
-            def progress_callback(item, total):
-                msg = _('%(i)s/%(t)s bytes')
-                bar.render(item, total, msg % {'i' : item, 't' : total})
+                upload_manager.upload(upload_id, progress_callback)
 
-            upload_manager.upload(upload_id, progress_callback)
-
-            context.prompt.write(_('... completed'))
-            context.prompt.render_spacer()
+                context.prompt.write(_('... completed'))
+                context.prompt.render_spacer()
 
             # Import the upload request
             context.prompt.write(_('Importing into the repository...'))

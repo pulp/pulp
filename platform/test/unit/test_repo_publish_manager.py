@@ -12,8 +12,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import datetime
+import mock
 
 import base
 import mock_plugins
@@ -48,7 +48,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         RepoDistributor.get_collection().remove()
         RepoPublishResult.get_collection().remove()
 
-    def test_publish(self):
+    @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_started')
+    @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_finished')
+    def test_publish(self, mock_finished, mock_started):
         """
         Tests publish under normal conditions when everything is configured
         correctly.
@@ -95,6 +97,12 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertEqual({}, call_args[2].override_config)
 
         self.assertEqual(0, mock_plugins.MOCK_DISTRIBUTOR_2.publish_repo.call_count)
+
+        self.assertEqual(1, mock_started.call_count)
+        self.assertEqual('repo-1', mock_started.call_args[0][0])
+
+        self.assertEqual(1, mock_finished.call_count)
+        self.assertEqual('repo-1', mock_finished.call_args[0][0]['repo_id'])
 
     def test_publish_failure_report(self):
         """
