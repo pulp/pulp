@@ -17,8 +17,8 @@ Syncs content into a repository from a feed source using the repository's
 
 | :response_list:`_`
 
-* :response_code:`202, if the sync is set to be executed`
-* :response_code:`409, if a conflicting operation is in progress`
+* :response_code:`202,if the sync is set to be executed`
+* :response_code:`409,if a conflicting operation is in progress`
 
 | :return:`call report representing the current state of they sync`
 

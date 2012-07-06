@@ -21,7 +21,7 @@ in the server.
 
 | :response_list:`_`
 
-* :response_code:`201,The repository was successfully created`
+* :response_code:`201,the repository was successfully created`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`409,if there is already a repository with the given ID`
 
