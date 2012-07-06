@@ -27,10 +27,11 @@ from pulp.server.webservices import serialization
 repo_repr = serialization.repo.serialize(repo)
 """
 
+import consumer
 import content
 import dispatch
 import error
 import link
 import repo
 
-__all__ = ['content', 'dispatch', 'error', 'link', 'repo']
+__all__ = ['consumer', 'content', 'dispatch', 'error', 'link', 'repo']
