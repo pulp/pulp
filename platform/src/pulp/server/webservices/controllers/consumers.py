@@ -98,7 +98,6 @@ class ConsumerResource(JSONController):
            
         return self.ok(consumer)
 
-
     @auth_required(DELETE)
     def DELETE(self, id):
 
@@ -111,8 +110,7 @@ class ConsumerResource(JSONController):
                                    [id],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
-
+        return self.ok(execution.execute(call_request))
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -130,9 +128,7 @@ class ConsumerResource(JSONController):
                                    [id, delta],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
-  
-
+        return self.ok(execution.execute(call_request))
 
 
 class Bindings(JSONController):

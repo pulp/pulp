@@ -154,7 +154,6 @@ class ConsumerResourceTests(ConsumerControllersTests):
         status, body = self.delete('/v2/consumers/doomed/')
 
         # Verify
-        print body
         self.assertEqual(200, status)
 
         consumer = Consumer.get_collection().find_one({'id' : 'doomed'})
