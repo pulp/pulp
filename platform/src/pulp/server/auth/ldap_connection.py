@@ -17,7 +17,7 @@ import logging
 import ldap.modlist
 
 from pulp.server.config import config
-from pulp.server.managers.auth.user import UserManager
+from pulp.server.managers.auth.user.cud import UserManager
 from pulp.server.auth import authorization
 
 _user_manager = UserManager()

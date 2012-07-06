@@ -23,7 +23,7 @@ from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
 
-from pulp.server.managers.auth.user import UserManager
+from pulp.server.managers.auth.user.cud import UserManager
 
 _permission_api = PermissionAPI()
 _role_api = RoleAPI()

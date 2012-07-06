@@ -19,7 +19,7 @@ import logging
 
 import oauth2
 
-from pulp.server.managers.auth.user import UserManager
+from pulp.server.managers.auth.user.cud import UserManager
 from pulp.server.auth import cert_generator, ldap_connection
 from pulp.server.auth.authorization import consumer_users_role
 from pulp.server.auth.cert_generator import verify_cert

@@ -229,7 +229,7 @@ def schedule_manager():
 
 def user_manager():
     """
-    @rtype: L{pulp.server.managers.auth.user.UserManager}
+    @rtype: L{pulp.server.managers.auth.user.cud.UserManager}
     """
     return get_manager(TYPE_USER)
 
@@ -241,7 +241,7 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
-    from pulp.server.managers.auth.user import UserManager
+    from pulp.server.managers.auth.user.cud import UserManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
