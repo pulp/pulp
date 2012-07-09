@@ -66,8 +66,8 @@ class UserManager(object):
 
         if login is None or not is_user_login_valid(login):
             invalid_values.append('login')
-        #if name is not None and not isinstance(name, str):
-        #    invalid_values.append('name')
+        if name is not None and not isinstance(name, basestring):
+            invalid_values.append('name')
         if roles is not None and not isinstance(roles, list):
             invalid_values.append('roles')
 
@@ -105,8 +105,8 @@ class UserManager(object):
         """
 
         # Raise exception if login is invalid or 'admin'
-        #if login is None or not isinstance(login, str) or login == 'admin':
-        #    raise InvalidValue(['login'])
+        if login is None or not isinstance(login, basestring) or login == 'admin':
+            raise InvalidValue(['login'])
 
         # Validation
         found = User.get_collection().find_one({'login' : login})
@@ -144,16 +144,16 @@ class UserManager(object):
         # Check
         invalid_values = []
         if 'password' in delta:
-            if not isinstance(delta['password'], str):
+            if not isinstance(delta['password'], basestring):
                 invalid_values.append('password')
             else:
                 user['password'] = password_util.hash_password(delta['password'])
 
-#        if 'name' in delta:
-#            if delta['name'] is not None and not isinstance(delta['name'], str):
-#                invalid_values.append('name')
-#            else:
-#                user['name'] = delta['name']
+        if 'name' in delta:
+            if delta['name'] is not None and not isinstance(delta['name'], basestring):
+                invalid_values.append('name')
+            else:
+                user['name'] = delta['name']
 
         if 'roles' in delta:
             if delta['roles'] is not None and not isinstance(delta['roles'], list):
