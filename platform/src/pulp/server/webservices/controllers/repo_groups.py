@@ -136,8 +136,8 @@ class RepoGroupUnassociateAction(JSONController):
 # web.py application -----------------------------------------------------------
 
 _URLS = ('/$', RepoGroupCollection,
-         '/([!/]+)/$', RepoGroupResource,
-         '/([!/]+)/actions/associate/$', RepoGroupAssociateAction,
-         '/([!/]+)/actions/unassociate/$', RepoGroupUnassociateAction)
+         '/([^/]+)/$', RepoGroupResource,
+         '/([^/]+)/actions/associate/$', RepoGroupAssociateAction,
+         '/([^/]+)/actions/unassociate/$', RepoGroupUnassociateAction)
 
 application = web.application(_URLS, globals())
