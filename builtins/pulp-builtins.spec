@@ -52,6 +52,7 @@ rm -rf %{buildroot}
 
 %package admin-extensions
 Summary: The builtin admin client extensions
+Group: Development/Languages
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
@@ -74,6 +75,7 @@ client capabilites.
 
 %package consumer-extensions
 Summary: The builtin consumer client extensions
+Group: Development/Languages
 Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
