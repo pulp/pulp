@@ -361,7 +361,7 @@ def add_repo_options(command, is_update):
     basic_group.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
     d =  'if "true", on each successful sync the repository will automatically be ' \
     'published on the configured protocols; if "false" synchronized content will ' \
-    'only be available after manually publishing the repository'
+    'only be available after manually publishing the repository; defaults to "true"'
     basic_group.add_option(PulpCliOption('--auto-publish', _(d), required=False))
 
     # Synchronization Options
