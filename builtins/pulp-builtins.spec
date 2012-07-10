@@ -91,6 +91,10 @@ client capabilites.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-3
+- bump release. (jortel@redhat.com)
+- Add Group: Development/Languages for RHEL5 builds. (jortel@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
 - Add missing pulp_user extension. (jortel@redhat.com)
 
