@@ -386,7 +386,7 @@ upload process.
 .. _orphaned-packages:
 
 Uploading Package Groups/Categories Into a Repository
-----------------------------------------------------
+-----------------------------------------------------
 
 Package groups and categories may be uploaded into any Pulp repository.
 Please refer to the RPM upload section for more details on the upload process.
