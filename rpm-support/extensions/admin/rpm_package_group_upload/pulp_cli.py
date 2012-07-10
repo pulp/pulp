@@ -173,7 +173,7 @@ class CreatePackageCategoryCommand(PulpCliCommand):
         self.create_option('--display-order', _(d), allow_multiple=False, required=False, default=0)
 
         d = 'package group ids to include in this package category'
-        self.create_option('--package', _(d), aliases=['-p'], allow_multiple=True, required=False)
+        self.create_option('--group', _(d), aliases=['-g'], allow_multiple=True, required=False)
 
         d = 'display extra information about the creation process'
         self.create_flag('-v', _(d))
@@ -185,7 +185,7 @@ class CreatePackageCategoryCommand(PulpCliCommand):
         name = kwargs['name']
         description = kwargs['description']
         display_order = kwargs['display-order']
-        packagegroupids = kwargs['package']
+        packagegroupids = kwargs['group']
 
         unit_key = {"id":cat_id, "repo_id":repo_id}
         metadata = {
