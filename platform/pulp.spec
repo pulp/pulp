@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.311
+Version: 0.0.312
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -417,6 +417,98 @@ exit 0
 %endif
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
+- minor fix to user manager functions (skarmark@redhat.com)
+- user admin extensions (skarmark@redhat.com)
+- fixing return of associate & unassociate (jason.connor@gmail.com)
+- fixing rest api (jason.connor@gmail.com)
+- finished adding doctrings (jason.connor@gmail.com)
+- added some docstrings (jason.connor@gmail.com)
+- moving manager factory initialization up immediately after db initialization
+  (skarmark@redhat.com)
+- updating copyright date (mhrivnak@redhat.com)
+- Added unit tests for REST API notifier (jason.dobies@redhat.com)
+- BZ 827204 moved the 'serialize' method to the 'serialization.consumer' module
+  (mhrivnak@redhat.com)
+- BZ 827619 ConsumerResource controller now adds '_href' attribute to return
+  values for GET and PUT requests. (mhrivnak@redhat.com)
+- Implementation of the REST API notifier (jason.dobies@redhat.com)
+- using a different query for unassociate, hopefully one that is friendlier for
+  pymongo 1.9 (jason.connor@gmail.com)
+- BZ 827619 Removing uses of a deprecated method. Also documenting that method
+  as deprecated and removing its duplicate code. (mhrivnak@redhat.com)
+- Modifying two tests to not use the 'assertIsInstance' method, which isn't
+  available in all of our environments. (mhrivnak@redhat.com)
+- BZ 827619 Removing use of a deprecated method. (mhrivnak@redhat.com)
+  (mhrivnak@redhat.com)
+- Modifying two tests to not use the 'assertIsInstance' method, which isn't
+  available in all of our environments. (mhrivnak@redhat.com)
+- Wired up publish events (jason.dobies@redhat.com)
+- Wired repo sync started/finished events into the manager execution
+  (jason.dobies@redhat.com)
+- Minor tweaks to group/category upload CLI (jason.dobies@redhat.com)
+- repo group tests (jason.connor@gmail.com)
+- fixed associate query (jason.connor@gmail.com)
+- added more robust note management for repo groups (jason.connor@gmail.com)
+- changed repod_ids to always be an array, even an empty one
+  (jason.connor@gmail.com)
+- Revert "changed to dict access instead of Model" (jason.connor@gmail.com)
+- added missing collection name (jason.connor@gmail.com)
+- skeleton tests (jason.connor@gmail.com)
+- start of repo group unit tests (jason.connor@gmail.com)
+- fixed bug in action tag generation (jason.connor@gmail.com)
+- initial pass at repo groups controllers (jason.connor@gmail.com)
+- added call to remove repo from all groups to repo delete
+  (jason.connor@gmail.com)
+- added group manager to factory (jason.connor@gmail.com)
+- removed unused add repo and converted remove to batch remove a repo from
+  multiple (or even all) associated groups (jason.connor@gmail.com)
+- added returns of repo group for create and update (jason.connor@gmail.com)
+- added repo groups resource (jason.connor@gmail.com)
+- added i18n test (jason.connor@gmail.com)
+- more advanced associate and unassociate methods for batch adding/removing
+  repos using the new criteria model (jason.connor@gmail.com)
+- some reminders from the deep dive (jason.connor@gmail.com)
+- changed to dict access instead of Model (jason.connor@gmail.com)
+- removed comment as Jay answered the question pertaining to it
+  (jason.connor@gmail.com)
+- fixing upload to include get units and needed summary info
+  (pkilambi@redhat.com)
+- Cleanup how we change the version identifier in our selinux module
+  (jmatthews@redhat.com)
+- Allow client upload of a unit with no file data, allows creation of unit with
+  just unit_key/metadata (jmatthews@redhat.com)
+- BZ 827617: content upload API no longer returns empty dictionaries as a
+  response body, but instead returns None. (mhrivnak@redhat.com)
+- updating grinder to include fix for #828447 (pkilambi@redhat.com)
+- adding additional documentation to the advanced repository searching method
+  (mhrivnak@redhat.com)
+- Adding advanced repo searching to the REST API. (mhrivnak@redhat.com)
+- fixing wrong manager module import before the initialization of factory
+  (skarmark@redhat.com)
+- Using factory.managers instead of importing user_manager separately
+  (skarmark@redhat.com)
+- Fixed a bug where the related object merging method assumed that the list of
+  related objects would have a 'repo_id' attribute, which turned out to be
+  incorrect since objects fresh out of the database are basically just dicts.
+  The method now accesses the 'repo_id' key on the object with dict-style
+  access notation. (mhrivnak@redhat.com)
+- Modified the REST API for repo queries to accept new query parameters
+  'importers' and 'distributors', which simply split the work of the
+  previously-implemented 'details' parameter. (mhrivnak@redhat.com)
+- added tests to verify current functionality of CLI repo requests. Also added
+  the ability to pass query parameters to the REST API when making the CLI code
+  makes a repositories request. (mhrivnak@redhat.com)
+  (mhrivnak@redhat.com)
+- Adding unit tests, improving existing tests, and adding documentation (while
+  fixing a couple of typos). This is all to help me understand how this system
+  works before changing it. (mhrivnak@redhat.com)
+- BZ 827223 Fetching an individual repository now includes the _href attribute.
+  Expanded existing tests to verify its presence. (mhrivnak@redhat.com)
+- Added a query parameter "details" to the queries for a specific repo by ID or
+  all repos, which signifies if importers and distributors should be included.
+  Also added tests and updated API docs. (mhrivnak@redhat.com)
+
 * Tue Jul 03 2012 wes hayutin <whayutin@redhat.com> 0.0.311-1
 - 837406 need to add yum groups to pulp spec for rhel5 to build
   (whayutin@redhat.com)
