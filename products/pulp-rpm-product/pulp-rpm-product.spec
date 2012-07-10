@@ -17,7 +17,7 @@ Version: 0.0.312
 Release: 1%{?dist}
 License: GPLv2
 Summary: Pulp (plus) RPM product metapackage
-Group: Virtual groups/Pulp
+Group: Development/Languages
 URL: https://fedorahosted.org/pulp/
 Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
 BuildArch: noarch
@@ -43,7 +43,7 @@ rpm -e %{name}
 
 %package -n pulp-rpm-server
 Summary: The Pulp (plus) RPM server metapackage
-Group: Virtual groups/Pulp
+Group: Development/Languages
 Requires: pulp-server = %{version}
 Requires: pulp-rpm-plugins = %{version}
 
@@ -58,7 +58,7 @@ to provide the Pulp platform (plus) RPM support packages.
 
 %package -n pulp-rpm-admin-client
 Summary: The Pulp (plus) RPM admin client metapackage
-Group: Virtual groups/Pulp
+Group: Development/Languages
 Requires: pulp-admin-client = %{version}
 Requires: pulp-rpm-admin-extensions = %{version}
 
@@ -73,7 +73,7 @@ to provide the Pulp admin client (plus) RPM extensions.
 
 %package -n pulp-rpm-consumer-client
 Summary: The Pulp (plus) RPM consumer client metapackage
-Group: Virtual groups/Pulp
+Group: Development/Languages
 Requires: pulp-consumer-client = %{version}
 Requires: pulp-rpm-consumer-extensions = %{version}
 
@@ -88,7 +88,7 @@ to provide the Pulp consumer client (plus) RPM extensions.
 
 %package -n pulp-rpm-agent
 Summary: The Pulp (plus) RPM agent metapackage
-Group: Virtual groups/Pulp
+Group: Development/Languages
 Requires: pulp-agent = %{version}
 Requires: pulp-rpm-handlers = %{version}
 
