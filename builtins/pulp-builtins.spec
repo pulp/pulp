@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 0.0.312
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
