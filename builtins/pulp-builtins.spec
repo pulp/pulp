@@ -89,6 +89,9 @@ client capabilites.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
+- Add missing pulp_user extension. (jortel@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
 - user admin extensions (skarmark@redhat.com)
 - user admin extensions (skarmark@redhat.com)
