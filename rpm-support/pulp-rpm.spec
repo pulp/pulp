@@ -222,6 +222,12 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
+- bump release. (jortel@redhat.com)
+- Add Group: Development/Languages for RHEL5 builds. (jortel@redhat.com)
+- 835667 - Added default for auto-publish (jason.dobies@redhat.com)
+- Updated argument name for package category upload (jmatthews@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
 - align version with platform. (jortel@redhat.com)
 - YumImporter:  Fixed issue building summary report for uploaded package
