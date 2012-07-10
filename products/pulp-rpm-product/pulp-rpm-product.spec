@@ -101,6 +101,11 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
+- bump release. (jortel@redhat.com)
+- Fix Group: in product spec. (jortel@redhat.com)
+- Add Group: Development/Languages for RHEL5 builds. (jortel@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
 - align version with platform. (jortel@redhat.com)
 
