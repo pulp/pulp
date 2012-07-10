@@ -94,6 +94,7 @@ rm -rf %{buildroot}
 
 %package plugins
 Summary: Pulp RPM plugins
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
@@ -134,6 +135,7 @@ A collection of components share between RPM plugins, extensions and handlers.
 
 %package admin-extensions
 Summary: The RPM admin client extensions
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-admin-client = %{version}
 
@@ -158,6 +160,7 @@ client capabilites with RPM specific features.
 
 %package consumer-extensions
 Summary: The RPM consumer client extensions
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-consumer-client = %{version}
 
@@ -175,6 +178,7 @@ client capabilites with RPM specific features.
 
 %package handlers
 Summary: Pulp agent rpm handlers
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: python-pulp-agent-lib = %{version}
 
@@ -200,6 +204,7 @@ management and Linux specific commands such as system reboot.
 
 %package yumplugins
 Summary: Yum plugins supplementing in Pulp consumer operations
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
