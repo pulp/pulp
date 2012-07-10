@@ -97,6 +97,9 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
+- align version with platform. (jortel@redhat.com)
+
 * Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
 - 
 
