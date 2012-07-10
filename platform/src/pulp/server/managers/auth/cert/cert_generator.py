@@ -66,7 +66,8 @@ class SerialNumber:
         finally:
             self.__mutex.release()
 
-
+class CertGenerationManager():
+    
 def make_admin_user_cert(user):
     '''
     Generates a x509 certificate for an admin user.

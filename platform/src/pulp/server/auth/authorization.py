@@ -19,11 +19,12 @@ from gettext import gettext as _
 
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
+from pulp.server.managers.auth.user.cud import UserManager
 from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
 
-from pulp.server.managers.auth.user.cud import UserManager
+#from pulp.server.managers import factory
 
 _permission_api = PermissionAPI()
 _role_api = RoleAPI()

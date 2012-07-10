@@ -11,6 +11,7 @@ APIs
    repo/index
    content/index
    dispatch/index
+   event/index
 
 Documentation
 -------------

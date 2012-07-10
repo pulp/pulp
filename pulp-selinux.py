@@ -32,6 +32,7 @@ LABELS = {
                 ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/pulp")),
                 ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/httpd")),
                 ("%s(/.*)?", os.path.join(PLATFORM_DIR, "srv/pulp")),
+                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "srv/pulp")),
                 ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "etc/pulp")),
         ],
         "lib_t": [

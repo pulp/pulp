@@ -95,9 +95,9 @@ class ConsumerResource(JSONController):
         
         bind_manager = managers.consumer_bind_manager()
         consumer['bindings'] = bind_manager.find_by_consumer(consumer['id'])
+        consumer.update(serialization.link.current_link_obj())
            
         return self.ok(consumer)
-
 
     @auth_required(DELETE)
     def DELETE(self, id):
@@ -111,8 +111,7 @@ class ConsumerResource(JSONController):
                                    [id],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
-
+        return self.ok(execution.execute(call_request))
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -130,9 +129,9 @@ class ConsumerResource(JSONController):
                                    [id, delta],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
-  
-
+        consumer = execution.execute(call_request)
+        consumer.update(serialization.link.current_link_obj())
+        return self.ok(consumer)
 
 
 class Bindings(JSONController):
@@ -162,7 +161,7 @@ class Bindings(JSONController):
         """
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id, repo_id)
-        bindings = [Binding.serialized(b) for b in bindings]
+        bindings = [serialization.consumer.serialize(b) for b in bindings]
         return self.ok(bindings)
 
     @auth_required(CREATE)
@@ -214,48 +213,6 @@ class Binding(JSONController):
     Represents a specific bind resource.
     """
 
-    @classmethod
-    def serialized(cls, bind):
-        """
-        Construct a REST object to be returned.
-        Add _href and augments information used by the caller
-        to consume published content.
-        @param bind: A bind model/SON object.
-        @type bind: dict/SON
-        @return: A bind REST object.
-            {consumer_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>,
-             href:<str>,
-             type_id:<str>,
-             details:<dict>}
-        @rtype: dict
-        """
-        # bind
-        serialized = dict(bind)
-        # href
-        link = serialization.link.child_link_obj(
-            bind['consumer_id'],
-            bind['repo_id'],
-            bind['distributor_id'])
-        serialized.update(link)
-        # repository
-        manager = managers.repo_query_manager()
-        repo = manager.get_repository(bind['repo_id'])
-        serialized['repository'] = dict(repo)
-        # type_id
-        manager = managers.repo_distributor_manager()
-        distributor = manager.get_distributor(
-            bind['repo_id'],
-            bind['distributor_id'])
-        serialized['type_id'] = distributor['distributor_type_id']
-        # details
-        details = manager.create_bind_payload(
-            bind['repo_id'],
-            bind['distributor_id'])
-        serialized['details'] = details
-        return serialized
-
     @auth_required(READ)
     def GET(self, consumer_id, repo_id, distributor_id):
         """
@@ -278,7 +235,8 @@ class Binding(JSONController):
         """
         manager = managers.consumer_bind_manager()
         bind = manager.get_bind(consumer_id, repo_id, distributor_id)
-        return self.ok(self.serialized(bind))
+        serialized_bind = serialization.consumer.serialize(bind)
+        return self.ok(serialized_bind)
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, repo_id, distributor_id):
@@ -334,7 +292,7 @@ class Binding(JSONController):
                                    args=args,
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        return self.ok(execution.execute(call_request))
 
 
 class Content(JSONController):
@@ -636,7 +594,7 @@ class Profile(JSONController):
                                    args=args,
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        return self.ok(execution.execute(call_request))
 
 
 # -- web.py application -------------------------------------------------------

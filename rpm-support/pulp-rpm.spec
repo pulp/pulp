@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.310
+Version: 0.0.312
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -217,6 +217,27 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
+- align version with platform. (jortel@redhat.com)
+- YumImporter:  Fixed issue building summary report for uploaded package
+  groups/categories (jmatthews@redhat.com)
+- YumDistributor: Updating publish of package groups (jmatthews@redhat.com)
+- Minor tweaks to group/category upload CLI (jason.dobies@redhat.com)
+- fixing upload to include get units and needed summary info
+  (pkilambi@redhat.com)
+- Adding client side package group upload to CLI (jmatthews@redhat.com)
+- 837850 - https publishing is broken after refactoring (jmatthews@redhat.com)
+- Made on-demand fetching of importers and distributors for a repo list call
+  available in rpm-support. (mhrivnak@redhat.com)
+- Merge branch 'master' into mhrivnak-repo-query (mhrivnak@redhat.com)
+- adding minor doc updates (mhrivnak@redhat.com)
+- Implement resolve_deps api and integrate depsolver functionality into yum
+  importer (pkilambi@redhat.com)
+- Added package group/category to unit search CLI (jmatthews@redhat.com)
+- Adding package group step to rpm_sync CLI (jmatthews@redhat.com)
+- YumImporter:  Adding upload_unit for package groups/categories
+  (jmatthews@redhat.com)
+
 * Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
 - Adding depsolver module for rpm importer plugin (pkilambi@redhat.com)
 - moving the common unit upload logic out of the rpm plugin into the builtins

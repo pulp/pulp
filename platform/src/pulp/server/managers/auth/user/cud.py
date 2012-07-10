@@ -19,11 +19,12 @@ update, and deletion on a Pulp user.
 import logging
 import re
 
+from pulp.server import config
 from pulp.server.db.model.auth import User
-from pulp.server.auth import cert_generator, principal
+from pulp.server.auth import cert_generator, principal, authorization
 from pulp.server.auth.authorization import is_last_super_user, revoke_all_permissions_from_user
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
-
+from pulp.server.managers import factory
 
 import pulp.server.auth.password_util as password_util
 
@@ -68,7 +69,7 @@ class UserManager(object):
 
         if login is None or not is_user_login_valid(login):
             invalid_values.append('login')
-        if name is not None and not isinstance(name, str):
+        if name is not None and not isinstance(name, basestring):
             invalid_values.append('name')
         if roles is not None and not isinstance(roles, list):
             invalid_values.append('roles')
@@ -107,7 +108,7 @@ class UserManager(object):
         """
 
         # Raise exception if login is invalid
-        if login is None or not isinstance(login, str):
+        if login is None or not isinstance(login, basestring) or login == 'admin':
             raise InvalidValue(['login'])
 
         # Check whether user exists
@@ -153,13 +154,13 @@ class UserManager(object):
         # Check
         invalid_values = []
         if 'password' in delta:
-            if not isinstance(delta['password'], str):
+            if not isinstance(delta['password'], basestring):
                 invalid_values.append('password')
             else:
                 user['password'] = password_util.hash_password(delta['password'])
 
         if 'name' in delta:
-            if delta['name'] is not None and not isinstance(delta['name'], str):
+            if delta['name'] is not None and not isinstance(delta['name'], basestring):
                 invalid_values.append('name')
             else:
                 user['name'] = delta['name']
@@ -186,6 +187,8 @@ class UserManager(object):
         @rtype:  list of dict
         """
         all_users = list(User.get_collection().find())
+        for user in all_users:
+            user.pop('password')
         return all_users
 
 
@@ -215,6 +218,25 @@ class UserManager(object):
         """
         users = list(User.get_collection().find({'id' : {'$in' : login_list}}))
         return users
+    
+    def ensure_admin(self):
+        """
+        This function ensures that there is at least one super user for the system.
+        If no super users are found, the default admin user (from the pulp config)
+        is looked up or created and added to the super users role.
+        """
+        super_users = authorization._get_users_belonging_to_role( 
+                    authorization._get_role(authorization.super_user_role))
+        if super_users:
+            return
+        default_login = config.config.get('server', 'default_login')
+        user_manager = factory.user_manager()
+        admin = user_manager.find_by_login(default_login)
+        if admin is None:
+            default_password = config.config.get('server', 'default_password')
+            admin = user_manager.create_user(login=default_login, password=default_password)
+        authorization.add_user_to_role(authorization.super_user_role, default_login)
+
 
 
     def generate_user_certificate(self):

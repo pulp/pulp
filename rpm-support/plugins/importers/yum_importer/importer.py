@@ -369,11 +369,14 @@ class YumImporter(Importer):
     def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
         _LOG.info("Upload Unit Invoked: repo.id <%s> type_id <%s>, unit_key <%s>" % (repo.id, type_id, unit_key))
         try:
+            num_units_saved = 0
             status, summary, details = self._upload_unit(repo, type_id, unit_key, metadata, file_path, conduit, config)
+            if summary.has_key("num_units_saved"):
+                num_units_saved = int(summary["num_units_saved"])
             if status:
-                report = SyncReport(True, int(summary['num_units_saved']), 0, 0, summary, details)
+                report = SyncReport(True, num_units_saved, 0, 0, summary, details)
             else:
-                report = SyncReport(False, int(summary['num_units_saved']), 0, 0, summary, details)
+                report = SyncReport(False, num_units_saved, 0, 0, summary, details)
         except Exception, e:
             _LOG.exception("Caught Exception: %s" % (e))
             summary = {}
@@ -468,6 +471,7 @@ class YumImporter(Importer):
 
     def _upload_unit_pkg_group_or_category(self, repo, type_id, unit_key, metadata, conduit, config):
         summary = {}
+        summary['num_units_saved'] = 1
         details = {'errors' : []}
         try:
             u = conduit.init_unit(type_id, unit_key, metadata, None)

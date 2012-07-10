@@ -385,6 +385,150 @@ upload process.
 
 .. _orphaned-packages:
 
+Uploading Package Groups/Categories Into a Repository
+-----------------------------------------------------
+
+Package groups and categories may be uploaded into any Pulp repository.
+Please refer to the RPM upload section for more details on the upload process.
+
+.. _upload-create-package-group-or-category:
+
+Uploading a Package Group
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``group`` command is used to initialize and upload a package group into a repository.
+
+
+The following arguments are available on the ``group`` command:
+
+``--repo-id``
+  Identifies the repository into which to upload the specified package group. This
+  argument is required and must refer to an existing repository.
+
+``--group-id, -i``
+  The identifier for this package group.  This argument is required.
+
+``--name, -n``
+  Name of this package group.  This argument is required.
+
+``--description, -d``
+  Description of this package group.  This argument is required.
+
+``--cond-name``
+  Adds an entry to the conditional package name list under the package group.
+  A conditional package entry will only install a package if the specified 
+  required package name is installed on the system.  For example an entry 
+  of 'foo-fr' may be marked as requiring 'foo'.  In this case if 'foo' is 
+  installed on the system, then 'foo-fr' will be installed, otherwise 'foo-fr'
+  is not installed.
+  The format for this entry is: "package_name:required_package_name"
+  Multiple entries may be indicated by specifying the argument multiple times.
+
+``--mand-name``
+  Adds an entry to the mandatory package name list under the package group.
+  A mandatory package entry will always be installed if this package group is
+  installed.  This means a GUI like Anaconda or PackageKit will not allow 
+  deselecting this package for installation.
+  Multiple entries may be indicated by specifying the argument multiple times.
+
+``--opt-name``
+  Adds an entry to the optional package name list under the package group.
+  An optional package entry is typically not installed when this package group
+  is installed, but it is possible if using something like PackageKit to select 
+  this entry for installation.
+  Multiple entries may be indicated by specifying the argument multiple times.
+
+``--default-name, -p``
+  Adds an entry to the default package name list under the package group.
+  A default package entry is typically installed when the package group is
+  installed, but it is possible if using something like PackageKit to unselect 
+  a particular package.
+  Multiple entries may be indicated by specifying the argument multiple times.
+
+``--display-order``
+  Sets the 'displayorder' value on the package group.  Typically an integer 
+  suggesting when to display this package group.
+
+``--langonly```
+  Set the 'langonly' field on the package group.
+
+``--default``
+  If specified, this will set the "default" flag on the package group to True.
+  If omitted the "default" flag is set to False
+
+``--user-visible``
+  If specified, this will set the "uservisible" flag on the package group to True.
+  If omitted the "default" flag is set to False
+
+``-v``
+  If specified, more detailed information about the upload will be displayed.
+
+Below is the sample output from the ``group`` command when uploading a package group::
+
+ $ pulp-admin repo uploads group --repo-id demo --group-id devtools --name DevTools --description "List of development tools" -p scala -p sbt -p vim
+ +----------------------------------------------------------------------+
+                          Package Group Creation
+ +----------------------------------------------------------------------+
+
+ Starting upload of selected packages. If this process is stopped through ctrl+c,
+ the uploads will be paused and may be resumed later using the resume command or
+ cancelled entirely using the cancel command.
+ 
+ Importing into the repository...
+ ... completed
+
+ Deleting the upload request...
+ ... completed
+
+Uploading a Package Category
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``category`` command is used to initialize and upload a package category into a repository.
+
+
+The following arguments are available on the ``category`` command:
+
+``--repo-id``
+  Identifies the repository into which to upload the specified package category. This
+  argument is required and must refer to an existing repository.
+
+``--category-id, -i``
+  The identifier for this package category.  This argument is required.
+
+``--name, -n``
+  Name of this package category.  This argument is required.
+
+``--description, -d``
+  Description of this package category.  This argument is required.
+
+``--group, -g``
+  Adds a package group id to this category.
+  Multiple entries may be indicated by specifying the argument multiple times.
+
+``--display-order``
+  Sets the 'displayorder' value on the package category.  Typically an integer 
+  suggesting when to display this package category.
+
+``-v``
+  If specified, more detailed information about the upload will be displayed.
+
+Below is the sample output from the ``category`` command when uploading a package category::
+
+  pulp-admin repo uploads category --repo-id demo --category-id apps --name Apps --description "Popular Applications" -g chrome -g xchat2 -g thunderbird 
+  +----------------------------------------------------------------------+
+                         Package Category Creation
+  +----------------------------------------------------------------------+
+
+  Starting upload of selected packages. If this process is stopped through ctrl+c,
+  the uploads will be paused and may be resumed later using the resume command or
+  cancelled entirely using the cancel command.
+
+  Importing into the repository...
+  ... completed
+
+  Deleting the upload request...
+  ... completed
+
 Orphaned Packages
 -----------------
 

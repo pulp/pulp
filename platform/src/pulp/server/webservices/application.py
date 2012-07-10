@@ -43,15 +43,13 @@ logs.start_logging()
 db_connection.initialize()
 
 from pulp.server.agent.direct.services import Services as AgentServices
-from pulp.server.managers.auth.user.admin import ensure_admin
-from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.plugins import loader as plugin_loader
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    agent, consumers, contents, dispatch, events, plugins, repo_groups, repositories, root_actions)
+    agent, consumers, contents, dispatch, events, plugins, repo_groups, repositories, root_actions, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
@@ -70,6 +68,7 @@ URLS = (
     '/v2/repositories', repositories.application,
     '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
+    '/v2/users', users.application,
     )
 
 _LOG = logging.getLogger(__name__)
@@ -92,9 +91,18 @@ def _initialize_pulp():
     # check our db version and other support
     check_version()
 
+    # pulp generic content initialization
+    manager_factory.initialize()
+    plugin_loader.initialize()
+
+    # new async dispatch initialization
+    dispatch_factory.initialize()
+
     # ensure necessary infrastructure
-    ensure_builtin_roles()
-    ensure_admin()
+    role_manager = manager_factory.role_manager()
+    role_manager.ensure_builtin_roles()
+    user_manager = manager_factory.user_manager()
+    user_manager.ensure_admin()
 
     # agent services
     AgentServices.start()
@@ -104,12 +112,6 @@ def _initialize_pulp():
         STACK_TRACER = StacktraceDumper()
         STACK_TRACER.start()
 
-    # pulp generic content initialization
-    manager_factory.initialize()
-    plugin_loader.initialize()
-
-    # new async dispatch initialization
-    dispatch_factory.initialize()
 
 
 def wsgi_application():

@@ -58,7 +58,7 @@ class CreatePackageGroupCommand(PulpCliCommand):
         d = 'description of this package group'
         self.create_option('--description', _(d), aliases=['-d'], required=True)
 
-        d = 'conditional package name to include in this package group, specified as "key:value1,value2,..."; multiple may '\
+        d = 'conditional package name to include in this package group, specified as "pkg_name:required_package"; multiple may '\
             'be indicated by specifying the argument multiple times'
         self.create_option('--cond-name', _(d), allow_multiple=True, required=False)
 
@@ -100,12 +100,12 @@ class CreatePackageGroupCommand(PulpCliCommand):
         # Adjust cond_names
         # format is key:value1,value2,...
         #
-        cond_names = {}
+        cond_names = []
         cond_names_raw = kwargs['cond-name']
         if cond_names_raw:
             for entry in cond_names_raw:
-                key, values = entry.split(":")
-                cond_names[key] = values.split(",")
+                key, value = entry.split(":")
+                cond_names.append((key,value))
 
         mand_names = kwargs['mand-name']
         opt_names = kwargs['opt-name']
@@ -173,7 +173,7 @@ class CreatePackageCategoryCommand(PulpCliCommand):
         self.create_option('--display-order', _(d), allow_multiple=False, required=False, default=0)
 
         d = 'package group ids to include in this package category'
-        self.create_option('--package', _(d), aliases=['-p'], allow_multiple=True, required=False)
+        self.create_option('--group', _(d), aliases=['-g'], allow_multiple=True, required=False)
 
         d = 'display extra information about the creation process'
         self.create_flag('-v', _(d))
@@ -185,7 +185,7 @@ class CreatePackageCategoryCommand(PulpCliCommand):
         name = kwargs['name']
         description = kwargs['description']
         display_order = kwargs['display-order']
-        packagegroupids = kwargs['package']
+        packagegroupids = kwargs['group']
 
         unit_key = {"id":cat_id, "repo_id":repo_id}
         metadata = {

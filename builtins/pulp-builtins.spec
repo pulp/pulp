@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.310
-Release: 1%{?dist}
+Version: 0.0.312
+Release: 2%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -66,6 +66,7 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_server_info/
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
 %{_usr}/lib/pulp/admin/extensions/pulp_upload/
+%{_usr}/lib/pulp/admin/extensions/pulp_user/
 %doc
 
 
@@ -88,6 +89,28 @@ client capabilites.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
+- Add missing pulp_user extension. (jortel@redhat.com)
+
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
+- user admin extensions (skarmark@redhat.com)
+- user admin extensions (skarmark@redhat.com)
+- Allow client upload of a unit with no file data, allows creation of unit with
+  just unit_key/metadata (jmatthews@redhat.com)
+- Fixed typo where repo display_name was incorrectly referenced as 'display-
+  name'. (mhrivnak@redhat.com)
+- Merge branch 'master' into mhrivnak-repo-query (mhrivnak@redhat.com)
+- Changed the repo CLI to request importers and distributors through the REST
+  API only when desired. Added a test. (mhrivnak@redhat.com)
+- added tests to verify current functionality of CLI repo requests. Also added
+  the ability to pass query parameters to the REST API when making the CLI code
+  makes a repositories request. (mhrivnak@redhat.com)
+- Merge branch 'mhrivnak-repo-query' into mhrivnak-repo-cli
+  (mhrivnak@redhat.com)
+- Adding unit tests, improving existing tests, and adding documentation (while
+  fixing a couple of typos). This is all to help me understand how this system
+  works before changing it. (mhrivnak@redhat.com)
+
 * Tue Jul 03 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.310-1
 - Added pulp_upload extension to pulp-dev and the spec
   (jason.dobies@redhat.com)

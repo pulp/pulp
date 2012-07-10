@@ -40,6 +40,7 @@ TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
 TYPE_DEPENDENCY             = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
+TYPE_PERMISSION             = 'permission-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
 TYPE_REPO                   = 'repo-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
@@ -50,8 +51,10 @@ TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH           = 'repo-publish-manager'
 TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
+TYPE_ROLE                   = 'role-manager'
 TYPE_SCHEDULE               = 'schedule-manager'
 TYPE_USER                   = 'user-manager'
+
 
 # Mapping of key to class that will be instantiated in the factory method
 # Initialized to a copy of the defaults so changes won't break the defaults
@@ -161,6 +164,12 @@ def event_listener_manager():
     """
     return get_manager(TYPE_EVENT_LISTENER)
 
+def permission_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.permission.cud.PermissionManager}
+    """
+    return get_manager(TYPE_PERMISSION)
+
 def plugin_manager():
     """
     @rtype: L{pulp.server.managers.plugin.PluginManager}
@@ -221,6 +230,12 @@ def repo_group_manager():
     """
     return get_manager(TYPE_REPO_GROUP)
 
+def role_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.role.cud.RoleManager}
+    """
+    return get_manager(TYPE_ROLE)
+
 def schedule_manager():
     """
     @rtype: L{pulp.server.manager.schedule.cud.ScheduleManager}
@@ -242,6 +257,8 @@ def initialize():
     """
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.auth.user.cud import UserManager
+    from pulp.server.managers.auth.permission.cud import PermissionManager
+    from pulp.server.managers.auth.role.cud import RoleManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
@@ -283,6 +300,7 @@ def initialize():
         TYPE_DEPENDENCY: DependencyManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
+        TYPE_PERMISSION: PermissionManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
@@ -293,6 +311,7 @@ def initialize():
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_REPO_GROUP: RepoGroupManager,
+        TYPE_ROLE: RoleManager,
         TYPE_SCHEDULE: ScheduleManager,
         TYPE_USER: UserManager,
     }

@@ -114,7 +114,9 @@ class RepoGroupAssociateAction(JSONController):
                                    [repo_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        group = execution.execute(call_request)
+        execution.execute(call_request)
+        collection = RepoGroup.get_collection()
+        group = collection.find_one({'id': repo_group_id})
         return self.ok(group['repo_ids'])
 
 
@@ -130,14 +132,16 @@ class RepoGroupUnassociateAction(JSONController):
                                    [repo_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        group = execution.execute(call_request)
+        execution.execute(call_request)
+        collection = RepoGroup.get_collection()
+        group = collection.find_one({'id': repo_group_id})
         return self.ok(group['repo_ids'])
 
 # web.py application -----------------------------------------------------------
 
 _URLS = ('/$', RepoGroupCollection,
-         '/([!/]+)/$', RepoGroupResource,
-         '/([!/]+)/actions/associate/$', RepoGroupAssociateAction,
-         '/([!/]+)/actions/unassociate/$', RepoGroupUnassociateAction)
+         '/([^/]+)/$', RepoGroupResource,
+         '/([^/]+)/actions/associate/$', RepoGroupAssociateAction,
+         '/([^/]+)/actions/unassociate/$', RepoGroupUnassociateAction)
 
 application = web.application(_URLS, globals())
