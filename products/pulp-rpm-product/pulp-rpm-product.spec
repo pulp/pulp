@@ -14,7 +14,7 @@
 
 Name: pulp-rpm-product
 Version: 0.0.312
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2
 Summary: Pulp (plus) RPM product metapackage
 Group: Development/Languages
