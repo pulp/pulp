@@ -17,14 +17,14 @@ import mock
 
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.exceptions as exceptions
-from pulp.server.webservices.controllers.advanced_search import AdvancedSearchController
+from pulp.server.webservices.controllers.search import SearchController
 
 class TestGetQueryResults(unittest.TestCase):
     PARAMS = {'criteria' : {}}
 
     def setUp(self):
-        self.mock_manager = mock.MagicMock()
-        self.controller = AdvancedSearchController(self.mock_manager)
+        self.mock_query_method = mock.MagicMock()
+        self.controller = SearchController(self.mock_query_method)
         self.controller.params = mock.MagicMock(return_value=self.PARAMS)
 
     def test_requires_criteria(self):
@@ -33,5 +33,5 @@ class TestGetQueryResults(unittest.TestCase):
 
     def test_calls_query(self):
         self.controller._get_query_results()
-        self.assertEqual(self.mock_manager.find_by_criteria.call_count, 1)
-        self.assertTrue(isinstance(self.mock_manager.find_by_criteria.call_args[0][0], Criteria))
+        self.assertEqual(self.mock_query_method.call_count, 1)
+        self.assertTrue(isinstance(self.mock_query_method.call_args[0][0], Criteria))

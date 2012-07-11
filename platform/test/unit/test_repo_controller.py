@@ -50,8 +50,8 @@ class RepoControllersTests(base.PulpWebserviceTests):
         super(RepoControllersTests, self).clean()
         Repo.get_collection().remove(safe=True)
 
-class RepoAdvancedSearchTests(RepoControllersTests):
-    @mock.patch.object(repositories.RepoAdvancedSearch, 'params')
+class RepoSearchTests(RepoControllersTests):
+    @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_basic_search(self, mock_query, mock_params):
         mock_params.return_value = {
@@ -65,7 +65,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         # one call each for criteria, importers, and distributors
         self.assertEqual(mock_params.call_count, 3)
 
-    @mock.patch.object(repositories.RepoAdvancedSearch, 'params')
+    @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_return_value(self, mock_query, mock_params):
         """
@@ -83,7 +83,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         self.assertEqual(ret[1], mock_query.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.repositories.RepoCollection._process_repos')
-    @mock.patch.object(repositories.RepoAdvancedSearch, 'params')
+    @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_search_with_importers(self, mock_query, mock_params, mock_process_repos):
         mock_params.return_value = {
@@ -96,7 +96,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         mock_process_repos.assert_called_once_with([], 1, 0)
 
     @mock.patch('pulp.server.webservices.controllers.repositories.RepoCollection._process_repos')
-    @mock.patch.object(repositories.RepoAdvancedSearch, 'params')
+    @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_search_with_distributors(self, mock_query, mock_params, mock_process_repos):
         mock_params.return_value = {
@@ -109,7 +109,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         mock_process_repos.assert_called_once_with([], 0, 1)
 
     @mock.patch('pulp.server.webservices.controllers.repositories.RepoCollection._process_repos')
-    @mock.patch.object(repositories.RepoAdvancedSearch, 'params')
+    @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_search_with_both(self, mock_query, mock_params, mock_process_repos):
         mock_params.return_value = {
@@ -121,7 +121,7 @@ class RepoAdvancedSearchTests(RepoControllersTests):
         self.assertEqual(ret[0], 200)
         mock_process_repos.assert_called_once_with([], 1, 1)
 
-    @mock.patch.object(repositories.RepoAdvancedSearch, 'params', return_value={})
+    @mock.patch.object(repositories.RepoSearch, 'params', return_value={})
     def test_require_criteria(self, mock_params):
         """
         make sure this raises a MissingValue exception if 'criteria' is not

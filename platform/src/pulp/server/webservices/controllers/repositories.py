@@ -34,7 +34,7 @@ from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices.controllers.advanced_search import AdvancedSearchController
+from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
 
 # -- constants ----------------------------------------------------------------
@@ -180,9 +180,10 @@ class RepoCollection(JSONController):
         return self.created(id, repo)
 
 
-class RepoAdvancedSearch(AdvancedSearchController):
+class RepoSearch(SearchController):
     def __init__(self):
-        super(RepoAdvancedSearch, self).__init__(manager_factory.repo_query_manager())
+        super(RepoSearch, self).__init__(
+            manager_factory.repo_query_manager().find_by_criteria)
 
     @auth_required(READ)
     def POST(self):
@@ -1000,7 +1001,7 @@ class RepoUnitAdvancedSearch(JSONController):
 # These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
     '/', 'RepoCollection', # collection
-    '/search/$', 'RepoAdvancedSearch', # resource search
+    '/search/$', 'RepoSearch', # resource search
     '/([^/]+)/$', 'RepoResource', # resource
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection

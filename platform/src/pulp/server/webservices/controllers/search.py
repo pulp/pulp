@@ -18,14 +18,15 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
 
-class AdvancedSearchController(JSONController):
-    def __init__(self, manager):
+class SearchController(JSONController):
+    def __init__(self, query_method):
         """
-        @param manager:  manager that will be used for the search
-        @type  manager:  anything with a method 'def find_by_criteria(criteria)'
+        @param query_method:    method that will be used for the search
+        @type  query_method:    any method that takes one argument of type
+                                Criteria
         """
-        super(AdvancedSearchController, self).__init__()
-        self.manager = manager
+        super(SearchController, self).__init__()
+        self.query_method = query_method
 
     @auth_required(READ)
     def POST(self):
@@ -68,4 +69,4 @@ class AdvancedSearchController(JSONController):
         except KeyError:
             raise exceptions.MissingValue(['criteria'])
         criteria = Criteria.from_json_doc(criteria_param)
-        return list(self.manager.find_by_criteria(criteria))
+        return list(self.query_method(criteria))
