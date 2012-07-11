@@ -103,6 +103,9 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Wed Jul 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-4
+- create buildroot dir. (jortel@redhat.com)
+
 * Wed Jul 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-3
 - Add BuildRoot so find-debuginfo.sh wont barf on EL5. (jortel@redhat.com)
 
