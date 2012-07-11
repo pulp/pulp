@@ -79,3 +79,17 @@ class ConsumerQueryManager(object):
     def find_by_content_unit(self, unit_id):
         pass
 
+    @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Return a list of consumers that match the provided criteria.
+
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of Consumer instances
+        @rtype:     list
+        """
+        return Consumer.get_collection().query(criteria)
+

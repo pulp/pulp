@@ -12,10 +12,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
+
 import base
 import dummy_plugins
 
 from pulp.plugins import loader as plugin_loader
+from pulp.server.db.connection import PulpCollection
+from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.managers import factory as manager_factory
 
@@ -29,6 +33,22 @@ class ConsumerControllersTests(base.PulpWebserviceTests):
     def clean(self):
         super(ConsumerControllersTests, self).clean()
         Consumer.get_collection().remove(safe=True)
+
+
+class ConsumerAdvancedSearchTests(ConsumerControllersTests):
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    def test_basic_search(self, mock_query, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        ret = self.post('/v2/consumers/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+        self.assertEqual(mock_params.call_count, 1)
+
 
 class ConsumerCollectionTests(ConsumerControllersTests):
 

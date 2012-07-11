@@ -26,7 +26,6 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -35,6 +34,7 @@ from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
 
 # -- constants ----------------------------------------------------------------
@@ -180,7 +180,11 @@ class RepoCollection(JSONController):
         return self.created(id, repo)
 
 
-class RepoAdvancedSearch(JSONController):
+class RepoSearch(SearchController):
+    def __init__(self):
+        super(RepoSearch, self).__init__(
+            manager_factory.repo_query_manager().find_by_criteria)
+
     @auth_required(READ)
     def POST(self):
         """
@@ -205,19 +209,14 @@ class RepoAdvancedSearch(JSONController):
         @return:    list of matching repositories
         @rtype:     list
         """
-        try:
-            criteria_param = self.params()['criteria']
-        except KeyError:
-            raise exceptions.MissingValue(['criteria'])
-        criteria = Criteria.from_json_doc(criteria_param)
-        repos = list(Repo.get_collection().query(criteria))
+        items = self._get_query_results()
 
         RepoCollection._process_repos(
-            repos,
+            items,
             self.params().get('importers', False),
             self.params().get('distributors', False)
         )
-        return self.ok(repos)
+        return self.ok(items)
 
 
 class RepoResource(JSONController):
@@ -1002,7 +1001,7 @@ class RepoUnitAdvancedSearch(JSONController):
 # These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
     '/', 'RepoCollection', # collection
-    '/search/$', 'RepoAdvancedSearch', # resource search
+    '/search/$', 'RepoSearch', # resource search
     '/([^/]+)/$', 'RepoResource', # resource
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection

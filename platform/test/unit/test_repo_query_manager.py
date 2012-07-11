@@ -12,9 +12,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
+
 import base
 import mock_plugins
-
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.factory as manager_factory
 
@@ -203,3 +205,9 @@ class RepoQueryManagerTests(base.PulpServerTests):
         # Verify
         self.assertEqual(0, len(repos))
         self.assertTrue(isinstance(repos, list))
+
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_find_by_criteria(self, mock_query):
+        criteria = Criteria()
+        self.query_manager.find_by_criteria(criteria)
+        mock_query.assert_called_once_with(criteria)

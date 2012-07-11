@@ -26,6 +26,7 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.webservices import execution
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
@@ -78,6 +79,12 @@ class ConsumersCollection(JSONController):
                                    weight=weight,
                                    tags=tags)
         return execution.execute_sync_created(self, call_request, id)
+
+
+class ConsumerSearch(SearchController):
+    def __init__(self):
+        super(ConsumerSearch, self).__init__(
+            managers.consumer_query_manager().find_by_criteria)
 
 
 class ConsumerResource(JSONController):
@@ -602,6 +609,7 @@ class Profile(JSONController):
 
 urls = (
     '/$', 'ConsumersCollection',
+    '/search/$', 'ConsumerSearch', # resource search
     '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
