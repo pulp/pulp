@@ -19,7 +19,6 @@ from gettext import gettext as _
 
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
-from pulp.server.managers.auth.user.cud import UserManager
 from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
@@ -28,7 +27,6 @@ from pulp.server.exceptions import PulpException
 
 _permission_api = PermissionAPI()
 _role_api = RoleAPI()
-_user_manager = UserManager()
 
 
 class PulpAuthorizationError(PulpException):
@@ -42,31 +40,6 @@ operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
 
 # Temporarily moved this out of db into here; this is the only place using it
 # and it's going to be deleted.
-
-class Delta(dict):
-    """
-    The delta of a model object.
-    Contains the primary key and keys/values specified in the filter.
-    """
-
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __init__(self, obj, filter=()):
-        """
-        @param obj: A model object (dict).
-        @type obj: Model|dict
-        @param filter: A list of dictionary keys to include
-            in the delta.
-        @type filter: str|list
-        """
-        dict.__init__(self)
-        if isinstance(filter, basestring):
-            filter = (filter,)
-        for k,v in obj.items():
-            if k in filter:
-                self[k] = v
 
 def name_to_operation(name):
     """
@@ -113,37 +86,6 @@ def operation_to_name(operation):
 
 # utilities -------------------------------------------------------------------
 
-def _get_user(user_name):
-    """
-    Get a user from the database that corresponds to the user name
-    Raise an exception if the user isn't found
-    @type user_name: str
-    @param user_name: user's login
-    @rtype: L{pulp.server.db.model.User} instance
-    @return: user instance
-    @raise L{PulpAuthorizationError}: if no user with name exists
-    """
-    user = _user_manager.find_by_login(login=user_name)
-    if user is None:
-        raise PulpAuthorizationError(_('no such user: %s') % user_name)
-    return user
-
-
-def _get_role(role_name):
-    """
-    Get a role from the database that corresponds to the role name
-    Raise an exceptoin if the role isn't found
-    @type role_name: str
-    @param role_name: role's name
-    @rtype: L{pulp.server.db.model.Role} instance
-    @return: role instance
-    @raise L{PulpAuthorizationError}: if no user with role exists
-    """
-    role = _role_api.role(role_name)
-    if role is None:
-        raise PulpAuthorizationError(_('no such role: %s') % role_name)
-    return role
-
 
 def _get_operations(operation_names):
     """
@@ -161,33 +103,6 @@ def _get_operations(operation_names):
                             ', '.join(operation_names))
     return operations
 
-
-def _get_users_belonging_to_role(role):
-    """
-    Get a list of users belonging to the given role
-    @type role: L{pulp.server.db.model.Role} instance
-    @param role: role to get members of
-    @rtype: list of L{pulp.server.db.model.User} instances
-    @return: list of users that are members of the given role
-    """
-    users = []
-    for user in _user_manager.find_all():
-        if role['name'] in user['roles']:
-            users.append(user)
-    return users
-
-
-def _get_other_roles(role, role_names):
-    """
-    Get a list of role instance corresponding to the role names, excluding the
-    given role instance
-    @type role: L{pulp.server.model.db.Role} instance
-    @param role: role to exclude
-    @type role_names: list or tuple of str's
-    @rtype: list of L{pulp.server.model.db.Role} instances
-    @return: list of roles
-    """
-    return [_get_role(n) for n in role_names if n != role['name']]
 
 
 def _operations_not_granted_by_roles(resource, operations, roles):
@@ -215,22 +130,6 @@ def _operations_not_granted_by_roles(resource, operations, roles):
 
 # permissions api -------------------------------------------------------------
 
-def grant_permission_to_user(resource, user_name, operation_names):
-    """
-    Grant the operations on the resource to the user
-    @type resource: str
-    @param resource: pulp resource to grant operations on
-    @type user_name: str
-    @param user_name: name of the user to grant permissions to
-    @type operation_names: list or tuple of str's
-    @param operation_names: name of the operations to grant
-    @rtype: bool
-    @return: True on success
-    """
-    user = _get_user(user_name)
-    operations = _get_operations(operation_names)
-    _permission_api.grant(resource, user, operations)
-    return True
 
 
 def grant_automatic_permissions_for_created_resource(resource):
@@ -314,61 +213,6 @@ def revoke_all_permissions_from_user(user_name):
     return True
 
 
-def grant_permission_to_role(resource, role_name, operation_names):
-    """
-    Grant the operations on the resource to the users in the given role
-    @type resource: str
-    @param resource: pulp resource to grant operations on
-    @type role_name: str
-    @param role_name: name of the role to grant permissions to
-    @type operation_names: list or tuple of str's
-    @param operation_names: name of the operations to grant
-    @rtype: bool
-    @return: True on success
-    """
-    check_builtin_roles(role_name)
-    role = _get_role(role_name)
-    users = _get_users_belonging_to_role(role)
-    operations = _get_operations(operation_names)
-    current_ops = role['permissions'].setdefault(resource, [])
-    new_ops = []
-    for op in operations:
-        if op in current_ops:
-            continue
-        new_ops.append(op)
-    _role_api.add_permissions(role, resource, new_ops)
-    for user in users:
-        _permission_api.grant(resource, user, operations)
-    return True
-
-
-def revoke_permission_from_role(resource, role_name, operation_names):
-    """
-    Revoke the operations on the resource from the users in the given role
-    @type resource: str
-    @param resource: pulp resource to revoke operations on
-    @type role_name: str
-    @param role_name: name of the role to revoke permissions from
-    @type operation_names: list or tuple of str's
-    @param operation_names: name of the operations to revoke
-    @rtype: bool
-    @return: True on success
-    """
-    check_builtin_roles(role_name)
-    role = _get_role(role_name)
-    if resource not in role['permissions']:
-        return False
-    operations = _get_operations(operation_names)
-    _role_api.remove_permissions(role, resource, operations)
-    users = _get_users_belonging_to_role(role)
-    for user in users:
-        other_roles = _get_other_roles(role, user['roles'])
-        user_ops = _operations_not_granted_by_roles(resource,
-                                                    operations,
-                                                    other_roles)
-        _permission_api.revoke(resource, user, user_ops)
-    return True
-
 
 def show_permissions(resource):
     """
@@ -447,84 +291,6 @@ def create_role(role_name):
     """
     return _role_api.create(role_name)
 
-
-def delete_role(role_name):
-    """
-    Delete a role. This has the side-effect of revoking any permissions granted
-    to the role from the users in the role, unless those permissions are also
-    granted through another role the user is a memeber of.
-    @type role_name: name of the role to delete
-    @param role_name: role name
-    @rtype: bool
-    @return: True on success
-    """
-    check_builtin_roles(role_name)
-    role = _get_role(role_name)
-    users = _get_users_belonging_to_role(role)
-    for resource, operations in role['permissions'].items():
-        for user in users:
-            other_roles = _get_other_roles(role, user['roles'])
-            user_ops = _operations_not_granted_by_roles(resource,
-                                                        operations,
-                                                        other_roles)
-            _permission_api.revoke(resource, user, user_ops)
-    for user in users:
-        user['roles'].remove(role_name)
-        _user_manager.update_user(user['login'], Delta(user, 'roles'))
-    _role_api.delete(role)
-    return True
-
-
-def add_user_to_role(role_name, user_name):
-    """
-    Add a user to a role. This has the side-effect of granting all the
-    permissions granted to the role to the user.
-    @type role_name: str
-    @param role_name: name of role
-    @type user_name: str
-    @param user_name: name of user
-    @rtype: bool
-    @return: True on success
-    """
-    role = _get_role(role_name)
-    user = _get_user(user_name)
-    if role_name in user['roles']:
-        return False
-    user['roles'].append(role_name)
-    _user_manager.update_user(user['login'], Delta(user, 'roles'))
-    for resource, operations in role['permissions'].items():
-        _permission_api.grant(resource, user, operations)
-    return True
-
-
-def remove_user_from_role(role_name, user_name):
-    """
-    Remove a user from a role. This has the side-effect of revoking all the
-    permissions granted to the role from the user, unless the permissions are
-    also granted by another role.
-    @type role_name: str
-    @param role_name: name of role
-    @type user_name: str
-    @param suer_name: name of user
-    @rtype: bool
-    @return: True on success
-    """
-    role = _get_role(role_name)
-    user = _get_user(user_name)
-    if role_name == super_user_role and is_last_super_user(user):
-        raise PulpAuthorizationError(_('%s cannot be empty, and %s is the last member') %
-                                     (super_user_role, user_name))
-    if role_name not in user['roles']:
-        return False
-    user['roles'].remove(role_name)
-    _user_manager.update_user(user['login'], Delta(user, 'roles'))
-    for resource, operations in role['permissions'].items():
-        other_roles = _get_other_roles(role, user['roles'])
-        user_ops = _operations_not_granted_by_roles(resource,
-                                                    operations,
-                                                    other_roles)
-        _permission_api.revoke(resource, user, user_ops)
-    return True
 
 
 def list_users_in_role(role_name):

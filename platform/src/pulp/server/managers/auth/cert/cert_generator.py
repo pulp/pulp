@@ -66,154 +66,154 @@ class SerialNumber:
         finally:
             self.__mutex.release()
 
-class CertGenerationManager():
+class CertGenerationManager(object):
     
-def make_admin_user_cert(user):
-    '''
-    Generates a x509 certificate for an admin user.
+    def make_admin_user_cert(self, user):
+        '''
+        Generates a x509 certificate for an admin user.
 
-    @param user: identification the certificate will be created for; may not be None
-    @type  user: pulp.server.db.model.User
+        @param user: identification the certificate will be created for; may not be None
+        @type  user: pulp.server.db.model.User
 
-    @return: tuple of PEM encoded private key and certificate
-    @rtype:  (str, str)
-    '''
-    expiration = config.config.getint('security', 'user_cert_expiration')
-    return make_cert(encode_admin_user(user), expiration)
+        @return: tuple of PEM encoded private key and certificate
+        @rtype:  (str, str)
+        '''
+        expiration = config.config.getint('security', 'user_cert_expiration')
+        return self.make_cert(self.encode_admin_user(user), expiration)
 
-def make_cert(uid, expiration):
-    """
-    Generate an x509 certificate with the Subject set to the uid passed into this method:
-    Subject: CN=someconsumer.example.com
+    def make_cert(self, uid, expiration):
+        """
+        Generate an x509 certificate with the Subject set to the uid passed into this method:
+        Subject: CN=someconsumer.example.com
 
-    @param uid: ID to be embedded in the certificate
-    @type  uid: string
+        @param uid: ID to be embedded in the certificate
+        @type  uid: string
 
-    @return: tuple of PEM encoded private key and certificate
-    @rtype:  (str, str)
-    """
-    # Ensure we are dealing with a string and not unicode
-    try:
-        uid = str(uid)
-    except UnicodeEncodeError:
-        uid = encode_unicode(uid)
+        @return: tuple of PEM encoded private key and certificate
+        @rtype:  (str, str)
+        """
+        # Ensure we are dealing with a string and not unicode
+        try:
+            uid = str(uid)
+        except UnicodeEncodeError:
+            uid = encode_unicode(uid)
 
-    log.debug("make_cert: [%s]" % uid)
+        log.debug("make_cert: [%s]" % uid)
 
-    #Make a private key
-    # Don't use M2Crypto directly as it leads to segfaults when trying to convert
-    # the key to a PEM string.  Instead create the key with openssl and return the PEM string
-    # Sorta hacky but necessary.
-    # rsa = RSA.gen_key(1024, 65537, callback=passphrase_callback)
-    private_key_pem = _make_priv_key()
-    rsa = RSA.load_key_string(private_key_pem,
-                              callback=util.no_passphrase_callback)
+        #Make a private key
+        # Don't use M2Crypto directly as it leads to segfaults when trying to convert
+        # the key to a PEM string.  Instead create the key with openssl and return the PEM string
+        # Sorta hacky but necessary.
+        # rsa = RSA.gen_key(1024, 65537, callback=passphrase_callback)
+        private_key_pem = _make_priv_key()
+        rsa = RSA.load_key_string(private_key_pem,
+                                  callback=util.no_passphrase_callback)
 
-    # Make the Cert Request
-    req, pub_key = _make_cert_request(uid, rsa)
+        # Make the Cert Request
+        req, pub_key = _make_cert_request(uid, rsa)
 
-    # Sign it with the Pulp server CA
-    # We can't do this in m2crypto either so we have to shell out
+        # Sign it with the Pulp server CA
+        # We can't do this in m2crypto either so we have to shell out
 
-    ca_cert = config.config.get('security', 'cacert')
-    ca_key = config.config.get('security', 'cakey')
+        ca_cert = config.config.get('security', 'cacert')
+        ca_key = config.config.get('security', 'cakey')
 
-    sn = SerialNumber()
-    serial = sn.next()
+        sn = SerialNumber()
+        serial = sn.next()
 
-    cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
-          (ca_cert, ca_key, serial, expiration)
-    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output = p.communicate(input=req.as_pem())[0]
-    p.wait()
-    exit_code = p.returncode
-    if exit_code != 0:
-        raise Exception("error signing cert request: %s" % output)
-    cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
-    return private_key_pem, cert_pem_string
+        cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
+                (ca_cert, ca_key, serial, expiration)
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output = p.communicate(input=req.as_pem())[0]
+        p.wait()
+        exit_code = p.returncode
+        if exit_code != 0:
+            raise Exception("error signing cert request: %s" % output)
+        cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
+        return private_key_pem, cert_pem_string
 
-def verify_cert(cert_pem):
-    '''
-    Ensures the given certificate can be verified against the server's CA.
+    def verify_cert(self, cert_pem):
+        '''
+        Ensures the given certificate can be verified against the server's CA.
 
-    @param cert_pem: PEM encoded certificate to be verified
-    @type  cert_pem: string
+        @param cert_pem: PEM encoded certificate to be verified
+        @type  cert_pem: string
 
-    @return: True if the certificate is successfully verified against the CA; False otherwise
-    @rtype:  boolean
-    '''
+        @return: True if the certificate is successfully verified against the CA; False otherwise
+        @rtype:  boolean
+        '''
 
-    # M2Crypto doesn't support verifying a cert against a CA, so call out to openssl
-    ca_cert = config.config.get('security', 'cacert')
-    cmd = 'openssl verify -CAfile %s' % ca_cert
-    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+        # M2Crypto doesn't support verifying a cert against a CA, so call out to openssl
+        ca_cert = config.config.get('security', 'cacert')
+        cmd = 'openssl verify -CAfile %s' % ca_cert
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # Use communicate to pipe the certificate to the verify call
-    stdout, stderr = p.communicate(input=cert_pem)
+        # Use communicate to pipe the certificate to the verify call
+        stdout, stderr = p.communicate(input=cert_pem)
 
-    # Successful result example:
-    #   stdin: OK\n
-    # Failed result example:
-    #   stdin: C = US, ST = NC, L = Raleigh, O = Red Hat, CN = localhost
-    #   error 20 at 0 depth lookup:unable to get local issuer certificate\n
-    result = stdout.rstrip()
+        # Successful result example:
+        #   stdin: OK\n
+        # Failed result example:
+        #   stdin: C = US, ST = NC, L = Raleigh, O = Red Hat, CN = localhost
+        #   error 20 at 0 depth lookup:unable to get local issuer certificate\n
+        result = stdout.rstrip()
 
-    if result.endswith('OK'):
-        return True
-    else:
-        return False
+        if result.endswith('OK'):
+            return True
+        else:
+            return False
 
-def encode_admin_user(user):
-    '''
-    Encodes an admin user's identity into a single line suitable for identification.
-    This is intended to be the identity used in admin certificates.
+    def encode_admin_user(self, user):
+        '''
+        Encodes an admin user's identity into a single line suitable for identification.
+        This is intended to be the identity used in admin certificates.
 
-    @param user: admin user; may not be None
-    @type user:  pulp.server.db.model.User
+        @param user: admin user; may not be None
+        @type user:  pulp.server.db.model.User
 
-    @return: single line identification of the admin user safe for public visibility;
-             any sensitive information is hashed
-    @rtype:  string
-    '''
-    return '%s%s%s%s' % (ADMIN_PREFIX, user['login'], ADMIN_SPLITTER, user['id'])
+        @return: single line identification of the admin user safe for public visibility;
+                 any sensitive information is hashed
+        @rtype:  string
+        '''
+        return '%s%s%s%s' % (ADMIN_PREFIX, user['login'], ADMIN_SPLITTER, user['id'])
 
-def is_admin_user(encoded_string):
-    '''
-    Indicates if the encoded user string represents an admin user. If the string is
-    identified as an admin user, it can be parsed with decode_admin_user.
+    def is_admin_user(self, encoded_string):
+        '''
+        Indicates if the encoded user string represents an admin user. If the string is
+        identified as an admin user, it can be parsed with decode_admin_user.
 
-    @return: True if the user string represents an admin user; False otherwise
-    @rtype:  boolean
-    '''
-    return encoded_string.startswith(ADMIN_PREFIX)
+        @return: True if the user string represents an admin user; False otherwise
+        @rtype:  boolean
+        '''
+        return encoded_string.startswith(ADMIN_PREFIX)
 
-def decode_admin_user(encoded_string):
-    '''
-    Decodes the single line admin user identification produced by encode_admin_user
-    into all of the parts that make up that identification.
+    def decode_admin_user(self, encoded_string):
+        '''
+        Decodes the single line admin user identification produced by encode_admin_user
+        into all of the parts that make up that identification.
 
-    @param encoded_string: string representation of the user provided by encode_admin_user
-    @type  encoded_string: string
+        @param encoded_string: string representation of the user provided by encode_admin_user
+        @type  encoded_string: string
+    
+        @return: tuple of information describing the admin user; (username, id)
+        @rtype:  (string, string)
+        '''
 
-    @return: tuple of information describing the admin user; (username, id)
-    @rtype:  (string, string)
-    '''
+        # Strip off the leading "admin:" prefix
+        encoded_string = encoded_string[len(ADMIN_PREFIX):]
 
-    # Strip off the leading "admin:" prefix
-    encoded_string = encoded_string[len(ADMIN_PREFIX):]
+        # Find where to split
+        parsed = encoded_string.split(ADMIN_SPLITTER)
 
-    # Find where to split
-    parsed = encoded_string.split(ADMIN_SPLITTER)
+        if len(parsed) != 2:
+            raise PulpException('Invalid encoded admin user information [%s]' % encoded_string)
 
-    if len(parsed) != 2:
-        raise PulpException('Invalid encoded admin user information [%s]' % encoded_string)
+        username = parsed[0]
+        id = parsed[1]
 
-    username = parsed[0]
-    id = parsed[1]
-
-    return username, id
+        return username, id
 
 def _make_priv_key():
     cmd = 'openssl genrsa 1024'

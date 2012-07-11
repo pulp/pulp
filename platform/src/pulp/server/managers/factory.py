@@ -41,6 +41,7 @@ TYPE_DEPENDENCY             = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
 TYPE_PERMISSION             = 'permission-manager'
+TYPE_PERMISSION_QUERY       = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
 TYPE_REPO                   = 'repo-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
@@ -52,8 +53,10 @@ TYPE_REPO_PUBLISH           = 'repo-publish-manager'
 TYPE_REPO_QUERY             = 'repo-query-manager'
 TYPE_REPO_SYNC              = 'repo-sync-manager'
 TYPE_ROLE                   = 'role-manager'
+TYPE_ROLE_QUERY             = 'role-query-manager'
 TYPE_SCHEDULE               = 'schedule-manager'
 TYPE_USER                   = 'user-manager'
+TYPE_USER_QUERY             = 'user-query-manager'
 
 
 # Mapping of key to class that will be instantiated in the factory method
@@ -170,6 +173,12 @@ def permission_manager():
     """
     return get_manager(TYPE_PERMISSION)
 
+def permission_query_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.permission.query.PermissionQueryManager}
+    """
+    return get_manager(TYPE_PERMISSION_QUERY)
+
 def plugin_manager():
     """
     @rtype: L{pulp.server.managers.plugin.PluginManager}
@@ -236,6 +245,12 @@ def role_manager():
     """
     return get_manager(TYPE_ROLE)
 
+def role_query_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.role.query.RoleQueryManager}
+    """
+    return get_manager(TYPE_ROLE_QUERY)
+
 def schedule_manager():
     """
     @rtype: L{pulp.server.manager.schedule.cud.ScheduleManager}
@@ -248,6 +263,12 @@ def user_manager():
     """
     return get_manager(TYPE_USER)
 
+def user_query_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.user.query.UserQueryManager}
+    """
+    return get_manager(TYPE_USER_QUERY)
+
 # -- other --------------------------------------------------------------------
 
 def initialize():
@@ -257,8 +278,11 @@ def initialize():
     """
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.auth.user.cud import UserManager
+    from pulp.server.managers.auth.user.query import UserQueryManager
     from pulp.server.managers.auth.permission.cud import PermissionManager
+    from pulp.server.managers.auth.permission.query import PermissionQueryManager
     from pulp.server.managers.auth.role.cud import RoleManager
+    from pulp.server.managers.auth.role.query import RoleQueryManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.bind import BindManager
@@ -301,6 +325,7 @@ def initialize():
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
         TYPE_PERMISSION: PermissionManager,
+        TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
@@ -312,8 +337,10 @@ def initialize():
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_REPO_GROUP: RepoGroupManager,
         TYPE_ROLE: RoleManager,
+        TYPE_ROLE_QUERY: RoleQueryManager,
         TYPE_SCHEDULE: ScheduleManager,
         TYPE_USER: UserManager,
+        TYPE_USER_QUERY: UserQueryManager,
     }
     _CLASSES.update(builtins)
 

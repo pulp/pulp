@@ -93,6 +93,35 @@ class RoleManager(object):
       
         Role.get_collection().remove({'name' : name}, safe=True)
 
+#def delete_role(role_name):
+#    """
+#    Delete a role. This has the side-effect of revoking any permissions granted
+#    to the role from the users in the role, unless those permissions are also
+#    granted through another role the user is a memeber of.
+#    @type role_name: name of the role to delete
+#    @param role_name: role name
+#    @rtype: bool
+#    @return: True on success
+#    """
+#    check_builtin_roles(role_name)
+#    role = _get_role(role_name)
+#    users = _get_users_belonging_to_role(role)
+#    for resource, operations in role['permissions'].items():
+#        for user in users:
+#            other_roles = _get_other_roles(role, user['roles'])
+#            user_ops = _operations_not_granted_by_roles(resource,
+#                                                        operations,
+#                                                        other_roles)
+#            _permission_api.revoke(resource, user, user_ops)
+#    for user in users:
+#        user['roles'].remove(role_name)
+#        _user_manager.update_user(user['login'], Delta(user, 'roles'))
+#    _role_api.delete(role)
+#    return True
+
+
+
+
 
     def add_permissions_to_role(self, name, resource, operations):
         role = Role.get_collection().find_one({'name' : name})
@@ -151,30 +180,6 @@ class RoleManager(object):
         """
         self._ensure_super_user_role()
         self._ensure_consumer_user_role()
-
-
-    def find_all(self):
-        """
-        Returns serialized versions of all role in the database.
-
-        @return: list of serialized roles
-        @rtype:  list of dict
-        """
-        all_roles = list(Role.get_collection().find())
-        return all_roles
-
-
-    def find_by_name(self, name):
-        """
-        Returns a serialized version of the given role if it exists.
-        If a role cannot be found with the given name, None is returned.
-
-        @return: serialized data describing the role
-        @rtype:  dict or None
-        """
-        role = Role.get_collection().find_one({'name' : name})
-        return role
-
 
 
 # -- functions ----------------------------------------------------------------

@@ -192,26 +192,4 @@ class PermissionManager(object):
         Role.get_collection().save(role, safe=True)
 
 
-    def find_all(self):
-        """
-        Returns serialized versions of all permissions in the database.
-
-        @return: list of serialized permissions
-        @rtype:  list of dict
-        """
-        all_permissions = list(Permission.get_collection().find())
-        return all_permissions
-
-
-    def find_by_resource(self, resource_uri):
-        """
-        Returns a serialized version of the given permission if it exists.
-        If a resource cannot be found with the given URI, None is returned.
-
-        @return: serialized data describing the permission
-        @rtype:  dict or None
-        """
-        permission = Permission.get_collection().find_one({'resource' : resource_uri})
-        return permission
-
 

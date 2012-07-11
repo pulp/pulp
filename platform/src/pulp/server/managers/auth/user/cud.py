@@ -177,48 +177,75 @@ class UserManager(object):
         user_coll.save(user, safe=True)
 
         return user
-
-
-    def find_all(self):
-        """
-        Returns serialized versions of all users in the database.
-
-        @return: list of serialized users
-        @rtype:  list of dict
-        """
-        all_users = list(User.get_collection().find())
-        for user in all_users:
-            user.pop('password')
-        return all_users
-
-
-    def find_by_login(self, login):
-        """
-        Returns a serialized version of the given user if it exists.
-        If a user cannot be found with the given login, None is returned.
-
-        @return: serialized data describing the user
-        @rtype:  dict or None
-        """
-        user = User.get_collection().find_one({'login' : login})
-        return user
-
-
-    def find_by_id_list(self, login_list):
-        """
-        Returns serialized versions of all of the given users. Any
-        login that does not refer to valid user are ignored and will not
-        raise an error.
-
-        @param login_list: list of logins
-        @type  login_list: list of str
-
-        @return: list of serialized users
-        @rtype:  list of dict
-        """
-        users = list(User.get_collection().find({'id' : {'$in' : login_list}}))
-        return users
     
+    
+    def add_user_to_role(self, role_name, user_name):
+        """
+        Add a user to a role. This has the side-effect of granting all the
+        permissions granted to the role to the user.
+        
+        @type role_name: str
+        @param role_name: name of role
+        
+        @type user_name: str
+        @param user_name: name of user
+        
+        @rtype: bool
+        @return: True on success
+        """
+        role_query_manager = factory.role_query_manager()
+        role = role_query_manager.find_by_name(role_name)
+        
+        user_query_manager = factory.user_query_manager()
+        user = user_query_manager.find_by_login(user_name)
+        
+        if role_name in user['roles']:
+            return False
+        user['roles'].append(role_name)
+        user_manager = factory.user_manager()
+        user_manager.update_user(user['login'], Delta(user, 'roles'))
+        
+        permission_manager = factory.permission_manager() 
+        for resource, operations in role['permissions'].items():
+            permission_manager.grant(resource, user, operations)
+        return True
+
+
+    def remove_user_from_role(self, role_name, user_name):
+        """
+        Remove a user from a role. This has the side-effect of revoking all the
+        permissions granted to the role from the user, unless the permissions are
+        also granted by another role.
+        
+        @type role_name: str
+        @param role_name: name of role
+    
+        @type user_name: str
+        @param suer_name: name of user
+        
+        @rtype: bool
+        @return: True on success
+        """
+        role = _get_role(role_name)
+        user = _get_user(user_name)
+        if role_name == super_user_role and is_last_super_user(user):
+            raise PulpAuthorizationError(_('%s cannot be empty, and %s is the last member') %
+                                     (super_user_role, user_name))
+        if role_name not in user['roles']:
+            return False
+        user['roles'].remove(role_name)
+        _user_manager.update_user(user['login'], Delta(user, 'roles'))
+        for resource, operations in role['permissions'].items():
+            other_roles = _get_other_roles(role, user['roles'])
+            user_ops = _operations_not_granted_by_roles(resource,
+                                                        operations,
+                                                        other_roles)
+            _permission_api.revoke(resource, user, user_ops)
+        return True
+
+    
+
+  
     def ensure_admin(self):
         """
         This function ensures that there is at least one super user for the system.
