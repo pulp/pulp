@@ -2,7 +2,7 @@
 
 Name: grinder
 Version: 0.1.5
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
