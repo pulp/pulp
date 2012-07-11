@@ -2,7 +2,7 @@
 
 Name: grinder
 Version: 0.1.5
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
@@ -59,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Jul 11 2012 Jeff Ortel <jortel@redhat.com> 0.1.5-2
+- updating grinder tar ball (pkilambi@redhat.com)
+
 * Thu Jul 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.5-1
 - updating grinder to include fix for #828447 (pkilambi@redhat.com)
 

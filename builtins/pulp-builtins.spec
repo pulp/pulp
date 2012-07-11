@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 0.0.312
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -52,6 +52,7 @@ rm -rf %{buildroot}
 
 %package admin-extensions
 Summary: The builtin admin client extensions
+Group: Development/Languages
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
@@ -74,6 +75,7 @@ client capabilites.
 
 %package consumer-extensions
 Summary: The builtin consumer client extensions
+Group: Development/Languages
 Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
@@ -89,6 +91,10 @@ client capabilites.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-3
+- bump release. (jortel@redhat.com)
+- Add Group: Development/Languages for RHEL5 builds. (jortel@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
 - Add missing pulp_user extension. (jortel@redhat.com)
 
