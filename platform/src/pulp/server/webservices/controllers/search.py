@@ -39,17 +39,7 @@ class SearchController(JSONController):
                             an instance of the Criteria model.
         @type  criteria:    dict
 
-        @param importers:   Optional. iff evaluates to True, will include
-                            each repo's related importers on the 'importers'
-                            attribute.
-        @type  imports:     bool
-
-        @param distributors:    Optional. iff evaluates to True, will include
-                                each repo's related distributors on the
-                                'importers' attribute.
-        @type  distributors:    bool
-
-        @return:    list of matching repositories
+        @return:    list of matching items
         @rtype:     list
         """
 
