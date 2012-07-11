@@ -14,12 +14,13 @@
 
 Name: pulp-rpm-product
 Version: 0.0.312
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPLv2
 Summary: Pulp (plus) RPM product metapackage
 Group: Development/Languages
 URL: https://fedorahosted.org/pulp/
 Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 
 %description
