@@ -134,3 +134,17 @@ class RepoQueryManager(object):
             results.append(repo)
 
         return results
+
+    @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Return a list of repositories that match the provided criteria.
+
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of Repo instances
+        @rtype:     list
+        """
+        return Repo.get_collection().query(criteria)

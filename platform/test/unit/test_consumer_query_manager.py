@@ -12,9 +12,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
+
 import base
 
 from pulp.server.db.model.consumer import Consumer
+from pulp.server.db.model.criteria import Criteria
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.query as query_manager
 
@@ -118,3 +121,9 @@ class ConsumerQueryManagerTests(base.PulpServerTests):
         ids = [c['id'] for c in consumers]
         self.assertTrue('consumer-2' in ids)
         self.assertTrue('consumer-1' in ids)
+
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_find_by_criteria(self, mock_query):
+        criteria = Criteria()
+        self.query_manager.find_by_criteria(criteria)
+        mock_query.assert_called_once_with(criteria)

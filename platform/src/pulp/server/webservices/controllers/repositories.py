@@ -182,7 +182,7 @@ class RepoCollection(JSONController):
 
 class RepoAdvancedSearch(AdvancedSearchController):
     def __init__(self):
-        super(RepoAdvancedSearch, self).__init__(Repo.get_collection())
+        super(RepoAdvancedSearch, self).__init__(manager_factory.repo_query_manager())
 
     @auth_required(READ)
     def POST(self):
