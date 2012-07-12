@@ -43,7 +43,19 @@ class Criteria(Model):
         self.fields = fields
 
     @classmethod
-    def from_json_doc(cls, doc):
+    def from_client_input(cls, doc):
+        """
+        Accept input provided by a client (such as through a GET or POST
+        request), validate that the provided data is part of a Criteria
+        definition, and ensure that no additional data is present.
+
+        @param doc: a dict including only data that corresponds to attributes
+                    of a Criteria object
+        @type  doc: dict
+
+        @return:    new Criteria instance based on provided data
+        @rtype:     pulp.server.db.model.criteria.Criteria
+        """
         doc = copy.copy(doc)
         filters = _validate_filters(doc.pop('filters', None))
         sort = _validate_sort(doc.pop('sort', None))
@@ -53,11 +65,6 @@ class Criteria(Model):
         if doc:
             raise pulp_exceptions.InvalidValue(doc.keys())
         return cls(filters, sort, limit, skip, fields)
-
-    @classmethod
-    def from_query_params(cls, params):
-        # pagination
-        pass
 
     @property
     def spec(self):

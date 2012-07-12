@@ -134,6 +134,25 @@ class RepoSearchTests(RepoControllersTests):
         self.assertTrue('missing_property_names' in value)
         self.assertEqual(value['missing_property_names'], [u'criteria'])
 
+    @mock.patch.object(PulpCollection, 'query')
+    def test_get(self, mock_query):
+        """
+        Make sure that we can do a criteria-based search with GET. Ensures that
+        a proper Criteria object is created and passed to the collection's
+        query method.
+        """
+        status, body = self.get(
+            '/v2/repositories/search/?fields=id&fields=display_name&limit=20')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_query.call_count, 1)
+        generated_criteria = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(generated_criteria, criteria.Criteria))
+        self.assertEqual(len(generated_criteria.fields), 2)
+        self.assertTrue('id' in generated_criteria.fields)
+        self.assertTrue('display_name' in generated_criteria.fields)
+        self.assertEqual(generated_criteria.limit, 20)
+        self.assertTrue(generated_criteria.skip is None)
+
 
 class RepoCollectionTests(RepoControllersTests):
 

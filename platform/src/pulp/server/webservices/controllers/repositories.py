@@ -209,7 +209,7 @@ class RepoSearch(SearchController):
         @return:    list of matching repositories
         @rtype:     list
         """
-        items = self._get_query_results()
+        items = self._get_query_results_from_post()
 
         RepoCollection._process_repos(
             items,

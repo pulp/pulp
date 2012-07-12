@@ -106,7 +106,7 @@ class RepoGroupAssociateAction(JSONController):
 
     @auth_required(authorization.EXECUTE)
     def POST(self, repo_group_id):
-        criteria = Criteria.from_json_doc(self.params())
+        criteria = Criteria.from_client_input(self.params())
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 action_tag('repo_group_associate')]
@@ -124,7 +124,7 @@ class RepoGroupUnassociateAction(JSONController):
 
     @auth_required(authorization.EXECUTE)
     def POST(self, repo_group_id):
-        criteria = Criteria.from_json_doc(self.params())
+        criteria = Criteria.from_client_input(self.params())
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 action_tag('repo_group_unassociate')]

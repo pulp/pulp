@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import web
+
 from pulp.server.auth.authorization import READ
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.exceptions as exceptions
@@ -29,6 +31,17 @@ class SearchController(JSONController):
         self.query_method = query_method
 
     @auth_required(READ)
+    def GET(self):
+        """
+        Searches based on a Criteria object. Pass in each Criteria field as a
+        query parameter.  For the 'fields' parameter, pass multiple fields as
+        separate key-value pairs as is normal with query parameters in URLs. For
+        example, '/v2/sometype/search/?fields=id&fields=display_name' will
+        return the fields 'id' and 'display_name'.
+        """
+        return self.ok(self._get_query_results_from_get())
+
+    @auth_required(READ)
     def POST(self):
         """
         Searches based on a Criteria object. Requires a posted parameter
@@ -43,9 +56,22 @@ class SearchController(JSONController):
         @rtype:     list
         """
 
-        return self.ok(self._get_query_results())
+        return self.ok(self._get_query_results_from_post())
 
-    def _get_query_results(self):
+    def _get_query_results_from_get(self):
+        """
+        Looks for query parameters that define a Criteria, and returns the
+        results of a search based on that Criteria.
+
+        @return:    list of documents from the DB that match the given criteria
+                    for the collection associated with this controller
+        @rtype:     list
+        """
+        input = web.input(fields=[])
+        criteria = Criteria.from_client_input(input)
+        return list(self.query_method(criteria))
+
+    def _get_query_results_from_post(self):
         """
         Looks for a Criteria passed as a POST parameter on ket 'criteria', and
         returns the results of a search based on that Criteria.
@@ -58,5 +84,5 @@ class SearchController(JSONController):
             criteria_param = self.params()['criteria']
         except KeyError:
             raise exceptions.MissingValue(['criteria'])
-        criteria = Criteria.from_json_doc(criteria_param)
+        criteria = Criteria.from_client_input(criteria_param)
         return list(self.query_method(criteria))
