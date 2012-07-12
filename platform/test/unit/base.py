@@ -203,7 +203,7 @@ class PulpWebserviceTests(PulpServerTests):
         dispatch_factory.finalize(clear_queued_calls=True)
 
     def get(self, uri, params=None, additional_headers=None):
-        return self._do_request('get', uri, params, additional_headers)
+        return self._do_request('get', uri, params, additional_headers, serialize_json=False)
 
     def post(self, uri, params=None, additional_headers=None):
         return self._do_request('post', uri, params, additional_headers)
