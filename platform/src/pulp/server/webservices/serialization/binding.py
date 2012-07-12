@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Module for content serialization.
+Module for binding serialization.
 """
 
 from pulp.server.managers import factory as manager_factory

@@ -32,6 +32,7 @@ import content
 import dispatch
 import error
 import link
+import profile
 import repo
 
-__all__ = ['consumer', 'content', 'dispatch', 'error', 'link', 'repo']
+__all__ = ['binding', 'content', 'dispatch', 'error', 'link', 'profile', 'repo']

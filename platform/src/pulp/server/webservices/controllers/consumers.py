@@ -463,7 +463,7 @@ class Profiles(JSONController):
         """
         manager = managers.consumer_profile_manager()
         profiles = manager.get_profiles(consumer_id)
-        profiles = [Profile.serialized(p) for p in profiles]
+        profiles = [serialization.profile.serialize(p) for p in profiles]
         return self.ok(profiles)
 
     @auth_required(CREATE)
@@ -506,14 +506,6 @@ class Profile(JSONController):
     unit profiles.
     """
 
-    @classmethod
-    def serialized(cls, profile):
-        serialized = dict(profile)
-        link = serialization.link.child_link_obj(
-            profile['consumer_id'],
-            profile['content_type'])
-        return serialized
-
     @auth_required(READ)
     def GET(self, consumer_id, content_type):
         """
@@ -522,7 +514,8 @@ class Profile(JSONController):
         """
         manager = managers.consumer_profile_manager()
         profile = manager.get_profile(consumer_id, content_type)
-        return self.ok(self.serialized(profile))
+        serialized = serialization.profile.serialize(profile)
+        return self.ok(serialized)
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, content_type):
