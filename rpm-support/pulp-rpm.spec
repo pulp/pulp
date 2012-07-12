@@ -31,6 +31,14 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose
 BuildRequires:  rpm-python
 
+%if 0%{?rhel} == 5
+# RHEL-5
+Requires: mkisofs
+%else
+# RHEL-6 & Fedora
+Requires: genisoimage
+%endif
+
 %description
 Provides a collection of platform plugins, client extensions and agent
 handlers that provide RPM support.
