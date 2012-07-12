@@ -245,20 +245,6 @@ class Binding(JSONController):
         serialized_bind = serialization.consumer.serialize(bind)
         return self.ok(serialized_bind)
 
-    @auth_required(UPDATE)
-    def PUT(self, consumer_id, repo_id, distributor_id):
-        """
-        Update a bind.
-            **TBD
-        @param consumer_id: A consumer ID.
-        @type consumer_id: str
-        @param repo_id: A repo ID.
-        @type repo_id: str
-        @param distributor_id: A distributor ID.
-        @type distributor_id: str
-        """
-        return self.not_implemented()
-
     @auth_required(DELETE)
     def DELETE(self, consumer_id, repo_id, distributor_id):
         """
