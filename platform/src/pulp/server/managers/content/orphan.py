@@ -13,10 +13,12 @@
 
 import logging
 import os
+import re
 from gettext import gettext as _
 
-from pulp.server import exceptions as pulp_exceptions
 from pulp.plugins.types import database as content_types_db
+from pulp.server import constants as pulp_constants
+from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 
@@ -148,17 +150,29 @@ class OrphanManager(object):
         @type  path: str
         """
         assert os.path.isabs(path)
-        assert os.access(path, os.F_OK | os.W_OK)
 
         _LOG.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
 
+        if not os.path.exists(path):
+            _LOG.warn(_('Cannot delete orphaned file: %(p)s, No such file') % {'p': path})
+            return
+
+        if not os.access(path, os.W_OK):
+            _LOG.warn(_('Cannot delete orphaned file: %(p)s, Insufficient permissions') % {'p': path})
+            return
+
         os.unlink(path)
 
+        # delete parent directories on the path as long as they fall empty
+        root_content_regex = re.compile(os.path.join(pulp_constants.LOCAL_STORAGE, 'content', '[^/]+/?'))
         while True:
             path = os.path.dirname(path)
-            if path == '/':
+            if root_content_regex.match(path):
                 break
             contents = os.listdir(path)
-            if not contents and os.access(path, os.W_OK):
-                os.rmdir(path)
+            if contents:
+                break
+            if not os.access(path, os.W_OK):
+                break
+            os.rmdir(path)
 

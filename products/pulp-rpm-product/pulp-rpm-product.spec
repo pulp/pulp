@@ -13,13 +13,14 @@
 # ---- Pulp (plus) RPM Product---------------------------------------------------------
 
 Name: pulp-rpm-product
-Version: 0.0.312
-Release: 2%{?dist}
+Version: 0.0.313
+Release: 1%{?dist}
 License: GPLv2
 Summary: Pulp (plus) RPM product metapackage
 Group: Development/Languages
 URL: https://fedorahosted.org/pulp/
 Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 
 %description
@@ -29,6 +30,7 @@ The Pulp (plus) RPM product metapackage.
 %setup -q
 
 %build
+mkdir -p %{buildroot}
 
 %install
 
@@ -101,6 +103,14 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
+- Version alignment.
+* Wed Jul 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-4
+- create buildroot dir. (jortel@redhat.com)
+
+* Wed Jul 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-3
+- Add BuildRoot so find-debuginfo.sh wont barf on EL5. (jortel@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
 - bump release. (jortel@redhat.com)
 - Fix Group: in product spec. (jortel@redhat.com)
