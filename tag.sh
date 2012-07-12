@@ -5,10 +5,13 @@
 # Also, when adding that flag, don't forget to delete the above comment. :)
 
 GIT_ROOT=`pwd`
+TAG_FLAGS="--accept-auto-changelog"
+PUSH_FLAGS="--tags"
 
 for SUBPROJECT in platform rpm-support builtins products/pulp-rpm-product
 do
-  cd $SUBPROJECT
-  tito tag --accept-auto-changelog && git push && git push --tags
-  cd $GIT_ROOT
+  pushd $SUBPROJECT
+  echo "tagging $SUBPROJECT"
+  tito tag $TAG_FLAGS && git push && git push PUSH_FLAGS
+  popd
 done
