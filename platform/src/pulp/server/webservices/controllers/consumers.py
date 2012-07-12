@@ -168,7 +168,7 @@ class Bindings(JSONController):
         """
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id, repo_id)
-        bindings = [serialization.consumer.serialize(b) for b in bindings]
+        bindings = [serialization.binding.serialize(b) for b in bindings]
         return self.ok(bindings)
 
     @auth_required(CREATE)
@@ -242,7 +242,7 @@ class Binding(JSONController):
         """
         manager = managers.consumer_bind_manager()
         bind = manager.get_bind(consumer_id, repo_id, distributor_id)
-        serialized_bind = serialization.consumer.serialize(bind)
+        serialized_bind = serialization.binding.serialize(bind)
         return self.ok(serialized_bind)
 
     @auth_required(DELETE)

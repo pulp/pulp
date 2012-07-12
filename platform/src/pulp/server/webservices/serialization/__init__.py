@@ -27,7 +27,7 @@ from pulp.server.webservices import serialization
 repo_repr = serialization.repo.serialize(repo)
 """
 
-import consumer
+import binding
 import content
 import dispatch
 import error
