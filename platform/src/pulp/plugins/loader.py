@@ -68,29 +68,17 @@ class PluginLoaderException(PulpException):
 
 class PluginLoadError(PluginLoaderException):
     """
-    Raised when error are encountered while loading plugins.
+    Raised when errors are encountered while loading plugins.
     """
     pass
-
-# derivative classes used for testing
-class InvalidImporter(PluginLoadError): pass
-class NamespaceCollision(PluginLoadError): pass
-class MalformedMetadata(PluginLoadError): pass
-class MissingMetadata(PluginLoadError): pass
-class MissingPluginClass(PluginLoadError): pass
-class MissingPluginModule(PluginLoadError): pass
-class MissingPluginPackage(PluginLoadError): pass
 
 
 class ConflictingPluginError(PluginLoaderException):
     """
     Raised when 2 or more plugins try to handle the same content, distribution,
-    or progile type(s).
+    or profile type(s).
     """
     pass
-
-# derivative classes used for testing
-class ConflictingPluginName(ConflictingPluginError): pass
 
 
 class PluginNotFound(PluginLoaderException):
@@ -98,6 +86,18 @@ class PluginNotFound(PluginLoaderException):
     Raised when a plugin cannot be located.
     """
     pass
+
+
+# derivative classes used for testing
+class ConflictingPluginName(ConflictingPluginError): pass
+class InvalidImporter(PluginLoadError): pass
+class MalformedMetadata(PluginLoadError): pass
+class MissingMetadata(PluginLoadError): pass
+class MissingPluginClass(PluginLoadError): pass
+class MissingPluginModule(PluginLoadError): pass
+class MissingPluginPackage(PluginLoadError): pass
+class NamespaceCollision(PluginLoadError): pass
+
 
 # loader public api methods ----------------------------------------------------
 
@@ -109,16 +109,19 @@ def initialize(validate=True):
     @param validate: if True, perform post-initialization validation
     @type validate: bool
     """
+
     global _LOADER
     # pre-initialization validation
     assert not _is_initialized()
     _check_path(_PLUGINS_ROOT)
+
     # initialization
     _create_loader()
     _load_content_types(_TYPES_DIR)
     _LOADER.load_distributors_from_path(_DISTRIBUTORS_DIR)
     _LOADER.load_importers_from_path(_IMPORTERS_DIR)
     _LOADER.load_profilers_from_path(_PROFILERS_DIR)
+
     # post-initialization validation
     if not validate:
         return
@@ -129,8 +132,10 @@ def finalize():
     """
     Finalize the loader module by freeing all of the plugins.
     """
+
     # NOTE this method isn't necessary for the pulp server
     # it is provided for testing purposes
+
     global _LOADER
     assert _is_initialized()
     _LOADER = None
@@ -482,7 +487,7 @@ class PluginLoader(object):
         @rtype: tuple (L{Profiler}, dict)
         """
         return self.__profilers.get_plugin_by_id(id)
-    
+
     def get_profiler_by_type(self, content_type):
         """
         Get profiler by type.
