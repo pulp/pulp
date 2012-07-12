@@ -231,6 +231,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-2
+- Add iso distributor to .spec. (jortel@redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
 - - ISO Export Distributor: * Basic skeleton in place * Adding iso generation
   module * adding a makeisofs dependency (pkilambi@redhat.com)
