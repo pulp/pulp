@@ -124,10 +124,13 @@ class PermissionManager(object):
     def grant(self, resource, user, operations):
         """
         Grant permission on a resource for a user and a set of operations.
+        
         @type resource: str
         @param resource: uri path representing a pulp resource
+        
         @type user: L{pulp.server.db.model.User} instance
         @param user: user to grant permissions to
+        
         @type operations: list or tuple
         @param operations:list of allowed operations being granted
         """
@@ -142,10 +145,13 @@ class PermissionManager(object):
     def revoke(self, resource, user, operations):
         """
         Revoke permission on a resource for a user and a set of operations.
+        
         @type resource: str
         @param resource: uri path representing a pulp resource
+        
         @type user: L{pulp.server.db.model.User} instance
         @param user: user to revoke permissions from
+        
         @type operations: list or tuple
         @param operations:list of allowed operations being revoked
         """
@@ -168,6 +174,23 @@ class PermissionManager(object):
             return
         self.collection.save(permission, safe=True)
 
+
+    def grant_automatic_permissions_for_created_resource(self, resource):
+        """
+        Grant CRUDE permissions for a newly created resource to current principal.
+        @type resource: str
+        @param resource: resource path to grant permissions to
+        @rtype: bool
+        @return: True on success, False otherwise
+        @raise RuntimeError: if the system principal has not been set
+        """
+        user = get_principal()
+        if is_system_principal():
+            raise RuntimeError(_('cannot grant auto permission on %s to %s') %
+                               (resource, user))
+        operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
+        self.grant(resource, user, operations)
+        return True
 
     def add_permissions_to_role(self, name, resource, operations):
         role = Role.get_collection().find_one({'name' : name})
@@ -198,6 +221,21 @@ class PermissionManager(object):
         if not current_ops:
             del role['permissions'][resource]
         Role.get_collection().save(role, safe=True)
+
+
+    def grant_automatic_permissions_for_new_user(self, user_name):
+        """
+        Grant the permissions required for a new user so that they my log into Pulp
+        and update their own information.
+        
+        @param user_name: name of the new user
+        @type  user_name: str
+        """
+        
+        user_query_manager = factory.user_query_manager()
+        user = user_query_manager.find_by_login(user_name)
+        self.grant('/users/%s/' % user_name, user, [READ, UPDATE])
+        self.grant('/users/admin_certificate/', user, [READ])
         
     
     def revoke_permission_from_user(self, resource, user_name, operation_names):
@@ -241,32 +279,8 @@ class PermissionManager(object):
         return True
 
 
-    def grant_automatic_permissions_for_created_resource(self, resource):
-        """
-        Grant CRUDE permissions for a newly created resource to current principal.
-        @type resource: str
-        @param resource: resource path to grant permissions to
-        @rtype: bool
-        @return: True on success, False otherwise
-        @raise RuntimeError: if the system principal has not been set
-        """
-        user = get_principal()
-        if is_system_principal():
-            raise RuntimeError(_('cannot grant auto permission on %s to %s') %
-                               (resource, user))
-        operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
-        self.grant(resource, user, operations)
-        return True
 
 
-    def grant_automatic_permissions_for_new_user(user_name):
-        """
-        Grant the permissions required for a new user so that they my log into Pulp
-        and update their own information.
-        @param user_name: name of the new user
-        @type  user_name: str
-        """
-        user = _get_user(user_name)
-        _permission_api.grant('/users/%s/' % user_name, user, [READ, UPDATE])
-        _permission_api.grant('/users/admin_certificate/', user, [READ])
+
+
 

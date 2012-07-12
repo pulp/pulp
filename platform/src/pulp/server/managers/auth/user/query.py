@@ -16,11 +16,16 @@ Contains users query classes
 """
 
 from pulp.server.db.model.auth import User
+from pulp.server.managers import factory
 from logging import getLogger
+
+from pulp.server.exceptions import PulpDataException
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = getLogger(__name__)
+
+super_user_role = 'super-users'
 
 # -- manager ------------------------------------------------------------------
 
@@ -89,5 +94,77 @@ class UserQueryManager(object):
             if role['name'] in user['roles']:
                 users.append(user)
         return users
+
+
+    def is_superuser(self, user):
+        """
+        Return True if the user is a super user
+        
+        @type user: L{pulp.server.db.model.User} instance
+        @param user: user to check
+        
+        @rtype: bool
+        @return: True if the user is a super user, False otherwise
+        """
+        return super_user_role in user['roles']
+
+
+    def is_authorized(self, resource, user, operation):
+        """
+        Check to see if a user is authorized to perform an operation on a resource
+        
+        @type resource: str
+        @param resource: pulp resource path
+    
+        @type user: L{pulp.server.db.model.User} instance
+        @param user: user to check permissions for
+    
+        @type operation: int
+        @param operation: operation to be performed on resource
+    
+        @rtype: bool
+        @return: True if the user is authorized for the operation on the resource,
+                 False otherwise
+        """
+        if self.is_superuser(user):
+            return True
+        login = user['login']
+        parts = [p for p in resource.split('/') if p]
+        
+        permission_query_manager = factory.permission_query_manager()
+        while parts:
+            current_resource = '/%s/' % '/'.join(parts)
+            permission = permission_query_manager.find_by_resource(current_resource)
+            if permission is not None:
+                if operation in permission['users'].get(login, []):
+                    return True
+            parts = parts[:-1]
+        permission = permission_query_manager.find_by_resource('/')
+        return (permission is not None and
+                operation in permission['users'].get(login, []))
+        
+        
+    def is_last_super_user(self, user):
+        """
+        Check to see if a user is the last super user
+        
+        @type user: L{pulp.server.db.model.User} instace
+        @param user: user to check
+        
+        @rtype: bool
+        @return: True if the user is the last super user, False otherwise
+        
+        @raise PulpException: if no super users are found
+        """
+        if super_user_role not in user['roles']:
+            return False
+        role = factory.role_query_manager().find_byname(super_user_role)
+        users = self.get_users_belonging_to_role(role)
+        if not users:
+            raise PulpDataException(_('no super users defined'))
+        if len(users) >= 2:
+            return False
+        return users[0]['_id'] == user['_id'] # this should be True
+
 
 

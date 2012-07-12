@@ -21,14 +21,16 @@ import re
 
 from pulp.server import config
 from pulp.server.db.model.auth import User
-from pulp.server.auth import principal, authorization
-from pulp.server.auth.authorization import is_last_super_user, revoke_all_permissions_from_user
+from pulp.server.auth import principal
+from pulp.server.auth.authorization import _operations_not_granted_by_roles
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
 
 import pulp.server.auth.password_util as password_util
 
 # -- constants ----------------------------------------------------------------
+
+super_user_role = 'super-users'
 
 _USER_LOGIN_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
@@ -117,11 +119,11 @@ class UserManager(object):
             raise MissingResource(login)
 
         # Make sure user is not the last super user 
-        if is_last_super_user(found): 
+        if factory.user_query_manager().is_last_super_user(found): 
             raise PulpDataException(_("The last superuser [%s] cannot be deleted" % found['id']))
              
         # Revoke all permissions from the user
-        revoke_all_permissions_from_user(login)
+        factory.permission_manager().revoke_all_permissions_from_user(login)
         
         User.get_collection().remove({'login' : login}, safe=True)
 
@@ -226,21 +228,27 @@ class UserManager(object):
         @rtype: bool
         @return: True on success
         """
-        role = _get_role(role_name)
-        user = _get_user(user_name)
-        if role_name == super_user_role and is_last_super_user(user):
-            raise PulpAuthorizationError(_('%s cannot be empty, and %s is the last member') %
+        role_query_manager = factory.role_query_manager()
+        user_query_manager = factory.user_query_manager()
+      
+        role = role_query_manager.find_by_name(role_name)
+        user = user_query_manager.find_by_login(user_name)
+        if role_name == super_user_role and user_query_manager.is_last_super_user(user):
+            raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
                                      (super_user_role, user_name))
         if role_name not in user['roles']:
             return False
         user['roles'].remove(role_name)
-        _user_manager.update_user(user['login'], Delta(user, 'roles'))
+
+        self.update_user(user['login'], Delta(user, 'roles'))
+        
+        permission_manager = factory.permission_manager()
         for resource, operations in role['permissions'].items():
-            other_roles = _get_other_roles(role, user['roles'])
+            other_roles = role_query_manager.get_other_roles(role, user['roles'])
             user_ops = _operations_not_granted_by_roles(resource,
                                                         operations,
                                                         other_roles)
-            _permission_api.revoke(resource, user, user_ops)
+            permission_manager.revoke(resource, user, user_ops)
         return True
 
     
@@ -252,8 +260,10 @@ class UserManager(object):
         If no super users are found, the default admin user (from the pulp config)
         is looked up or created and added to the super users role.
         """
-        super_users = authorization._get_users_belonging_to_role( 
-                    authorization._get_role(authorization.super_user_role))
+        user_query_manager = factory.user_query_manager()
+        role_query_manager = factory.role_query_manager()
+        super_users = user_query_manager.get_users_belonging_to_role( 
+                    role_query_manager.find_by_name(super_user_role))
         if super_users:
             return
         default_login = config.config.get('server', 'default_login')
@@ -262,7 +272,7 @@ class UserManager(object):
         if admin is None:
             default_password = config.config.get('server', 'default_password')
             admin = user_manager.create_user(login=default_login, password=default_password)
-        authorization.add_user_to_role(authorization.super_user_role, default_login)
+        self.add_user_to_role(super_user_role, default_login)
 
 
 
@@ -277,7 +287,7 @@ class UserManager(object):
 
         # Get the currently logged in user
         user = principal.get_principal()
-        key, certificate = cert_generator.make_admin_user_cert(user)
+        key, certificate = factory.cert_generation_manager().make_admin_user_cert(user)
         return key + certificate
 
 

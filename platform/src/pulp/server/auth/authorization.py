@@ -17,16 +17,11 @@ Utility functions to manage permissions and roles in pulp.
 
 from gettext import gettext as _
 
-from pulp.server.api.permission import PermissionAPI
-from pulp.server.api.role import RoleAPI
 from pulp.server.auth.principal import (
     get_principal, is_system_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
 
-#from pulp.server.managers import factory
-
-_permission_api = PermissionAPI()
-_role_api = RoleAPI()
+from pulp.server.managers import factory
 
 
 class PulpAuthorizationError(PulpException):
@@ -36,6 +31,10 @@ class PulpAuthorizationError(PulpException):
 
 CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
 operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
+
+super_user_role = 'super-users'
+consumer_users_role = 'consumer-users'
+
 
 
 # Temporarily moved this out of db into here; this is the only place using it
@@ -128,26 +127,6 @@ def _operations_not_granted_by_roles(resource, operations, roles):
                 culled_ops.remove(operation)
     return culled_ops
 
-# permissions api -------------------------------------------------------------
-
-
-
-
-
-def grant_automatic_permissions_to_consumer_user(user_name):
-    """
-    Grant the permissions required by a consumer user.
-    @type user_name: str
-    @param user_name: name of the consumer user
-    @type user_resource: str
-    @param user_resource: the resource path for the consumer user
-    @rtype: bool
-    @return: True on success, False otherwise
-    """
-    user = _get_user(user_name)
-    user_operations = [READ, UPDATE, DELETE, EXECUTE]
-    _permission_api.grant('/consumers/%s/' % user_name, user, user_operations)
-
 
 class GrantPermissionsForTask(object):
     """
@@ -201,56 +180,6 @@ class RevokePermissionsForTaskV2(RevokePermissionsForTask):
         operations = ['READ', 'DELETE']
         revoke_permission_from_user(resource, self.user_name, operations)
 
-# role api --------------------------------------------------------------------
-
-def create_role(role_name):
-    """
-    Create a role with the give name
-    Raises and exception if the role already exists
-    @type role_name: str
-    @param role_name: name of role
-    @rtype: bool
-    @return: True on success
-    """
-    return _role_api.create(role_name)
-
-
-
-def list_users_in_role(role_name):
-    """
-    Get a list of the users belonging to a role
-    @type role_name: str
-    @param role_name: name of role
-    @rtype: list of L{pulp.server.db.model.User} instances
-    @return: users belonging to the role
-    """
-    role = _get_role(role_name)
-    return _get_users_belonging_to_role(role)
-
-# built in roles --------------------------------------------------------------
-
-super_user_role = 'super-users'
-consumer_users_role = 'consumer-users'
-
-
-def is_last_super_user(user):
-    """
-    Check to see if a user is the last super user
-    @type user: L{pulp.server.db.model.User} instace
-    @param user: user to check
-    @rtype: bool
-    @return: True if the user is the last super user, False otherwise
-    @raise PulpException: if no super users are found
-    """
-    if super_user_role not in user['roles']:
-        return False
-    role = _role_api.role(super_user_role)
-    users = _get_users_belonging_to_role(role)
-    if not users:
-        raise PulpException(_('no super users defined'))
-    if len(users) >= 2:
-        return False
-    return users[0]['_id'] == user['_id'] # this should be True
 
 
 def check_builtin_roles(role_name):
@@ -266,43 +195,3 @@ def check_builtin_roles(role_name):
     raise PulpAuthorizationError(_('role %s cannot be changed') % role_name)
 
 
-# authorization api -----------------------------------------------------------
-
-def is_superuser(user):
-    """
-    Return True if the user is a super user
-    @type user: L{pulp.server.db.model.User} instance
-    @param user: user to check
-    @rtype: bool
-    @return: True if the user is a super user, False otherwise
-    """
-    return super_user_role in user['roles']
-
-
-def is_authorized(resource, user, operation):
-    """
-    Check to see if a user is authorized to perform an operation on a resource
-    @type resource: str
-    @param resource: pulp resource path
-    @type user: L{pulp.server.db.model.User} instance
-    @param user: user to check permissions for
-    @type operation: int
-    @param operation: operation to be performed on resource
-    @rtype: bool
-    @return: True if the user is authorized for the operation on the resource,
-             False otherwise
-    """
-    if is_superuser(user):
-        return True
-    login = user['login']
-    parts = [p for p in resource.split('/') if p]
-    while parts:
-        current_resource = '/%s/' % '/'.join(parts)
-        permission = _permission_api.permission(current_resource)
-        if permission is not None:
-            if operation in permission['users'].get(login, []):
-                return True
-        parts = parts[:-1]
-    permission = _permission_api.permission('/')
-    return (permission is not None and
-            operation in permission['users'].get(login, []))
