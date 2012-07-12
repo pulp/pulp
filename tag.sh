@@ -12,6 +12,6 @@ for SUBPROJECT in platform rpm-support builtins products/pulp-rpm-product
 do
   pushd $SUBPROJECT
   echo "tagging $SUBPROJECT"
-  tito tag $TAG_FLAGS && git push && git push PUSH_FLAGS
+  tito tag $TAG_FLAGS && git push && git push $PUSH_FLAGS
   popd
 done
