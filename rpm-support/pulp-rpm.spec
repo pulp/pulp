@@ -17,8 +17,8 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.312
-Release: 2%{?dist}
+Version: 0.0.313
+Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -230,6 +230,10 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
+- - ISO Export Distributor: * Basic skeleton in place * Adding iso generation
+  module * adding a makeisofs dependency (pkilambi@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
 - bump release. (jortel@redhat.com)
 - Add Group: Development/Languages for RHEL5 builds. (jortel@redhat.com)
