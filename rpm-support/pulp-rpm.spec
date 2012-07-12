@@ -18,7 +18,7 @@
 
 Name: pulp-rpm
 Version: 0.0.313
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -117,6 +117,7 @@ to provide RPM specific support.
 %{_usr}/lib/pulp/plugins/types/rpm_support.json
 %{_usr}/lib/pulp/plugins/importers/yum_importer/
 %{_usr}/lib/pulp/plugins/distributors/yum_distributor/
+%{_usr}/lib/pulp/plugins/distributors/iso_distributor/
 %defattr(-,apache,apache,-)
 %{_var}/www/pub
 /srv/pulp/repo_auth.wsgi
