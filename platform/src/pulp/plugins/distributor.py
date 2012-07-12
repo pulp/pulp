@@ -14,9 +14,9 @@
 
 class Distributor(object):
     """
-    Base class for Pulp content distributors. Distributors must subclass this
-    class in order for Pulp to identify it as a valid distributor during
-    discovery.
+    Base class for Pulp content distributors for a single repository.
+    Distributors must subclass this class in order for Pulp to identify it as a
+    valid distributor during discovery.
     """
 
     # -- plugin lifecycle -----------------------------------------------------
@@ -30,7 +30,7 @@ class Distributor(object):
         * id - Programmatic way to refer to this distributor. Must be unique
                across all distributors. Only letters and underscores are valid.
         * display_name - User-friendly identification of the distributor.
-        * types - List of all content type IDs that may be imported using this
+        * types - List of all content type IDs that may be published using this
                distributor.
 
         This method call may be made multiple times during the course of a
@@ -65,15 +65,15 @@ class Distributor(object):
 
         @param repo: metadata describing the repository to which the
                      configuration applies
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: pulp.plugins.model.Repository
 
         @param config: plugin configuration instance; the proposed repo
                        configuration is found within
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: pulp.plugins.config.PluginCallConfiguration
 
         @param related_repos: list of other repositories using this distributor
                type; empty list if there are none; entries are of type
-               L{pulp.server.content.plugins.data.RelatedRepository}
+               pulp.plugins.model.RelatedRepository
         @type  related_repos: list
 
         @return: tuple of (bool, str) to describe the result
@@ -94,10 +94,10 @@ class Distributor(object):
         the distributor will be unavailable for the given repository.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: pulp.plugins.model.Repository
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: pulp.plugins.config.PluginCallConfiguration
         """
         pass
 
@@ -116,10 +116,10 @@ class Distributor(object):
         wiped by Pulp.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: pulp.plugins.model.Repository
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: pulp.plugins.config.PluginCallConfiguration
         """
         pass
 
@@ -138,13 +138,13 @@ class Distributor(object):
         that have been made.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: pulp.plugins.model.Repository
 
         @param publish_conduit: provides access to relevant Pulp functionality
-        @type  publish_conduit: L{pulp.server.content.conduits.repo_publish.RepoPublishConduit}
+        @type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginConfiguration}
+        @type  config: pulp.plugins.config.PluginConfiguration
         """
         raise NotImplementedError()
 
@@ -159,12 +159,124 @@ class Distributor(object):
         of the published repository.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: pulp.plugins.model.Repository
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: pulp.plugins.config.PluginCallConfiguration
 
         @return: dictionary of relevant data
         @rtype:  dict
         """
         return {}
+
+class GroupDistributor(object):
+    """
+    Base class for Pulp content distributors for a repository group. Group
+    distributors must subclass this class in order for Pulp to identify it as
+    a valid group distributor during discovery.
+    """
+
+    # -- plugin lifecycle -----------------------------------------------------
+
+    @classmethod
+    def metadata(cls):
+        """
+        Used by Pulp to classify the capabilities of this group distributor. The
+        following keys must be present in the returned dictionary:
+
+        * id - Programmatic way to refer to this distributor. Must be unique
+               across all group distributors. Only letters and underscores are
+               valid.
+        * display_name - User-friendly identification of the distributor.
+        * types - List of all content type IDs that may be imported using this
+               distributor.
+
+        This method call may be made multiple times during the course of a
+        running Pulp server and thus should not be used for initialization
+        purposes.
+
+        @return: description of the distributor's capabilities
+        @rtype:  dict
+        """
+        raise NotImplementedError()
+
+    # -- repo group lifecycle -------------------------------------------------
+
+    def validate_config(self, repo_group, config, related_repo_groups):
+        """
+        Allows the distributor to check the contents of a potential configuration
+        for the given repository group. This call is made both for the addition of
+        this distributor to a new repository group as well as updating the
+        configuration for this distributor on a previously configured repository
+        group.
+
+        The return is a tuple of the result of the validation (True for success,
+        False for failure) and a message. The message may be None and is unused
+        in the success case. For a failed validation, the message will be
+        communicated to the caller so the plugin should take i18n into
+        consideration when generating the message.
+
+        The related_repo_groups parameter contains a list of other repository
+        groups that have a configured distributor of this type. The distributor
+        configurations is found in each repository group in the "plugin_configs"
+        field.
+
+        @param repo_group: metadata describing the repository group to which the
+                     configuration applies
+        @type  repo_group: pulp.plugins.model.RepositoryGroup
+
+        @param config: plugin configuration instance; the proposed repo
+                       configuration is found within
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+
+        @param related_repo_groups: list of other repository groups using this
+               distributor type; empty list if there are none; entries are of type
+               pulp.plugins.model.RelatedRepositoryGroup
+        @type  related_repo_groups: list
+
+        @return: tuple of (bool, str) to describe the result
+        @rtype:  tuple
+        """
+        raise NotImplementedError()
+
+    def distributor_added(self, repo_group, config):
+        """
+        Called upon the successful addition of a distributor of this type to a
+        repository group. This hook allows the distributor to do any initial setup
+        it needs to prior to the first publish call.
+
+        This call should raise an exception in the case where the distributor is
+        unable to successfully perform any setup actions that will be required
+        to perform actions (publish, unpublish) later. In this case, Pulp will
+        mark the distributor as broken and operations that rely on
+        the distributor will be unavailable for the given repository group.
+
+        @param repo_group: metadata describing the repository group
+        @type  repo_group: pulp.plugins.model.RepositoryGroup
+
+        @param config: plugin configuration
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+        """
+        pass
+
+    def distributor_removed(self, repo_group, config):
+        """
+        Called when a distributor of this type is removed from a repository
+        group. This hook allows the distributor to clean up any files that may
+        have been created during the actual publishing.
+
+        The distributor may use the contents of the working directory in cleanup.
+        It is not required that the contents of this directory be deleted by
+        the distributor; Pulp will ensure it is wiped following this call.
+
+        If this call raises an exception, the distributor will still be removed
+        from the repository group and the working directory contents will still
+        be wiped by Pulp.
+
+        @param repo_group: metadata describing the repository group
+        @type  repo_group: pulp.plugins.model.RepositoryGroup
+
+        @param config: plugin configuration
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+        """
+        pass

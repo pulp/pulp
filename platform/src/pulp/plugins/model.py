@@ -35,19 +35,18 @@ class Repository:
                  programmatically describe the repository
     @type notes: str or None
 
-    @ivar working_dir: local (to the Pulp server) directory the importer may use
-          to store any temporary data required by the importer; this directory
-          is unique for each repository
+    @ivar working_dir: local (to the Pulp server) directory the plugin may use
+          to store any temporary data required by the plugin; this directory
+          is unique for each repository and plugin combination
     @type working_dir: str
     """
 
-    def __init__(self, id, display_name=None, description=None, notes=None):
+    def __init__(self, id, display_name=None, description=None, notes=None, working_dir=None):
         self.id = id
         self.display_name = display_name
         self.description = description
         self.notes = notes
-
-        self.working_dir = None
+        self.working_dir = working_dir
 
     def __str__(self):
         return 'Repository [%s]' % self.id
@@ -64,6 +63,56 @@ class RelatedRepository(Repository):
 
     def __init__(self, id, plugin_configs, display_name=None, description=None, notes=None):
         Repository.__init__(self, id, display_name, description, notes)
+        self.plugin_configs = plugin_configs
+
+class RepositoryGroup(object):
+    """
+    Contains repository group data and any additional data relevant for the
+    plugin to function.
+
+    @ivar id: programmatic ID for the repository group
+    @type id: str
+
+    @ivar display_name: user-friendly name describing the repository group
+    @type display_name: str
+
+    @ivar description: user-friendly description of the repository group
+    @type description: str
+
+    @ivar notes: arbitrary key-value pairs set and used by users to
+                 programmatically describe the repository
+    @type notes: dict
+
+    @ivar working_dir: local (to the Pulp server) directory the plugin may use
+          to store any temporary data required by the plugin; this directory
+          is unique for each repository and plugin combination
+    @type working_dir: str
+    """
+
+    def __init__(self, id, display_name, description, notes, working_dir):
+        self.id = id
+        self.display_name = display_name
+        self.description = description
+        self.notes = notes
+        self.working_dir = working_dir
+
+    def __str__(self):
+        return 'Repository Group [%s]' % self.id
+
+class RelatedRepositoryGroup(RepositoryGroup):
+    """
+    When validating a plugin configuration, instances of this class will
+    describe other repository groups that share the same plugin type as the
+    plugin being configured. This class will describe the basic repository
+    group metadata for each group and information on that repository group's
+    configuration for the plugin. If the group has multiple associations to
+    the given plugin type, a list of configurations will be returned.
+    """
+
+    def __init__(self, id, plugin_configs, display_name, description, notes, working_dir):
+        super(RelatedRepositoryGroup, self).__init__(id, display_name,
+                                                     description, notes,
+                                                     working_dir)
         self.plugin_configs = plugin_configs
 
 class Unit:

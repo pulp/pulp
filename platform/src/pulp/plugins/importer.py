@@ -14,8 +14,9 @@
 
 class Importer(object):
     """
-    Base class for Pulp content importers. Importers must subclass this class
-    in order for Pulp to identify it as a valid importer during discovery.
+    Base class for Pulp content importers for a single repository. Importers
+    must subclass this class in order for Pulp to identify it as a valid
+    importer during discovery.
     """
 
     # -- plugin lifecycle -----------------------------------------------------
@@ -301,5 +302,35 @@ class Importer(object):
         @return: list of relevant units retrieved from the conduit calls; empty
                  list if no dependencies are found
         @rtype:  list of L{pulp.server.content.plugins.data.Unit}
+        """
+        raise NotImplementedError()
+
+class GroupImporter(object):
+    """
+    Base class for Pulp content importers for a repository group. Group
+    importers must subclass this class in order for Pulp to identify it as a
+    valid importer during discovery.
+    """
+
+    # -- plugin lifecycle -----------------------------------------------------
+
+    @classmethod
+    def metadata(cls):
+        """
+        Used by Pulp to classify the capabilities of this importer. The
+        following keys must be present in the returned dictionary:
+
+        * id - Programmatic way to refer to this importer. Must be unique
+               across all group importers. Only letters and underscores are valid.
+        * display_name - User-friendly identification of the importer.
+        * types - List of all content type IDs that may be imported using this
+               importer.
+
+        This method call may be made multiple times during the course of a
+        running Pulp server and thus should not be used for initialization
+        purposes.
+
+        @return: description of the importer's capabilities
+        @rtype:  dict
         """
         raise NotImplementedError()
