@@ -20,6 +20,7 @@ import logging
 import re
 
 from pulp.server import config
+from pulp.server.util import Delta
 from pulp.server.db.model.auth import User
 from pulp.server.auth import principal
 from pulp.server.auth.authorization import _operations_not_granted_by_roles
