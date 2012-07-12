@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.312
+Version: 0.0.313
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -417,6 +417,18 @@ exit 0
 %endif
 
 %changelog
+* Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
+- - Move the repo working dirs under "repos" to make room for the group
+  working dirs (jason.dobies@redhat.com)
+- Moved repo group related managers under a group subpackage
+  (jason.dobies@redhat.com)
+- Added plugin base classes and data types for group plugins
+  (jason.dobies@redhat.com)
+- fixed multiple bugs in deletion of on-disk orphaned content
+  (jason.connor@gmail.com)
+- TA51977 Pulled generic Criteria-based search features out of the repository
+  controller and into a generic SearchController. (mhrivnak@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
 - minor fix to user manager functions (skarmark@redhat.com)
 - user admin extensions (skarmark@redhat.com)
