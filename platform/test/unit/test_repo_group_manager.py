@@ -20,7 +20,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoGroup
 from pulp.server.managers import factory as managers_factory
-from pulp.server.managers.repo import group
+from pulp.server.managers.repo.group import cud
 
 
 class RepoGroupManagerInstantiationTests(unittest.TestCase):
@@ -43,7 +43,7 @@ class RepoGroupTests(PulpServerTests):
     def setUp(self):
         super(RepoGroupTests, self).setUp()
         self.collection = RepoGroup.get_collection()
-        self.manager = group.RepoGroupManager()
+        self.manager = cud.RepoGroupManager()
 
     def tearDown(self):
         super(RepoGroupTests, self).tearDown()
