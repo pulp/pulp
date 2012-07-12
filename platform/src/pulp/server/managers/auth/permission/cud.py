@@ -21,11 +21,19 @@ import re
 
 from pulp.server.db.model.auth import User, Role, Permission
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
+from pulp.server.managers import factory
+from pulp.server.auth.authorization import _get_operations
+from pulp.server.auth.principal import (
+    get_principal, is_system_principal, SystemPrincipal)
 
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
+
+CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
+operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
+
 
 # -- classes ------------------------------------------------------------------
 
@@ -190,6 +198,75 @@ class PermissionManager(object):
         if not current_ops:
             del role['permissions'][resource]
         Role.get_collection().save(role, safe=True)
+        
+    
+    def revoke_permission_from_user(self, resource, user_name, operation_names):
+        """
+        Revoke the operations on the resource from the user
+        @type resource: str
+        @param resource: pulp resource to revoke operations on
+        
+        @type user_name: str
+        @param user_name: name of the user to revoke permissions from
+        
+        @type operation_names: list or tuple of str's
+        @param operation_names: name of the operations to revoke
+        
+        @rtype: bool
+        @return: True on success
+        """
+        user_query_manager = factory.user_query_manager()
+        user = user_query_manager.find_by_login(user_name)
+        operations = _get_operations(operation_names)
+        self.revoke(resource, user, operations)
+        return True
 
 
+    def revoke_all_permissions_from_user(self, user_name):
+        """
+        Revoke all the permissions from a given user
+        @type user_name: str
+        @param user_name: name of the user to revoke all permissions from
+        @rtype: bool
+        @return: True on success
+        """
+        user_query_manager = factory.user_query_manager()
+        user = user_query_manager.find_by_login(user_name)
+        for permission in factory.permission_query_manager().find_all():
+            if user['login'] not in permission['users']:
+                continue
+            del permission['users'][user['login']]
+            self.update(permission['resource'],
+                                   {'users': permission['users']})
+        return True
+
+
+    def grant_automatic_permissions_for_created_resource(self, resource):
+        """
+        Grant CRUDE permissions for a newly created resource to current principal.
+        @type resource: str
+        @param resource: resource path to grant permissions to
+        @rtype: bool
+        @return: True on success, False otherwise
+        @raise RuntimeError: if the system principal has not been set
+        """
+        user = get_principal()
+        if is_system_principal():
+            raise RuntimeError(_('cannot grant auto permission on %s to %s') %
+                               (resource, user))
+        operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
+        self.grant(resource, user, operations)
+        return True
+
+
+    def grant_automatic_permissions_for_new_user(user_name):
+        """
+        Grant the permissions required for a new user so that they my log into Pulp
+        and update their own information.
+        @param user_name: name of the new user
+        @type  user_name: str
+        """
+        user = _get_user(user_name)
+        _permission_api.grant('/users/%s/' % user_name, user, [READ, UPDATE])
+        _permission_api.grant('/users/admin_certificate/', user, [READ])
 

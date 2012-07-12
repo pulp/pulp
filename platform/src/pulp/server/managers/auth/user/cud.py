@@ -21,7 +21,7 @@ import re
 
 from pulp.server import config
 from pulp.server.db.model.auth import User
-from pulp.server.auth import cert_generator, principal, authorization
+from pulp.server.auth import principal, authorization
 from pulp.server.auth.authorization import is_last_super_user, revoke_all_permissions_from_user
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
@@ -69,9 +69,9 @@ class UserManager(object):
 
         if login is None or not is_user_login_valid(login):
             invalid_values.append('login')
-        if name is not None and not isinstance(name, basestring):
+        if invalid_type(name, basestring):
             invalid_values.append('name')
-        if roles is not None and not isinstance(roles, list):
+        if invalid_type(roles, list):
             invalid_values.append('roles')
 
         if invalid_values:
@@ -108,7 +108,7 @@ class UserManager(object):
         """
 
         # Raise exception if login is invalid
-        if login is None or not isinstance(login, basestring) or login == 'admin':
+        if login is None or not isinstance(login, basestring):
             raise InvalidValue(['login'])
 
         # Check whether user exists
@@ -290,3 +290,12 @@ def is_user_login_valid(login):
     """
     result = _USER_LOGIN_REGEX.match(login) is not None
     return result
+
+def invalid_type(input_value, valid_type):
+    """
+    @return: true if input_value is not of valid_type
+    @rtype: bool
+    """
+    if input_value is not None and not isinstance(input_value, valid_type):
+        return True
+    return False
