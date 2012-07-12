@@ -18,7 +18,7 @@
 
 Name: pulp-rpm
 Version: 0.0.312
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -94,6 +94,7 @@ rm -rf %{buildroot}
 
 %package plugins
 Summary: Pulp RPM plugins
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
@@ -134,6 +135,7 @@ A collection of components share between RPM plugins, extensions and handlers.
 
 %package admin-extensions
 Summary: The RPM admin client extensions
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-admin-client = %{version}
 
@@ -158,6 +160,7 @@ client capabilites with RPM specific features.
 
 %package consumer-extensions
 Summary: The RPM consumer client extensions
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-consumer-client = %{version}
 
@@ -175,6 +178,7 @@ client capabilites with RPM specific features.
 
 %package handlers
 Summary: Pulp agent rpm handlers
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: python-pulp-agent-lib = %{version}
 
@@ -200,6 +204,7 @@ management and Linux specific commands such as system reboot.
 
 %package yumplugins
 Summary: Yum plugins supplementing in Pulp consumer operations
+Group: Development/Languages
 Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
@@ -217,6 +222,12 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-2
+- bump release. (jortel@redhat.com)
+- Add Group: Development/Languages for RHEL5 builds. (jortel@redhat.com)
+- 835667 - Added default for auto-publish (jason.dobies@redhat.com)
+- Updated argument name for package category upload (jmatthews@redhat.com)
+
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-1
 - align version with platform. (jortel@redhat.com)
 - YumImporter:  Fixed issue building summary report for uploaded package
