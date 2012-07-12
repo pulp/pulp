@@ -264,7 +264,7 @@ def initialize():
     from pulp.server.managers.repo.publish import RepoPublishManager
     from pulp.server.managers.repo.query import RepoQueryManager
     from pulp.server.managers.repo.sync import RepoSyncManager
-    from pulp.server.managers.repo.group import RepoGroupManager
+    from pulp.server.managers.repo.group.cud import RepoGroupManager
     from pulp.server.managers.schedule.cud import ScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the

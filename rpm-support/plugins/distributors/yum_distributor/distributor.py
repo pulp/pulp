@@ -91,7 +91,7 @@ class YumDistributor(Distributor):
         return {
             'id'           : YUM_DISTRIBUTOR_TYPE_ID,
             'display_name' : 'Yum Distributor',
-            'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID]
+            'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, DISTRO_TYPE_ID, PKG_CATEGORY_TYPE_ID, PKG_GROUP_TYPE_ID]
         }
 
     def validate_config(self, repo, config, related_repos):

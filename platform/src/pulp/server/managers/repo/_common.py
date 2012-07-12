@@ -36,7 +36,7 @@ from pulp.plugins.model import Repository, RelatedRepository
 
 # -- constants ----------------------------------------------------------------
 
-_WORKING_DIR_ROOT = os.path.join(pulp_constants.LOCAL_STORAGE, 'working')
+_WORKING_DIR_ROOT = os.path.join(pulp_constants.LOCAL_STORAGE, 'working', 'repos')
 
 # -- public -------------------------------------------------------------------
 
