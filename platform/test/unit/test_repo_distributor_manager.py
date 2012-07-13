@@ -26,10 +26,10 @@ import pulp.server.managers.repo.distributor as distributor_manager
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoManagerTests(base.PulpServerTests):
+class RepoDistributorManagerTests(base.PulpServerTests):
 
     def setUp(self):
-        super(RepoManagerTests, self).setUp()
+        super(RepoDistributorManagerTests, self).setUp()
         mock_plugins.install()
 
         # Create the manager instance to test
@@ -37,11 +37,11 @@ class RepoManagerTests(base.PulpServerTests):
         self.distributor_manager = distributor_manager.RepoDistributorManager()
 
     def tearDown(self):
-        super(RepoManagerTests, self).tearDown()
+        super(RepoDistributorManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
-        super(RepoManagerTests, self).clean()
+        super(RepoDistributorManagerTests, self).clean()
 
         mock_plugins.MOCK_DISTRIBUTOR.reset_mock()
 
