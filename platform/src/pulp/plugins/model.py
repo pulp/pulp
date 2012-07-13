@@ -220,3 +220,42 @@ class PublishReport:
         self.success_flag = success_flag
         self.summary = summary
         self.details = details
+
+class Consumer:
+    """
+    A profiled consumer.
+
+    @ivar id: The consumer ID.
+    @type id: str
+
+    @param profiles: A dictionary of profiles keyed by content type.
+    @type profiles: dict
+    """
+
+    def __init__(self, id, profiles):
+        self.id = id
+        self.profiles = profiles
+
+class ApplicabilityReport:
+    """
+    Returned to the pulp server at the end of a unit_applicable call.
+    This is returned to indicate the applicability of a content
+    unit along with summary and details.
+
+    @ivar applicable: Flag indicates whether the unit is
+                      applicable to the consumer.
+    @type applicable: bool
+
+    @ivar summary: arbitrary value that will be returned by default as the log
+                   for the call (should be short)
+    @type summary: just about any serializable object (likely str or dict)
+
+    @ivar details: potentially longer log that will have to be specifically
+                   retrieved through the Pulp REST APIs
+    @type details: just about any serializable object (likley str or dict)
+    """
+
+    def __init__(self, applicable, summary, details=None):
+        self.applicable = applicable
+        self.summary = summary
+        self.details = details

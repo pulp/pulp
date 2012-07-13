@@ -123,17 +123,6 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         self.assertEquals(1, len(binds))
         self.assertTrue(binds[0], self.REPO_ID)
 
-    def test_get_profile(self):
-        # Setup
-        self.populate()
-        # Test
-        conduit = ProfilerConduit()
-        profile = conduit.get_profile(self.CONSUMER_ID, self.TYPE_1_DEF.id)
-        # Verify
-        self.assertEquals(profile['consumer_id'], self.CONSUMER_ID)
-        self.assertEquals(profile['content_type'], self.TYPE_1_DEF.id)
-        self.assertEquals(profile['profile'], self.PROFILE)
-
     def test_get_units(self):
         # Setup
         self.populate()

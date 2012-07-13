@@ -29,28 +29,6 @@ _LOG = logging.getLogger(__name__)
 
 class ProfilerConduit(object):
 
-    def get_profile(self, consumer_id, content_type):
-        """
-        Get a unit profile by consumer ID.
-
-        @param consumer_id: A consumer ID.
-        @type consumer_id: str
-
-        @param content_type: A profile (content) type ID.
-        @type content_type: str
-
-        @return: The requested profile.
-        @rtype: dict
-
-        @raise ProfilerConduitException: On error.
-        """
-        try:
-            manager = managers.consumer_profile_manager()
-            return manager.get_profile(consumer_id, content_type)
-        except Exception, e:
-            _LOG.exception(_('Error fetching profile for consumer [%(c)s]') % {'c' : consumer_id})
-            raise ProfilerConduitException(e), None, sys.exc_info()[2]
-
     def get_bindings(self, consumer_id):
         """
         Get a list of bound repository IDs.

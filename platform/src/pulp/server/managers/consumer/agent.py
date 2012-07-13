@@ -22,6 +22,7 @@ from pulp.server.managers import factory as managers
 from pulp.plugins import loader as plugins
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.server.exceptions import PulpExecutionException
 from pulp.server.agent import PulpAgent
 from logging import getLogger
@@ -86,8 +87,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
+            pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.install_units(id, units, options, cfg, conduit)
+            units = profiler.install_units(pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -109,8 +111,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
+            pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.update_units(id, units, options, cfg, conduit)
+            units = profiler.update_units(pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -132,8 +135,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
+            pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.uninstall_units(id, units, options, cfg, conduit)
+            units = profiler.uninstall_units(pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -162,6 +166,22 @@ class AgentManager(object):
             plugin = Profiler()
             cfg = {}
         return _Plugin(plugin), cfg
+
+    def __profiled_consumer(self, id):
+        """
+        Get a profiler consumer model object.
+        @param id: A consumer ID.
+        @type id: str
+        @return: A populated profiler consumer model object.
+        @rtype: L{ProfiledConsumer}
+        """
+        profiles = {}
+        manager = managers.consumer_profile_manager()
+        for p in manager.get_profiles(id):
+            typeid = p['content_type']
+            profile = p['profile']
+            profiles[typeid] = profile
+        return ProfiledConsumer(id, profiles)
 
 
 class Units(dict):
