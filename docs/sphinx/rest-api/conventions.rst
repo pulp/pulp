@@ -1,6 +1,55 @@
 Conventions
 ===========
 
+.. _search_criteria:
+
+Search Criteria
+---------------
+
+Pulp offers a standard set of criteria for searching through collections as well
+as for specifying resources in a collection to actions upon.
+
+Any API that supports this criteria will accept a JSON document with a
+**criteria** field. The criteria field will be a sub-document with the following
+fields:
+
+ * **filters**
+ * **sort**
+ * **limit**
+ * **skip**
+ * **fields**
+
+The **filters** field is itself a document that specifies, using the pymongo
+find specification syntax, the resource fields and values to match. For more
+information on the syntax, see:
+http://www.mongodb.org/display/DOCS/Querying
+
+The **sort** field is an array of arrays. Each specifying a field and a
+direction.
+
+The **limit** field is a number that gives the maximum amount of resources to
+select. Useful for pagination.
+
+The **skip** field is a number that gives the index of the first resource to
+select. Useful for pagination.
+
+The **fields** field is an array of resource field names to return in the
+results.
+
+Example search criteria::
+
+ {
+  "criteria": {"filters": {"id": {"$in": ["fee", "fie", "foe", "foo"]},
+                           "group": {"$regex": ".*-dev"}},
+               "sort": [["id", "ascending"], ["timestamp", "descending"]],
+               "limit": 100,
+               "skip": 0,
+               "fields": ["id", "group", "description", "timestamp"]}
+ }
+
+
+.. _exception_handling:
+
 Exception Handling
 ------------------
 
@@ -33,6 +82,8 @@ Example serialized exception::
   "http_status": 404
  }
 
+
+.. _date_and_time:
 
 Date and Time Formats
 ---------------------
