@@ -29,8 +29,8 @@ try:
 except ImportError:
     import simplejson as json
 
-from pulp.plugins.distributor import Distributor
-from pulp.plugins.importer import Importer
+from pulp.plugins.distributor import Distributor, GroupDistributor
+from pulp.plugins.importer import Importer, GroupImporter
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
@@ -49,6 +49,8 @@ _LOADER = None
 _PLUGINS_ROOT = '/usr/lib/pulp/plugins'
 _DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/distributors'
 _IMPORTERS_DIR = _PLUGINS_ROOT + '/importers'
+_GROUP_DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/group_distributors'
+_GROUP_IMPORTERS_DIR = _PLUGINS_ROOT + '/group_importers'
 _PROFILERS_DIR = _PLUGINS_ROOT + '/profilers'
 _TYPES_DIR = _PLUGINS_ROOT + '/types'
 
@@ -308,6 +310,34 @@ def get_importer_by_id(id):
     return (cls(), cfg)
 
 
+def get_group_distributor_by_id(id):
+    """
+    Get a group distributor instance that corresponds to the given id.
+    @param id: id of the group distributor
+    @type id: str
+    @return: tuple of L{GroupDistributor} instance and dictionary configuration
+    @rtype: tuple (L{GroupDistributor}, dict)
+    @raise: L{PluginNotFound} if no group distributor corresponds to the id
+    """
+    assert _is_initialized()
+    cls, cfg = _LOADER.get_group_distributor_by_id(id)
+    return (cls(), cfg)
+
+
+def get_group_importer_by_id(id):
+    """
+    Get a group importer instance that corresponds to the given id.
+    @param id: id of the group importer
+    @type id: str
+    @return: tuple of L{GroupImporter} instance and dictionary configuration
+    @rtype: tuple (L{GroupImporter}, dict)
+    @raise: L{PluginNotFound} if no group importer corresponds to the id
+    """
+    assert _is_initialized()
+    cls, cfg = _LOADER.get_group_importer_by_id(id)
+    return (cls(), cfg)
+
+
 def get_profiler_by_id(id):
     """
     Get a profiler instance that corresponds to the given id.
@@ -345,6 +375,8 @@ class PluginLoader(object):
     def __init__(self):
         self.__distributors = _PluginMap()
         self.__importers = _PluginMap()
+        self.__group_distributors = _PluginMap()
+        self.__group_importers = _PluginMap()
         self.__profilers = _PluginMap()
 
     # plugin management api
@@ -372,6 +404,30 @@ class PluginLoader(object):
         """
         types = _get_plugin_types(cls)
         self.__importers.add_plugin(id, cls, cfg, types)
+
+    def add_group_distributor(self, id, cls, cfg):
+        """
+        @param id: group distributor id
+        @type id: str
+        @param cls: group distributor class
+        @type cls: type
+        @param cfg: group distributor configuration
+        @type cfg: dict
+        """
+        types = _get_plugin_types(cls)
+        self.__group_distributors.add_plugin(id, cls, cfg, types)
+
+    def add_group_importer(self, id, cls, cfg):
+        """
+        @param id: group importer id
+        @type id: str
+        @param cls: group importer class
+        @type cls: type
+        @param cfg: group importer configuration
+        @type cfg: dict
+        """
+        types = _get_plugin_types(cls)
+        self.__group_importers.add_plugin(id, cls, cfg, types)
 
     def add_profiler(self, id, cls, cfg):
         """
@@ -403,6 +459,24 @@ class PluginLoader(object):
         _add_path_to_sys_path(path)
         _load_plugins_from_path(path, Importer, self.__importers)
 
+    def load_group_distributors_from_path(self, path):
+        """
+        @param path: group distributors root directory
+        @type path: str
+        """
+        _check_path(path)
+        _add_path_to_sys_path(path)
+        _load_plugins_from_path(path, GroupDistributor, self.__group_distributors)
+
+    def load_group_importers_from_path(self, path):
+        """
+        @param path: group importers root directory
+        @type path: str
+        """
+        _check_path(path)
+        _add_path_to_sys_path(path)
+        _load_plugins_from_path(path, GroupImporter, self.__group_importers)
+
     def load_profilers_from_path(self, path):
         """
         @param path: profilers root directory
@@ -425,6 +499,20 @@ class PluginLoader(object):
         @type id: str
         """
         self.__importers.remove_plugin(id)
+
+    def remove_group_distributor(self, id):
+        """
+        @param id: group distributor id
+        @type id: str
+        """
+        self.__group_distributors.remove_plugin(id)
+
+    def remove_group_importer(self, id):
+        """
+        @param id: importer id
+        @type id: str
+        """
+        self.__group_importers.remove_plugin(id)
 
     def remove_profiler(self, id):
         """
@@ -479,6 +567,46 @@ class PluginLoader(object):
             importers.append(self.get_importer_by_id(id))
         return importers
 
+    def get_group_distributor_by_id(self, id):
+        """
+        @param id: group distributor id
+        @type id: str
+        @return: tuple of group distributor (class, configuration)
+        @rtype: tuple (L{GroupDistributor}, dict)
+        """
+        return self.__group_distributors.get_plugin_by_id(id)
+
+    def get_group_distributors_by_type(self, content_type):
+        """
+        @param content_type: content type
+        @type content_type: str
+        @return: list of tuples of group distributor (class, configuration)
+        @rtype: list [(L{GroupDistributor}, dict)]
+        """
+        ids = self.__group_distributors.get_plugin_ids_by_type(content_type)
+        group_distributors = map(self.get_group_distributor_by_id, ids)
+        return group_distributors
+
+    def get_group_importer_by_id(self, id):
+        """
+        @param id: group importer id
+        @type id: str
+        @return: tuple of group importer (class, configuration)
+        @rtype: tuple (L{GroupImporter}, dict)
+        """
+        return self.__group_importers.get_plugin_by_id(id)
+
+    def get_group_importers_by_type(self, content_type):
+        """
+        @param content_type: content type
+        @type content_type: str
+        @return: list of tuples of group importer (class, configuration)
+        @rtype: list [(L{GroupImporter}, dict), ...]
+        """
+        ids = self.__group_importers.get_plugin_ids_by_type(content_type)
+        group_importers = map(self.get_group_importer_by_id, ids)
+        return group_importers
+
     def get_profiler_by_id(self, id):
         """
         @param id: profiler id
@@ -520,6 +648,20 @@ class PluginLoader(object):
         """
         return self.__importers.get_loaded_plugins()
 
+    def get_loaded_group_distributors(self):
+        """
+        @return: dictionary of group distributor id: metadata dictionary
+        @rtype: dict {str: dict}
+        """
+        return self.__group_distributors.get_loaded_plugins()
+
+    def get_loaded_group_importers(self):
+        """
+        @return: dictionary of group importer id: metadata dictionary
+        @rtype: dict {str: dict}
+        """
+        return self.__group_importers.get_loaded_plugins()
+
     def get_loaded_profilers(self):
         """
         @return: dictionary of profiler id: metadata dictionary
@@ -527,7 +669,7 @@ class PluginLoader(object):
         """
         return self.__profilers.get_loaded_plugins()
 
-# plugin management class
+# plugin management class ------------------------------------------------------
 
 class _PluginMap(object):
     """
