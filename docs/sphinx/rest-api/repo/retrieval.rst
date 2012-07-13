@@ -138,7 +138,7 @@ list is returned in the case where there are no repositories.
 | :method:`post`
 | :path:`/v2/repositories/search/`
 | :permission:`read`
-| :param_list:`post` include the key "criteria" whose value is a mapping structure as defined in pulp.server.db.model.Criteria
+| :param_list:`post` include the key "criteria" whose value is a mapping structure as defined in :ref:`search_criteria`.
 | :response_list:`_`
 
 * :response_code:`200,containing the list of repositories`
@@ -201,7 +201,7 @@ filter expressions may not be serializable as query parameters.
 | :path:`/v2/repositories/search/`
 | :permission:`read`
 | :param_list:`get` query params should match the attributes of a Criteria
- object as defined in pulp.server.db.model.Criteria.
+ object as defined in :ref:`search_criteria`.
  For example: /v2/repositories/search/?fields=id&fields=display_name&limit=20'
 | :response_list:`_`
 
