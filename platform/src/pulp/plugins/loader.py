@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Loader module that provides the infratructure and api for loading generic
+Loader module that provides the infrastructure and api for loading generic
 content plugins and type definitions.
 """
 
@@ -122,6 +122,8 @@ def initialize(validate=True):
     _load_content_types(_TYPES_DIR)
     _LOADER.load_distributors_from_path(_DISTRIBUTORS_DIR)
     _LOADER.load_importers_from_path(_IMPORTERS_DIR)
+    _LOADER.load_group_distributors_from_path(_GROUP_DISTRIBUTORS_DIR)
+    _LOADER.load_grop_importers_from_path(_GROUP_IMPORTERS_DIR)
     _LOADER.load_profilers_from_path(_PROFILERS_DIR)
 
     # post-initialization validation
