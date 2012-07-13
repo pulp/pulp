@@ -257,6 +257,19 @@ def is_valid_distributor(id):
     return id in plugins
 
 
+def is_valid_group_distributor(id):
+    """
+    Checks to see that a group distributor exists for the given id.
+    @param id: id of the group distributor
+    @type  id: str
+    @return: true if the group distributor exists; false otherwise
+    @rtype: bool
+    """
+    assert _is_initialized()
+    plugins = _LOADER.get_loaded_group_distributors()
+    return id in plugins
+
+
 def is_valid_importer(id):
     """
     Check to see that a importer exists for the given id.
@@ -267,6 +280,19 @@ def is_valid_importer(id):
     """
     assert _is_initialized()
     plugins = _LOADER.get_loaded_importers()
+    return id in plugins
+
+
+def is_valid_group_importer(id):
+    """
+    Checks to see that a group importer exists for the given id.
+    @param id: id of the group importer
+    @type  id: str
+    @return: true if the group importer exists; false otherwise
+    @rtype: bool
+    """
+    assert _is_initialized()
+    plugins = _LOADER.get_loaded_group_importers()
     return id in plugins
 
 
