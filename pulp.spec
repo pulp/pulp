@@ -318,7 +318,6 @@ then
   fi
 fi
 
-chown apache:apache /etc/pki/pulp/content/pulp-protected-repos
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
