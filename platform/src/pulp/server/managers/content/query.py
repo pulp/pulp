@@ -21,14 +21,14 @@ from pulp.server.exceptions import InvalidValue, MissingResource
 
 class ContentQueryManager(object):
     """
-    Query operations for content types and and individual content units.
+    Query operations for content types and individual content units.
     """
 
     def list_content_types(self):
         """
         List the currently defined content type ids.
-        @retun: list of content type ids
-        @rtype: list [str, ...]
+        @return: list of content type ids
+        @rtype:  list [str, ...]
         """
         return content_types_db.all_type_ids()
 
@@ -37,6 +37,23 @@ class ContentQueryManager(object):
         """
         return content_types_db.type_definition(type_id)
 
+    @classmethod
+    def find_by_criteria(cls, type_id, criteria):
+        """
+        Return a list of content units that match the provided criteria.
+
+        @param type_id: id of ContentType to search
+        @type  type_id: basestring
+
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of content unit instances
+        @rtype:     list
+        """
+        return cls.get_content_unit_collection(type_id).query(criteria)
+
     def list_content_units(self,
                            content_type,
                            db_spec=None,
@@ -44,6 +61,8 @@ class ContentQueryManager(object):
                            start=0,
                            limit=None):
         """
+        DEPRECATED!!!  Please use find_by_criteria() instead.
+
         List the content units in a content type collection.
         @param content_type: unique id of content collection
         @type content_type: str
@@ -72,6 +91,20 @@ class ContentQueryManager(object):
         if limit is not None:
             cursor.limit(limit)
         return tuple(cursor)
+
+    @staticmethod
+    def get_content_unit_collection(type_id):
+        """
+        Get and return the PulpCollection that corresponds to a given
+        ContentType id.
+
+        @param type_id: ContentType id
+        @type  type_id: basestring
+
+        @return:    PulpCollection instance
+        @rtype:     PulpCollection
+        """
+        return content_types_db.type_units_collection(type_id)
 
     def get_content_unit_by_keys_dict(self, content_type, unit_keys_dict, model_fields=None):
         """
