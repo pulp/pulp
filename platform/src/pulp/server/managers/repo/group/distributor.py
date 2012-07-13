@@ -79,7 +79,7 @@ class RepoGroupDistributorManager(object):
 
         @raise MissingResource: if the group does not exist
         """
-        group = RepoGroup.get_collection.find_one({'id' : repo_group_id})
+        group = RepoGroup.get_collection().find_one({'id' : repo_group_id})
         if group is None:
             raise MissingResource(repo_group=repo_group_id)
 

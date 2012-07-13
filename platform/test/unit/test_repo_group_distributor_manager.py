@@ -226,19 +226,31 @@ class RepoGroupDistributorManager(base.PulpServerTests):
             self.assertEqual(e.resources['repo_group'], 'bar')
             self.assertTrue('distributor' not in e.resources)
 
+    def test_remove_distributor_plugin_exception(self):
+        # Setup
+        mock_plugins.MOCK_GROUP_DISTRIBUTOR.distributor_removed.side_effect = Exception()
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+
+        # Test
+        try:
+            self.distributor_manager.remove_distributor(self.group_id, 'd1')
+            self.fail()
+        except PulpExecutionException, e:
+            pass
+
     # -- update ---------------------------------------------------------------
 
     def test_update_distributor_config(self):
         # Setup
-        orig = {'a' : 'a', 'b' : 'b'}
+        orig = {'a' : 'a', 'b' : 'b', 'c' : 'c'}
         self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', orig, distributor_id='d1')
 
         # Test
-        delta = {'a' : 'A', 'c' : 'C'}
+        delta = {'a' : 'A', 'b' : None, 'd' : 'D'}
         self.distributor_manager.update_distributor_config(self.group_id, 'd1', delta)
 
         # Verify
-        expected_config = {'a' : 'A', 'b' : 'b', 'c' : 'C'}
+        expected_config = {'a' : 'A', 'c' : 'c', 'd' : 'D'}
 
         #   Database
         distributor = self.distributor_manager.get_distributor(self.group_id, 'd1')
@@ -292,3 +304,41 @@ class RepoGroupDistributorManager(base.PulpServerTests):
         except PulpDataException, e:
             self.assertEqual(e.args[0][0], 'foo')
 
+    # -- scratchpad -----------------------------------------------------------
+
+    def test_get_set_scratchpad(self):
+        # Setup
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+
+        # Test - Get Without Set
+        sp = self.distributor_manager.get_distributor_scratchpad(self.group_id, 'd1')
+        self.assertTrue(sp is None)
+
+        # Test - Set
+        value = {'a' : 'a'}
+        self.distributor_manager.set_distributor_scratchpad(self.group_id, 'd1', value)
+
+        # Test - Get
+        sp = self.distributor_manager.get_distributor_scratchpad(self.group_id, 'd1')
+        self.assertEqual(value, sp)
+
+    # -- find -----------------------------------------------------------------
+
+    def test_find_distributors(self):
+        # Setup
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d2')
+
+        # Test
+        matching = self.distributor_manager.find_distributors(self.group_id)
+
+        # Verify
+        self.assertEqual(2, len(matching))
+
+    def test_find_distributors_no_group(self):
+        # Test
+        try:
+            self.distributor_manager.find_distributors('foo')
+            self.fail()
+        except MissingResource, e:
+            self.assertEqual(e.resources['repo_group'], 'foo')
