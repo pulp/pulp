@@ -520,13 +520,16 @@ class RepoGroup(Model):
         self.description = description
         self.repo_ids = repo_ids or []
         self.notes = notes or {}
-        self.scratchpad = {}
+
+        self.scratchpad = None
 
 
 class RepoGroupDistributor(Model):
     """
     Represents group-wide distributors.
     """
+
+    collection_name = 'repo_group_distributors'
 
     unique_indices = (('repo_group_id', 'id'),)
     search_indices = ('distributor_type_id', 'repo_group_id', 'id')
@@ -539,3 +542,4 @@ class RepoGroupDistributor(Model):
         self.repo_group_id = repo_group_id
         self.config = config
 
+        self.scratchpad = None

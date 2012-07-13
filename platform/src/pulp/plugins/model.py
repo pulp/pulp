@@ -89,7 +89,7 @@ class RepositoryGroup(object):
     @type working_dir: str
     """
 
-    def __init__(self, id, display_name, description, notes, working_dir):
+    def __init__(self, id, display_name, description, notes, working_dir=None):
         self.id = id
         self.display_name = display_name
         self.description = description
@@ -109,7 +109,7 @@ class RelatedRepositoryGroup(RepositoryGroup):
     the given plugin type, a list of configurations will be returned.
     """
 
-    def __init__(self, id, plugin_configs, display_name, description, notes, working_dir):
+    def __init__(self, id, plugin_configs, display_name, description, notes, working_dir=None):
         super(RelatedRepositoryGroup, self).__init__(id, display_name,
                                                      description, notes,
                                                      working_dir)

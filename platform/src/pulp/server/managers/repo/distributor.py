@@ -270,9 +270,8 @@ class RepoDistributorManager(object):
         @return: the updated distributor
         @rtype:  dict
 
-        @raise MissingResource: if the given repo doesn't exist
-        @raise MissingResource: if the given distributor doesn't exist
-        @raise InvalidConfiguration: if the plugin rejects the given changes
+        @raise MissingResource: if the given repo or distributor doesn't exist
+        @raise PulpDataException: if the plugin rejects the given changes
         """
 
         repo_coll = Repo.get_collection()
@@ -401,7 +400,7 @@ class RepoDistributorManager(object):
 
         distributor_coll = RepoDistributor.get_collection()
 
-        # Validatoin
+        # Validation
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
             return None
