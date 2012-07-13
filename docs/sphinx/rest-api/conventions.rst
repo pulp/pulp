@@ -7,7 +7,7 @@ Search Criteria
 ---------------
 
 Pulp offers a standard set of criteria for searching through collections as well
-as for specifying resources in a collection to actions upon.
+as for specifying resources in a collection to act upon.
 
 Any API that supports this criteria will accept a JSON document with a
 **criteria** field. The criteria field will be a sub-document with the following
