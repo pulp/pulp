@@ -56,6 +56,8 @@ DIRS = (
     '/usr/lib/pulp/plugins',
     '/usr/lib/pulp/plugins/distributors',
     '/usr/lib/pulp/plugins/importers',
+    '/usr/lib/pulp/plugins/group_distributors',
+    '/usr/lib/pulp/plugins/group_importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
     '/var/lib/pulp/published',
