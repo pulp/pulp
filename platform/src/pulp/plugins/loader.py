@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -24,16 +24,12 @@ import sys
 from gettext import gettext as _
 from pprint import pformat
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 from pulp.plugins.distributor import Distributor, GroupDistributor
 from pulp.plugins.importer import Importer, GroupImporter
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
+from pulp.server.compat import json
 from pulp.server.exceptions import PulpException
 
 # constants --------------------------------------------------------------------
@@ -101,9 +97,7 @@ class MissingPluginPackage(PluginLoadError): pass
 class NamespaceCollision(PluginLoadError): pass
 
 
-# loader public api methods ----------------------------------------------------
-
-# state management
+# state management -------------------------------------------------------------
 
 def initialize(validate=True):
     """
@@ -144,7 +138,7 @@ def finalize():
     assert _is_initialized()
     _LOADER = None
 
-# query api
+# query api --------------------------------------------------------------------
 
 def list_content_types():
     """
@@ -308,7 +302,7 @@ def is_valid_profiler(id):
     plugins = _LOADER.get_loaded_profilers()
     return id in plugins
 
-# plugin api
+# plugin api -------------------------------------------------------------------
 
 def get_distributor_by_id(id):
     """
@@ -407,7 +401,7 @@ class PluginLoader(object):
         self.__group_importers = _PluginMap()
         self.__profilers = _PluginMap()
 
-    # plugin management api
+    # plugin management api ----------------------------------------------------
 
     def add_distributor(self, id, cls, cfg):
         """
@@ -549,7 +543,7 @@ class PluginLoader(object):
         """
         self.__profilers.remove_plugin(id)
 
-    # plugin lookup api
+    # plugin lookup api --------------------------------------------------------
 
     def get_distributor_by_id(self, id):
         """
@@ -660,7 +654,7 @@ class PluginLoader(object):
             break
         return profiler
 
-    # plugin query api
+    # plugin query api ---------------------------------------------------------
 
     def get_loaded_distributors(self):
         """
@@ -782,9 +776,7 @@ class _PluginMap(object):
                 continue
             ids.remove(id)
 
-# utility methods --------------------------------------------------------------
-
-# general utility
+# general utility methods ------------------------------------------------------
 
 def _check_path(path):
     """
@@ -806,7 +798,7 @@ def _read_content(file_name):
     handle.close()
     return contents
 
-# initialization
+# initialization methods -------------------------------------------------------
 
 def _create_loader():
     global _LOADER
@@ -865,7 +857,7 @@ def _validate_importers():
             msg = _('Importer %(i)s: no type definition found for %(t)s')
             raise InvalidImporter(msg % {'i': plugin_id, 't': type_})
 
-# plugin loading
+# plugin loading methods -------------------------------------------------------
 
 def _add_path_to_sys_path(path):
     """
