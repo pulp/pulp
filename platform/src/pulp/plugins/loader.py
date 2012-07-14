@@ -116,8 +116,8 @@ def initialize(validate=True):
     _load_content_types(_TYPES_DIR)
     _LOADER.load_distributors_from_path(_DISTRIBUTORS_DIR)
     _LOADER.load_importers_from_path(_IMPORTERS_DIR)
-    _LOADER.load_group_distributors_from_path(_GROUP_DISTRIBUTORS_DIR)
-    _LOADER.load_group_importers_from_path(_GROUP_IMPORTERS_DIR)
+    _LOADER.load_group_distributors_from_path(_DISTRIBUTORS_DIR)
+    _LOADER.load_group_importers_from_path(_IMPORTERS_DIR)
     _LOADER.load_profilers_from_path(_PROFILERS_DIR)
 
     # post-initialization validation
