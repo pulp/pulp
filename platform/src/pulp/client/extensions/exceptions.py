@@ -252,7 +252,7 @@ class ExceptionHandler:
             desc = _(desc) % {'e' : expiration_date}
         else:
             desc = 'Use the login command to authenticate with the server and ' \
-            'downloaded a session certificate for use in future calls to this script. ' \
+            'download a session certificate for use in future calls to this script. ' \
             'If credentials were specified, please double check the username and ' \
             'password and attempt the request again.'
             desc = _(desc)
