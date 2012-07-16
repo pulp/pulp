@@ -10,8 +10,8 @@ general consumer details.
 | :method:`get`
 | :path:`/v2/consumers/<consumer_id>/`
 | :permission:`read`
-| :param_list:`get` None; the consumer ID is included in the URL itself. There are
-  no supported query parameters.
+| :param_list:`get` include the key 'bindings' to have the 'bindings' attribute,
+  a list of related bindings, added to the returned consumer.
 | :response_list:`_`
 
 * :response_code:`200,if the consumer exists`
@@ -48,7 +48,8 @@ where there are no consumers.
 | :method:`get`
 | :path:`/v2/consumers/`
 | :permission:`read`
-| :param_list:`get` Currently none, all consumers are returned.
+| :param_list:`get` include the key 'bindings' to have the 'bindings' attribute,
+  a list of related bindings, added to each returned consumer.
 | :response_list:`_`
 
 * :response_code:`200,containing the list of consumers`
@@ -98,7 +99,10 @@ list is returned in the case where there are no consumers.
 | :method:`post`
 | :path:`/v2/consumers/search/`
 | :permission:`read`
-| :param_list:`post` include the key "criteria" whose value is a mapping structure as defined in :ref:`search_criteria`.
+| :param_list:`post` include the key "criteria" whose value is a mapping
+  structure as defined in :ref:`search_criteria`.  Optionally include the key
+  "bindings" with any value that evaluates to True to have the "bindings"
+  attribute added to each returned consumer.
 | :response_list:`_`
 
 * :response_code:`200,containing the list of consumers`
@@ -151,6 +155,8 @@ filter expressions may not be serializable as query parameters.
 | :param_list:`get` query params should match the attributes of a Criteria
  object as defined in :ref:`search_criteria`.
  For example: /v2/consumers/search/?fields=id&fields=display_name&limit=20'
+ Include the key 'bindings' to have the 'bindings' attribute,
+  a list of related bindings, added to each returned consumer.
 | :response_list:`_`
 
 * :response_code:`200,containing the list of consumers`
