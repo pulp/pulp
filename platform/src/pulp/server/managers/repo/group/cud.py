@@ -16,7 +16,8 @@ import sys
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db.model.repository import Repo, RepoGroup
+from pulp.server.db.model.repo_group import RepoGroup
+from pulp.server.db.model.repository import Repo
 
 
 class RepoGroupManager(object):

@@ -91,8 +91,8 @@ class CreateErratumCommand(PulpCliCommand):
         d = 'pushcount for this erratum; an integer, defaults to 1'
         self.create_option('--pushcount', _(d), required=True, default=1)
 
-        d = 'reboot_suggested for this erratum will be true if this flag is specified'
-        self.create_flag('--reboot_suggested', _(d))
+        d = 'reboot-suggested for this erratum will be true if this flag is specified'
+        self.create_flag('--reboot-suggested', _(d))
 
         d = 'severity of this erratum'
         self.create_option('--severity', _(d), required=False)
@@ -139,7 +139,7 @@ class CreateErratumCommand(PulpCliCommand):
             msg = _("Error: Invalid pushcount [%s]; should be an integer ") % kwargs['pushcount']
             self.context.prompt.render_failure_message(msg)
             return os.EX_DATAERR
-        reboot_suggested = kwargs['reboot_suggested']
+        reboot_suggested = kwargs['reboot-suggested']
 
         unit_key = {"id":erratum_id}
         metadata = {

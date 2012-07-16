@@ -16,7 +16,7 @@ import mock_plugins
 
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import RepositoryGroup
-from pulp.server.db.model.repository import RepoGroup, RepoGroupDistributor
+from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.exceptions import InvalidValue, MissingResource, PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as manager_factory
 
