@@ -35,6 +35,35 @@ from pulp.server.webservices import serialization
 
 _LOG = logging.getLogger(__name__)
 
+def process_consumers(consumers, merge_bindings=False):
+    """
+    Apply standard processing to consumers before returning them to a client.
+    This includes adding the '_href' link attribute, and optionally merging in
+    related bindings.
+
+    @param consumers:   list of consumers pulled from the database
+    @type  consumer:    list
+
+    @param merge_bindings:  iff True, add an attribute 'bindings' to each
+                            consumer, the value of which will be a list of
+                            related binding objects.
+    @type  merge_bindings:  bool
+
+    @return:    same list that was passed in, just for convenience. list members
+                are modified in-place
+    @rtype:     list
+    """
+    ids = [consumer['id'] for consumer in consumers]
+    if merge_bindings:
+        bindings = managers.consumer_bind_manager().find_by_consumer_list(ids)
+
+    for consumer in consumers:
+        consumer.update(serialization.link.current_link_obj())
+        if merge_bindings:
+            consumer['bindings'] = bindings[consumer['id']]
+    return consumers
+
+
 # -- controllers --------------------------------------------------------------
 
 class ConsumersCollection(JSONController):
@@ -48,12 +77,9 @@ class ConsumersCollection(JSONController):
 
         query_manager = managers.consumer_query_manager()
         consumers = query_manager.find_all()
-        
-        bind_manager = managers.consumer_bind_manager()
-        for consumer in consumers:
-            bindings = bind_manager.find_by_consumer(consumer['id'])
-            consumer['bindings'] = bindings
-            
+
+        process_consumers(consumers, True)
+
         return self.ok(consumers)
 
     @auth_required(CREATE)
@@ -86,6 +112,16 @@ class ConsumerSearch(SearchController):
         super(ConsumerSearch, self).__init__(
             managers.consumer_query_manager().find_by_criteria)
 
+    def GET(self):
+        consumers = self._get_query_results_from_get()
+        process_consumers(consumers, True)
+        return self.ok(consumers)
+
+    def POST(self):
+        consumers = self._get_query_results_from_post()
+        process_consumers(consumers, True)
+        return self.ok(consumers)
+
 
 class ConsumerResource(JSONController):
 
@@ -99,11 +135,9 @@ class ConsumerResource(JSONController):
 
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        
-        bind_manager = managers.consumer_bind_manager()
-        consumer['bindings'] = bind_manager.find_by_consumer(consumer['id'])
-        consumer.update(serialization.link.current_link_obj())
-           
+
+        consumer = process_consumers([consumer], True)[0]
+
         return self.ok(consumer)
 
     @auth_required(DELETE)

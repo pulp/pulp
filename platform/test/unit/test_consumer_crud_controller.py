@@ -49,6 +49,30 @@ class ConsumerAdvancedSearchTests(ConsumerControllersTests):
         self.assertTrue(isinstance(query_arg, criteria.Criteria))
         self.assertEqual(mock_params.call_count, 1)
 
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_post_calls_process(self, mock_process, mock_query, mock_params):
+        """
+        Make sure the search calls process_consumers
+        """
+        mock_params.return_value = {'criteria' : {}}
+        status, body = self.post('/v2/consumers/search/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_get_calls_process(self, mock_process, mock_query, mock_params):
+        """
+        Make sure the search calls process_consumers
+        """
+        mock_params.return_value = {'criteria' : {}}
+        status, body = self.get('/v2/consumers/search/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+
 
 class ConsumerCollectionTests(ConsumerControllersTests):
 
@@ -67,6 +91,10 @@ class ConsumerCollectionTests(ConsumerControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(2, len(body))
+        self.assertTrue(body[0]['id'].startswith('consumer'))
+        self.assertTrue('bindings' in body[0])
+        self.assertTrue('_href' in body[0])
+
 
     def test_get_no_consumers(self):
         """
@@ -151,6 +179,7 @@ class ConsumerResourceTests(ConsumerControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.assertEqual('consumer-1', body['id'])
+        self.assertTrue('bindings' in body)
         self.assertTrue('_href' in body)
         self.assertTrue(body['_href'].endswith(PATH))
 
