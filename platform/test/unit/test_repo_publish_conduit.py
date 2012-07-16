@@ -41,17 +41,17 @@ TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'k
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncConduitTests(base.PulpServerTests):
+class RepoPublishConduitTests(base.PulpServerTests):
 
     def clean(self):
-        super(RepoSyncConduitTests, self).clean()
+        super(RepoPublishConduitTests, self).clean()
         types_database.clean()
 
         RepoContentUnit.get_collection().remove()
         Repo.get_collection().remove()
 
     def setUp(self):
-        super(RepoSyncConduitTests, self).setUp()
+        super(RepoPublishConduitTests, self).setUp()
         mock_plugins.install()
         types_database.update_database([TYPE_1_DEF, TYPE_2_DEF])
 
@@ -142,10 +142,10 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
     # -- errors tests ---------------------------------------------------------
 
-    def test_get_units_with_error(self):
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
+    def test_get_units_with_error(self, mock_query):
         # Setup
-        self.conduit._association_query_manager = mock.Mock()
-        self.conduit._association_query_manager.get_units_across_types.side_effect = Exception()
+        mock_query.side_effect = Exception()
 
         # Test
         try:
@@ -154,10 +154,10 @@ class RepoSyncConduitTests(base.PulpServerTests):
         except DistributorConduitException, e:
             print(e) # for coverage
 
-    def test_last_publish_with_error(self):
+    @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.last_publish')
+    def test_last_publish_with_error(self, mock_call):
         # Setup
-        self.conduit._repo_publish_manager = mock.Mock()
-        self.conduit._repo_publish_manager.last_publish.side_effect = Exception()
+        mock_call.side_effect = Exception()
 
         # Test
         self.assertRaises(DistributorConduitException, self.conduit.last_publish)
