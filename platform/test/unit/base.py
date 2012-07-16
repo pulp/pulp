@@ -114,10 +114,10 @@ class PulpServerTests(unittest.TestCase):
         pass
 
     def setup_async(self):
-        pass
+        dispatch_factory.initialize()
 
     def teardown_async(self):
-        pass
+        dispatch_factory.finalize(clear_queued_calls=True)
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
@@ -195,12 +195,6 @@ class PulpWebserviceTests(PulpServerTests):
 
         user_manager = UserManager()
         user_manager.delete_user(login='ws-user')
-
-    def setup_async(self):
-        dispatch_factory.initialize()
-
-    def teardown_async(self):
-        dispatch_factory.finalize(clear_queued_calls=True)
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers)
