@@ -49,11 +49,6 @@ class ScheduleTests(base.PulpServerTests):
 
         self.schedule_manager = ScheduleManager()
 
-        # This call needs to happen after the DB is initialized by the super to
-        # this method.
-        # jdob, June 12, 2012
-        dispatch_factory.initialize()
-
     def tearDown(self):
         super(ScheduleTests, self).tearDown()
         mock_plugins.reset()
@@ -61,13 +56,6 @@ class ScheduleTests(base.PulpServerTests):
         self._distributor_manager = None
         self._importer_manager = None
         self.schedule_manager = None
-
-        # There is no uninitialize in dispatch_factory and it's not idempotent,
-        # so manually uninitialize it so the setUp call doesn't fail.
-        # jdob, June 12, 2012
-        dispatch_factory._COORDINATOR = None
-        dispatch_factory._SCHEDULER = None
-        dispatch_factory._TASK_QUEUE = None
 
     def clean(self):
         super(ScheduleTests, self).clean()
