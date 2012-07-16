@@ -13,15 +13,53 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import time
+import unittest
+
+import mock
 
 import base
 import mock_plugins
 import mock_agent
-
 import pulp.plugins.loader as plugin_loader
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.webservices.controllers import consumers
+
+
+class ProcessConsumersTests(unittest.TestCase):
+    def setUp(self):
+        factory.initialize()
+
+    @mock.patch(
+        'pulp.server.webservices.serialization.link.current_link_obj',
+        return_value={'_href':'some/path'}
+    )
+    def test_without_merge(self, mock_link):
+        ret = consumers.process_consumers([{'id':'consumer1'}])
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(mock_link.call_count, 1)
+        self.assertTrue('_href' in ret[0])
+        self.assertTrue('bindings' not in ret[0])
+
+    @mock.patch(
+        'pulp.server.webservices.serialization.link.current_link_obj',
+        return_value={'_href':'some/path'}
+    )
+    @mock.patch(
+        'pulp.server.managers.consumer.bind.BindManager.find_by_consumer_list',
+        return_value={'consumer1':[{'id':'binding1'}, {'id':'binding2'}]}
+    )
+    def test_with_merge(self, mock_find, mock_link):
+        items = [{'id':'consumer1'}]
+        ret = consumers.process_consumers(items, True)
+        self.assertEqual(mock_find.call_count, 1)
+        self.assertTrue('bindings' in ret[0])
+        self.assertEqual(len(ret[0]['bindings']), 2)
+
+    def test_without_consumers(self):
+        ret = consumers.process_consumers([])
+        self.assertEqual(ret, [])
 
 
 class BindTest(base.PulpWebserviceTests):

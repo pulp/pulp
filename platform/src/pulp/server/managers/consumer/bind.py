@@ -191,6 +191,31 @@ class BindManager(object):
         cursor = collection.find(query)
         return list(cursor)
 
+    def find_by_consumer_list(self, consumer_ids):
+        """
+        Given a list of consumer ids, return a dictionary whose keys are the
+        consumer ids, and whose values are each a list of bindings for the
+        given consumer.
+
+        @param consumer_ids:    list of consumer ids
+        @type  consumer_ids:    list
+
+        @return:    a dictionary whose keys are the consumer ids, and whose
+                    values are each a list of bindings for the given consumer.
+        @rtype:     dict
+        """
+        collection = Bind.get_collection()
+        # initialize a dictionary where each consumer_id has an empty list
+        ret = dict([(consumer_id, []) for consumer_id in consumer_ids])
+
+        cursor = collection.find({'consumer_id': {'$in': consumer_ids}})
+        for binding in cursor:
+            consumer_id = binding['consumer_id']
+            ret[consumer_id].append(binding)
+
+        return ret
+
+
     def find_by_repo(self, id):
         """
         Find all binds by Repo ID.

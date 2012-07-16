@@ -12,9 +12,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
+
 import base
 import mock_plugins
-
 import pulp.plugins.loader as plugin_loader
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -136,6 +137,25 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    @mock.patch.object(Bind, 'get_collection')
+    def test_find_by_consumer_list(self, mock_get_collection):
+        manager = factory.consumer_bind_manager()
+        CONSUMER_IDS = ['consumer1', 'consumer2']
+        mock_collection = mock_get_collection.return_value
+        # return a fake binding list
+        mock_collection.find.return_value = [
+            {'id' : 'binding1', 'consumer_id' : 'consumer1'}
+        ]
+
+        ret = manager.find_by_consumer_list(CONSUMER_IDS)
+
+        mock_collection.find.assert_called_once_with(
+            {'consumer_id': {'$in': CONSUMER_IDS}})
+
+        self.assertTrue(isinstance(ret, dict))
+        self.assertTrue('consumer1' in ret)
+        self.assertEqual(ret['consumer1'][0]['id'], 'binding1')
 
     def test_find_by_repo(self):
         # Setup
