@@ -55,13 +55,6 @@ class TestComps(rpm_support_base.PulpRPMTests):
         super(TestComps, self).tearDown()
         shutil.rmtree(self.temp_dir)
 
-    def simulate_sync(self, repo, src):
-        # Simulate a repo sync, copy the source contents to the repo.working_dir
-        dst = os.path.join(repo.working_dir, repo.id)
-        if os.path.exists(dst):
-            shutil.rmtree(dst)
-        shutil.copytree(src, dst)
-
     def create_dummy_pkg_group_unit(self, repo_id, pkg_grp_id):
         random_int = int(random.random())
         type_id = PKG_GROUP_TYPE_ID

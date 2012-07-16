@@ -177,6 +177,9 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
         pkglist = u.metadata['pkglist']
         for pkg in pkglist:
             for pinfo in pkg['packages']:
+                if not pinfo.has_key('sum'):
+                    _LOG.debug("Missing checksum info on package <%s> for linking a rpm to an erratum." % (pinfo))
+                    continue
                 pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
                 rpm_key = importer_rpm.form_lookup_key(pinfo)
                 if rpm_key in existing_rpms.keys():
