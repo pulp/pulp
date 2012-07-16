@@ -20,11 +20,10 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin
+from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin, StatusMixin
 import pulp.plugins.conduits._common as common_utils
 import pulp.plugins.types.database as types_db
 from pulp.plugins.model import PublishReport
-import pulp.server.dispatch.factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
@@ -33,7 +32,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
+class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, StatusMixin):
     """
     Used to communicate back into the Pulp server while a distributor is
     publishing a repo. Instances of this call should *not* be cached between
@@ -56,14 +55,10 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
         """
         RepoScratchPadMixin.__init__(self, repo_id)
         DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
+        StatusMixin.__init__(self, distributor_id, DistributorConduitException, progress_report=base_progress_report)
 
         self.repo_id = repo_id
         self.distributor_id = distributor_id
-
-        if base_progress_report is not None:
-            self.progress_report = base_progress_report
-        else:
-            self.progress_report = {}
 
         self._repo_manager = manager_factory.repo_manager()
         self._repo_publish_manager = manager_factory.repo_publish_manager()
@@ -76,30 +71,6 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
         return _('RepoPublishConduit for repository [%(r)s]' % {'r' : self.repo_id})
 
     # -- public ---------------------------------------------------------------
-
-    def set_progress(self, status):
-        """
-        Informs the server of the current state of the publish operation. The
-        contents of the status is dependent on how the distributor
-        implementation chooses to divide up the publish process.
-
-        @param status: contains arbitrary data to describe the state of the
-               publish; the contents may contain whatever information is relevant
-               to the distributor implementation so long as it is serializable
-        """
-        try:
-            self.progress_report[self.distributor_id] = status
-            context = dispatch_factory.context()
-            context.report_progress(self.progress_report)
-        except Exception, e:
-            _LOG.exception('Exception from server setting progress for repository [%s]' % self.repo_id)
-            try:
-                _LOG.error('Progress value: %s' % str(status))
-            except:
-                # Best effort to print this, but if its that grossly unserializable
-                # the log will tank and we don't want that exception to bubble up
-                pass
-            raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def last_publish(self):
         """
