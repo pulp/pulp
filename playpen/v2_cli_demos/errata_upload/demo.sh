@@ -1,7 +1,7 @@
 DATE=`date`
 ERRATUM_ID=DEMO_ID_`python -c "import time; print int(time.time())"`
 ERRATUM_TITLE="Demo Errata created on ${DATE}"
-ERRATUM_DESCRIPTION="This is a multi line description\n of the erratum.\n"
+ERRATUM_DESCRIPTION="This is the description for ${ERRATUM_ID}"
 ERRATUM_VERSION=1
 ERRATUM_RELEASE="el6"
 ERRATUM_TYPE="enhancement"
@@ -15,7 +15,7 @@ ERRATUM_PUSHCOUNT=1
 ERRATUM_SEVERITY="example severity"
 ERRATUM_RIGHTS="example rights"
 ERRATUM_SUMMARY="example summary"
-ERRATUM_SOLUTIONS="example solutions"
+ERRATUM_SOLUTION="example solution"
 
 pulp-admin repo uploads errata --repo-id errata_demo --erratum-id "${ERRATUM_ID}" --title "${ERRATUM_TITLE}" --description "${ERRATUM_DESCRIPTION}" \
     --version "${ERRATUM_VERSION}" --release "${ERRATUM_RELEASE}" --type "${ERRATUM_TYPE}" --status "${ERRATUM_STATUS}" --updated "${ERRATUM_UPDATED}" \
