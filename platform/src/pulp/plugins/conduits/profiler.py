@@ -49,7 +49,7 @@ class ProfilerConduit(object):
         specified repository IDs.
 
         @param repo_id: A repo ID.
-        @type repo_id: list
+        @type repo_id: str
 
         @param criteria: used to scope the returned results or the data within
         @type  criteria: L{Criteria}
