@@ -18,7 +18,7 @@ from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.repository import RepoGroup
+from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.managers import factory as managers_factory

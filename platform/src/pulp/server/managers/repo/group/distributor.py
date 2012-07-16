@@ -18,7 +18,7 @@ import uuid
 
 from pulp.plugins import loader as plugin_loader
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.server.db.model.repository import RepoGroup, RepoGroupDistributor
+from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.exceptions import InvalidValue, MissingResource, PulpDataException, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils

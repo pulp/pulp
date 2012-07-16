@@ -18,7 +18,8 @@ from base import PulpServerTests
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.repository import Repo, RepoGroup
+from pulp.server.db.model.repo_group import RepoGroup
+from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.repo.group import cud
 
