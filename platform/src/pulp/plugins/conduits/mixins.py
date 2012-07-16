@@ -18,6 +18,7 @@ import sys
 import pulp.plugins.conduits._common as common_utils
 from   pulp.plugins.model import Unit
 from   pulp.plugins.types import database as types_db
+import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
@@ -396,3 +397,34 @@ class AddUnitMixin(object):
         except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+class StatusMixin(object):
+
+    def __init__(self, report_id, exception_class, progress_report=None):
+        self.report_id = report_id
+        self.exception_class = exception_class
+        self.progress_report = progress_report or {}
+
+    def set_progress(self, status):
+        """
+        Informs the server of the current state of the publish operation. The
+        contents of the status is dependent on how the distributor
+        implementation chooses to divide up the publish process.
+
+        @param status: contains arbitrary data to describe the state of the
+               publish; the contents may contain whatever information is relevant
+               to the distributor implementation so long as it is serializable
+        """
+        try:
+            self.progress_report[self.report_id] = status
+            context = dispatch_factory.context()
+            context.report_progress(self.progress_report)
+        except Exception, e:
+            _LOG.exception('Exception from server setting progress for report [%s]' % self.report_id)
+            try:
+                _LOG.error('Progress value: %s' % str(status))
+            except Exception:
+                # Best effort to print this, but if its that grossly unserializable
+                # the log will tank and we don't want that exception to bubble up
+                pass
+            raise self.exception_class(e), None, sys.exc_info()[2]

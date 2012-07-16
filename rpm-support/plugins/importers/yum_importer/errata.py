@@ -227,7 +227,7 @@ class ImporterErrata(object):
         if self.canceled:
             return False, {}, {}
         skip_list = config.get("skip") or []
-        if 'errata' in skip_list:
+        if 'erratum' in skip_list:
             _LOG.info("errata content type part of skip types; skipping import")
             return True, {}, {}
 

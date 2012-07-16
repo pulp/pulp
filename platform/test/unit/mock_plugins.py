@@ -64,7 +64,13 @@ class MockProfiler(mock.Mock):
 
     @classmethod
     def metadata(cls):
-        return {'types' : ['mock-type', 'type-1', 'rpm']}
+        return {'types' : ['mock-type', 'type-1']}
+
+class MockRpmProfiler(mock.Mock):
+
+    @classmethod
+    def metadata(cls):
+        return {'types' : ['rpm']}
 
 # -- mock instances -----------------------------------------------------------
 
@@ -75,6 +81,8 @@ MOCK_DISTRIBUTOR_2 = MockDistributor()
 MOCK_GROUP_DISTRIBUTOR = MockGroupDistributor()
 MOCK_GROUP_DISTRIBUTOR_2 = MockGroupDistributor()
 MOCK_PROFILER = MockProfiler()
+MOCK_PROFILER_RPM = MockRpmProfiler()
+MOCK_PROFILERS = [MOCK_PROFILER, MOCK_PROFILER_RPM]
 
 # Set by install; can edit these during a test to simulate a plugin being uninstalled
 DISTRIBUTOR_MAPPINGS = None
@@ -101,6 +109,7 @@ def install():
     plugin_loader._LOADER.add_group_distributor('mock-group-distributor', MockGroupDistributor, {})
     plugin_loader._LOADER.add_group_distributor('mock-group-distributor-2', MockGroupDistributor, {})
     plugin_loader._LOADER.add_profiler('mock-profiler', MockProfiler, {})
+    plugin_loader._LOADER.add_profiler('mock-rpm-profiler', MockRpmProfiler, {})
 
     # -- return mock instances instead of ephemeral ones ----------------------
 
@@ -141,9 +150,10 @@ def install():
     }
 
     global PROFILER_MAPPINGS
-    PROFILER_MAPPINGS = {
-        'rpm' : MOCK_PROFILER
-    }
+    PROFILER_MAPPINGS = {}
+    for profiler in MOCK_PROFILERS:
+        for t in profiler.metadata()['types']:
+            PROFILER_MAPPINGS[t] = profiler
 
     # Return the mock instance; eventually can enhance this to support
     # multiple IDs and instances
@@ -201,10 +211,15 @@ def install():
     MOCK_GROUP_DISTRIBUTOR.validate_config.return_value = True, None
     MOCK_GROUP_DISTRIBUTOR_2.validate_config.return_value = True, None
 
-    MOCK_PROFILER.update_profile = lambda i,p,c,x: p
-    MOCK_PROFILER.install_units = lambda i,u,o,c,x: sorted(u)
-    MOCK_PROFILER.update_units = lambda i,u,o,c,x: sorted(u)
-    MOCK_PROFILER.uninstall_units = lambda i,u,o,c,x: sorted(u)
+    for profiler in MOCK_PROFILERS:
+        profiler.update_profile = \
+            mock.Mock(side_effect=lambda i,p,c,x: p)
+        profiler.install_units = \
+            mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
+        profiler.update_units = \
+            mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
+        profiler.uninstall_units = \
+            mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
 
 def reset():
     """
@@ -219,6 +234,7 @@ def reset():
     MOCK_GROUP_DISTRIBUTOR.reset_mock()
     MOCK_GROUP_DISTRIBUTOR_2.reset_mock()
     MOCK_PROFILER.reset_mock()
+    MOCK_PROFILER_RPM.reset_mock()
 
     # Undo the monkey patch
     plugin_loader.get_distributor_by_id = _ORIG_GET_DISTRIBUTOR_BY_ID
