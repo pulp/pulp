@@ -193,8 +193,10 @@ class RepoManager(object):
         scheduler = dispatch_factory.scheduler()
 
         importer_manager = manager_factory.repo_importer_manager()
-        for schedule_id in importer_manager.list_sync_schedules(repo_id):
-            scheduler.remove(schedule_id)
+        importers = importer_manager.get_importers(repo_id)
+        if importers:
+            for schedule_id in importer_manager.list_sync_schedules(repo_id):
+                scheduler.remove(schedule_id)
 
         distributor_manager = manager_factory.repo_distributor_manager()
         for distributor in distributor_manager.get_distributors(repo_id):
