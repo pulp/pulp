@@ -145,6 +145,9 @@ class Distributor(object):
 
         @param config: plugin configuration
         @type  config: pulp.plugins.config.PluginConfiguration
+
+        @return: report describing the publish run
+        @rtype:  pulp.plugins.model.PublishReport
         """
         raise NotImplementedError()
 
@@ -303,5 +306,8 @@ class GroupDistributor(object):
 
         @param config: plugin configuration
         @type  config: pulp.plugins.config.PluginConfiguration
+
+        @return: report describing the publish run
+        @rtype:  pulp.plugins.model.PublishReport
         """
         raise NotImplementedError()
