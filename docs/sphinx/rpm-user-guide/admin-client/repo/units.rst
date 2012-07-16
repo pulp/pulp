@@ -617,6 +617,18 @@ The following arguments are available on the ``erratum`` command:
 ``-v``
   If specified, more detailed information about the upload will be displayed.
 
+Below is a sample package list csv file::
+
+  $ cat package_list.csv 
+  xen,3.0.3,105.el5_5.2,0,i386,xen-3.0.3-105.el5_5.2.i386.rpm,0f1174b38383b01a77278b0d9f289987,md5,xen-3.0.3-105.el5_5.2.src.rpm
+  xen-devel,3.0.3,105.el5_5.2,0,i386,xen-devel-3.0.3-105.el5_5.2.i386.rpm,3680d1dde276fd155ead7203508fed30,md5,xen-3.0.3-105.el5_5.2.src.rpm
+
+Below is a sample references csv file::
+  
+  $ cat references.csv 
+  http://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=580398,bugzilla,580398,Windows Logo testing likes its PCI classes to be consistent
+  http://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=517903,bugzilla,517903,Add -no-kvm-pit-reinject in qemu cmdline for RHEL guests
+
 Below is the sample output from the ``errata`` command when uploading an erratum::
 
   $ pulp-admin repo uploads errata --repo-id errata_demo --erratum-id DEMO_ID_1342457000 --title "Demo Errata created on Mon Jul 16 12:43:20 EDT 2012" --description "This is the description" --version 1 --release el6 --type enhancement --status final --updated "Mon Jul 16 12:43:20 EDT 2012" --issued "Mon Jul 16 12:43:20 EDT 2012" --reference-csv references.csv --pkglist-csv package_list.csv --from "pulp-list@redhat.com" --pushcount 1 --severity "example severity" --rights "example rights" --summary "example summary" --solution "solution text would go here"  -v
