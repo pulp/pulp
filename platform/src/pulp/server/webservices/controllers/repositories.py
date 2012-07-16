@@ -186,6 +186,22 @@ class RepoSearch(SearchController):
             manager_factory.repo_query_manager().find_by_criteria)
 
     @auth_required(READ)
+    def GET(self):
+        query_params = web.input()
+        if query_params.pop('details', False):
+            query_params['importers'] = True
+            query_params['distributors'] = True
+        items = self._get_query_results_from_get(
+            ('details', 'importers', 'distributors'))
+
+        RepoCollection._process_repos(
+            items,
+            query_params.pop('importers', False),
+            query_params.pop('distributors', False)
+        )
+        return self.ok(items)
+
+    @auth_required(READ)
     def POST(self):
         """
         Searches based on a Criteria object. Requires a posted parameter

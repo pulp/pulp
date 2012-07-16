@@ -131,6 +131,8 @@ where there are no repositories.
 Advanced Search For Repositories
 --------------------------------
 
+Please see :ref:`search-api` for more details on how to perform these searches.
+
 Returns information on repositories in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
 list is returned in the case where there are no repositories.
@@ -201,8 +203,9 @@ filter expressions may not be serializable as query parameters.
 | :path:`/v2/repositories/search/`
 | :permission:`read`
 | :param_list:`get` query params should match the attributes of a Criteria
- object as defined in :ref:`search_criteria`.
- For example: /v2/repositories/search/?fields=id&fields=display_name&limit=20'
+ object as defined in :ref:`search_criteria`. The exception is the 'fields'
+ parameter, which should be specified in singular form as follows:
+ For example: /v2/repositories/search/?field=id&field=display_name&limit=20'
 | :response_list:`_`
 
 * :response_code:`200,containing the list of repositories`

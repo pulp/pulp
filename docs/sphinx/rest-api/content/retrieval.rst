@@ -4,6 +4,8 @@ Retrieval
 Search For Units
 --------------------------------
 
+Please see :ref:`search-api` for more details on how to perform these searches.
+
 Returns information on content units in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
 list is returned in the case where there are no content units. This is even the
@@ -51,7 +53,7 @@ filter expressions may not be serializable as query parameters.
 | :permission:`read`
 | :param_list:`get` query params should match the attributes of a Criteria
  object as defined in :ref:`search_criteria`.
- For example: /v2/content/units/deb/search/?fields=id&fields=display_name&limit=20'
+ For example: /v2/content/units/deb/search/?field=id&field=display_name&limit=20'
 | :response_list:`_`
 
 * :response_code:`200,containing the list of content units`

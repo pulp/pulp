@@ -65,6 +65,20 @@ class RepoSearchTests(RepoControllersTests):
         # one call each for criteria, importers, and distributors
         self.assertEqual(mock_params.call_count, 3)
 
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.db.model.criteria.Criteria.from_client_input')
+    def test_get_details(self, mock_from_client, mock_query):
+        status, body = self.get('/v2/repositories/search/?details=1&limit=2')
+        self.assertEqual(status, 200)
+        self.assertEquals(mock_from_client.call_count, 1)
+
+        # make sure the non-criteria arguments aren't passed to the criteria
+        # constructor
+        criteria_args = mock_from_client.call_args[0][0]
+        self.assertTrue('limit' in criteria_args)
+        self.assertFalse('details' in criteria_args)
+        self.assertFalse('importers' in criteria_args)
+
     @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_return_value(self, mock_query, mock_params):
@@ -142,7 +156,7 @@ class RepoSearchTests(RepoControllersTests):
         query method.
         """
         status, body = self.get(
-            '/v2/repositories/search/?fields=id&fields=display_name&limit=20')
+            '/v2/repositories/search/?field=id&field=display_name&limit=20')
         self.assertEqual(status, 200)
         self.assertEqual(mock_query.call_count, 1)
         generated_criteria = mock_query.call_args[0][0]

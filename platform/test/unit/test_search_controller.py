@@ -41,9 +41,16 @@ class TestGetQueryResultsFromGet(unittest.TestCase):
         self.mock_query_method = mock.MagicMock()
         self.controller = SearchController(self.mock_query_method)
 
-    @mock.patch('web.input', return_value={})
+    @mock.patch('web.input', return_value={'field':[]})
     def test_calls_query(self, mock_input):
         self.controller._get_query_results_from_get()
         self.assertEqual(mock_input.call_count, 1)
         self.assertEqual(self.mock_query_method.call_count, 1)
         self.assertTrue(isinstance(self.mock_query_method.call_args[0][0], Criteria))
+
+    @mock.patch('web.input', return_value={'field':[], 'limit':10, 'foo':1, 'bar':2})
+    @mock.patch('pulp.server.db.model.criteria.Criteria.from_client_input')
+    def test_ignore_fields(self, mock_from_client, mock_input):
+        self.controller._get_query_results_from_get(('foo','bar'))
+        mock_from_client.assert_called_once_with({'limit':10})
+

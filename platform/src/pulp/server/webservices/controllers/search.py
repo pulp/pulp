@@ -58,16 +58,31 @@ class SearchController(JSONController):
 
         return self.ok(self._get_query_results_from_post())
 
-    def _get_query_results_from_get(self):
+    def _get_query_results_from_get(self, ignore_fields=None):
         """
         Looks for query parameters that define a Criteria, and returns the
         results of a search based on that Criteria.
+
+        @param ignore_fields:   Field names to ignore. All other fields will be
+                                used in an attempt to generate a Criteria
+                                instance, which will fail if unexpected field
+                                names are present.
+        @type  ignore_fields:   list
 
         @return:    list of documents from the DB that match the given criteria
                     for the collection associated with this controller
         @rtype:     list
         """
-        input = web.input(fields=[])
+        input = web.input(field=[])
+        if ignore_fields:
+            for field in ignore_fields:
+                input.pop(field, None)
+
+        # rename this to 'fields' within the dict, and omit it if empty so we
+        # default to getting all fields
+        fields = input.pop('field')
+        if fields:
+            input['fields'] = fields
         criteria = Criteria.from_client_input(input)
         return list(self.query_method(criteria))
 

@@ -12,6 +12,7 @@ APIs
    content/index
    dispatch/index
    event/index
+   search_api
 
 Documentation
 -------------
