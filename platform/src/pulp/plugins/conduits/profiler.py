@@ -61,7 +61,7 @@ class ProfilerConduit(object):
             result = []
             manager = managers.repo_unit_association_query_manager()
             units = manager.get_units_across_types(repo_id, criteria=criteria)
-            typedefs = dict([(u['unit_type_id'],{}) for u in units])
+            typedefs = dict([(u['unit_type_id'], None) for u in units])
             for type_id in typedefs.keys():
                 typedefs[type_id] = typedb.type_definition(type_id)
             for unit in units:
