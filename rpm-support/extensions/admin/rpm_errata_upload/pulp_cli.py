@@ -139,7 +139,7 @@ class CreateErratumCommand(PulpCliCommand):
             msg = _("Error: Invalid pushcount [%s]; should be an integer ") % kwargs['pushcount']
             self.context.prompt.render_failure_message(msg)
             return os.EX_DATAERR
-        reboot_suggested = kwargs['reboot_suggested']
+        reboot_suggested = kwargs['reboot-suggested']
 
         unit_key = {"id":erratum_id}
         metadata = {
