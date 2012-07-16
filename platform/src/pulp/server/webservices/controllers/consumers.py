@@ -16,9 +16,9 @@ import logging
 
 # 3rd Party
 import web
+from web.webapi import BadRequest
 
 # Pulp
-from pulp.common import dateutils
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
