@@ -17,7 +17,7 @@ plugin method call. Objects defined in this module will have extra information
 bundled in that is relevant to the plugin's state for the given entity.
 """
 
-class Repository:
+class Repository(object):
     """
     Contains repository data and any additional data relevant for the plugin to
     function.
@@ -115,7 +115,7 @@ class RelatedRepositoryGroup(RepositoryGroup):
                                                      working_dir)
         self.plugin_configs = plugin_configs
 
-class Unit:
+class Unit(object):
     """
     Contains information related to a single content unit. The unit may or
     may not exist in Pulp; this is meant simply as a way of linking together
@@ -146,6 +146,9 @@ class Unit:
 
         self.id = None
 
+    def __eq__(self, other):
+        return self.unit_key == other.unit_key
+
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
 
@@ -163,7 +166,7 @@ class AssociatedUnit(Unit):
         self.owner_type = owner_type
         self.owner_id = owner_id
 
-class SyncReport:
+class SyncReport(object):
     """
     Returned to the Pulp server at the end of a sync call. This is used by the
     plugin to describe what took place during the sync.
@@ -198,7 +201,7 @@ class SyncReport:
         self.summary = summary
         self.details = details
 
-class PublishReport:
+class PublishReport(object):
     """
     Returned to the Pulp server at the end of a publish call. This is used by the
     plugin to decrive what took place during the publish run.
