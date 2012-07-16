@@ -78,7 +78,7 @@ class ConsumersCollection(JSONController):
         query_manager = managers.consumer_query_manager()
         consumers = query_manager.find_all()
 
-        process_consumers(consumers, True)
+        process_consumers(consumers, self.params().get('bindings', False))
 
         return self.ok(consumers)
 
@@ -114,12 +114,12 @@ class ConsumerSearch(SearchController):
 
     def GET(self):
         consumers = self._get_query_results_from_get()
-        process_consumers(consumers, True)
+        process_consumers(consumers, self.params().get('bindings', False))
         return self.ok(consumers)
 
     def POST(self):
         consumers = self._get_query_results_from_post()
-        process_consumers(consumers, True)
+        process_consumers(consumers, self.params().get('bindings', False))
         return self.ok(consumers)
 
 
@@ -136,7 +136,8 @@ class ConsumerResource(JSONController):
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
 
-        consumer = process_consumers([consumer], True)[0]
+        consumer = process_consumers(
+            [consumer], self.params().get('bindings', False))[0]
 
         return self.ok(consumer)
 
