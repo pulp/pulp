@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        22%{?dist}
+Release:        23%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -318,7 +318,6 @@ then
   fi
 fi
 
-chown apache:apache /etc/pki/pulp/content/pulp-protected-repos
 # -- post - pulp cds ---------------------------------------------------------
 
 %post cds
@@ -500,11 +499,14 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
-* Tue Jul 17 2012 James Slagle <jslagle@redhat.com> 0.0.263-22
+* Tue Jul 17 2012 James Slagle <jslagle@redhat.com> 0.0.263-23
 - 840979 Use .startswith instead of .find to match a requested repo url against
   one in the pulp protected repos file (jslagle@redhat.com)
 - 800525 - fix paths in /var/lib/pulp-cds/.cds_repo_list to be: repos
   /<relative-path>. (jortel@redhat.com)
+
+* Fri Jul 13 2012 Wes Hayutin <whayutin@redhat.com> 0.0.263-22
+- 810448, fix scriplet failure in pulp rpm (whayutin@redhat.com)
 
 * Tue Jul 03 2012 James Slagle <jslagle@redhat.com> 0.0.263-21
 - Remove %%{dist} from Requires lines (jslagle@redhat.com)
