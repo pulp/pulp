@@ -572,11 +572,11 @@ The following arguments are available on the ``erratum`` command:
   The status of this erratum, common example is "final".  This argument is required.
 
 ``--updated, -u``
-  The date this erratum was updated.  The expected format is "YEAR-MONTH-DAY HOUR:MIN:SEC".
+  The date this erratum was updated.  The expected format is "YYYY-MM-DD HH:MM:SS".
   This argument is required.
 
 ``--issued``
-  The date this erratum was issued.  The expected format is "YEAR-MONTH-DAY HOUR:MIN:SEC".
+  The date this erratum was issued.  The expected format is "YYYY-MM-DD HH:MM:SS".
   This argument is required.
 
 ``--reference-csv, -r``

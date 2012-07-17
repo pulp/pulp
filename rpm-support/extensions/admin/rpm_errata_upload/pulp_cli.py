@@ -70,10 +70,10 @@ class CreateErratumCommand(PulpCliCommand):
         d = 'status of this erratum; example "final"'
         self.create_option('--status', _(d), aliases=['-s'], required=True)
 
-        d = 'when was this erratum last updated; expected format "YEAR-MONTH-DAY HOUR:MIN:SEC"'
+        d = 'when was this erratum last updated; expected format "YYYY-MM-DD HH:MM:SS"'
         self.create_option('--updated', _(d), aliases=['-u'], required=True)
 
-        d = 'when was this erratum issued; expected format "YEAR-MONTH-DAY HOUR:MIN:SEC"'
+        d = 'when was this erratum issued; expected format "YYYY-MM-DD HH:MM:SS"'
         self.create_option('--issued', _(d), required=True)
 
         d = 'path to a file containing reference information in comma separated value format. '\
