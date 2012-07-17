@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.313
-Release: 2%{?dist}
+Version: 0.0.314
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -419,6 +419,17 @@ exit 0
 %endif
 
 %changelog
+* Tue Jul 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.314-1
+- (re)add /etc/init.d/pulp-agent symlink. (jortel@redhat.com)
+- 840482 - fixed fix for repos without an importer (jason.connor@gmail.com)
+- happily removing jdob hack job for dispatch initialization
+  (jason.connor@gmail.com)
+- moved dispatch initialization/finalization to server instead of webservices
+  tests class (jason.connor@gmail.com)
+- 840482 - added removal of sync and publish schedules on repo deletion
+  (jason.connor@gmail.com)
+- 839389 - Correct error message (jason.dobies@redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
 - - Move the repo working dirs under "repos" to make room for the group
   working dirs (jason.dobies@redhat.com)
