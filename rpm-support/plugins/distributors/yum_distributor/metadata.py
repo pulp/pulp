@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import commands
 import gzip
-import logging
 import os
 import shlex
 import shutil
@@ -23,7 +22,7 @@ import time
 from pulp_rpm.yum_plugin import util
 from pulp.common.util import encode_unicode, decode_unicode
 
-_LOG = logging.getLogger(__name__)
+_LOG = util.getLogger(__name__)
 __yum_lock = threading.Lock()
 
 # In memory lookup table for createrepo processes

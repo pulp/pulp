@@ -10,11 +10,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import logging
 import yum
 from yum.update_md import UpdateMetadata
 
-log = logging.getLogger(__name__)
+import util
+log = util.getLogger(__name__)
 #
 # yum 3.2.22 compat:  UpdateMetadata.add_notice() not
 # supported in 3.2.22.

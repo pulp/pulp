@@ -13,7 +13,6 @@
 
 from ConfigParser import SafeConfigParser
 import gettext
-import logging
 import os
 import shutil
 import time
@@ -28,7 +27,7 @@ from yum_distributor import metadata
 
 # -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+_LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 DISTRO_TYPE_ID="distribution"

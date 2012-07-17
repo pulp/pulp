@@ -17,14 +17,11 @@ Errata Support for Yum Importer
 import os
 import time
 import yum
-import logging
 from pulp_rpm.yum_plugin import util, updateinfo
 from pulp.server.managers.repo.unit_association_query import Criteria
 from yum_importer import importer_rpm
 
-_LOG = logging.getLogger(__name__)
-#TODO Fix up logging so we log to a separate file to aid debugging
-#_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
+_LOG = util.getLogger(__name__)
 
 ERRATA_TYPE_ID="erratum"
 ERRATA_UNIT_KEY = ("id",)

@@ -16,8 +16,9 @@ import logging
 import time
 
 from pulp.plugins.distributor import Distributor
+from pulp_rpm.yum_plugin import util
 
-_LOG = logging.getLogger(__name__)
+_LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 ISO_DISTRIBUTOR_TYPE_ID="iso_distributor"

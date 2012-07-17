@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import logging
 import os
 import time
 import itertools
@@ -22,8 +21,7 @@ from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp_rpm.yum_plugin import util
 from yum_importer import distribution, drpm
 
-_LOG = logging.getLogger(__name__)
-#_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
+_LOG = util.getLogger(__name__)
 
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"

@@ -18,8 +18,16 @@ import os
 import logging
 import gettext
 from M2Crypto import X509
-_LOG = logging.getLogger(__name__)
 _ = gettext.gettext
+
+LOG_PREFIX_NAME="pulp.plugins"
+def getLogger(name):
+    log_name = LOG_PREFIX_NAME + "." + name 
+    return logging.getLogger(log_name)
+_LOG = getLogger(__name__)
+
+
+
 def get_repomd_filetypes(repomd_path):
     """
     @param repomd_path: path to repomd.xml

@@ -17,8 +17,8 @@ import commands
 import datetime
 import tempfile
 from stat import ST_SIZE
-from logging import getLogger
 
+from pulp_rpm.yum_plugin.util import getLogger
 log = getLogger(__name__)
 
 VALID_IMAGE_TYPES = {
