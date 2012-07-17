@@ -17,8 +17,8 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.313
-Release: 2%{?dist}
+Version: 0.0.314
+Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -231,6 +231,11 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Jul 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.314-1
+- 840490 - Exception from 'link_errata_rpm_units': KeyError: 'sum'
+  (jmatthews@redhat.com)
+- 837361 - fix errtum skip during syncs (pkilambi@prad.rdu.redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-2
 - Add iso distributor to .spec. (jortel@redhat.com)
 
