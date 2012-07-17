@@ -38,6 +38,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         self.temp_dir = tempfile.mkdtemp()
 
         self.working_dir = os.path.join(self.temp_dir, "working")
+        os.makedirs(self.working_dir)
         self.repo_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "test_repo")
         self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
 
