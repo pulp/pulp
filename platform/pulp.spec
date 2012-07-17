@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 0.0.313
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -119,6 +119,7 @@ cp etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
 # Agent
 cp etc/gofer/plugins/pulp.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
 cp -R src/pulp/agent/gofer/pulp.py %{buildroot}/%{_libdir}/gofer/plugins
+ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # Tools
 cp bin/* %{buildroot}/%{_bindir}
@@ -361,6 +362,7 @@ on a defined interval.
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
 %{_sysconfdir}/gofer/plugins/pulp.conf
 %{_libdir}/gofer/plugins/pulp.*
+%{_sysconfdir}/rc.d/init.d/pulp-agent
 %doc
 
 # --- Selinux ---------------------------------------------------------------------
