@@ -181,6 +181,7 @@ class Profiler(object):
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return: An applicability report.
-        @rtype: L{ApplicabilityReport}
+        @rtype: L{pulp.plugins.model.ApplicabilityReport}
         """
-        pass
+        raise Exception, \
+            'Applicability for: %s, not supported' % unit

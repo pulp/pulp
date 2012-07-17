@@ -23,7 +23,7 @@ the defaults.
 import mock
 
 import pulp.plugins.loader as plugin_loader
-from pulp.plugins.model import SyncReport, PublishReport
+from pulp.plugins.model import SyncReport, PublishReport, ApplicabilityReport
 
 # -- constants ----------------------------------------------------------------
 
@@ -220,6 +220,8 @@ def install():
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
         profiler.uninstall_units = \
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
+        profiler.unit_applicable = \
+            mock.Mock(side_effect=lambda i,u,c,x: ApplicabilityReport(u, False, 'mocked'))
 
 def reset():
     """

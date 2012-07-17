@@ -29,6 +29,7 @@ do so may indirectly break other tests.
 TYPE_CDS                    = 'cds-manager'
 TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
+TYPE_CONSUMER_APPLICABILITY = 'consumer-applicability-manager',
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
 TYPE_CONSUMER_HISTORY       = 'consumer-history-manager'
 TYPE_CONSUMER_PROFILE       = 'consumer-profile-manager'
@@ -96,6 +97,12 @@ def consumer_agent_manager():
     @rtype: L{pulp.server.managers.consumer.agent.AgentManager}
     """
     return get_manager(TYPE_CONSUMER_AGENT)
+
+def consumer_applicability_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.applicability.ApplicabilityManager}
+    """
+    return get_manager(TYPE_CONSUMER_APPLICABILITY)
 
 def consumer_bind_manager():
     """
@@ -258,6 +265,7 @@ def initialize():
     from pulp.server.managers.auth.user import UserManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
+    from pulp.server.managers.consumer.applicability import ApplicabilityManager
     from pulp.server.managers.consumer.bind import BindManager
     from pulp.server.managers.consumer.history import ConsumerHistoryManager
     from pulp.server.managers.consumer.profile import ProfileManager
@@ -288,6 +296,7 @@ def initialize():
     builtins = {
         TYPE_CONSUMER: ConsumerManager,
         TYPE_CONSUMER_AGENT: AgentManager,
+        TYPE_CONSUMER_APPLICABILITY: ApplicabilityManager,
         TYPE_CONSUMER_BIND: BindManager,
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
         TYPE_CONSUMER_PROFILE: ProfileManager,
