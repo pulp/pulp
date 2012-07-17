@@ -11,6 +11,8 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import os
+import shutil
 import traceback
 import unittest
 
@@ -21,6 +23,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers_factory
+from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers.repo.group import cud
 
 
@@ -143,16 +146,29 @@ class RepoGroupCUDTests(RepoGroupTests):
         self.assertFalse(group['notes'])
 
     def test_delete(self):
+        # Setup
         group_id = 'delete_me'
         self.manager.create_repo_group(group_id)
 
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(group is None)
 
+        # Simulate the working dir being created by a plugin
+        working_dir = common_utils.repo_group_working_dir(group_id)
+        if os.path.exists(working_dir):
+            shutil.rmtree(working_dir)
+        os.makedirs(working_dir)
+        self.assertTrue(os.path.exists(working_dir))
+
+        # Test
         self.manager.delete_repo_group(group_id)
 
+        # Verify
         group = self.collection.find_one({'id': group_id})
         self.assertTrue(group is None)
+
+        # Ensure the working dir was deleted
+        self.assertTrue(not os.path.exists(working_dir))
 
 
 class RepoGroupMembershipTests(RepoGroupTests):
