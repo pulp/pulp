@@ -111,7 +111,7 @@ class GenerateIsos(object):
         """
          template mkisofs command to be filled and executed
         """
-        return "mkisofs -r -J -D -graft-points -path-list %s -o %s"
+        return "mkisofs -r -D -graft-points -path-list %s -o %s"
 
     def __grafts(self, img_files):
         grafts = []

@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 
 from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
     RPM_TYPE_ID, SRPM_TYPE_ID
-
+from pulp_rpm.yum_plugin import util
 from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
 
@@ -202,20 +202,20 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         test_unit = Unit("rpm", "unit_key", {}, "")
 
         test_unit.unit_key = {"fileName" : "test_1"}
-        rel_path = distributor.get_relpath_from_unit(test_unit)
+        rel_path = util.get_relpath_from_unit(test_unit)
         self.assertEqual(rel_path, "test_1")
 
         test_unit.unit_key = {}
         test_unit.storage_path = "test_0"
-        rel_path = distributor.get_relpath_from_unit(test_unit)
+        rel_path = util.get_relpath_from_unit(test_unit)
         self.assertEqual(rel_path, "test_0")
 
         test_unit.metadata["filename"] = "test_2"
-        rel_path = distributor.get_relpath_from_unit(test_unit)
+        rel_path = util.get_relpath_from_unit(test_unit)
         self.assertEqual(rel_path, "test_2")
 
         test_unit.metadata["relativepath"] = "test_3"
-        rel_path = distributor.get_relpath_from_unit(test_unit)
+        rel_path = util.get_relpath_from_unit(test_unit)
         self.assertEqual(rel_path, "test_3")
 
 
@@ -228,7 +228,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         symlink_path = os.path.join(self.temp_dir, "symlink_dir", "a", "b", "file_path.lnk")
         # Confirm subdir of symlink_path doesn't exist
         self.assertFalse(os.path.isdir(os.path.dirname(symlink_path)))
-        self.assertTrue(distributor.create_symlink(source_path, symlink_path))
+        self.assertTrue(util.create_symlink(source_path, symlink_path))
         # Confirm we created the subdir
         self.assertTrue(os.path.isdir(os.path.dirname(symlink_path)))
         self.assertTrue(os.path.exists(symlink_path))
@@ -244,18 +244,18 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         target_dir = os.path.join(self.temp_dir, "a", "b", "c", "d", "e")
         distributor = YumDistributor()
         self.assertFalse(os.path.exists(target_dir))
-        self.assertTrue(distributor.create_dirs(target_dir))
+        self.assertTrue(util.create_dirs(target_dir))
         self.assertTrue(os.path.exists(target_dir))
         self.assertTrue(os.path.isdir(target_dir))
         # Test we can call it twice with no errors
-        self.assertTrue(distributor.create_dirs(target_dir))
+        self.assertTrue(util.create_dirs(target_dir))
         # Remove permissions to directory and force an error
         orig_stat = os.stat(target_dir)
         try:
             os.chmod(target_dir, 0000)
             self.assertFalse(os.access(target_dir, os.R_OK))
             target_dir_b = os.path.join(target_dir, "f")
-            self.assertFalse(distributor.create_dirs(target_dir_b))
+            self.assertFalse(util.create_dirs(target_dir_b))
         finally:
             os.chmod(target_dir, orig_stat.st_mode)
 

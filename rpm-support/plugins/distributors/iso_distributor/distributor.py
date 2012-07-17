@@ -10,13 +10,15 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+import os
 import gettext
 import logging
 import time
-
-from pulp.plugins.distributor import Distributor
+import traceback
 from pulp_rpm.yum_plugin import util
+from pulp.plugins.distributor import Distributor
+from iso_distributor.generate_iso import GenerateIsos
+from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
@@ -68,8 +70,159 @@ class ISODistributor(Distributor):
             'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, DISTRO_TYPE_ID, PKG_CATEGORY_TYPE_ID, PKG_GROUP_TYPE_ID]
         }
 
+    def init_progress(self):
+        return  {
+            "state": "IN_PROGRESS",
+            "num_success" : 0,
+            "num_error" : 0,
+            "items_left" : 0,
+            "items_total" : 0,
+            "error_details" : [],
+            }
+
     def validate_config(self, repo, config, related_repos):
-        pass
+        _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
+        auth_cert_bundle = {}
+        for key in REQUIRED_CONFIG_KEYS:
+            value = config.get(key)
+            if value is None:
+                msg = _("Missing required configuration key: %(key)s" % {"key":key})
+                _LOG.error(msg)
+                return False, msg
+            if key == 'relative_url':
+                relative_path = config.get('relative_url')
+                if relative_path is not None and not isinstance(relative_path, basestring):
+                    msg = _("relative_url should be a basestring; got %s instead" % relative_path)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'http':
+                config_http = config.get('http')
+                if config_http is not None and not isinstance(config_http, bool):
+                    msg = _("http should be a boolean; got %s instead" % config_http)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'https':
+                config_https = config.get('https')
+                if config_https is not None and not isinstance(config_https, bool):
+                    msg = _("https should be a boolean; got %s instead" % config_https)
+                    _LOG.error(msg)
+                    return False, msg
+        for key in config.keys():
+            if key not in REQUIRED_CONFIG_KEYS and key not in OPTIONAL_CONFIG_KEYS:
+                msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
+                _LOG.error(msg)
+                return False, msg
+            if key == 'protected':
+                protected = config.get('protected')
+                if protected is not None and not isinstance(protected, bool):
+                    msg = _("protected should be a boolean; got %s instead" % protected)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'auth_cert':
+                auth_pem = config.get('auth_cert').encode('utf-8')
+                if auth_pem is not None and not util.validate_cert(auth_pem):
+                    msg = _("auth_cert is not a valid certificate")
+                    _LOG.error(msg)
+                    return False, msg
+                auth_cert_bundle['cert'] = auth_pem
+            if key == 'auth_ca':
+                auth_ca = config.get('auth_ca').encode('utf-8')
+                if auth_ca is not None and not util.validate_cert(auth_ca):
+                    msg = _("auth_ca is not a valid certificate")
+                    _LOG.error(msg)
+                    return False, msg
+                auth_cert_bundle['ca'] = auth_ca
+
+        return True, None
+
+    def cancel_publish_repo(self, repo):
+        self.canceled = True
+        return metadata.cancel_createrepo(repo.working_dir)
+
+    def set_progress(self, type_id, status, progress_callback=None):
+        if progress_callback:
+            progress_callback(type_id, status)
 
     def publish_repo(self, repo, publish_conduit, config):
-        pass
+        publish_start_time = time.time()
+        _LOG.info("Start publish time %s" % publish_start_time)
+        summary = {}
+        details = {}
+        progress_status = {
+            "rpms":               {"state": "NOT_STARTED"},
+            "distribution":       {"state": "NOT_STARTED"},
+            "metadata":           {"state": "NOT_STARTED"},
+            "packagegroups":      {"state": "NOT_STARTED"},
+            "isos":               {"state": "NOT_STARTED"},
+            "publish_http":       {"state": "NOT_STARTED"},
+            "publish_https":      {"state": "NOT_STARTED"},
+            }
+
+        def progress_callback(type_id, status):
+            progress_status[type_id] = status
+            publish_conduit.set_progress(progress_status)
+
+        repo_working_dir = os.path.join(repo.working_dir, repo.id)
+        # rpm units
+        progress_status["rpms"]["state"] = "STARTED"
+        criteria = Criteria(type_ids=[RPM_TYPE_ID])
+        rpm_units = publish_conduit.get_units(criteria)
+        self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
+        progress_status["rpms"]["state"] = "FINISHED"
+
+        # build iso
+#        repo_iso_working_dir = "%s/%s" % (repo.working_dir, "isos")
+#        try:
+#            isogen = GenerateIsos(repo_working_dir, repo_iso_working_dir , progress=progress_status)
+#            progress_status = isogen.run()
+#        except Exception,e:
+#            progress_status["isos"]["state"] = "ERROR"
+#            progress_status["error_details"].append(str(e))
+#            return progress_status
+#        progress_status["isos"]["state"] = "FINISHED"
+        return progress_status
+
+    def _export_rpms(self, rpm_units, symlink_dir, progress_callback=None):
+        # get rpm units
+        packages_progress_status = self.init_progress()
+        packages_progress_status["num_success"] = 0
+        packages_progress_status["items_left"] = len(rpm_units)
+        packages_progress_status["items_total"] = len(rpm_units)
+        errors = []
+        for u in rpm_units:
+            self.set_progress("packages", packages_progress_status, progress_callback)
+            relpath = util.get_relpath_from_unit(u)
+            source_path = u.storage_path
+            symlink_path = os.path.join(symlink_dir, relpath)
+            if not os.path.exists(source_path):
+                msg = "Source path: %s is missing" % (source_path)
+                errors.append((source_path, symlink_path, msg))
+                packages_progress_status["num_error"] += 1
+                packages_progress_status["items_left"] -= 1
+                continue
+            _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
+            try:
+                if not util.create_symlink(source_path, symlink_path):
+                    msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
+                    _LOG.error(msg)
+                    errors.append((source_path, symlink_path, msg))
+                    packages_progress_status["num_error"] += 1
+                    packages_progress_status["items_left"] -= 1
+                    continue
+                packages_progress_status["num_success"] += 1
+            except Exception, e:
+                tb_info = traceback.format_exc()
+                _LOG.error("%s" % (tb_info))
+                _LOG.critical(e)
+                errors.append((source_path, symlink_path, str(e)))
+                packages_progress_status["num_error"] += 1
+                packages_progress_status["items_left"] -= 1
+                continue
+            packages_progress_status["items_left"] -= 1
+        if errors:
+            packages_progress_status["error_details"] = errors
+            return False, errors
+        packages_progress_status["state"] = "FINISHED"
+        self.set_progress("packages", packages_progress_status, progress_callback)
+        print packages_progress_status
+        return True, []
