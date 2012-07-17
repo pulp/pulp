@@ -136,16 +136,20 @@ class OidValidator:
         #   Example URL: https://guardian/pulp/repos/my-repo/pulp/fedora-13/i386/repodata/repomd.xml
         #   Repo Portion: /my-repo/pulp/fedora-13/i386/repodata/repomd.xml
         repo_url = dest[dest.find(RELATIVE_URL) + len(RELATIVE_URL):]
+        # Remove initial and trailing / from the requested repo_url.  The
+        # relative url in the protected repos file do not start with a /, so
+        # this is safe.
+        repo_url = repo_url.strip('/')
 
         # If the repo portion of the URL starts with any of the protected relative URLs,
         # it is considered to be a request against that protected repo
         repo_id = None
         for relative_url in prot_repos.keys():
 
-            # Relative URL is inconsistent in Pulp, so a simple "startswith" tends to
-            # break. Changing this to a find helps remove issues where the leading /
-            # is missing, present, or duplicated.
-            if repo_url.find(relative_url) != -1:
+            # Changing this back to startswith.  If the relative_url is not
+            # consistent in other places, it should be made so.
+            # See https://bugzilla.redhat.com/show_bug.cgi?id=840979
+            if repo_url.startswith(relative_url):
                 repo_id = prot_repos[relative_url]
                 break
 
