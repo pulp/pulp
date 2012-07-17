@@ -18,6 +18,7 @@ import datetime
 
 from pulp.common import dateutils
 from pulp.plugins import loader as plugin_loader
+from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
@@ -63,7 +64,7 @@ class RepoGroupPublishManager(object):
             raise MissingResource(distributor_type=distributor_type_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for publish
-        conduit = None # TODO: Fill in with conduit instantiation
+        conduit = RepoGroupPublishConduit(group_id, distributor_id)
 
         call_config = PluginCallConfiguration(plugin_config, distributor['config'], publish_config_override)
         transfer_group = common_utils.to_transfer_repo_group(group)
@@ -128,6 +129,30 @@ class RepoGroupPublishManager(object):
 
         publish_result_coll.save(result, safe=True)
         return result
+
+    def last_publish(self, group_id, distributor_id):
+        """
+        Returns the timestamp of the last publish call, regardless of its
+        success or failure. If the group has never been published, returns
+        None.
+
+        @param group_id: identifies the repo group
+        @type  group_id: str
+
+        @param distributor_id: identifies the group's distributor
+        @type  distributor_id: str
+
+        @return: timestamp of the last publish or None
+        @rtype:  datetime
+        """
+        distributor = manager_factory.repo_group_distributor_manager().get_distributor(group_id, distributor_id)
+
+        date = distributor['last_publish']
+
+        if date is not None:
+            date = dateutils.parse_iso8601_datetime(date)
+
+        return date
 
 def _now_timestamp():
     """

@@ -54,7 +54,7 @@ class RepoGroupDistributor(Model):
         self.distributor_type_id = distributor_type_id
         self.repo_group_id = repo_group_id
         self.config = config
-
+        self.last_publish = None
         self.scratchpad = None
 
 

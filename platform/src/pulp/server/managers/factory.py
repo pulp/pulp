@@ -47,6 +47,7 @@ TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
 TYPE_REPO_GROUP             = 'repo-group-manager'
 TYPE_REPO_GROUP_DISTRIBUTOR = 'repo-group-distributor'
+TYPE_REPO_GROUP_PUBLISH     = 'repo-group-publish'
 TYPE_REPO_GROUP_QUERY       = 'repo-group-query-manager'
 TYPE_REPO_IMPORTER          = 'repo-importer-manager'
 TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
@@ -188,6 +189,12 @@ def repo_group_distributor_manager():
     """
     return get_manager(TYPE_REPO_GROUP_DISTRIBUTOR)
 
+def repo_group_publish_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.group.publish.RepoGroupPublishManager}
+    """
+    return get_manager(TYPE_REPO_GROUP_PUBLISH)
+
 def repo_group_query_manager():
     """
     @rtype: L{pulp.server.managers.repo.group.query.RepoGroupQueryManager}
@@ -282,6 +289,7 @@ def initialize():
     from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.group.cud import RepoGroupManager
     from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
+    from pulp.server.managers.repo.group.publish import RepoGroupPublishManager
     from pulp.server.managers.repo.group.query import RepoGroupQueryManager
     from pulp.server.managers.repo.importer import RepoImporterManager
     from pulp.server.managers.repo.publish import RepoPublishManager
@@ -315,6 +323,7 @@ def initialize():
         TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
         TYPE_REPO_GROUP: RepoGroupManager,
         TYPE_REPO_GROUP_DISTRIBUTOR : RepoGroupDistributorManager,
+        TYPE_REPO_GROUP_PUBLISH : RepoGroupPublishManager,
         TYPE_REPO_GROUP_QUERY : RepoGroupQueryManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
         TYPE_REPO_PUBLISH: RepoPublishManager,
