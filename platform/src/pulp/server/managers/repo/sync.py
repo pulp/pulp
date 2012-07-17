@@ -27,19 +27,15 @@ import sys
 
 # Pulp
 from pulp.common import dateutils
-import pulp.server.constants as pulp_constants
-import pulp.plugins.loader as plugin_loader
+from pulp.server import constants as pulp_constants
+from pulp.plugins import loader as plugin_loader
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
-from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
-import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._common as common_utils
+from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.exceptions import MissingResource, PulpExecutionException
-
-# TODO: This needs to change because managers shouldn't reach into each other
-# or else we'll run back into circular imports again.
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
+from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.repo import _common as common_utils
 
 
 # -- constants ----------------------------------------------------------------
@@ -100,7 +96,7 @@ class RepoSyncManager(object):
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync
-        conduit = RepoSyncConduit(repo_id, repo_importer['id'], OWNER_TYPE_IMPORTER, repo_importer['id'])
+        conduit = RepoSyncConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_IMPORTER, repo_importer['id'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], sync_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
