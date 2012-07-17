@@ -95,29 +95,17 @@ class PulpServerTests(unittest.TestCase):
 
     def setUp(self):
         super(PulpServerTests, self).setUp()
-
         self._mocks = {}
         self.config = PulpServerTests.CONFIG # shadow for simplicity
-
-        self.setup_async() # deprecated; being removed
-
         self.clean()
 
     def tearDown(self):
         super(PulpServerTests, self).tearDown()
         self.unmock_all()
-        self.teardown_async()
-
         self.clean()
 
     def clean(self):
         pass
-
-    def setup_async(self):
-        dispatch_factory.initialize()
-
-    def teardown_async(self):
-        dispatch_factory.finalize(clear_queued_calls=True)
 
     def mock(self, parent, attribute, mock_object=None):
         self._mocks.setdefault(parent, {})[attribute] = getattr(parent, attribute)
@@ -131,7 +119,22 @@ class PulpServerTests(unittest.TestCase):
                 setattr(parent, mocked_attr, original_attr)
 
 
-class PulpWebserviceTests(PulpServerTests):
+class PulpAsyncServerTests(PulpServerTests):
+    """
+    Intermediate test suite that starts and stops the asynchronous dispatch
+    system, but doesn't setup the webservices.
+    """
+
+    def setUp(self):
+        super(PulpAsyncServerTests, self).setUp()
+        dispatch_factory.initialize()
+
+    def tearDown(self):
+        super(PulpAsyncServerTests, self).tearDown()
+        dispatch_factory.finalize(clear_queued_calls=True)
+
+
+class PulpWebserviceTests(PulpAsyncServerTests):
     """
     Base unit test class for all webservice controller tests.
     """

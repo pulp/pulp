@@ -14,7 +14,7 @@
 import traceback
 import unittest
 
-from base import PulpServerTests
+from base import PulpAsyncServerTests
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
@@ -39,7 +39,7 @@ class RepoGroupManagerInstantiationTests(unittest.TestCase):
             self.fail(traceback.format_exc())
 
 
-class RepoGroupTests(PulpServerTests):
+class RepoGroupTests(PulpAsyncServerTests):
 
     def setUp(self):
         super(RepoGroupTests, self).setUp()

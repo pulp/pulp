@@ -24,7 +24,7 @@ from pulp.server.managers import factory
 
 # -- test cases ---------------------------------------------------------------
 
-class BindManagerTests(base.PulpServerTests):
+class BindManagerTests(base.PulpAsyncServerTests):
 
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
@@ -36,7 +36,7 @@ class BindManagerTests(base.PulpServerTests):
         )
 
     def setUp(self):
-        base.PulpServerTests.setUp(self)
+        super(BindManagerTests, self).setUp()
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -45,7 +45,7 @@ class BindManagerTests(base.PulpServerTests):
         mock_plugins.install()
 
     def tearDown(self):
-        base.PulpServerTests.tearDown(self)
+        super(BindManagerTests, self).tearDown()
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()

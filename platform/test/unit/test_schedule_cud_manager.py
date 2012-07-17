@@ -28,7 +28,7 @@ from pulp.server.managers.schedule.cud import ScheduleManager
 
 # schedule tests base class ----------------------------------------------------
 
-class ScheduleTests(base.PulpServerTests):
+class ScheduleTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(ScheduleTests, self).setUp()
@@ -66,7 +66,7 @@ class ScheduleTests(base.PulpServerTests):
 
 # schedule manager tests -------------------------------------------------------
 
-class ScheduleManagerTests(base.PulpServerTests):
+class ScheduleManagerTests(base.PulpAsyncServerTests):
 
     def test_instantiation(self):
         schedule_manager = ScheduleManager()
