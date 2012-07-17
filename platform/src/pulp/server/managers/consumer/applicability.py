@@ -29,12 +29,12 @@ _LOG = getLogger(__name__)
 
 class ApplicabilityManager(object):
 
-    def units_applicable(self, consumer_ids, units):
+    def units_applicable(self, criteria, units):
         """
         Detemine and report which of the specified content units
         is applicable to consumers specified by the I{criteria}.
-        @param consumer_ids: A list of consumer IDs.
-        @type consumer_ids: list
+        @param criteria: The consumer selection criteria.
+        @type criteria: list
         @param units: A list of content units to be installed.
         @type units: list of:
             { type_id:<str>, unit_key:<dict> }
@@ -44,11 +44,11 @@ class ApplicabilityManager(object):
         """
         result = {}
         conduit = ProfilerConduit()
+        manager = managers.consumer_query_manager()
+        ids = [c['id'] for c in manager.find_by_criteria(criteria)]
         manager = managers.consumer_profile_manager()
-        profiles = manager.find_profiles(consumer_ids)
-        manager = managers.consumer_manager()
-        for id in consumer_ids:
-            manager.get_consumer(id)
+        profiles = manager.find_profiles(ids)
+        for id in ids:
             for unit in units:
                 typeid = unit['type_id']
                 profiler, cfg = self.__profiler(typeid)
