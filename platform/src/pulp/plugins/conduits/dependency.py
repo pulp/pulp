@@ -11,11 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.plugins.conduits.mixins import ImporterScratchPadMixin, RepoScratchPadMixin, GetRepoUnitsMixin, DistributorConduitException
+from pulp.plugins.conduits.mixins import ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepoUnitsMixin, DistributorConduitException
 
-class DependencyResolutionConduit(RepoScratchPadMixin, ImporterScratchPadMixin, GetRepoUnitsMixin):
+class DependencyResolutionConduit(RepoScratchPadMixin, ImporterScratchPadMixin, SingleRepoUnitsMixin):
 
     def __init__(self, repo_id, importer_id):
         RepoScratchPadMixin.__init__(self, repo_id)
         ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
-        GetRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)
+        SingleRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)

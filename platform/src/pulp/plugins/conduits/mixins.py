@@ -16,7 +16,7 @@ import logging
 import sys
 
 import pulp.plugins.conduits._common as common_utils
-from   pulp.plugins.model import Unit, PublishReport, SyncReport
+from   pulp.plugins.model import Unit, PublishReport
 from   pulp.plugins.types import database as types_db
 import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
@@ -92,7 +92,8 @@ class RepoScratchPadMixin(object):
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
-class GetRepoUnitsMixin(object):
+
+class SingleRepoUnitsMixin(object):
 
     def __init__(self, repo_id, exception_class):
         self.repo_id = repo_id
@@ -113,31 +114,31 @@ class GetRepoUnitsMixin(object):
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
+        return do_get_repo_units(self.repo_id, criteria, self.exception_class)
 
-        try:
-            association_query_manager = manager_factory.repo_unit_association_query_manager()
-            units = association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
 
-            all_units = []
+class MultipleRepoUnitsMixin(object):
 
-            # Load all type definitions in use so we don't hammer the database
-            unique_type_defs = set([u['unit_type_id'] for u in units])
-            type_defs = {}
-            for def_id in unique_type_defs:
-                type_def = types_db.type_definition(def_id)
-                type_defs[def_id] = type_def
+    def __init__(self, exception_class):
+        self.exception_class = exception_class
 
-            # Convert to transfer object
-            for unit in units:
-                type_id = unit['unit_type_id']
-                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
-                all_units.append(u)
+    def get_units(self, repo_id, criteria=None):
+        """
+        Returns the collection of content units associated with the given
+        repository.
 
-            return all_units
+        Units returned from this call will have the id field populated and are
+        useable in any calls in this conduit that require the id field.
 
-        except Exception, e:
-            _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
-            raise self.exception_class(e), None, sys.exc_info()[2]
+        @param criteria: used to scope the returned results or the data within;
+               the Criteria class can be imported from this module
+        @type  criteria: L{Criteria}
+
+        @return: list of unit instances
+        @rtype:  list of L{AssociatedUnit}
+        """
+        return do_get_repo_units(repo_id, criteria, self.exception_class)
+
 
 class ImporterScratchPadMixin(object):
 
@@ -461,3 +462,36 @@ class PublishReportMixin(object):
         """
         r = PublishReport(False, summary, details)
         return r
+
+# -- utilities ----------------------------------------------------------------
+
+def do_get_repo_units(repo_id, criteria, exception_class):
+    """
+    Performs a repo unit association query. This is split apart so we can have
+    custom mixins with different signatures.
+    """
+    try:
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
+        units = association_query_manager.get_units_across_types(repo_id, criteria=criteria)
+
+        all_units = []
+
+        # Load all type definitions in use so we don't hammer the database
+        unique_type_defs = set([u['unit_type_id'] for u in units])
+        type_defs = {}
+        for def_id in unique_type_defs:
+            type_def = types_db.type_definition(def_id)
+            type_defs[def_id] = type_def
+
+        # Convert to transfer object
+        for unit in units:
+            type_id = unit['unit_type_id']
+            u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+            all_units.append(u)
+
+        return all_units
+
+    except Exception, e:
+        _LOG.exception('Exception from server requesting all content units for repository [%s]' % repo_id)
+        raise exception_class(e), None, sys.exc_info()[2]
+

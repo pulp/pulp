@@ -20,7 +20,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin, StatusMixin, GetRepoUnitsMixin, PublishReportMixin
+from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin, StatusMixin, SingleRepoUnitsMixin, PublishReportMixin
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
@@ -30,7 +30,7 @@ _LOG = logging.getLogger(__name__)
 # -- classes -----------------------------------------------------------------
 
 class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, StatusMixin,
-                         GetRepoUnitsMixin, PublishReportMixin):
+                         SingleRepoUnitsMixin, PublishReportMixin):
     """
     Used to communicate back into the Pulp server while a distributor is
     publishing a repo. Instances of this call should *not* be cached between
@@ -54,7 +54,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         RepoScratchPadMixin.__init__(self, repo_id)
         DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
         StatusMixin.__init__(self, distributor_id, DistributorConduitException, progress_report=base_progress_report)
-        GetRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)
+        SingleRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)
         PublishReportMixin.__init__(self)
 
         self.repo_id = repo_id
