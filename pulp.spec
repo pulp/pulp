@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        23%{?dist}
+Release:        22%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -500,9 +500,6 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
-* Tue Jul 17 2012 James Slagle <jslagle@redhat.com> 0.0.263-23
-- 
-
 * Tue Jul 17 2012 James Slagle <jslagle@redhat.com> 0.0.263-22
 - 840979 Use .startswith instead of .find to match a requested repo url against
   one in the pulp protected repos file (jslagle@redhat.com)
