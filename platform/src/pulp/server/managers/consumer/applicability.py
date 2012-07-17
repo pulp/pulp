@@ -16,7 +16,7 @@ Contains content applicability management classes
 """
 
 from pulp.server.managers import factory as managers
-from pulp.server.managers.plugin import PluginWrapper
+from pulp.server.managers.pluginwrapper import PluginWrapper
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.model import Consumer as ProfiledConsumer

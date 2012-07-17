@@ -19,7 +19,7 @@ Contains agent management classes
 
 import sys
 from pulp.server.managers import factory as managers
-from pulp.server.managers.plugin import PluginWrapper
+from pulp.server.managers.pluginwrapper import PluginWrapper
 from pulp.plugins import loader as plugins
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.conduits.profiler import ProfilerConduit
