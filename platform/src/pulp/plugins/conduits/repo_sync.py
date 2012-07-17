@@ -71,7 +71,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         RepoScratchPadMixin.__init__(self, repo_id)
         ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
         AddUnitMixin.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
-        GetRepoUnitsMixin.__init__(self, repo_id)
+        GetRepoUnitsMixin.__init__(self, repo_id, ImporterConduitException)
         StatusMixin.__init__(self, importer_id, ImporterConduitException)
 
         self._association_manager = manager_factory.repo_unit_association_manager()

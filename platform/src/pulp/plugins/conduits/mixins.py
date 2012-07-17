@@ -16,7 +16,7 @@ import logging
 import sys
 
 import pulp.plugins.conduits._common as common_utils
-from   pulp.plugins.model import Unit
+from   pulp.plugins.model import Unit, PublishReport, SyncReport
 from   pulp.plugins.types import database as types_db
 import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
@@ -94,13 +94,14 @@ class RepoScratchPadMixin(object):
 
 class GetRepoUnitsMixin(object):
 
-    def __init__(self, repo_id):
+    def __init__(self, repo_id, exception_class):
         self.repo_id = repo_id
+        self.exception_class = exception_class
 
     def get_units(self, criteria=None):
         """
         Returns the collection of content units associated with the repository
-        being synchronized.
+        being operated on.
 
         Units returned from this call will have the id field populated and are
         useable in any calls in this conduit that require the id field.
@@ -136,7 +137,7 @@ class GetRepoUnitsMixin(object):
 
         except Exception, e:
             _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
+            raise self.exception_class(e), None, sys.exc_info()[2]
 
 class ImporterScratchPadMixin(object):
 
@@ -428,3 +429,35 @@ class StatusMixin(object):
                 # the log will tank and we don't want that exception to bubble up
                 pass
             raise self.exception_class(e), None, sys.exc_info()[2]
+
+class PublishReportMixin(object):
+
+    def build_success_report(self, summary, details):
+        """
+        Creates the PublishReport instance that needs to be returned to the Pulp
+        server at the end of the publish_repo call.
+
+        @param summary: short log of the publish; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the publish; may be None
+        @type  details: any serializable
+        """
+        r = PublishReport(True, summary, details)
+        return r
+
+    def build_failure_report(self, summary, details):
+        """
+        Creates the PublishReport instance that needs to be returned to the Pulp
+        server at the end of the publish_repo call. The report built in this
+        fashion will indicate the publish operation has gracefully failed
+        (as compared to an unexpected exception bubbling up).
+
+        @param summary: short log of the publish; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the publish; may be None
+        @type  details: any serializable
+        """
+        r = PublishReport(False, summary, details)
+        return r

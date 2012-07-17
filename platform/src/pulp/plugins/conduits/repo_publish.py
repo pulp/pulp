@@ -20,10 +20,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin, StatusMixin
-import pulp.plugins.conduits._common as common_utils
-import pulp.plugins.types.database as types_db
-from pulp.plugins.model import PublishReport
+from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin, StatusMixin, GetRepoUnitsMixin, PublishReportMixin
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
@@ -32,7 +29,8 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, StatusMixin):
+class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, StatusMixin,
+                         GetRepoUnitsMixin, PublishReportMixin):
     """
     Used to communicate back into the Pulp server while a distributor is
     publishing a repo. Instances of this call should *not* be cached between
@@ -56,16 +54,11 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         RepoScratchPadMixin.__init__(self, repo_id)
         DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
         StatusMixin.__init__(self, distributor_id, DistributorConduitException, progress_report=base_progress_report)
+        GetRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)
+        PublishReportMixin.__init__(self)
 
         self.repo_id = repo_id
         self.distributor_id = distributor_id
-
-        self._repo_manager = manager_factory.repo_manager()
-        self._repo_publish_manager = manager_factory.repo_publish_manager()
-        self._repo_distributor_manager = manager_factory.repo_distributor_manager()
-        self._association_manager = manager_factory.repo_unit_association_manager()
-        self._association_query_manager = manager_factory.repo_unit_association_query_manager()
-        self._content_query_manager = manager_factory.content_manager()
 
     def __str__(self):
         return _('RepoPublishConduit for repository [%(r)s]' % {'r' : self.repo_id})
@@ -82,73 +75,9 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         @rtype:  datetime or None
         """
         try:
-            last = self._repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
+            repo_publish_manager = manager_factory.repo_publish_manager()
+            last = repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
             return last
         except Exception, e:
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
-
-    def get_units(self, criteria=None):
-        """
-        Returns the collection of content units associated with the repository
-        being published.
-
-        @param criteria: used to scope the returned results or the data within
-        @type  criteria: L{Criteria}
-
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
-        """
-
-        try:
-            units = self._association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
-
-            all_units = []
-
-            # Load all type definitions in use so we don't hammer the database
-            unique_type_defs = set([u['unit_type_id'] for u in units])
-            type_defs = {}
-            for def_id in unique_type_defs:
-                type_def = types_db.type_definition(def_id)
-                type_defs[def_id] = type_def
-
-            # Convert to transfer object
-            for unit in units:
-                type_id = unit['unit_type_id']
-                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
-                all_units.append(u)
-
-            return all_units
-        except Exception, e:
-            _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
-            raise DistributorConduitException(e), None, sys.exc_info()[2]
-
-    def build_success_report(self, summary, details):
-        """
-        Creates the PublishReport instance that needs to be returned to the Pulp
-        server at the end of the publish_repo call.
-
-        @param summary: short log of the publish; may be None but probably shouldn't be
-        @type  summary: any serializable
-
-        @param details: potentially longer log of the publish; may be None
-        @type  details: any serializable
-        """
-        r = PublishReport(True, summary, details)
-        return r
-
-    def build_failure_report(self, summary, details):
-        """
-        Creates the PublishReport instance that needs to be returned to the Pulp
-        server at the end of the publish_repo call. The report built in this
-        fashion will indicate the publish operation has gracefully failed
-        (as compared to an unexpected exception bubbling up).
-
-        @param summary: short log of the publish; may be None but probably shouldn't be
-        @type  summary: any serializable
-
-        @param details: potentially longer log of the publish; may be None
-        @type  details: any serializable
-        """
-        r = PublishReport(False, summary, details)
-        return r
