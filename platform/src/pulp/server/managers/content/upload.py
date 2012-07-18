@@ -19,7 +19,8 @@ from uuid import uuid4
 import pulp.server.auth.principal as pulp_principal
 import pulp.server.constants as pulp_constants
 from   pulp.plugins.conduits.upload import UploadConduit
-import pulp.plugins.loader as content_loader
+from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.new_loader import exceptions as plugin_exceptions
 from   pulp.plugins.config import PluginCallConfiguration
 from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
@@ -167,7 +168,7 @@ class ContentUploadManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         # Make sure the importer on the repo can support the indicated type
-        importer_types = content_loader.list_importer_types(repo_importer['importer_type_id'])['types']
+        importer_types = plugin_api.list_importer_types(repo_importer['importer_type_id'])['types']
 
         if unit_type_id not in importer_types:
             raise PulpDataException('Invalid unit type for repository')
@@ -212,8 +213,8 @@ class ContentUploadManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         try:
-            importer_instance, plugin_config = content_loader.get_importer_by_id(repo_importer['importer_type_id'])
-        except content_loader.PluginNotFound:
+            importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+        except plugin_exceptions.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the import

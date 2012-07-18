@@ -28,7 +28,8 @@ import sys
 # Pulp
 from pulp.common import dateutils
 from pulp.server import constants as pulp_constants
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.new_loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
@@ -91,8 +92,8 @@ class RepoSyncManager(object):
         repo_importer = repo_importers[0]
 
         try:
-            importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
-        except plugin_loader.PluginNotFound:
+            importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+        except plugin_exceptions.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the sync

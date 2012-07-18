@@ -16,7 +16,7 @@ import re
 import sys
 import uuid
 
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.exceptions import InvalidValue, MissingResource, PulpDataException, PulpExecutionException
@@ -128,7 +128,7 @@ class RepoGroupDistributorManager(object):
         # Validation
         group = query_manager.get_group(repo_group_id) # will raise MissingResource
 
-        if not plugin_loader.is_valid_group_distributor(distributor_type_id):
+        if not plugin_api.is_valid_group_distributor(distributor_type_id):
             raise InvalidValue(['distributor_type_id'])
 
         # Determine the ID for the distributor on this repo
@@ -139,7 +139,7 @@ class RepoGroupDistributorManager(object):
             if not is_distributor_id_valid(distributor_id):
                 raise InvalidValue(['distributor_id'])
 
-        distributor_instance, plugin_config = plugin_loader.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
         # are explicitly set to None so the plugin will default them.
@@ -210,7 +210,7 @@ class RepoGroupDistributorManager(object):
 
         # Call the distributor's cleanup method
         distributor_type_id = distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_loader.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
 
         call_config = PluginCallConfiguration(plugin_config, distributor['config'])
         transfer_group = common_utils.to_transfer_repo_group(group)
@@ -257,7 +257,7 @@ class RepoGroupDistributorManager(object):
         distributor = self.get_distributor(repo_group_id, distributor_id)
 
         distributor_type_id = distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_loader.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
 
         # Resolve the requested changes into the existing config
         merged_config = process_update_config(distributor['config'], distributor_config)

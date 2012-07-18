@@ -45,7 +45,7 @@ db_connection.initialize()
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
@@ -96,7 +96,7 @@ def _initialize_pulp():
 
     # pulp generic content initialization
     manager_factory.initialize()
-    plugin_loader.initialize()
+    plugin_api.initialize()
 
     # new async dispatch initialization
     dispatch_factory.initialize()

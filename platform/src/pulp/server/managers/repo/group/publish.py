@@ -17,7 +17,8 @@ import sys
 import datetime
 
 from pulp.common import dateutils
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.new_loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport
@@ -59,8 +60,8 @@ class RepoGroupPublishManager(object):
 
         try:
             distributor_instance, plugin_config =\
-                plugin_loader.get_group_distributor_by_id(distributor_type_id)
-        except plugin_loader.PluginNotFound:
+                plugin_api.get_group_distributor_by_id(distributor_type_id)
+        except plugin_exceptions.PluginNotFound:
             raise MissingResource(distributor_type=distributor_type_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for publish

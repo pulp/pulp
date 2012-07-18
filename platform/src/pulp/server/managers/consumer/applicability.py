@@ -21,7 +21,8 @@ from pulp.plugins.profiler import Profiler
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.conduits.profiler import ProfilerConduit
-from pulp.plugins import loader as plugins
+from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.new_loader import exceptions as plugin_exceptions
 from logging import getLogger
 
 _LOG = getLogger(__name__)
@@ -69,8 +70,8 @@ class ApplicabilityManager(object):
         @rtype: tuple
         """
         try:
-            plugin, cfg = plugins.get_profiler_by_type(typeid)
-        except plugins.PluginNotFound:
+            plugin, cfg = plugin_api.get_profiler_by_type(typeid)
+        except plugin_exceptions.PluginNotFound:
             plugin = Profiler()
             cfg = {}
         return PluginWrapper(plugin), cfg
