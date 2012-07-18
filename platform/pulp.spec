@@ -420,6 +420,10 @@ exit 0
 %endif
 
 %changelog
+* Wed Jul 18 2012 Jeff Ortel <jortel@redhat.com> 0.0.314-2
+- 841208 - pulp-consumer RPM doesn't create needed directory:
+  /etc/pki/pulp/consumer (jmatthews@redhat.com)
+
 * Tue Jul 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.314-1
 - (re)add /etc/init.d/pulp-agent symlink. (jortel@redhat.com)
 - 840482 - fixed fix for repos without an importer (jason.connor@gmail.com)
