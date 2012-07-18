@@ -339,6 +339,7 @@ A tool used to administer a pulp consumer.
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
+%config(noreplace) %{_sysconfdir}/pki/%{name}/consumer
 %{_bindir}/%{name}-consumer
 %doc
 
