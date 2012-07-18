@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
-from yum_distributor import metadata
+from pulp_rpm.yum_plugin  import metadata
 
 from pulp.plugins.model import Repository
 

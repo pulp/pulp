@@ -29,9 +29,10 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 from iso_distributor.distributor import ISODistributor, ISO_DISTRIBUTOR_TYPE_ID,\
     RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, DISTRO_TYPE_ID, PKG_CATEGORY_TYPE_ID, PKG_GROUP_TYPE_ID
 from yum_importer import importer_rpm
-
+from yum_importer import errata
 from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
+from pulp_rpm.yum_plugin import util
 
 import distributor_mocks
 import rpm_support_base
@@ -103,7 +104,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         existing_units = []
         for unit in [unit_a, unit_b, unit_c]:
             existing_units.append(unit)
-        symlink_dir = "%s/%s" % (self.repo_working_dir, repo.id)
+        symlink_dir = "%s/%s" % (self.repo_working_dir, "isos")
         iso_distributor = ISODistributor()
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
@@ -112,3 +113,79 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         print status, errors
         self.assertTrue(status)
         self.assertEquals(len(os.listdir(symlink_dir)), 4)
+
+    def test_errata_export(self):
+        feed_url = "file://%s/test_errata_local_sync/" % self.data_dir
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "test_errata_local_sync"
+        repo.checksumtype = 'sha'
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        metadata = {}
+        unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'md5',
+                      'checksum': 'f3c197a29d9b66c5b65c5d62b25db5b4'}
+        unit_key_b = {'id' : '', 'name' :'emoticons', 'version' :'0.1', 'release' :'2', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'md5',
+                      'checksum' : '366bb5e73a5905eacb82c96e0578f92b'}
+
+        existing_units = []
+        for unit in [unit_key_a, unit_key_b]:
+            existing_units.append(Unit(RPM_TYPE_ID, unit, metadata, ''))
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
+        importerErrata = errata.ImporterErrata()
+        status, summary, details = importerErrata.sync(repo, sync_conduit, config)
+        unit_key = dict()
+        unit_key['id'] = "RHEA-2010:9999"
+        mdata = { 'description'  : "test",
+                     'from_str': 'security@redhat.com',
+                    'issued': '2010-03-30 08:07:30',
+                    'pkglist': [{'name': 'RHEL Virtualization (v. 5 for 32-bit x86)',
+                            'packages': [{'arch': 'x86_64',
+                                        'epoch': '0',
+                                        'filename': 'patb-0.1-2.x86_64.rpm',
+                                        'name': 'patb',
+                                        'release': '2',
+                                        'src': '',
+                                        'sum': ('md5',
+                                                'f3c197a29d9b66c5b65c5d62b25db5b4'),
+                                        'version': '0.1'},
+                                        {'arch': 'x86_64',
+                                        'epoch': '0',
+                                        'filename': 'emoticons-0.1-2.x86_64.rpm',
+                                        'name': 'emoticons',
+                                        'release': '2',
+                                        'src': '',
+                                        'sum': ('md5',
+                                                '366bb5e73a5905eacb82c96e0578f92b'),
+                                        'version': '0.1'}],
+                            'short': 'rhel-i386-server-vt-5'}],
+                    'pushcount': 1,
+                    'reboot_suggested': False,
+                    'references': [],
+                    'release': '',
+                    'rights': '',
+                     'status': 'final',
+                    'summary': '',
+                    'title': 'emoticons enhancement fix and enhancement update',
+                     'updated': '2010-03-30 08:07:30',
+        'version': '1',
+        'type' : 'enhancement',
+        'severity' : 'Low',
+        'solution' : ''}
+        errata_unit = [Unit(errata.ERRATA_TYPE_ID, unit_key, mdata, '')]
+        symlink_dir = "%s/%s" % (self.repo_working_dir, repo.id)
+        iso_distributor = ISODistributor()
+        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
+        print symlink_dir
+        rpm_units = iso_distributor._get_errata_rpms(errata_unit, existing_units)
+        print "RPMS in ERRATA",rpm_units
+        iso_distributor._export_rpms(rpm_units, self.repo_working_dir)
+        status, errors = iso_distributor._export_errata(errata_unit, symlink_dir)
+        self.assertTrue(os.path.exists("%s/%s" % (symlink_dir, "updateinfo.xml")))
+        self.assertTrue(status)
+        ftypes = util.get_repomd_filetypes("%s/%s" % (symlink_dir, "repodata/repomd.xml"))
+        print ftypes
+        self.assertTrue("updateinfo" in ftypes)

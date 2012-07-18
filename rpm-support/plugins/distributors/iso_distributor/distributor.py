@@ -15,7 +15,7 @@ import gettext
 import logging
 import time
 import traceback
-from pulp_rpm.yum_plugin import util
+from pulp_rpm.yum_plugin import util, updateinfo, metadata
 from pulp.plugins.distributor import Distributor
 from iso_distributor.generate_iso import GenerateIsos
 from pulp.server.managers.repo.unit_association_query import Criteria
@@ -150,6 +150,7 @@ class ISODistributor(Distributor):
         details = {}
         progress_status = {
             "rpms":               {"state": "NOT_STARTED"},
+            "errata":             {"state": "NOT_STARTED"},
             "distribution":       {"state": "NOT_STARTED"},
             "metadata":           {"state": "NOT_STARTED"},
             "packagegroups":      {"state": "NOT_STARTED"},
@@ -163,12 +164,22 @@ class ISODistributor(Distributor):
             publish_conduit.set_progress(progress_status)
 
         repo_working_dir = os.path.join(repo.working_dir, repo.id)
+
         # rpm units
         progress_status["rpms"]["state"] = "STARTED"
-        criteria = Criteria(type_ids=[RPM_TYPE_ID])
+        criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
         rpm_units = publish_conduit.get_units(criteria)
         self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["rpms"]["state"] = "FINISHED"
+
+        # errata units
+        progress_status["errata"]["state"] = "STARTED"
+        criteria = Criteria(type_ids=[ERRATA_TYPE_ID])
+        errata_units = publish_conduit.get_units(criteria)
+        rpm_units = self._get_errata_rpms(errata_units, rpm_units)
+        self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
+        self._export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
+        progress_status["errata"]["state"] = "FINISHED"
 
         # build iso
 #        repo_iso_working_dir = "%s/%s" % (repo.working_dir, "isos")
@@ -224,5 +235,68 @@ class ISODistributor(Distributor):
             return False, errors
         packages_progress_status["state"] = "FINISHED"
         self.set_progress("packages", packages_progress_status, progress_callback)
-        print packages_progress_status
+        # generate metadata
+        try:
+            metadata.create_repo(symlink_dir)
+            _LOG.info("metadata generation complete at target location %s" % symlink_dir)
+        except metadata.CreateRepoError, cre:
+            msg = "Unable to generate metadata for exported packages in target directory %s; Error: %s" % (symlink_dir, str(cre))
+            errors.append(msg)
+            _LOG.error(msg)
+            return False, errors
         return True, []
+
+    def _export_errata(self, errata_units, repo_working_dir, progress_callback=None):
+        errors = []
+        if not errata_units:
+            return True, []
+        try:
+            updateinfo_path = updateinfo.updateinfo(errata_units, repo_working_dir)
+            if updateinfo_path:
+                repodata_dir = os.path.join(repo_working_dir, "repodata")
+                if not os.path.exists(repodata_dir):
+                    _LOG.error("Missing repodata; cannot run modifyrepo")
+                    return False, []
+                _LOG.debug("Modifying repo for updateinfo")
+                metadata.modify_repo(repodata_dir,  updateinfo_path)
+        except metadata.ModifyRepoError, mre:
+            msg = "Unable to run modifyrepo to include updateinfo at target location %s; Error: %s" % (repo_working_dir, str(mre))
+            errors.append(msg)
+            _LOG.error(msg)
+            return False, errors
+        except Exception, e:
+            errors.append(str(e))
+            return False, errors
+        return True, []
+
+    def _get_errata_rpms(self, errata_units, rpm_units):
+        existing_rpm_units = form_unit_key_map(rpm_units)
+        print "existing",existing_rpm_units
+        # get pkglist associaed to the errata
+        rpm_units = []
+        for u in errata_units:
+            pkglist = u.metadata['pkglist']
+            for pkg in pkglist:
+                for pinfo in pkg['packages']:
+                    if not pinfo.has_key('sum'):
+                        _LOG.debug("Missing checksum info on package <%s> for linking a rpm to an erratum." % (pinfo))
+                        continue
+                    pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
+                    rpm_key = form_lookup_key(pinfo)
+                    print "RPM KEY",rpm_key
+                    if rpm_key in existing_rpm_units.keys():
+                        rpm_unit = existing_rpm_units[rpm_key]
+                        _LOG.info("Found matching rpm unit %s" % rpm_unit)
+                        rpm_units.append(rpm_unit)
+        return rpm_units
+
+def form_lookup_key(rpm):
+    rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm['release'], rpm["arch"], rpm["checksumtype"], rpm["checksum"])
+    return rpm_key
+
+def form_unit_key_map(units):
+   existing_units = {}
+   for u in units:
+       key = form_lookup_key(u.unit_key)
+       existing_units[key] = u
+   return existing_units

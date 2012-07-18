@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import commands
 import hashlib
 import traceback
 import urlparse
@@ -26,8 +27,6 @@ def getLogger(name):
     log_name = LOG_PREFIX_NAME + "." + name 
     return logging.getLogger(log_name)
 _LOG = getLogger(__name__)
-
-
 
 def get_repomd_filetypes(repomd_path):
     """
