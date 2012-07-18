@@ -166,7 +166,7 @@ class Profiler(object):
         """
         Determine whether the a content unit is applicable to
         the specified consumer.  The definition of "applicable" is content
-        type specific and up to the descrision of the profiler.
+        type specific and up to the descision of the profiler.
 
         @param consumer: A consumer.
         @type consumer: L{pulp.server.plugins.model.Consumer}
