@@ -23,6 +23,7 @@ import mock_plugins
 import mock_agent
 import pulp.plugins.loader as plugin_loader
 from pulp.plugins.model import ApplicabilityReport
+from pulp.plugins.new_loader import api as plugin_api
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -65,7 +66,7 @@ class ProcessConsumersTests(unittest.TestCase):
 
 
 class BindTest(base.PulpWebserviceTests):
-    
+
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
@@ -89,10 +90,10 @@ class BindTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
-        
+
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
@@ -100,7 +101,7 @@ class BindTest(base.PulpWebserviceTests):
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         mock_plugins.reset()
-    
+
     def populate(self):
         manager = factory.repo_manager()
         repo = manager.create_repo(self.REPO_ID)
@@ -114,7 +115,7 @@ class BindTest(base.PulpWebserviceTests):
         mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value=self.PAYLOAD
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
-        
+
     def test_get_bind(self):
         # Setup
         self.populate()
@@ -227,7 +228,7 @@ class BindTest(base.PulpWebserviceTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         print binds
         self.assertEquals(len(binds), 0)
-        
+
     def test_bind_missing_distributor(self):
         # Setup
         self.populate()
@@ -258,7 +259,7 @@ class ContentTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
 

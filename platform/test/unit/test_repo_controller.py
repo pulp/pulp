@@ -27,7 +27,7 @@ import base
 import dummy_plugins
 
 from pulp.common import dateutils
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -478,7 +478,7 @@ class RepoPluginsTests(RepoControllersTests):
     def setUp(self):
         super(RepoPluginsTests, self).setUp()
 
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         dummy_plugins.install()
 
         self.importer_manager = manager_factory.repo_importer_manager()

@@ -15,7 +15,7 @@ import base
 import mock_plugins
 
 from mock import Mock
-from pulp.plugins import loader as plugins
+from pulp.plugins.new_loader import api as plugins
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.plugins.conduits.profiler import ProfilerConduit
@@ -37,7 +37,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         base.PulpServerTests.setUp(self)
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
-        plugins._create_loader()
+        plugins._create_manager()
         mock_plugins.install()
         profiler = plugins.get_profiler_by_type('rpm')[0]
         profiler.unit_applicable = \

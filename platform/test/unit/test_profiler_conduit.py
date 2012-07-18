@@ -25,7 +25,7 @@ from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
 from pulp.plugins.conduits.profiler import ProfilerConduit, ProfilerConduitException
 
 # -- test cases ---------------------------------------------------------------
@@ -48,7 +48,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         UnitProfile.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         typedb.update_database([self.TYPE_1_DEF, self.TYPE_2_DEF])
         mock_plugins.install()
 

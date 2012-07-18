@@ -22,7 +22,7 @@ import mock_plugins
 import mock
 
 from   pulp.common.util import encode_unicode
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
 from   pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
@@ -36,7 +36,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
     def setUp(self):
         super(RepoManagerTests, self).setUp()
 
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
 
         # Create the manager instance to test

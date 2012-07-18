@@ -19,7 +19,8 @@ module instead when testing with new v2 controllers that have been integrated
 with dispatch.
 """
 
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.new_loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport, PublishReport
 
 # dummy base class -------------------------------------------------------------
@@ -96,10 +97,10 @@ def install():
 
     # update plugin loader inventory
 
-    plugin_loader._create_loader()
-    plugin_loader._LOADER.add_importer('dummy-importer', DummyImporter, {})
-    plugin_loader._LOADER.add_distributor('dummy-distributor', DummyDistributor, {})
-    plugin_loader._LOADER.add_distributor('dummy-distributor-2', DummyDistributor, {})
+    plugin_api._create_manager()
+    plugin_api._MANAGER.importers.add_plugin('dummy-importer', DummyImporter, {})
+    plugin_api._MANAGER.distributors.add_plugin('dummy-distributor', DummyDistributor, {})
+    plugin_api._MANAGER.distributors.add_plugin('dummy-distributor-2', DummyDistributor, {})
 
     # setup the importer/distributor mappings that return the dummy instances
 
@@ -109,25 +110,25 @@ def install():
 
     # save state of original plugin so it can be reverted
 
-    _ORIG_GET_IMPORTER_BY_ID = plugin_loader.get_importer_by_id
-    _ORIG_GET_DISTRIBUTOR_BY_ID = plugin_loader.get_distributor_by_id
+    _ORIG_GET_IMPORTER_BY_ID = plugin_api.get_importer_by_id
+    _ORIG_GET_DISTRIBUTOR_BY_ID = plugin_api.get_distributor_by_id
 
     # monkey-patch methods to return the dummy instances
 
     def dummy_get_importer_by_id(id):
         if id not in IMPORTER_MAPPINGS:
-            raise plugin_loader.PluginNotFound()
+            raise plugin_exceptions.PluginNotFound()
         return IMPORTER_MAPPINGS[id], {}
 
     def dummy_get_distributor_by_id(id):
         if id not in DISTRIBUTOR_MAPPINGS:
-            raise plugin_loader.PluginNotFound()
+            raise plugin_exceptions.PluginNotFound()
         return DISTRIBUTOR_MAPPINGS[id], {}
 
     # monkey-patch in the dummy methods
 
-    plugin_loader.get_importer_by_id = dummy_get_importer_by_id
-    plugin_loader.get_distributor_by_id = dummy_get_distributor_by_id
+    plugin_api.get_importer_by_id = dummy_get_importer_by_id
+    plugin_api.get_distributor_by_id = dummy_get_distributor_by_id
 
 
 def reset():
@@ -143,13 +144,13 @@ def reset():
 
     # undo the monkey-patch
 
-    plugin_loader.get_importer_by_id = _ORIG_GET_IMPORTER_BY_ID
-    plugin_loader.get_distributor_by_id = _ORIG_GET_DISTRIBUTOR_BY_ID
+    plugin_api.get_importer_by_id = _ORIG_GET_IMPORTER_BY_ID
+    plugin_api.get_distributor_by_id = _ORIG_GET_DISTRIBUTOR_BY_ID
 
     # remove the loaded plugins
 
-    plugin_loader._LOADER.remove_importer('dummy-importer')
-    plugin_loader._LOADER.remove_distributor('dummy-distributor')
-    plugin_loader._LOADER.remove_distributor('dummy-distributor-2')
+    plugin_api._MANAGER.importers.remove_plugin('dummy-importer')
+    plugin_api._MANAGER.distributors.remove_plugin('dummy-distributor')
+    plugin_api._MANAGER.distributors.remove_plugin('dummy-distributor-2')
 
 

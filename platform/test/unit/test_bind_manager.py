@@ -16,7 +16,7 @@ import mock
 
 import base
 import mock_plugins
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.new_loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import MissingResource
@@ -41,7 +41,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
 
     def tearDown(self):

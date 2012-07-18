@@ -57,15 +57,14 @@ def initialize(validate=True):
 
     # initialization
     _load_content_types(_TYPES_DIR)
-    _MANAGER = PluginManager()
 
+    _create_manager()
     # add plugins here in the form (path, base class, manager map)
     plugin_tuples =  ((_DISTRIBUTORS_DIR, Distributor, _MANAGER.distributors),
                       (_GROUP_DISTRIBUTORS_DIR, GroupDistributor, _MANAGER.group_distributors),
                       (_GROUP_IMPORTERS_DIR, GroupImporter, _MANAGER.group_importers),
                       (_IMPORTERS_DIR, Importer, _MANAGER.importers),
                       (_PROFILERS_DIR, Profiler, _MANAGER.profilers))
-
     for path, base_class, plugin_map in plugin_tuples:
         loading.load_plugins_from_path(path, base_class, plugin_map)
 
@@ -345,6 +344,9 @@ def _is_initialized():
     """
     return isinstance(_MANAGER, PluginManager)
 
+def _create_manager():
+    global _MANAGER
+    _MANAGER = PluginManager()
 
 def _load_content_types(types_dir):
     """
