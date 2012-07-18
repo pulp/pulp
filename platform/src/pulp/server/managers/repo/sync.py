@@ -28,8 +28,8 @@ import sys
 # Pulp
 from pulp.common import dateutils
 from pulp.server import constants as pulp_constants
-from pulp.plugins.new_loader import api as plugin_api
-from pulp.plugins.new_loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport

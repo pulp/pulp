@@ -22,7 +22,7 @@ import sys
 
 import pulp.plugins.conduits._common as conduit_common_utils
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
-from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.plugins.types.database as types_db
 from pulp.server.db.model.repository import RepoContentUnit

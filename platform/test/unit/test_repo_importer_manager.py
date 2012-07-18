@@ -17,7 +17,7 @@ import mock_plugins
 
 import mock
 
-from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import Repository
 from pulp.plugins.config import PluginCallConfiguration

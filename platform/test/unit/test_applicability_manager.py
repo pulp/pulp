@@ -15,7 +15,7 @@ import base
 import mock_plugins
 
 from mock import Mock
-from pulp.plugins.new_loader import api as plugins
+from pulp.plugins.loader import api as plugins
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.plugins.conduits.profiler import ProfilerConduit

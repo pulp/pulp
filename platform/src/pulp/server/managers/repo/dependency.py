@@ -16,8 +16,8 @@ import sys
 import pulp.plugins.conduits._common as conduit_common_utils
 from   pulp.plugins.conduits.dependency import DependencyResolutionConduit
 from   pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.new_loader import api as plugin_api
-from pulp.plugins.new_loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 import pulp.plugins.types.database as types_db
 from   pulp.server.exceptions import MissingResource, PulpExecutionException
 import pulp.server.managers.factory as manager_factory

@@ -18,7 +18,7 @@ Contains the manager class and exceptions for all repository related functionali
 import logging
 
 import pulp.plugins.types.database as types_database
-from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.loader import api as plugin_api
 
 # -- constants ----------------------------------------------------------------
 

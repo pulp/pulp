@@ -21,8 +21,8 @@ from pulp.plugins.profiler import Profiler
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.conduits.profiler import ProfilerConduit
-from pulp.plugins.new_loader import api as plugin_api
-from pulp.plugins.new_loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from logging import getLogger
 
 _LOG = getLogger(__name__)

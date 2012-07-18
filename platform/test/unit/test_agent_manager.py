@@ -15,7 +15,7 @@ import base
 import mock_plugins
 import mock_agent
 
-from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 import pulp.server.managers.factory as factory

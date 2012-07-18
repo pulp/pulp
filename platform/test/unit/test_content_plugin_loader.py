@@ -22,7 +22,7 @@ from pprint import pprint
 
 import base
 
-from pulp.plugins.new_loader import exceptions, loading, manager
+from pulp.plugins.loader import exceptions, loading, manager
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
 from pulp.plugins.profiler import Profiler

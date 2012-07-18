@@ -17,8 +17,8 @@ import sys
 import datetime
 
 from pulp.common import dateutils
-from pulp.plugins.new_loader import api as plugin_api
-from pulp.plugins.new_loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport

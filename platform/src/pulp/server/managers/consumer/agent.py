@@ -20,8 +20,8 @@ Contains agent management classes
 import sys
 from pulp.server.managers import factory as managers
 from pulp.server.managers.pluginwrapper import PluginWrapper
-from pulp.plugins.new_loader import api as plugin_api
-from pulp.plugins.new_loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import Consumer as ProfiledConsumer

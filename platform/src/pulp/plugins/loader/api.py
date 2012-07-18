@@ -17,9 +17,9 @@ from gettext import gettext as _
 
 from pulp.plugins.distributor import Distributor, GroupDistributor
 from pulp.plugins.importer import Importer, GroupImporter
-from pulp.plugins.new_loader import exceptions as loader_exceptions
-from pulp.plugins.new_loader import loading
-from pulp.plugins.new_loader.manager import PluginManager
+from pulp.plugins.loader import exceptions as loader_exceptions
+from pulp.plugins.loader import loading
+from pulp.plugins.loader.manager import PluginManager
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor

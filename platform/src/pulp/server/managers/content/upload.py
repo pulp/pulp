@@ -19,8 +19,8 @@ from uuid import uuid4
 import pulp.server.auth.principal as pulp_principal
 import pulp.server.constants as pulp_constants
 from   pulp.plugins.conduits.upload import UploadConduit
-from pulp.plugins.new_loader import api as plugin_api
-from pulp.plugins.new_loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from   pulp.plugins.config import PluginCallConfiguration
 from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
 import pulp.server.managers.factory as manager_factory

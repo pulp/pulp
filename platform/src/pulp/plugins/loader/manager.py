@@ -16,7 +16,7 @@ import logging
 from gettext import gettext as _
 from pprint import pformat
 
-from pulp.plugins.new_loader import exceptions as loader_exceptions
+from pulp.plugins.loader import exceptions as loader_exceptions
 
 
 _LOG = logging.getLogger(__name__)

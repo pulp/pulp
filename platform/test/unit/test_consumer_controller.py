@@ -24,6 +24,7 @@ import mock_agent
 import pulp.plugins.loader as plugin_loader
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.new_loader import api as plugin_api
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
