@@ -16,7 +16,7 @@ import logging
 from gettext import gettext as _
 from pprint import pformat
 
-from pulp.plugins.loader import exceptions as loader_exceptions
+from pulp.plugins.new_loader import exceptions as loader_exceptions
 
 
 _LOG = logging.getLogger(__name__)
@@ -83,6 +83,15 @@ class _PluginMap(object):
             raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
         # return a deepcopy of the config to avoid persisting external changes
         return self.plugins[id], copy.deepcopy(self.configs[id])
+
+    def get_plugins_by_type(self, type_):
+        """
+        @type type_: str
+        @rtype: list of tuples (cls, config)
+        @raise: L{exceptions.PluginNotFound}
+        """
+        ids = self.get_plugin_ids_by_type(type_)
+        return [(self.plugins[id], self.configs[id]) for id in ids]
 
     def get_plugin_ids_by_type(self, type_):
         """

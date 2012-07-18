@@ -22,7 +22,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from pulp.plugins.loader import exceptions as loader_exceptions
+from pulp.plugins.new_loader import exceptions as loader_exceptions
 
 # constants --------------------------------------------------------------------
 
