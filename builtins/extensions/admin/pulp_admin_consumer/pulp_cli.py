@@ -13,9 +13,12 @@
 
 import time
 from gettext import gettext as _
+
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
     PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client.extensions.search import SearchCommand
+from pulp.server.db.model.criteria import Criteria
 
 # -- framework hook -----------------------------------------------------------
 
@@ -71,7 +74,10 @@ class AdminConsumerSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the consumer information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
-        
+
+        # Search Command
+        self.add_command(SearchCommand(self.search))
+
         # Bind Command
         bind_command = PulpCliCommand('bind', 'binds a consumer to a repository distributor for consuming published content', self.bind)
         bind_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
@@ -149,7 +155,13 @@ class AdminConsumerSection(PulpCliSection):
         # manually based on the CLI flags.
         for c in consumer_list:
             self.prompt.render_document(c, filters=filters, order=order)
-            
+
+    def search(self, **kwargs):
+        criteria = Criteria.from_client_input(kwargs)
+        consumer_list = self.context.server.consumer_search.search(criteria)
+        for consumer in consumer_list:
+            self.prompt.render_document(consumer)
+
     def bind(self, **kwargs):
         id = kwargs['id']
         repo_id = kwargs['repo-id']

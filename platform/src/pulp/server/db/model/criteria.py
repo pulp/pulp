@@ -36,13 +36,28 @@ class Criteria(Model):
         assert isinstance(sort, (list, tuple, NoneType))
         assert isinstance(limit, (int, NoneType))
         assert isinstance(skip, (int, NoneType))
-        assert isinstance(fields, (list, NoneType))
+        assert isinstance(fields, (list, tuple, NoneType))
 
         self.filters = filters
         self.sort = sort
         self.limit = limit
         self.skip = skip
         self.fields = fields
+
+    def as_dict(self):
+        """
+        @return:    the Criteria as a dict, suitable for serialization by
+                    something like JSON, and compatible as input to the
+                    from_client_input method.
+        @rtype:     dict
+        """
+        return {
+            'filters' : self.filters,
+            'sort' : self.sort,
+            'limit' : self.limit,
+            'skip' : self.skip,
+            'fields' : self.fields
+        }
 
     @classmethod
     def from_client_input(cls, doc):

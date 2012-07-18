@@ -11,15 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import unittest
 
-class PulpAPI(object):
-    """
-    Base api class that allows an internal server object to be set at instantiation
-    @ivar server: L{PulpConnection} instance
-    """
-    def __init__(self, pulp_connection):
-        """
-        @type:   pulp_connection: pulp.bindings.server.PulpConnection
-        """
-        self.server = pulp_connection
+import mock
+
+from pulp.bindings.repository import RepositorySearchAPI
+
+class TestRepoSearchAPI(unittest.TestCase):
+    def test_path_defined(self):
+        api = RepositorySearchAPI(mock.MagicMock())
+        self.assertTrue(api.PATH is not None)
+        self.assertTrue(len(api.PATH) > 0)
 

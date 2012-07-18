@@ -139,6 +139,7 @@ def _initialize_logging(config, debug=False):
 def _create_bindings(config, logger, username, password):
     """
     @return: bindings with a fully configured Pulp connection
+    @rtype:  pulp.bindings.bindings.Bindings
     """
 
     # Extract all of the necessary values

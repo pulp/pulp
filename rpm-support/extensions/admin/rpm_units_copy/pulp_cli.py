@@ -100,7 +100,7 @@ class CopyCommand(PulpCliCommand):
             return
 
         if 'dry-run' in kwargs and kwargs['dry-run']:
-            matching_units = self.context.server.repo_search.search(from_repo, criteria).response_body
+            matching_units = self.context.server.repo_unit_search.search(from_repo, criteria).response_body
             matching_units_metadata = [u['metadata'] for u in matching_units]
 
             self.context.prompt.render_title(_('Matching Units'))

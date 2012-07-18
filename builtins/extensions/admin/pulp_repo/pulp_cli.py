@@ -11,8 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from okaara.cli import CommandUsage
+
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client.extensions.search import SearchCommand
+from pulp.server.db.model.criteria import Criteria
 
 # -- framework hook -----------------------------------------------------------
 
@@ -24,6 +28,10 @@ def initialize(context):
 class RepoSection(PulpCliSection):
 
     def __init__(self, context):
+        """
+        @param context:
+        @type  context: pulp.client.extensions.core.ClientContext
+        """
         PulpCliSection.__init__(self, 'repo', 'repository lifecycle (create, delete, configure, etc.) commands')
 
         self.context = context
@@ -60,6 +68,9 @@ class RepoSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--importers', 'if specified, importer configuration is displayed'))
         list_command.add_option(PulpCliFlag('--distributors', 'if specified, the list of distributors and their configuration is displayed'))
         self.add_command(list_command)
+
+        # Search Command
+        self.add_command(SearchCommand(self.search))
 
         # List Units Command
         units_command = PulpCliCommand('units', 'lists content units in the repository', self.units)
@@ -155,14 +166,21 @@ class RepoSection(PulpCliSection):
         for repo in repo_list:
             self.prompt.render_document(repo, filters=filters, order=order)
 
+    def search(self, **kwargs):
+        criteria = Criteria.from_client_input(kwargs)
+        repo_list = self.context.server.repo_search.search(criteria)
+        for repo in repo_list:
+            self.prompt.render_document(repo)
+
     def units(self, **kwargs):
         repo_id = kwargs['id']
         self.prompt.render_title('Units in Repository [%s]' % repo_id)
 
         query = {}
-        units = self.context.server.repo_search.search(repo_id, query)
+        units = self.context.server.repo_unit_search.search(repo_id, query)
 
-        def header_func(i) : return '-----------'
+        def header_func(i):
+            return '-----------'
         filters = ['unit_type_id', 'unit_id', 'owner_type', 'owner_id', 'created', 'updated', 'repo_id', 'metadata']
         order = filters
         self.prompt.render_document_list(units.response_body, header_func=header_func, filters=filters, order=order)

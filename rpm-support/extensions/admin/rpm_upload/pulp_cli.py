@@ -28,7 +28,9 @@ RPMTAG_NOSOURCE = 1051
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-
+    """
+    @type context:  pulp.client.extensions.core.ClientContext
+    """
     repo_section = context.cli.find_section('repo')
     uploads_section = repo_section.find_subsection('uploads')
 

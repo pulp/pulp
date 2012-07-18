@@ -11,15 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
-class PulpAPI(object):
+def positive_int_validator(x):
     """
-    Base api class that allows an internal server object to be set at instantiation
-    @ivar server: L{PulpConnection} instance
-    """
-    def __init__(self, pulp_connection):
-        """
-        @type:   pulp_connection: pulp.bindings.server.PulpConnection
-        """
-        self.server = pulp_connection
+    Validates that the input is a positive integer
 
+    @param x:   input value to be validated
+    @type  x:   int
+    """
+    if int(x) <= 0:
+        raise ValueError('value must be greater than 0')
