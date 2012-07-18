@@ -1,9 +1,9 @@
-%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.18
+Version:        1.0.22
 Release:        2%{?dist}
 Summary:        Python command line utilities
 
@@ -14,9 +14,9 @@ Source0:        http://jdob.fedorapeople.org/okaara-src/%{name}-%{version}.tar.g
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
+BuildRequires:  python-nose
 BuildRequires:  python-setuptools
 BuildRequires:  python2-devel
-Requires:       python >= 2.4
 
 %description
 Python library to facilitate the creation of command-line interfaces.
@@ -42,7 +42,15 @@ pushd src
 popd
 rm -f $RPM_BUILD_ROOT%{python_sitelib}/rhui*egg-info/requires.txt
 
-# -- clean -----------------------------------------------------------------------
+# -- check --------------------------------------------------------------------
+
+%check
+export PYTHONPATH=$RPM_BUILD_ROOT/%{python_sitelib}
+pushd test
+nosetests
+popd
+
+# -- clean --------------------------------------------------------------------
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -50,7 +58,6 @@ rm -rf $RPM_BUILD_ROOT
 # -- files --------------------------------------------------------------------
 
 %files
-%defattr(-,root,root,-)
 %{python_sitelib}/okaara/
 %{python_sitelib}/okaara*.egg-info
 %doc LICENSE
@@ -58,12 +65,36 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 1.0.18-2
-- Renamed dependency RPMs (jason.dobies@redhat.com)
+* Wed Jul 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.22-2
+- Upgraded okaara to 1.0.22 (jason.dobies@redhat.com)
 
-* Fri May 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.18-1
-- Removed old okaara spec file (jason.dobies@redhat.com)
-- Upgraded okaara to 1.0.18 (jason.dobies@redhat.com)
+* Wed Jul 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.22-1
+- converted to new-style classes so they are easier to subclass.
+  (mhrivnak@redhat.com)
+- Validate and parse functions are no longer applied to options for which the
+  user did not supply any input. (mhrivnak@redhat.com)
+ Added built in validate and parse functions on options
+  (jason.dobies@redhat.com)
+- Some refactoring to support subclasses better (jason.dobies@redhat.com)
+- Added color support (naturally) (jason.dobies@redhat.com)
+
+* Mon Jul 09 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.21-1
+- Make sure src is in the python path so tests can run
+  (jason.dobies@redhat.com)
+
+* Sun Jul 08 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.20-1
+- Removing the explicit python version requirement since it's not needed on
+  Fedora (might still be needed on RHEL5). (jason.dobies@redhat.com)
+- Added %check section and %files change for fedora packaging
+  (jason.dobies@redhat.com)
+
+* Wed May 23 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.19-1
+- Changed RPM macro to adhere to Fedora packaging standards
+  (jason.dobies@redhat.com)
+- Work on the shell user docs (jason.dobies@redhat.com)
+- Corrected incorrect docstrings (jason.dobies@redhat.com)
+- More advanced usage for CLIs (jason.dobies@redhat.com)
+- Significant work towards the CLI documentation (jason.dobies@redhat.com)
 
 * Fri May 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.18-1
 - Minor spec tweaks for Fedora packaging guidelines (jason.dobies@redhat.com)

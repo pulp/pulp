@@ -92,7 +92,6 @@ class RepoScratchPadMixin(object):
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
-
 class SingleRepoUnitsMixin(object):
 
     def __init__(self, repo_id, exception_class):
@@ -116,7 +115,6 @@ class SingleRepoUnitsMixin(object):
         """
         return do_get_repo_units(self.repo_id, criteria, self.exception_class)
 
-
 class MultipleRepoUnitsMixin(object):
 
     def __init__(self, exception_class):
@@ -138,7 +136,6 @@ class MultipleRepoUnitsMixin(object):
         @rtype:  list of L{AssociatedUnit}
         """
         return do_get_repo_units(repo_id, criteria, self.exception_class)
-
 
 class ImporterScratchPadMixin(object):
 
@@ -229,6 +226,51 @@ class DistributorScratchPadMixin(object):
             distributor_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
         except Exception, e:
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
+
+class RepoGroupDistributorScratchPadMixin(object):
+
+    def __init__(self, group_id, distributor_id):
+        self.group_id = group_id
+        self.distributor_id = distributor_id
+
+    def get_scratchpad(self):
+        """
+        Returns the value set in the scratchpad for this repository group. If no
+        value has been set, None is returned.
+
+        @return: value saved for the repository group and this distributor
+        @rtype:  object
+
+        @raises DistributorConduitException: wraps any exception that may occur
+                in the Pulp server
+        """
+        try:
+            distributor_manager = manager_factory.repo_group_distributor_manager()
+            value = distributor_manager.get_distributor_scratchpad(self.group_id, self.distributor_id)
+            return value
+        except Exception, e:
+            _LOG.exception('Error getting scratchpad for repository [%s]' % self.group_id)
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
+
+    def set_scratchpad(self, value):
+        """
+        Saves the given value to the scratchpad for this repository group. It
+        can later be retrieved in subsequent syncs through get_scratchpad. The
+        type for the given value is anything that can be stored in the database
+        (string, list, dict, etc.).
+
+        @param value: will overwrite the existing scratchpad
+        @type  value: object
+
+        @raises DistributorConduitException: wraps any exception that may occur
+                in the Pulp server
+        """
+        try:
+            distributor_manager = manager_factory.repo_distributor_manager()
+            distributor_manager.set_distributor_scratchpad(self.group_id, self.distributor_id, value)
+        except Exception, e:
+            _LOG.exception('Error setting scratchpad for repository [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
 class AddUnitMixin(object):

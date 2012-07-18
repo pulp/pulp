@@ -16,11 +16,12 @@ Contains the definitions for all classes related to the distributor's API for
 interacting with the Pulp server during a repo publish.
 """
 
-from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin, StatusMixin, SingleRepoUnitsMixin, PublishReportMixin
+from pulp.plugins.conduits.mixins import (DistributorConduitException, RepoScratchPadMixin,
+    DistributorScratchPadMixin, RepoGroupDistributorScratchPadMixin, StatusMixin,
+    SingleRepoUnitsMixin, MultipleRepoUnitsMixin, PublishReportMixin)
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
@@ -61,7 +62,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         self.distributor_id = distributor_id
 
     def __str__(self):
-        return _('RepoPublishConduit for repository [%(r)s]' % {'r' : self.repo_id})
+        return 'RepoPublishConduit for repository [%s]' % self.repo_id
 
     # -- public ---------------------------------------------------------------
 
@@ -80,4 +81,35 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
             return last
         except Exception, e:
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
+
+class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin, MultipleRepoUnitsMixin, PublishReportMixin):
+
+    def __init__(self, group_id, distributor_id):
+        RepoGroupDistributorScratchPadMixin.__init__(self, group_id, distributor_id)
+        StatusMixin.__init__(self, distributor_id, DistributorConduitException)
+        MultipleRepoUnitsMixin.__init__(self, DistributorConduitException)
+        PublishReportMixin.__init__(self)
+
+        self.group_id = group_id
+        self.distributor_id = distributor_id
+
+    def __str__(self):
+        return 'RepoGroupPublishConduit for group [%s]' % self.group_id
+
+    def last_publish(self):
+        """
+        Returns the timestamp of the last time this repository group was
+        publishe, regardless of the success or failure of the publish. If
+        the group was never published, this call returns None.
+
+        @return: timestamp describing the last publish
+        @rtype:  datetime
+        """
+        try:
+            manager = manager_factory.repo_group_publish_manager()
+            last = manager.last_publish(self.group_id, self.distributor_id)
+            return last
+        except Exception, e:
+            _LOG.exception('Error getting last publish time for group [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]

@@ -22,9 +22,9 @@ from pulp.server.managers import factory as manager_factory
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoGroupDistributorManager(base.PulpServerTests):
+class RepoGroupDistributorManagerTests(base.PulpServerTests):
     def setUp(self):
-        super(RepoGroupDistributorManager, self).setUp()
+        super(RepoGroupDistributorManagerTests, self).setUp()
         mock_plugins.install()
 
         self.group_manager = manager_factory.repo_group_manager()
@@ -34,11 +34,11 @@ class RepoGroupDistributorManager(base.PulpServerTests):
         self.group_manager.create_repo_group(self.group_id)
 
     def tearDown(self):
-        super(RepoGroupDistributorManager, self).tearDown()
+        super(RepoGroupDistributorManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
-        super(RepoGroupDistributorManager, self).clean()
+        super(RepoGroupDistributorManagerTests, self).clean()
 
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()

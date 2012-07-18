@@ -16,6 +16,7 @@ import mock_plugins
 
 from mock import Mock
 from pulp.plugins import loader as plugins
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import ApplicabilityReport
@@ -27,6 +28,9 @@ from pulp.server.exceptions import PulpExecutionException
 class ApplicabilityManagerTests(base.PulpServerTests):
 
     CONSUMER_IDS = ['test-1', 'test-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [{'id':1}]
+    CRITERIA = Criteria(filters=FILTER, sort=SORT)
     PROFILE = [1,2,3]
 
     def setUp(self):
@@ -65,7 +69,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
             {'type_id':'mock-type', 'unit_key':{'name':'def'}}
         ]
         manager = factory.consumer_applicability_manager()
-        applicability = manager.units_applicable(self.CONSUMER_IDS, units)
+        applicability = manager.units_applicable(self.CRITERIA, units)
         # verify
         self.assertEquals(len(applicability), 2)
         for id in self.CONSUMER_IDS:
@@ -108,7 +112,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         self.assertRaises(
             PulpExecutionException,
             manager.units_applicable,
-            self.CONSUMER_IDS,
+            self.CRITERIA,
             units)
 
     def test_profiler_notfound(self):
@@ -123,5 +127,5 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         self.assertRaises(
             PulpExecutionException,
             manager.units_applicable,
-            self.CONSUMER_IDS,
+            self.CRITERIA,
             units)
