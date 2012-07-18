@@ -21,6 +21,7 @@ import base
 import mock_plugins
 import mock_agent
 import pulp.plugins.loader as plugin_loader
+from pulp.plugins.model import ApplicabilityReport
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -452,3 +453,68 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(body['content_type'], self.TYPE_1)
         self.assertEqual(body['profile'], self.PROFILE_1)
+
+
+class TestApplicability(base.PulpWebserviceTests):
+
+    CONSUMER_IDS = ['test-1', 'test-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [('id','ascending')]
+    CRITERIA = dict(filters=FILTER, sort=SORT)
+    UNIT = {'type_id':'errata', 'unit_key':'security-patch'}
+    PROFILE = [1,2,3]
+    SUMMARY = 'mysummary'
+    DETAILS = 'mydetails'
+
+    def setUp(self):
+        base.PulpServerTests.setUp(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        plugin_loader._create_loader()
+        mock_plugins.install()
+        profiler = plugin_loader.get_profiler_by_type('errata')[0]
+        profiler.unit_applicable = \
+            mock.Mock(side_effect=lambda i,u,c,x:
+                ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
+
+    def tearDown(self):
+        base.PulpServerTests.tearDown(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate(self):
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        manager = factory.consumer_profile_manager()
+        for id in self.CONSUMER_IDS:
+            manager.create(id, 'rpm', self.PROFILE)
+
+    def test_applicability(self):
+        # Setup
+        self.populate()
+        # Test
+        path = '/v2/consumers/applicability/content/'
+        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        status, body = self.post(path, body)
+        self.assertEquals(status, 200)
+        self.assertEquals(len(body), 2)
+        for id in self.CONSUMER_IDS:
+            report = body[id]
+            self.assertEquals(report[0]['unit'], self.UNIT)
+            self.assertTrue(report[0]['applicable'])
+            self.assertEquals(report[0]['summary'], self.SUMMARY)
+            self.assertEquals(report[0]['details'], self.DETAILS)
+
+    def test_missing_values(self):
+        # Setup
+        self.populate()
+        # Test
+        path = '/v2/consumers/applicability/content/'
+        body = dict(criteria=self.CRITERIA)
+        status, body = self.post(path, body)
+        self.assertEquals(status, 400)
+        body = dict(units=[self.UNIT])
+        status, body = self.post(path, body)
+        self.assertEquals(status, 400)

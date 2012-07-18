@@ -64,7 +64,7 @@ class MockProfiler(mock.Mock):
 
     @classmethod
     def metadata(cls):
-        return {'types' : ['mock-type', 'type-1']}
+        return {'types' : ['mock-type', 'type-1', 'errata']}
 
 class MockRpmProfiler(mock.Mock):
 

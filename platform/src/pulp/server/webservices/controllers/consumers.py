@@ -23,6 +23,7 @@ from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.webservices import execution
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
@@ -30,6 +31,7 @@ from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+from pulp.server.exceptions import MissingValue
 
 # -- constants ----------------------------------------------------------------
 
@@ -618,12 +620,59 @@ class Profile(JSONController):
         return self.ok(execution.execute(call_request))
 
 
+class ContentApplicability(JSONController):
+    """
+    Determine content applicability.
+    """
+
+    #@auth_required(READ)
+    def POST(self):
+        """
+        Determine content applicability.
+        body {criteria:<dict>, units:[{type_id:<str>,unit_key:<str>}]}
+        @return: A dict of applicability reports keyed by consumer ID.
+            Each report is:
+                {unit:<{type_id:<str>,unit_key:<str>}>,
+                 applicable:<bool>,
+                 summary:<str>,
+                 details:<?>}
+        @return: dict
+        """
+        body = self.params()
+        try:
+            criteria = body['criteria']
+            units = body['units']
+        except KeyError, e:
+            raise MissingValue(str(e))
+        criteria = Criteria.from_client_input(criteria)
+        manager = managers.consumer_applicability_manager()
+        report = manager.units_applicable(criteria, units)
+        for k,v in report.items():
+            report[k] = [self.__rdict(r) for r in v]
+        return self.ok(report)
+
+    def __rdict(self, report):
+        """
+        Serialized report dict.
+        @param report: A applicability report object.
+        @type report: ApplicabilityReport
+        @return: A dictionary representation of the report.
+        @rtype: dict
+        """
+        return dict(
+            unit=report.unit,
+            applicable=report.applicable,
+            summary=report.summary,
+            details=report.details)
+
+
 # -- web.py application -------------------------------------------------------
 
 
 urls = (
     '/$', 'ConsumersCollection',
     '/search/$', 'ConsumerSearch', # resource search
+    '/applicability/content/$', 'ContentApplicability',
     '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
