@@ -71,13 +71,13 @@ class RepoGroupPublishManager(object):
         transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id, group_id)
 
         # TODO: Add events for group publish start/complete
-        self._do_publish(group, distributor_id, distributor_instance, conduit, call_config)
+        self._do_publish(transfer_group, distributor_id, distributor_instance, conduit, call_config)
 
     def _do_publish(self, group, distributor_id, distributor_instance, conduit, call_config):
 
         distributor_coll = RepoGroupDistributor.get_collection()
         publish_result_coll = RepoGroupPublishResult.get_collection()
-        group_id = group['id']
+        group_id = group.id
 
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
