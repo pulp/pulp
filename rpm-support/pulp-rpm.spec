@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.314
+Version: 0.0.315
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -231,6 +231,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Jul 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.315-1
+- version alignment.
+
 * Tue Jul 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.314-1
 - 840490 - Exception from 'link_errata_rpm_units': KeyError: 'sum'
   (jmatthews@redhat.com)
