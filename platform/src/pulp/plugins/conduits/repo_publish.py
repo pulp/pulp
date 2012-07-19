@@ -52,7 +52,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         @param distributor_id: identifies the distributor being published
         @type  distributor_id: str
         """
-        RepoScratchPadMixin.__init__(self, repo_id)
+        RepoScratchPadMixin.__init__(self, repo_id, DistributorConduitException)
         DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
         StatusMixin.__init__(self, distributor_id, DistributorConduitException, progress_report=base_progress_report)
         SingleRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)

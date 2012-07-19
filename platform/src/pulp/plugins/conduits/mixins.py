@@ -50,8 +50,9 @@ class ProfilerConduitException(Exception):
 
 class RepoScratchPadMixin(object):
 
-    def __init__(self, repo_id):
+    def __init__(self, repo_id, exception_class):
         self.repo_id = repo_id
+        self.exception_class = exception_class
 
     def get_repo_scratchpad(self):
         """
@@ -70,7 +71,7 @@ class RepoScratchPadMixin(object):
             return value
         except Exception, e:
             _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
+            raise self.exception_class(e), None, sys.exc_info()[2]
 
     def set_repo_scratchpad(self, value):
         """
@@ -90,7 +91,7 @@ class RepoScratchPadMixin(object):
             repo_manager.set_repo_scratchpad(self.repo_id, value)
         except Exception, e:
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
+            raise self.exception_class(e), None, sys.exc_info()[2]
 
 class SingleRepoUnitsMixin(object):
 
@@ -267,7 +268,7 @@ class RepoGroupDistributorScratchPadMixin(object):
                 in the Pulp server
         """
         try:
-            distributor_manager = manager_factory.repo_distributor_manager()
+            distributor_manager = manager_factory.repo_group_distributor_manager()
             distributor_manager.set_distributor_scratchpad(self.group_id, self.distributor_id, value)
         except Exception, e:
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.group_id)
@@ -312,11 +313,7 @@ class AddUnitMixin(object):
         self._added_count = 0
         self._updated_count = 0
 
-        self._association_owner_type = association_owner_type
         self._association_owner_id = association_owner_id
-
-    def __str__(self):
-        return _('UnitAddConduit for repository [%(r)s]') % {'r' : self.repo_id}
 
     def init_unit(self, type_id, unit_key, metadata, relative_path):
         """
@@ -350,7 +347,7 @@ class AddUnitMixin(object):
         @type  metadata: dict
 
         @param relative_path: see above; may be None
-        @type  relative_path: str
+        @type  relative_path: str, None
 
         @return: object representation of the unit, populated by Pulp with both
                  provided and derived values
@@ -405,7 +402,7 @@ class AddUnitMixin(object):
                 self._added_count += 1
 
             # Associate it with the repo
-            association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, self._association_owner_type, self._association_owner_id)
+            association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, self.association_owner_type, self.association_owner_id)
 
             return unit
         except Exception, e:

@@ -68,7 +68,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
     """
 
     def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
-        RepoScratchPadMixin.__init__(self, repo_id)
+        RepoScratchPadMixin.__init__(self, repo_id, ImporterConduitException)
         ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
         AddUnitMixin.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
         SingleRepoUnitsMixin.__init__(self, repo_id, ImporterConduitException)
