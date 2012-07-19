@@ -181,6 +181,13 @@ class ISODistributor(Distributor):
         self._export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["errata"]["state"] = "FINISHED"
 
+        # distro units
+        progress_status["distribution"]["state"] = "STARTED"
+        criteria = Criteria(type_ids=[DISTRO_TYPE_ID])
+        distro_units = publish_conduit.get_units(criteria)
+        self._export_distributions(distro_units, repo_working_dir, progress_callback=progress_callback)
+        progress_status["distribution"]["state"] = "FINISHED"
+
         # build iso
 #        repo_iso_working_dir = "%s/%s" % (repo.working_dir, "isos")
 #        try:
@@ -289,6 +296,75 @@ class ISODistributor(Distributor):
                         _LOG.info("Found matching rpm unit %s" % rpm_unit)
                         rpm_units.append(rpm_unit)
         return rpm_units
+
+    def _export_distributions(self, units, symlink_dir, progress_callback=None):
+        """
+        Export distriubution unit involves including files within the unit.
+        Distribution is an aggregate unit with distribution files. This call
+        looksup each distribution unit and symlinks the files from the storage location
+        to working directory.
+
+        @param units
+        @type AssociatedUnit
+
+        @param symlink_dir: path of where we want the symlink to reside
+        @type symlink_dir str
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+
+        @return tuple of status and list of error messages if any occurred
+        @rtype (bool, [str])
+        """
+        distro_progress_status = self.init_progress()
+        self.set_progress("distribution", distro_progress_status, progress_callback)
+        _LOG.info("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
+        errors = []
+        for u in units:
+            source_path_dir  = u.storage_path
+            if not u.metadata.has_key('files'):
+                msg = "No distribution files found for unit %s" % u
+                _LOG.error(msg)
+            distro_files =  u.metadata['files']
+            _LOG.info("Found %s distribution files to symlink" % len(distro_files))
+            distro_progress_status['items_total'] = len(distro_files)
+            distro_progress_status['items_left'] = len(distro_files)
+            for dfile in distro_files:
+                self.set_progress("distribution", distro_progress_status, progress_callback)
+                source_path = os.path.join(source_path_dir, dfile['relativepath'])
+                symlink_path = os.path.join(symlink_dir, dfile['relativepath'])
+                if not os.path.exists(source_path):
+                    msg = "Source path: %s is missing" % source_path
+                    errors.append((source_path, symlink_path, msg))
+                    distro_progress_status['num_error'] += 1
+                    distro_progress_status["items_left"] -= 1
+                    continue
+                try:
+                    if not util.create_symlink(source_path, symlink_path):
+                        msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
+                        _LOG.error(msg)
+                        errors.append((source_path, symlink_path, msg))
+                        distro_progress_status['num_error'] += 1
+                        distro_progress_status["items_left"] -= 1
+                        continue
+                    distro_progress_status['num_success'] += 1
+                except Exception, e:
+                    tb_info = traceback.format_exc()
+                    _LOG.error("%s" % tb_info)
+                    _LOG.critical(e)
+                    errors.append((source_path, symlink_path, str(e)))
+                    distro_progress_status['num_error'] += 1
+                    distro_progress_status["items_left"] -= 1
+                    continue
+                distro_progress_status["items_left"] -= 1
+        if errors:
+            distro_progress_status["error_details"] = errors
+            distro_progress_status["state"] = "FAILED"
+            self.set_progress("distribution", distro_progress_status, progress_callback)
+            return False, errors
+        distro_progress_status["state"] = "FINISHED"
+        self.set_progress("distribution", distro_progress_status, progress_callback)
+        return True, []
 
 def form_lookup_key(rpm):
     rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm['release'], rpm["arch"], rpm["checksumtype"], rpm["checksum"])

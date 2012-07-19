@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 from iso_distributor.distributor import ISODistributor, ISO_DISTRIBUTOR_TYPE_ID,\
     RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, DISTRO_TYPE_ID, PKG_CATEGORY_TYPE_ID, PKG_GROUP_TYPE_ID
 from yum_importer import importer_rpm
-from yum_importer import errata
+from yum_importer import errata, distribution
 from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp_rpm.yum_plugin import util
@@ -52,6 +52,9 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         #pkg_dir is where we simulate units actually residing
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         os.makedirs(self.pkg_dir)
+        #distro_dir is where we simulate units actually residing
+        self.distro_dir = os.path.join(self.temp_dir, "distribution")
+        os.makedirs(self.distro_dir)
         #publish_dir simulates /var/lib/pulp/published
         self.http_publish_dir = os.path.join(self.temp_dir, "publish", "http")
         os.makedirs(self.http_publish_dir)
@@ -189,3 +192,54 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         ftypes = util.get_repomd_filetypes("%s/%s" % (symlink_dir, "repodata/repomd.xml"))
         print ftypes
         self.assertTrue("updateinfo" in ftypes)
+
+    def test_distribution_exports(self):
+        feed_url = "file://%s/pulp_unittest/" % self.data_dir
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "pulp_unittest"
+        repo.checksumtype = 'sha'
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        dunit_key = {}
+        dunit_key['id'] = "ks-TestFamily-TestVariant-16-x86_64"
+        dunit_key['version'] = "16"
+        dunit_key['arch'] = "x86_64"
+        dunit_key['family'] = "TestFamily"
+        dunit_key['variant'] = "TestVariant"
+        metadata = { "files" : [{"checksumtype" : "sha256", 	"relativepath" : "images/fileA.txt", 	"fileName" : "fileA.txt",
+                    "downloadurl" : "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest//images/fileA.txt",
+                    "item_type" : "tree_file",
+                    "savepath" : "%s/testr1/images" % self.repo_working_dir,
+                    "checksum" : "22603a94360ee24b7034c74fa13d70dd122aa8c4be2010fc1361e1e6b0b410ab",
+                    "filename" : "fileA.txt",
+                    "pkgpath" : "%s/ks-TestFamily-TestVariant-16-x86_64/images" % self.pkg_dir,
+                    "size" : 0 },
+                { 	"checksumtype" : "sha256", 	"relativepath" : "images/fileB.txt", 	"fileName" : "fileB.txt",
+                    "downloadurl" : "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest//images/fileB.txt",
+                    "item_type" : "tree_file",
+                    "savepath" : "%s/testr1/images" % self.repo_working_dir,
+                    "checksum" : "8dc89e9883c098443f6616e60a8e489254bf239eeade6e4b4943b7c8c0c345a4",
+                    "filename" : "fileB.txt",
+                    "pkgpath" : "%s/ks-TestFamily-TestVariant-16-x86_64/images" % self.pkg_dir, 	"size" : 0 },
+                { 	"checksumtype" : "sha256", 	"relativepath" : "images/fileC.iso", 	"fileName" : "fileC.iso",
+                    "downloadurl" : "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest//images/fileC.iso",
+                    "item_type" : "tree_file",
+                    "savepath" : "%s/testr1/images" % self.repo_working_dir,
+                    "checksum" : "099f2bafd533e97dcfee778bc24138c40f114323785ac1987a0db66e07086f74",
+                    "filename" : "fileC.iso",
+                    "pkgpath" : "%s/ks-TestFamily-TestVariant-16-x86_64/images" % self.pkg_dir, 	"size" : 0 } ],}
+        distro_unit = Unit(distribution.DISTRO_TYPE_ID, dunit_key, metadata, '')
+        distro_unit.storage_path = "%s/ks-TestFamily-TestVariant-16-x86_64" % self.pkg_dir
+        symlink_dir = "%s/%s" % (self.repo_working_dir, repo.id)
+        iso_distributor = ISODistributor()
+        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=[distro_unit], pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
+        status, errors = iso_distributor._export_distributions([distro_unit], symlink_dir)
+        print status, errors
+        self.assertTrue(status)
+        for file in metadata['files']:
+            print os.path.islink("%s/%s" % (symlink_dir, file['relativepath']))
+            self.assertTrue(os.path.islink("%s/%s" % (symlink_dir, file['relativepath'])))
