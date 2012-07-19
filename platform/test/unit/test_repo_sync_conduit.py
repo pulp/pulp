@@ -69,78 +69,6 @@ class RepoSyncConduitTests(base.PulpServerTests):
         """
         str(self.conduit)
 
-    def test_init_save_units(self):
-        """
-        Tests using the init and save methods to add and associate content to a repository.
-        """
-
-        # Test - init_unit
-        unit_1_key = {'key-1' : 'unit_1'}
-        unit_1_metadata = {'meta_1' : 'value_1'}
-        unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, '/foo/bar')
-
-        #   Verify that the returned unit is populated with the correct data
-        self.assertTrue(unit_1 is not None)
-        self.assertEqual(unit_1.unit_key, unit_1_key)
-        self.assertEqual(unit_1.type_id, TYPE_1_DEF.id)
-        self.assertEqual(unit_1.metadata, unit_1_metadata)
-        self.assertTrue(unit_1.id is None)
-        self.assertTrue(unit_1.storage_path is not None)
-        self.assertTrue('/foo/bar' in unit_1.storage_path)
-
-        # Test - save_unit
-        unit_1 = self.conduit.save_unit(unit_1)
-
-        #   Verify the returned unit
-        self.assertTrue(unit_1 is not None)
-        self.assertTrue(unit_1.id is not None)
-
-        #   Verify the unit exists in the database
-        db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
-        self.assertTrue(db_unit is not None)
-
-        #   Verify the repo association exists
-        associated_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
-        self.assertEqual(1, len(associated_units))
-
-    def test_init_no_relative_path(self):
-        """
-        Makes sure passing a none relative path doesn't error.
-        """
-
-        # Test
-        unit_1_key = {'key-1' : 'unit_1'}
-        unit_1_metadata = {'meta_1' : 'value_1'}
-        unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, None)
-
-        # Verify
-        self.assertTrue(unit_1.storage_path is None)
-
-    def test_update_unit(self):
-        """
-        Tests saving a unit that already exists.
-        """
-
-        # Setup
-        unit_1_key = {'key-1' : 'unit_1'}
-        unit_1_metadata = {'meta_1' : 'value_1'}
-        unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, '/foo/bar')
-        self.conduit.save_unit(unit_1)
-
-        # Test
-        unit_1_new_metadata = {'meta_1' : 'value_2', 'meta_2' : 'value_2'}
-        unit_1_updated = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_new_metadata, '/foo/bar')
-        self.conduit.save_unit(unit_1_updated)
-
-        # Verify database metadata
-        db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
-        self.assertTrue(db_unit is not None)
-        self.assertEqual('value_2', db_unit['meta_1'])
-
-        # Verify only one repo association
-        associated_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
-        self.assertEqual(1, len(associated_units))
-
     def test_get_remove_unit(self):
         """
         Tests retrieving units through the conduit and removing them.
@@ -170,58 +98,6 @@ class RepoSyncConduitTests(base.PulpServerTests):
         #   Verify the unit itself is still in the database
         db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
         self.assertTrue(db_unit is not None)
-
-    def test_link_unit(self):
-        """
-        Tests creating a unit reference.
-        """
-
-        # Setup
-        unit_1_key = {'key-1' : 'unit_1'}
-        unit_1_metadata = {'meta_1' : 'value_1'}
-        unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, '/foo/bar')
-        unit_1 = self.conduit.save_unit(unit_1)
-
-        unit_2_key = {'key-2a' : 'unit_2', 'key-2b' : 'unit_2'}
-        unit_2_metadata = {}
-        unit_2 = self.conduit.init_unit(TYPE_2_DEF.id, unit_2_key, unit_2_metadata, '/foo/bar')
-        unit_2 = self.conduit.save_unit(unit_2)
-
-        # Test
-        self.conduit.link_unit(unit_2, unit_1)
-
-        # Verify
-        parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, unit_2.id)
-        self.assertTrue('_type_1_references' in parent)
-        self.assertTrue(unit_1.id in parent['_type_1_references'])
-
-    def test_link_unit_bidirectional(self):
-        """
-        Tests creating a bidirectional unit reference.
-        """
-
-        # Setup
-        unit_1_key = {'key-1' : 'unit_1'}
-        unit_1_metadata = {'meta_1' : 'value_1'}
-        unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, '/foo/bar')
-        unit_1 = self.conduit.save_unit(unit_1)
-
-        unit_2_key = {'key-2a' : 'unit_2', 'key-2b' : 'unit_2'}
-        unit_2_metadata = {}
-        unit_2 = self.conduit.init_unit(TYPE_2_DEF.id, unit_2_key, unit_2_metadata, '/foo/bar')
-        unit_2 = self.conduit.save_unit(unit_2)
-
-        # Test
-        self.conduit.link_unit(unit_2, unit_1, bidirectional=True)
-
-        # Verify
-        parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, unit_2.id)
-        self.assertTrue('_type_1_references' in parent)
-        self.assertTrue(unit_1.id in parent['_type_1_references'])
-
-        parent = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
-        self.assertTrue('_type_2_references' in parent)
-        self.assertTrue(unit_2.id in parent['_type_2_references'])
 
     def test_build_reports(self):
         """
@@ -260,39 +136,6 @@ class RepoSyncConduitTests(base.PulpServerTests):
             self.assertEqual('summary', r.summary)
             self.assertEqual('details', r.details)
 
-    # -- error tests ----------------------------------------------------------
-
-    # The following tests make sure error conditions are always wrapped in a
-    # RepoSyncConduitException
-
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
-    def test_get_units_with_error(self, mock_get_method):
-        # Setup
-        mock_get_method.side_effect = Exception()
-
-        # Test
-        try:
-            self.conduit.get_units()
-            self.fail('Exception expected')
-        except ImporterConduitException, e:
-            print(e) # for coverage
-
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
-    def test_init_unit_with_error(self, mock_request_method):
-        # Setup
-        mock_request_method.side_effect = Exception()
-
-        # Test
-        self.assertRaises(ImporterConduitException, self.conduit.init_unit, 't', {}, {}, 'p')
-
-    def test_save_unit_with_error(self):
-        # Setup
-        self.conduit._content_query_manager = mock.Mock()
-        self.conduit._content_query_manager.request_content_unit_file_path.side_effect = Exception()
-
-        # Test
-        self.assertRaises(ImporterConduitException, self.conduit.save_unit, None)
-
     def test_remove_unit_with_error(self):
         # Setup
         self.conduit._association_manager = mock.Mock()
@@ -300,11 +143,3 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
         # Test
         self.assertRaises(ImporterConduitException, self.conduit.remove_unit, None)
-
-    def test_link_unit_with_error(self):
-        # Setup
-        self.conduit._content_manager = mock.Mock()
-        self.conduit._content_manager.link_referenced_content_units.side_effect = Exception()
-
-        # Test
-        self.assertRaises(ImporterConduitException, self.conduit.link_unit, None, None)
