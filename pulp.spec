@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        23%{?dist}
+Release:        24%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -499,6 +499,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jul 19 2012 Wes Hayutin <whayutin@redhat.com> 0.0.263-24
+- bz 798281 add status call to service pulp-cds (whayutin@redhat.com)
+
 * Tue Jul 17 2012 James Slagle <jslagle@redhat.com> 0.0.263-23
 - 840979 Use .startswith instead of .find to match a requested repo url against
   one in the pulp protected repos file (jslagle@redhat.com)
