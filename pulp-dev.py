@@ -17,6 +17,9 @@ import os
 import shutil
 import sys
 
+WARNING_COLOR = '\033[31m'
+WARNING_RESET = '\033[0m'
+
 DIRS = (
     '/etc',
     '/etc/bash_completion.d',
@@ -169,6 +172,8 @@ def parse_cmdline():
 
     return (opts, args)
 
+def warning(msg):
+    print "%s%s%s" % (WARNING_COLOR, msg, WARNING_RESET)
 
 def debug(opts, msg):
     if not opts.debug:
@@ -178,10 +183,10 @@ def debug(opts, msg):
 
 def create_dirs(opts):
     for d in DIRS:
-        debug(opts, 'creating directory: %s' % d)
         if os.path.exists(d) and os.path.isdir(d):
-            debug(opts, '%s exists, skipping' % d)
+            debug(opts, 'skipping %s exists' % d)
             continue
+        debug(opts, 'creating directory: %s' % d)
         os.makedirs(d, 0777)
 
 
@@ -199,22 +204,16 @@ def getlinks():
 
 
 def install(opts):
+    warnings = []
     create_dirs(opts)
     currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
-        debug(opts, 'creating link: %s' % dst)
-        target = os.path.join(currdir, src)
-        try:
-            os.symlink(target, dst)
-        except OSError, e:
-            if e.errno != 17:
-                raise
-            debug(opts, '%s exists, skipping' % dst)
-            continue
+        warning_msg = create_link(opts, os.path.join(currdir,src), dst)
+        if warning_msg:
+            warnings.append(warning_msg)
 
     # Link between pulp and apache
-    if not os.path.exists('/var/www/pub'):
-        os.symlink('/var/lib/pulp/published', '/var/www/pub')
+    create_link(opts, '/var/lib/pulp/published', '/var/www/pub')
 
     # Grant apache write access to the pulp tools log file and pulp
     # packages dir
@@ -229,6 +228,10 @@ def install(opts):
     # Update for certs
     os.system('chown -R apache:apache /etc/pki/pulp')
 
+    if warnings:
+        print "\n***\nPossible problems:  Please read below\n***"
+        for w in warnings:
+            warning(w)
     return os.EX_OK
 
 
@@ -249,6 +252,38 @@ def uninstall(opts):
         os.unlink('/var/www/html/pub')
 
     return os.EX_OK
+
+
+def create_link(opts, src, dst):
+    if not os.path.lexists(dst):
+        return _create_link(opts, src, dst)
+
+    if not os.path.islink(dst):
+        return "[%s] is not a symbolic link as we expected, please adjust if this is not what you intended." % (dst)
+
+    if not os.path.exists(os.readlink(dst)):
+        warning('BROKEN LINK: [%s] attempting to delete and fix it to point to %s.' % (dst, src))
+        try:
+            os.unlink(dst)
+            return _create_link(opts, src, dst)
+        except:
+            msg = "[%s] was a broken symlink, failed to delete and relink to [%s], please fix this manually" % (dst, src)
+            return msg
+
+    debug(opts, 'verifying link: %s points to %s' % (dst, src))
+    dst_stat = os.stat(dst)
+    src_stat = os.stat(src)
+    if dst_stat.st_ino != src_stat.st_ino:
+        msg = "[%s] is pointing to [%s] which is different than the intended target [%s]" % (dst, os.readlink(dst), src)
+        return msg
+
+def _create_link(opts, src, dst):
+        debug(opts, 'creating link: %s pointing to %s' % (dst, src))
+        try:
+            os.symlink(src, dst)
+        except OSError, e:
+            msg = "Unable to create symlink for [%s] pointing to [%s], received error: <%s>" % (dst, src, e)
+            return msg
 
 # -----------------------------------------------------------------------------
 
