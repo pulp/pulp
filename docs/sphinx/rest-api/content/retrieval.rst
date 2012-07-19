@@ -1,8 +1,8 @@
 Retrieval
 =========
 
-Search For Units
---------------------------------
+Search for Units
+----------------
 
 Please see :ref:`search-api` for more details on how to perform these searches.
 
