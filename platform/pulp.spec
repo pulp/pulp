@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.314
-Release: 2%{?dist}
+Version: 0.0.315
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -420,6 +420,8 @@ exit 0
 %endif
 
 %changelog
+* Thu Jul 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.315-1
+- version alignment.
 * Wed Jul 18 2012 Jeff Ortel <jortel@redhat.com> 0.0.314-2
 - 841208 - pulp-consumer RPM doesn't create needed directory:
   /etc/pki/pulp/consumer (jmatthews@redhat.com)
