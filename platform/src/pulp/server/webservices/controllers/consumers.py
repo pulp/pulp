@@ -672,7 +672,6 @@ class ContentApplicability(JSONController):
 urls = (
     '/$', 'ConsumersCollection',
     '/search/$', 'ConsumerSearch', # resource search
-    '/applicability/content/$', 'ContentApplicability',
     '/([^/]+)/$', 'ConsumerResource',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
@@ -680,6 +679,7 @@ urls = (
     '/([^/]+)/profiles/$', 'Profiles',
     '/([^/]+)/profiles/([^/]+)/$', 'Profile',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
+    '/actions/content/applicability/$', 'ContentApplicability',
     '/([^/]+)/history/$', 'ConsumerHistory',  
 )
 

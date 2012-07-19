@@ -466,6 +466,8 @@ class TestApplicability(base.PulpWebserviceTests):
     SUMMARY = 'mysummary'
     DETAILS = 'mydetails'
 
+    PATH = '/v2/consumers/actions/content/applicability/'
+
     def setUp(self):
         base.PulpServerTests.setUp(self)
         Consumer.get_collection().remove()
@@ -495,9 +497,8 @@ class TestApplicability(base.PulpWebserviceTests):
         # Setup
         self.populate()
         # Test
-        path = '/v2/consumers/applicability/content/'
         body = dict(criteria=self.CRITERIA, units=[self.UNIT])
-        status, body = self.post(path, body)
+        status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
         self.assertEquals(len(body), 2)
         for id in self.CONSUMER_IDS:
@@ -511,10 +512,16 @@ class TestApplicability(base.PulpWebserviceTests):
         # Setup
         self.populate()
         # Test
-        path = '/v2/consumers/applicability/content/'
         body = dict(criteria=self.CRITERIA)
-        status, body = self.post(path, body)
+        status, body = self.post(self.PATH, body)
         self.assertEquals(status, 400)
         body = dict(units=[self.UNIT])
-        status, body = self.post(path, body)
+        status, body = self.post(self.PATH, body)
         self.assertEquals(status, 400)
+
+    def test_no_consumers(self):
+        # Test
+        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        status, body = self.post(self.PATH, body)
+        self.assertEquals(status, 200)
+        self.assertEquals(len(body), 0)
