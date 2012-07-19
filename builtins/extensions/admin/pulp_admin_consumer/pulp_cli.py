@@ -57,7 +57,7 @@ class AdminConsumerSection(PulpCliSection):
         update_command.add_option(id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
-        d =  'adds/updates/deletes notes to programmtically identify the consumer; '
+        d =  'adds/updates/deletes notes to programmatically identify the consumer; '
         d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
         d += 'be changed by specifying this option multiple times; notes are deleted by '
         d += 'specifying "" as the value'

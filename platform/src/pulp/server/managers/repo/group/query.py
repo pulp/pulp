@@ -72,3 +72,18 @@ class RepoGroupQueryManager(object):
             dists.append(gd)
 
         return groups_by_id.values()
+
+    @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Return a list of repository groups that match the provided criteria.
+
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of repo group instances
+        @rtype:     list
+        """
+        return RepoGroup.get_collection().query(criteria)
+

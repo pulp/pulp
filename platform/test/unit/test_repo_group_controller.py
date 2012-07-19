@@ -11,10 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
+
 import dummy_plugins
 import base
 import mock_plugins
-
+from pulp.server.db.model import criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor, RepoGroupPublishResult
 from pulp.server.managers import factory as manager_factory
@@ -431,3 +433,45 @@ class PublishActionTests(base.PulpWebserviceTests):
         # Can't verify the status code due to the unit test framework
 #        self.assertEqual(200, status)
 #        self.assertEqual(1, dummy_plugins.DUMMY_GROUP_DISTRIBUTOR.call_count)
+
+class RepoGroupSearchTests(base.PulpWebserviceTests):
+    @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_post(self, mock_query, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        ret = self.post('/v2/repo_groups/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+        self.assertEqual(mock_params.call_count, 1)
+
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_get(self, mock_query):
+        ret = self.get('/v2/repo_groups/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+
+    @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
+    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query',
+        return_value=[{'id':'rg1'}])
+    def test_post_serialization(self, mock_query, mock_child_link, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        status, body = self.post('/v2/repo_groups/search/')
+        self.assertEqual(status, 200)
+        mock_child_link.assert_called_once_with('rg1')
+
+    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query',
+        return_value=[{'id':'rg1'}])
+    def test_get_serialization(self, mock_query, mock_child_link):
+        status, body = self.get('/v2/repo_groups/search/')
+        self.assertEqual(status, 200)
+        mock_child_link.assert_called_once_with('rg1')
