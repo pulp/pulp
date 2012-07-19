@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.315
+Version: 0.0.316
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -91,6 +91,9 @@ client capabilites.
 
 
 %changelog
+* Thu Jul 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.316-1
+- version alignment.
+
 * Thu Jul 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.315-1
 - 841584 - Temporarily turn the generic bind extension into RPM
   (jason.dobies@redhat.com)
