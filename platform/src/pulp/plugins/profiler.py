@@ -155,7 +155,7 @@ class Profiler(object):
 
     def unit_applicable(self, consumer, unit, config, conduit):
         """
-        Determine whether the a content unit is applicable to
+        Determine whether the content unit is applicable to
         the specified consumer.  The definition of "applicable" is content
         type specific and up to the descision of the profiler.
 
