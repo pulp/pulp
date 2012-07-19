@@ -1,5 +1,5 @@
-Creation and Configuration
-==========================
+Creation, Delete, and Configuration
+===================================
 
 Create a Repository
 -------------------
@@ -241,3 +241,20 @@ The details of the added distributor are returned from the call.
   },
   "id": "dist_1"
  }
+
+Delete a Repository
+-------------------
+
+When a repository is deleted, it is removed from the database and its local
+working directory is deleted. The content within the repository, however,
+is not deleted. Deleting content is handled through the
+:doc:`orphaned unit <../content/orphan>` process.
+
+| :method:`delete`
+| :path:`/v2/repositories/<repo_id>/`
+| :permission:`delete`
+| :response_list:`_`
+
+* :response_code:`202,if the request was accepted by the server to delete when the repository is available`
+
+| :return:`call report representing the current state of the delete`

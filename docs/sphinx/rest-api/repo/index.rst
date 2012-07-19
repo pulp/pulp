@@ -4,7 +4,7 @@ Repository APIs
 .. toctree::
    :maxdepth: 3
 
-   create-and-configure
+   cud
    retrieval
    sync
    publish
