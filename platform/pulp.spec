@@ -205,19 +205,19 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%config(noreplace) %{_sysconfdir}/pki/%{name}
 %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
 %dir %{_var}/log/%{name}
-/srv/%{name}/webservices.wsgi
+%{_sysconfdir}/pki/%{name}/
 %{_var}/lib/%{name}/
-%{_usr}/lib/pulp/plugins/distributors
-%{_usr}/lib/pulp/plugins/importers
-%{_usr}/lib/pulp/plugins/profilers
-%{_usr}/lib/pulp/plugins/types
+%{_usr}/lib/%{name}/plugins/distributors
+%{_usr}/lib/%{name}/plugins/importers
+%{_usr}/lib/%{name}/plugins/profilers
+%{_usr}/lib/%{name}/plugins/types
+/srv/%{name}/webservices.wsgi
 %doc
 
 
