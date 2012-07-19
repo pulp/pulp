@@ -24,6 +24,11 @@ Glossary
     necessarily correspond to a file. It is possible that a content unit is
     defined as the aggregation of other content units as a grouping mechanism.
 
+  unit profile
+    A list of :term:`content unit` installed on a :term:`consumer`.  The
+    structure and content of each item in the profile varies based on the
+    unit type.
+
   distributor
     Server-side plugin that takes content from a repository and publishes it
     for consumption. The process by which a distributor publishes content varies

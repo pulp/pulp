@@ -9,3 +9,4 @@ Consumer APIs
    retrieval
    content
    history
+   profile

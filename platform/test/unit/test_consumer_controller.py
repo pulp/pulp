@@ -18,6 +18,7 @@ import unittest
 import mock
 
 import base
+import logging
 import mock_plugins
 import mock_agent
 import pulp.plugins.loader as plugin_loader
@@ -344,6 +345,7 @@ class TestProfiles(base.PulpWebserviceTests):
     PROFILE_2 = {'name':'ksh', 'version':'2.0', 'arch':'x86_64'}
 
     def setUp(self):
+        self.logger = logging.getLogger('pulp')
         base.PulpWebserviceTests.setUp(self)
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
@@ -469,7 +471,7 @@ class TestApplicability(base.PulpWebserviceTests):
     PATH = '/v2/consumers/actions/content/applicability/'
 
     def setUp(self):
-        base.PulpServerTests.setUp(self)
+        base.PulpWebserviceTests.setUp(self)
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         plugin_loader._create_loader()
@@ -480,7 +482,7 @@ class TestApplicability(base.PulpWebserviceTests):
                 ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
 
     def tearDown(self):
-        base.PulpServerTests.tearDown(self)
+        base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         mock_plugins.reset()

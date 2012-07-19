@@ -258,6 +258,8 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         if serialize_json:
             params = json.dumps(params)
 
+        print 'REST PARAMS: %s' % params
+
         # Invoke the API
         f = getattr(PulpWebserviceTests.TEST_APP, request_type)
         response = f('http://localhost' + uri, params=params, headers=headers, expect_errors=True)
@@ -266,6 +268,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         status = response.status
         try:
             body = json.loads(response.body)
+            print '[%d] REST BODY: %s' % (status, response.body)
         except ValueError:
             body = None
 
