@@ -10,3 +10,4 @@ Consumer APIs
    content
    history
    profile
+   applicability

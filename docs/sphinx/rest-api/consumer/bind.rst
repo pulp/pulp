@@ -17,7 +17,7 @@ for the purpose of consuming published content.
 
 | :response_list:`_`
 
-* :response_code:`200,if the bind was successfully created`
+* :response_code:`201,if the bind was successfully created`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 

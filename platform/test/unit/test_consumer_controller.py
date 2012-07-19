@@ -463,7 +463,7 @@ class TestApplicability(base.PulpWebserviceTests):
     FILTER = {'id':{'$in':CONSUMER_IDS}}
     SORT = [('id','ascending')]
     CRITERIA = dict(filters=FILTER, sort=SORT)
-    UNIT = {'type_id':'errata', 'unit_key':'security-patch'}
+    UNIT = {'type_id':'errata', 'unit_key':{'name':'security-patch_123'}}
     PROFILE = [1,2,3]
     SUMMARY = 'mysummary'
     DETAILS = 'mydetails'
