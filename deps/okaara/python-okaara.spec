@@ -3,8 +3,8 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.22
-Release:        2%{?dist}
+Version:        1.0.23
+Release:        1%{?dist}
 Summary:        Python command line utilities
 
 Group:          Development/Tools
@@ -65,8 +65,8 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Wed Jul 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.22-2
-- Upgraded okaara to 1.0.22 (jason.dobies@redhat.com)
+* Thu Jul 19 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.23-1
+- Added ability to remove a command from the root CLI (jason.dobies@redhat.com)
 
 * Wed Jul 18 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.22-1
 - converted to new-style classes so they are easier to subclass.
