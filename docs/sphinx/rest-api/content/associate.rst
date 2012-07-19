@@ -2,7 +2,7 @@ Copying Units Between Repositories
 ==================================
 
 Pulp provides the ability to copy units between repositories. Units to copy
-are specified through a :ref:`criteria <search_criteria>` applied to a
+are specified through a :ref:`unit association criteria <unit_association_criteria>` applied to a
 source repository, where only the ``filters`` field applies. All matching units
 are imported into the destination repository.
 

@@ -39,15 +39,58 @@ results.
 Example search criteria::
 
  {
-  "criteria": {"filters": {"id": {"$in": ["fee", "fie", "foe", "foo"]},
-                           "group": {"$regex": ".*-dev"}},
-               "sort": [["id", "ascending"], ["timestamp", "descending"]],
-               "limit": 100,
-               "skip": 0,
-               "fields": ["id", "group", "description", "timestamp"]}
+  "criteria": {
+    "filters": {"id": {"$in": ["fee", "fie", "foe", "foo"]}, "group": {"$regex": ".*-dev"}},
+    "sort": [["id", "ascending"], ["timestamp", "descending"]],
+    "limit": 100,
+    "skip": 0,
+    "fields": ["id", "group", "description", "timestamp"]}
  }
 
-.. _search-api:
+.. _unit_association_criteria:
+
+Unit Association Criteria
+-------------------------
+
+The criteria when dealing with units in a repository is slightly different
+from the standard model. The metadata about the unit itself is split apart from
+the metadata about when and how it was associated to the repository. This split
+occurs in the filters, sort, and fields sections.
+
+The valid fields that may be used in the association sections are as follows:
+
+* ``created`` - Timestamp in iso8601 format indicating when the unit was *first*
+  associated with the repository.
+* ``updated`` - Timestamp in iso8601 format indicating when the unit was
+  most recently confirmed to be in the repository.
+* ``owner_type`` - Indicates where the association between the unit and
+  the repository was created. Valid values are ``importer`` and ``user``.
+* ``owner_id`` - Indicates specifically who created the association. This will
+  be the importer ID if added by an importer or the user login if added by
+  a user.
+
+Example unit association criteria::
+
+  {
+    'type_ids' : ['rpm'],
+    'filters' : {
+      'unit' : <mongo spec syntax>,
+      'association' : <mongo spec syntax>
+    },
+    'sort' : {
+      'unit' : [ ['name', 'ascending'], ['version', 'descending'] ],
+      'association' : [ ['created', 'descending'] ]
+    },
+    'limit' : 100,
+    'skip' : 200,
+    'fields' : {
+      'unit' : ['name', 'version', 'arch'],
+      'association' : ['created']
+    },
+    'remove_duplicates' : True
+  }
+
+.. _search_api:
 
 Search API
 ----------
