@@ -37,23 +37,25 @@ from pulp.server import logs
 from pulp.server.db import connection as db_connection
 
 # We need to read the config, start the logging, and initialize the db
-#connection prior to any other imports, since some of the imports will invoke
+# connection prior to any other imports, since some of the imports will invoke
 # setup methods
 logs.start_logging()
 db_connection.initialize()
 
 from pulp.server.agent.direct.services import Services as AgentServices
-from pulp.plugins import loader as plugin_loader
+
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    agent, consumers, contents, dispatch, events, plugins, repo_groups, repositories, root_actions, users)
+    agent, consumers, contents, dispatch, events, plugins, repo_groups,
+    repositories, root_actions, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
-# conatants and application globals --------------------------------------------
+# constants and application globals --------------------------------------------
 
 URLS = (
     # Please keep the following in alphabetical order.
@@ -93,7 +95,7 @@ def _initialize_pulp():
 
     # pulp generic content initialization
     manager_factory.initialize()
-    plugin_loader.initialize()
+    plugin_api.initialize()
 
     # new async dispatch initialization
     dispatch_factory.initialize()

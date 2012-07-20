@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 0.0.313
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -119,6 +119,7 @@ cp etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
 # Agent
 cp etc/gofer/plugins/pulp.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
 cp -R src/pulp/agent/gofer/pulp.py %{buildroot}/%{_libdir}/gofer/plugins
+ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # Tools
 cp bin/* %{buildroot}/%{_bindir}
@@ -204,19 +205,19 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%config(noreplace) %{_sysconfdir}/pki/%{name}
 %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
 %dir %{_var}/log/%{name}
-/srv/%{name}/webservices.wsgi
+%{_sysconfdir}/pki/%{name}/
 %{_var}/lib/%{name}/
-%{_usr}/lib/pulp/plugins/distributors
-%{_usr}/lib/pulp/plugins/importers
-%{_usr}/lib/pulp/plugins/profilers
-%{_usr}/lib/pulp/plugins/types
+%{_usr}/lib/%{name}/plugins/distributors
+%{_usr}/lib/%{name}/plugins/importers
+%{_usr}/lib/%{name}/plugins/profilers
+%{_usr}/lib/%{name}/plugins/types
+/srv/%{name}/webservices.wsgi
 %doc
 
 
@@ -338,6 +339,7 @@ A tool used to administer a pulp consumer.
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
+%config(noreplace) %{_sysconfdir}/pki/%{name}/consumer
 %{_bindir}/%{name}-consumer
 %doc
 
@@ -361,6 +363,7 @@ on a defined interval.
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
 %{_sysconfdir}/gofer/plugins/pulp.conf
 %{_libdir}/gofer/plugins/pulp.*
+%{_sysconfdir}/rc.d/init.d/pulp-agent
 %doc
 
 # --- Selinux ---------------------------------------------------------------------

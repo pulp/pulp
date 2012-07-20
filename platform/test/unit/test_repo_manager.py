@@ -22,7 +22,7 @@ import mock_plugins
 import mock
 
 from   pulp.common.util import encode_unicode
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from   pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
@@ -31,12 +31,12 @@ import pulp.server.exceptions as exceptions
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoManagerTests(base.PulpServerTests):
+class RepoManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(RepoManagerTests, self).setUp()
 
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
 
         # Create the manager instance to test
@@ -298,7 +298,7 @@ class RepoManagerTests(base.PulpServerTests):
 
         repo_working_dir = common_utils.repository_working_dir('doomed', mkdir=False)
         self.assertTrue(not os.path.exists(repo_working_dir))
-        
+
     def test_delete_with_plugin_error(self):
         """
         Tests deleting a repo where one (or more) of the plugins raises an error.

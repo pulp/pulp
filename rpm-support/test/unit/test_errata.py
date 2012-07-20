@@ -37,7 +37,8 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         super(TestErrata, self).setUp()
         self.temp_dir = tempfile.mkdtemp()
 
-        self.working_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        self.working_dir = os.path.join(self.temp_dir, "working")
+        os.makedirs(self.working_dir)
         self.repo_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "test_repo")
         self.data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
 
@@ -60,6 +61,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         repo.id = "test_repo"
         sync_conduit = importer_mocks.get_sync_conduit()
         config = importer_mocks.get_basic_config(feed_url=feed_url)
+        self.simulate_sync(repo, self.repo_dir)
         importer_errata = errata.ImporterErrata()
         status, summary, details = importer_errata.sync(repo, sync_conduit, config)
         self.assertTrue(status)
@@ -146,3 +148,22 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         importerErrata = errata.ImporterErrata()
         status, summary, details = importerErrata.sync(repo, sync_conduit, config)
         self.assertEquals(len(details['link_report']['linked_units']), 2)
+
+    def test_link_errata_rpm_units_with_bad_data(self):
+        # Tests against EPEL Fedora 6 errata info which lacks checksum info for package list entries
+        repo_src_dir = os.path.join(self.data_dir, "test_epel_errata_info")
+        feed_url = "file://%s/" % repo_src_dir
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.working_dir
+        repo.id = "test_link_errata_rpm_units_with_bad_data"
+        repo.checksumtype = 'sha'
+        self.simulate_sync(repo, repo_src_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        caught_exception = False
+        try:
+            importerErrata = errata.ImporterErrata()
+            status, summary, details = importerErrata.sync(repo, sync_conduit, config)
+        except Exception, e:
+            caught_exception = True
+        self.assertFalse(caught_exception)

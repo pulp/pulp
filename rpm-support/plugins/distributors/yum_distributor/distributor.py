@@ -13,7 +13,6 @@
 
 from ConfigParser import SafeConfigParser
 import gettext
-import logging
 import os
 import shutil
 import time
@@ -21,14 +20,13 @@ import traceback
 
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers.repo.unit_association_query import Criteria
-from pulp_rpm.yum_plugin import comps_util, util
+from pulp_rpm.yum_plugin import comps_util, util, metadata
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
-from yum_distributor import metadata
 
 
 # -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+_LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 DISTRO_TYPE_ID="distribution"
@@ -458,7 +456,7 @@ class YumDistributor(Distributor):
             self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, https_repo_publish_dir))
-                self.create_symlink(repo.working_dir, https_repo_publish_dir)
+                util.create_symlink(repo.working_dir, https_repo_publish_dir)
                 summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
             except:
@@ -478,7 +476,7 @@ class YumDistributor(Distributor):
             self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, http_repo_publish_dir))
-                self.create_symlink(repo.working_dir, http_repo_publish_dir)
+                util.create_symlink(repo.working_dir, http_repo_publish_dir)
                 summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
             except:
@@ -547,7 +545,7 @@ class YumDistributor(Distributor):
         packages_progress_status["items_left"] =  len(units)
         for u in units:
             self.set_progress("packages", packages_progress_status, progress_callback)
-            relpath = self.get_relpath_from_unit(u)
+            relpath = util.get_relpath_from_unit(u)
             source_path = u.storage_path
             symlink_path = os.path.join(symlink_dir, relpath)
             if not os.path.exists(source_path):
@@ -558,7 +556,7 @@ class YumDistributor(Distributor):
                 continue
             _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
             try:
-                if not self.create_symlink(source_path, symlink_path):
+                if not util.create_symlink(source_path, symlink_path):
                     msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
                     _LOG.error(msg)
                     errors.append((source_path, symlink_path, msg))
@@ -611,75 +609,6 @@ class YumDistributor(Distributor):
                 # Directory is not empty so stop removal quit
                 break
             os.rmdir(path_to_remove)
-
-    def get_relpath_from_unit(self, unit):
-        """
-        @param unit
-        @type AssociatedUnit
-
-        @return relative path
-        @rtype str
-        """
-        filename = ""
-        if unit.metadata.has_key("relativepath"):
-            relpath = unit.metadata["relativepath"]
-        elif unit.metadata.has_key("filename"):
-            relpath = unit.metadata["filename"]
-        elif unit.unit_key.has_key("fileName"):
-            relpath = unit.unit_key["fileName"]
-        else:
-            relpath = os.path.basename(unit.storage_path)
-        return relpath
-
-    def create_symlink(self, source_path, symlink_path):
-        """
-        @param source_path source path 
-        @type source_path str
-
-        @param symlink_path path of where we want the symlink to reside
-        @type symlink_path str
-
-        @return True on success, False on error
-        @rtype bool
-        """
-        if symlink_path.endswith("/"):
-            symlink_path = symlink_path[:-1]
-        if os.path.lexists(symlink_path):
-            if not os.path.islink(symlink_path):
-                _LOG.error("%s is not a symbolic link as expected." % (symlink_path))
-                return False
-            existing_link_target = os.readlink(symlink_path)
-            if existing_link_target == source_path:
-                return True
-            _LOG.warning("Removing <%s> since it was pointing to <%s> and not <%s>" \
-                    % (symlink_path, existing_link_target, source_path))
-            os.unlink(symlink_path)
-        # Account for when the relativepath consists of subdirectories
-        if not self.create_dirs(os.path.dirname(symlink_path)):
-            return False
-        _LOG.debug("creating symlink %s pointing to %s" % (symlink_path, source_path))
-        os.symlink(source_path, symlink_path)
-        return True
-
-    def create_dirs(self, target):
-        """
-        @param target path
-        @type target str
-
-        @return True - success, False - error
-        @rtype bool
-        """
-        try:
-            os.makedirs(target)
-        except OSError, e:
-            # Another thread may have created the dir since we checked,
-            # if that's the case we'll see errno=17, so ignore that exception
-            if e.errno != 17:
-                _LOG.error("Unable to create directories for: %s" % (target))
-                tb_info = traceback.format_exc()
-                _LOG.error("%s" % (tb_info))
-                return False
-        return True
 
     def copy_importer_repodata(self, src_working_dir, tgt_working_dir):
         """
@@ -752,7 +681,7 @@ class YumDistributor(Distributor):
                     distro_progress_status["items_left"] -= 1
                     continue
                 try:
-                    if not self.create_symlink(source_path, symlink_path):
+                    if not util.create_symlink(source_path, symlink_path):
                         msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
                         _LOG.error(msg)
                         errors.append((source_path, symlink_path, msg))

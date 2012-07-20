@@ -17,7 +17,7 @@ import mock
 import base
 import dummy_plugins
 
-from pulp.plugins import loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import Consumer
@@ -47,8 +47,62 @@ class ConsumerAdvancedSearchTests(ConsumerControllersTests):
         self.assertEqual(mock_query.call_count, 1)
         query_arg = mock_query.call_args[0][0]
         self.assertTrue(isinstance(query_arg, criteria.Criteria))
-        self.assertEqual(mock_params.call_count, 1)
+        # once to get the criteria, once to check for 'bindings'
+        self.assertEqual(mock_params.call_count, 2)
 
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_post_calls_process(self, mock_process, mock_query, mock_params):
+        """
+        Make sure the search calls process_consumers
+        """
+        mock_params.return_value = {'criteria' : {}}
+        status, body = self.post('/v2/consumers/search/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+        # make sure the 'bindings' argument was False
+        self.assertFalse(mock_process.call_args[0][1])
+
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_get_calls_process(self, mock_process, mock_query, mock_params):
+        """
+        Make sure the search calls process_consumers
+        """
+        mock_params.return_value = {}
+        status, body = self.get('/v2/consumers/search/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+        # make sure the 'bindings' argument was False
+        self.assertFalse(mock_process.call_args[0][1])
+
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_post_with_bindings(self, mock_process, mock_query, mock_params):
+        """
+        Make sure the search calls process_consumers
+        """
+        mock_params.return_value = {'criteria' : {}, 'bindings' : True}
+        status, body = self.post('/v2/consumers/search/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+        self.assertTrue(mock_process.call_args[0][1])
+
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_get_with_bindings(self, mock_process, mock_query, mock_params):
+        """
+        Make sure the search calls process_consumers
+        """
+        mock_params.return_value = {'bindings' : True}
+        status, body = self.get('/v2/consumers/search/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+        self.assertTrue(mock_process.call_args[0][1])
 
 class ConsumerCollectionTests(ConsumerControllersTests):
 
@@ -67,6 +121,23 @@ class ConsumerCollectionTests(ConsumerControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(2, len(body))
+        self.assertTrue(body[0]['id'].startswith('consumer'))
+        self.assertFalse('bindings' in body[0])
+        self.assertTrue('_href' in body[0])
+
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_get_with_bindings(self, mock_process, mock_query, mock_params):
+        """
+        Test that if the 'bindings' parameter is passed in, bindings will be
+        requested of the process_consumers function
+        """
+        mock_params.return_value = {'bindings' : True}
+        status, body = self.get('/v2/consumers/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+        self.assertTrue(mock_process.call_args[0][1])
 
     def test_get_no_consumers(self):
         """
@@ -151,8 +222,23 @@ class ConsumerResourceTests(ConsumerControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.assertEqual('consumer-1', body['id'])
+        self.assertTrue('bindings' not in body)
         self.assertTrue('_href' in body)
         self.assertTrue(body['_href'].endswith(PATH))
+
+    @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
+    @mock.patch.object(PulpCollection, 'query')
+    @mock.patch('pulp.server.webservices.controllers.consumers.process_consumers')
+    def test_get_with_bindings(self, mock_process, mock_query, mock_params):
+        """
+        Test that if the 'bindings' parameter is passed in, bindings will be
+        requested of the process_consumers function
+        """
+        mock_params.return_value = {'bindings' : True}
+        status, body = self.get('/v2/consumers/')
+        self.assertEqual(status, 200)
+        self.assertEqual(mock_process.call_count, 1)
+        self.assertTrue(mock_process.call_args[0][1])
 
     def test_get_missing_consumer(self):
         """
@@ -248,7 +334,7 @@ class ConsumerPluginsTests(ConsumerControllersTests):
     def setUp(self):
         super(ConsumerPluginsTests, self).setUp()
 
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         dummy_plugins.install()
 
         self.consumer_query_manager = manager_factory.consumer_query_manager()

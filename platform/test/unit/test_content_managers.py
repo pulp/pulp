@@ -12,9 +12,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base
+import mock
 
+import base
 from pulp.plugins.types import database, model
+from pulp.server.db.connection import PulpCollection
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 
@@ -117,6 +120,26 @@ class PulpContentQueryTests(PulpContentTests):
         for unit in TYPE_2_UNITS:
             unit_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, unit)
             self.type_2_ids.append(unit_id)
+
+    def test_get_content_unit_collection(self):
+        manager = ContentQueryManager()
+        collection = manager.get_content_unit_collection('deb')
+        self.assertTrue(isinstance(collection, PulpCollection))
+        self.assertEqual(collection.name, 'units_deb')
+
+    @mock.patch.object(ContentQueryManager, 'get_content_unit_collection')
+    def test_find_by_criteria(self, mock_get_collection):
+        criteria = Criteria(limit=20)
+        units = self.query_manager.find_by_criteria('deb', criteria)
+
+        # make sure it tried to get the correct collection
+        mock_get_collection.assert_called_once_with('deb')
+
+        # make sure the query call itself was correct
+        mock_query = mock_get_collection.return_value.query
+        self.assertEqual(mock_query.call_count, 1)
+        self.assertEqual(mock_query.call_args[0][0], criteria)
+        self.assertEqual(mock_query.return_value, units)
 
     def test_list(self):
         units = self.query_manager.list_content_units(TYPE_1_DEF.id)

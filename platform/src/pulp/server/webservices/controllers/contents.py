@@ -17,6 +17,7 @@ import web
 
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.exceptions import MissingResource, InvalidValue
@@ -26,6 +27,7 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
 # content types controller classes ---------------------------------------------
+from pulp.server.webservices.controllers.search import SearchController
 
 class ContentTypesCollection(JSONController):
 
@@ -66,20 +68,78 @@ class ContentTypeResource(JSONController):
 
 class ContentUnitsCollection(JSONController):
 
+    @staticmethod
+    def process_unit(unit):
+        unit = serialization.content.content_unit_obj(unit)
+        unit.update(serialization.link.child_link_obj(unit['_id']))
+        unit.update({'children': serialization.content.content_unit_child_link_objs(unit)})
+        return unit
+
     @auth_required(READ)
     def GET(self, type_id):
         """
         List all the available content units.
         """
-        collection = []
         cqm = factory.content_query_manager()
-        content_units = cqm.list_content_units(type_id)
-        for unit in content_units:
-            resource = serialization.content.content_unit_obj(unit)
-            resource.update(serialization.link.child_link_obj(unit['_id']))
-            resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
-            collection.append(resource)
-        return self.ok(collection)
+        units = cqm.find_by_criteria(type_id, Criteria())
+        return self.ok([self.process_unit(unit) for unit in units])
+
+
+class ContentUnitsSearch(SearchController):
+    def __init__(self):
+        super(ContentUnitsSearch, self).__init__(self._proxy_query_method)
+
+    def _proxy_query_method(self, criteria):
+        """
+        Normally the constructor passes a manager's query method to the
+        super-class constructor. Since our manager's query method takes an extra
+        parameter to tell it what content type to look in, we have this proxy
+        query method that will make the correct call at the time.
+
+        Also, at the time of instantiation, we don't know what the content
+        type_id will be, so each request handler method will set self._type_id
+        to the correct value, and this method will use it at the time of being
+        called.
+
+        This sounds like it's asking for a race condition, I know, but web.py
+        instantiates a new controller for each and every request, so that isn't
+        a concern.
+
+        @param criteria:    Criteria representing a search
+        @type  criteria:    models.db.criteria.Criteria
+
+        @return:    same as PulpCollection.query
+        """
+        return factory.content_query_manager().find_by_criteria(
+            self._type_id, criteria)
+
+    @auth_required(READ)
+    def GET(self, type_id):
+        """
+        Does a normal GET after setting the query method from the appropriate
+        PulpCollection.
+
+        @param type_id: id of a ContentType that we are searching.
+        @type  type_id: basestring
+        """
+        self._type_id = type_id
+        units = self._get_query_results_from_get()
+        return self.ok(
+            [ContentUnitsCollection.process_unit(unit) for unit in units])
+
+    @auth_required(READ)
+    def POST(self, type_id):
+        """
+        Does a normal POST after setting the query method from the appropriate
+        PulpCollection.
+
+        @param type_id: id of a ContentType that we are searching.
+        @type  type_id: basestring
+        """
+        self._type_id = type_id
+        units = self._get_query_results_from_post()
+        return self.ok(
+            [ContentUnitsCollection.process_unit(unit) for unit in units])
 
 
 class ContentUnitResource(JSONController):
@@ -226,6 +286,7 @@ class DeleteOrphansAction(JSONController):
 _URLS = ('/types/$', ContentTypesCollection,
          '/types/([^/]+)/$', ContentTypeResource,
          '/units/([^/]+)/$', ContentUnitsCollection,
+         '/units/([^/]+)/search/$', ContentUnitsSearch,
          '/units/([^/]+)/([^/]+)/$', ContentUnitResource,
          '/uploads/$', UploadsCollection,
          '/uploads/([^/]+)/$', UploadResource,

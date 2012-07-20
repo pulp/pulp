@@ -16,7 +16,7 @@ import itertools
 
 import base
 
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 import pulp.plugins.types.database as types_db
 from   pulp.plugins.types.model import TypeDefinition
 
@@ -38,19 +38,19 @@ class PluginControllerTests(base.PulpWebserviceTests):
     def setUp(self):
         super(PluginControllerTests, self).setUp()
 
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         types_db.clean()
 
         # Configure content manager
-        plugin_loader._LOADER.add_importer('MockImporter', MockImporter, {})
-        plugin_loader._LOADER.add_distributor('MockDistributor', MockDistributor, {})
+        plugin_api._MANAGER.importers.add_plugin('MockImporter', MockImporter, {})
+        plugin_api._MANAGER.distributors.add_plugin('MockDistributor', MockDistributor, {})
 
     def tearDown(self):
         super(PluginControllerTests, self).tearDown()
 
         # Reset content manager
-        plugin_loader._LOADER.remove_importer('MockImporter')
-        plugin_loader._LOADER.remove_distributor('MockDistributor')
+        plugin_api._MANAGER.importers.remove_plugin('MockImporter')
+        plugin_api._MANAGER.distributors.remove_plugin('MockDistributor')
 
     def test_get_types(self):
         # Setup

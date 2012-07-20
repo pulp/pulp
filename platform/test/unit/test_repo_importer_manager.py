@@ -17,7 +17,7 @@ import mock_plugins
 
 import mock
 
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import Repository
 from pulp.plugins.config import PluginCallConfiguration
@@ -139,7 +139,7 @@ class RepoManagerTests(base.PulpServerTests):
                 return True
 
         mock_plugins.IMPORTER_MAPPINGS['mock-importer-2'] = MockImporter2()
-        plugin_loader._LOADER.add_importer('mock-importer-2', MockImporter2, {})
+        plugin_api._MANAGER.importers.add_plugin('mock-importer-2', MockImporter2, {})
 
         self.repo_manager.create_repo('change_me')
         self.importer_manager.set_importer('change_me', 'mock-importer', {})

@@ -145,6 +145,9 @@ class Distributor(object):
 
         @param config: plugin configuration
         @type  config: pulp.plugins.config.PluginConfiguration
+
+        @return: report describing the publish run
+        @rtype:  pulp.plugins.model.PublishReport
         """
         raise NotImplementedError()
 
@@ -280,3 +283,31 @@ class GroupDistributor(object):
         @type  config: pulp.plugins.config.PluginCallConfiguration
         """
         pass
+
+    # -- actions --------------------------------------------------------------
+
+    def publish_group(self, repo_group, publish_conduit, config):
+        """
+        Publishes the given repository group.
+
+        While this call may be implemented using multiple threads, its execution
+        from the Pulp server's standpoint should be synchronous. This call
+        should not return until the publish is complete.
+
+        It is not expected that this call be atomic. Should an error occur, it
+        is not the responsibility of the distributor to rollback any changes
+        that have been made.
+
+        @param repo_group: metadata describing the repository
+        @type  repo_group: pulp.plugins.model.RepositoryGroup
+
+        @param publish_conduit: provides access to relevant Pulp functionality
+        @type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoGroupPublishConduit
+
+        @param config: plugin configuration
+        @type  config: pulp.plugins.config.PluginConfiguration
+
+        @return: report describing the publish run
+        @rtype:  pulp.plugins.model.PublishReport
+        """
+        raise NotImplementedError()

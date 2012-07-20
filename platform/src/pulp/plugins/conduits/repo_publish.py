@@ -16,15 +16,12 @@ Contains the definitions for all classes related to the distributor's API for
 interacting with the Pulp server during a repo publish.
 """
 
-from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import DistributorConduitException, DistributorScratchPadMixin, RepoScratchPadMixin
-import pulp.plugins.conduits._common as common_utils
-import pulp.plugins.types.database as types_db
-from pulp.plugins.model import PublishReport
-import pulp.server.dispatch.factory as dispatch_factory
+from pulp.plugins.conduits.mixins import (DistributorConduitException, RepoScratchPadMixin,
+    DistributorScratchPadMixin, RepoGroupDistributorScratchPadMixin, StatusMixin,
+    SingleRepoUnitsMixin, MultipleRepoUnitsMixin, PublishReportMixin)
 import pulp.server.managers.factory as manager_factory
 
 # -- constants ---------------------------------------------------------------
@@ -33,7 +30,8 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
+class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, StatusMixin,
+                         SingleRepoUnitsMixin, PublishReportMixin):
     """
     Used to communicate back into the Pulp server while a distributor is
     publishing a repo. Instances of this call should *not* be cached between
@@ -54,52 +52,19 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
         @param distributor_id: identifies the distributor being published
         @type  distributor_id: str
         """
-        RepoScratchPadMixin.__init__(self, repo_id)
+        RepoScratchPadMixin.__init__(self, repo_id, DistributorConduitException)
         DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
+        StatusMixin.__init__(self, distributor_id, DistributorConduitException, progress_report=base_progress_report)
+        SingleRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)
+        PublishReportMixin.__init__(self)
 
         self.repo_id = repo_id
         self.distributor_id = distributor_id
 
-        if base_progress_report is not None:
-            self.progress_report = base_progress_report
-        else:
-            self.progress_report = {}
-
-        self._repo_manager = manager_factory.repo_manager()
-        self._repo_publish_manager = manager_factory.repo_publish_manager()
-        self._repo_distributor_manager = manager_factory.repo_distributor_manager()
-        self._association_manager = manager_factory.repo_unit_association_manager()
-        self._association_query_manager = manager_factory.repo_unit_association_query_manager()
-        self._content_query_manager = manager_factory.content_manager()
-
     def __str__(self):
-        return _('RepoPublishConduit for repository [%(r)s]' % {'r' : self.repo_id})
+        return 'RepoPublishConduit for repository [%s]' % self.repo_id
 
     # -- public ---------------------------------------------------------------
-
-    def set_progress(self, status):
-        """
-        Informs the server of the current state of the publish operation. The
-        contents of the status is dependent on how the distributor
-        implementation chooses to divide up the publish process.
-
-        @param status: contains arbitrary data to describe the state of the
-               publish; the contents may contain whatever information is relevant
-               to the distributor implementation so long as it is serializable
-        """
-        try:
-            self.progress_report[self.distributor_id] = status
-            context = dispatch_factory.context()
-            context.report_progress(self.progress_report)
-        except Exception, e:
-            _LOG.exception('Exception from server setting progress for repository [%s]' % self.repo_id)
-            try:
-                _LOG.error('Progress value: %s' % str(status))
-            except:
-                # Best effort to print this, but if its that grossly unserializable
-                # the log will tank and we don't want that exception to bubble up
-                pass
-            raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def last_publish(self):
         """
@@ -111,73 +76,40 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin):
         @rtype:  datetime or None
         """
         try:
-            last = self._repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
+            repo_publish_manager = manager_factory.repo_publish_manager()
+            last = repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
             return last
         except Exception, e:
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
-    def get_units(self, criteria=None):
+class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin, MultipleRepoUnitsMixin, PublishReportMixin):
+
+    def __init__(self, group_id, distributor_id):
+        RepoGroupDistributorScratchPadMixin.__init__(self, group_id, distributor_id)
+        StatusMixin.__init__(self, distributor_id, DistributorConduitException)
+        MultipleRepoUnitsMixin.__init__(self, DistributorConduitException)
+        PublishReportMixin.__init__(self)
+
+        self.group_id = group_id
+        self.distributor_id = distributor_id
+
+    def __str__(self):
+        return 'RepoGroupPublishConduit for group [%s]' % self.group_id
+
+    def last_publish(self):
         """
-        Returns the collection of content units associated with the repository
-        being published.
+        Returns the timestamp of the last time this repository group was
+        publishe, regardless of the success or failure of the publish. If
+        the group was never published, this call returns None.
 
-        @param criteria: used to scope the returned results or the data within
-        @type  criteria: L{Criteria}
-
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        @return: timestamp describing the last publish
+        @rtype:  datetime
         """
-
         try:
-            units = self._association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
-
-            all_units = []
-
-            # Load all type definitions in use so we don't hammer the database
-            unique_type_defs = set([u['unit_type_id'] for u in units])
-            type_defs = {}
-            for def_id in unique_type_defs:
-                type_def = types_db.type_definition(def_id)
-                type_defs[def_id] = type_def
-
-            # Convert to transfer object
-            for unit in units:
-                type_id = unit['unit_type_id']
-                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
-                all_units.append(u)
-
-            return all_units
+            manager = manager_factory.repo_group_publish_manager()
+            last = manager.last_publish(self.group_id, self.distributor_id)
+            return last
         except Exception, e:
-            _LOG.exception('Error getting units for repository [%s]' % self.repo_id)
+            _LOG.exception('Error getting last publish time for group [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
-
-    def build_success_report(self, summary, details):
-        """
-        Creates the PublishReport instance that needs to be returned to the Pulp
-        server at the end of the publish_repo call.
-
-        @param summary: short log of the publish; may be None but probably shouldn't be
-        @type  summary: any serializable
-
-        @param details: potentially longer log of the publish; may be None
-        @type  details: any serializable
-        """
-        r = PublishReport(True, summary, details)
-        return r
-
-    def build_failure_report(self, summary, details):
-        """
-        Creates the PublishReport instance that needs to be returned to the Pulp
-        server at the end of the publish_repo call. The report built in this
-        fashion will indicate the publish operation has gracefully failed
-        (as compared to an unexpected exception bubbling up).
-
-        @param summary: short log of the publish; may be None but probably shouldn't be
-        @type  summary: any serializable
-
-        @param details: potentially longer log of the publish; may be None
-        @type  details: any serializable
-        """
-        r = PublishReport(False, summary, details)
-        return r

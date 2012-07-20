@@ -19,9 +19,12 @@ Contains agent management classes
 
 import sys
 from pulp.server.managers import factory as managers
-from pulp.plugins import loader as plugins
+from pulp.server.managers.pluginwrapper import PluginWrapper
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.server.exceptions import PulpExecutionException
 from pulp.server.agent import PulpAgent
 from logging import getLogger
@@ -86,8 +89,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
+            pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.install_units(id, units, options, cfg, conduit)
+            units = profiler.install_units(pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -109,8 +113,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
+            pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.update_units(id, units, options, cfg, conduit)
+            units = profiler.update_units(pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -132,8 +137,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
+            pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.uninstall_units(id, units, options, cfg, conduit)
+            units = profiler.uninstall_units(pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -157,11 +163,27 @@ class AgentManager(object):
         @rtype: tuple
         """
         try:
-            plugin, cfg = plugins.get_profiler_by_type(typeid)
-        except plugins.PluginNotFound:
+            plugin, cfg = plugin_api.get_profiler_by_type(typeid)
+        except plugin_exceptions.PluginNotFound:
             plugin = Profiler()
             cfg = {}
-        return _Plugin(plugin), cfg
+        return PluginWrapper(plugin), cfg
+
+    def __profiled_consumer(self, id):
+        """
+        Get a profiler consumer model object.
+        @param id: A consumer ID.
+        @type id: str
+        @return: A populated profiler consumer model object.
+        @rtype: L{ProfiledConsumer}
+        """
+        profiles = {}
+        manager = managers.consumer_profile_manager()
+        for p in manager.get_profiles(id):
+            typeid = p['content_type']
+            profile = p['profile']
+            profiles[typeid] = profile
+        return ProfiledConsumer(id, profiles)
 
 
 class Units(dict):
@@ -190,47 +212,3 @@ class Units(dict):
         @rtype: list
         """
         return [j for i in self.values() for j in i]
-
-
-class _Plugin:
-    """
-    Plugin wrapper.
-    Used to consistently wrap plugin method calls in a
-    PulpExecutionException.
-    """
-
-    class Method:
-        """
-        Method wrapper.
-        Used to consistently wrap plugin method calls in a
-        PulpExecutionException.
-        """
-        
-        def __init__(self, method):
-            """
-            @param method: method to be wrapped.
-            @type method: instancemethod
-            """
-            self.__method = method
-            
-        def __call__(self, *args, **kwargs):
-            try:
-                return self.__method(*args, **kwargs)
-            except Exception, e:
-                msg = str(e)
-                tb = sys.exc_info()[2]
-                raise PulpExecutionException(msg), None, tb
-    
-    def __init__(self, plugin):
-        """
-        @param plugin: The plugin to be wrapped.
-        @type plugin: Plugin
-        """
-        self.__plugin = plugin
-        
-    def __getattr__(self, name):
-        attr = getattr(self.__plugin, name)
-        if callable(attr):
-            return self.Method(attr)
-        else:
-            return attr

@@ -42,38 +42,38 @@ class Profiler(object):
 
     # -- translations ----------------------------------------------------------
 
-    def update_profile(self, consumer_id, profile, config, conduit):
+    def update_profile(self, consumer, profile, config, conduit):
         """
         Notification that the consumer has reported the installed unit
         profile.  The profiler has this opportunity to translate the
         reported profile.
 
-        @param consumer_id: The ID of the consumer reporting the profile.
-        @type consumer_id: str
+        @param consumer: A consumer.
+        @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param profile: The reported profile.
         @type profile: dict
 
         @param config: plugin configuration
-        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
+        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
         """
         return profile
 
-    def install_units(self, consumer_id, units, options, config, conduit):
+    def install_units(self, consumer, units, options, config, conduit):
         """
         Translate the specified content units to be installed.
         The specified content units are intented to be installed on the
         specified consumer.  It is requested that the profiler translate
         the units as needed.
 
-        @param consumer_id: The ID of the consumer.
-        @type consumer_id: str
+        @param consumer: A consumer.
+        @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param units: A list of content units to be installed.
         @type units: list of:
@@ -83,10 +83,10 @@ class Profiler(object):
         @type options: dict
         
         @param config: plugin configuration
-        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
+        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -96,15 +96,15 @@ class Profiler(object):
         """
         return units
 
-    def update_units(self, consumer_id, units, options, config, conduit):
+    def update_units(self, consumer, units, options, config, conduit):
         """
         Translate the specified content units to be updated.
         The specified content units are intented to be updated on the
         specified consumer.  It is requested that the profiler translate
         the units as needed.
 
-        @param consumer_id: The ID of the consumer.
-        @type consumer_id: str
+        @param consumer: A consumer.
+        @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param units: A list of content units to be updated.
         @type units: list of:
@@ -114,10 +114,10 @@ class Profiler(object):
         @type options: dict
 
         @param config: plugin configuration
-        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
+        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -127,15 +127,15 @@ class Profiler(object):
         """
         return units
 
-    def uninstall_units(self, consumer_id, units, options, config, conduit):
+    def uninstall_units(self, consumer, units, options, config, conduit):
         """
         Translate the specified content units to be uninstalled.
         The specified content units are intented to be uninstalled on the
         specified consumer.  It is requested that the profiler translate
         the units as needed.
 
-        @param consumer_id: The ID of the consumer.
-        @type consumer_id: str
+        @param consumer: A consumer.
+        @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param units: A list of content units to be uninstalled.
         @type units: list of:
@@ -145,10 +145,10 @@ class Profiler(object):
         @type options: dict
         
         @param config: plugin configuration
-        @type config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.consuits.profile.ProfilerConduit}
+        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return: The translated profile.
         @rtype: dict
@@ -157,3 +157,31 @@ class Profiler(object):
         @rtype: list
         """
         return units
+
+
+    # -- applicability ---------------------------------------------------------
+
+
+    def unit_applicable(self, consumer, unit, config, conduit):
+        """
+        Determine whether the a content unit is applicable to
+        the specified consumer.  The definition of "applicable" is content
+        type specific and up to the descision of the profiler.
+
+        @param consumer: A consumer.
+        @type consumer: L{pulp.server.plugins.model.Consumer}
+
+        @param unit: A content unit: { type_id:<str>, unit_key:<dict> }
+        @type unit: dict
+
+        @param config: plugin configuration
+        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
+
+        @return: An applicability report.
+        @rtype: L{pulp.plugins.model.ApplicabilityReport}
+        """
+        raise Exception, \
+            'Applicability for: %s, not supported' % unit

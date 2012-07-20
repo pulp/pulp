@@ -22,7 +22,7 @@ import sys
 
 import pulp.plugins.conduits._common as conduit_common_utils
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.plugins.types.database as types_db
 from pulp.server.db.model.repository import RepoContentUnit
@@ -226,7 +226,7 @@ class RepoUnitAssociationManager(object):
 
         # The docs are incorrect on the list_importer_types call; it actually
         # returns a dict with the types under key "types" for some reason.
-        supported_type_ids = plugin_loader.list_importer_types(dest_repo_importer['importer_type_id'])['types']
+        supported_type_ids = plugin_api.list_importer_types(dest_repo_importer['importer_type_id'])['types']
 
         # If criteria is specified, retrieve the list of units now
         associate_us = None
@@ -302,7 +302,7 @@ class RepoUnitAssociationManager(object):
         transfer_source_repo.working_dir = common_utils.importer_working_dir(source_repo_importer['importer_type_id'], source_repo['id'], mkdir=True)
 
         # Invoke the importer
-        importer_instance, plugin_config = plugin_loader.get_importer_by_id(dest_repo_importer['importer_type_id'])
+        importer_instance, plugin_config = plugin_api.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
         call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'])
         conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])

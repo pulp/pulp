@@ -16,13 +16,14 @@ import logging
 
 # 3rd Party
 import web
+from web.webapi import BadRequest
 
 # Pulp
-from pulp.common import dateutils
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.webservices import execution
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
@@ -30,10 +31,40 @@ from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+from pulp.server.exceptions import MissingValue
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
+
+def process_consumers(consumers, merge_bindings=False):
+    """
+    Apply standard processing to consumers before returning them to a client.
+    This includes adding the '_href' link attribute, and optionally merging in
+    related bindings.
+
+    @param consumers:   list of consumers pulled from the database
+    @type  consumer:    list
+
+    @param merge_bindings:  iff True, add an attribute 'bindings' to each
+                            consumer, the value of which will be a list of
+                            related binding objects.
+    @type  merge_bindings:  bool
+
+    @return:    same list that was passed in, just for convenience. list members
+                are modified in-place
+    @rtype:     list
+    """
+    ids = [consumer['id'] for consumer in consumers]
+    if merge_bindings:
+        bindings = managers.consumer_bind_manager().find_by_consumer_list(ids)
+
+    for consumer in consumers:
+        consumer.update(serialization.link.current_link_obj())
+        if merge_bindings:
+            consumer['bindings'] = bindings[consumer['id']]
+    return consumers
+
 
 # -- controllers --------------------------------------------------------------
 
@@ -48,12 +79,9 @@ class ConsumersCollection(JSONController):
 
         query_manager = managers.consumer_query_manager()
         consumers = query_manager.find_all()
-        
-        bind_manager = managers.consumer_bind_manager()
-        for consumer in consumers:
-            bindings = bind_manager.find_by_consumer(consumer['id'])
-            consumer['bindings'] = bindings
-            
+
+        process_consumers(consumers, self.params().get('bindings', False))
+
         return self.ok(consumers)
 
     @auth_required(CREATE)
@@ -86,6 +114,16 @@ class ConsumerSearch(SearchController):
         super(ConsumerSearch, self).__init__(
             managers.consumer_query_manager().find_by_criteria)
 
+    def GET(self):
+        consumers = self._get_query_results_from_get()
+        process_consumers(consumers, self.params().get('bindings', False))
+        return self.ok(consumers)
+
+    def POST(self):
+        consumers = self._get_query_results_from_post()
+        process_consumers(consumers, self.params().get('bindings', False))
+        return self.ok(consumers)
+
 
 class ConsumerResource(JSONController):
 
@@ -99,11 +137,10 @@ class ConsumerResource(JSONController):
 
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        
-        bind_manager = managers.consumer_bind_manager()
-        consumer['bindings'] = bind_manager.find_by_consumer(consumer['id'])
-        consumer.update(serialization.link.current_link_obj())
-           
+
+        consumer = process_consumers(
+            [consumer], self.params().get('bindings', False))[0]
+
         return self.ok(consumer)
 
     @auth_required(DELETE)
@@ -168,7 +205,7 @@ class Bindings(JSONController):
         """
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id, repo_id)
-        bindings = [serialization.consumer.serialize(b) for b in bindings]
+        bindings = [serialization.binding.serialize(b) for b in bindings]
         return self.ok(bindings)
 
     @auth_required(CREATE)
@@ -242,22 +279,8 @@ class Binding(JSONController):
         """
         manager = managers.consumer_bind_manager()
         bind = manager.get_bind(consumer_id, repo_id, distributor_id)
-        serialized_bind = serialization.consumer.serialize(bind)
+        serialized_bind = serialization.binding.serialize(bind)
         return self.ok(serialized_bind)
-
-    @auth_required(UPDATE)
-    def PUT(self, consumer_id, repo_id, distributor_id):
-        """
-        Update a bind.
-            **TBD
-        @param consumer_id: A consumer ID.
-        @type consumer_id: str
-        @param repo_id: A repo ID.
-        @type repo_id: str
-        @param distributor_id: A distributor ID.
-        @type distributor_id: str
-        """
-        return self.not_implemented()
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, repo_id, distributor_id):
@@ -477,7 +500,7 @@ class Profiles(JSONController):
         """
         manager = managers.consumer_profile_manager()
         profiles = manager.get_profiles(consumer_id)
-        profiles = [Profile.serialized(p) for p in profiles]
+        profiles = [serialization.consumer.profile(p) for p in profiles]
         return self.ok(profiles)
 
     @auth_required(CREATE)
@@ -520,14 +543,6 @@ class Profile(JSONController):
     unit profiles.
     """
 
-    @classmethod
-    def serialized(cls, profile):
-        serialized = dict(profile)
-        link = serialization.link.child_link_obj(
-            profile['consumer_id'],
-            profile['content_type'])
-        return serialized
-
     @auth_required(READ)
     def GET(self, consumer_id, content_type):
         """
@@ -536,7 +551,8 @@ class Profile(JSONController):
         """
         manager = managers.consumer_profile_manager()
         profile = manager.get_profile(consumer_id, content_type)
-        return self.ok(self.serialized(profile))
+        serialized = serialization.consumer.profile(profile)
+        return self.ok(serialized)
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, content_type):
@@ -604,6 +620,52 @@ class Profile(JSONController):
         return self.ok(execution.execute(call_request))
 
 
+class ContentApplicability(JSONController):
+    """
+    Determine content applicability.
+    """
+
+    #@auth_required(READ)
+    def POST(self):
+        """
+        Determine content applicability.
+        body {criteria:<dict>, units:[{type_id:<str>,unit_key:<str>}]}
+        @return: A dict of applicability reports keyed by consumer ID.
+            Each report is:
+                {unit:<{type_id:<str>,unit_key:<str>}>,
+                 applicable:<bool>,
+                 summary:<str>,
+                 details:<?>}
+        @return: dict
+        """
+        body = self.params()
+        try:
+            criteria = body['criteria']
+            units = body['units']
+        except KeyError, e:
+            raise MissingValue(str(e))
+        criteria = Criteria.from_client_input(criteria)
+        manager = managers.consumer_applicability_manager()
+        report = manager.units_applicable(criteria, units)
+        for k,v in report.items():
+            report[k] = [serialization.consumer.applicability_report(r) for r in v]
+        return self.ok(report)
+
+    def __rdict(self, report):
+        """
+        Serialized report dict.
+        @param report: A applicability report object.
+        @type report: ApplicabilityReport
+        @return: A dictionary representation of the report.
+        @rtype: dict
+        """
+        return dict(
+            unit=report.unit,
+            applicable=report.applicable,
+            summary=report.summary,
+            details=report.details)
+
+
 # -- web.py application -------------------------------------------------------
 
 
@@ -617,6 +679,7 @@ urls = (
     '/([^/]+)/profiles/$', 'Profiles',
     '/([^/]+)/profiles/([^/]+)/$', 'Profile',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
+    '/actions/content/applicability/$', 'ContentApplicability',
     '/([^/]+)/history/$', 'ConsumerHistory',  
 )
 

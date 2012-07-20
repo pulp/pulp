@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import logging
 import os
 import time
 import itertools
@@ -22,8 +21,7 @@ from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp_rpm.yum_plugin import util
 from yum_importer import distribution, drpm
 
-_LOG = logging.getLogger(__name__)
-#_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
+_LOG = util.getLogger(__name__)
 
 RPM_TYPE_ID="rpm"
 SRPM_TYPE_ID="srpm"
@@ -603,7 +601,7 @@ class ImporterRPM(object):
         # Determine new and missing items
         rpm_info['new_rpms'], rpm_info['new_rpm_units'] = get_new_rpms_and_units(rpm_info['available_rpms'], rpm_info['existing_rpm_units'], sync_conduit)
         rpm_info['missing_rpms'], rpm_info['missing_rpm_units'] = get_missing_rpms_and_units(rpm_info['available_rpms'], rpm_info['existing_rpm_units'], verify_options)
-        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new rpms, %s missing rpms." % \
+        _LOG.info("Repo <%s> %s existing rpm units, %s have been orphaned, %s new rpms, %s missing rpms." % \
                     (repo.id, len(rpm_info['existing_rpm_units']), len(rpm_info['orphaned_rpm_units']), len(rpm_info['new_rpms']), len(rpm_info['missing_rpms'])))
 
         return rpm_info
@@ -627,7 +625,7 @@ class ImporterRPM(object):
         # Determine new and missing items
         drpm_info['new_drpms'], drpm_info['new_drpm_units'] = drpm.get_new_drpms_and_units(drpm_info['available_drpms'], drpm_info['existing_drpm_units'], sync_conduit)
         drpm_info['missing_drpms'], drpm_info['missing_drpm_units'] = get_missing_rpms_and_units(drpm_info['available_drpms'], drpm_info['existing_drpm_units'], verify_options)
-        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new drpms, %s missing drpms." %\
+        _LOG.info("Repo <%s> %s existing drpm units, %s have been orphaned, %s new drpms, %s missing drpms." %\
                   (repo.id, len(drpm_info['existing_drpm_units']), len(drpm_info['orphaned_drpm_units']), len(drpm_info['new_drpms']), len(drpm_info['missing_drpms'])))
 
         return drpm_info
@@ -648,7 +646,7 @@ class ImporterRPM(object):
                   (len(distro_info['available_distros']), repo.id, (end_metadata-start_metadata)))
         distro_info['new_distro_files'], distro_info['new_distro_units'] = distribution.get_new_distros_and_units(distro_info['available_distros'], distro_info['existing_distro_units'], sync_conduit)
         distro_info['missing_distro_files'], distro_info['missing_distro_units'] = distribution.get_missing_distros_and_units(distro_info['available_distros'], distro_info['existing_distro_units'], verify_options)
-        _LOG.info("Repo <%s> %s existing units, %s have been orphaned, %s new distro files, %s missing distro." %\
+        _LOG.info("Repo <%s> %s existing distro units, %s have been orphaned, %s new distro files, %s missing distro." %\
                   (repo.id, len(distro_info['existing_distro_units']), len(distro_info['orphaned_distro_units']), len(distro_info['new_distro_files']), len(distro_info['missing_distro_files'])))
         return distro_info
 

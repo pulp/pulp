@@ -11,12 +11,20 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import logging
+import os
+import shutil
 import sys
 
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db.model.repository import Repo, RepoGroup
+from pulp.server.db.model.repo_group import RepoGroup
+from pulp.server.db.model.repository import Repo
+from pulp.server.managers.repo import _common as common_utils
+
+
+_LOG = logging.getLogger(__name__)
 
 
 class RepoGroupManager(object):
@@ -81,6 +89,17 @@ class RepoGroupManager(object):
         @type group_id: str
         """
         collection = validate_existing_repo_group(group_id)
+
+        # Delete the working directory for the group
+        working_dir = common_utils.repo_group_working_dir(group_id)
+        if os.path.exists(working_dir):
+            try:
+                shutil.rmtree(working_dir)
+            except Exception:
+                _LOG.exception('Error while deleting working dir [%s] for repo group [%s]' % (working_dir, group_id))
+                raise
+
+        # Delete from the database
         collection.remove({'id': group_id}, safe=True)
 
     # repo membership ----------------------------------------------------------

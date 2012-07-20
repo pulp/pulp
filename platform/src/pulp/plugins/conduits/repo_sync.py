@@ -43,9 +43,8 @@ from gettext import gettext as _
 import logging
 import sys
 
-from   pulp.plugins.conduits.mixins import ImporterConduitException, AddUnitMixin, RepoScratchPadMixin, ImporterScratchPadMixin, GetRepoUnitsMixin
+from   pulp.plugins.conduits.mixins import ImporterConduitException, AddUnitMixin, RepoScratchPadMixin, ImporterScratchPadMixin, SingleRepoUnitsMixin, StatusMixin
 from   pulp.plugins.model import SyncReport
-import pulp.server.dispatch.factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 from   pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
@@ -55,7 +54,7 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin, GetRepoUnitsMixin):
+class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin, SingleRepoUnitsMixin, StatusMixin):
     """
     Used to communicate back into the Pulp server while an importer performs
     a repo sync. Instances of this class should *not* be cached between repo
@@ -69,12 +68,11 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
     """
 
     def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
-        RepoScratchPadMixin.__init__(self, repo_id)
+        RepoScratchPadMixin.__init__(self, repo_id, ImporterConduitException)
         ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
         AddUnitMixin.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
-        GetRepoUnitsMixin.__init__(self, repo_id)
-
-        self.progress_report = {}
+        SingleRepoUnitsMixin.__init__(self, repo_id, ImporterConduitException)
+        StatusMixin.__init__(self, importer_id, ImporterConduitException)
 
         self._association_manager = manager_factory.repo_unit_association_manager()
 
@@ -82,30 +80,6 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
 
     def __str__(self):
         return _('RepoSyncConduit for repository [%(r)s]') % {'r' : self.repo_id}
-
-    def set_progress(self, status):
-        """
-        Informs the server of the current state of the sync operation. The
-        contents of the status is dependent on how the importer
-        implementation chooses to divide up the sync process.
-
-        @param status: contains arbitrary data to describe the state of the
-               sync; the contents may contain whatever information is relevant
-               to the importer implementation so long as it is serializable
-        """
-        try:
-            self.progress_report['importer'] = status
-            context = dispatch_factory.context()
-            context.report_progress(self.progress_report)
-        except Exception, e:
-            _LOG.exception('Exception from server setting progress for repository [%s]' % self.repo_id)
-            try:
-                _LOG.error('Progress value: %s' % str(status))
-            except:
-                # Best effort to print this, but if its that grossly unserializable
-                # the log will tank and we don't want that exception to bubble up
-                pass
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def remove_unit(self, unit):
         """

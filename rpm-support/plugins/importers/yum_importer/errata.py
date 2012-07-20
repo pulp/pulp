@@ -17,14 +17,11 @@ Errata Support for Yum Importer
 import os
 import time
 import yum
-import logging
 from pulp_rpm.yum_plugin import util, updateinfo
 from pulp.server.managers.repo.unit_association_query import Criteria
 from yum_importer import importer_rpm
 
-_LOG = logging.getLogger(__name__)
-#TODO Fix up logging so we log to a separate file to aid debugging
-#_LOG.addHandler(logging.FileHandler('/var/log/pulp/yum-importer.log'))
+_LOG = util.getLogger(__name__)
 
 ERRATA_TYPE_ID="erratum"
 ERRATA_UNIT_KEY = ("id",)
@@ -177,6 +174,9 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
         pkglist = u.metadata['pkglist']
         for pkg in pkglist:
             for pinfo in pkg['packages']:
+                if not pinfo.has_key('sum'):
+                    _LOG.debug("Missing checksum info on package <%s> for linking a rpm to an erratum." % (pinfo))
+                    continue
                 pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
                 rpm_key = importer_rpm.form_lookup_key(pinfo)
                 if rpm_key in existing_rpms.keys():
@@ -227,7 +227,7 @@ class ImporterErrata(object):
         if self.canceled:
             return False, {}, {}
         skip_list = config.get("skip") or []
-        if 'errata' in skip_list:
+        if 'erratum' in skip_list:
             _LOG.info("errata content type part of skip types; skipping import")
             return True, {}, {}
 

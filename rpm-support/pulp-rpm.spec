@@ -18,7 +18,7 @@
 
 Name: pulp-rpm
 Version: 0.0.313
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -117,6 +117,7 @@ to provide RPM specific support.
 %{_usr}/lib/pulp/plugins/types/rpm_support.json
 %{_usr}/lib/pulp/plugins/importers/yum_importer/
 %{_usr}/lib/pulp/plugins/distributors/yum_distributor/
+%{_usr}/lib/pulp/plugins/distributors/iso_distributor/
 %defattr(-,apache,apache,-)
 %{_var}/www/pub
 /srv/pulp/repo_auth.wsgi
@@ -161,6 +162,7 @@ client capabilites with RPM specific features.
 %{_usr}/lib/pulp/admin/extensions/rpm_units_search/
 %{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
+%{_usr}/lib/pulp/admin/extensions/rpm_errata_upload/
 %doc
 
 
@@ -230,6 +232,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-2
+- Add iso distributor to .spec. (jortel@redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
 - - ISO Export Distributor: * Basic skeleton in place * Adding iso generation
   module * adding a makeisofs dependency (pkilambi@redhat.com)

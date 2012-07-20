@@ -13,19 +13,60 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import time
+import unittest
+
+import mock
 
 import base
+import logging
 import mock_plugins
 import mock_agent
-
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.model import ApplicabilityReport
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.webservices.controllers import consumers
+
+
+class ProcessConsumersTests(unittest.TestCase):
+    def setUp(self):
+        factory.initialize()
+
+    @mock.patch(
+        'pulp.server.webservices.serialization.link.current_link_obj',
+        return_value={'_href':'some/path'}
+    )
+    def test_without_merge(self, mock_link):
+        ret = consumers.process_consumers([{'id':'consumer1'}])
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(mock_link.call_count, 1)
+        self.assertTrue('_href' in ret[0])
+        self.assertTrue('bindings' not in ret[0])
+
+    @mock.patch(
+        'pulp.server.webservices.serialization.link.current_link_obj',
+        return_value={'_href':'some/path'}
+    )
+    @mock.patch(
+        'pulp.server.managers.consumer.bind.BindManager.find_by_consumer_list',
+        return_value={'consumer1':[{'id':'binding1'}, {'id':'binding2'}]}
+    )
+    def test_with_merge(self, mock_find, mock_link):
+        items = [{'id':'consumer1'}]
+        ret = consumers.process_consumers(items, True)
+        self.assertEqual(mock_find.call_count, 1)
+        self.assertTrue('bindings' in ret[0])
+        self.assertEqual(len(ret[0]['bindings']), 2)
+
+    def test_without_consumers(self):
+        ret = consumers.process_consumers([])
+        self.assertEqual(ret, [])
 
 
 class BindTest(base.PulpWebserviceTests):
-    
+
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
@@ -49,10 +90,10 @@ class BindTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
-        
+
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
@@ -60,7 +101,7 @@ class BindTest(base.PulpWebserviceTests):
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         mock_plugins.reset()
-    
+
     def populate(self):
         manager = factory.repo_manager()
         repo = manager.create_repo(self.REPO_ID)
@@ -74,7 +115,7 @@ class BindTest(base.PulpWebserviceTests):
         mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value=self.PAYLOAD
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
-        
+
     def test_get_bind(self):
         # Setup
         self.populate()
@@ -187,7 +228,7 @@ class BindTest(base.PulpWebserviceTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         print binds
         self.assertEquals(len(binds), 0)
-        
+
     def test_bind_missing_distributor(self):
         # Setup
         self.populate()
@@ -218,7 +259,7 @@ class ContentTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
 
@@ -305,6 +346,7 @@ class TestProfiles(base.PulpWebserviceTests):
     PROFILE_2 = {'name':'ksh', 'version':'2.0', 'arch':'x86_64'}
 
     def setUp(self):
+        self.logger = logging.getLogger('pulp')
         base.PulpWebserviceTests.setUp(self)
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
@@ -414,3 +456,75 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(body['content_type'], self.TYPE_1)
         self.assertEqual(body['profile'], self.PROFILE_1)
+
+
+class TestApplicability(base.PulpWebserviceTests):
+
+    CONSUMER_IDS = ['test-1', 'test-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [('id','ascending')]
+    CRITERIA = dict(filters=FILTER, sort=SORT)
+    UNIT = {'type_id':'errata', 'unit_key':{'name':'security-patch_123'}}
+    PROFILE = [1,2,3]
+    SUMMARY = 'mysummary'
+    DETAILS = 'mydetails'
+
+    PATH = '/v2/consumers/actions/content/applicability/'
+
+    def setUp(self):
+        base.PulpWebserviceTests.setUp(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        plugin_api._create_manager()
+        mock_plugins.install()
+        profiler = plugin_api.get_profiler_by_type('errata')[0]
+        profiler.unit_applicable = \
+            mock.Mock(side_effect=lambda i,u,c,x:
+                ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
+
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate(self):
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        manager = factory.consumer_profile_manager()
+        for id in self.CONSUMER_IDS:
+            manager.create(id, 'rpm', self.PROFILE)
+
+    def test_applicability(self):
+        # Setup
+        self.populate()
+        # Test
+        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        status, body = self.post(self.PATH, body)
+        self.assertEquals(status, 200)
+        self.assertEquals(len(body), 2)
+        for id in self.CONSUMER_IDS:
+            report = body[id]
+            self.assertEquals(report[0]['unit'], self.UNIT)
+            self.assertTrue(report[0]['applicable'])
+            self.assertEquals(report[0]['summary'], self.SUMMARY)
+            self.assertEquals(report[0]['details'], self.DETAILS)
+
+    def test_missing_values(self):
+        # Setup
+        self.populate()
+        # Test
+        body = dict(criteria=self.CRITERIA)
+        status, body = self.post(self.PATH, body)
+        self.assertEquals(status, 400)
+        body = dict(units=[self.UNIT])
+        status, body = self.post(self.PATH, body)
+        self.assertEquals(status, 400)
+
+    def test_no_consumers(self):
+        # Test
+        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        status, body = self.post(self.PATH, body)
+        self.assertEquals(status, 200)
+        self.assertEquals(len(body), 0)

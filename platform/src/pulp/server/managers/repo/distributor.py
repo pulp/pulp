@@ -17,7 +17,7 @@ import sys
 import uuid
 
 from pulp.server.db.model.repository import Repo, RepoDistributor
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as manager_factory
@@ -137,7 +137,7 @@ class RepoDistributorManager(object):
         if repo is None:
             raise MissingResource(repo_id)
 
-        if not plugin_loader.is_valid_distributor(distributor_type_id):
+        if not plugin_api.is_valid_distributor(distributor_type_id):
             raise InvalidValue(['distributor_type_id'])
 
         # Determine the ID for this distributor on this repo; will be
@@ -149,7 +149,7 @@ class RepoDistributorManager(object):
             if not is_distributor_id_valid(distributor_id):
                 raise InvalidValue(['distributor_id'])
 
-        distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
         # are explicitly set to None so the plugin will default them.
@@ -235,7 +235,7 @@ class RepoDistributorManager(object):
 
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
 
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
 
@@ -243,7 +243,7 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
         distributor_instance.distributor_removed(transfer_repo, call_config)
-        
+
         # clean up binds
         bind_manager = manager_factory.consumer_bind_manager()
         bind_manager.distributor_deleted(repo_id, distributor_id)
@@ -270,9 +270,8 @@ class RepoDistributorManager(object):
         @return: the updated distributor
         @rtype:  dict
 
-        @raise MissingResource: if the given repo doesn't exist
-        @raise MissingResource: if the given distributor doesn't exist
-        @raise InvalidConfiguration: if the plugin rejects the given changes
+        @raise MissingResource: if the given repo or distributor doesn't exist
+        @raise PulpDataException: if the plugin rejects the given changes
         """
 
         repo_coll = Repo.get_collection()
@@ -288,7 +287,7 @@ class RepoDistributorManager(object):
             raise MissingResource(distributor_id)
 
         distributor_type_id = repo_distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
 
         # The supplied config is a delta of changes to make to the existing config.
         # The plugin expects a full configuration, so we apply those changes to
@@ -369,7 +368,7 @@ class RepoDistributorManager(object):
         repo = Repo.get_collection().find_one({'id' : repo_id})
 
         distributor_type_id = repo_distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_loader.get_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
 
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
@@ -401,7 +400,7 @@ class RepoDistributorManager(object):
 
         distributor_coll = RepoDistributor.get_collection()
 
-        # Validatoin
+        # Validation
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
             return None

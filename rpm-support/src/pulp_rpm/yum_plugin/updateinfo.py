@@ -10,11 +10,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import logging
 import yum
-from yum.update_md import UpdateMetadata
+from yum.update_md import UpdateMetadata, UpdateNotice
 
-log = logging.getLogger(__name__)
+import util
+log = util.getLogger(__name__)
 #
 # yum 3.2.22 compat:  UpdateMetadata.add_notice() not
 # supported in 3.2.22.
@@ -132,3 +132,43 @@ class Errata(dict):
         return self.get(attr, None)
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+def updateinfo(errata_units, save_location):
+    um = UpdateMetadata()
+    for e in errata_units:
+        un = UpdateNotice()
+
+        _md = {
+            'from'             : e.metadata['from_str'],
+            'type'             : e.metadata['type'],
+            'title'            : e.metadata['title'],
+            'release'          : e.metadata['release'],
+            'status'           : e.metadata['status'],
+            'version'          : e.metadata['version'],
+            'pushcount'        : e.metadata['pushcount'],
+            'update_id'        : e.unit_key['id'],
+            'issued'           : e.metadata['issued'],
+            'updated'          : e.metadata['updated'],
+            'description'      : e.metadata['description'],
+            'references'       : e.metadata['references'],
+            'pkglist'          : e.metadata['pkglist'],
+            'reboot_suggested' : e.metadata['reboot_suggested'],
+            'severity'         : e.metadata['severity'],
+            'rights'           : e.metadata['rights'],
+            'summary'          : e.metadata['summary'],
+            'solution'         : e.metadata['solution'],
+            }
+        un._md = _md
+        um.add_notice(un)
+
+    if not um._notices:
+        # nothing to do return
+        return
+    updateinfo_path = None
+    try:
+        updateinfo_path = "%s/%s" % (save_location, "updateinfo.xml")
+        updateinfo_xml = um.xml(fileobj=open(updateinfo_path, 'wt'))
+        log.info("updateinfo.xml generated and written to file %s" % updateinfo_path)
+    except:
+        log.error("Error writing updateinfo.xml to path %s" % updateinfo_path)
+    return updateinfo_path

@@ -15,7 +15,7 @@ import logging
 import sys
 
 from pulp.server.db.model.repository import Repo, RepoImporter
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -110,10 +110,10 @@ class RepoImporterManager(object):
         if repo is None:
             raise MissingResource(repo_id)
 
-        if not plugin_loader.is_valid_importer(importer_type_id):
+        if not plugin_api.is_valid_importer(importer_type_id):
             raise InvalidValue(['importer_type_id'])
 
-        importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
+        importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
         # are explicitly set to None so the plugin will default them.
@@ -200,7 +200,7 @@ class RepoImporterManager(object):
 
         # Call the importer's cleanup method
         importer_type_id = repo_importer['importer_type_id']
-        importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
+        importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
 
@@ -244,7 +244,7 @@ class RepoImporterManager(object):
             raise MissingResource(repo_id)
 
         importer_type_id = repo_importer['importer_type_id']
-        importer_instance, plugin_config = plugin_loader.get_importer_by_id(importer_type_id)
+        importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
 
         # The supplied config is a delta of changes to make to the existing config.
         # The plugin expects a full configuration, so we apply those changes to

@@ -1,0 +1,2 @@
+xen,3.0.3,105.el5_5.2,0,i386,xen-3.0.3-105.el5_5.2.i386.rpm,0f1174b38383b01a77278b0d9f289987,md5,xen-3.0.3-105.el5_5.2.src.rpm
+xen-devel,3.0.3,105.el5_5.2,0,i386,xen-devel-3.0.3-105.el5_5.2.i386.rpm,3680d1dde276fd155ead7203508fed30,md5,xen-3.0.3-105.el5_5.2.src.rpm,BAD_VALUE

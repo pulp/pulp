@@ -32,13 +32,16 @@ working directory is simply deleted.
 import os
 
 import pulp.server.constants as pulp_constants
-from pulp.plugins.model import Repository, RelatedRepository
+from pulp.plugins.model import Repository, RelatedRepository, RepositoryGroup, RelatedRepositoryGroup
 
 # -- constants ----------------------------------------------------------------
 
-_WORKING_DIR_ROOT = os.path.join(pulp_constants.LOCAL_STORAGE, 'working', 'repos')
+_WORKING_DIR_ROOT = os.path.join(pulp_constants.LOCAL_STORAGE, 'working')
 
-# -- public -------------------------------------------------------------------
+_REPO_WORKING_DIR = os.path.join(_WORKING_DIR_ROOT, 'repos')
+_REPO_GROUP_WORKING_DIR = os.path.join(_WORKING_DIR_ROOT, 'repo_groups')
+
+# -- single repo calls --------------------------------------------------------
 
 def to_transfer_repo(repo_data):
     """
@@ -50,7 +53,7 @@ def to_transfer_repo(repo_data):
     @type  repo_data: dict
 
     @return: transfer object used in many plugin API calls
-    @rtype:  L{pulp.server.content.plugins.data.Repository}
+    @rtype:  pulp.plugins.model.Repository}
     """
     r = Repository(repo_data['id'], repo_data['display_name'], repo_data['description'], repo_data['notes'])
     return r
@@ -68,7 +71,7 @@ def to_related_repo(repo_data, configs):
     @type  configs: list
 
     @return: transfer object used in many plugin API calls
-    @rtype:  L{pulp.server.content.plugins.data.RelatedRepository}
+    @rtype:  pulp.plugins.model.RelatedRepository
     """
     r = RelatedRepository(repo_data['id'], configs, repo_data['display_name'], repo_data['description'], repo_data['notes'])
     return r
@@ -89,7 +92,7 @@ def repository_working_dir(repo_id, mkdir=True):
     @return: full path on disk
     @rtype:  str
     """
-    working_dir = os.path.join(_WORKING_DIR_ROOT, repo_id)
+    working_dir = os.path.join(_REPO_WORKING_DIR, repo_id)
 
     if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)
@@ -140,6 +143,107 @@ def distributor_working_dir(distributor_type_id, repo_id, mkdir=True):
     """
     repo_working_dir = repository_working_dir(repo_id, mkdir)
     working_dir = os.path.join(repo_working_dir, 'distributors', distributor_type_id)
+
+    if mkdir and not os.path.exists(working_dir):
+        os.makedirs(working_dir)
+
+    return working_dir
+
+# -- repository group calls ---------------------------------------------------
+
+def to_transfer_repo_group(group_data):
+    """
+    Converts the given database representation of a repository group into a
+    plugin transfer object.
+
+    @param group_data: database representation of the group
+    @type  group_data: dict
+
+    @return: transfer object used in plugin calls
+    @rtype:  pulp.plugins.model.RepositoryGroup
+    """
+    g = RepositoryGroup(group_data['id'], group_data['display_name'],
+                        group_data['description'], group_data['notes'])
+    return g
+
+def to_related_repo_group(group_data, configs):
+    """
+    Converts the given database representation of a repository group into a
+    plugin transfer object. The list of configurations for the requested
+    group plugins are included in the returned type.
+
+    @param group_data: database representation of the group
+    @type  group_data: dict
+
+    @param configs: list of plugin configurations to include
+    @type  configs: list
+
+    @return: transfer object used in plugin calls
+    @rtype:  pulp.plugins.model.RelatedRepositoryGroup
+    """
+    g = RelatedRepositoryGroup(group_data['id'], configs, group_data['display_name'],
+                               group_data['description'], group_data['notes'])
+    return g
+
+def repo_group_working_dir(group_id, mkdir=True):
+    """
+    Determines the repo group's working directory. Individual plugin working
+    directories will be placed under this. If the mkdir argument is set to
+    true, the directory will be created as part of this call.
+
+    @param group_id: identifies the repo group
+    @type  group_id: str
+
+    @param mkdir: if true, the call will create the directory; otherwise the
+                  full path will just be generated and returned
+    @type  mkdir: bool
+
+    @return: full path on disk
+    @rtype:  str
+    """
+    working_dir = os.path.join(_REPO_GROUP_WORKING_DIR, group_id)
+
+    if mkdir and not os.path.exists(working_dir):
+        os.makedirs(working_dir)
+
+    return working_dir
+
+def group_importer_working_dir(importer_type_id, group_id, mkdir=True):
+    """
+    Determines the working directory for an importer to use for a repository
+    group. If the mkdir argument is set to true, the directory will be created
+    as part of this call.
+
+    @param mkdir: if true, the call will create the directory; otherwise the
+                  full path will just be generated and returned
+    @type  mkdir: bool
+
+    @return: full path on disk
+    @rtype:  str
+    """
+    group_working_dir = repo_group_working_dir(group_id, mkdir)
+    working_dir = os.path.join(group_working_dir, 'importers', importer_type_id)
+
+    if mkdir and not os.path.exists(working_dir):
+        os.makedirs(working_dir)
+
+    return working_dir
+
+def group_distributor_working_dir(distributor_type_id, group_id, mkdir=True):
+    """
+    Determines the working directory for an importer to use for a repository
+    group. If the mkdir argument is set to true, the directory will be created
+    as part of this call.
+
+    @param mkdir: if true, the call will create the directory; otherwise the
+                  full path will just be generated and returned
+    @type  mkdir: bool
+
+    @return: full path on disk
+    @rtype:  str
+    """
+    group_working_dir = repo_group_working_dir(group_id, mkdir)
+    working_dir = os.path.join(group_working_dir, 'distributors', distributor_type_id)
 
     if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)

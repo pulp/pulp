@@ -15,7 +15,6 @@
 Importer plugin for Yum functionality
 """
 import gettext
-import logging
 import os
 import shutil
 import time
@@ -31,7 +30,7 @@ from pulp.plugins.model import SyncReport
 from pulp_rpm.yum_plugin import util, depsolver
 
 _ = gettext.gettext
-_LOG = logging.getLogger(__name__)
+_LOG = util.getLogger(__name__)
 
 YUM_IMPORTER_TYPE_ID="yum_importer"
 

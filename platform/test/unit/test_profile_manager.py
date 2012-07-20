@@ -174,3 +174,15 @@ class ProfileManagerTests(base.PulpServerTests):
         cursor = collection.find()
         profiles = list(cursor)
         self.assertEquals(len(profiles), 0)
+        
+    def test_consumer_unregister_cleanup(self):
+        # Setup
+        self.test_create()
+        # Test
+        manager = factory.consumer_manager()
+        manager.unregister(self.CONSUMER_ID)
+        # Verify
+        collection = UnitProfile.get_collection()
+        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        profiles = list(cursor)
+        self.assertEquals(len(profiles), 0)

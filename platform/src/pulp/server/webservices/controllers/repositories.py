@@ -26,7 +26,6 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.db.model.repository import Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -186,6 +185,22 @@ class RepoSearch(SearchController):
             manager_factory.repo_query_manager().find_by_criteria)
 
     @auth_required(READ)
+    def GET(self):
+        query_params = web.input()
+        if query_params.pop('details', False):
+            query_params['importers'] = True
+            query_params['distributors'] = True
+        items = self._get_query_results_from_get(
+            ('details', 'importers', 'distributors'))
+
+        RepoCollection._process_repos(
+            items,
+            query_params.pop('importers', False),
+            query_params.pop('distributors', False)
+        )
+        return self.ok(items)
+
+    @auth_required(READ)
     def POST(self):
         """
         Searches based on a Criteria object. Requires a posted parameter
@@ -209,7 +224,7 @@ class RepoSearch(SearchController):
         @return:    list of matching repositories
         @rtype:     list
         """
-        items = self._get_query_results()
+        items = self._get_query_results_from_post()
 
         RepoCollection._process_repos(
             items,
@@ -542,8 +557,6 @@ class RepoDistributors(JSONController):
     @auth_required(CREATE)
     def POST(self, repo_id):
 
-        # Distributor ID is optional and thus isn't part of the URL
-
         # Params (validation will occur in the manager)
         params = self.params()
         distributor_type = params.get('distributor_type_id', None)
@@ -554,16 +567,13 @@ class RepoDistributors(JSONController):
         # Update the repo
         distributor_manager = manager_factory.repo_distributor_manager()
 
-        # Note: The manager will automatically replace a distributor with the
-        # same ID, so there is no need to return a 409.
-
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('add_distributor')]
         if distributor_id is not None:
             resources.update({dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}})
-            tags.append(distributor_id)
+            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id))
         call_request = CallRequest(distributor_manager.add_distributor,
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,

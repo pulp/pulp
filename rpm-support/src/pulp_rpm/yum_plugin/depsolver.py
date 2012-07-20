@@ -13,7 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation
 
-import logging
 import re
 import shutil
 import yum
@@ -22,7 +21,8 @@ from yum.packageSack import ListPackageSack
 from yum.packages import parsePackages
 from yum.repos import RepoStorage
 
-log = logging.getLogger(__name__)
+import util
+log = util.getLogger(__name__)
 
 CACHE_DIR="/tmp/pulp/cache"
 

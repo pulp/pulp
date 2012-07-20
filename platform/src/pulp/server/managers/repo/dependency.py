@@ -16,7 +16,8 @@ import sys
 import pulp.plugins.conduits._common as conduit_common_utils
 from   pulp.plugins.conduits.dependency import DependencyResolutionConduit
 from   pulp.plugins.config import PluginCallConfiguration
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 import pulp.plugins.types.database as types_db
 from   pulp.server.exceptions import MissingResource, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
@@ -82,8 +83,8 @@ class DependencyManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         try:
-            importer_instance, plugin_config = plugin_loader.get_importer_by_id(repo_importer['importer_type_id'])
-        except plugin_loader.PluginNotFound:
+            importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+        except plugin_exceptions.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Package for the importer call

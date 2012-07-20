@@ -25,7 +25,8 @@ import sys
 import traceback
 
 from pulp.common import dateutils
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -80,8 +81,8 @@ class RepoPublishManager(object):
 
         try:
             distributor_instance, plugin_config = \
-                plugin_loader.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except plugin_loader.PluginNotFound:
+                plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+        except plugin_exceptions.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish

@@ -9,3 +9,5 @@ Consumer APIs
    retrieval
    content
    history
+   profile
+   applicability

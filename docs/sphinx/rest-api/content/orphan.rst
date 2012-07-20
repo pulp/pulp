@@ -18,8 +18,8 @@ Content types are defined by type definitions.
 Viewing Orphaned Content
 ------------------------
 
-View all orphaned content
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+View All Orphaned Content
+~~~~~~~~~~~~~~~~~~~~~~~~~
 List all orphaned content, regardless of type.
 
 | :method:`get`
@@ -97,8 +97,8 @@ sample is provided as a demonstration only and does not necessarily reflect the
 exact return types of all calls. However all fields beginning with a **_** will
 be available in all content units, regardless of type.
 
-View orphaned content by type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+View Orphaned Content by Type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 List all the orphaned content of a particular content type.
 
 | :method:`get`
@@ -111,7 +111,7 @@ List all the orphaned content of a particular content type.
 
 | :return:`(possibly empty) list of content units`
 
-View an individual orphaned content unit
+View an Individual Orphaned Content Unit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Retrieve an individual orphaned content unit by content type and content id.
 
@@ -132,8 +132,8 @@ Removing orphans may entail deleting contents from disk and, as such, may
 possibly be long-running process, so all these calls run asynchronously and
 return a :ref:`call_report`
 
-Remove all orphaned content
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Remove All Orphaned Content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove all orphaned content units, regardless of type.
 
 | :method:`delete`
@@ -145,8 +145,8 @@ Remove all orphaned content units, regardless of type.
 
 | :return:`call report representing the current state of the delete`
 
-Remove orphaned content by type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Remove Orphaned Content by Type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove all the orphaned content of a particular content type.
 
 | :method:`delete`
@@ -158,8 +158,8 @@ Remove all the orphaned content of a particular content type.
 
 | :return:`call report representing the current state of the delete`
 
-Remove an individual orphaned content unit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Remove an Individual Orphaned Content Unit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove and individual orphaned content unit by content type and content id.
 
 | :method:`delete`
@@ -172,8 +172,8 @@ Remove and individual orphaned content unit by content type and content id.
 
 | :return:`call report representing the current state of the delete`
 
-Remove orphaned content units by type and id
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Remove Orphaned Content Units by Type and Id
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Individual content units across types may be deleted by this call. The body of
 the call consists of a list of JSON objects with the fields:
 

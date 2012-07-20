@@ -17,7 +17,7 @@ for the purpose of consuming published content.
 
 | :response_list:`_`
 
-* :response_code:`200,if the bind was successfully created`
+* :response_code:`201,if the bind was successfully created`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 
@@ -26,16 +26,19 @@ for the purpose of consuming published content.
 :sample_request:`_` ::
 
  {
-  "repo_id":"A repository ID",
-  "distributor_id":"A repostory distributor ID"
+   "repo_id": "test-repo",
+   "distributor_id": "dist-1"
  }
  
 :sample_response:`200` ::
 
  {
-  "repo_id":"A repository ID",
-  "distributor_id":"A repostory distributor ID",
-  "consumer_id":"A consumer ID"
+   "repo_id": "test-repo",
+   "consumer_id": "test-consumer",
+   "_ns": "consumer_bindings",
+   "_id": {"$oid": "50085f91e138236f9f00000b"},
+   "distributor_id": "dist-1",
+   "id": "50085f91e138236f9f00000b"
  }
 
 
@@ -62,9 +65,12 @@ Remove a binding between a :term:`consumer` and a :term:`repository's <repositor
 :sample_response:`200` ::
 
  {
-  "consumer_id" : "demo_consumer",
-  "repo_id" : "demo_repository",
-  "distributor_id" : "distributor_1",
+   "repo_id": "test-repo",
+   "consumer_id": "test-consumer",
+   "_ns": "consumer_bindings",
+   "_id": {"$oid": "5008604be13823703800003e"},
+   "distributor_id": "dist-1",
+   "id": "5008604be13823703800003e"
  }
 
 
@@ -83,12 +89,81 @@ Retrieves information on a single binding between a consumer and a repository.
 * :response_code:`200,if the bind exists`
 * :response_code:`404,if no bind exists with the given IDs`
 
-| :return:`database representation of the matching repository`
+| :return:`database representation of the matching bind`
 
 :sample_response:`200` ::
 
  {
-  "consumer_id" : "demo_consumer",
-  "repo_id" : "demo_repository",
-  "distributor_id" : "distributor_1",
+   "repo_id": "test-repo",
+   "consumer_id": "test-consumer",
+   "_ns": "consumer_bindings",
+   "_id": {"$oid": "5008604be13823703800003e"},
+   "distributor_id": "dist-1",
+   "id": "5008604be13823703800003e"
+ }
+
+
+Retrieve All Bindings
+---------------------
+
+Retrieves information on all bindings for the specified consumer.
+
+| :method:`get`
+| :path:`/v2/consumers/<consumer_id>/bindings/`
+| :permission:`read`
+| :param_list:`get` None; the consumer ID is included in the URL itself.
+      There are no supported query parameters.
+| :response_list:`_`
+
+* :response_code:`200,if the consumer exists`
+
+| :return:`a list of database representations of the matching binds`
+
+:sample_response:`200` ::
+
+ [
+   {
+     "repo_id": "test-repo",
+     "consumer_id": "test-consumer",
+     " _ns": "consumer_bindings",
+     "_id": {"$oid": "5008604be13823703800003e"},
+     "distributor_id": "dist-1",
+     "id": "5008604be13823703800003e"
+   },
+     "repo_id": "test-repo2",
+     "consumer_id": "test-consumer",
+     " _ns": "consumer_bindings",
+     "_id": {"$oid": "5008604be13823703800003e"},
+     "distributor_id": "dist-1",
+     "id": "5008604be13823703800003e"
+   },
+  ]
+
+
+Retrieve Binding By Consumer And Repository
+-------------------------------------------
+
+Retrieves information on all bindings between a consumer and a repository.
+
+| :method:`get`
+| :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/`
+| :permission:`read`
+| :param_list:`get` None; the consumer and repository IDs are included
+      in the URL itself. There are no supported query parameters.
+| :response_list:`_`
+
+* :response_code:`200,if the bind exists`
+* :response_code:`404,if no bind exists with the given IDs`
+
+| :return:`a database representation of the matching bind`
+
+:sample_response:`200` ::
+
+ {
+   "repo_id": "test-repo",
+   "consumer_id": "test-consumer",
+   "_ns": "consumer_bindings",
+   "_id": {"$oid": "5008604be13823703800003e"},
+   "distributor_id": "dist-1",
+   "id": "5008604be13823703800003e"
  }

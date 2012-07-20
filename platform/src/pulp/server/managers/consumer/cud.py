@@ -111,6 +111,10 @@ class ConsumerManager(object):
         # Remove associate bind
         manager = factory.consumer_bind_manager()
         manager.consumer_deleted(id)
+        
+        # Remove associated profiles
+        manager = factory.consumer_profile_manager()
+        manager.consumer_deleted(id)
 
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()

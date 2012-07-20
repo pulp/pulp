@@ -15,7 +15,7 @@ import base
 import mock_plugins
 import mock_agent
 
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 import pulp.server.managers.factory as factory
@@ -34,7 +34,7 @@ class AgentManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
 
@@ -108,14 +108,27 @@ class AgentManagerTests(base.PulpServerTests):
              'unit_key':{'name':'bar', 'version':'1.0'}},
             {'type_id':'rpm',
              'unit_key':{'name':'abc', 'version':'1.0'}},
+            {'type_id':'mock-type',
+             'unit_key':{'name':'monster', 'version':'5.0'}},
             {'type_id':'unsupported',
              'unit_key':{'name':'xxx', 'version':'1.0'}},
         ]
         options = dict(importkeys=True)
         manager = factory.consumer_agent_manager()
         manager.install_content(self.CONSUMER_ID, units, options)
-        # verify
-        # TODO: verify
+        # Verify
+        profiler = plugin_api.get_profiler_by_type('rpm')[0]
+        pargs = profiler.install_units.call_args[0]
+        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
+        self.assertEquals(pargs[0].profiles, {})
+        self.assertEquals(pargs[1], units[:3])
+        self.assertEquals(pargs[2], options)
+        profiler = plugin_api.get_profiler_by_type('mock-type')[0]
+        pargs = profiler.install_units.call_args[0]
+        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
+        self.assertEquals(pargs[0].profiles, {})
+        self.assertEquals(pargs[1], units[3:4])
+        self.assertEquals(pargs[2], options)
 
     def test_content_update(self):
         # Setup
@@ -127,7 +140,12 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_agent_manager()
         manager.update_content(self.CONSUMER_ID, units, options)
         # verify
-        # TODO: verify
+        profiler = plugin_api.get_profiler_by_type('rpm')[0]
+        pargs = profiler.update_units.call_args[0]
+        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
+        self.assertEquals(pargs[0].profiles, {})
+        self.assertEquals(pargs[1], units[:3])
+        self.assertEquals(pargs[2], options)
 
     def test_content_uninstall(self):
         # Setup
@@ -139,4 +157,9 @@ class AgentManagerTests(base.PulpServerTests):
         options = {}
         manager.uninstall_content(self.CONSUMER_ID, units, options)
         # verify
-        # TODO: verify
+        profiler = plugin_api.get_profiler_by_type('rpm')[0]
+        pargs = profiler.uninstall_units.call_args[0]
+        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
+        self.assertEquals(pargs[0].profiles, {})
+        self.assertEquals(pargs[1], units[:3])
+        self.assertEquals(pargs[2], options)

@@ -17,8 +17,8 @@ Contains the manager class and exceptions for all repository related functionali
 
 import logging
 
-import pulp.plugins.loader as plugin_loader
 import pulp.plugins.types.database as types_database
+from pulp.plugins.loader import api as plugin_api
 
 # -- constants ----------------------------------------------------------------
 
@@ -49,7 +49,7 @@ class PluginManager:
         @rtype:  list
         """
 
-        importer_dicts = plugin_loader.list_importers()
+        importer_dicts = plugin_api.list_importers()
         result = []
         for i in importer_dicts:
             merged = importer_dicts[i]
@@ -66,14 +66,14 @@ class PluginManager:
         @rtype:  list of tuples (str, list of int)
         """
 
-        distributor_dicts = plugin_loader.list_distributors()
+        distributor_dicts = plugin_api.list_distributors()
         result = []
         for d in distributor_dicts:
             merged = distributor_dicts[d]
             merged['id'] = d
             result.append(merged)
         return result
-    
+
     def profilers(self):
         """
         Returns the names and versions of all profilers loaded in the server.
@@ -83,7 +83,7 @@ class PluginManager:
         @rtype:  list of tuples (str, list of int)
         """
 
-        profiler_dicts = plugin_loader.list_profilers()
+        profiler_dicts = plugin_api.list_profilers()
         result = []
         for d in profiler_dicts:
             merged = profiler_dicts[d]

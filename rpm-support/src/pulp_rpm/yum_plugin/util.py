@@ -10,7 +10,9 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import commands
 import hashlib
+import traceback
 import urlparse
 import yum
 import time
@@ -18,8 +20,14 @@ import os
 import logging
 import gettext
 from M2Crypto import X509
-_LOG = logging.getLogger(__name__)
 _ = gettext.gettext
+
+LOG_PREFIX_NAME="pulp.plugins"
+def getLogger(name):
+    log_name = LOG_PREFIX_NAME + "." + name 
+    return logging.getLogger(log_name)
+_LOG = getLogger(__name__)
+
 def get_repomd_filetypes(repomd_path):
     """
     @param repomd_path: path to repomd.xml
@@ -208,3 +216,72 @@ def cleanup_file(file_path):
         os.remove(file_path)
     except (OSError, IOError), e:
         _LOG.info("Error [%s] trying to clean up file path [%s]" % (e, file_path))
+
+def create_symlink(source_path, symlink_path):
+    """
+    @param source_path source path
+    @type source_path str
+
+    @param symlink_path path of where we want the symlink to reside
+    @type symlink_path str
+
+    @return True on success, False on error
+    @rtype bool
+    """
+    if symlink_path.endswith("/"):
+        symlink_path = symlink_path[:-1]
+    if os.path.lexists(symlink_path):
+        if not os.path.islink(symlink_path):
+            _LOG.error("%s is not a symbolic link as expected." % (symlink_path))
+            return False
+        existing_link_target = os.readlink(symlink_path)
+        if existing_link_target == source_path:
+            return True
+        _LOG.warning("Removing <%s> since it was pointing to <%s> and not <%s>"\
+        % (symlink_path, existing_link_target, source_path))
+        os.unlink(symlink_path)
+        # Account for when the relativepath consists of subdirectories
+    if not create_dirs(os.path.dirname(symlink_path)):
+        return False
+    _LOG.debug("creating symlink %s pointing to %s" % (symlink_path, source_path))
+    os.symlink(source_path, symlink_path)
+    return True
+
+def create_dirs(target):
+    """
+    @param target path
+    @type target str
+
+    @return True - success, False - error
+    @rtype bool
+    """
+    try:
+        os.makedirs(target)
+    except OSError, e:
+        # Another thread may have created the dir since we checked,
+        # if that's the case we'll see errno=17, so ignore that exception
+        if e.errno != 17:
+            _LOG.error("Unable to create directories for: %s" % (target))
+            tb_info = traceback.format_exc()
+            _LOG.error("%s" % (tb_info))
+            return False
+    return True
+
+def get_relpath_from_unit(unit):
+    """
+    @param unit
+    @type AssociatedUnit
+
+    @return relative path
+    @rtype str
+    """
+    filename = ""
+    if unit.metadata.has_key("relativepath"):
+        relpath = unit.metadata["relativepath"]
+    elif unit.metadata.has_key("filename"):
+        relpath = unit.metadata["filename"]
+    elif unit.unit_key.has_key("fileName"):
+        relpath = unit.unit_key["fileName"]
+    else:
+        relpath = os.path.basename(unit.storage_path)
+    return relpath

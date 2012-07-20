@@ -55,3 +55,8 @@ Glossary
     by the configured :term:`importer`. A repository may have multiple
     :term:`distributors <distributor>` associated which are used to publish
     its content to multiple destinations, formats, or protocols.
+
+  unit profile
+    A list of :term:`content unit` installed on a :term:`consumer`.  The
+    structure and content of each item in the profile varies based on the
+    unit type.

@@ -13,7 +13,6 @@
 
 # Python
 import gzip
-import logging
 import os
 import shutil
 import tempfile
@@ -23,7 +22,7 @@ import xml.dom.minidom
 import yum.comps
 
 import util
-log = logging.getLogger(__name__)
+log = util.getLogger(__name__)
 
 def yum_group_to_model_group(obj):
     """

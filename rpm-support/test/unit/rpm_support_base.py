@@ -16,6 +16,7 @@ import logging
 import os
 import mock
 import okaara
+import shutil
 import unittest
 
 from pulp.bindings.bindings import Bindings
@@ -42,6 +43,13 @@ class PulpRPMTests(unittest.TestCase):
 
     def setUp(self):
         super(PulpRPMTests, self).setUp()
+
+    def simulate_sync(self, repo, src):
+        # Simulate a repo sync, copy the source contents to the repo.working_dir
+        dst = os.path.join(repo.working_dir, repo.id)
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
 
 class PulpClientTests(unittest.TestCase):
     """

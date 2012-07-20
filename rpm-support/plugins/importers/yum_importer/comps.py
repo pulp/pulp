@@ -19,11 +19,10 @@ import os
 import sys
 import time
 import yum
-import logging
 from pulp_rpm.yum_plugin import comps_util, util
 from pulp.server.managers.repo.unit_association_query import Criteria
 
-_LOG = logging.getLogger(__name__)
+_LOG = util.getLogger(__name__)
 
 PKG_GROUP_TYPE_ID="package_group"
 PKG_CATEGORY_TYPE_ID="package_category"

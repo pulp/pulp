@@ -16,8 +16,9 @@ import logging
 import sys
 
 import pulp.plugins.conduits._common as common_utils
-from   pulp.plugins.model import Unit
+from   pulp.plugins.model import Unit, PublishReport
 from   pulp.plugins.types import database as types_db
+import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
@@ -49,8 +50,9 @@ class ProfilerConduitException(Exception):
 
 class RepoScratchPadMixin(object):
 
-    def __init__(self, repo_id):
+    def __init__(self, repo_id, exception_class):
         self.repo_id = repo_id
+        self.exception_class = exception_class
 
     def get_repo_scratchpad(self):
         """
@@ -69,7 +71,7 @@ class RepoScratchPadMixin(object):
             return value
         except Exception, e:
             _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
+            raise self.exception_class(e), None, sys.exc_info()[2]
 
     def set_repo_scratchpad(self, value):
         """
@@ -89,17 +91,18 @@ class RepoScratchPadMixin(object):
             repo_manager.set_repo_scratchpad(self.repo_id, value)
         except Exception, e:
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
+            raise self.exception_class(e), None, sys.exc_info()[2]
 
-class GetRepoUnitsMixin(object):
+class SingleRepoUnitsMixin(object):
 
-    def __init__(self, repo_id):
+    def __init__(self, repo_id, exception_class):
         self.repo_id = repo_id
+        self.exception_class = exception_class
 
     def get_units(self, criteria=None):
         """
         Returns the collection of content units associated with the repository
-        being synchronized.
+        being operated on.
 
         Units returned from this call will have the id field populated and are
         useable in any calls in this conduit that require the id field.
@@ -111,31 +114,29 @@ class GetRepoUnitsMixin(object):
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
+        return do_get_repo_units(self.repo_id, criteria, self.exception_class)
 
-        try:
-            association_query_manager = manager_factory.repo_unit_association_query_manager()
-            units = association_query_manager.get_units_across_types(self.repo_id, criteria=criteria)
+class MultipleRepoUnitsMixin(object):
 
-            all_units = []
+    def __init__(self, exception_class):
+        self.exception_class = exception_class
 
-            # Load all type definitions in use so we don't hammer the database
-            unique_type_defs = set([u['unit_type_id'] for u in units])
-            type_defs = {}
-            for def_id in unique_type_defs:
-                type_def = types_db.type_definition(def_id)
-                type_defs[def_id] = type_def
+    def get_units(self, repo_id, criteria=None):
+        """
+        Returns the collection of content units associated with the given
+        repository.
 
-            # Convert to transfer object
-            for unit in units:
-                type_id = unit['unit_type_id']
-                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
-                all_units.append(u)
+        Units returned from this call will have the id field populated and are
+        useable in any calls in this conduit that require the id field.
 
-            return all_units
+        @param criteria: used to scope the returned results or the data within;
+               the Criteria class can be imported from this module
+        @type  criteria: L{Criteria}
 
-        except Exception, e:
-            _LOG.exception('Exception from server requesting all content units for repository [%s]' % self.repo_id)
-            raise ImporterConduitException(e), None, sys.exc_info()[2]
+        @return: list of unit instances
+        @rtype:  list of L{AssociatedUnit}
+        """
+        return do_get_repo_units(repo_id, criteria, self.exception_class)
 
 class ImporterScratchPadMixin(object):
 
@@ -228,6 +229,51 @@ class DistributorScratchPadMixin(object):
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
+class RepoGroupDistributorScratchPadMixin(object):
+
+    def __init__(self, group_id, distributor_id):
+        self.group_id = group_id
+        self.distributor_id = distributor_id
+
+    def get_scratchpad(self):
+        """
+        Returns the value set in the scratchpad for this repository group. If no
+        value has been set, None is returned.
+
+        @return: value saved for the repository group and this distributor
+        @rtype:  object
+
+        @raises DistributorConduitException: wraps any exception that may occur
+                in the Pulp server
+        """
+        try:
+            distributor_manager = manager_factory.repo_group_distributor_manager()
+            value = distributor_manager.get_distributor_scratchpad(self.group_id, self.distributor_id)
+            return value
+        except Exception, e:
+            _LOG.exception('Error getting scratchpad for repository [%s]' % self.group_id)
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
+
+    def set_scratchpad(self, value):
+        """
+        Saves the given value to the scratchpad for this repository group. It
+        can later be retrieved in subsequent syncs through get_scratchpad. The
+        type for the given value is anything that can be stored in the database
+        (string, list, dict, etc.).
+
+        @param value: will overwrite the existing scratchpad
+        @type  value: object
+
+        @raises DistributorConduitException: wraps any exception that may occur
+                in the Pulp server
+        """
+        try:
+            distributor_manager = manager_factory.repo_group_distributor_manager()
+            distributor_manager.set_distributor_scratchpad(self.group_id, self.distributor_id, value)
+        except Exception, e:
+            _LOG.exception('Error setting scratchpad for repository [%s]' % self.group_id)
+            raise DistributorConduitException(e), None, sys.exc_info()[2]
+
 class AddUnitMixin(object):
     """
     Used to communicate back into the Pulp server while an importer performs
@@ -267,11 +313,7 @@ class AddUnitMixin(object):
         self._added_count = 0
         self._updated_count = 0
 
-        self._association_owner_type = association_owner_type
         self._association_owner_id = association_owner_id
-
-    def __str__(self):
-        return _('UnitAddConduit for repository [%(r)s]') % {'r' : self.repo_id}
 
     def init_unit(self, type_id, unit_key, metadata, relative_path):
         """
@@ -305,7 +347,7 @@ class AddUnitMixin(object):
         @type  metadata: dict
 
         @param relative_path: see above; may be None
-        @type  relative_path: str
+        @type  relative_path: str, None
 
         @return: object representation of the unit, populated by Pulp with both
                  provided and derived values
@@ -360,7 +402,7 @@ class AddUnitMixin(object):
                 self._added_count += 1
 
             # Associate it with the repo
-            association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, self._association_owner_type, self._association_owner_id)
+            association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, self.association_owner_type, self.association_owner_id)
 
             return unit
         except Exception, e:
@@ -396,3 +438,99 @@ class AddUnitMixin(object):
         except Exception, e:
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+class StatusMixin(object):
+
+    def __init__(self, report_id, exception_class, progress_report=None):
+        self.report_id = report_id
+        self.exception_class = exception_class
+        self.progress_report = progress_report or {}
+
+    def set_progress(self, status):
+        """
+        Informs the server of the current state of the publish operation. The
+        contents of the status is dependent on how the distributor
+        implementation chooses to divide up the publish process.
+
+        @param status: contains arbitrary data to describe the state of the
+               publish; the contents may contain whatever information is relevant
+               to the distributor implementation so long as it is serializable
+        """
+        try:
+            self.progress_report[self.report_id] = status
+            context = dispatch_factory.context()
+            context.report_progress(self.progress_report)
+        except Exception, e:
+            _LOG.exception('Exception from server setting progress for report [%s]' % self.report_id)
+            try:
+                _LOG.error('Progress value: %s' % str(status))
+            except Exception:
+                # Best effort to print this, but if its that grossly unserializable
+                # the log will tank and we don't want that exception to bubble up
+                pass
+            raise self.exception_class(e), None, sys.exc_info()[2]
+
+class PublishReportMixin(object):
+
+    def build_success_report(self, summary, details):
+        """
+        Creates the PublishReport instance that needs to be returned to the Pulp
+        server at the end of the publish_repo call.
+
+        @param summary: short log of the publish; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the publish; may be None
+        @type  details: any serializable
+        """
+        r = PublishReport(True, summary, details)
+        return r
+
+    def build_failure_report(self, summary, details):
+        """
+        Creates the PublishReport instance that needs to be returned to the Pulp
+        server at the end of the publish_repo call. The report built in this
+        fashion will indicate the publish operation has gracefully failed
+        (as compared to an unexpected exception bubbling up).
+
+        @param summary: short log of the publish; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the publish; may be None
+        @type  details: any serializable
+        """
+        r = PublishReport(False, summary, details)
+        return r
+
+# -- utilities ----------------------------------------------------------------
+
+def do_get_repo_units(repo_id, criteria, exception_class):
+    """
+    Performs a repo unit association query. This is split apart so we can have
+    custom mixins with different signatures.
+    """
+    try:
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
+        units = association_query_manager.get_units_across_types(repo_id, criteria=criteria)
+
+        all_units = []
+
+        # Load all type definitions in use so we don't hammer the database
+        unique_type_defs = set([u['unit_type_id'] for u in units])
+        type_defs = {}
+        for def_id in unique_type_defs:
+            type_def = types_db.type_definition(def_id)
+            type_defs[def_id] = type_def
+
+        # Convert to transfer object
+        for unit in units:
+            type_id = unit['unit_type_id']
+            u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+            all_units.append(u)
+
+        return all_units
+
+    except Exception, e:
+        _LOG.exception('Exception from server requesting all content units for repository [%s]' % repo_id)
+        raise exception_class(e), None, sys.exc_info()[2]
+

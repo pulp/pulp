@@ -17,8 +17,8 @@ import commands
 import datetime
 import tempfile
 from stat import ST_SIZE
-from logging import getLogger
 
+from pulp_rpm.yum_plugin.util import getLogger
 log = getLogger(__name__)
 
 VALID_IMAGE_TYPES = {
@@ -111,7 +111,7 @@ class GenerateIsos(object):
         """
          template mkisofs command to be filled and executed
         """
-        return "mkisofs -r -J -D -graft-points -path-list %s -o %s"
+        return "mkisofs -r -D -graft-points -path-list %s -o %s"
 
     def __grafts(self, img_files):
         grafts = []

@@ -66,7 +66,7 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('skip', 'skip_types'),
 ]
 
-VALID_SKIP_TYPES = ['rpm', 'drpm', 'distribution', 'errata']
+VALID_SKIP_TYPES = ['rpm', 'drpm', 'distribution', 'erratum']
 
 LOG = None # set by context
 

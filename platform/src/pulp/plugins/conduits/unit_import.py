@@ -57,7 +57,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin):
 
     def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id):
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
-        RepoScratchPadMixin.__init__(self, dest_repo_id)
+        RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
 
         self.source_repo_id = source_repo_id
         self.dest_repo_id = dest_repo_id

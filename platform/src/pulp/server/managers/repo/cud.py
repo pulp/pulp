@@ -27,6 +27,7 @@ import sys
 import pymongo
 
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
+from pulp.server.dispatch import factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException
@@ -188,9 +189,22 @@ class RepoManager(object):
         # will have to look at the server logs for more information.
         error_tuples = [] # tuple of failed step and exception arguments
 
+        # Remove and scheduled activities
+        scheduler = dispatch_factory.scheduler()
+
+        importer_manager = manager_factory.repo_importer_manager()
+        importers = importer_manager.get_importers(repo_id)
+        if importers:
+            for schedule_id in importer_manager.list_sync_schedules(repo_id):
+                scheduler.remove(schedule_id)
+
+        distributor_manager = manager_factory.repo_distributor_manager()
+        for distributor in distributor_manager.get_distributors(repo_id):
+            for schedule_id in distributor_manager.list_publish_schedules(repo_id, distributor['id']):
+                scheduler.remove(schedule_id)
+
         # Inform the importer
         importer_coll = RepoImporter.get_collection()
-        importer_manager = manager_factory.repo_importer_manager()
         repo_importer = importer_coll.find_one({'repo_id' : repo_id})
         if repo_importer is not None:
             try:
@@ -201,7 +215,6 @@ class RepoManager(object):
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
-        distributor_manager = manager_factory.repo_distributor_manager()
         repo_distributors = list(distributor_coll.find({'repo_id' : repo_id}))
         for repo_distributor in repo_distributors:
             try:

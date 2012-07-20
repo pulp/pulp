@@ -22,7 +22,7 @@ from pprint import pprint
 
 import base
 
-from pulp.plugins import loader
+from pulp.plugins.loader import exceptions, loading, manager
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
 from pulp.plugins.profiler import Profiler
@@ -178,7 +178,7 @@ class BogusImporter(Importer):
     @classmethod
     def metadata(cls):
         return {'types': ['excellent_type']}
-    
+
 class GoodProfiler(Importer):
     @classmethod
     def metadata(cls):
@@ -190,7 +190,7 @@ class PluginMapTests(base.PulpServerTests):
 
     def setUp(self):
         super(PluginMapTests, self).setUp()
-        self.plugin_map = loader._PluginMap()
+        self.plugin_map = manager._PluginMap()
 
     def test_add_plugin(self):
         name = 'excellent'
@@ -211,7 +211,7 @@ class PluginMapTests(base.PulpServerTests):
         name = 'less_excellent'
         types = ExcellentImporter.metadata()['types']
         self.plugin_map.add_plugin(name, ExcellentImporter, {}, types)
-        self.assertRaises(loader.ConflictingPluginName,
+        self.assertRaises(exceptions.ConflictingPluginName,
                           self.plugin_map.add_plugin,
                           name, BogusImporter, {}, types)
 
@@ -228,12 +228,12 @@ class PluginMapTests(base.PulpServerTests):
         self.assertEqual(id, 'excellent')
 
     def test_name_not_found(self):
-        self.assertRaises(loader.PluginNotFound,
+        self.assertRaises(exceptions.PluginNotFound,
                           self.plugin_map.get_plugin_by_id,
                           'bogus')
 
     def test_type_not_found(self):
-        self.assertRaises(loader.PluginNotFound,
+        self.assertRaises(exceptions.PluginNotFound,
                           self.plugin_map.get_plugin_ids_by_type,
                           'bogus_type')
 
@@ -249,7 +249,7 @@ class LoaderInstanceTest(base.PulpServerTests):
 
     def test_loader_instantiation(self):
         try:
-            l = loader.PluginLoader()
+            l = manager.PluginManager()
         except Exception, e:
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
@@ -258,7 +258,7 @@ class LoaderTest(base.PulpServerTests):
 
     def setUp(self):
         super(LoaderTest, self).setUp()
-        self.loader = loader.PluginLoader()
+        self.loader = manager.PluginManager()
 
     def tearDown(self):
         super(LoaderTest, self).tearDown()
@@ -270,61 +270,61 @@ class LoaderDirectOperationsTests(LoaderTest):
     def test_distributor(self):
         name = 'spidey'
         types = WebDistributor.metadata()['types']
-        self.loader.add_distributor(name, WebDistributor, {})
+        self.loader.distributors.add_plugin(name, WebDistributor, {}, types)
 
-        cls = self.loader.get_distributor_by_id(name)[0]
+        cls = self.loader.distributors.get_plugin_by_id(name)[0]
         self.assertTrue(cls is WebDistributor)
 
-        cls = self.loader.get_distributors_by_type(types[0])[0][0]
+        cls = self.loader.distributors.get_plugins_by_type(types[0])[0][0]
         self.assertTrue(cls is WebDistributor)
 
-        cls = self.loader.get_distributors_by_type(types[1])[0][0]
+        cls = self.loader.distributors.get_plugins_by_type(types[1])[0][0]
         self.assertTrue(cls is WebDistributor)
 
-        distributors = self.loader.get_loaded_distributors()
+        distributors = self.loader.distributors.get_loaded_plugins()
         self.assertTrue(name in distributors)
 
-        self.loader.remove_distributor(name)
-        self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_distributor_by_id,
+        self.loader.distributors.remove_plugin(name)
+        self.assertRaises(exceptions.PluginNotFound,
+                          self.loader.distributors.get_plugin_by_id,
                           name)
 
     def test_importer(self):
         name = 'bill'
         types = ExcellentImporter.metadata()['types']
-        self.loader.add_importer(name, ExcellentImporter, {})
+        self.loader.importers.add_plugin(name, ExcellentImporter, {}, types)
 
-        cls = self.loader.get_importer_by_id(name)[0]
+        cls = self.loader.importers.get_plugin_by_id(name)[0]
         self.assertTrue(cls is ExcellentImporter)
 
-        cls = self.loader.get_importers_by_type(types[0])[0][0]
+        cls = self.loader.importers.get_plugins_by_type(types[0])[0][0]
         self.assertTrue(cls is ExcellentImporter)
 
-        importers = self.loader.get_loaded_importers()
+        importers = self.loader.importers.get_loaded_plugins()
         self.assertTrue(name in importers)
 
-        self.loader.remove_importer(name)
-        self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_importer_by_id,
+        self.loader.importers.remove_plugin(name)
+        self.assertRaises(exceptions.PluginNotFound,
+                          self.loader.importers.get_plugin_by_id,
                           name)
 
     def test_profiler(self):
         name = 'elmer'
         types = GoodProfiler.metadata()['types']
-        self.loader.add_profiler(name, GoodProfiler, {})
+        self.loader.profilers.add_plugin(name, GoodProfiler, {}, types)
 
-        cls = self.loader.get_profiler_by_id(name)[0]
+        cls = self.loader.profilers.get_plugin_by_id(name)[0]
         self.assertTrue(cls is GoodProfiler)
 
-        cls = self.loader.get_profiler_by_type(types[0])[0]
+        cls = self.loader.profilers.get_plugins_by_type(types[0])[0][0]
         self.assertTrue(cls is GoodProfiler)
 
-        profilers = self.loader.get_loaded_profilers()
+        profilers = self.loader.profilers.get_loaded_plugins()
         self.assertTrue(name in profilers)
 
-        self.loader.remove_profiler(name)
-        self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_profiler_by_id,
+        self.loader.profilers.remove_plugin(name)
+        self.assertRaises(exceptions.PluginNotFound,
+                          self.loader.profilers.get_plugin_by_id,
                           name)
 
 
@@ -337,17 +337,17 @@ class LoaderFileSystemOperationsTests(LoaderTest):
                                        'distributor',
                                        'TestDistributor',
                                        types)
-        self.loader.load_distributors_from_path(distributors_root)
+        loading.load_plugins_from_path(distributors_root, Distributor, self.loader.distributors)
         try:
-            cls, cfg = self.loader.get_distributor_by_id('testdistributor')
+            cls, cfg = self.loader.distributors.get_plugin_by_id('testdistributor')
         except Exception, e:
             print 'plugin root: %s' % plugin_root
             print 'plugins: ',
-            pprint(self.loader._PluginLoader__distributors.plugins)
+            pprint(self.loader.distributors.plugins)
             print 'configs: ',
-            pprint(self.loader._PluginLoader__distributors.configs)
+            pprint(self.loader.distributors.configs)
             print 'types: ',
-            pprint(self.loader._PluginLoader__distributors.types)
+            pprint(self.loader.distributors.types)
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
     def test_single_importer_with_query(self):
@@ -357,8 +357,8 @@ class LoaderFileSystemOperationsTests(LoaderTest):
                                     'importer',
                                     'TestImporter',
                                     types)
-        self.loader.load_importers_from_path(importers_root)
-        cls, cfg = self.loader.get_importers_by_type(types[0])[0]
+        loading.load_plugins_from_path(importers_root, Importer, self.loader.importers)
+        cls, cfg = self.loader.importers.get_plugins_by_type(types[0])[0]
         self.assertTrue(issubclass(cls, Importer))
 
     def test_multiple_distributors(self):
@@ -378,15 +378,15 @@ class LoaderFileSystemOperationsTests(LoaderTest):
         self.assertEqual(distributors_root_1,
                          distributors_root_2,
                          distributors_root_3)
-        self.loader.load_distributors_from_path(distributors_root_1)
+        loading.load_plugins_from_path(distributors_root_1, Distributor, self.loader.distributors)
 
-        cls_1 = self.loader.get_distributor_by_id('foodistributor')[0]
+        cls_1 = self.loader.distributors.get_plugin_by_id('foodistributor')[0]
         self.assertTrue(issubclass(cls_1, Distributor))
 
-        cls_2 = self.loader.get_distributors_by_type('bar')[0][0]
+        cls_2 = self.loader.distributors.get_plugins_by_type('bar')[0][0]
         self.assertTrue(issubclass(cls_2, Distributor))
 
-        cls_3 = self.loader.get_distributor_by_id('bazdistributor')[0]
+        cls_3 = self.loader.distributors.get_plugin_by_id('bazdistributor')[0]
         self.assertTrue(issubclass(cls_3, Distributor))
 
     def test_multiple_importers_per_plugin(self):
@@ -399,10 +399,10 @@ class LoaderFileSystemOperationsTests(LoaderTest):
         imp_root = gen_multi_plugin(plugin_root, 'importer', 'MultiImporter', ['foo'])
 
         # Test
-        self.loader.load_importers_from_path(imp_root)
+        loading.load_plugins_from_path(imp_root, Importer, self.loader.importers)
 
         # Verify
-        loaded = self.loader.get_loaded_importers()
+        loaded = self.loader.importers.get_loaded_plugins()
         self.assertEqual(3, len(loaded))
 
 
@@ -422,15 +422,15 @@ class LoaderFileSystemOperationsTests(LoaderTest):
                                      ['test_importer'],
                                      enabled=False)
         self.assertEqual(importer_root_1, importer_root_2)
-        self.loader.load_distributors_from_path(distributors_root)
-        self.loader.load_importers_from_path(importer_root_1)
+        loading.load_plugins_from_path(distributors_root, Distributor, self.loader.distributors)
+        loading.load_plugins_from_path(importer_root_1, Importer, self.loader.importers)
 
-        distributor_cls = self.loader.get_distributor_by_id('mydistributor')[0]
+        distributor_cls = self.loader.distributors.get_plugin_by_id('mydistributor')[0]
         self.assertTrue(issubclass(distributor_cls, Distributor))
 
-        importer_cls = self.loader.get_importers_by_type('test_importer')[0][0]
+        importer_cls = self.loader.importers.get_plugins_by_type('test_importer')[0][0]
         self.assertEqual(importer_cls.__name__, 'EnabledImporter')
 
-        self.assertRaises(loader.PluginNotFound,
-                          self.loader.get_importer_by_id,
+        self.assertRaises(exceptions.PluginNotFound,
+                          self.loader.importers.get_plugin_by_id,
                           'disabledimporter')
