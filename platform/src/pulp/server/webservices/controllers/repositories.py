@@ -557,8 +557,6 @@ class RepoDistributors(JSONController):
     @auth_required(CREATE)
     def POST(self, repo_id):
 
-        # Distributor ID is optional and thus isn't part of the URL
-
         # Params (validation will occur in the manager)
         params = self.params()
         distributor_type = params.get('distributor_type_id', None)
