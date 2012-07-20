@@ -567,9 +567,6 @@ class RepoDistributors(JSONController):
         # Update the repo
         distributor_manager = manager_factory.repo_distributor_manager()
 
-        # Note: The manager will automatically replace a distributor with the
-        # same ID, so there is no need to return a 409.
-
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
