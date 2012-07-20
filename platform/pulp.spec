@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.316
+Version: 0.0.317
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,9 @@ exit 0
 %endif
 
 %changelog
+* Fri Jul 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.317-1
+- version alignment.
+
 * Thu Jul 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.316-1
 - 841655 - changed pulp.spec to that /etc/pki/pulp/ is owned by apache.
   (jortel@redhat.com)
