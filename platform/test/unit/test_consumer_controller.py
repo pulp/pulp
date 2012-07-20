@@ -21,9 +21,8 @@ import base
 import logging
 import mock_plugins
 import mock_agent
-import pulp.plugins.loader as plugin_loader
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
-from pulp.plugins.new_loader import api as plugin_api
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
@@ -476,9 +475,9 @@ class TestApplicability(base.PulpWebserviceTests):
         base.PulpWebserviceTests.setUp(self)
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
-        plugin_loader._create_loader()
+        plugin_api._create_manager()
         mock_plugins.install()
-        profiler = plugin_loader.get_profiler_by_type('errata')[0]
+        profiler = plugin_api.get_profiler_by_type('errata')[0]
         profiler.unit_applicable = \
             mock.Mock(side_effect=lambda i,u,c,x:
                 ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
