@@ -4,8 +4,11 @@ Unit Profiles
 Create A Profile
 ----------------
 
-Create a :term:`unit profile` associated with a :term:`consumer`.  Performs
-an update if a profile already exists for the specified content type.
+Create a :term:`unit profile` and associate it with the specified :term:`consumer`.
+Unit profiles are associated to consumers by content type.  Each consumer may
+be associated with one profile of a given content type at a time.  If a
+profile of the specified content type is already associated with the consumer,
+it is replaced with the profile supplied in this call.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/profiles/`
@@ -17,11 +20,11 @@ an update if a profile already exists for the specified content type.
 
 | :response_list:`_`
 
-* :response_code:`201,if the bind was successfully created`
+* :response_code:`201,if the profile was successfully created`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer does not exist`
 
-| :return:`The created profile object`
+| :return:`The created unit profile object`
 
 :sample_request:`_` ::
 
@@ -43,10 +46,15 @@ an update if a profile already exists for the specified content type.
  }
 
 
-Update A Profile
-----------------
+Replace a Profile
+-----------------
 
-Update a :term:`unit profile` associated with a :term:`consumer`.
+Replace a :term:`unit profile` associated with the specified :term:`consumer`.
+Unit profiles are associated to consumers by content type.  Each consumer may
+be associated to one profile of a given content type at one time.  If no
+unit profile matching the specified content type is currently associated to the
+consumer, the supplied profile is created and associated with the consumer
+using the specified content type.
 
 | :method:`put`
 | :path:`/v2/consumers/<consumer_id>/profiles/<content-type>/`
@@ -58,11 +66,11 @@ Update a :term:`unit profile` associated with a :term:`consumer`.
 
 | :response_list:`_`
 
-* :response_code:`201,if the bind was successfully updated`
+* :response_code:`201,if the profile was successfully updated`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer does not exist`
 
-| :return:`The created profile object`
+| :return:`The created unit profile object`
 
 :sample_request:`_` ::
 
@@ -97,9 +105,9 @@ a :term:`consumer`.
 | :response_list:`_`
 
 * :response_code:`200,regardless of whether any profiles exist`
-* :response_code:`404,if the consumer does not exists`
+* :response_code:`404,if the consumer does not exist`
 
-| :return:`a list of database representations of unit profiles`
+| :return:`a list of unit profile objects or an empty list of none exist`
 
 :sample_response:`200` ::
 
@@ -124,7 +132,7 @@ a :term:`consumer`.
    }
  ]
 
-Retrieve A profile By Content Type
+Retrieve a profile By Content Type
 ----------------------------------
 
 Retrieves a :term:`unit profile` associated with a :term:`consumer` by
@@ -139,7 +147,7 @@ content type.
 * :response_code:`200,regardless of whether any profiles exist`
 * :response_code:`404,if the consumer or requested profile does not exists`
 
-| :return:`a database representation of the requested unit profile`
+| :return:`the requested unit profile object`
 
 :sample_response:`200` ::
 
