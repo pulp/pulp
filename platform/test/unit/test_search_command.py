@@ -16,7 +16,7 @@ import unittest
 import mock
 from okaara.cli import CommandUsage
 
-from pulp.client.extensions.search import SearchCommand
+from pulp.client.search import SearchCommand
 
 class TestSearchCommand(unittest.TestCase):
     def setUp(self):

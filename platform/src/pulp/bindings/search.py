@@ -11,21 +11,26 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from okaara.cli import CommandUsage
+
 from pulp.bindings.base import PulpAPI
 
 class SearchAPI(PulpAPI):
     PATH = None
+    _CRITERIA_ARGS = set(('filters', 'sort', 'limit', 'skip', 'fields'))
 
-    def search(self, criteria):
+    def search(self, **kwargs):
         """
         Performs a search against the server-side REST API. This depends on
         self.PATH being set to something valid, generally by having a subclass
         override it.
 
-        @param criteria:    Criteria to search with
-        @type  criteria:    pulp.server.db.model.criteria.Criteria
+        Pass in name-based parameters only that match the values accepted by
+        pulp.server.db.model.criteria.Criteria.__init__
 
         @return:    response body from the server
         """
-        response = self.server.POST(self.PATH, {'criteria':criteria.as_dict()})
+        if not set(kwargs.keys()) <= self._CRITERIA_ARGS:
+            raise CommandUsage()
+        response = self.server.POST(self.PATH, {'criteria':kwargs})
         return response.response_body

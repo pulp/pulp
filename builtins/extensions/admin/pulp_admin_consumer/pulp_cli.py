@@ -15,10 +15,9 @@ import time
 from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
-    PulpCliOption, PulpCliFlag, UnknownArgsParser
+    PulpCliOption, PulpCliFlag
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.extensions.search import SearchCommand
-from pulp.server.db.model.criteria import Criteria
+from pulp.client.search import SearchCommand
 
 # -- framework hook -----------------------------------------------------------
 
@@ -157,8 +156,7 @@ class AdminConsumerSection(PulpCliSection):
             self.prompt.render_document(c, filters=filters, order=order)
 
     def search(self, **kwargs):
-        criteria = Criteria.from_client_input(kwargs)
-        consumer_list = self.context.server.consumer_search.search(criteria)
+        consumer_list = self.context.server.consumer_search.search(**kwargs)
         for consumer in consumer_list:
             self.prompt.render_document(consumer)
 

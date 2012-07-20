@@ -13,8 +13,7 @@
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.extensions.search import SearchCommand
-from pulp.server.db.model.criteria import Criteria
+from pulp.client.search import SearchCommand
 
 # -- framework hook -----------------------------------------------------------
 
@@ -166,8 +165,7 @@ class RepoSection(PulpCliSection):
             self.prompt.render_document(repo, filters=filters, order=order)
 
     def search(self, **kwargs):
-        criteria = Criteria.from_client_input(kwargs)
-        repo_list = self.context.server.repo_search.search(criteria)
+        repo_list = self.context.server.repo_search.search(**kwargs)
         for repo in repo_list:
             self.prompt.render_document(repo)
 
@@ -336,7 +334,6 @@ class RepoGroupSection(PulpCliSection):
             self.prompt.render_document(repo_group, filters=filters, order=order)
 
     def search(self, **kwargs):
-        criteria = Criteria.from_client_input(kwargs)
-        repo_group_list = self.context.server.repo_group_search.search(criteria)
+        repo_group_list = self.context.server.repo_group_search.search(**kwargs)
         for consumer in repo_group_list:
             self.prompt.render_document(consumer)

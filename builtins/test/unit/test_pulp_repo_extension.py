@@ -14,6 +14,9 @@
 import sys
 import os
 import copy
+
+from okaara.cli import CommandUsage
+
 try:
     from urlparse import parse_qs
 except ImportError:
@@ -27,7 +30,6 @@ sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),
 
 import base_builtins
 from pulp_repo import pulp_cli
-from pulp.server import exceptions
 
 class TestRepoSearch(base_builtins.PulpClientTests):
     def setUp(self):
@@ -44,8 +46,8 @@ class TestRepoSearch(base_builtins.PulpClientTests):
     def test_calls_search_api(self, mock_search):
         self.repo_section.search(limit=20)
         self.assertEqual(mock_search.call_count, 1)
-        criteria = mock_search.call_args[0][0]
-        self.assertEqual(criteria.limit, 20)
+        self.assertTrue('limit' in mock_search.call_args[1])
+        self.assertEqual(mock_search.call_args[1]['limit'], 20)
 
     @mock.patch('pulp.bindings.search.SearchAPI.search', return_value=[1,2])
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
@@ -61,7 +63,7 @@ class TestRepoSearch(base_builtins.PulpClientTests):
         self.assertTrue(mock_render.call_args_list[1][0][0] in (1, 2))
 
     def test_invalid_input(self):
-        self.assertRaises(exceptions.InvalidValue, self.repo_section.search, x=2)
+        self.assertRaises(CommandUsage, self.repo_section.search, x=2)
 
 
 class TestRepoExtension(base_builtins.PulpClientTests):

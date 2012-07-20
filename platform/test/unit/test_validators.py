@@ -13,7 +13,7 @@
 
 import unittest
 
-from pulp.client.extensions import validators
+from pulp.client import validators
 
 class TestPositiveInt(unittest.TestCase):
     def test_positive(self):

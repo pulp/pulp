@@ -16,23 +16,19 @@ import unittest
 import mock
 
 from pulp.bindings.search import SearchAPI
-from pulp.server.db.model.criteria import Criteria
 
 class TestSearchAPI(unittest.TestCase):
-    @mock.patch.object(Criteria, 'as_dict', return_value='this is unique')
-    def test_calls_post(self, mock_as_dict):
+    def test_calls_post(self):
         api = SearchAPI(mock.MagicMock())
         api.PATH = '/some/path'
-        criteria = Criteria()
-        api.search(criteria)
+        api.search(limit=12)
 
         self.assertEqual(api.server.POST.call_count, 1)
         self.assertEqual(api.server.POST.call_args[0][0], '/some/path')
-        self.assertEqual(api.server.POST.call_args[0][1], {'criteria':'this is unique'})
+        self.assertEqual(api.server.POST.call_args[0][1], {'criteria':{'limit':12}})
 
     def test_returns_response_body(self):
         api = SearchAPI(mock.MagicMock())
-        criteria = Criteria()
-        ret = api.search(criteria)
+        ret = api.search()
         self.assertEqual(ret, api.server.POST.return_value.response_body)
 

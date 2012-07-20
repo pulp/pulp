@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),
     '../../extensions/admin/'))
 
 from pulp_admin_consumer import pulp_cli
-from pulp.server import exceptions
+from okaara.cli import CommandUsage
 
 class TestConsumerSearch(base_builtins.PulpClientTests):
     def setUp(self):
@@ -38,8 +38,7 @@ class TestConsumerSearch(base_builtins.PulpClientTests):
     def test_calls_search_api(self, mock_search):
         self.consumer_section.search(limit=20)
         self.assertEqual(mock_search.call_count, 1)
-        criteria = mock_search.call_args[0][0]
-        self.assertEqual(criteria.limit, 20)
+        mock_search.assert_called_once_with(limit=20)
 
     @mock.patch('pulp.bindings.search.SearchAPI.search', return_value=[1,2])
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
@@ -55,4 +54,4 @@ class TestConsumerSearch(base_builtins.PulpClientTests):
         self.assertTrue(mock_render.call_args_list[1][0][0] in (1, 2))
 
     def test_invalid_input(self):
-        self.assertRaises(exceptions.InvalidValue, self.consumer_section.search, x=2)
+        self.assertRaises(CommandUsage, self.consumer_section.search, x=2)
