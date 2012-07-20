@@ -573,7 +573,7 @@ class RepoDistributors(JSONController):
                 action_tag('add_distributor')]
         if distributor_id is not None:
             resources.update({dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}})
-            tags.append(distributor_id)
+            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id))
         call_request = CallRequest(distributor_manager.add_distributor,
                                    [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
                                    resources=resources,
