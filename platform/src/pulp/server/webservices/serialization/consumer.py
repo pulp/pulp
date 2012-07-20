@@ -17,10 +17,17 @@ Module for profile serialization.
 
 import link
 
-def serialize(profile):
+def profile(profile):
     serialized = dict(profile)
     href = link.child_link_obj(
         profile['consumer_id'],
         profile['content_type'])
     serialized.update(href)
     return serialized
+
+def applicability_report(report):
+    return dict(
+        unit=report.unit,
+        applicable=report.applicable,
+        summary=report.summary,
+        details=report.details)

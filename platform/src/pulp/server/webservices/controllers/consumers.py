@@ -500,7 +500,7 @@ class Profiles(JSONController):
         """
         manager = managers.consumer_profile_manager()
         profiles = manager.get_profiles(consumer_id)
-        profiles = [serialization.profile.serialize(p) for p in profiles]
+        profiles = [serialization.consumer.profile(p) for p in profiles]
         return self.ok(profiles)
 
     @auth_required(CREATE)
@@ -551,7 +551,7 @@ class Profile(JSONController):
         """
         manager = managers.consumer_profile_manager()
         profile = manager.get_profile(consumer_id, content_type)
-        serialized = serialization.profile.serialize(profile)
+        serialized = serialization.consumer.profile(profile)
         return self.ok(serialized)
 
     @auth_required(UPDATE)
@@ -648,7 +648,7 @@ class ContentApplicability(JSONController):
         manager = managers.consumer_applicability_manager()
         report = manager.units_applicable(criteria, units)
         for k,v in report.items():
-            report[k] = [self.__rdict(r) for r in v]
+            report[k] = [serialization.consumer.applicability_report(r) for r in v]
         return self.ok(report)
 
     def __rdict(self, report):
