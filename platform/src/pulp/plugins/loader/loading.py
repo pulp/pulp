@@ -22,8 +22,6 @@ try:
 except ImportError:
     import simplejson as json
 
-from pulp.plugins.loader import exceptions as loader_exceptions
-
 # constants --------------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
@@ -42,19 +40,32 @@ def load_plugins_from_path(path, base_class, plugin_map):
     @type plugin_map: L{_PluginMap}
     """
     _LOG.debug('Loading multiple plugins: %s, %s' % (path, base_class.__name__))
-    check_path(path)
+
+    if not os.access(path, os.F_OK | os.R_OK):
+        msg = _('Cannot load plugins: path does not exist or cannot be read: %(p)s')
+        _LOG.critical(msg % {'p': path})
+        return
+
     add_path_to_sys_path(path)
 
     plugin_dirs = get_plugin_dirs(path)
+
     for dir_ in plugin_dirs:
         if dir_ in sys.modules:
-            msg =_('Python already has module loaded: %(d)s')
-            raise loader_exceptions.NamespaceCollision(msg % {'d': dir_})
+            msg = _('Cannot load plugin: python already has module loaded: %(d)s')
+            _LOG.error(msg % {'d': dir_})
+            continue
+
         plugin_tuples = load_plugins(dir_, base_class, base_class.__name__.lower())
+
+        if plugin_tuples is None:
+            continue
 
         for cls, cfg in plugin_tuples:
             id = get_plugin_metadata_field(cls, 'id', cls.__name__)
             types = get_plugin_types(cls)
+            if None in (id, types):
+                continue
             plugin_map.add_plugin(id, cls, cfg, types)
 
 
@@ -79,7 +90,6 @@ def load_plugins(path, base_class, module_name):
     @type base_class: type
     @type module_name: str
     @rtype: list of tuple (type, dict)
-    @raise: L{PluginLoadError}
     """
     _LOG.debug('Loading plugin: %s, %s, %s' % (path, base_class.__name__, module_name))
 
@@ -98,16 +108,15 @@ def load_plugins(path, base_class, module_name):
         elif _CONFIG_REGEX.match(entry):
             config_path = os.path.join(path, entry)
 
-    # if the plugin is not a package, error out
     if not init_found:
-        msg = _('%(n)s plugin is not a package: no __init__.py found')
-        raise loader_exceptions.MissingPluginPackage(msg % {'n': package_name})
+        msg = _('Cannot load plugin: %(n)s is not a package: no __init__.py found')
+        _LOG.error(msg % {'n': package_name})
+        return None
 
-    # if we can't find the module, error out
     if not module_found:
-        msg = _('%(n)s plugin has no module: %(p)s.%(m)s')
-        d = {'n': module_name.title(), 'p': package_name, 'm': module_name}
-        raise loader_exceptions.MissingPluginModule(msg % d)
+        msg = _('Cannot load plugin: %(n)s has no module: %(p)s.%(m)s')
+        _LOG.error(msg % {'n': module_name.title(), 'p': package_name, 'm': module_name})
+        return None
 
     # load and return the plugin class and configuration
     cls_list = load_plugin_classes('.'.join((package_name, module_name)), base_class)
@@ -124,7 +133,6 @@ def load_plugin_classes(module_name, base_class):
     @type module_name: str
     @type base_class: type
     @rtype: list of attr
-    @raise: L{PluginLoadError}
     """
     _LOG.debug('Loading plugin class: %s, %s' % (module_name, base_class.__name__))
 
@@ -149,8 +157,8 @@ def load_plugin_classes(module_name, base_class):
         attr_list.append(attr)
 
     if len(attr_list) is 0:
-        msg = _('%(m)s modules did not contain a derived class of %(c)s')
-        raise loader_exceptions.MissingPluginClass(msg % {'m': module_name, 'c': base_class.__name__})
+        msg = _('Cannot load plugin: %(m)s modules did not contain a derived class of %(c)s')
+        _LOG.error(msg % {'m': module_name, 'c': base_class.__name__})
 
     return attr_list
 
@@ -184,12 +192,13 @@ def get_plugin_types(plugin_class):
     """
     @type plugin_class: type
     @rtype: list [str, ...]
-    @raise: L{PluginLoadError}
     """
     _LOG.debug('Getting types for plugin class: %s' % plugin_class.__name__)
     types = get_plugin_metadata_field(plugin_class, 'types')
     if types is None:
-        raise loader_exceptions.MissingMetadata(_('%(p)s does not define any types') % {'p': plugin_class.__name__})
+        msg =  _('Cannot load plugin: %(p)s does not define any types')
+        _LOG.error(msg % {'p': plugin_class.__name__})
+        return None
     if isinstance(types, basestring):
         types = [types]
     return types
@@ -203,7 +212,9 @@ def get_plugin_metadata_field(plugin_class, field, default=None):
     """
     metadata = plugin_class.metadata()
     if not isinstance(metadata, dict):
-        raise loader_exceptions.MalformedMetadata(_('%(p)s.metadata() did not return a dictionary') % {'p': plugin_class.__name__})
+        msg = _('Cannot load plugin: %(p)s.metadata() did not return a dictionary')
+        _LOG.error(msg % {'p': plugin_class.__name__})
+        return None
     value = metadata.get(field, default)
     return value
 
@@ -217,16 +228,6 @@ def add_path_to_sys_path(path):
     if path in sys.path:
         return
     sys.path.append(path)
-
-
-def check_path(path):
-    """
-    @type path: str
-    @raise: ValueError
-    """
-    if os.access(path, os.F_OK | os.R_OK):
-        return
-    raise ValueError(_('Path not found or unreadable: %(p)s') % {'p': path})
 
 
 def read_content(file_name):

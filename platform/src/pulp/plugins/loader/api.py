@@ -352,7 +352,10 @@ def _load_content_types(types_dir):
     """
     @type types_dir: str
     """
-    loading.check_path(types_dir)
+    if not os.access(types_dir, os.F_OK | os.R_OK):
+        msg = _('Cannot load types: path does not exist or cannot be read: %(p)s')
+        _LOG.critical(msg % {'p': types_dir})
+        return
     descriptors = _load_type_descriptors(types_dir)
     _load_type_definitions(descriptors)
 
