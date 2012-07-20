@@ -15,10 +15,9 @@
 import base
 
 from pulp.server.auth import principal
-import pulp.server.auth.cert_generator as cert_generator
-from pulp.server.auth.cert_generator import SerialNumber
-from pulp.server.auth.certificate import Certificate
-from pulp.server.managers.auth.user import UserManager
+from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
+from pulp.server.managers.auth.cert.certificate import Certificate
 
 from pulp.server.db.model.auth import User
 import pulp.server.exceptions as exceptions
@@ -36,7 +35,10 @@ class UserManagerTests(base.PulpServerTests):
         sn = SerialNumber()
         sn.reset()
 
-        self.manager = UserManager()
+        self.user_manager = manager_factory.user_manager()
+        self.user_query_manager = manager_factory.user_query_manager()
+        self.cert_generation_manager = manager_factory.cert_generation_manager()
+        
 
     def tearDown(self):
         super(UserManagerTests, self).tearDown()
@@ -51,21 +53,18 @@ class UserManagerTests(base.PulpServerTests):
     def test_generate_user_certificate(self):
 
         # Setup
-        user_manager = UserManager()
-
-        # TODO: Fix this when UserManager can create users
-        admin_user = user_manager.create_user('test-admin')
+        admin_user = self.user_manager.create_user('test-admin')
         principal.set_principal(admin_user) # pretend the user is logged in
 
         # Test
-        cert = self.manager.generate_user_certificate()
+        cert = self.user_manager.generate_user_certificate()
 
         # Verify
         self.assertTrue(cert is not None)
 
         certificate = Certificate(content=cert)
         cn = certificate.subject()['CN']
-        username, id = cert_generator.decode_admin_user(cn)
+        username, id = self.cert_generation_manager.decode_admin_user(cn)
 
         self.assertEqual(username, admin_user['login'])
         self.assertEqual(id, admin_user['id'])
@@ -76,13 +75,13 @@ class UserManagerTests(base.PulpServerTests):
         clear_txt_pass = 'some password'
 
         # Test
-        user = self.manager.create_user(login, clear_txt_pass,
+        user = self.user_manager.create_user(login, clear_txt_pass,
                                                 name = "King of the World",
                                                 roles = ['test-role'])
 
         # Verify
         self.assertTrue(user is not None)
-        user = self.manager.find_by_login(login)
+        user = self.user_query_manager.find_by_login(login)
         self.assertTrue(user is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
@@ -90,11 +89,11 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'dupe-test'
         clear_txt_pass = 'some password'
-        user = self.manager.create_user(login, clear_txt_pass)
+        user = self.user_manager.create_user(login, clear_txt_pass)
 
         # Test and verify
         try:
-            user = self.manager.create_user(login, clear_txt_pass)
+            user = self.user_manager.create_user(login, clear_txt_pass)
             self.fail('User with an existing login did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(login in e)
@@ -105,10 +104,10 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.manager.create_user(login, password)
+        user = self.user_manager.create_user(login, password)
 
         # Test
-        users = self.manager.find_all()
+        users = self.user_query_manager.find_all()
 
         # Verify
         assert(len(users) == 1)
@@ -118,28 +117,28 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.manager.create_user(login, password)
+        user = self.user_manager.create_user(login, password)
 
         # test
-        self.manager.delete_user(login)
+        self.user_manager.delete_user(login)
 
         # Verify
-        user = self.manager.find_by_login(login)
+        user = self.user_query_manager.find_by_login(login)
         assert(user is None)
 
     def test_update_password(self):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.manager.create_user(login, password)
+        user = self.user_manager.create_user(login, password)
 
         # Test
         changed_password = 'some other password'
         d = dict(password=changed_password)
-        user = self.manager.update_user(login, delta=d)
+        user = self.user_manager.update_user(login, delta=d)
 
         # Verify
-        user = self.manager.find_by_login(login)
+        user = self.user_query_manager.find_by_login(login)
         self.assertTrue(user is not None)
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(changed_password, user['password'])

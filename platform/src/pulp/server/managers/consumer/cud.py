@@ -22,7 +22,6 @@ import re
 
 from pulp.server import config
 from pulp.common.bundle import Bundle
-import pulp.server.auth.cert_generator as cert_generator
 
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.managers import factory
@@ -81,8 +80,9 @@ class ConsumerManager(object):
         display_name = display_name or id
 
         # Generate certificate
+        cert_gen_manager = factory.cert_generation_manager()
         expiration_date = config.config.getint('security', 'consumer_cert_expiration')
-        key, crt = cert_generator.make_cert(id, expiration_date)
+        key, crt = cert_gen_manager.make_cert(id, expiration_date)
 
         # Creation
         create_me = Consumer(id, display_name, description, notes, capabilities, certificate=crt.strip())

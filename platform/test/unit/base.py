@@ -22,6 +22,7 @@ import sys
 import time
 import web
 import unittest
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
 try:
     import json
@@ -30,8 +31,6 @@ except ImportError:
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
-
-from pulp.server.managers.auth.user import UserManager
 
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import  PulpConnection
@@ -44,11 +43,11 @@ from pulp.common.config import Config
 from pulp.server import constants
 from pulp.server import config
 from pulp.server.auth import authorization
-from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.db import connection
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices import http
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
@@ -185,7 +184,7 @@ class PulpWebserviceTests(PulpServerTests):
 
         # The built in PulpTest clean will automatically delete users between
         # test runs, so we can't just create the user in the class level setup.
-        user_manager = UserManager()
+        user_manager = manager_factory.user_manager()
         roles = []
         roles.append(authorization.super_user_role)
         user_manager.create_user(login='ws-user', password='ws-user', roles=roles)
@@ -193,7 +192,7 @@ class PulpWebserviceTests(PulpServerTests):
     def tearDown(self):
         super(PulpWebserviceTests, self).tearDown()
 
-        user_manager = UserManager()
+        user_manager = manager_factory.user_manager()
         user_manager.delete_user(login='ws-user')
 
     def setup_async(self):

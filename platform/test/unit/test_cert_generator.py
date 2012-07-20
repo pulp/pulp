@@ -16,9 +16,9 @@
 import logging
 import unittest
 
-from pulp.server.auth.certificate import Certificate
-from pulp.server.auth.cert_generator import SerialNumber
-import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.managers.auth.cert import cert_generator
+from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager, SerialNumber
+from pulp.server.managers.auth.cert.certificate import Certificate
 
 SerialNumber.PATH = '/tmp/sn.dat'
 sn = SerialNumber()
@@ -93,6 +93,7 @@ class TestCertGeneration(unittest.TestCase):
 
     def test_priv_key(self):
         # Test
+        #cert_gen_manager = CertGenerationManager()
         pem = cert_generator._make_priv_key()
 
         # Verify
@@ -103,7 +104,8 @@ class TestCertGeneration(unittest.TestCase):
         cid = "foobarbaz"
 
         # Test
-        pk, x509_pem = cert_generator.make_cert(cid, 7)
+        cert_gen_manager = CertGenerationManager()
+        pk, x509_pem = cert_gen_manager.make_cert(cid, 7)
 
         # Verify
         self.assertTrue(pk is not None)
@@ -116,10 +118,11 @@ class TestCertGeneration(unittest.TestCase):
 
     def test_verify(self):
         # Test
-        valid_result = cert_generator.verify_cert(VALID_CERT)
+        cert_gen_manager = CertGenerationManager()
+        valid_result = cert_gen_manager.verify_cert(VALID_CERT)
         self.assertTrue(valid_result)
 
-        invalid_result = cert_generator.verify_cert(INVALID_CERT)
+        invalid_result = cert_gen_manager.verify_cert(INVALID_CERT)
         self.assertTrue(not invalid_result)
 
 if __name__ == '__main__':

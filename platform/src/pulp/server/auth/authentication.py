@@ -20,10 +20,11 @@ import logging
 import oauth2
 
 from pulp.server.managers.auth.user.cud import UserManager
-from pulp.server.auth import cert_generator, ldap_connection
+from pulp.server.managers.auth.user.query import UserQueryManager
+from pulp.server.auth import ldap_connection
 from pulp.server.auth.authorization import consumer_users_role
-from pulp.server.auth.cert_generator import verify_cert
-from pulp.server.auth.certificate import Certificate
+from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
+from pulp.server.managers.auth.cert.certificate import Certificate
 from pulp.server.auth.password_util import check_password
 from pulp.server.config import config
 from pulp.server.exceptions import PulpException
@@ -78,7 +79,8 @@ def _check_username_password_ldap(username, password=None):
         user = ldap_server.authenticate_user(ldap_base, username, password,
                                              filter=ldap_filter)
     else:
-        user = _user_manager.find_by_login(username)
+        user_query_manager = UserQueryManager()
+        user = user_query_manager.find_by_login(username)
     if user is None:
         return None
     return user
@@ -95,7 +97,8 @@ def _check_username_password_local(username, password=None):
     @rtype: L{pulp.server.db.model.User} instance or None
     @return: user corresponding to the credentials
     """
-    user = _user_manager.find_by_login(username)
+    user_query_manager = UserQueryManager()
+    user = user_query_manager.find_by_login(username)
     if user is None:
         _log.error('User [%s] specified in certificate was not found in the system' %
                    username)
@@ -142,12 +145,13 @@ def check_user_cert(cert_pem):
     encoded_user = subject.get('CN', None)
     if not encoded_user:
         return None
-    if not verify_cert(cert_pem):
+    cert_gen_manager = CertGenerationManager()
+    if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
     try:
-        username, id = cert_generator.decode_admin_user(encoded_user)
+        username, id = cert_gen_manager.decode_admin_user(encoded_user)
     except PulpException:
         return None
     return check_username_password(username)
@@ -159,7 +163,8 @@ def check_consumer_cert_no_user(cert_pem):
     encoded_user = subject.get('CN', None)
     if encoded_user is None:
         return None
-    if not verify_cert(cert_pem):
+    cert_gen_manager = CertGenerationManager()
+    if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
@@ -172,7 +177,8 @@ def check_consumer_cert(cert_pem):
     encoded_user = subject.get('CN', None)
     if encoded_user is None:
         return None
-    if not verify_cert(cert_pem):
+    cert_gen_manager = CertGenerationManager()
+    if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None

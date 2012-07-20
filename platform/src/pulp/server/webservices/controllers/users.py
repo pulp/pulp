@@ -45,8 +45,8 @@ class UsersCollection(JSONController):
     @auth_required(READ)
     def GET(self):
 
-        manager = managers.user_manager()
-        users = manager.find_all()
+        query_manager = managers.user_query_manager()
+        users = query_manager.find_all()
 
         return self.ok(users)
 
@@ -59,7 +59,6 @@ class UsersCollection(JSONController):
         password = user_data.get('password', None)
         name = user_data.get('name', None)
         roles = user_data.get('roles', None)
-        _LOG.info("$$$$$$$$$$$ %s : %s" % (login, name))
 
         # Creation
         manager = managers.user_manager()
@@ -86,8 +85,8 @@ class UserResource(JSONController):
     @auth_required(READ)
     def GET(self, login):
 
-        manager = managers.user_manager()
-        user = manager.find_by_login(login)
+        query_manager = managers.user_query_manager()
+        user = query_manager.find_by_login(login)
 
         return self.ok(user)
 

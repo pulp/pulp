@@ -157,7 +157,8 @@ class RoleManager(object):
         """
         Assure the super user role exists.
         """
-        role = self.find_by_name(super_user_role)
+        role_query_manager = factory.role_query_manager()
+        role = role_query_manager.find_by_name(super_user_role)
         if role is None:
             role = self.create_role(super_user_role)
             self.add_permissions_to_role(role, '/', [CREATE, READ, UPDATE, DELETE, EXECUTE])
@@ -167,7 +168,8 @@ class RoleManager(object):
         """
         Assure the consumer role exists.
         """
-        role = self.find_by_name(consumer_users_role)
+        role_query_manager = factory.role_query_manager()
+        role = role_query_manager.find_by_name(consumer_users_role)
         if role is None:
             role = self.create_role(consumer_users_role)
             self.add_permissions_to_role(role, '/consumers/', [CREATE, READ]) # XXX not sure this is necessary

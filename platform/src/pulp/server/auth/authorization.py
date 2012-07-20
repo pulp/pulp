@@ -142,7 +142,7 @@ class GrantPermissionsForTask(object):
             return
         resource = '/tasks/%s/' % task.id
         operations = ['READ', 'DELETE']
-        grant_permission_to_user(resource, self.user_name, operations)
+        factory.permission_manager().grant(resource, self.user_name, operations)
 
 
 class RevokePermissionsForTask(object):
@@ -158,7 +158,7 @@ class RevokePermissionsForTask(object):
             return
         resource = '/tasks/%s/' % task.id
         operations = ['READ', 'DELETE']
-        revoke_permission_from_user(resource, self.user_name, operations)
+        factory.permission_manager().revoke(resource, self.user_name, operations)
 
 
 class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
@@ -168,7 +168,7 @@ class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
-        grant_permission_to_user(resource, self.user_name, operations)
+        factory.permission_manager().grant(resource, self.user_name, operations)
 
 
 class RevokePermissionsForTaskV2(RevokePermissionsForTask):
@@ -178,7 +178,7 @@ class RevokePermissionsForTaskV2(RevokePermissionsForTask):
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
-        revoke_permission_from_user(resource, self.user_name, operations)
+        factory.permission_manager().revoke(resource, self.user_name, operations)
 
 
 
