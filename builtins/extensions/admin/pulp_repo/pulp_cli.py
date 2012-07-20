@@ -11,8 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from okaara.cli import CommandUsage
-
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.extensions.search import SearchCommand
@@ -80,6 +78,7 @@ class RepoSection(PulpCliSection):
         # Subsections
         self.add_subsection(ImporterSection(context))
         self.add_subsection(SyncSection(context))
+        self.add_subsection(RepoGroupSection(context))
 
     def create(self, **kwargs):
 
@@ -236,3 +235,108 @@ class SyncSection(PulpCliSection):
             spinner.stop()
 
         self.prompt.render_success_message('Repository sync completed for repository [%s]' % repo_id)
+
+
+class RepoGroupSection(PulpCliSection):
+    def __init__(self, context):
+        PulpCliSection.__init__(self, 'group', 'repository group commands')
+
+        self.context = context
+        self.prompt = context.prompt # for easier access
+
+        # Common Options
+        id_option = PulpCliOption('--id', 'uniquely identifies the repo group; only alphanumeric, -, and _ allowed', required=True)
+        name_option = PulpCliOption('--display-name', 'user-readable display name for the repo group', required=False)
+        description_option = PulpCliOption('--description', 'user-readable description for the repo group', required=False)
+
+        # Create Command
+        create_command = PulpCliCommand('create', 'creates a new repository group', self.create)
+        create_command.add_option(id_option)
+        create_command.add_option(name_option)
+        create_command.add_option(description_option)
+        self.add_command(create_command)
+
+        # Update Command
+        update_command = PulpCliCommand('update', 'changes metadata on an existing repo group', self.update)
+        update_command.add_option(id_option)
+        update_command.add_option(name_option)
+        update_command.add_option(description_option)
+        d =  'adds/updates/deletes notes to programmatically identify the repo group; '
+        d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
+        d += 'be changed by specifying this option multiple times; notes are deleted by '
+        d += 'specifying "" as the value'
+        update_command.add_option(PulpCliOption('--note', d, required=False, allow_multiple=True))
+        self.add_command(update_command)
+
+        # Delete Command
+        delete_command = PulpCliCommand('delete', 'deletes a repository group', self.delete)
+        delete_command.add_option(PulpCliOption('--id', 'identifies the repository group to be deleted', required=True))
+        self.add_command(delete_command)
+
+        # List Command
+        list_command = PulpCliCommand('list', 'lists summary of repo groups registered to the Pulp server', self.list)
+        list_command.add_option(PulpCliFlag('--details', 'if specified, all the repo group information is displayed'))
+        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of repo group fields; if specified, only the given fields will displayed', required=False))
+        self.add_command(list_command)
+
+        # Search Command
+        self.add_command(SearchCommand(self.search))
+
+    def create(self, **kwargs):
+        # Collect input
+        id = kwargs['id']
+        name = id
+        if 'display-name' in kwargs:
+            name = kwargs['display-name']
+        description = kwargs['description']
+        notes = None # TODO: add support later
+
+        # Call the server
+        self.context.server.repo_group.create(id, name, description, notes)
+        self.prompt.render_success_message('Repository Group [%s] successfully created' % id)
+
+    def update(self, **kwargs):
+        # Assemble the delta for all options that were passed in
+        delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
+        delta.pop('id') # not needed in the delta
+
+        try:
+            self.context.server.repo_group.update(kwargs['id'], delta)
+            self.prompt.render_success_message('Repo group [%s] successfully updated' % kwargs['id'])
+        except NotFoundException:
+            self.prompt.write('Repo group [%s] does not exist on the server' % kwargs['id'], tag='not-found')
+
+    def delete(self, **kwargs):
+        id = kwargs['id']
+
+        try:
+            self.context.server.repo_group.delete(id)
+            self.prompt.render_success_message('Repository group [%s] successfully deleted' % id)
+        except NotFoundException:
+            self.prompt.write('Repository group [%s] does not exist on the server' % id, tag='not-found')
+
+    def list(self, **kwargs):
+        self.prompt.render_title('Repository Groups')
+
+        repo_group_list = self.context.server.repo_group.repo_groups().response_body
+
+        # Default flags to render_document_list
+        filters = ['id', 'display_name', 'description', 'repo_ids', 'notes']
+        order = filters
+
+        if kwargs['fields'] is not None:
+            filters = kwargs['fields'].split(',')
+            if 'id' not in filters:
+                filters.append('id')
+            order = ['id']
+
+        # Manually loop over the repositories so we can interject the plugins
+        # manually based on the CLI flags.
+        for repo_group in repo_group_list:
+            self.prompt.render_document(repo_group, filters=filters, order=order)
+
+    def search(self, **kwargs):
+        criteria = Criteria.from_client_input(kwargs)
+        repo_group_list = self.context.server.repo_group_search.search(criteria)
+        for consumer in repo_group_list:
+            self.prompt.render_document(consumer)

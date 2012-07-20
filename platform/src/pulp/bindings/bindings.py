@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.bindings.actions import ActionsAPI
+from pulp.bindings.repo_groups import *
 from pulp.bindings.repository import *
 from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI
@@ -38,6 +39,8 @@ class Bindings(object):
         self.repo = RepositoryAPI(pulp_connection)
         self.repo_actions = RepositoryActionsAPI(pulp_connection)
         self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
+        self.repo_group = RepoGroupAPI(pulp_connection)
+        self.repo_group_search = RepoGroupSearchAPI(pulp_connection)
         self.repo_history = RepositoryHistoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
         self.repo_publish_schedules = RepositoryPublishSchedulesAPI(pulp_connection)

@@ -78,6 +78,9 @@ class TestRepoExtension(base_builtins.PulpClientTests):
         super(TestRepoExtension, self).setUp()
         self.repo_section = pulp_cli.RepoSection(self.context)
 
+    def test_has_group_subsection(self):
+        self.assertTrue('group' in self.repo_section.subsections)
+
     def test_list_no_data(self):
         """
         Test retrieving the list of repos when there are no repos present.
