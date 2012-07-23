@@ -4,7 +4,7 @@ Retrieval
 Search for Units
 ----------------
 
-Please see :ref:`search-api` for more details on how to perform these searches.
+Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on content units in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
