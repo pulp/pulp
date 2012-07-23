@@ -32,7 +32,7 @@ class RequestException(Exception):
         self.exception = response_body.pop('exception', None)
         self.traceback = response_body.pop('traceback', None)
 
-        # Anything not explciitly removed above represents extra data to further
+        # Anything not explicitly removed above represents extra data to further
         # classify the exception.
         self.extra_data = response_body
 

@@ -15,7 +15,7 @@ import unittest
 
 import mock
 
-from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupSearchAPI
+from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupSearchAPI, RepoGroupActionAPI
 
 class TestRepoGroupAPI(unittest.TestCase):
     def setUp(self):
@@ -72,4 +72,27 @@ class TestRepoGroupSearchAPI(unittest.TestCase):
         self.assertTrue(len(self.api.PATH) > 0)
         # this should be a relative path, and thus not start with a '/'
         self.assertFalse(self.api.PATH.startswith('/'))
+
+
+class TestRepoGroupActionAPI(unittest.TestCase):
+    def setUp(self):
+        self.api = RepoGroupActionAPI(mock.MagicMock())
+
+    def test_path(self):
+        self.assertTrue(isinstance(self.api.PATH, basestring))
+        self.assertTrue(len(self.api.PATH) > 0)
+        # this should be a relative path, and thus not start with a '/'
+        self.assertFalse(self.api.PATH.startswith('/'))
+
+    def test_associate(self):
+        ret = self.api.associate('rg1')
+        self.api.server.POST.assert_called_once_with(
+            'v2/repo_groups/rg1/actions/associate/', {'criteria':{}})
+        self.assertEqual(ret, self.api.server.POST.return_value.response_body)
+
+    def test_unassociate(self):
+        ret = self.api.unassociate('rg1')
+        self.api.server.POST.assert_called_once_with(
+            'v2/repo_groups/rg1/actions/unassociate/', {'criteria':{}})
+        self.assertEqual(ret, self.api.server.POST.return_value.response_body)
 

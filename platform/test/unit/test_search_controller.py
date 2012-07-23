@@ -36,6 +36,14 @@ class TestGetQueryResultsFromPost(unittest.TestCase):
         self.assertEqual(self.mock_query_method.call_count, 1)
         self.assertTrue(isinstance(self.mock_query_method.call_args[0][0], Criteria))
 
+    def test_adds_id(self):
+        # make sure it adds the 'id' field if not requested.
+        self.controller.params = mock.MagicMock(
+            return_value={'criteria':{'fields':('name',)}})
+        self.controller._get_query_results_from_post()
+        self.assertTrue('id' in self.mock_query_method.call_args[0][0].fields)
+
+
 class TestGetQueryResultsFromGet(unittest.TestCase):
     def setUp(self):
         self.mock_query_method = mock.MagicMock()
@@ -53,4 +61,10 @@ class TestGetQueryResultsFromGet(unittest.TestCase):
     def test_ignore_fields(self, mock_from_client, mock_input):
         self.controller._get_query_results_from_get(('foo','bar'))
         mock_from_client.assert_called_once_with({'limit':10})
+
+    @mock.patch('web.input', return_value={'field':['name']})
+    def test_adds_id(self, mock_input):
+        # make sure it adds the 'id' field if not requested.
+        self.controller._get_query_results_from_get()
+        self.assertTrue('id' in self.mock_query_method.call_args[0][0].fields)
 

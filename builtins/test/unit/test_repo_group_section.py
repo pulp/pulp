@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import os
 import sys
 import unittest
@@ -40,7 +41,7 @@ class TestRepoGroupSection(unittest.TestCase):
 
     def test_create(self):
         ARGS = {
-            'id' : 'rg1',
+            'group-id' : 'rg1',
             # note the '-' is intentional for CLI convenient instead of '_'
             'display-name' : 'repo group 1',
             'description' : 'a great group'
@@ -48,12 +49,14 @@ class TestRepoGroupSection(unittest.TestCase):
         self.section.create(**ARGS)
 
         self.section.context.server.repo_group.create.assert_called_once_with(
-            ARGS['id'], ARGS['display-name'], ARGS['description'], None)
+            ARGS['group-id'], ARGS['display-name'], ARGS['description'], None)
         self.assertEqual(self.section.prompt.render_success_message.call_count, 1)
 
     def test_update_success(self):
         DELTA = {'display_name' : 'foo'}
-        self.section.update(id='rg1', **DELTA)
+        PARAMS = copy.copy(DELTA)
+        PARAMS['group-id'] = 'rg1'
+        self.section.update(**PARAMS)
 
         self.section.context.server.repo_group.update.assert_called_once_with(
             'rg1', DELTA)
@@ -62,13 +65,13 @@ class TestRepoGroupSection(unittest.TestCase):
     def test_update_not_found(self):
         self.section.context.server.repo_group.update.side_effect = self._raise_not_found
 
-        self.section.update(id='rg1')
+        self.section.update(**{'group-id':'rg1'})
         self.assertEqual(self.section.prompt.write.call_count, 1)
         self.assertTrue(self.section.prompt.write.call_args[0][0].find(
             'does not exist') >= 0)
 
     def test_delete_success(self):
-        self.section.delete(id='rg1')
+        self.section.delete(**{'group-id':'rg1'})
 
         self.section.context.server.repo_group.delete.assert_called_once_with(
             'rg1')
@@ -76,7 +79,7 @@ class TestRepoGroupSection(unittest.TestCase):
 
     def test_delete_not_found(self):
         self.section.context.server.repo_group.delete.side_effect = self._raise_not_found
-        self.section.delete(id='rg1')
+        self.section.delete(**{'group-id':'rg1'})
 
         self.assertEqual(self.section.prompt.write.call_count, 1)
         self.assertTrue(self.section.prompt.write.call_args[0][0].find(

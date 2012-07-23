@@ -36,7 +36,7 @@ class SearchController(JSONController):
         Searches based on a Criteria object. Pass in each Criteria field as a
         query parameter.  For the 'fields' parameter, pass multiple fields as
         separate key-value pairs as is normal with query parameters in URLs. For
-        example, '/v2/sometype/search/?fields=id&fields=display_name' will
+        example, '/v2/sometype/search/?field=id&field=display_name' will
         return the fields 'id' and 'display_name'.
         """
         return self.ok(self._get_query_results_from_get())
@@ -82,7 +82,10 @@ class SearchController(JSONController):
         # default to getting all fields
         fields = input.pop('field')
         if fields:
+            if 'id' not in fields and u'id' not in fields:
+                fields.append('id')
             input['fields'] = fields
+
         criteria = Criteria.from_client_input(input)
         return list(self.query_method(criteria))
 
@@ -100,4 +103,6 @@ class SearchController(JSONController):
         except KeyError:
             raise exceptions.MissingValue(['criteria'])
         criteria = Criteria.from_client_input(criteria_param)
+        if criteria.fields and 'id' not in criteria.fields and u'id' not in criteria.fields:
+            criteria.fields.append('id')
         return list(self.query_method(criteria))

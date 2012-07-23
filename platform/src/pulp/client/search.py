@@ -38,7 +38,10 @@ class SearchCommand(PulpCliCommand):
         @param method:  A method to call when this command is executed. See
                         okaara docs for more info
         """
-        super(SearchCommand, self).__init__('search', _SEARCH_DESCRIPTION,
+        name = kwargs.pop('name', None) or 'search'
+        description = kwargs.pop('description', None) or _SEARCH_DESCRIPTION
+
+        super(SearchCommand, self).__init__(name, description,
             method, *args, **kwargs)
         self.add_option(PulpCliOption('--limit', _LIMIT_DESCRIPTION,
             required=False, parse_func=int,
