@@ -15,7 +15,7 @@
 Contains users query classes
 """
 
-from pulp.server.db.model.auth import User
+from pulp.server.db.model.auth import User, Role
 from pulp.server.managers import factory
 from logging import getLogger
 
@@ -159,7 +159,9 @@ class UserQueryManager(object):
         """
         if super_user_role not in user['roles']:
             return False
-        role = factory.role_query_manager().find_by_name(super_user_role)
+
+        role = Role.get_collection().find_one({'name' : super_user_role})
+
         users = self.get_users_belonging_to_role(role)
         if not users:
             raise PulpDataException(_('no super users defined'))

@@ -44,6 +44,7 @@ from pulp.server import constants
 from pulp.server import config
 from pulp.server.auth import authorization
 from pulp.server.db import connection
+from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
@@ -194,9 +195,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
 
     def tearDown(self):
         super(PulpWebserviceTests, self).tearDown()
-
-        user_manager = manager_factory.user_manager()
-        user_manager.delete_user(login='ws-user')
+        User.get_collection().remove()
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers, serialize_json=False)
