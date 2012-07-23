@@ -43,8 +43,8 @@ class GroupReport(HandlerReport):
 
     def succeeded(self, details):
         chgcnt = \
-            len(details[0])+ \
-            len(details[1])
+            len(details['resolved'])+ \
+            len(details['deps'])
         HandlerReport.succeeded(self, details, chgcnt)
 
 
@@ -165,23 +165,6 @@ class GroupHandler(ContentHandler):
         grp = self.__impl(options)
         names = [key['name'] for key in units]
         details = grp.install(names)
-        report.succeeded(details)
-        return report
-
-    def update(self, units, options):
-        """
-        Update content unit(s).
-        @param units: A list of content unit_keys.
-        @type units: list
-        @param options: Unit update options.
-        @type options: dict
-        @return: An update report.
-        @rtype: L{HandlerReport}
-        """
-        report = GroupReport()
-        grp = self.__impl(options)
-        names = [key['name'] for key in units]
-        details = grp.update(names)
         report.succeeded(details)
         return report
 
