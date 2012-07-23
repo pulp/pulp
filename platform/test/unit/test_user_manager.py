@@ -50,7 +50,7 @@ class UserManagerTests(base.PulpServerTests):
 
         User.get_collection().remove()
 
-    def test_generate_user_certificate(self):
+    def _test_generate_user_certificate(self):
 
         # Setup
         admin_user = self.user_manager.create_user('test-admin')

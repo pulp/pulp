@@ -78,7 +78,6 @@ class UserQueryManager(object):
         for user in users:
             user.pop('password')
         return users
-
     
     
     def get_users_belonging_to_role(self, role):

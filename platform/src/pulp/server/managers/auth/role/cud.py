@@ -19,8 +19,10 @@ update, and deletion on a Pulp Role.
 import logging
 import re
 
-from pulp.server.db.model.auth import User, Role
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
+from pulp.server.util import Delta
+from pulp.server.db.model.auth import Role
+from pulp.server.auth.authorization import _operations_not_granted_by_roles
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException
 from pulp.server.managers import factory
 
 
@@ -31,7 +33,6 @@ _ROLE_NAME_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, undersco
 # built in roles --------------------------------------------------------------
 
 super_user_role = 'super-users'
-consumer_users_role = 'consumer-users'
 
 CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
 operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
@@ -59,7 +60,10 @@ class RoleManager(object):
         existing_role = Role.get_collection().find_one({'name' : name})
         if existing_role is not None:
             raise DuplicateResource(name)
-
+        
+        if name is None or _ROLE_NAME_REGEX.match(name) is None:
+            raise InvalidValue(['name'])
+        
         # Creation
         create_me = Role(name=name)
         Role.get_collection().save(create_me, safe=True)
@@ -68,59 +72,84 @@ class RoleManager(object):
         created = Role.get_collection().find_one({'name' : name})
 
         return created
+    
 
+    def update_role(self, name, delta):
+        """
+        Updates a role object.
+
+        @param id: The role name.
+        @type id: str
+
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+
+        @return: The updated object
+        @rtype: dict
+        """
+ 
+        delta.pop('name', None)
+         
+        role = Role.get_collection().find_one({'name' : name})
+        if role is None:
+            raise MissingResource(name)
+
+        for key, value in delta.items():
+            # simple changes
+            if key in ('users','permissions',):
+                role[key] = value
+                continue
+            # unsupported
+            raise PulpDataException(_("Update Keyword [%s] is not supported" % key))
+        
+        Role.get_collection().save(role, safe=True)
+         
+        # Retrieve the user to return the SON object
+        updated = Role.get_collection().find_one({'name' : name})
+        return updated
+        
 
     def delete_role(self, name):
         """
-        Deletes the given role. 
+        Deletes the given role. This has the side-effect of revoking any permissions granted
+        to the role from the users in the role, unless those permissions are also granted 
+        through another role the user is a memeber of.
+
         @param name: identifies the role being deleted
         @type  name: str
+        
+        @rtype: bool
+        @return: True on success
 
         @raise MissingResource: if the given role does not exist
         @raise InvalidValue: if role name is invalid
         """
-
         # Raise exception if login is invalid
-        if name is None or not isinstance(name, str):
+        if name is None or not isinstance(name, basestring):
             raise InvalidValue(['name'])
 
         # Check whether role exists
-        found = Role.get_collection().find_one({'name' : name})
-        if found is None:
+        role = Role.get_collection().find_one({'name' : name})
+        if role is None:
             raise MissingResource(name)
 
-        # To do: Remove respective roles from users
+        # Make sure role is not a superuser role
+        if name == super_user_role:
+            raise PulpDataException(_('Role %s cannot be changed') % name)
+
+        # Remove respective roles from users
+        users = factory.user_query_manager().get_users_belonging_to_role(role)
+        for resource, operations in role['permissions'].items():
+            for user in users:
+                other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
+                user_ops = _operations_not_granted_by_roles(resource, operations, other_roles)
+                factory.permission_manager().revoke(resource, user, user_ops)
+
+        for user in users:
+            user['roles'].remove(name)
+        factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
       
         Role.get_collection().remove({'name' : name}, safe=True)
-
-#def delete_role(role_name):
-#    """
-#    Delete a role. This has the side-effect of revoking any permissions granted
-#    to the role from the users in the role, unless those permissions are also
-#    granted through another role the user is a memeber of.
-#    @type role_name: name of the role to delete
-#    @param role_name: role name
-#    @rtype: bool
-#    @return: True on success
-#    """
-#    check_builtin_roles(role_name)
-#    role = _get_role(role_name)
-#    users = _get_users_belonging_to_role(role)
-#    for resource, operations in role['permissions'].items():
-#        for user in users:
-#            other_roles = _get_other_roles(role, user['roles'])
-#            user_ops = _operations_not_granted_by_roles(resource,
-#                                                        operations,
-#                                                        other_roles)
-#            _permission_api.revoke(resource, user, user_ops)
-#    for user in users:
-#        user['roles'].remove(role_name)
-#        _user_manager.update_user(user['login'], Delta(user, 'roles'))
-#    _role_api.delete(role)
-#    return True
-
-
-
 
 
     def add_permissions_to_role(self, name, resource, operations):
@@ -148,10 +177,13 @@ class RoleManager(object):
             if o not in current_ops:
                 continue
             current_ops.remove(o)
+        
         # in no more allowed operations, remove the resource
         if not current_ops:
             del role['permissions'][resource]
+        
         Role.get_collection().save(role, safe=True)
+        
         
     def _ensure_super_user_role(self):
         """
@@ -164,32 +196,14 @@ class RoleManager(object):
             self.add_permissions_to_role(role, '/', [CREATE, READ, UPDATE, DELETE, EXECUTE])
 
 
-    def _ensure_consumer_user_role(self):
-        """
-        Assure the consumer role exists.
-        """
-        role_query_manager = factory.role_query_manager()
-        role = role_query_manager.find_by_name(consumer_users_role)
-        if role is None:
-            role = self.create_role(consumer_users_role)
-            self.add_permissions_to_role(role, '/consumers/', [CREATE, READ]) # XXX not sure this is necessary
-            self.add_permissions_to_role(role, '/errata/', [READ])
-            self.add_permissions_to_role(role, '/repositories/', [READ])
-
     def ensure_builtin_roles(self):
         """
         Assure the roles required for pulp's operation are in the database.
         """
         self._ensure_super_user_role()
-        self._ensure_consumer_user_role()
+        
+    
 
 
 # -- functions ----------------------------------------------------------------
 
-def is_role_name_valid(name):
-    """
-    @return: true if the role name is valid; false otherwise
-    @rtype:  bool
-    """
-    result = _ROLE_NAME_REGEX.match(name) is not None
-    return result

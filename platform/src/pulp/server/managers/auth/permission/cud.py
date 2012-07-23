@@ -17,14 +17,13 @@ update, and deletion on a Pulp Role.
 """
 
 import logging
-import re
 
-from pulp.server.db.model.auth import User, Role, Permission
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
-from pulp.server.managers import factory
+from pulp.server.db.model.auth import Permission
 from pulp.server.auth.authorization import _get_operations
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException, PulpExecutionException
+from pulp.server.managers import factory
 from pulp.server.auth.principal import (
-    get_principal, is_system_principal, SystemPrincipal)
+    get_principal, is_system_principal)
 
 
 # -- constants ----------------------------------------------------------------
@@ -67,30 +66,7 @@ class PermissionManager(object):
         return created
 
 
-    def delete_permission(self, resource_uri):
-        """
-        Deletes the given permission. 
-        @param resource_uri: identifies the resource URI of the permission being deleted
-        @type  resource_uri: str
 
-        @raise MissingResource: if permission for a given resource does not exist
-        @raise InvalidValue: if resource URI is invalid
-        """
-
-        # Raise exception if resource is invalid
-        if resource_uri is None or not isinstance(resource_uri, str):
-            raise InvalidValue(['resource_uri'])
-
-        # Check whether the permission exists
-        found = Permission.get_collection().find_one({'resource' : resource_uri})
-        if found is None:
-            raise MissingResource(resource_uri)
-
-        # To do: Remove respective roles from users
-      
-        Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
-
-    
     def update_permission(self, resource_uri, delta):
         """
         Updates a permission object.
@@ -115,11 +91,36 @@ class PermissionManager(object):
             if key in ('users',):
                 found[key] = value
                 continue
+            
             # unsupported
-            raise Exception, \
-                'update keyword "%s", not-supported' % key
-        
+            raise PulpDataException(_("Update Keyword [%s] is not supported" % key))
+                                            
         Permission.get_collection().save(found, safe=True)
+
+
+    def delete_permission(self, resource_uri):
+        """
+        Deletes the given permission. 
+        @param resource_uri: identifies the resource URI of the permission being deleted
+        @type  resource_uri: str
+
+        @raise MissingResource: if permission for a given resource does not exist
+        @raise InvalidValue: if resource URI is invalid
+        """
+
+        # Raise exception if resource is invalid
+        if resource_uri is None or not isinstance(resource_uri, basestring):
+            raise InvalidValue(['resource_uri'])
+
+        # Check whether the permission exists
+        found = Permission.get_collection().find_one({'resource' : resource_uri})
+        if found is None:
+            raise MissingResource(resource_uri)
+
+        # To do: Remove respective roles from users
+      
+        Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
+
 
     def grant(self, resource, user, operations):
         """
@@ -134,13 +135,18 @@ class PermissionManager(object):
         @type operations: list or tuple
         @param operations:list of allowed operations being granted
         """
-        permission = self._get_or_create(resource)
+        # Get or create permission if it doesn't already exist
+        permission = Permission.get_collection().find_one({'resource' : resource})
+        if permission is None:
+            permission = self.create_permission(resource)
+        
         current_ops = permission['users'].setdefault(user['login'], [])
         for o in operations:
             if o in current_ops:
                 continue
             current_ops.append(o)
-        self.collection.save(permission, safe=True)
+
+        Permission.get_collection().save(permission, safe=True)
 
     def revoke(self, resource, user, operations):
         """
@@ -155,75 +161,54 @@ class PermissionManager(object):
         @type operations: list or tuple
         @param operations:list of allowed operations being revoked
         """
-        permission = self.permission(resource)
+        permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:
             return
+
         current_ops = permission['users'].get(user['login'], [])
         if not current_ops:
             return
+
         for o in operations:
             if o not in current_ops:
                 continue
             current_ops.remove(o)
+
         # delete the user if there are no more allowed operations
         if not current_ops:
             del permission['users'][user['login']]
+
         # delete the permission if there are no more users
         if not permission['users']:
-            self.delete(permission)
+            self.delete_permission(resource)
             return
+
         self.collection.save(permission, safe=True)
 
 
-    def grant_automatic_permissions_for_created_resource(self, resource):
+    def grant_automatic_permissions_for_resource(self, resource):
         """
         Grant CRUDE permissions for a newly created resource to current principal.
+        
         @type resource: str
         @param resource: resource path to grant permissions to
+        
         @rtype: bool
         @return: True on success, False otherwise
-        @raise RuntimeError: if the system principal has not been set
+        
+        @raise PulpExecutionException: if the system principal has not been set
         """
         user = get_principal()
         if is_system_principal():
-            raise RuntimeError(_('cannot grant auto permission on %s to %s') %
-                               (resource, user))
+            raise PulpExecutionException(_('Cannot grant automatic permissions for [%s] on resource [%s]') %
+                               (user, resource))
+            
         operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
         self.grant(resource, user, operations)
         return True
 
-    def add_permissions_to_role(self, name, resource, operations):
-        role = Role.get_collection().find_one({'name' : name})
-        if role is None:
-            raise MissingResource(name)
-        
-        current_ops = role['permissions'].setdefault(resource, [])
-        for o in operations:
-            if o in current_ops:
-                continue
-            current_ops.append(o)
-            
-        Role.get_collection().save(role, safe=True)
 
-    def remove_permissions_from_role(self, name, resource, operations):
-        role = Role.get_collection().find_one({'name' : name})
-        if role is None:
-            raise MissingResource(name)
-        
-        current_ops = role['permissions'].get(resource, [])
-        if not current_ops:
-            return
-        for o in operations:
-            if o not in current_ops:
-                continue
-            current_ops.remove(o)
-        # in no more allowed operations, remove the resource
-        if not current_ops:
-            del role['permissions'][resource]
-        Role.get_collection().save(role, safe=True)
-
-
-    def grant_automatic_permissions_for_new_user(self, user_name):
+    def grant_automatic_permissions_for_user(self, user_name):
         """
         Grant the permissions required for a new user so that they my log into Pulp
         and update their own information.
@@ -231,13 +216,11 @@ class PermissionManager(object):
         @param user_name: name of the new user
         @type  user_name: str
         """
-        
-        user_query_manager = factory.user_query_manager()
-        user = user_query_manager.find_by_login(user_name)
+        user = factory.user_query_manager().find_by_login(user_name)
         self.grant('/users/%s/' % user_name, user, [READ, UPDATE])
         self.grant('/users/admin_certificate/', user, [READ])
         
-    
+
     def revoke_permission_from_user(self, resource, user_name, operation_names):
         """
         Revoke the operations on the resource from the user
@@ -258,29 +241,24 @@ class PermissionManager(object):
         operations = _get_operations(operation_names)
         self.revoke(resource, user, operations)
         return True
-
-
+        
+    
     def revoke_all_permissions_from_user(self, user_name):
         """
         Revoke all the permissions from a given user
+
         @type user_name: str
         @param user_name: name of the user to revoke all permissions from
+
         @rtype: bool
         @return: True on success
         """
-        user_query_manager = factory.user_query_manager()
-        user = user_query_manager.find_by_login(user_name)
+        user = factory.user_query_manager().find_by_login(user_name)
         for permission in factory.permission_query_manager().find_all():
             if user['login'] not in permission['users']:
                 continue
             del permission['users'][user['login']]
-            self.update(permission['resource'],
+            self.update_permission(permission['resource'],
                                    {'users': permission['users']})
         return True
-
-
-
-
-
-
 

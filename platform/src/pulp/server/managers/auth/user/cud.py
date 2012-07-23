@@ -20,9 +20,7 @@ import logging
 import re
 
 from pulp.server import config
-from pulp.server.util import Delta
 from pulp.server.db.model.auth import User
-from pulp.server.auth import principal
 from pulp.server.auth.authorization import _operations_not_granted_by_roles
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
@@ -95,7 +93,7 @@ class UserManager(object):
         
         # Grant permissions
         permission_manager = factory.permission_manager()
-        permission_manager.grant_automatic_permissions_for_new_user(create_me['login'])
+        permission_manager.grant_automatic_permissions_for_user(create_me['login'])
 
         # Retrieve the user to return the SON object
         created = User.get_collection().find_one({'login' : login})

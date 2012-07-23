@@ -142,7 +142,8 @@ class GrantPermissionsForTask(object):
             return
         resource = '/tasks/%s/' % task.id
         operations = ['READ', 'DELETE']
-        factory.permission_manager().grant(resource, self.user_name, operations)
+        user = factory.user_query_manager().find_by_login(self.user_name)
+        factory.permission_manager().grant(resource, user, operations)
 
 
 class RevokePermissionsForTask(object):
@@ -158,7 +159,8 @@ class RevokePermissionsForTask(object):
             return
         resource = '/tasks/%s/' % task.id
         operations = ['READ', 'DELETE']
-        factory.permission_manager().revoke(resource, self.user_name, operations)
+        user = factory.user_query_manager().find_by_login(self.user_name)
+        factory.permission_manager().revoke(resource, user, operations)
 
 
 class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
@@ -168,7 +170,8 @@ class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
-        factory.permission_manager().grant(resource, self.user_name, operations)
+        user = factory.user_query_manager().find_by_login(self.user_name)
+        factory.permission_manager().grant(resource, user, operations)
 
 
 class RevokePermissionsForTaskV2(RevokePermissionsForTask):
@@ -178,20 +181,10 @@ class RevokePermissionsForTaskV2(RevokePermissionsForTask):
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
-        factory.permission_manager().revoke(resource, self.user_name, operations)
+        user = factory.user_query_manager().find_by_login(self.user_name)
+        factory.permission_manager().revoke(resource, user, operations)
 
 
 
-def check_builtin_roles(role_name):
-    """
-    Check to see if a role name corresponds to a built in role, and raise an
-    exception if it does
-    @type role_name: str
-    @param role_name: name of role to check
-    @raise L{PulpAuthorizationError}: if the role name matches a built in role
-    """
-    if role_name not in (super_user_role, consumer_users_role):
-        return
-    raise PulpAuthorizationError(_('role %s cannot be changed') % role_name)
 
 
