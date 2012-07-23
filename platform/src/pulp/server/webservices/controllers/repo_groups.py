@@ -93,14 +93,15 @@ class RepoGroupResource(JSONController):
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)]
         call_request = CallRequest(manager.update_repo_group,
-                                   [repo_group_id, update_data],
+                                   args=[repo_group_id],
+                                   kwargs=update_data,
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
         group = execution.execute(call_request)
         group.update(serialization.link.current_link_obj())
         return self.ok(group)
 
-# repo group actions -----------------------------------------------------------
+# repo group membership -------------------------------------------------------
 
 class RepoGroupAssociateAction(JSONController):
 
@@ -137,11 +138,183 @@ class RepoGroupUnassociateAction(JSONController):
         group = collection.find_one({'id': repo_group_id})
         return self.ok(group['repo_ids'])
 
+# distributor controllers -----------------------------------------------------
+
+class RepoGroupDistributors(JSONController):
+
+    # Scope: Sub-collection
+    # GET:   List Distributors
+    # POST:  Add Distributor
+
+    @auth_required(authorization.READ)
+    def GET(self, repo_group_id):
+        distributor_manager = managers_factory.repo_group_distributor_manager()
+
+        distributor_list = distributor_manager.find_distributors(repo_group_id)
+        for d in distributor_list:
+            href = serialization.link.link_obj(d['id'])
+            d.update(href)
+
+        return self.ok(distributor_list)
+
+    @auth_required(authorization.CREATE)
+    def POST(self, repo_group_id):
+        # Params (validation will occur in the manager)
+        params = self.params()
+        distributor_type_id = params.get('distributor_type_id', None)
+        distributor_config = params.get('distributor_config', None)
+        distributor_id = params.get('distributor_id', None)
+
+        distributor_manager = managers_factory.repo_group_distributor_manager()
+
+        resources = {dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE : {
+            repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION
+        }}
+        weight = pulp_config.config.getint('tasks', 'create_weight')
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
+                action_tag('add_distributor')]
+        if distributor_id is not None:
+            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id))
+
+        call_request = CallRequest(distributor_manager.add_distributor,
+                                   [repo_group_id, distributor_type_id, distributor_config, distributor_id],
+                                   resources=resources,
+                                   weight=weight,
+                                   tags=tags)
+        created = execution.execute(call_request)
+
+        href = serialization.link.child_link_obj(created['id'])
+        created.update(href)
+
+        return self.created(href['_href'], created)
+
+class RepoGroupDistributor(JSONController):
+
+    # Scope:  Exclusive Sub-resource
+    # GET:    Get Distributor
+    # DELETE: Remove Distributor
+    # PUT:    Update Distributor Config
+
+    @auth_required(authorization.READ)
+    def GET(self, repo_group_id, distributor_id):
+        distributor_manager = managers_factory.repo_group_distributor_manager()
+        dist = distributor_manager.get_distributor(repo_group_id, distributor_id)
+
+        href = serialization.link.current_link_obj()
+        dist.update(href)
+
+        return self.ok(dist)
+
+    @auth_required(authorization.DELETE)
+    def DELETE(self, repo_group_id, distributor_id):
+        params = self.params()
+        force = params.get('force', False)
+
+        distributor_manager = managers_factory.repo_group_distributor_manager()
+
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE :
+                    {repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE :
+                    {distributor_id : dispatch_constants.RESOURCE_DELETE_OPERATION},
+                     }
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
+                action_tag('remove_distributor')
+               ]
+        call_request = CallRequest(distributor_manager.remove_distributor,
+                                   args=[repo_group_id, distributor_id],
+                                   kwargs={'force' : force},
+                                   resources=resources,
+                                   tags=tags,
+                                   archive=True)
+
+        execution.execute(call_request)
+        return self.ok(None)
+
+    @auth_required(authorization.UPDATE)
+    def PUT(self, repo_group_id, distributor_id):
+        params = self.params()
+
+        distributor_config = params.get('distributor_config', None)
+
+        if distributor_config is None:
+            raise pulp_exceptions.MissingValue(['distributor_config'])
+
+        distributor_manager = managers_factory.repo_group_distributor_manager()
+
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE :
+                    {repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE :
+                    {distributor_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
+            }
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
+                action_tag('update_distributor')
+        ]
+
+        call_request = CallRequest(distributor_manager.update_distributor_config,
+                                   args=[repo_group_id, distributor_id, distributor_config],
+                                   resources=resources,
+                                   tags=tags,
+                                   archive=True)
+
+        result = execution.execute(call_request)
+
+        href = serialization.link.current_link_obj()
+        result.update(href)
+
+        return self.ok(result)
+
+# publish ---------------------------------------------------------------------
+
+class PublishAction(JSONController):
+
+    # Scope: Action
+    # POST: Trigger a group publish
+
+    def POST(self, repo_group_id):
+        params = self.params()
+        distributor_id = params.get('id', None)
+        overrides = params.get('override_config', None)
+
+        publish_manager = managers_factory.repo_group_publish_manager()
+
+        resources = {
+            dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE :
+                    {repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
+            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE :
+                    {distributor_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
+            }
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
+                action_tag('publish')
+        ]
+        weight = pulp_config.config.getint('tasks', 'publish_weight')
+
+
+        call_request = CallRequest(publish_manager.publish,
+                                   args=[repo_group_id, distributor_id],
+                                   kwargs={'publish_override_config' : overrides},
+                                   resources=resources,
+                                   tags=tags,
+                                   weight=weight,
+                                   archive=True)
+
+        return execution.execute_async(call_request)
+
 # web.py application -----------------------------------------------------------
 
 _URLS = ('/$', RepoGroupCollection,
          '/([^/]+)/$', RepoGroupResource,
+
+         '/([^/]+)/distributors/$', RepoGroupDistributors,
+         '/([^/]+)/distributors/([^/]+)/$', RepoGroupDistributor,
+
          '/([^/]+)/actions/associate/$', RepoGroupAssociateAction,
-         '/([^/]+)/actions/unassociate/$', RepoGroupUnassociateAction)
+         '/([^/]+)/actions/unassociate/$', RepoGroupUnassociateAction,
+         '/([^/]+)/actions/publish/$', PublishAction,
+        )
 
 application = web.application(_URLS, globals())
