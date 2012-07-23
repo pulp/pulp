@@ -69,7 +69,7 @@ and :term:`distributors <distributor>` associated with it.
  }
 
 
-Retrieve all Repositories
+Retrieve All Repositories
 -------------------------
 
 Returns information on all repositories in the Pulp server. It is worth noting
@@ -136,10 +136,10 @@ where there are no repositories.
   }
  ]
 
-Advanced Search For Repositories
+Advanced Search for Repositories
 --------------------------------
 
-Please see :ref:`search-api` for more details on how to perform these searches.
+Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on repositories in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty

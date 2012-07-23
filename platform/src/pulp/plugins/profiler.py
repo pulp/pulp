@@ -88,9 +88,6 @@ class Profiler(object):
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
-        @return: The translated profile.
-        @rtype: dict
-
         @return: The translated units
         @rtype: list
         """
@@ -119,9 +116,6 @@ class Profiler(object):
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
-        @return: The translated profile.
-        @rtype: dict
-
         @return: The translated units
         @rtype: list
         """
@@ -149,9 +143,6 @@ class Profiler(object):
 
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
-
-        @return: The translated profile.
-        @rtype: dict
 
         @return: The translated units
         @rtype: list

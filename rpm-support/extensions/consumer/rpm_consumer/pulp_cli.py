@@ -26,10 +26,13 @@ def initialize(context):
     # Replace the existing bind command with one scoped specifically to the
     # yum distributor
     context.cli.remove_command('bind')
+    context.cli.remove_command('unbind')
 
     d = 'binds this consumer to a Pulp repository'
-    bind_command = BindCommand(context, 'bind', _(d))
-    context.cli.add_command(bind_command)
+    context.cli.add_command(BindCommand(context, 'bind', _(d)))
+
+    d = 'unbinds this consumer from a Pulp repository'
+    context.cli.add_command(UnbindCommand(context, 'unbind', _(d)))
 
 class BindCommand(PulpCliCommand):
 
@@ -44,7 +47,7 @@ class BindCommand(PulpCliCommand):
         consumer_id = load_consumer_id(self.context)
 
         if not consumer_id:
-            m = 'This consumer is not registered to the Pulp server.'
+            m = 'This consumer is not registered to the Pulp server'
             self.prompt.render_failure_message(_(m))
             return
 
@@ -58,3 +61,28 @@ class BindCommand(PulpCliCommand):
             m = 'Consumer [%(c)s] does not exist on the server'
             self.prompt.render_failure_message(_(m) % {'c' : consumer_id})
 
+class UnbindCommand(PulpCliCommand):
+
+    def __init__(self, context, name, description):
+        PulpCliCommand.__init__(self, name, description, self.unbind)
+        self.context = context
+        self.prompt = context.prompt
+
+        self.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+
+    def unbind(self, **kwargs):
+        consumer_id = load_consumer_id(self.context)
+        if not consumer_id:
+            m = 'This consumer is not registered to the Pulp server'
+            self.prompt.render_failure_message(_(m))
+            return
+
+        repo_id = kwargs['repo-id']
+
+        try:
+            self.context.server.bind.unbind(consumer_id, repo_id, YUM_DISTRIBUTOR_TYPE_ID)
+            m = 'Consumer [%(c)s] successfully unbound from repository [%(r)s]'
+            self.prompt.render_success_message(_(m) % {'c' : consumer_id, 'r' : repo_id})
+        except NotFoundException:
+            m = 'Consumer [%(c)s] does not exist on the server'
+            self.prompt.render_failure_message(_(m) % {'c' : consumer_id}, tag='not-found')

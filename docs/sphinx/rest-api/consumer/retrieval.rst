@@ -37,7 +37,7 @@ general consumer details.
  }
 
 
-Retrieve all Consumers
+Retrieve All Consumers
 -------------------------
 
 Returns information on all consumers in the Pulp server. Eventually this call
@@ -89,10 +89,10 @@ where there are no consumers.
   }
  ]
 
-Advanced Search For Consumers
+Advanced Search for Consumers
 --------------------------------
 
-Please see :ref:`search-api` for more details on how to perform these searches.
+Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on consumers in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty

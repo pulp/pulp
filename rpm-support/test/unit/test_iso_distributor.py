@@ -115,7 +115,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         status, errors = iso_distributor._export_rpms(existing_units, symlink_dir)
         print status, errors
         self.assertTrue(status)
-        self.assertEquals(len(os.listdir(symlink_dir)), 4)
+        self.assertEquals(len(os.listdir(symlink_dir)), 3)
 
     def test_errata_export(self):
         feed_url = "file://%s/test_errata_local_sync/" % self.data_dir
