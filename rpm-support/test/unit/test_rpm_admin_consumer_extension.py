@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensio
 
 import rpm_support_base
 
-from rpm_admin_consumer import pulp_cli
+from rpm_admin_consumer import package, group
 from pulp.client.extensions.core import TAG_SUCCESS
 
 
@@ -44,7 +44,15 @@ TASK = {
         'status':True,
         'reboot_scheduled':False,
         'details':{
-            'rpm':{
+            package.TYPE_ID:{
+                'status':True,
+                'details':{
+                   'resolved':[
+                        {'name':'zsh-1.0'}],
+                   'deps':[]
+                }
+            },
+            group.TYPE_ID:{
                 'status':True,
                 'details':{
                    'resolved':[
@@ -82,7 +90,7 @@ class TestPackages(rpm_support_base.PulpClientTests):
 
     def test_install(self):
         # Setup
-        command = pulp_cli.InstallContent(self.context)
+        command = package.Install(self.context)
         self.server_mock.request = Mock(side_effect=Request('install'))
         # Test
         args = {
@@ -104,7 +112,7 @@ class TestPackages(rpm_support_base.PulpClientTests):
 
     def test_update(self):
         # Setup
-        command = pulp_cli.UpdateContent(self.context)
+        command = package.Update(self.context)
         self.server_mock.request = Mock(side_effect=Request('update'))
         # Test
         args = {
@@ -127,12 +135,62 @@ class TestPackages(rpm_support_base.PulpClientTests):
 
     def test_uninstall(self):
         # Setup
-        command = pulp_cli.UninstallContent(self.context)
+        command = package.Uninstall(self.context)
         self.server_mock.request = Mock(side_effect=Request('uninstall'))
         # Test
         args = {
             'id':'xyz',
             'name':['zsh'],
+            'no-commit':False,
+            'importkeys':False,
+            'reboot':False,
+        }
+        command.run(**args)
+
+        # Verify
+        passed = self.server_mock.request.call_args[0]
+        self.assertEqual('GET', passed[0])
+        self.assertEqual('/pulp/api/v2/tasks/TASK123/', passed[1])
+        tags = self.prompt.get_write_tags()
+        self.assertEqual(5, len(tags))
+        self.assertEqual(tags[0], TAG_SUCCESS)
+
+
+
+class TestGroups(rpm_support_base.PulpClientTests):
+
+    CONSUMER_ID = 'test-consumer'
+
+    def test_install(self):
+        # Setup
+        command = group.Install(self.context)
+        self.server_mock.request = Mock(side_effect=Request('install'))
+        # Test
+        args = {
+            'id':'xyz',
+            'name':['Test Group'],
+            'no-commit':False,
+            'import-keys':False,
+            'reboot':False,
+        }
+        command.run(**args)
+
+        # Verify
+        passed = self.server_mock.request.call_args[0]
+        self.assertEqual('GET', passed[0])
+        self.assertEqual('/pulp/api/v2/tasks/TASK123/', passed[1])
+        tags = self.prompt.get_write_tags()
+        self.assertEqual(5, len(tags))
+        self.assertEqual(tags[0], TAG_SUCCESS)
+
+    def test_uninstall(self):
+        # Setup
+        command = group.Uninstall(self.context)
+        self.server_mock.request = Mock(side_effect=Request('uninstall'))
+        # Test
+        args = {
+            'id':'xyz',
+            'name':['Test Group'],
             'no-commit':False,
             'importkeys':False,
             'reboot':False,
