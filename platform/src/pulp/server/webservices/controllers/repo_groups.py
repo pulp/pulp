@@ -293,7 +293,6 @@ class PublishAction(JSONController):
         ]
         weight = pulp_config.config.getint('tasks', 'publish_weight')
 
-
         call_request = CallRequest(publish_manager.publish,
                                    args=[repo_group_id, distributor_id],
                                    kwargs={'publish_override_config' : overrides},
@@ -302,7 +301,7 @@ class PublishAction(JSONController):
                                    weight=weight,
                                    archive=True)
 
-        return execution.execute_async(call_request)
+        return execution.execute_async(self, call_request)
 
 # web.py application -----------------------------------------------------------
 
