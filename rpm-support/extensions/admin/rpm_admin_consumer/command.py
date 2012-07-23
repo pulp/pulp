@@ -21,6 +21,10 @@ from pulp.client.extensions.extensions import PulpCliCommand
 
 class PollingCommand(PulpCliCommand):
 
+    def __init__(self, name, description, method, context):
+        PulpCliCommand.__init__(self, name, description, method)
+        self.context = context
+
     def process(self, id, task):
         prompt = self.context.prompt
         m = 'This command may be exited via ctrl+c without affecting the install.'
@@ -74,6 +78,9 @@ class PollingCommand(PulpCliCommand):
                 ' This request will take place at the earliest possible time.'
             self.context.prompt.render_paragraph(_(msg))
         return postponed
+
+    def succeeded(self, id, task):
+        raise NotImplementedError()
 
     def failed(self, id, task):
         prompt = self.context.prompt

@@ -52,7 +52,8 @@ class Install(PollingCommand):
             self,
             'install',
             _('install packages'),
-            self.run)
+            self.run,
+            context)
         self.create_option(
             '--name',
             _('package name; may repeat for multiple packages'),
@@ -62,7 +63,6 @@ class Install(PollingCommand):
         self.create_flag(
             '--import-keys',
             _('import GPG keys as needed'))
-        self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
@@ -139,7 +139,8 @@ class Update(PollingCommand):
             self,
             'update',
             _('update (installed) packages'),
-            self.run)
+            self.run,
+            context)
         self.create_option(
             '--name',
             _('package name; may repeat for multiple packages'),
@@ -153,7 +154,6 @@ class Update(PollingCommand):
             '--all',
             _('update all packages'),
             aliases=['-a'])
-        self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
@@ -243,14 +243,14 @@ class Uninstall(PollingCommand):
             self,
             'uninstall',
             _('uninstall packages'),
-            self.run)
+            self.run,
+            context)
         self.create_option(
             '--name',
             _('package name; may repeat for multiple packages'),
             required=True,
             allow_multiple=True,
             aliases=['-n'])
-        self.context = context
 
     def run(self, **kwargs):
         id = kwargs['id']
