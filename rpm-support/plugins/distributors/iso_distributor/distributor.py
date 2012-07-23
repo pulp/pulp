@@ -19,7 +19,7 @@ from pulp_rpm.yum_plugin import util, updateinfo, metadata
 from pulp.plugins.distributor import Distributor
 from iso_distributor.generate_iso import GenerateIsos
 from pulp.server.managers.repo.unit_association_query import Criteria
-
+from pulp_rpm.yum_plugin import comps_util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
@@ -172,6 +172,17 @@ class ISODistributor(Distributor):
         self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["rpms"]["state"] = "FINISHED"
 
+        # package groups
+        criteria = Criteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+        existing_units = publish_conduit.get_units(criteria)
+        existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
+        existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
+        groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
+        # generate metadata
+        metadata_status, metadata_errors = metadata.generate_metadata(
+                repo, publish_conduit, config, progress_callback, groups_xml_path)
+        _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+
         # errata units
         progress_status["errata"]["state"] = "STARTED"
         criteria = Criteria(type_ids=[ERRATA_TYPE_ID])
@@ -242,15 +253,6 @@ class ISODistributor(Distributor):
             return False, errors
         packages_progress_status["state"] = "FINISHED"
         self.set_progress("packages", packages_progress_status, progress_callback)
-        # generate metadata
-        try:
-            metadata.create_repo(symlink_dir)
-            _LOG.info("metadata generation complete at target location %s" % symlink_dir)
-        except metadata.CreateRepoError, cre:
-            msg = "Unable to generate metadata for exported packages in target directory %s; Error: %s" % (symlink_dir, str(cre))
-            errors.append(msg)
-            _LOG.error(msg)
-            return False, errors
         return True, []
 
     def _export_errata(self, errata_units, repo_working_dir, progress_callback=None):

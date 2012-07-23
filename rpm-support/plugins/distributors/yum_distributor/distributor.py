@@ -437,7 +437,7 @@ class YumDistributor(Distributor):
             existing_units = publish_conduit.get_units(criteria)
             existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
             existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
-            groups_xml_path = self.write_comps_xml(repo, existing_groups, existing_cats)
+            groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
         metadata_start_time = time.time()
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
         metadata_status, metadata_errors = metadata.generate_metadata(
@@ -742,44 +742,6 @@ class YumDistributor(Distributor):
                 payload['global_auth_ca'] = open(global_auth_ca).read()
         return payload
 
-    def write_comps_xml(self, repo, existing_groups, existing_cats):
-        """
-        Generates a xml file commonly called a 'comps.xml'
-        Contains information from the package groups and package categories
-        associated with this repo
-
-        @param repo: metadata describing the repository
-        @type repo: L{pulp.plugins.data.Repository}
-
-        @param existing_groups: package group units in this repo
-        @type existing_groups: [Unit]
-
-        @param existing_cats: package category units in this repo
-        @type existing_cats: [Unit]
-
-        @return path to comps.xml or None if no groups/cat info is available
-        @rtype: str
-        """
-        if not existing_groups and not existing_cats:
-            # No groups/cats info 
-            return None
-        comps_xml = comps_util.form_comps_xml_from_units(existing_groups, existing_cats)
-        if not comps_xml:
-            return None
-        out_path = os.path.join(repo.working_dir, "comps.xml")
-        f = open(out_path, "w")
-        try:
-            try:
-                data = comps_xml
-                if isinstance(data, unicode):
-                    data = data.encode('utf-8')
-                f.write(data)
-            except Exception, e:
-                _LOG.exception("Unable to write comps.xml for repo: %s with %s groups and %s categories" % (repo.id, len(existing_groups), len(existing_cats)))
-                raise
-        finally:
-            f.close()
-        return out_path
 
 def load_config(config_file=CONFIG_REPO_AUTH):
     config = SafeConfigParser()
