@@ -93,7 +93,6 @@ class TestCertGeneration(unittest.TestCase):
 
     def test_priv_key(self):
         # Test
-        #cert_gen_manager = CertGenerationManager()
         pem = cert_generator._make_priv_key()
 
         # Verify

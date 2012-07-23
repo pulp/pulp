@@ -75,6 +75,8 @@ class UserQueryManager(object):
         @rtype:  list of dict
         """
         users = list(User.get_collection().find({'id' : {'$in' : login_list}}))
+        for user in users:
+            user.pop('password')
         return users
 
     

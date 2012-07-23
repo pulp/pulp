@@ -72,7 +72,15 @@ class UsersCollection(JSONController):
                                    resources=resources,
                                    weight=weight,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, login)
+        user = execution.execute_sync(self, call_request, login)
+        user_link = serialization.link.child_link_obj(login)
+        user.update(user_link)
+        
+        # Grant permissions
+        permission_manager = managers.permission_manager()
+        permission_manager.grant_automatic_permissions_for_created_resource(user_link)
+        
+        return self.created(login, user)
 
 
 class UserResource(JSONController):

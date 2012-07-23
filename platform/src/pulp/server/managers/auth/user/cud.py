@@ -70,7 +70,7 @@ class UserManager(object):
 
         invalid_values = []
 
-        if login is None or not is_user_login_valid(login):
+        if login is None or _USER_LOGIN_REGEX.match(login) is None:
             invalid_values.append('login')
         if invalid_type(name, basestring):
             invalid_values.append('name')
@@ -92,41 +92,15 @@ class UserManager(object):
         # Creation
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)
         User.get_collection().save(create_me, safe=True)
+        
+        # Grant permissions
+        permission_manager = factory.permission_manager()
+        permission_manager.grant_automatic_permissions_for_new_user(create_me['login'])
 
         # Retrieve the user to return the SON object
         created = User.get_collection().find_one({'login' : login})
 
         return created
-
-
-    def delete_user(self, login):
-        """
-        Deletes the given user. Deletion of last superuser is not permitted.
-
-        @param login: identifies the user being deleted
-        @type  login: str
-
-        @raise MissingResource: if the given user does not exist
-        @raise InvalidValue: if login value is invalid
-        """
-
-        # Raise exception if login is invalid
-        if login is None or not isinstance(login, basestring):
-            raise InvalidValue(['login'])
-
-        # Check whether user exists
-        found = User.get_collection().find_one({'login' : login})
-        if found is None:
-            raise MissingResource(login)
-
-        # Make sure user is not the last super user 
-        if factory.user_query_manager().is_last_super_user(found): 
-            raise PulpDataException(_("The last superuser [%s] cannot be deleted" % found['id']))
-             
-        # Revoke all permissions from the user
-        factory.permission_manager().revoke_all_permissions_from_user(login)
-        
-        User.get_collection().remove({'login' : login}, safe=True)
 
 
 
@@ -148,39 +122,103 @@ class UserManager(object):
         @raise MissingResource: if there is no user with login
         """
 
-        user_coll = User.get_collection()
-
-        user = user_coll.find_one({'login' : login})
+        user = User.get_collection().find_one({'login' : login})
         if user is None:
             raise MissingResource(login)
 
-        # Check
+        # Check invalid values
         invalid_values = []
         if 'password' in delta:
-            if not isinstance(delta['password'], basestring):
+            if delta['password'] is None or invalid_type(delta['password'], basestring):
                 invalid_values.append('password')
             else:
                 user['password'] = password_util.hash_password(delta['password'])
 
         if 'name' in delta:
-            if delta['name'] is not None and not isinstance(delta['name'], basestring):
+            if delta['name'] is None or invalid_type(delta['name'], basestring):
                 invalid_values.append('name')
             else:
                 user['name'] = delta['name']
 
         if 'roles' in delta:
-            if delta['roles'] is not None and not isinstance(delta['roles'], list):
+            if delta['roles'] is None or invalid_type(delta['roles'], list):
                 invalid_values.append('roles')
             else:
+                # Add new roles to the user and remove deleted roles from the user according to delta
+                old_roles = user['roles']
+                for new_role in delta['roles']:
+                    if new_role not in old_roles:
+                        self.add_user_to_role(new_role, login)
+                for old_role in old_roles:
+                    if old_role not in delta['roles']:
+                        self.remove_user_from_role(old_role, login)
                 user['roles'] = delta['roles']
 
         if invalid_values:
             raise InvalidValue(invalid_values)
 
-        user_coll.save(user, safe=True)
+        User.get_collection().save(user, safe=True)
 
-        return user
+        # Retrieve the user to return the SON object
+        updated = User.get_collection().find_one({'login' : login})
+        updated.pop('password')
+
+        return updated
     
+
+    def delete_user(self, login):
+        """
+        Deletes the given user. Deletion of last superuser is not permitted.
+
+        @param login: identifies the user being deleted
+        @type  login: str
+
+        @raise MissingResource: if the given user does not exist
+        @raise InvalidValue: if login value is invalid
+        """
+
+        # Raise exception if login is invalid
+        if login is None or invalid_type(login, basestring):
+            raise InvalidValue(['login'])
+
+        # Check whether user exists
+        found = User.get_collection().find_one({'login' : login})
+        if found is None:
+            raise MissingResource(login)
+
+        # Make sure user is not the last super user 
+        if factory.user_query_manager().is_last_super_user(found): 
+            raise PulpDataException(_("The last superuser [%s] cannot be deleted" % found['id']))
+             
+        # Revoke all permissions from the user
+        factory.permission_manager().revoke_all_permissions_from_user(login)
+        
+        User.get_collection().remove({'login' : login}, safe=True)
+
+
+    def ensure_admin(self):
+        """
+        This function ensures that there is at least one super user for the system.
+        If no super users are found, the default admin user (from the pulp config)
+        is looked up or created and added to the super users role.
+        """
+        user_query_manager = factory.user_query_manager()
+        role_query_manager = factory.role_query_manager()
+        super_users = user_query_manager.get_users_belonging_to_role( 
+                    role_query_manager.find_by_name(super_user_role))
+        if super_users:
+            return
+        
+        default_login = config.config.get('server', 'default_login')
+        
+        user_manager = factory.user_manager()
+        admin = user_manager.find_by_login(default_login)
+        if admin is None:
+            default_password = config.config.get('server', 'default_password')
+            admin = user_manager.create_user(login=default_login, password=default_password)
+        
+        self.add_user_to_role(super_user_role, default_login)
+
     
     def add_user_to_role(self, role_name, user_name):
         """
@@ -196,21 +234,17 @@ class UserManager(object):
         @rtype: bool
         @return: True on success
         """
-        role_query_manager = factory.role_query_manager()
-        role = role_query_manager.find_by_name(role_name)
-        
-        user_query_manager = factory.user_query_manager()
-        user = user_query_manager.find_by_login(user_name)
-        
+        role =  factory.role_query_manager().find_by_name(role_name)
+        user = factory.user_query_manager().find_by_login(user_name)
+       
         if role_name in user['roles']:
             return False
+
         user['roles'].append(role_name)
-        user_manager = factory.user_manager()
-        user_manager.update_user(user['login'], Delta(user, 'roles'))
+        User.get_collection().save(user, safe=True)
         
-        permission_manager = factory.permission_manager() 
         for resource, operations in role['permissions'].items():
-            permission_manager.grant(resource, user, operations)
+            factory.permission_manager() .grant(resource, user, operations)
         return True
 
 
@@ -229,78 +263,31 @@ class UserManager(object):
         @rtype: bool
         @return: True on success
         """
-        role_query_manager = factory.role_query_manager()
-        user_query_manager = factory.user_query_manager()
       
-        role = role_query_manager.find_by_name(role_name)
-        user = user_query_manager.find_by_login(user_name)
-        if role_name == super_user_role and user_query_manager.is_last_super_user(user):
+        role = factory.role_query_manager().find_by_name(role_name)
+        user = factory.user_query_manager().find_by_login(user_name)
+        if role_name == super_user_role and factory.user_query_manager().is_last_super_user(user):
             raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
                                      (super_user_role, user_name))
+        
         if role_name not in user['roles']:
             return False
-        user['roles'].remove(role_name)
 
-        self.update_user(user['login'], Delta(user, 'roles'))
+        user['roles'].remove(role_name)
+        User.get_collection().save(user, safe=True)
         
-        permission_manager = factory.permission_manager()
         for resource, operations in role['permissions'].items():
-            other_roles = role_query_manager.get_other_roles(role, user['roles'])
+            other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
             user_ops = _operations_not_granted_by_roles(resource,
                                                         operations,
                                                         other_roles)
-            permission_manager.revoke(resource, user, user_ops)
+            factory.permission_manager().revoke(resource, user, user_ops)
         return True
-
-    
-
-  
-    def ensure_admin(self):
-        """
-        This function ensures that there is at least one super user for the system.
-        If no super users are found, the default admin user (from the pulp config)
-        is looked up or created and added to the super users role.
-        """
-        user_query_manager = factory.user_query_manager()
-        role_query_manager = factory.role_query_manager()
-        super_users = user_query_manager.get_users_belonging_to_role( 
-                    role_query_manager.find_by_name(super_user_role))
-        if super_users:
-            return
-        default_login = config.config.get('server', 'default_login')
-        user_manager = factory.user_manager()
-        admin = user_manager.find_by_login(default_login)
-        if admin is None:
-            default_password = config.config.get('server', 'default_password')
-            admin = user_manager.create_user(login=default_login, password=default_password)
-        self.add_user_to_role(super_user_role, default_login)
-
-
-
-    def generate_user_certificate(self):
-        """
-        Generates a user certificate for the currently logged in user.
-
-        @return: certificate and private key, combined into a single string,
-                 that can be used to identify the current user on subsequent calls
-        @rtype:  str
-        """
-
-        # Get the currently logged in user
-        user = principal.get_principal()
-        key, certificate = factory.cert_generation_manager().make_admin_user_cert(user)
-        return key + certificate
+ 
 
 
 # -- functions ----------------------------------------------------------------
 
-def is_user_login_valid(login):
-    """
-    @return: true if the login is valid; false otherwise
-    @rtype:  bool
-    """
-    result = _USER_LOGIN_REGEX.match(login) is not None
-    return result
 
 def invalid_type(input_value, valid_type):
     """
