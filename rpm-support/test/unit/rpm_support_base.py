@@ -24,9 +24,19 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
-from pulp.server import config
+from pulp.server import config, constants
+from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
+from pulp.server.managers import factory as manager_factory
+from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
+from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
+from pulp.plugins.types import database as typedb
+
+
+SerialNumber.PATH = '/tmp/sn.dat'
+constants.LOCAL_STORAGE = '/tmp/pulp/'
+constants.CACHE_DIR = '/tmp/pulp/cache'
 
 class PulpRPMTests(unittest.TestCase):
     """
@@ -35,11 +45,20 @@ class PulpRPMTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if not os.path.exists('/tmp/pulp'):
+            os.makedirs('/tmp/pulp')
         stop_logging()
         config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test-override-pulp.conf')
         config.config.read(config_filename)
         start_logging()
-        connection.initialize()
+        name = config.config.get('database', 'name')
+        connection.initialize(name)
+        manager_factory.initialize()
+
+    @classmethod
+    def tearDownClass(cls):
+        name = config.config.get('database', 'name')
+        connection._connection.drop_database(name)
 
     def setUp(self):
         super(PulpRPMTests, self).setUp()
