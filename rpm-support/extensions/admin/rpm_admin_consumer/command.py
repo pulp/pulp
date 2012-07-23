@@ -20,17 +20,45 @@ from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliCommand
 
 class PollingCommand(PulpCliCommand):
+    """
+    A I{polling} command provides support for polling tasks created during
+    REST calls to the server.  Primarily, it polls the server for an updated
+    status for the task.  Once the task is finished, it is dispatched to
+    a method based on task status.  Additionally, it stores the I{context}
+    for convenience.
+    @ivar context: The command context object.
+    @type context: See okaara.
+    """
 
     def __init__(self, name, description, method, context):
+        """
+        @param name: The command name.
+        @type name: str
+        @param description: The command description.
+        @type description: str
+        @param method: The command (main) method.
+        @type method: instancemethod
+        @param context: The command context object.
+        @type context: See okaara.
+        """
         PulpCliCommand.__init__(self, name, description, method)
         self.context = context
 
     def process(self, id, task):
+        """
+        Process the queued task by polling and waiting for it to complete.
+        Once the task has completed, it is dispatched to a method based
+        on the task status.  A spinner is displayed while polling.
+        @type id: The consumer ID.
+        @type id: str
+        @param task: A queued task.
+        @type task: Task
+        """
         prompt = self.context.prompt
         m = 'This command may be exited via ctrl+c without affecting the install.'
         prompt.render_paragraph(_(m))
         try:
-            task = self.poll(task)
+            task = self._poll(task)
             if task.was_successful():
                 self.succeeded(id, task)
                 return
@@ -44,7 +72,14 @@ class PollingCommand(PulpCliCommand):
             # graceful interrupt
             pass
 
-    def poll(self, task):
+    def _poll(self, task):
+        """
+        Poll the server, waiting for a task completion.
+        @param task: A queued task.
+        @type task: Task
+        @return: The completed task.
+        @rtype: Task
+        """
         server = self.context.server
         cfg = self.context.config
         spinner = self.context.prompt.create_spinner()
@@ -60,6 +95,15 @@ class PollingCommand(PulpCliCommand):
         return task
 
     def rejected(self, task):
+        """
+        Test for rejected tasks.
+        If rejected, an appropriate message is displayed for the user and
+        and the test result (flag) is returned.
+        @param task: A queued task.
+        @type task: Task
+        @return: Whether the task was rejected.
+        @rtype: bool
+        """
         rejected = task.is_rejected()
         if rejected:
             prompt = self.context.prompt
@@ -70,6 +114,15 @@ class PollingCommand(PulpCliCommand):
         return rejected
 
     def postponed(self, task):
+        """
+        Test for postponed tasks.
+        If postponed, an appropriate message is displayed for the user and
+        and the test result (flag) is returned.
+        @param task: A queued task.
+        @type task: Task
+        @return: Whether the task was postponed.
+        @rtype: bool
+        """
         postponed = task.is_postponed()
         if postponed:
             msg  = \
@@ -80,14 +133,40 @@ class PollingCommand(PulpCliCommand):
         return postponed
 
     def succeeded(self, id, task):
+        """
+        Called when a task has completed with a status indicating success.
+        Must be overridden by subclasses which are expected to print the
+        appropriate output to the user.
+        @type id: The consumer ID.
+        @type id: str
+        @param task: A successful task.
+        @type task: Task
+        """
         raise NotImplementedError()
 
     def failed(self, id, task):
+        """
+        Called when a task has completed with a status indicating that it failed.
+        An appropriate message is displayed to the user.
+        @type id: The consumer ID.
+        @type id: str
+        @param task: A cancelled task.
+        @type task: Task
+        """
         prompt = self.context.prompt
         msg = 'Request Failed'
         prompt.render_failure_message(_(msg))
         prompt.render_failure_message(task.exception)
 
-    def cancelled(self, id, response):
+    def cancelled(self, id, task):
+        """
+        Called when a task has completed with a status indicating
+        that it was cancelled.
+        An appropriate message is displayed to the user.
+        @type id: The consumer ID.
+        @type id: str
+        @param task: A cancelled task.
+        @type task: Task 
+        """
         prompt = self.context.prompt
         prompt.render_failure_message('Request Cancelled')
