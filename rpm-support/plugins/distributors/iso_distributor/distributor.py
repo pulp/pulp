@@ -18,7 +18,7 @@ import traceback
 from pulp_rpm.yum_plugin import util, updateinfo, metadata
 from pulp.plugins.distributor import Distributor
 from iso_distributor.generate_iso import GenerateIsos
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import comps_util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
@@ -167,13 +167,13 @@ class ISODistributor(Distributor):
 
         # rpm units
         progress_status["rpms"]["state"] = "STARTED"
-        criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
         rpm_units = publish_conduit.get_units(criteria)
         self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["rpms"]["state"] = "FINISHED"
 
         # package groups
-        criteria = Criteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
         existing_units = publish_conduit.get_units(criteria)
         existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
         existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
@@ -185,7 +185,7 @@ class ISODistributor(Distributor):
 
         # errata units
         progress_status["errata"]["state"] = "STARTED"
-        criteria = Criteria(type_ids=[ERRATA_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[ERRATA_TYPE_ID])
         errata_units = publish_conduit.get_units(criteria)
         rpm_units = self._get_errata_rpms(errata_units, rpm_units)
         self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
@@ -194,7 +194,7 @@ class ISODistributor(Distributor):
 
         # distro units
         progress_status["distribution"]["state"] = "STARTED"
-        criteria = Criteria(type_ids=[DISTRO_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[DISTRO_TYPE_ID])
         distro_units = publish_conduit.get_units(criteria)
         self._export_distributions(distro_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["distribution"]["state"] = "FINISHED"

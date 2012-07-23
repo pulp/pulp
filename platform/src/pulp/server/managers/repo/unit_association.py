@@ -31,7 +31,7 @@ import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 
 _LOG = logging.getLogger(__name__)
 
@@ -256,7 +256,7 @@ class RepoUnitAssociationManager(object):
 
             for type_id in unit_ids_by_type.keys():
                 spec = {'unit_id' : {'$in' : unit_ids_by_type[type_id]}}
-                criteria = Criteria(association_filters=spec)
+                criteria = UnitAssociationCriteria(association_filters=spec)
                 dep_associations = association_query_manager.get_units_by_type(source_repo_id, type_id, criteria)
 
                 associate_us += dep_associations

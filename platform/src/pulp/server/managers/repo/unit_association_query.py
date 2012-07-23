@@ -104,7 +104,7 @@ class RepoUnitAssociationQueryManager(object):
         @type  repo_id: str
 
         @param criteria: if specified will drive the query
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
         """
 
         if criteria is not None and\
@@ -136,12 +136,12 @@ class RepoUnitAssociationQueryManager(object):
         @type  repo_id: str
 
         @param criteria: if specified will drive the query
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
         """
 
         # For simplicity, create a criteria if one is not provided and use its defaults
         if criteria is None:
-            criteria = Criteria()
+            criteria = UnitAssociationCriteria()
 
         # -- association collection lookup ------------------------------------
 
@@ -220,12 +220,12 @@ class RepoUnitAssociationQueryManager(object):
         @type  type_id: str
 
         @param criteria: if specified will drive the query
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
         """
 
         # For simplicity, create a criteria if one is not provided and use its defaults
         if criteria is None:
-            criteria = Criteria()
+            criteria = UnitAssociationCriteria()
 
         # -- association collection lookup ------------------------------------
 
@@ -385,7 +385,7 @@ class RepoUnitAssociationQueryManager(object):
 
 # -- association criteria -----------------------------------------------------
 
-class Criteria:
+class UnitAssociationCriteria:
 
     # Shadowed here for convenience
     SORT_ASCENDING = pymongo.ASCENDING

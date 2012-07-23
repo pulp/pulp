@@ -36,7 +36,7 @@ from pulp.server.db.model.repository import (
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 import pulp.server.webservices.serialization.unit_criteria as repo_query_utils
 from pulp.server.webservices.controllers import repositories
 
@@ -1163,12 +1163,12 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
         self.assertEqual(1, self.association_query_mock.get_units_by_type.call_count)
 
         criteria = self.association_query_mock.get_units_by_type.call_args[1]['criteria']
-        self.assertTrue(isinstance(criteria, Criteria))
+        self.assertTrue(isinstance(criteria, UnitAssociationCriteria))
         self.assertEqual(query['type_ids'], criteria.type_ids)
         self.assertEqual(query['filters']['association'], criteria.association_filters)
         self.assertEqual(query['filters']['unit'], criteria.unit_filters)
-        self.assertEqual([('created', Criteria.SORT_DESCENDING), ('updated', Criteria.SORT_ASCENDING)], criteria.association_sort)
-        self.assertEqual([('name', Criteria.SORT_ASCENDING), ('version', Criteria.SORT_DESCENDING)], criteria.unit_sort)
+        self.assertEqual([('created', UnitAssociationCriteria.SORT_DESCENDING), ('updated', UnitAssociationCriteria.SORT_ASCENDING)], criteria.association_sort)
+        self.assertEqual([('name', UnitAssociationCriteria.SORT_ASCENDING), ('version', UnitAssociationCriteria.SORT_DESCENDING)], criteria.unit_sort)
         self.assertEqual(int(query['limit']), criteria.limit)
         self.assertEqual(int(query['skip']), criteria.skip)
         self.assertEqual(query['fields']['unit'], criteria.unit_fields)
@@ -1193,7 +1193,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
         self.assertEqual(0, self.association_query_mock.get_units_by_type.call_count)
         self.assertEqual(1, self.association_query_mock.get_units_across_types.call_count)
-        self.assertTrue(isinstance(self.association_query_mock.get_units_across_types.call_args[1]['criteria'], Criteria))
+        self.assertTrue(isinstance(self.association_query_mock.get_units_across_types.call_args[1]['criteria'], UnitAssociationCriteria))
 
     def test_post_missing_query(self):
         # Test

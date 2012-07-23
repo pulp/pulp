@@ -13,7 +13,7 @@
 
 import re
 
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 
 def unit_association_criteria(query):
     """
@@ -75,9 +75,9 @@ def unit_association_criteria(query):
         parsed_list = []
         for t in sort_list:
             if t[1] in ['ascending', 1, '1']:
-                t[1] = Criteria.SORT_ASCENDING
+                t[1] = UnitAssociationCriteria.SORT_ASCENDING
             elif t[1] in ['descending', -1, '-1']:
-                t[1] = Criteria.SORT_DESCENDING
+                t[1] = UnitAssociationCriteria.SORT_DESCENDING
             else:
                 raise ValueError('Invalid sort direction [%s]' % t[1])
 
@@ -102,7 +102,7 @@ def unit_association_criteria(query):
     if association_filters:
         _recursive_check_not(association_filters)
 
-    c = Criteria(type_ids=type_ids, association_filters=association_filters, unit_filters=unit_filters,
+    c = UnitAssociationCriteria(type_ids=type_ids, association_filters=association_filters, unit_filters=unit_filters,
                  association_sort=association_sort, unit_sort=unit_sort, limit=limit, skip=skip,
                  association_fields=association_fields, unit_fields=unit_fields, remove_duplicates=remove_duplicates)
     return c

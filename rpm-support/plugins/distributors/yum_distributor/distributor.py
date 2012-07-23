@@ -19,7 +19,7 @@ import time
 import traceback
 
 from pulp.plugins.distributor import Distributor
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import comps_util, util, metadata
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 
@@ -39,7 +39,7 @@ SRPM_TYPE_ID="srpm"
 YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
 
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
-OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
+OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
                         "https_ca", "gpgkey", "generate_metadata",
                         "checksum_type", "skip", "https_publish_dir", "http_publish_dir"]
 
@@ -290,7 +290,7 @@ class YumDistributor(Distributor):
         """
         # We will construct a tree like data object referenced by the lookup dict
         # Each piece of a url will be used to create a new dict
-        # When we get to the end of the url pieces we will store 
+        # When we get to the end of the url pieces we will store
         # a single key/value pair of 'repo_id':"id"
         # The existance of this key/value pair signifies a conflict
         #  Desire is to support similar subdirs
@@ -433,7 +433,7 @@ class YumDistributor(Distributor):
         existing_cats = []
         existing_groups = []
         if 'packagegroup' not in skip_list:
-            criteria = Criteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
             existing_units = publish_conduit.get_units(criteria)
             existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
             existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
@@ -528,13 +528,13 @@ class YumDistributor(Distributor):
         @param units list of units that belong to the repo and should be published
         @type units [AssociatedUnit]
 
-        @param symlink_dir where to create symlinks 
+        @param symlink_dir where to create symlinks
         @type symlink_dir str
 
         @param progress_callback: callback to report progress info to publish_conduit
         @type  progress_callback: function
 
-        @return tuple of status and list of error messages if any occurred 
+        @return tuple of status and list of error messages if any occurred
         @rtype (bool, [str])
         """
         packages_progress_status = self.init_progress()
