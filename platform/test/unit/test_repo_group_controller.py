@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import dummy_plugins
 import base
 import mock_plugins
 
@@ -185,6 +186,11 @@ class RepoGroupDistributorsTests(base.PulpWebserviceTests):
         self.manager = manager_factory.repo_group_manager()
         self.distributor_manager = manager_factory.repo_group_distributor_manager()
 
+    def tearDown(self):
+        super(RepoGroupDistributorsTests, self).tearDown()
+
+        mock_plugins.reset()
+
     def clean(self):
         super(RepoGroupDistributorsTests, self).clean()
 
@@ -250,6 +256,11 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
 
         self.manager = manager_factory.repo_group_manager()
         self.distributor_manager = manager_factory.repo_group_distributor_manager()
+
+    def tearDown(self):
+        super(RepoGroupDistributorTests, self).tearDown()
+
+        mock_plugins.reset()
 
     def clean(self):
         super(RepoGroupDistributorTests, self).clean()
@@ -378,7 +389,7 @@ class PublishActionTests(base.PulpWebserviceTests):
     def setUp(self):
         super(PublishActionTests, self).setUp()
 
-        mock_plugins.install()
+        dummy_plugins.install()
 
         self.manager = manager_factory.repo_group_manager()
         self.distributor_manager = manager_factory.repo_group_distributor_manager()
@@ -394,11 +405,13 @@ class PublishActionTests(base.PulpWebserviceTests):
         group_id = 'group-1'
         distributor_id = 'dist-1'
         self.manager.create_repo_group(group_id)
-        self.distributor_manager.add_distributor(group_id, 'mock-group-distributor', {}, distributor_id=distributor_id)
+        self.distributor_manager.add_distributor(group_id, 'dummy-group-distributor', {}, distributor_id=distributor_id)
 
         # Test
         data = {'id' : distributor_id}
         status, body = self.post('/v2/repo_groups/%s/actions/publish/' % group_id, data)
 
         # Verify
-#        self.assertEqual(202, status)
+        # Can't verify the status code due to the unit test framework
+#        self.assertEqual(200, status)
+#        self.assertEqual(1, dummy_plugins.DUMMY_GROUP_DISTRIBUTOR.call_count)
