@@ -23,7 +23,7 @@ class PollingCommand(PulpCliCommand):
 
     def process(self, id, task):
         prompt = self.context.prompt
-        m = 'This command may be exited via CTRL+C without affecting the install.'
+        m = 'This command may be exited via ctrl+c without affecting the install.'
         prompt.render_paragraph(_(m))
         try:
             task = self.poll(task)
