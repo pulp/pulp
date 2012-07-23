@@ -17,7 +17,7 @@ import itertools
 from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import util
 from yum_importer import distribution, drpm
 

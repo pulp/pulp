@@ -20,12 +20,12 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, Unit
 from pulp.plugins.types import database, model
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo, RepoImporter
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.unit_association as association_manager
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.content.cud as content_cud_manager
 import pulp.server.managers.factory as manager_factory

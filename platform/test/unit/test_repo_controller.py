@@ -30,13 +30,13 @@ from pulp.common import dateutils
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 import pulp.server.webservices.serialization.unit_criteria as repo_query_utils
 from pulp.server.webservices.controllers import repositories
 

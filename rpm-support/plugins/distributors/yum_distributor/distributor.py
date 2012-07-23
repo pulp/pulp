@@ -19,7 +19,7 @@ import time
 import traceback
 
 from pulp.plugins.distributor import Distributor
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import comps_util, util, metadata
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 

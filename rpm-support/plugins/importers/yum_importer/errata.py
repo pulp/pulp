@@ -18,7 +18,7 @@ import os
 import time
 import yum
 from pulp_rpm.yum_plugin import util, updateinfo
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from yum_importer import importer_rpm
 
 _LOG = util.getLogger(__name__)

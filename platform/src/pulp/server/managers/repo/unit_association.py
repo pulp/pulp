@@ -25,13 +25,13 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.plugins.types.database as types_db
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 
 _LOG = logging.getLogger(__name__)
 

@@ -20,12 +20,12 @@ from pulp.plugins.conduits.dependency import DependencyResolutionConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Unit
 from pulp.plugins.types import database, model
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoContentUnit
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 
 # -- constants ----------------------------------------------------------------
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 
 TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
     ['key-1'], ['search-1'], [])

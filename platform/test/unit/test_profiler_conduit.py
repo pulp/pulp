@@ -20,9 +20,9 @@ import base
 
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
 from pulp.plugins.loader import api as plugin_api

@@ -20,7 +20,7 @@ import sys
 import time
 import yum
 from pulp_rpm.yum_plugin import comps_util, util
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 
 _LOG = util.getLogger(__name__)
 

@@ -15,7 +15,7 @@
 Distribution Support for Yum Importer
 """
 import os
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import util
 
 _LOG = util.getLogger(__name__)

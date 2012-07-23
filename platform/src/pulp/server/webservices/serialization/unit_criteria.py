@@ -13,7 +13,7 @@
 
 import re
 
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 
 def unit_association_criteria(query):
     """

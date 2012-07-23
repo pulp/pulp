@@ -24,7 +24,7 @@ from yum_importer.distribution import DISTRO_TYPE_ID
 from yum_importer.drpm import DRPM_TYPE_ID
 from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID, link_errata_rpm_units
 from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID, get_existing_units
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import SyncReport
 from pulp_rpm.yum_plugin import util, depsolver

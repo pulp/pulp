@@ -19,11 +19,11 @@ import mock
 
 from pulp.common import dateutils
 from pulp.plugins.types import database, model
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.repo.unit_association as association_manager
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.repo.unit_association_query as association_query_manager
-from pulp.server.managers.repo.unit_association_query import UnitAssociationCriteria
 import pulp.server.managers.content.cud as content_cud_manager
 import pulp.server.managers.factory as manager_factory
 
