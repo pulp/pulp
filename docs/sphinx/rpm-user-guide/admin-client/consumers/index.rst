@@ -6,3 +6,4 @@ Consumers
 
    registration
    packages
+   packagegroups

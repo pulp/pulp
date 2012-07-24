@@ -16,7 +16,7 @@ it is replaced with the profile supplied in this call.
 | :param_list:`post`
 
 * :param:`content_type,string,the content type ID`
-* :param:`profile,any,the content profile`
+* :param:`profile,object,the content profile`
 
 | :response_list:`_`
 
@@ -62,7 +62,7 @@ using the specified content type.
 | :param_list:`post`
 
 * :param:`content_type,string,the content type ID`
-* :param:`profile,any,the content profile`
+* :param:`profile,object,the content profile`
 
 | :response_list:`_`
 
