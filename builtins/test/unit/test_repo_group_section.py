@@ -44,12 +44,14 @@ class TestRepoGroupSection(unittest.TestCase):
             'group-id' : 'rg1',
             # note the '-' is intentional for CLI convenient instead of '_'
             'display-name' : 'repo group 1',
-            'description' : 'a great group'
+            'description' : 'a great group',
+            'note' : ['x=1', 'y=2']
         }
         self.section.create(**ARGS)
 
         self.section.context.server.repo_group.create.assert_called_once_with(
-            ARGS['group-id'], ARGS['display-name'], ARGS['description'], None)
+            ARGS['group-id'], ARGS['display-name'], ARGS['description'],
+            {'x':'1', 'y':'2'})
         self.assertEqual(self.section.prompt.render_success_message.call_count, 1)
 
     def test_update_success(self):
@@ -69,6 +71,14 @@ class TestRepoGroupSection(unittest.TestCase):
         self.assertEqual(self.section.prompt.write.call_count, 1)
         self.assertTrue(self.section.prompt.write.call_args[0][0].find(
             'does not exist') >= 0)
+
+    def test_update_notes(self):
+        DELTA = {'note' : ['x=1', 'y=2']}
+        PARAMS = copy.copy(DELTA)
+        PARAMS['group-id'] = 'rg1'
+        self.section.update(**PARAMS)
+        self.section.context.server.repo_group.update.assert_called_once_with(
+            'rg1', {'notes':{'x':'1', 'y':'2'}})
 
     def test_delete_success(self):
         self.section.delete(**{'group-id':'rg1'})

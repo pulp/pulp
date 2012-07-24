@@ -94,8 +94,7 @@ class RepoGroupAPI(PulpAPI):
         :rtype:     pulp.bindings.responses.Response
         """
         path = self.PATH + '%s/' % id
-        body = {'delta' : delta}
-        return self.server.PUT(path, body)
+        return self.server.PUT(path, delta)
 
 
 class RepoGroupSearchAPI(SearchAPI):

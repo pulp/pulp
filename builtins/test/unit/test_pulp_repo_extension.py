@@ -80,6 +80,31 @@ class TestRepoExtension(base_builtins.PulpClientTests):
         super(TestRepoExtension, self).setUp()
         self.repo_section = pulp_cli.RepoSection(self.context)
 
+    def test_create(self):
+        section = pulp_cli.RepoSection(mock.MagicMock())
+        ARGS = {
+            'repo-id' : 'repo1',
+            # note the '-' is intentional for CLI convenient instead of '_'
+            'display-name' : 'repo 1',
+            'description' : 'a great repo',
+            'note' : ['x=1', 'y=2']
+        }
+        section.create(**ARGS)
+
+        section.context.server.repo.create.assert_called_once_with(
+            ARGS['repo-id'], ARGS['display-name'], ARGS['description'],
+                {'x':'1', 'y':'2'})
+        self.assertEqual(section.prompt.render_success_message.call_count, 1)
+
+    def test_update_notes(self):
+        section = pulp_cli.RepoSection(mock.MagicMock())
+        DELTA = {'note' : ['x=1', 'y=2']}
+        PARAMS = copy.copy(DELTA)
+        PARAMS['repo-id'] = 'repo1'
+        section.update(**PARAMS)
+        section.context.server.repo.update.assert_called_once_with(
+            'repo1', {'delta':{'notes':{'x':'1', 'y':'2'}}})
+
     def test_has_group_subsection(self):
         self.assertTrue('group' in self.repo_section.subsections)
 

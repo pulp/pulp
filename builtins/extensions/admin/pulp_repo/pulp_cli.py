@@ -13,6 +13,7 @@
 
 import copy
 from gettext import gettext as _
+from pulp.client import arg_utils
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
@@ -22,6 +23,14 @@ from pulp.client.search import SearchCommand
 
 def initialize(context):
     context.cli.add_section(RepoSection(context))
+
+# -- common options -----------------------------------------------------------
+
+note_desc =  'adds/updates/deletes notes to programmatically identify the resource; '
+note_desc += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
+note_desc += 'be changed by specifying this option multiple times; notes are deleted by '
+note_desc += 'specifying "" as the value'
+note_option = PulpCliOption('--note', _(note_desc), required=False, allow_multiple=True)
 
 # -- sections -----------------------------------------------------------------
 
@@ -38,7 +47,7 @@ class RepoSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        id_option = PulpCliOption('--id', _('uniquely identifies the repository; only alphanumeric, -, and _ allowed'), required=True)
+        id_option = PulpCliOption('--repo-id', _('uniquely identifies the repository; only alphanumeric, -, and _ allowed'), required=True)
         name_option = PulpCliOption('--display-name', _('user-readable display name for the repository'), required=False)
         description_option = PulpCliOption('--description', _('user-readable description for the repository'), required=False)
 
@@ -47,6 +56,7 @@ class RepoSection(PulpCliSection):
         create_command.add_option(id_option)
         create_command.add_option(name_option)
         create_command.add_option(description_option)
+        create_command.add_option(note_option)
         self.add_command(create_command)
 
         # Update Command
@@ -54,11 +64,12 @@ class RepoSection(PulpCliSection):
         update_command.add_option(id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
+        update_command.add_option(note_option)
         self.add_command(update_command)
 
         # Delete Command
         delete_command = PulpCliCommand('delete', _('deletes a repository'), self.delete)
-        delete_command.add_option(PulpCliOption('--id', _('identifies the repository to be deleted'), required=True))
+        delete_command.add_option(id_option)
         self.add_command(delete_command)
 
         # List Command
@@ -85,12 +96,12 @@ class RepoSection(PulpCliSection):
     def create(self, **kwargs):
 
         # Collect input
-        id = kwargs['id']
+        id = kwargs['repo-id']
         name = id
         if 'display-name' in kwargs:
             name = kwargs['display-name']
         description = kwargs['description']
-        notes = None # TODO: add support later
+        notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         # Call the server
         self.context.server.repo.create(id, name, description, notes)
@@ -100,16 +111,19 @@ class RepoSection(PulpCliSection):
 
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('id') # not needed in the delta
+        delta.pop('repo-id') # not needed in the delta
+
+        if delta.pop('note', None) is not None:
+            delta['notes'] = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         try:
-            self.context.server.repo.update(kwargs['id'], {'delta' : delta})
-            self.prompt.render_success_message('Repository [%s] successfully updated' % kwargs['id'])
+            self.context.server.repo.update(kwargs['repo-id'], {'delta' : delta})
+            self.prompt.render_success_message('Repository [%s] successfully updated' % kwargs['repo-id'])
         except NotFoundException:
-            self.prompt.write('Repository [%s] does not exist on the server' % kwargs['id'], tag='not-found')
+            self.prompt.write('Repository [%s] does not exist on the server' % kwargs['repo-id'], tag='not-found')
 
     def delete(self, **kwargs):
-        id = kwargs['id']
+        id = kwargs['repo-id']
 
         try:
             self.context.server.repo.delete(id)
@@ -173,7 +187,7 @@ class RepoSection(PulpCliSection):
             self.prompt.render_document(repo)
 
     def units(self, **kwargs):
-        repo_id = kwargs['id']
+        repo_id = kwargs['repo-id']
         self.prompt.render_title('Units in Repository [%s]' % repo_id)
 
         query = {}
@@ -317,6 +331,7 @@ class RepoGroupSection(PulpCliSection):
         create_command.add_option(id_option)
         create_command.add_option(name_option)
         create_command.add_option(description_option)
+        create_command.add_option(note_option)
         self.add_command(create_command)
 
         # Update Command
@@ -324,11 +339,7 @@ class RepoGroupSection(PulpCliSection):
         update_command.add_option(id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
-        d =  'adds/updates/deletes notes to programmatically identify the repo group; '
-        d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
-        d += 'be changed by specifying this option multiple times; notes are deleted by '
-        d += 'specifying "" as the value'
-        update_command.add_option(PulpCliOption('--note', _(d), required=False, allow_multiple=True))
+        update_command.add_option(note_option)
         self.add_command(update_command)
 
         # Delete Command
@@ -352,7 +363,7 @@ class RepoGroupSection(PulpCliSection):
         if 'display-name' in kwargs:
             name = kwargs['display-name']
         description = kwargs['description']
-        notes = None # TODO: add support later
+        notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)
@@ -363,6 +374,8 @@ class RepoGroupSection(PulpCliSection):
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop('group-id') # not needed in the delta
 
+        if delta.pop('note', None) is not None:
+            delta['notes'] = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
         try:
             self.context.server.repo_group.update(kwargs['group-id'], delta)
             self.prompt.render_success_message(

@@ -58,8 +58,7 @@ class TestRepoGroupAPI(unittest.TestCase):
         DELTA = {'display_name':'foo'}
         ret = self.api.update('rg1', DELTA)
         expected_path = self.api.PATH + 'rg1/'
-        self.api.server.PUT.assert_called_once_with(expected_path,
-                {'delta':DELTA})
+        self.api.server.PUT.assert_called_once_with(expected_path, DELTA)
         self.assertEqual(ret, self.api.server.PUT.return_value)
 
 
