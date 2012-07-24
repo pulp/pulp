@@ -97,7 +97,7 @@ class UnitAssociationCriteria(Model):
 
     def __init__(self, type_ids=None, association_filters=None, unit_filters=None,
                  association_sort=None, unit_sort=None, limit=None, skip=None,
-                 association_fields=None, unit_fields=None, remove_duplicates=None):
+                 association_fields=None, unit_fields=None, remove_duplicates=False):
         """
         There are a number of entry points into creating one of these instances:
         multiple REST interfaces, the plugins, etc. As such, this constructor
@@ -169,9 +169,25 @@ class UnitAssociationCriteria(Model):
         self.association_fields = association_fields
         self.unit_fields = unit_fields
 
-        if remove_duplicates is None:
-            remove_duplicates = False
         self.remove_duplicates = remove_duplicates
+
+    @classmethod
+    def from_client_input(cls, doc):
+        doc = copy.copy(doc)
+        type_ids = doc.pop('type_ids', None)
+        association_filters = _validate_filters(doc.pop('association_filters', None))
+        unit_filters = _validate_filters(doc.pop('unit_filters', None))
+        association_sort = _validate_sort(doc.pop('association_sort', None))
+        unit_sort = _validate_sort(doc.pop('unit_sort', None))
+        limit = _validate_limit(doc.pop('limit', None))
+        skip = _validate_skip(doc.pop('skip', None))
+        association_fields = _validate_fields(doc.pop('association_fields', None))
+        unit_fields = _validate_fields(doc.pop('unit_fields', None))
+        remove_duplicates = bool(doc.pop('remove_duplicates', False))
+        if doc:
+            raise pulp_exceptions.InvalidValue(doc.keys())
+        return cls(type_ids, association_filters, unit_filters, association_sort,
+                   unit_sort, limit, skip, association_fields, unit_fields, remove_duplicates)
 
     def __str__(self):
         s = ''
