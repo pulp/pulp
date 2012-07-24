@@ -7,8 +7,7 @@ Add Repositories to a Group
 ---------------------------
 
 One or more repositories can be added to an existing group. The repositories to
-be added are specified using a
-:ref:`unit association search criteria document <unit_association_criteria>`.
+be added are specified using a :ref:`search criteria document <search_criteria>`.
 This call is idempotent; if a repository is already a member of the group, no
 changes are made and no error is raised.
 
@@ -32,10 +31,8 @@ changes are made and no error is raised.
 
  {
   "criteria": {
-    "unit" : {
-      "filters": {
-        "id": {"$in": ["dest-1", "dest-2"]}
-      }
+    "filters": {
+      "id": {"$in": ["dest-1", "dest-2"]}
     }
   }
  }
@@ -50,7 +47,7 @@ Remove Repositories from a Group
 --------------------------------
 
 In the same fashion as adding repositories to a group, repositories to remove
-are specified through a :ref:`unit association search criteria document <unit_association_criteria>`.
+are specified through a :ref:`search criteria document <search_criteria>`.
 The repositories themselves are unaffected; this call simply removes the
 association to the given group.
 
@@ -73,10 +70,8 @@ association to the given group.
 
  {
   "criteria": {
-    "unit" : {
-      "filters": {
-        "id": "dest-1"
-      }
+    "filters": {
+      "id": "dest-1"
     }
   }
  }
