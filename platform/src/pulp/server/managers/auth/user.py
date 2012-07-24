@@ -21,8 +21,8 @@ import re
 
 from pulp.server.db.model.auth import User
 from pulp.server.auth import cert_generator, principal
-from pulp.server.auth.authorization import is_last_super_user, grant_automatic_permissions_for_new_user, revoke_all_permissions_from_user
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException
+from pulp.server.auth.authorization import grant_automatic_permissions_for_new_user, revoke_all_permissions_from_user
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 
 import pulp.server.auth.password_util as password_util
 
@@ -109,17 +109,13 @@ class UserManager(object):
         """
 
         # Raise exception if login is invalid or 'admin'
-        if login is None or not isinstance(login, basestring):
+        if login is None or not isinstance(login, basestring) or login == 'admin':
             raise InvalidValue(['login'])
 
         # Validation
         found = User.get_collection().find_one({'login' : login})
         if found is None:
             raise MissingResource(login)
-        
-        # Make sure user is not the last super user 
-        if is_last_super_user(found): 
-            raise PulpDataException("The last superuser [%s] cannot be deleted" % found['id'])
 
         # Revoke all permissions from the user
         revoke_all_permissions_from_user(login)
