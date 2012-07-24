@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.317
+Version: 0.0.318
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,13 @@ exit 0
 %endif
 
 %changelog
+* Tue Jul 24 2012 Jeff Ortel <jortel@redhat.com> 0.0.318-1
+- 842854 - updated automatic user permissions to v2 resources and added
+  v2/actions/ so that user can login and update successfully
+  (skarmark@redhat.com)
+- 842848 - added the capability to obfuscate the call_request args and kwargs
+  so that the log will not show them (jason.connor@gmail.com)
+
 * Fri Jul 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.317-1
 - version alignment.
 
