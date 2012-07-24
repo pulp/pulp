@@ -33,7 +33,6 @@ from yum_importer import errata, distribution
 from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp_rpm.yum_plugin import util
-
 import distributor_mocks
 import rpm_support_base
 
@@ -243,3 +242,42 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         for file in metadata['files']:
             print os.path.islink("%s/%s" % (symlink_dir, file['relativepath']))
             self.assertTrue(os.path.islink("%s/%s" % (symlink_dir, file['relativepath'])))
+
+    def test_repo_export_isos(self):
+        feed_url = "file://%s/pulp_unittest/" % self.data_dir
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "pulp_unittest"
+        repo.checksumtype = 'sha'
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        config = importer_mocks.get_basic_config(feed_url=feed_url)
+        importerRPM = importer_rpm.ImporterRPM()
+        status, summary, details = importerRPM.sync(repo, sync_conduit, config)
+        metadata = {}
+        unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'md5',
+                      'checksum': 'f3c197a29d9b66c5b65c5d62b25db5b4'}
+        unit_key_b = {'id' : '', 'name' :'emoticons', 'version' :'0.1', 'release' :'2', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'md5',
+                      'checksum' : '366bb5e73a5905eacb82c96e0578f92b'}
+
+        existing_units = []
+        for unit in [unit_key_a, unit_key_b]:
+            existing_units.append(Unit(RPM_TYPE_ID, unit, metadata, ''))
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
+        importerErrata = errata.ImporterErrata()
+        importerErrata.sync(repo, sync_conduit, config)
+        symlink_dir = "%s/%s" % (self.repo_working_dir, repo.id)
+        iso_distributor = ISODistributor()
+        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
+        print symlink_dir
+        iso_dir = "%s/%s/%s" % (repo.working_dir, "isos", repo.id)
+        progress_status = iso_distributor.publish_repo(repo, publish_conduit, config)
+        isos_list = os.listdir(iso_dir)
+        print "List of isos generated in `%s` Iso dir %s" % (iso_dir, isos_list)
+        self.assertEqual(len(isos_list), 1)
+        print os.system("isoinfo -l -i %s " % "%s/%s" % (iso_dir, isos_list[0]))
+        self.assertEqual(progress_status["rpms"]["state"], "FINISHED")
+        self.assertEqual(progress_status["packagegroups"]["state"], "FINISHED")
+        self.assertEqual(progress_status["distribution"]["state"], "FINISHED")
+        self.assertEqual(progress_status["errata"]["state"], "FINISHED")
+        self.assertEqual(progress_status["isos"]["state"], "FINISHED")

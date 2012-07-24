@@ -19,6 +19,7 @@ from pulp_rpm.yum_plugin import util, updateinfo, metadata
 from pulp.plugins.distributor import Distributor
 from iso_distributor.generate_iso import GenerateIsos
 from pulp.server.db.model.criteria import UnitAssociationCriteria
+
 from pulp_rpm.yum_plugin import comps_util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
@@ -152,7 +153,6 @@ class ISODistributor(Distributor):
             "rpms":               {"state": "NOT_STARTED"},
             "errata":             {"state": "NOT_STARTED"},
             "distribution":       {"state": "NOT_STARTED"},
-            "metadata":           {"state": "NOT_STARTED"},
             "packagegroups":      {"state": "NOT_STARTED"},
             "isos":               {"state": "NOT_STARTED"},
             "publish_http":       {"state": "NOT_STARTED"},
@@ -167,12 +167,13 @@ class ISODistributor(Distributor):
 
         # rpm units
         progress_status["rpms"]["state"] = "STARTED"
-        criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID])
         rpm_units = publish_conduit.get_units(criteria)
         self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["rpms"]["state"] = "FINISHED"
 
         # package groups
+        progress_status["packagegroups"]["state"] = "STARTED"
         criteria = UnitAssociationCriteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
         existing_units = publish_conduit.get_units(criteria)
         existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
@@ -182,6 +183,7 @@ class ISODistributor(Distributor):
         metadata_status, metadata_errors = metadata.generate_metadata(
                 repo, publish_conduit, config, progress_callback, groups_xml_path)
         _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+        progress_status["packagegroups"]["state"] = "FINISHED"
 
         # errata units
         progress_status["errata"]["state"] = "STARTED"
@@ -200,15 +202,15 @@ class ISODistributor(Distributor):
         progress_status["distribution"]["state"] = "FINISHED"
 
         # build iso
-#        repo_iso_working_dir = "%s/%s" % (repo.working_dir, "isos")
-#        try:
-#            isogen = GenerateIsos(repo_working_dir, repo_iso_working_dir , progress=progress_status)
-#            progress_status = isogen.run()
-#        except Exception,e:
-#            progress_status["isos"]["state"] = "ERROR"
-#            progress_status["error_details"].append(str(e))
-#            return progress_status
-#        progress_status["isos"]["state"] = "FINISHED"
+        repo_iso_working_dir = "%s/%s/%s" % (repo.working_dir, "isos", repo.id)
+        try:
+            isogen = GenerateIsos(repo_working_dir, repo_iso_working_dir , prefix=repo.id, progress=progress_status)
+            progress_status = isogen.run()
+        except Exception,e:
+            progress_status["isos"]["state"] = "ERROR"
+            progress_status["error_details"].append(str(e))
+            return progress_status
+        progress_status["isos"]["state"] = "FINISHED"
         return progress_status
 
     def _export_rpms(self, rpm_units, symlink_dir, progress_callback=None):
