@@ -75,7 +75,7 @@ association to the given group.
   "criteria": {
     "unit" : {
       "filters": {
-        "id": "dest-1"}
+        "id": "dest-1"
       }
     }
   }
