@@ -107,18 +107,19 @@ class RepoGroupCUDTests(RepoGroupTests):
 
     def test_update_notes(self):
         group_id = 'notes'
-        original_notes = {'key_1': 'blonde'}
+        original_notes = {'key_1': 'blonde', 'key_3': 'brown'}
         self.manager.create_repo_group(group_id, notes=original_notes)
 
         group = self.collection.find_one({'id': group_id})
         self.assertTrue(group['notes'] == original_notes)
 
-        updated_notes = {'key_1': 'brunette', 'key_2': 'ginger'}
-        self.manager.update_repo_group(group_id, notes=updated_notes)
+        delta = {'key_2': 'ginger', 'key_3': ''}
+        self.manager.update_repo_group(group_id, notes=delta)
 
         group = self.collection.find_one({'id': group_id})
-        self.assertFalse(group['notes'] == original_notes)
-        self.assertTrue(group['notes'] == updated_notes)
+        self.assertEqual(group['notes'].get('key_1', None), 'blonde')
+        self.assertEqual(group['notes'].get('key_2', None), 'ginger')
+        self.assertTrue('key_3' not in group['notes'])
 
     def test_set_note(self):
         group_id = 'noteworthy'

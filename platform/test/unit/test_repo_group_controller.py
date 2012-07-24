@@ -176,6 +176,22 @@ class RepoGroupResourceTests(base.PulpWebserviceTests):
         found = RepoGroup.get_collection().find_one({'id' : group_id})
         self.assertEqual(changed['display_name'], found['display_name'])
 
+    def test_update_notes(self):
+        group_id = 'update-me'
+        self.manager.create_repo_group(group_id, display_name='Original',
+            notes={'a':'A', 'b':'B'})
+
+        # Test
+        changed = {'notes' : {'b':''}}
+        status, body = self.put('/v2/repo_groups/%s/' % group_id, changed)
+
+        # Verify
+        self.assertEqual(200, status)
+
+        found = RepoGroup.get_collection().find_one({'id' : group_id})
+        self.assertTrue('a' in found['notes'])
+        self.assertTrue('b' not in found['notes'])
+
 class RepoGroupDistributorsTests(base.PulpWebserviceTests):
 
     def setUp(self):
