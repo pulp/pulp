@@ -409,6 +409,47 @@ class RepoUnitAssociationManager(object):
             manager_factory.repo_manager().update_unit_count(
                 repo_id, -unique_count)
 
+    def unassociate_by_criteria(self, repo_id, criteria, owner_type, owner_id):
+        """
+        Unassociate units that are matched by the given criteria.
+        @param repo_id: identifies the repo
+        @type repo_id: str
+        @param criteria:
+        @param owner_type: category of the caller who created the association
+        @type owner_type: str
+        @param owner_id: identifies the call who created the association
+        @type owner_id: str
+        """
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
+        unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
+
+        if len(unassociate_units) is 0:
+            return
+
+        unit_map = {} # maps unit_type_id to a list of unit_ids
+
+        for unit in unassociate_units:
+            id_list = unit_map.setdefault(unit['unit_type_id'], [])
+            id_list.append(unit['id'])
+
+        collection = RepoContentUnit.get_collection()
+
+        for unit_type_id, unit_ids in unit_map.items():
+            spec = {'repo_id': repo_id,
+                    'unit_type_id': unit_type_id,
+                    'unit_id': {'$in': unit_ids},
+                    'owner_type': owner_type,
+                    'owner_id': owner_id}
+            collection.remove(spec, safe=True)
+
+            unique_count = sum(1 for unit_id in unit_ids
+                               if not self.association_exists(repo_id, unit_id, unit_type_id))
+            if not unique_count:
+                continue
+
+            repo_manager = manager_factory.repo_manager()
+            repo_manager.update_unit_count(repo_id, -unique_count)
+
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):
         """
