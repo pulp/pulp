@@ -56,8 +56,8 @@ or removed from the group using the :doc:`membership calls<members>`.
 Delete a Repository Group
 -------------------------
 
-Deleting a repository group does not affect the underlying repositories, it
-simply removes the group and its relationship to its repositories.
+Deleting a repository group does not affect the underlying repositories; it
+simply removes the group and its relationship to all repositories.
 
 | :method:`delete`
 | :path:`/v2/repo_groups/<group_id>/`
@@ -75,8 +75,11 @@ Update a Repository Group
 
 Once a repository group is created, its display name, description, and notes
 can be changed at a later time. The repositories belonging to the group do not
-fall under this call and are instance modified using the
+fall under this call and are instead modified using the
 :doc:`membership calls<members>`.
+
+Only changes to notes need to be specified. Unspecified notes in this call
+remain unaffected. A note is removed by specifying its key with a value of null.
 
 | :method:`put`
 | :path:`/v2/repo_groups/<group_id>/`
@@ -85,11 +88,11 @@ fall under this call and are instance modified using the
 
 * :param:`?display_name,string,user-friendly name for the repository group`
 * :param:`?description,string,user-friendly text describing the group's purpose`
-* :param:`?notes,object,key-value pairs to programmatically tag the group`
+* :param:`?notes,object,changes to key-value pairs to programmatically tag the group`
 
 | :response_list:`_`
 
-* :response_code:`200,if the update was executed and was successful`
+* :response_code:`200,if the update executed immediately and was successful`
 * :response_code:`202,if the update was postponed until the group is available to be updated`
 * :response_code:`400,if one of the parameters is invalid`
 * :response_code:`404,if the group does not exist`
