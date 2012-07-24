@@ -107,7 +107,7 @@ class RoleManager(object):
         # Retrieve the user to return the SON object
         updated = Role.get_collection().find_one({'name' : name})
         return updated
-        
+
 
     def delete_role(self, name):
         """
@@ -147,7 +147,7 @@ class RoleManager(object):
 
         for user in users:
             user['roles'].remove(name)
-        factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
+            factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
       
         Role.get_collection().remove({'name' : name}, safe=True)
 
@@ -193,7 +193,7 @@ class RoleManager(object):
         role = role_query_manager.find_by_name(super_user_role)
         if role is None:
             role = self.create_role(super_user_role)
-            self.add_permissions_to_role(role, '/', [CREATE, READ, UPDATE, DELETE, EXECUTE])
+            self.add_permissions_to_role(role['name'], '/', [CREATE, READ, UPDATE, DELETE, EXECUTE])
 
 
     def ensure_builtin_roles(self):

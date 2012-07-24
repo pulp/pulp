@@ -209,11 +209,10 @@ class UserManager(object):
         
         default_login = config.config.get('server', 'default_login')
         
-        user_manager = factory.user_manager()
-        admin = user_manager.find_by_login(default_login)
+        admin = factory.user_query_manager().find_by_login(default_login)
         if admin is None:
             default_password = config.config.get('server', 'default_password')
-            admin = user_manager.create_user(login=default_login, password=default_password)
+            admin = factory.user_manager().create_user(login=default_login, password=default_password)
         
         self.add_user_to_role(super_user_role, default_login)
 

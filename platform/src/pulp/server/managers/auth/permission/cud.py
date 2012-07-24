@@ -129,7 +129,7 @@ class PermissionManager(object):
         @type resource: str
         @param resource: uri path representing a pulp resource
         
-        @type user: L{pulp.server.db.model.User} instance
+        @type user: L{pulp.server.db.model.auth.User} instance
         @param user: user to grant permissions to
         
         @type operations: list or tuple
