@@ -619,8 +619,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         os.symlink(self.https_publish_dir, link_path)
         self.assertTrue(os.path.exists(link_path))
 
-        distributor = YumDistributor()
-        distributor.remove_symlink(pub_dir, link_path)
+        util.remove_symlink(pub_dir, link_path)
         self.assertFalse(os.path.exists(link_path))
         self.assertEqual(len(os.listdir(pub_dir)), 0)
 

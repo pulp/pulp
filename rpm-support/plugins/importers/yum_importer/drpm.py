@@ -15,7 +15,7 @@
 DeltaRPM Support for Yum Importer
 """
 import os
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import util
 
 _LOG = util.getLogger(__name__)
@@ -48,7 +48,7 @@ def get_existing_drpm_units(sync_conduit):
    @rtype {():pulp.server.content.plugins.model.Unit}
    """
    existing_drpm_units = {}
-   criteria = Criteria(type_ids=[DRPM_TYPE_ID])
+   criteria = UnitAssociationCriteria(type_ids=[DRPM_TYPE_ID])
    for u in sync_conduit.get_units(criteria):
        key = form_lookup_drpm_key(u.unit_key)
        existing_drpm_units[key] = u

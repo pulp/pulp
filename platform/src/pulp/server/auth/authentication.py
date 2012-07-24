@@ -22,7 +22,6 @@ import oauth2
 from pulp.server.managers.auth.user.cud import UserManager
 from pulp.server.managers.auth.user.query import UserQueryManager
 from pulp.server.auth import ldap_connection
-from pulp.server.auth.authorization import consumer_users_role
 from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
 from pulp.server.managers.auth.cert.certificate import Certificate
 from pulp.server.auth.password_util import check_password

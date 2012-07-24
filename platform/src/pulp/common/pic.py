@@ -33,6 +33,8 @@ AUTH_SCHEME = 'basic' # can also be 'oauth' (XXX not really)
 USER = 'admin'
 PASSWORD = 'admin'
 
+LOG_BODIES = True
+
 # connection management -------------------------------------------------------
 
 _CONNECTION = None
@@ -80,8 +82,18 @@ def _auth_header():
 def _request(method, path, body=None):
     if _CONNECTION is None:
         raise RuntimeError('You must run connect() before making requests')
+
+    # Strip off the leading prefix if it's specified to aid in copy/paste usage
+    if path.startswith(PATH_PREFIX):
+        path = path[len(PATH_PREFIX):]
+
     if not isinstance(body, types.NoneType):
-        body = json.dumps(body)
+        body = json.dumps(body, indent=2)
+
+        if LOG_BODIES:
+            print('Request Body')
+            print(body)
+
     _CONNECTION.request(method,
                         PATH_PREFIX + path,
                         body=body,
@@ -90,6 +102,11 @@ def _request(method, path, body=None):
     response_body = response.read()
     try:
         response_body = json.loads(response_body)
+
+        if LOG_BODIES:
+            print('Response Body')
+            print(json.dumps(response_body, indent=2))
+
     except:
         pass
     if response.status > 299:

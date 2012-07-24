@@ -15,7 +15,7 @@
 Distribution Support for Yum Importer
 """
 import os
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import util
 
 _LOG = util.getLogger(__name__)
@@ -49,7 +49,7 @@ def get_existing_distro_units(sync_conduit):
     @rtype {():pulp.server.content.plugins.model.Unit}
     """
     existing_distro_units = {}
-    criteria = Criteria(type_ids=[DISTRO_TYPE_ID])
+    criteria = UnitAssociationCriteria(type_ids=[DISTRO_TYPE_ID])
     for u in sync_conduit.get_units(criteria):
         key = form_lookup_distro_key(u.unit_key)
         existing_distro_units[key] = u

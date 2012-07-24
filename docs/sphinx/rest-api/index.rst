@@ -9,6 +9,7 @@ APIs
 
    consumer/index
    repo/index
+   repo/groups/index
    content/index
    dispatch/index
    event/index
@@ -19,7 +20,6 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
+   conventions/index
    authentication
-   conventions
    glossary
-   sync-v-async

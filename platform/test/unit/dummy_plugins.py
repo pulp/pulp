@@ -71,29 +71,39 @@ class DummyDistributor(DummyPlugin):
     def publish_repo(self, *args, **kwargs):
         return PublishReport(True, 'Summary of the publish', 'Details of the publish')
 
+
+class DummyGroupDistributor(DummyPlugin):
+
+    def publish_group(self, *args, **kwargs):
+        return PublishReport(True, 'Summary of the publish', 'Details of the publish')
+
+    def validate_config(self, repo_group, config, related_repo_groups):
+        return True, None
+
 # dummy instances --------------------------------------------------------------
 
 DUMMY_IMPORTER = DummyImporter()
 DUMMY_DISTRIBUTOR = DummyDistributor()
 DUMMY_DISTRIBUTOR_2 = DummyDistributor()
+DUMMY_GROUP_DISTRIBUTOR = DummyGroupDistributor()
 
 IMPORTER_MAPPINGS = None
 DISTRIBUTOR_MAPPINGS = None
+GROUP_DISTRIBUTOR_MAPPINGS = None
 
 # install/reset plugins --------------------------------------------------------
 
 # used to undo monkey patching
 _ORIG_GET_IMPORTER_BY_ID = None
 _ORIG_GET_DISTRIBUTOR_BY_ID = None
-
+_ORIG_GET_GROUP_DISTRIBUTOR_BY_ID = None
 
 def install():
     """
     Install the plugin loader monkey patch dummy plugins for testing.
     """
-    global DUMMY_IMPORTER, DUMMY_DISTRIBUTOR, DUMMY_DISTRIBUTOR_2, \
-           IMPORTER_MAPPINGS, DISTRIBUTOR_MAPPINGS, \
-           _ORIG_GET_IMPORTER_BY_ID, _ORIG_GET_DISTRIBUTOR_BY_ID
+    global IMPORTER_MAPPINGS, DISTRIBUTOR_MAPPINGS, GROUP_DISTRIBUTOR_MAPPINGS, \
+           _ORIG_GET_IMPORTER_BY_ID, _ORIG_GET_DISTRIBUTOR_BY_ID, _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID
 
     # update plugin loader inventory
 
@@ -101,17 +111,20 @@ def install():
     plugin_api._MANAGER.importers.add_plugin('dummy-importer', DummyImporter, {})
     plugin_api._MANAGER.distributors.add_plugin('dummy-distributor', DummyDistributor, {})
     plugin_api._MANAGER.distributors.add_plugin('dummy-distributor-2', DummyDistributor, {})
+    plugin_api._MANAGER.group_distributors.add_plugin('dummy-group-distributor', DummyGroupDistributor, {})
 
     # setup the importer/distributor mappings that return the dummy instances
 
     IMPORTER_MAPPINGS = {'dummy-importer': DUMMY_IMPORTER}
     DISTRIBUTOR_MAPPINGS = {'dummy-distributor': DUMMY_DISTRIBUTOR,
                             'dummy-distributor-2': DUMMY_DISTRIBUTOR_2}
+    GROUP_DISTRIBUTOR_MAPPINGS = {'dummy-group-distributor' : DUMMY_GROUP_DISTRIBUTOR}
 
     # save state of original plugin so it can be reverted
 
     _ORIG_GET_IMPORTER_BY_ID = plugin_api.get_importer_by_id
     _ORIG_GET_DISTRIBUTOR_BY_ID = plugin_api.get_distributor_by_id
+    _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID = plugin_api.get_group_distributor_by_id
 
     # monkey-patch methods to return the dummy instances
 
@@ -125,11 +138,16 @@ def install():
             raise plugin_exceptions.PluginNotFound()
         return DISTRIBUTOR_MAPPINGS[id], {}
 
+    def dummy_get_group_distributor_by_id(id):
+        if id not in GROUP_DISTRIBUTOR_MAPPINGS:
+            raise plugin_exceptions.PluginNotFound()
+        return GROUP_DISTRIBUTOR_MAPPINGS[id], {}
+
     # monkey-patch in the dummy methods
 
     plugin_api.get_importer_by_id = dummy_get_importer_by_id
     plugin_api.get_distributor_by_id = dummy_get_distributor_by_id
-
+    plugin_api.get_group_distributor_by_id = dummy_get_group_distributor_by_id
 
 def reset():
     """
@@ -141,16 +159,17 @@ def reset():
     DUMMY_IMPORTER.reset_dummy()
     DUMMY_DISTRIBUTOR.reset_dummy()
     DUMMY_DISTRIBUTOR_2.reset_dummy()
+    DUMMY_GROUP_DISTRIBUTOR.reset_dummy()
 
     # undo the monkey-patch
 
     plugin_api.get_importer_by_id = _ORIG_GET_IMPORTER_BY_ID
     plugin_api.get_distributor_by_id = _ORIG_GET_DISTRIBUTOR_BY_ID
+    plugin_api.get_group_distributor_by_id = _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID
 
     # remove the loaded plugins
 
     plugin_api._MANAGER.importers.remove_plugin('dummy-importer')
     plugin_api._MANAGER.distributors.remove_plugin('dummy-distributor')
     plugin_api._MANAGER.distributors.remove_plugin('dummy-distributor-2')
-
-
+    plugin_api._MANAGER.group_distributors.remove_plugin('dummy-group-distributor')

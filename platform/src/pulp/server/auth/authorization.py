@@ -14,7 +14,7 @@
 """
 Utility functions to manage permissions and roles in pulp.
 """
-
+import logging
 from gettext import gettext as _
 
 from pulp.server.auth.principal import (
@@ -23,6 +23,7 @@ from pulp.server.exceptions import PulpException
 
 from pulp.server.managers import factory
 
+_log = logging.getLogger(__name__)
 
 class PulpAuthorizationError(PulpException):
     pass
@@ -103,7 +104,6 @@ def _get_operations(operation_names):
     return operations
 
 
-
 def _operations_not_granted_by_roles(resource, operations, roles):
     """
     Filter a list of operations on a resource, removing the operations that
@@ -181,8 +181,11 @@ class RevokePermissionsForTaskV2(RevokePermissionsForTask):
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
+
         user = factory.user_query_manager().find_by_login(self.user_name)
         factory.permission_manager().revoke(resource, user, operations)
+
+
 
 
 

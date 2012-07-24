@@ -20,7 +20,7 @@ import sys
 import time
 import yum
 from pulp_rpm.yum_plugin import comps_util, util
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 
 _LOG = util.getLogger(__name__)
 
@@ -32,8 +32,8 @@ PKG_CATEGORY_TYPE_ID="package_category"
 #We do not want to allow sharing a single group or category between repos.
 PKG_GROUP_UNIT_KEY = ("id", "repo_id")
 PKG_GROUP_METADATA = (  "name", "description", "default", "user_visible", "langonly", "display_order", \
-                        "mandatory_package_names", "conditional_package_names", 
-                        "optional_package_names", "default_package_names", 
+                        "mandatory_package_names", "conditional_package_names",
+                        "optional_package_names", "default_package_names",
                         "translated_description", "translated_name")
 
 PKG_CATEGORY_UNIT_KEY = ("id", "repo_id")
@@ -167,7 +167,7 @@ def get_new_group_units(available_groups, existing_groups, sync_conduit, repo):
 def get_groups_metadata_file(repo_dir, md_types=None):
     """
     @param repo_dir path to a repo
-    @type repo_dir str 
+    @type repo_dir str
 
     @param md_types May override the metadata type names, defaults to ['group', 'group_gz']
     @type md_types str
@@ -185,7 +185,7 @@ def get_groups_metadata_file(repo_dir, md_types=None):
     for ret_type in valid_md_types:
         if ret_type in md_types:
             ret_file = util.get_repomd_filetype_path(repomd_xml, ret_type)
-            return ret_file, ret_type 
+            return ret_file, ret_type
     return None, None
 
 def get_available(repo_dir, md_types=None, group_file=None, group_type=None):
@@ -264,7 +264,7 @@ def get_existing_groups(sync_conduit):
      @rtype {():pulp.server.content.plugins.model.Unit}
     """
     existing_units = {}
-    criteria = Criteria(type_ids=PKG_GROUP_TYPE_ID)
+    criteria = UnitAssociationCriteria(type_ids=PKG_GROUP_TYPE_ID)
     for u in sync_conduit.get_units(criteria=criteria):
         key = u.unit_key['id']
         existing_units[key] = u
@@ -281,7 +281,7 @@ def get_existing_categories(sync_conduit):
      @rtype {():pulp.server.content.plugins.model.Unit}
     """
     existing_units = {}
-    criteria = Criteria(type_ids=PKG_CATEGORY_TYPE_ID)
+    criteria = UnitAssociationCriteria(type_ids=PKG_CATEGORY_TYPE_ID)
     for u in sync_conduit.get_units(criteria=criteria):
         key = u.unit_key['id']
         existing_units[key] = u
@@ -314,7 +314,7 @@ class ImporterComps(object):
 
           @return a tuple of state, dict of sync summary and dict of sync details
           @rtype (bool, {}, {})
-          Returns false only when an error occurs or we've been canceled. 
+          Returns false only when an error occurs or we've been canceled.
                   true is returned, even if no groups metadata was present.
         """
         def set_progress(status):
@@ -332,7 +332,7 @@ class ImporterComps(object):
 
         repo_dir = "%s/%s" % (repo.working_dir, repo.id)
         progress = {
-                "state":"IN_PROGRESS", 
+                "state":"IN_PROGRESS",
                 }
         set_progress(progress)
 
@@ -348,7 +348,7 @@ class ImporterComps(object):
                 (repo.id, len(existing_groups), len(existing_categories)))
 
         new_groups, new_group_units = get_new_group_units(available_groups, existing_groups, sync_conduit, repo)
-        new_categories, new_category_units = get_new_category_units(available_categories, 
+        new_categories, new_category_units = get_new_category_units(available_categories,
                 existing_categories, sync_conduit, repo)
         ###
         # Save the new units
@@ -369,7 +369,7 @@ class ImporterComps(object):
         end = time.time()
 
         progress = {
-                "state":"FINISHED", 
+                "state":"FINISHED",
                 }
         set_progress(progress)
 

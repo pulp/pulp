@@ -25,13 +25,13 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.plugins.types.database as types_db
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
-from pulp.server.managers.repo.unit_association_query import Criteria
 
 _LOG = logging.getLogger(__name__)
 
@@ -256,7 +256,7 @@ class RepoUnitAssociationManager(object):
 
             for type_id in unit_ids_by_type.keys():
                 spec = {'unit_id' : {'$in' : unit_ids_by_type[type_id]}}
-                criteria = Criteria(association_filters=spec)
+                criteria = UnitAssociationCriteria(association_filters=spec)
                 dep_associations = association_query_manager.get_units_by_type(source_repo_id, type_id, criteria)
 
                 associate_us += dep_associations
@@ -408,6 +408,47 @@ class RepoUnitAssociationManager(object):
         if unique_count:
             manager_factory.repo_manager().update_unit_count(
                 repo_id, -unique_count)
+
+    def unassociate_by_criteria(self, repo_id, criteria, owner_type, owner_id):
+        """
+        Unassociate units that are matched by the given criteria.
+        @param repo_id: identifies the repo
+        @type repo_id: str
+        @param criteria:
+        @param owner_type: category of the caller who created the association
+        @type owner_type: str
+        @param owner_id: identifies the call who created the association
+        @type owner_id: str
+        """
+        association_query_manager = manager_factory.repo_unit_association_query_manager()
+        unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
+
+        if len(unassociate_units) is 0:
+            return
+
+        unit_map = {} # maps unit_type_id to a list of unit_ids
+
+        for unit in unassociate_units:
+            id_list = unit_map.setdefault(unit['unit_type_id'], [])
+            id_list.append(unit['id'])
+
+        collection = RepoContentUnit.get_collection()
+
+        for unit_type_id, unit_ids in unit_map.items():
+            spec = {'repo_id': repo_id,
+                    'unit_type_id': unit_type_id,
+                    'unit_id': {'$in': unit_ids},
+                    'owner_type': owner_type,
+                    'owner_id': owner_id}
+            collection.remove(spec, safe=True)
+
+            unique_count = sum(1 for unit_id in unit_ids
+                               if not self.association_exists(repo_id, unit_id, unit_type_id))
+            if not unique_count:
+                continue
+
+            repo_manager = manager_factory.repo_manager()
+            repo_manager.update_unit_count(repo_id, -unique_count)
 
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):

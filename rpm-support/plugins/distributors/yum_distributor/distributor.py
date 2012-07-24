@@ -19,7 +19,7 @@ import time
 import traceback
 
 from pulp.plugins.distributor import Distributor
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import comps_util, util, metadata
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 
@@ -39,7 +39,7 @@ SRPM_TYPE_ID="srpm"
 YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
 
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
-OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", 
+OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
                         "https_ca", "gpgkey", "generate_metadata",
                         "checksum_type", "skip", "https_publish_dir", "http_publish_dir"]
 
@@ -290,7 +290,7 @@ class YumDistributor(Distributor):
         """
         # We will construct a tree like data object referenced by the lookup dict
         # Each piece of a url will be used to create a new dict
-        # When we get to the end of the url pieces we will store 
+        # When we get to the end of the url pieces we will store
         # a single key/value pair of 'repo_id':"id"
         # The existance of this key/value pair signifies a conflict
         #  Desire is to support similar subdirs
@@ -433,7 +433,7 @@ class YumDistributor(Distributor):
         existing_cats = []
         existing_groups = []
         if 'packagegroup' not in skip_list:
-            criteria = Criteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
             existing_units = publish_conduit.get_units(criteria)
             existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
             existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
@@ -465,7 +465,7 @@ class YumDistributor(Distributor):
             self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
             if os.path.lexists(https_repo_publish_dir):
                 _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
-                self.remove_symlink(https_publish_dir, https_repo_publish_dir)
+                util.remove_symlink(https_publish_dir, https_repo_publish_dir)
         #
         # Handle publish link for HTTP
         #
@@ -485,7 +485,7 @@ class YumDistributor(Distributor):
             self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)
             if os.path.lexists(http_repo_publish_dir):
                 _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
-                self.remove_symlink(http_publish_dir, http_repo_publish_dir)
+                util.remove_symlink(http_publish_dir, http_repo_publish_dir)
 
         summary["num_package_units_attempted"] = len(pkg_units)
         summary["num_package_units_published"] = len(pkg_units) - len(pkg_errors)
@@ -528,13 +528,13 @@ class YumDistributor(Distributor):
         @param units list of units that belong to the repo and should be published
         @type units [AssociatedUnit]
 
-        @param symlink_dir where to create symlinks 
+        @param symlink_dir where to create symlinks
         @type symlink_dir str
 
         @param progress_callback: callback to report progress info to publish_conduit
         @type  progress_callback: function
 
-        @return tuple of status and list of error messages if any occurred 
+        @return tuple of status and list of error messages if any occurred
         @rtype (bool, [str])
         """
         packages_progress_status = self.init_progress()
@@ -579,36 +579,6 @@ class YumDistributor(Distributor):
         packages_progress_status["state"] = "FINISHED"
         self.set_progress("packages", packages_progress_status, progress_callback)
         return True, []
-
-    def remove_symlink(self, publish_dir, link_path):
-        """
-        @param publish_dir: full http/https publish directory for all repos
-        @type publish_dir: str
-
-        @param link_path: full publish path for this specific repo
-        @type link_path: str
-
-        Intent is to remove all the specific link and all unique sub directories used to create it
-        """
-        # Remove the symlink from filesystem
-        link_path = link_path.rstrip('/')
-        os.unlink(link_path)
-
-        # Adjust the link_path and removal the symlink from it
-        link_path = os.path.split(link_path)[0]
-        common_pieces = [x for x in publish_dir.split('/') if x] # remove empty pieces
-        link_pieces = [x for x in link_path.split('/') if x]
-        # Determine what are the non shared pieces from this link
-        potential_to_remove = link_pieces[len(common_pieces):]
-        num_pieces = len(potential_to_remove)
-        # Start removing the end pieces of the path and work our way back
-        # If we encounter a non-empty directory stop removal and return
-        for index in range(num_pieces, 0, -1):
-            path_to_remove = os.path.join(publish_dir, *potential_to_remove[:index])  #Start with all then work back
-            if len(os.listdir(path_to_remove)):
-                # Directory is not empty so stop removal quit
-                break
-            os.rmdir(path_to_remove)
 
     def copy_importer_repodata(self, src_working_dir, tgt_working_dir):
         """

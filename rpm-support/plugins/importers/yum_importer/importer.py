@@ -24,7 +24,7 @@ from yum_importer.distribution import DISTRO_TYPE_ID
 from yum_importer.drpm import DRPM_TYPE_ID
 from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID, link_errata_rpm_units
 from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID, get_existing_units
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import SyncReport
 from pulp_rpm.yum_plugin import util, depsolver
@@ -48,7 +48,7 @@ OPTIONAL_CONFIG_KEYS = ['feed_url', 'ssl_verify', 'ssl_ca_cert', 'ssl_client_cer
 # ssl_ca_cert: Path to SSL CA certificate used for ssl verification
 # ssl_client_cert: Path to SSL Client certificate, used for protected repository access
 # ssl_client_key: Path to SSL Client key, used for protected repository access
-# proxy_url: Proxy URL 
+# proxy_url: Proxy URL
 # proxy_port: Port Port
 # proxy_user: Username for Proxy
 # proxy_pass: Password for Proxy
@@ -450,7 +450,7 @@ class YumImporter(Importer):
             return False, summary, details
         _LOG.info("Upload complete with summary: %s; Details: %s" % (summary, details))
         return True, summary, details
-            
+
     def _upload_unit_erratum(self, repo, unit_key, metadata, conduit, config):
         summary = {'num_units_saved' : 0}
         details = {'errors' : []}
@@ -515,7 +515,7 @@ class YumImporter(Importer):
         solved, unsolved = dsolve.processResults(results)
         dep_pkgs_map = {}
         _LOG.info(" results from depsolver %s" % results)
-        criteria = Criteria(type_ids=[RPM_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID])
         existing_units = get_existing_units(dependency_conduit, criteria)
         for dep, pkgs in solved.items():
             dep_pkgs_map[dep] = []

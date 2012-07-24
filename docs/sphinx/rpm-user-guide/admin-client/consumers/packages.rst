@@ -1,5 +1,5 @@
-Consumer Package Management
-===========================
+Package Management
+==================
 
 The Pulp admin client can be used to manipulate installed packages on registered
 consumers. All package-related commands are found under the ``consumer package``

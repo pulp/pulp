@@ -85,7 +85,8 @@ class PulpCliCommand(Command):
     REQUIRED_OPTION_PREFIX = _('(required) ')
     OPTIONAL_OPTION_PREFIX = ''
 
-    def create_option(self, name, description, aliases=None, required=True, allow_multiple=False, default=None):
+    def create_option(self, name, description, aliases=None, required=True,
+                      allow_multiple=False, default=None, validate_func=None, parse_func=None):
         """
         Creates a new option for this command. An option is an argument to the
         command line call that accepts a value.
@@ -124,10 +125,19 @@ class PulpCliCommand(Command):
         :param default: The default value for optional options
         :type  default: object
 
+        :param validate_func: if specified, this function will be applied to
+               the user-specified value
+        :type  validate_func: callable
+
+        :param parse_func: if specified, this function will be applied to the
+               user-specified value and its return will replace that value
+        :type  parse_func: callable
+
         :return: instance representing the option
         :rtype:  PulpCliOption
         """
-        option = PulpCliOption(name, description, required=required, allow_multiple=allow_multiple, aliases=aliases, default=default)
+        option = PulpCliOption(name, description, required=required, allow_multiple=allow_multiple,
+                               aliases=aliases, default=default, validate_func=validate_func, parse_func=parse_func)
         self.add_option(option)
         return option
 

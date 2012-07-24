@@ -71,7 +71,8 @@ class UsersCollection(JSONController):
                                    args,
                                    resources=resources,
                                    weight=weight,
-                                   tags=tags)
+                                   tags=tags,
+                                   obfuscate_args=True)
         user = execution.execute_sync(call_request)
         user_link = serialization.link.child_link_obj(login)
         user.update(user_link)

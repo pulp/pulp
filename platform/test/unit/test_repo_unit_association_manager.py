@@ -20,12 +20,12 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, Unit
 from pulp.plugins.types import database, model
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo, RepoImporter
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.unit_association as association_manager
-from pulp.server.managers.repo.unit_association_query import Criteria
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
 import pulp.server.managers.content.cud as content_cud_manager
 import pulp.server.managers.factory as manager_factory
@@ -255,7 +255,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3', OWNER_TYPE_USER, 'admin')
 
         # Test
-        criteria = Criteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
+        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
         self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
 
         # Verify
@@ -292,7 +292,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-x', OWNER_TYPE_USER, 'admin')
 
         # Test
-        criteria = Criteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
+        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
         self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria, with_dependencies=True)
 
         # Verify
@@ -380,7 +380,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
 
         # Test
-        criteria = Criteria(type_ids=['mock-type'], unit_filters={'key-1' : 'no way this matches squat'})
+        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'no way this matches squat'})
         self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
 
         # Verify

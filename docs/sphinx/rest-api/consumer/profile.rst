@@ -16,7 +16,7 @@ it is replaced with the profile supplied in this call.
 | :param_list:`post`
 
 * :param:`content_type,string,the content type ID`
-* :param:`profile,any,the content profile`
+* :param:`profile,object,the content profile`
 
 | :response_list:`_`
 
@@ -62,7 +62,7 @@ using the specified content type.
 | :param_list:`post`
 
 * :param:`content_type,string,the content type ID`
-* :param:`profile,any,the content profile`
+* :param:`profile,object,the content profile`
 
 | :response_list:`_`
 
@@ -107,7 +107,7 @@ a :term:`consumer`.
 * :response_code:`200,regardless of whether any profiles exist`
 * :response_code:`404,if the consumer does not exist`
 
-| :return:`a list of unit profile objects or an empty list of none exist`
+| :return:`a list of unit profile objects or an empty list if none exist`
 
 :sample_response:`200` ::
 
@@ -132,7 +132,7 @@ a :term:`consumer`.
    }
  ]
 
-Retrieve a profile By Content Type
+Retrieve a Profile By Content Type
 ----------------------------------
 
 Retrieves a :term:`unit profile` associated with a :term:`consumer` by

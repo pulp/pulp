@@ -34,7 +34,7 @@ Each returned *ApplicabilityReport* is an object:
 * :response_code:`200,if the applicability check was performed successfully`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:`a dictionary keyed by consumer ID containing a list of ApplicabilityReport (see above)`
+| :return:`a dictionary keyed by consumer ID containing a list of applicability report (see above)`
 
 :sample_request:`_` ::
 
@@ -62,7 +62,7 @@ Each returned *ApplicabilityReport* is an object:
      {
        "summary": "mysummary",
        "applicable": true,
-       "unit": {"unit_key": {"name": "security-patch_456"}, "type_id": "errata"},
+       "unit": {"unit_key": {"name": "security-patch_123"}, "type_id": "errata"},
        "details": "mydetails"
      }
    ]

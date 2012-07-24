@@ -71,8 +71,8 @@ is centered around updating only that metadata.
 
 * :response_code:`200,if the update was executed and successful`
 * :response_code:`202,if the update was postponed`
-* :response_code:`404,if there is no repository with the give ID`
 * :response_code:`400,if one or more of the parameters is invalid`
+* :response_code:`404,if there is no repository with the give ID`
 
 | :return:`database representation of the repository (after changes made by the update)`
 
@@ -255,6 +255,7 @@ is not deleted. Deleting content is handled through the
 | :permission:`delete`
 | :response_list:`_`
 
+* :response_code:
 * :response_code:`202,if the request was accepted by the server to delete when the repository is available`
 
 | :return:`call report representing the current state of the delete`

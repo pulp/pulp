@@ -20,6 +20,7 @@ import logging
 import pymongo
 
 import pulp.plugins.types.database as types_db
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 
 # -- constants ----------------------------------------------------------------
@@ -104,7 +105,7 @@ class RepoUnitAssociationQueryManager(object):
         @type  repo_id: str
 
         @param criteria: if specified will drive the query
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
         """
 
         if criteria is not None and\
@@ -136,12 +137,12 @@ class RepoUnitAssociationQueryManager(object):
         @type  repo_id: str
 
         @param criteria: if specified will drive the query
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
         """
 
         # For simplicity, create a criteria if one is not provided and use its defaults
         if criteria is None:
-            criteria = Criteria()
+            criteria = UnitAssociationCriteria()
 
         # -- association collection lookup ------------------------------------
 
@@ -220,12 +221,12 @@ class RepoUnitAssociationQueryManager(object):
         @type  type_id: str
 
         @param criteria: if specified will drive the query
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
         """
 
         # For simplicity, create a criteria if one is not provided and use its defaults
         if criteria is None:
-            criteria = Criteria()
+            criteria = UnitAssociationCriteria()
 
         # -- association collection lookup ------------------------------------
 
@@ -383,101 +384,4 @@ class RepoUnitAssociationQueryManager(object):
         clean_units = [u for b, u in zip(keep_units, units) if b]
         return clean_units
 
-# -- association criteria -----------------------------------------------------
 
-class Criteria:
-
-    # Shadowed here for convenience
-    SORT_ASCENDING = pymongo.ASCENDING
-    SORT_DESCENDING = pymongo.DESCENDING
-
-    def __init__(self, type_ids=None, association_filters=None, unit_filters=None,
-                 association_sort=None, unit_sort=None, limit=None, skip=None,
-                 association_fields=None, unit_fields=None, remove_duplicates=None):
-        """
-        There are a number of entry points into creating one of these instances:
-        multiple REST interfaces, the plugins, etc. As such, this constructor
-        does quite a bit of validation on the parameter values.
-
-        @param type_ids: list of types to search
-        @type  type_ids: [str]
-
-        @param association_filters: mongo spec describing search parameters on
-               association metadata
-        @type  association_filters: dict
-
-        @param unit_filters: mongo spec describing search parameters on unit
-               metadata; only used when a single type ID is specified
-        @type  unit_filters: dict
-
-        @param association_sort: ordered list of fields and directions; may only
-               contain association metadata
-        @type  association_sort: [(str, <SORT_* constant>)]
-
-        @param unit_sort: ordered list of fields and directions; only used when
-               a single type ID is specified
-        @type  unit_sort: [(str, <SORT_* constant>)]
-
-        @param limit: maximum number of results to return
-        @type  limit: int
-
-        @param skip: number of results to skip
-        @type  skip: int
-
-        @param association_fields: if specified, only the given fields from the
-               association's metadata will be included in returned units
-        @type  association_fields: list of str
-
-        @param unit_fields: if specified, only the given fields from the unit's
-               metadata are returned; only applies when a single type ID is
-               specified
-        @type  unit_fields: list of str
-
-        @param remove_duplicates: if True, units with multiple associations will
-               only return a single association; defaults to False
-        @type  remove_duplicates: bool
-        """
-
-        # A default instance will be used in the case where no criteria is
-        # passed in, so use sane defaults here.
-
-        if type_ids is not None and  not isinstance(type_ids, (list, tuple)):
-            type_ids = [type_ids]
-        self.type_ids = type_ids
-
-        self.association_filters = association_filters or {}
-        self.unit_filters = unit_filters or {}
-
-        self.association_sort = association_sort
-        self.unit_sort = unit_sort
-
-        self.limit = limit
-        self.skip = skip
-
-        # The unit_id and unit_type_id are required as association returned data;
-        # frankly it doesn't make sense without them but it's also a technical
-        # requirement for the algorithm to run. Make sure they are there.
-        if association_fields is not None:
-            if 'unit_id' not in association_fields: association_fields.append('unit_id')
-            if 'unit_type_id' not in association_fields: association_fields.append('unit_type_id')
-
-        self.association_fields = association_fields
-        self.unit_fields = unit_fields
-
-        if remove_duplicates is None:
-            remove_duplicates = False
-        self.remove_duplicates = remove_duplicates
-
-    def __str__(self):
-        s = ''
-        if self.type_ids: s += 'Type IDs [%s] ' % self.type_ids
-        if self.association_filters: s += 'Assoc Filters [%s] ' % self.association_filters
-        if self.unit_filters is not None: s += 'Unit Filters [%s] ' % self.unit_filters
-        if self.association_sort is not None: s += 'Assoc Sort [%s] ' % self.association_sort
-        if self.unit_sort is not None: s += 'Unit Sort [%s] ' % self.unit_sort
-        if self.limit: s += 'Limit [%s] ' % self.limit
-        if self.skip: s += 'Skip [%s] ' % self.skip
-        if self.association_fields: s += 'Assoc Fields [%s] ' % self.association_fields
-        if self.unit_fields: s += 'Unit Fields [%s] ' % self.unit_fields
-        s += 'Remove Duplicates [%s]' % self.remove_duplicates
-        return s

@@ -18,7 +18,7 @@ import os
 import time
 import yum
 from pulp_rpm.yum_plugin import util, updateinfo
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from yum_importer import importer_rpm
 
 _LOG = util.getLogger(__name__)
@@ -65,7 +65,7 @@ def get_existing_errata(sync_conduit, criteria=None):
      @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
 
      @param criteria
-     @type criteria pulp.server.managers.repo.unit_association_query.Criteria
+     @type criteria pulp.server.managers.repo.unit_association_query.UnitAssociationCriteria
 
      @return a dictionary of existing units, key is the errata id and the value is the unit
      @rtype {():pulp.server.content.plugins.model.Unit}
@@ -166,7 +166,7 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
     """
     link_report = {}
     # link errata and rpm units
-    criteria = Criteria(type_ids=[importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID])
+    criteria = UnitAssociationCriteria(type_ids=[importer_rpm.RPM_TYPE_ID, importer_rpm.SRPM_TYPE_ID])
     existing_rpms = importer_rpm.get_existing_units(sync_conduit, criteria=criteria)
     link_report['linked_units'] = []
     link_report['missing_rpms'] = []
@@ -238,7 +238,7 @@ class ImporterErrata(object):
         progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
         set_progress(progress)
 
-        criteria = Criteria(type_ids=[ERRATA_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[ERRATA_TYPE_ID])
         existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
         _LOG.info("Existing Errata %s" % len(existing_errata))
         orphaned_units = get_orphaned_errata(available_errata, existing_errata)

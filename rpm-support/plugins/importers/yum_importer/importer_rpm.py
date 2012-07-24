@@ -17,7 +17,7 @@ import itertools
 from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import util
 from yum_importer import distribution, drpm
 
@@ -28,7 +28,7 @@ SRPM_TYPE_ID="srpm"
 RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "checksum", "checksumtype")
 
 
-PROGRESS_REPORT_FIELDS = ["state", "items_total", "items_left", "size_total", "size_left", 
+PROGRESS_REPORT_FIELDS = ["state", "items_total", "items_left", "size_total", "size_left",
     "num_error", "num_success", "details", "error_details"]
 
 def get_existing_units(sync_conduit, criteria=None):
@@ -285,7 +285,7 @@ def remove_unit(sync_conduit, repo, unit):
 
     @param unit
     @type unit L{pulp.server.content.plugins.model.Unit}
-    
+
     Goals:
      1) Remove the unit from the database
      2) Remove the unit from the file system
@@ -594,7 +594,7 @@ class ImporterRPM(object):
                     (len(rpm_info['available_rpms']), repo.id, (end_metadata-start_metadata)))
 
         # Determine what exists and what has been orphaned, or exists in Pulp but has been removed from the source repo
-        criteria = Criteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID])
         rpm_info['existing_rpm_units'] = get_existing_units(sync_conduit, criteria)
         rpm_info['orphaned_rpm_units'] = get_orphaned_units(rpm_info['available_rpms'], rpm_info['existing_rpm_units'])
 

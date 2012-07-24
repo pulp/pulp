@@ -579,7 +579,7 @@ class RepoDistributors(JSONController):
                                    resources=resources,
                                    weight=weight,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, distributor_id)
+        return execution.execute_created(self, call_request, distributor_id)
 
 
 class RepoDistributor(JSONController):
@@ -851,8 +851,6 @@ class RepoPublish(JSONController):
 
     @auth_required(EXECUTE)
     def POST(self, repo_id):
-
-        # TODO: Add timeout support
 
         # Params
         params = self.params()

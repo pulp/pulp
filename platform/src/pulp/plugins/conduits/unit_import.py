@@ -26,7 +26,7 @@ import pulp.plugins.types.database as types_db
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 
-from pulp.server.managers.repo.unit_association_query import Criteria # shadow for importing by plugins
+from pulp.server.db.model.criteria import UnitAssociationCriteria # shadow for importing by plugins
 
 # -- constants ----------------------------------------------------------------
 

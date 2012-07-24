@@ -62,6 +62,11 @@ class RepoGroupManager(object):
          * display_name
          * description
          * notes
+
+        For notes, provide a dict with key:value pairs for changes only. It is
+        not necessary to provide the entire field value. If a value is empty or
+        otherwise evaluates to False, that key will be unset.
+
         @param group_id: unique id of the repo group to update
         @type group_id: str
         @param updates: keyword arguments of attributes to update
@@ -70,15 +75,29 @@ class RepoGroupManager(object):
         """
         collection = validate_existing_repo_group(group_id)
         keywords = updates.keys()
-        valid_keywords = ('display_name', 'description', 'notes')
-        invalid_keywords = []
-        for kw in keywords:
-            if kw in valid_keywords:
-                continue
-            invalid_keywords.append(kw)
+        # validate keywords
+        valid_keywords = set(('display_name', 'description', 'notes'))
+        invalid_keywords = set(keywords) - valid_keywords
         if invalid_keywords:
-            raise pulp_exceptions.InvalidValue(invalid_keywords)
-        collection.update({'id': group_id}, {'$set': updates}, safe=True)
+            raise pulp_exceptions.InvalidValue(list(invalid_keywords))
+
+        # handle notes as a delta against the existing notes attribute
+        notes = updates.pop('notes', None)
+        if notes:
+            unset_dict = {}
+            for key, value in notes.iteritems():
+                newkey = 'notes.%s' % key
+                if value:
+                    updates[newkey] = value
+                else:
+                    unset_dict[newkey] = value
+
+            if unset_dict:
+                collection.update({'id': group_id}, {'$unset': unset_dict},
+                    safe=True)
+
+        if updates:
+            collection.update({'id': group_id}, {'$set': updates}, safe=True)
         group = collection.find_one({'id': group_id})
         return group
 
