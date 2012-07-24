@@ -72,7 +72,8 @@ class UsersCollection(JSONController):
                                    args,
                                    resources=resources,
                                    weight=weight,
-                                   tags=tags)
+                                   tags=tags,
+                                   obfuscate_args=True)
         return execution.execute_sync_created(self, call_request, login)
 
 

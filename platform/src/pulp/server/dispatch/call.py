@@ -67,7 +67,8 @@ class CallRequest(object):
                  weight=1,
                  tags=None,
                  asynchronous=False,
-                 archive=False):
+                 archive=False,
+                 obfuscate_args=False):
 
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
@@ -79,6 +80,7 @@ class CallRequest(object):
         assert isinstance(tags, (NoneType, list))
         assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
+        assert isinstance(obfuscate_args, bool)
 
         self.id = str(uuid.uuid4())
         self.call = call
@@ -90,6 +92,7 @@ class CallRequest(object):
         self.tags = tags or []
         self.asynchronous = asynchronous
         self.archive = archive
+        self.obfuscate_args = obfuscate_args
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
 
@@ -102,9 +105,13 @@ class CallRequest(object):
         return '.'.join((class_name, name))
 
     def callable_args_reprs(self):
+        if self.obfuscate_args:
+            return ['**OBFUSCATED**' for a in self.args]
         return [repr(a) for a in self.args]
 
     def callable_kwargs_reprs(self):
+        if self.obfuscate_args:
+            return dict([(k, '**OBFUSCATED**') for k in self.kwargs])
         return dict([(k, repr(v)) for k, v in self.kwargs.items()])
 
     def __str__(self):
