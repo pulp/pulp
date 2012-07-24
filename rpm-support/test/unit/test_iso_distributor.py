@@ -55,10 +55,10 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         self.distro_dir = os.path.join(self.temp_dir, "distribution")
         os.makedirs(self.distro_dir)
         #publish_dir simulates /var/lib/pulp/published
-        self.http_publish_dir = os.path.join(self.temp_dir, "publish", "http")
+        self.http_publish_dir = os.path.join(self.temp_dir, "publish", "http", "isos")
         os.makedirs(self.http_publish_dir)
 
-        self.https_publish_dir = os.path.join(self.temp_dir, "publish", "https")
+        self.https_publish_dir = os.path.join(self.temp_dir, "publish", "https", "isos")
         os.makedirs(self.https_publish_dir)
 
         self.repo_working_dir = os.path.join(self.temp_dir, "repo_working_dir")
@@ -253,31 +253,47 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
-        metadata = {}
-        unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'md5',
-                      'checksum': 'f3c197a29d9b66c5b65c5d62b25db5b4'}
-        unit_key_b = {'id' : '', 'name' :'emoticons', 'version' :'0.1', 'release' :'2', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'md5',
-                      'checksum' : '366bb5e73a5905eacb82c96e0578f92b'}
-
+        unit_key_a = {'id' : '','name' :'pulp-dot-2.0-test', 'version' :'0.1.2', 'release' : '1.fc11', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'sha256',
+                      'checksum': '435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979', 'type_id' : 'rpm'}
+        unit_a = Unit(RPM_TYPE_ID, unit_key_a, {}, '')
+        unit_a.storage_path = "%s/pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" % self.pkg_dir
+        unit_key_b = {'id' : '', 'name' :'pulp-test-package', 'version' :'0.2.1', 'release' :'1.fc11', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'sha256',
+                      'checksum': '4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7', 'type_id' : 'rpm', }
+        unit_b = Unit(RPM_TYPE_ID, unit_key_b, {}, '')
+        unit_b.storage_path = "%s/pulp-test-package/0.2.1/1.fc11/x86_64/4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7/pulp-test-package-0.2.1-1.fc11.x86_64.rpm" % self.pkg_dir
+        unit_key_c = {'id' : '', 'name' :'pulp-test-package', 'version' :'0.3.1', 'release' :'1.fc11', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'sha256',
+                      'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f', 'type_id' : 'rpm', }
+        unit_c = Unit(RPM_TYPE_ID, unit_key_c, {}, '')
+        unit_c.storage_path =  "%s/pulp-test-package/0.3.1/1.fc11/x86_64/6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f/pulp-test-package-0.3.1-1.fc11.x86_64.rpm" % self.pkg_dir
         existing_units = []
-        for unit in [unit_key_a, unit_key_b]:
-            existing_units.append(Unit(RPM_TYPE_ID, unit, metadata, ''))
+        for unit in [unit_a, unit_b, unit_c]:
+            existing_units.append(unit)
         sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
         importerErrata = errata.ImporterErrata()
         importerErrata.sync(repo, sync_conduit, config)
         symlink_dir = "%s/%s" % (self.repo_working_dir, repo.id)
         iso_distributor = ISODistributor()
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
+        # test https publish
+        config = distributor_mocks.get_basic_config(http_publish_dir=self.http_publish_dir, https_publish_dir=self.https_publish_dir, http=False, https=True)
         print symlink_dir
         iso_dir = "%s/%s/%s" % (repo.working_dir, "isos", repo.id)
-        progress_status = iso_distributor.publish_repo(repo, publish_conduit, config)
+        report = iso_distributor.publish_repo(repo, publish_conduit, config)
         isos_list = os.listdir(iso_dir)
         print "List of isos generated in `%s` Iso dir %s" % (iso_dir, isos_list)
         self.assertEqual(len(isos_list), 1)
         print os.system("isoinfo -l -i %s " % "%s/%s" % (iso_dir, isos_list[0]))
-        self.assertEqual(progress_status["rpms"]["state"], "FINISHED")
-        self.assertEqual(progress_status["packagegroups"]["state"], "FINISHED")
-        self.assertEqual(progress_status["distribution"]["state"], "FINISHED")
-        self.assertEqual(progress_status["errata"]["state"], "FINISHED")
-        self.assertEqual(progress_status["isos"]["state"], "FINISHED")
+        print report
+        self.assertTrue(os.path.exists("%s/%s" % (self.https_publish_dir, repo.id)))
+        self.assertEquals(len(os.listdir(self.http_publish_dir)), 0)
+
+        # test http publish
+        config = distributor_mocks.get_basic_config(http_publish_dir=self.http_publish_dir, https_publish_dir=self.https_publish_dir, http=True, https=False)
+        report = iso_distributor.publish_repo(repo, publish_conduit, config)
+        isos_list = os.listdir(iso_dir)
+        print "List of isos generated in `%s` Iso dir %s" % (iso_dir, isos_list)
+        self.assertEqual(len(isos_list), 1)
+        print os.system("isoinfo -l -i %s " % "%s/%s" % (iso_dir, isos_list[0]))
+        print report
+        self.assertTrue(os.path.exists("%s/%s" % (self.http_publish_dir, repo.id)))
+        self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)

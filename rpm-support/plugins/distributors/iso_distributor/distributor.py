@@ -169,7 +169,7 @@ class ISODistributor(Distributor):
         progress_status["rpms"]["state"] = "STARTED"
         criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID])
         rpm_units = publish_conduit.get_units(criteria)
-        self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
+        rpm_status, rpm_errors = self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["rpms"]["state"] = "FINISHED"
 
         # package groups
@@ -191,14 +191,14 @@ class ISODistributor(Distributor):
         errata_units = publish_conduit.get_units(criteria)
         rpm_units = self._get_errata_rpms(errata_units, rpm_units)
         self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
-        self._export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
+        errata_status, errata_errors = self._export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["errata"]["state"] = "FINISHED"
 
         # distro units
         progress_status["distribution"]["state"] = "STARTED"
         criteria = UnitAssociationCriteria(type_ids=[DISTRO_TYPE_ID])
         distro_units = publish_conduit.get_units(criteria)
-        self._export_distributions(distro_units, repo_working_dir, progress_callback=progress_callback)
+        distro_status, distro_errors = self._export_distributions(distro_units, repo_working_dir, progress_callback=progress_callback)
         progress_status["distribution"]["state"] = "FINISHED"
 
         # build iso
@@ -211,9 +211,101 @@ class ISODistributor(Distributor):
             progress_status["error_details"].append(str(e))
             return progress_status
         progress_status["isos"]["state"] = "FINISHED"
-        return progress_status
+
+        # Handle publish link for HTTPS
+        https_publish_dir = self.get_https_publish_iso_dir(config)
+        https_repo_publish_dir = os.path.join(https_publish_dir, repo.id).rstrip('/')
+        if config.get("https"):
+            # Publish for HTTPS
+            self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
+            try:
+                _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, https_repo_publish_dir))
+                util.create_symlink(repo_iso_working_dir, https_repo_publish_dir)
+                summary["https_publish_dir"] = https_repo_publish_dir
+                self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
+            except:
+                self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
+        else:
+            self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
+            if os.path.lexists(https_repo_publish_dir):
+                _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
+                util.remove_symlink(https_publish_dir, https_repo_publish_dir)
+
+        # Handle publish link for HTTP
+        http_publish_dir = self.get_http_publish_iso_dir(config)
+        http_repo_publish_dir = os.path.join(http_publish_dir, repo.id).rstrip('/')
+        if config.get("http"):
+            # Publish for HTTP
+            self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
+            try:
+                _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, http_repo_publish_dir))
+                util.create_symlink(repo_iso_working_dir, http_repo_publish_dir)
+                summary["http_publish_dir"] = http_repo_publish_dir
+                self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
+            except:
+                self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
+        else:
+            self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)
+            if os.path.lexists(http_repo_publish_dir):
+                _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
+                util.remove_symlink(http_publish_dir, http_repo_publish_dir)
+
+        summary["num_package_units_attempted"] = len(rpm_units)
+        summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
+        summary["num_package_units_errors"] = len(rpm_errors)
+        summary["num_distribution_units_attempted"] = len(distro_units)
+        summary["num_distribution_units_exported"] = len(distro_units) - len(distro_errors)
+        summary["num_distribution_units_errors"] = len(distro_errors)
+        summary["num_package_groups_exported"] = len(existing_groups)
+        summary["num_package_categories_exported"] = len(existing_cats)
+
+        details["errors"] = rpm_errors + distro_errors + metadata_errors
+        # metadata generate skipped vs run
+        _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
+        if details["errors"]:
+            return publish_conduit.build_failure_report(summary, details)
+        return publish_conduit.build_success_report(summary, details)
+
+    def get_http_publish_iso_dir(self, config=None):
+        """
+        @param config
+        @type pulp.server.content.plugins.config.PluginCallConfiguration
+        """
+        if config:
+            publish_dir = config.get("http_publish_dir")
+            if publish_dir:
+                _LOG.info("Override HTTP publish directory from passed in config value to: %s" % (publish_dir))
+                return publish_dir
+        return HTTP_PUBLISH_DIR
+
+    def get_https_publish_iso_dir(self, config=None):
+        """
+        @param config
+        @type pulp.server.content.plugins.config.PluginCallConfiguration
+        """
+        if config:
+            publish_dir = config.get("https_publish_dir")
+            if publish_dir:
+                _LOG.info("Override HTTPS publish directory from passed in config value to: %s" % (publish_dir))
+                return publish_dir
+        return HTTPS_PUBLISH_DIR
 
     def _export_rpms(self, rpm_units, symlink_dir, progress_callback=None):
+        """
+         This call looksup each rpm units and exports to the working directory.
+
+        @param rpm_units
+        @type errata_units list of AssociatedUnit to be exported
+
+        @param symlink_dir: path of where we want the symlink and repodata to reside
+        @type symlink_dir str
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+
+        @return tuple of status and list of error messages if any occurred
+        @rtype (bool, [str])
+        """
         # get rpm units
         packages_progress_status = self.init_progress()
         packages_progress_status["num_success"] = 0
@@ -258,6 +350,23 @@ class ISODistributor(Distributor):
         return True, []
 
     def _export_errata(self, errata_units, repo_working_dir, progress_callback=None):
+        """
+         This call looksup each errata unit and its associated rpms and exports
+         the rpms units to the working directory and generates updateinfo xml for
+         exported errata metadata.
+
+        @param errata_units
+        @type errata_units list of AssociatedUnit
+
+        @param repo_working_dir: path of where we want the symlink and repodata to reside
+        @type repo_working_dir str
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+
+        @return tuple of status and list of error messages if any occurred
+        @rtype (bool, [str])
+        """
         errors = []
         if not errata_units:
             return True, []
