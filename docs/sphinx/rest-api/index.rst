@@ -20,7 +20,6 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
+   conventions/index
    authentication
-   conventions
    glossary
-   sync-v-async
