@@ -9,6 +9,7 @@ APIs
 
    consumer/index
    repo/index
+   repo/groups/index
    content/index
    dispatch/index
    event/index
