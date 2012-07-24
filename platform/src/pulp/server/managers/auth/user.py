@@ -21,6 +21,7 @@ import re
 
 from pulp.server.db.model.auth import User
 from pulp.server.auth import cert_generator, principal
+from pulp.server.auth.authorization import grant_automatic_permissions_for_new_user, revoke_all_permissions_from_user
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 
 import pulp.server.auth.password_util as password_util
@@ -87,6 +88,9 @@ class UserManager(object):
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)
         User.get_collection().save(create_me, safe=True)
 
+        # Grant permissions
+        grant_automatic_permissions_for_new_user(create_me['login'])
+
         # Retrieve the user to return the SON object
         created = User.get_collection().find_one({'login' : login})
 
@@ -112,6 +116,9 @@ class UserManager(object):
         found = User.get_collection().find_one({'login' : login})
         if found is None:
             raise MissingResource(login)
+
+        # Revoke all permissions from the user
+        revoke_all_permissions_from_user(login)
 
         User.get_collection().remove({'login' : login}, safe=True)
 
