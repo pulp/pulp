@@ -23,9 +23,7 @@ Basic
 ^^^^^
 
 ``--id``
-  Unique identifier for the consumer. Valid characters include letters,
-  numbers, hyphen (``-``) and underscore (``_``). The ID is case sensitive;
-  "pulp" and "Pulp" are two separate consumers. An ID is required.
+  Unique identifier for the consumer.
 
 ``--name, -n``
   Indicates a package to install. This may be just the name component of the NEVRA
@@ -36,16 +34,16 @@ Options
 ^^^^^^^
 
 ``--no-commit``
-  A flag that indicates that the package install is to be executed but not
-  committed. This option is useful to see how package names will be
-  resolved and any dependencies that be installed as well.
+  If specified, the package install is to be executed but not committed.
+  This option may be used to see how package names will be resolved and any
+  dependencies that will be installed as well.
 
 ``--import-keys``
-  If specified, GPG keys may be imported on the consumer as needed.
+  If specified, GPG keys will be imported on the consumer as needed.
 
 ``--reboot``
-  A flag that indicates that a consumer reboot should be scheduled pending
-  the successful install of at least one requested package.
+  If sepcified, a reboot will be scheduled on the consumer pending a
+  successful transaction containing at least one package change.
 
 Uninstall Packages on a Consumer
 --------------------------------
@@ -54,7 +52,7 @@ Packages are uninstalled through the ``uninstall`` command in the packages secti
 
 See :ref:`install-packages` for more information on arguments to this command.
 All install arguments with the exception of ``import-keys`` are supported by
-the uninstall command.
+the `uninstall` command.
 
 Update Packages on a Consumer
 -----------------------------

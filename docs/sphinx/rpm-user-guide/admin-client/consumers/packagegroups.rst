@@ -19,16 +19,14 @@ of the consumer's content inventory.
 
 The following options are available to the package group ``install`` command.
 One or more groups may be specified in the same install request. Each group is
-indicated by name.  In the event that all packages associated with a group is
+indicated by name.  In the event that all packages associated with a group are
 already installed, no error is raised and the operation is still marked a success.
 
 Basic
 ^^^^^
 
 ``--id``
-  Unique identifier for the consumer. Valid characters include letters,
-  numbers, hyphen (``-``) and underscore (``_``). The ID is case sensitive;
-  "pulp" and "Pulp" are two separate consumers. An ID is required.
+  Unique identifier for the consumer.
 
 ``--name, -n``
   Indicates the name of a group to install.  This option may be used multiple
@@ -38,16 +36,16 @@ Options
 ^^^^^^^
 
 ``--no-commit``
-  A flag that indicates that the group install is to be executed but not
-  committed. This option is useful to see how package names will be
-  resolved and any dependencies that be installed as well.
+  If specified, the group install is to be executed but not committed.
+  This option may be used to see how package names will be resolved and any
+  dependencies that will be installed as well.
 
 ``--import-keys``
-  If specified, GPG keys may be imported on the consumer as needed.
+  If specified, GPG keys will be imported on the consumer as needed.
 
 ``--reboot``
-  A flag that indicates that a consumer reboot should be scheduled pending
-  the successful install of at least one requested package.
+  If sepcified, a reboot will be scheduled on the consumer pending a
+  successful transaction containing at least one package change.
 
 Uninstall Package Groups on a Consumer
 --------------------------------------
@@ -57,4 +55,4 @@ Package groups are uninstalled through the ``uninstall`` command in the
 
 See :ref:`install-package-group` for more information on arguments to this command.
 All install arguments with the exception of ``import-keys`` are supported by
-the uninstall command.
+the `uninstall` command.
