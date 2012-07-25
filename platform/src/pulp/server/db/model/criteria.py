@@ -72,18 +72,6 @@ class Criteria(Model):
     def spec(self):
         if self.filters is None:
             return None
-
-        def _compile_regexs_for_not(spec):
-            if not isinstance(spec, (dict, list, tuple)):
-                return
-            if isinstance(spec, (list, tuple)):
-                map(_compile_regexs_for_not, spec)
-                return
-            for key, value in spec.items():
-                if key == '$not' and isinstance(value, basestring):
-                    spec[key] = re.compile(value)
-                _compile_regexs_for_not(value)
-
         spec = copy.copy(self.filters)
         _compile_regexs_for_not(spec)
         return spec
@@ -174,6 +162,7 @@ class UnitAssociationCriteria(Model):
     @classmethod
     def from_client_input(cls, doc):
         doc = copy.copy(doc)
+
         type_ids = doc.pop('type_ids', None)
         association_filters = _validate_filters(doc.pop('association_filters', None))
         unit_filters = _validate_filters(doc.pop('unit_filters', None))
@@ -184,10 +173,36 @@ class UnitAssociationCriteria(Model):
         association_fields = _validate_fields(doc.pop('association_fields', None))
         unit_fields = _validate_fields(doc.pop('unit_fields', None))
         remove_duplicates = bool(doc.pop('remove_duplicates', False))
+
         if doc:
             raise pulp_exceptions.InvalidValue(doc.keys())
+
+        # XXX these are here for "backward compatibility", in the future, these
+        # should be removed and the corresponding association_spec and unit_spec
+        # properties should be used
+        if association_filters:
+            _compile_regexs_for_not(association_filters)
+        if unit_filters:
+            _compile_regexs_for_not(unit_filters)
+
         return cls(type_ids, association_filters, unit_filters, association_sort,
                    unit_sort, limit, skip, association_fields, unit_fields, remove_duplicates)
+
+    @property
+    def association_spec(self):
+        if self.association_filters is None:
+            return None
+        association_spec = copy.copy(self.association_filters)
+        _compile_regexs_for_not(association_spec)
+        return association_spec
+
+    @property
+    def unit_spec(self):
+        if self.unit_filters is None:
+            return None
+        unit_spec = copy.copy(self.unit_filters)
+        _compile_regexs_for_not(unit_spec)
+        return unit_spec
 
     def __str__(self):
         s = ''
@@ -220,7 +235,7 @@ def _validate_sort(sort):
         valid_sort = []
         for entry in sort:
             if not isinstance(entry[0], basestring):
-                raise TypeError()
+                raise TypeError('Invalid field name [%s]' % str(entry[0]))
             flag = str(entry[1]).lower()
             direction = None
             if flag in ('ascending', '1'):
@@ -228,7 +243,7 @@ def _validate_sort(sort):
             if flag in ('descending', '-1'):
                 direction = pymongo.DESCENDING
             if direction is None:
-                raise ValueError()
+                raise ValueError('Invalid sort direction [%s]' % flag)
             valid_sort.append((entry[0], direction))
     except (TypeError, ValueError):
        raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
@@ -273,4 +288,16 @@ def _validate_fields(fields):
     except TypeError:
         raise pulp_exceptions.InvalidValue(['fields']), None, sys.exc_info()[2]
     return fields
+
+
+def _compile_regexs_for_not(spec):
+    if not isinstance(spec, (dict, list, tuple)):
+        return
+    if isinstance(spec, (list, tuple)):
+        map(_compile_regexs_for_not, spec)
+        return
+    for key, value in spec.items():
+        if key == '$not' and isinstance(value, basestring):
+            spec[key] = re.compile(value)
+        _compile_regexs_for_not(value)
 
