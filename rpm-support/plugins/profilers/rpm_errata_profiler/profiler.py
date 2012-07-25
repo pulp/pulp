@@ -18,7 +18,7 @@ import gettext
 
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.profiler import Profiler
-from pulp.server.managers.repo.unit_association_query import Criteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.yum_plugin import util
 
 _ = gettext.gettext
@@ -257,7 +257,7 @@ class RPMErrataProfiler(Profiler):
         return translated_units
 
     def find_unit_associated_to_consumer(self, unit_type, unit_key, consumer, conduit):
-        criteria = Criteria(type_ids=[unit_type], unit_filters={"unit_key":unit_key})
+        criteria = UnitAssociationCriteria(type_ids=[unit_type], unit_filters={"unit_key":unit_key})
         return self.find_unit_associated_to_consumer_by_criteria(criteria, consumer, conduit)
 
     def find_unit_associated_to_consumer_by_criteria(self, criteria, consumer, conduit):
