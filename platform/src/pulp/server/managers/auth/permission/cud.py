@@ -219,6 +219,9 @@ class PermissionManager(object):
         user = factory.user_query_manager().find_by_login(user_name)
         self.grant('/users/%s/' % user_name, user, [READ, UPDATE])
         self.grant('/users/admin_certificate/', user, [READ])
+        self.grant('/v2/actions/', user, [READ, UPDATE])
+        self.grant('/v2/users/%s/' % user_name, user, [READ, UPDATE])
+        self.grant('/v2/users/admin_certificate/', user, [READ])
         
 
     def revoke_permission_from_user(self, resource, user_name, operation_names):
