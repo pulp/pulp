@@ -35,7 +35,7 @@ class ProcessConsumersTests(unittest.TestCase):
         factory.initialize()
 
     @mock.patch(
-        'pulp.server.webservices.serialization.link.current_link_obj',
+        'pulp.server.webservices.serialization.link.search_safe_link_obj',
         return_value={'_href':'some/path'}
     )
     def test_without_merge(self, mock_link):
@@ -44,9 +44,10 @@ class ProcessConsumersTests(unittest.TestCase):
         self.assertEqual(mock_link.call_count, 1)
         self.assertTrue('_href' in ret[0])
         self.assertTrue('bindings' not in ret[0])
+        mock_link.assert_called_once_with('consumer1')
 
     @mock.patch(
-        'pulp.server.webservices.serialization.link.current_link_obj',
+        'pulp.server.webservices.serialization.link.search_safe_link_obj',
         return_value={'_href':'some/path'}
     )
     @mock.patch(
@@ -226,7 +227,6 @@ class BindTest(base.PulpWebserviceTests):
         manager = factory.consumer_bind_manager()
         self.assertEquals(status, 404)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
-        print binds
         self.assertEquals(len(binds), 0)
 
     def test_bind_missing_distributor(self):

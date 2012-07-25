@@ -99,12 +99,12 @@ class TestValidateSort(unittest.TestCase):
     def test_as_list(self):
         input = []
         ret = criteria._validate_sort(input)
-        self.assertEqual(ret, tuple(input))
+        self.assertEqual(ret, input)
 
     def test_as_tuple(self):
         input = ()
         ret = criteria._validate_sort(input)
-        self.assertEqual(ret, input)
+        self.assertEqual(ret, [])
 
     def test_as_string(self):
         self.assertRaises(exceptions.InvalidValue, criteria._validate_sort,

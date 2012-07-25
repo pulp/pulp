@@ -45,24 +45,24 @@ class RepoGroupSearchTests(base.PulpWebserviceTests):
         self.assertTrue(isinstance(query_arg, criteria.Criteria))
 
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     @mock.patch('pulp.server.db.connection.PulpCollection.query',
         return_value=[{'id':'rg1'}])
-    def test_post_serialization(self, mock_query, mock_child_link, mock_params):
+    def test_post_serialization(self, mock_query, mock_link, mock_params):
         mock_params.return_value = {
             'criteria' : {}
         }
         status, body = self.post('/v2/repo_groups/search/')
         self.assertEqual(status, 200)
-        mock_child_link.assert_called_once_with('rg1')
+        mock_link.assert_called_once_with('rg1')
 
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     @mock.patch('pulp.server.db.connection.PulpCollection.query',
         return_value=[{'id':'rg1'}])
-    def test_get_serialization(self, mock_query, mock_child_link):
+    def test_get_serialization(self, mock_query, mock_link):
         status, body = self.get('/v2/repo_groups/search/')
         self.assertEqual(status, 200)
-        mock_child_link.assert_called_once_with('rg1')
+        mock_link.assert_called_once_with('rg1')
 
 
 class RepoGroupAssociationTests(base.PulpWebserviceTests):
@@ -553,21 +553,22 @@ class RepoGroupSearchTests(base.PulpWebserviceTests):
         self.assertTrue(isinstance(query_arg, criteria.Criteria))
 
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     @mock.patch('pulp.server.db.connection.PulpCollection.query',
         return_value=[{'id':'rg1'}])
-    def test_post_serialization(self, mock_query, mock_child_link, mock_params):
+    def test_post_serialization(self, mock_query,
+                                mock_search_safe_link, mock_params):
         mock_params.return_value = {
             'criteria' : {}
         }
         status, body = self.post('/v2/repo_groups/search/')
         self.assertEqual(status, 200)
-        mock_child_link.assert_called_once_with('rg1')
+        mock_search_safe_link.assert_called_once_with('rg1')
 
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     @mock.patch('pulp.server.db.connection.PulpCollection.query',
         return_value=[{'id':'rg1'}])
-    def test_get_serialization(self, mock_query, mock_child_link):
+    def test_get_serialization(self, mock_query, mock_search_safe_link):
         status, body = self.get('/v2/repo_groups/search/')
         self.assertEqual(status, 200)
-        mock_child_link.assert_called_once_with('rg1')
+        mock_search_safe_link.assert_called_once_with('rg1')

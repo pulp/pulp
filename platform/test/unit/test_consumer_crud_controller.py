@@ -224,6 +224,7 @@ class ConsumerResourceTests(ConsumerControllersTests):
         self.assertEqual('consumer-1', body['id'])
         self.assertTrue('bindings' not in body)
         self.assertTrue('_href' in body)
+        print body['_href']
         self.assertTrue(body['_href'].endswith(PATH))
 
     @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')

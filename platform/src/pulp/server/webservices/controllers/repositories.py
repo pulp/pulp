@@ -116,7 +116,7 @@ class RepoCollection(JSONController):
                 'distributors', manager_factory.repo_distributor_manager(), repos)
 
         for repo in repos:
-            repo.update(serialization.link.child_link_obj(repo['id']))
+            repo.update(serialization.link.search_safe_link_obj(repo['id']))
 
         return repos
 

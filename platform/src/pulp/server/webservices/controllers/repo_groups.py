@@ -74,13 +74,13 @@ class RepoGroupSearch(SearchController):
     def GET(self):
         items = self._get_query_results_from_get()
         for item in items:
-            item.update(serialization.link.child_link_obj(item['id']))
+            item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
     def POST(self):
         items = self._get_query_results_from_post()
         for item in items:
-            item.update(serialization.link.child_link_obj(item['id']))
+            item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
 # repo group resource ----------------------------------------------------------

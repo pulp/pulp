@@ -25,16 +25,17 @@ from pulp.server.webservices.controllers.contents import ContentUnitsCollection
 
 class TestContentUnitsCollection(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.serialization.content.content_unit_obj')
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     @mock.patch('pulp.server.webservices.serialization.content.content_unit_child_link_objs')
-    def test_process_unit(self, mock_content_unit_child_link_objs, mock_child_link_obj, mock_content_unit_obj):
+    def test_process_unit(self, mock_content_unit_child_link_objs,
+                          mock_search_safe_link_obj, mock_content_unit_obj):
         """
         Make sure it calls the right serialization methods
         """
         UNIT = {'_id':'cu1'}
         ContentUnitsCollection.process_unit(UNIT)
         self.assertEqual(mock_content_unit_child_link_objs.call_count, 1)
-        self.assertEqual(mock_child_link_obj.call_count, 1)
+        self.assertEqual(mock_search_safe_link_obj.call_count, 1)
         self.assertEqual(mock_content_unit_obj.call_count, 1)
 
     @mock.patch(
