@@ -58,7 +58,6 @@ from pulp.server.webservices.middleware.postponed import PostponedOperationMiddl
 
 SerialNumber.PATH = '/tmp/sn.dat'
 constants.LOCAL_STORAGE = '/tmp/pulp/'
-constants.CACHE_DIR = '/tmp/pulp/cache'
 
 
 def load_test_config():
