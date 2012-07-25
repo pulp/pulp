@@ -73,6 +73,9 @@ class Criteria(Model):
         @return:    new Criteria instance based on provided data
         @rtype:     pulp.server.db.model.criteria.Criteria
         """
+        if not isinstance(doc, dict):
+            raise pulp_exceptions.InvalidValue(['criteria']), None, sys.exc_info()[2]
+
         doc = copy.copy(doc)
         filters = _validate_filters(doc.pop('filters', None))
         sort = _validate_sort(doc.pop('sort', None))
@@ -267,8 +270,15 @@ def _validate_filters(filters):
 
 
 def _validate_sort(sort):
+    """
+    @type  sort:    list, tuple
+
+    @rtype: tuple
+    """
     if sort is None:
         return None
+    if not isinstance(sort, (list, tuple)):
+        raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
     try:
         valid_sort = []
         for entry in sort:
@@ -290,26 +300,30 @@ def _validate_sort(sort):
 
 
 def _validate_limit(limit):
+    if isinstance(limit, bool):
+        raise pulp_exceptions.InvalidValue(['limit']), None, sys.exc_info()[2]
     if limit is None:
         return None
     try:
         limit = int(limit)
         if limit < 1:
             raise TypeError()
-    except TypeError:
+    except (TypeError, ValueError):
         raise pulp_exceptions.InvalidValue(['limit']), None, sys.exc_info()[2]
     else:
         return limit
 
 
 def _validate_skip(skip):
+    if isinstance(skip, bool):
+        raise pulp_exceptions.InvalidValue(['skip']), None, sys.exc_info()[2]
     if skip is None:
         return None
     try:
         skip = int(skip)
         if skip < 0:
             raise TypeError()
-    except TypeError:
+    except (TypeError, ValueError):
         raise pulp_exceptions.InvalidValue(['skip']), None, sys.exc_info()[2]
     else:
         return skip
@@ -319,6 +333,8 @@ def _validate_fields(fields):
     if fields is None:
         return None
     try:
+        if isinstance(fields, (basestring, dict)):
+            raise TypeError
         fields = list(fields)
         for f in fields:
             if not isinstance(f, basestring):
