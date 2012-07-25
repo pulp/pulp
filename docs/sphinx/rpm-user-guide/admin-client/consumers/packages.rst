@@ -52,7 +52,7 @@ Packages are uninstalled through the ``uninstall`` command in the packages secti
 
 See :ref:`install-packages` for more information on arguments to this command.
 All install arguments with the exception of ``import-keys`` are supported by
-the `uninstall` command.
+the ``uninstall`` command.
 
 Update Packages on a Consumer
 -----------------------------

@@ -55,4 +55,4 @@ Package groups are uninstalled through the ``uninstall`` command in the
 
 See :ref:`install-package-group` for more information on arguments to this command.
 All install arguments with the exception of ``import-keys`` are supported by
-the `uninstall` command.
+the ``uninstall`` command.
