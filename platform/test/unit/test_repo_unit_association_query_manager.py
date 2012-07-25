@@ -590,7 +590,8 @@ class UnitAssociationQueryTests(base.PulpServerTests):
                 }
             }
         }
-        criteria = unit_association_criteria(query_string)
+        #criteria = unit_association_criteria(query_string)
+        criteria = UnitAssociationCriteria.from_client_input(query_string)
 
         # Test
         units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)

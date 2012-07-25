@@ -555,7 +555,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-1', OWNER_TYPE_IMPORTER, 'yum')
         self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-2', OWNER_TYPE_IMPORTER, 'yum')
 
-        criteria_doc = {'association_filters': {'unit_id': {'$in': ['unit-1', 'unit-3']}}}
+        criteria_doc = {'filters': {'association': {'unit_id': {'$in': ['unit-1', 'unit-3']}}}}
 
         criteria = UnitAssociationCriteria.from_client_input(criteria_doc)
 

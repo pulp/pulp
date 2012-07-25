@@ -26,6 +26,7 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -34,7 +35,7 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
-from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
+#from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
 
 # -- constants ----------------------------------------------------------------
 
@@ -890,7 +891,8 @@ class RepoAssociate(JSONController):
         criteria = params.get('criteria', None)
         if criteria is not None:
             try:
-                criteria = unit_association_criteria(criteria)
+                #criteria = unit_association_criteria(criteria)
+                criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
                 _LOG.exception('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
@@ -923,7 +925,8 @@ class RepoUnassociate(JSONController):
 
         if criteria is not None:
             try:
-                criteria = unit_association_criteria(criteria)
+                #criteria = unit_association_criteria(criteria)
+                criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
                 _LOG.exception('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
@@ -977,7 +980,8 @@ class RepoResolveDependencies(JSONController):
         timeout = params.get('timeout', 60)
 
         try:
-            criteria = unit_association_criteria(query)
+            #criteria = unit_association_criteria(query)
+            criteria = UnitAssociationCriteria.from_client_input(query)
         except:
             _LOG.exception('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
@@ -1019,7 +1023,8 @@ class RepoUnitAdvancedSearch(JSONController):
             raise exceptions.MissingValue(['query'])
 
         try:
-            criteria = unit_association_criteria(query)
+            #criteria = unit_association_criteria(query)
+            criteria = UnitAssociationCriteria.from_client_input(query)
         except:
             _LOG.exception('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]

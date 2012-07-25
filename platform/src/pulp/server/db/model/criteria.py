@@ -160,22 +160,45 @@ class UnitAssociationCriteria(Model):
         self.remove_duplicates = remove_duplicates
 
     @classmethod
-    def from_client_input(cls, doc):
-        doc = copy.copy(doc)
+    def from_client_input(cls, query):
+        query = copy.copy(query)
 
-        type_ids = doc.pop('type_ids', None)
-        association_filters = _validate_filters(doc.pop('association_filters', None))
-        unit_filters = _validate_filters(doc.pop('unit_filters', None))
-        association_sort = _validate_sort(doc.pop('association_sort', None))
-        unit_sort = _validate_sort(doc.pop('unit_sort', None))
-        limit = _validate_limit(doc.pop('limit', None))
-        skip = _validate_skip(doc.pop('skip', None))
-        association_fields = _validate_fields(doc.pop('association_fields', None))
-        unit_fields = _validate_fields(doc.pop('unit_fields', None))
-        remove_duplicates = bool(doc.pop('remove_duplicates', False))
+        type_ids = query.pop('type_ids', None)
 
-        if doc:
-            raise pulp_exceptions.InvalidValue(doc.keys())
+        filters = query.pop('filters', None)
+        if filters is None:
+            association_filters = None
+            unit_filters = None
+        else:
+            association_filters = _validate_filters(filters.pop('association', None))
+            unit_filters = _validate_filters(filters.pop('unit', None))
+
+        sort = query.pop('sort', None)
+        if sort is None:
+            association_sort = None
+            unit_sort = None
+        else:
+            association_sort = _validate_sort(sort.pop('association', None))
+            unit_sort = _validate_sort(sort.pop('unit', None))
+
+        limit = _validate_limit(query.pop('limit', None))
+        skip = _validate_skip(query.pop('skip', None))
+
+        fields = query.pop('fields', None)
+        if fields is None:
+            association_fields = None
+            unit_fields = None
+        else:
+            association_fields = _validate_fields(fields.pop('association', None))
+            unit_fields = _validate_fields(fields.pop('unit', None))
+
+        remove_duplicates = bool(query.pop('remove_duplicates', False))
+
+        # report any superfluous doc key, value pairs as errors
+        for d in (query, filters, sort, fields):
+            if not d:
+                continue
+            raise pulp_exceptions.InvalidValue(d.keys())
 
         # XXX these are here for "backward compatibility", in the future, these
         # should be removed and the corresponding association_spec and unit_spec
@@ -248,7 +271,7 @@ def _validate_sort(sort):
     except (TypeError, ValueError):
        raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
     else:
-        return tuple(valid_sort)
+        return valid_sort
 
 
 def _validate_limit(limit):

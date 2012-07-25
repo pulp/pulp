@@ -1505,7 +1505,8 @@ class UnitCriteriaTests(unittest.TestCase):
         }
 
         # Test
-        criteria = repo_query_utils.unit_association_criteria(query)
+        #criteria = repo_query_utils.unit_association_criteria(query)
+        criteria = UnitAssociationCriteria.from_client_input(query)
 
         # Verify
         self.assertEqual(criteria.type_ids, ['rpm'])
