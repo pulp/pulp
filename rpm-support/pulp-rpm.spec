@@ -118,6 +118,7 @@ to provide RPM specific support.
 %{_usr}/lib/pulp/plugins/importers/yum_importer/
 %{_usr}/lib/pulp/plugins/distributors/yum_distributor/
 %{_usr}/lib/pulp/plugins/distributors/iso_distributor/
+%{_usr}/lib/pulp/plugins/profilers/rpm_errata_profiler/
 %defattr(-,apache,apache,-)
 %{_var}/www/pub
 /srv/pulp/repo_auth.wsgi

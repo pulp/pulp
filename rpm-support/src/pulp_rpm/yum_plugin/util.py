@@ -19,6 +19,7 @@ import time
 import os
 import logging
 import gettext
+import rpmUtils
 from M2Crypto import X509
 _ = gettext.gettext
 
@@ -314,3 +315,26 @@ def remove_symlink(publish_dir, link_path):
             # Directory is not empty so stop removal quit
             break
         os.rmdir(path_to_remove)
+
+def is_rpm_newer(a, b):
+    """
+    @var a: represents rpm metadata
+    @type a: dict with keywords: name, arch, epoch, version, release
+
+    @var b: represents rpm metadata
+    @type b: dict with keywords: name, arch, epoch, version, release
+    
+    @return true if RPM is a newer, false if it's not
+    @rtype: bool
+    """
+    if a["name"] != b["name"]:
+        return False
+    if a["arch"] != b["arch"]:
+        return False
+    value = rpmUtils.miscutils.compareEVR(
+            (a["epoch"], a["version"], a["release"]), 
+            (b["epoch"], b["version"], b["release"]))
+    if value > 0:
+        return True
+    return False
+
