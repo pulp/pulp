@@ -15,7 +15,7 @@ import os
 from gettext import gettext as _
 from pprint import pformat
 
-from pulp.server.constants import LOCAL_STORAGE
+from pulp.server import config as pulp_config
 from pulp.plugins.types import database as content_types_db
 from pulp.server.exceptions import InvalidValue, MissingResource
 
@@ -255,7 +255,8 @@ class ContentQueryManager(object):
         @rtype: str
         """
         # I'm partitioning the content on the file system based on content type
-        root = os.path.join(LOCAL_STORAGE, 'content', content_type)
+        storage_dir = pulp_config.config.get('server', 'storage_dir')
+        root = os.path.join(storage_dir, 'content', content_type)
         if not os.path.exists(root):
             os.makedirs(root)
         return root

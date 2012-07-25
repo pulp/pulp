@@ -24,18 +24,15 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
-from pulp.server import config, constants
+from pulp.server import config
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as manager_factory
-from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
-from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
-from pulp.plugins.types import database as typedb
 
 
 SerialNumber.PATH = '/tmp/sn.dat'
-constants.LOCAL_STORAGE = '/tmp/pulp/'
+
 
 class PulpRPMTests(unittest.TestCase):
     """

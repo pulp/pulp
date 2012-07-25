@@ -27,7 +27,7 @@ import sys
 
 # Pulp
 from pulp.common import dateutils
-from pulp.server import constants as pulp_constants
+from pulp.server import config as pulp_config
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
@@ -40,8 +40,6 @@ from pulp.server.managers.repo import _common as common_utils
 
 
 # -- constants ----------------------------------------------------------------
-
-REPO_STORAGE_DIR = os.path.join(pulp_constants.LOCAL_STORAGE, 'repos')
 
 _LOG = logging.getLogger(__name__)
 
@@ -249,3 +247,8 @@ def _now_timestamp():
     now = datetime.datetime.now(dateutils.local_tz())
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
+
+def _repo_storage_dir():
+    storage_dir = pulp_config.config.get('server', 'storage_dir')
+    dir = os.path.join(storage_dir, 'repos')
+    return dir

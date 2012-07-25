@@ -31,15 +31,8 @@ working directory is simply deleted.
 
 import os
 
-import pulp.server.constants as pulp_constants
+from pulp.server import config as pulp_config
 from pulp.plugins.model import Repository, RelatedRepository, RepositoryGroup, RelatedRepositoryGroup
-
-# -- constants ----------------------------------------------------------------
-
-_WORKING_DIR_ROOT = os.path.join(pulp_constants.LOCAL_STORAGE, 'working')
-
-_REPO_WORKING_DIR = os.path.join(_WORKING_DIR_ROOT, 'repos')
-_REPO_GROUP_WORKING_DIR = os.path.join(_WORKING_DIR_ROOT, 'repo_groups')
 
 # -- single repo calls --------------------------------------------------------
 
@@ -92,7 +85,7 @@ def repository_working_dir(repo_id, mkdir=True):
     @return: full path on disk
     @rtype:  str
     """
-    working_dir = os.path.join(_REPO_WORKING_DIR, repo_id)
+    working_dir = os.path.join(_repo_working_dir(), repo_id)
 
     if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)
@@ -201,7 +194,7 @@ def repo_group_working_dir(group_id, mkdir=True):
     @return: full path on disk
     @rtype:  str
     """
-    working_dir = os.path.join(_REPO_GROUP_WORKING_DIR, group_id)
+    working_dir = os.path.join(_repo_group_working_dir(), group_id)
 
     if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)
@@ -249,3 +242,17 @@ def group_distributor_working_dir(distributor_type_id, group_id, mkdir=True):
         os.makedirs(working_dir)
 
     return working_dir
+
+
+def _working_dir_root():
+    storage_dir = pulp_config.config.get('server', 'storage_dir')
+    dir_root = os.path.join(storage_dir, 'working')
+    return dir_root
+
+def _repo_working_dir():
+    dir = os.path.join(_working_dir_root(), 'repos')
+    return dir
+
+def _repo_group_working_dir():
+    dir = os.path.join(_working_dir_root(), 'repo_groups')
+    return dir

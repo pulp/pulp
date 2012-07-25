@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import os
 import shutil
 
@@ -21,7 +20,6 @@ import base
 import dummy_plugins
 from pulp.server.db.model.repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
-import pulp.server.constants as pulp_constants
 from pulp.server.webservices.controllers.contents import ContentUnitsCollection
 
 
@@ -98,9 +96,6 @@ class BaseUploadTest(base.PulpWebserviceTests):
         super(BaseUploadTest, self).setUp()
         self.upload_manager = manager_factory.content_upload_manager()
 
-        self.original_local_storage = pulp_constants.LOCAL_STORAGE
-        pulp_constants.LOCAL_STORAGE = '/tmp/pulp-contents-controller-test'
-
         upload_storage_dir = self.upload_manager._upload_storage_dir()
 
         if os.path.exists(upload_storage_dir):
@@ -111,10 +106,6 @@ class BaseUploadTest(base.PulpWebserviceTests):
 
     def tearDown(self):
         super(BaseUploadTest, self).tearDown()
-        if os.path.exists(pulp_constants.LOCAL_STORAGE):
-            shutil.rmtree(pulp_constants.LOCAL_STORAGE)
-
-        pulp_constants.LOCAL_STORAGE = self.original_local_storage
 
         dummy_plugins.reset()
 
