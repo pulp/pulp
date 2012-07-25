@@ -430,7 +430,7 @@ class RepoUnitAssociationManager(object):
 
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
-            id_list.append(unit['id'])
+            id_list.append(unit['unit_id'])
 
         collection = RepoContentUnit.get_collection()
 
