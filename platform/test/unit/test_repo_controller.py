@@ -37,7 +37,6 @@ from pulp.server.db.model.repository import (
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
-import pulp.server.webservices.serialization.unit_criteria as repo_query_utils
 from pulp.server.webservices.controllers import repositories
 
 class RepoControllersTests(base.PulpWebserviceTests):
@@ -1505,7 +1504,6 @@ class UnitCriteriaTests(unittest.TestCase):
         }
 
         # Test
-        #criteria = repo_query_utils.unit_association_criteria(query)
         criteria = UnitAssociationCriteria.from_client_input(query)
 
         # Verify

@@ -35,7 +35,6 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
-#from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
 
 # -- constants ----------------------------------------------------------------
 
@@ -891,7 +890,6 @@ class RepoAssociate(JSONController):
         criteria = params.get('criteria', None)
         if criteria is not None:
             try:
-                #criteria = unit_association_criteria(criteria)
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
                 _LOG.exception('Error parsing association criteria [%s]' % criteria)
@@ -925,7 +923,6 @@ class RepoUnassociate(JSONController):
 
         if criteria is not None:
             try:
-                #criteria = unit_association_criteria(criteria)
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
                 _LOG.exception('Error parsing unassociation criteria [%s]' % criteria)
@@ -980,7 +977,6 @@ class RepoResolveDependencies(JSONController):
         timeout = params.get('timeout', 60)
 
         try:
-            #criteria = unit_association_criteria(query)
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
             _LOG.exception('Error parsing association criteria [%s]' % query)
@@ -1023,7 +1019,6 @@ class RepoUnitAdvancedSearch(JSONController):
             raise exceptions.MissingValue(['query'])
 
         try:
-            #criteria = unit_association_criteria(query)
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
             _LOG.exception('Error parsing association criteria [%s]' % query)

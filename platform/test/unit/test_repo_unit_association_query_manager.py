@@ -27,10 +27,6 @@ import pulp.server.managers.repo.unit_association_query as association_query_man
 import pulp.server.managers.content.cud as content_cud_manager
 import pulp.server.managers.factory as manager_factory
 
-# See test_get_units_by_type_not_query for an explanation as to why a webservice
-# import is in a manager test. It's legit, I promise  :)
-from pulp.server.webservices.serialization.unit_criteria import unit_association_criteria
-
 # -- constants ----------------------------------------------------------------
 
 TYPE_DEF_ALPHA = model.TypeDefinition('alpha', 'Alpha', 'Test Type Alpha',
