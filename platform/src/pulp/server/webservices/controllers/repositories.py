@@ -909,6 +909,36 @@ class RepoAssociate(JSONController):
                                    archive=True)
         return execution.execute_async(self, call_request)
 
+
+class RepoUnassociate(JSONController):
+
+    # Scope: Action
+    # POST: Unassociate units from a repository
+
+    @auth_required(UPDATE)
+    def POST(self, repo_id):
+
+        params = self.params()
+        criteria = params.get('criteria', None)
+
+        if criteria is not None:
+            try:
+                criteria = unit_association_criteria(criteria)
+            except:
+                _LOG.exception('Error parsing unassociation criteria [%s]' % criteria)
+                raise exceptions.PulpDataException(), None, sys.exc_info()[2]
+
+        association_manager = manager_factory.repo_unit_association_manager()
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                action_tag('unassociate')]
+
+        call_request = CallRequest(association_manager.unassociate_by_criteria,
+                                   [repo_id, criteria],
+                                   tags=tags)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+
+        return execution.execute_async(self, call_request)
+
 class RepoImportUpload(JSONController):
 
     @auth_required(UPDATE)
@@ -1028,6 +1058,7 @@ urls = (
     '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
     '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
     '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
+    '/([^/]+)/actions/unassociate/$', 'RepoUnassociate', # resource action
     '/([^/]+)/actions/import_upload/$', 'RepoImportUpload', # resource action
     '/([^/]+)/actions/resolve_dependencies/$', 'RepoResolveDependencies', # resource action
 
