@@ -21,7 +21,6 @@ further subclassed by extensions.
 
 from gettext import gettext as _
 import math
-import os
 import sys
 
 from   okaara.cli import Cli
@@ -458,6 +457,12 @@ class PulpPrompt(Prompt):
                                   in_progress_color=COLOR_IN_PROGRESS, completed_color=COLOR_COMPLETED,
                                   spin_tag=TAG_THREADED_SPINNER)
         return spinner
+
+    def write(self, content, new_line=True, center=False, color=None, tag=None,
+              skip_wrap=False):
+        content = encode_unicode(content)
+        Prompt.write(self, content, new_line, center, color, tag, skip_wrap)
+
 
 class PulpCli(Cli):
 
