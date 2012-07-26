@@ -102,7 +102,7 @@ def _initialize_pulp():
 
     # ensure necessary infrastructure
     role_manager = manager_factory.role_manager()
-    role_manager.ensure_builtin_roles()
+    role_manager.ensure_super_user_role()
     user_manager = manager_factory.user_manager()
     user_manager.ensure_admin()
 

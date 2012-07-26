@@ -183,7 +183,7 @@ class PermissionManager(object):
             self.delete_permission(resource)
             return
 
-        self.collection.save(permission, safe=True)
+        Permission.get_collection().save(permission, safe=True)
 
 
     def grant_automatic_permissions_for_resource(self, resource):
@@ -208,30 +208,30 @@ class PermissionManager(object):
         return True
 
 
-    def grant_automatic_permissions_for_user(self, user_name):
+    def grant_automatic_permissions_for_user(self, login):
         """
         Grant the permissions required for a new user so that they my log into Pulp
         and update their own information.
         
-        @param user_name: name of the new user
-        @type  user_name: str
+        @param login: login of the new user
+        @type  login: str
         """
-        user = factory.user_query_manager().find_by_login(user_name)
-        self.grant('/users/%s/' % user_name, user, [READ, UPDATE])
+        user = factory.user_query_manager().find_by_login(login)
+        self.grant('/users/%s/' % login, user, [READ, UPDATE])
         self.grant('/users/admin_certificate/', user, [READ])
         self.grant('/v2/actions/', user, [READ, UPDATE])
-        self.grant('/v2/users/%s/' % user_name, user, [READ, UPDATE])
+        self.grant('/v2/users/%s/' % login, user, [READ, UPDATE])
         self.grant('/v2/users/admin_certificate/', user, [READ])
         
 
-    def revoke_permission_from_user(self, resource, user_name, operation_names):
+    def revoke_permission_from_user(self, resource, login, operation_names):
         """
         Revoke the operations on the resource from the user
         @type resource: str
         @param resource: pulp resource to revoke operations on
         
-        @type user_name: str
-        @param user_name: name of the user to revoke permissions from
+        @type login: str
+        @param login: name of the user to revoke permissions from
         
         @type operation_names: list or tuple of str's
         @param operation_names: name of the operations to revoke
@@ -239,29 +239,28 @@ class PermissionManager(object):
         @rtype: bool
         @return: True on success
         """
-        user_query_manager = factory.user_query_manager()
-        user = user_query_manager.find_by_login(user_name)
+        user = factory.user_query_manager().find_by_login(login)
         operations = _get_operations(operation_names)
         self.revoke(resource, user, operations)
         return True
         
     
-    def revoke_all_permissions_from_user(self, user_name):
+    def revoke_all_permissions_from_user(self, login):
         """
         Revoke all the permissions from a given user
 
-        @type user_name: str
-        @param user_name: name of the user to revoke all permissions from
+        @type login: str
+        @param login: login of the user to revoke all permissions from
 
         @rtype: bool
         @return: True on success
         """
-        user = factory.user_query_manager().find_by_login(user_name)
+        user = factory.user_query_manager().find_by_login(login)
         for permission in factory.permission_query_manager().find_all():
             if user['login'] not in permission['users']:
                 continue
             del permission['users'][user['login']]
-            self.update_permission(permission['resource'],
-                                   {'users': permission['users']})
+            Permission.get_collection().save(permission, safe=True)
+            
         return True
 

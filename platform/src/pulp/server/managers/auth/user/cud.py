@@ -25,7 +25,7 @@ from pulp.server.auth.authorization import _operations_not_granted_by_roles
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
 
-import pulp.server.auth.password_util as password_util
+from pulp.server.managers.auth.password import PasswordManager
 
 # -- constants ----------------------------------------------------------------
 
@@ -85,7 +85,7 @@ class UserManager(object):
         # Encode plain-text password
         hashed_password = None
         if password:
-            hashed_password = password_util.hash_password(password)
+            hashed_password = PasswordManager().hash_password(password)
 
         # Creation
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)
@@ -130,7 +130,7 @@ class UserManager(object):
             if delta['password'] is None or invalid_type(delta['password'], basestring):
                 invalid_values.append('password')
             else:
-                user['password'] = password_util.hash_password(delta['password'])
+                user['password'] = PasswordManager().hash_password(delta['password'])
 
         if 'name' in delta:
             if delta['name'] is None or invalid_type(delta['name'], basestring):
@@ -202,6 +202,7 @@ class UserManager(object):
         """
         user_query_manager = factory.user_query_manager()
         role_query_manager = factory.role_query_manager()
+
         super_users = user_query_manager.get_users_belonging_to_role( 
                     role_query_manager.find_by_name(super_user_role))
         if super_users:
@@ -217,7 +218,7 @@ class UserManager(object):
         self.add_user_to_role(super_user_role, default_login)
 
     
-    def add_user_to_role(self, role_name, user_name):
+    def add_user_to_role(self, role_name, login):
         """
         Add a user to a role. This has the side-effect of granting all the
         permissions granted to the role to the user.
@@ -225,14 +226,14 @@ class UserManager(object):
         @type role_name: str
         @param role_name: name of role
         
-        @type user_name: str
-        @param user_name: name of user
+        @type login: str
+        @param login: login of user
         
         @rtype: bool
         @return: True on success
         """
         role =  factory.role_query_manager().find_by_name(role_name)
-        user = factory.user_query_manager().find_by_login(user_name)
+        user = factory.user_query_manager().find_by_login(login)
        
         if role_name in user['roles']:
             return False

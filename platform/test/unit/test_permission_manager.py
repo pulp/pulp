@@ -39,7 +39,7 @@ class RoleManagerTests(base.PulpServerTests):
         self.permission_manager = manager_factory.permission_manager()
         self.permission_query_manager = manager_factory.permission_query_manager()
         
-        self.role_manager.ensure_builtin_roles()
+        self.role_manager.ensure_super_user_role()
         principal.clear_principal()
 
     def tearDown(self):

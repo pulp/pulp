@@ -24,7 +24,7 @@ from pulp.server.managers.auth.user.query import UserQueryManager
 from pulp.server.auth import ldap_connection
 from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
 from pulp.server.managers.auth.cert.certificate import Certificate
-from pulp.server.auth.password_util import check_password
+from pulp.server.managers.auth.password import PasswordManager
 from pulp.server.config import config
 from pulp.server.exceptions import PulpException
 
@@ -106,7 +106,7 @@ def _check_username_password_local(username, password=None):
         _log.error('This is an ldap user %s' % user)
         return None
     if password is not None:
-        if not check_password(user['password'], password):
+        if not PasswordManager().check_password(user['password'], password):
             _log.error('Password for user [%s] was incorrect' % username)
             return None
     return user
@@ -182,7 +182,7 @@ def check_consumer_cert(cert_pem):
                    encoded_user)
         return None
     user = check_username_password(encoded_user)
-    if user is None or consumer_users_role not in user['roles']:
+    if user is None:
         return None
     return user
 

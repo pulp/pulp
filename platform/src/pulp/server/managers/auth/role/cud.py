@@ -153,6 +153,8 @@ class RoleManager(object):
 
 
     def add_permissions_to_role(self, name, resource, operations):
+        """
+        """
         role = Role.get_collection().find_one({'name' : name})
         if role is None:
             raise MissingResource(name)
@@ -166,6 +168,8 @@ class RoleManager(object):
         Role.get_collection().save(role, safe=True)
 
     def remove_permissions_from_role(self, name, resource, operations):
+        """
+        """
         role = Role.get_collection().find_one({'name' : name})
         if role is None:
             raise MissingResource(name)
@@ -185,7 +189,7 @@ class RoleManager(object):
         Role.get_collection().save(role, safe=True)
         
         
-    def _ensure_super_user_role(self):
+    def ensure_super_user_role(self):
         """
         Assure the super user role exists.
         """
@@ -194,15 +198,6 @@ class RoleManager(object):
         if role is None:
             role = self.create_role(super_user_role)
             self.add_permissions_to_role(role['name'], '/', [CREATE, READ, UPDATE, DELETE, EXECUTE])
-
-
-    def ensure_builtin_roles(self):
-        """
-        Assure the roles required for pulp's operation are in the database.
-        """
-        self._ensure_super_user_role()
-        
-    
 
 
 # -- functions ----------------------------------------------------------------
