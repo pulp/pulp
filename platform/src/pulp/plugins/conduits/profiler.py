@@ -15,19 +15,14 @@
 Profiler conduits.
 """
 
-from gettext import gettext as _
-import logging
-import sys
-
 from pulp.server.managers import factory as managers
-from pulp.plugins.conduits import _common
-from pulp.plugins.types import database as typedb
+from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin
 from pulp.plugins.conduits.mixins import ProfilerConduitException
 
-_LOG = logging.getLogger(__name__)
+class ProfilerConduit(MultipleRepoUnitsMixin):
 
-
-class ProfilerConduit(object):
+    def __init__(self):
+        MultipleRepoUnitsMixin.__init__(self, ProfilerConduitException)
 
     def get_bindings(self, consumer_id):
         """
@@ -42,34 +37,3 @@ class ProfilerConduit(object):
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
-
-    def get_units(self, repo_id, criteria=None):
-        """
-        Returns the collection of content units associated with the
-        specified repository IDs.
-
-        @param repo_id: A repo ID.
-        @type repo_id: str
-
-        @param criteria: used to scope the returned results or the data within
-        @type  criteria: L{Criteria}
-
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
-        """
-        try:
-            result = []
-            manager = managers.repo_unit_association_query_manager()
-            units = manager.get_units_across_types(repo_id, criteria=criteria)
-            typedefs = dict([(u['unit_type_id'], None) for u in units])
-            for type_id in typedefs.keys():
-                typedefs[type_id] = typedb.type_definition(type_id)
-            for unit in units:
-                type_id = unit['unit_type_id']
-                u = _common.to_plugin_unit(unit, typedefs[type_id])
-                result.append(u)
-            return result
-        except Exception, e:
-            _LOG.exception('Error getting units for repository [%s]' % repo_id)
-            raise ProfilerConduitException(e), None, sys.exc_info()[2]
-
