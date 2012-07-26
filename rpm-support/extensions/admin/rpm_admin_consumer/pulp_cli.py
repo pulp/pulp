@@ -11,8 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from package import PackageSection
+from errata import ErrataSection
 from group import GroupSection
+from package import PackageSection
 
 # -- framework hook -----------------------------------------------------------
 
@@ -20,4 +21,5 @@ def initialize(context):
     parentsection = context.cli.find_section('consumer')
     parentsection.add_subsection(PackageSection(context))
     parentsection.add_subsection(GroupSection(context))
+    parentsection.add_subsection(ErrataSection(context))
     parentsection.remove_subsection('content')

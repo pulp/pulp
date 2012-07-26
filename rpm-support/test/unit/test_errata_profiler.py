@@ -114,7 +114,7 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         dummy_unit_key = "dummy_value"
         dummy_metadata = {"name":"value"}
         existing_units = [ Unit(RPM_TYPE_ID, dummy_unit_key, dummy_metadata, None) ]
-        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
+        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo.id])
         found_rpm = prof.find_unit_associated_to_consumer(RPM_TYPE_ID, dummy_unit_key, self.test_consumer, conduit)
         self.assertTrue(found_rpm)
         self.assertTrue(found_rpm.type_id, RPM_TYPE_ID)

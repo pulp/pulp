@@ -264,9 +264,9 @@ class RPMErrataProfiler(Profiler):
         # We don't know what repo the unit could belong to
         # and we don't have a means for querying all repos at once
         # so we are iterating over each repo
-        bound_repos = conduit.get_bindings(consumer.id)
-        for repo in bound_repos:
-            result = conduit.get_units(repo.id, criteria)
+        bound_repo_ids = conduit.get_bindings(consumer.id)
+        for repo_id in bound_repo_ids:
+            result = conduit.get_units(repo_id, criteria)
             if result:
                 return result[0]
         return None
