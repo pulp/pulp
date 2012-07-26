@@ -221,7 +221,7 @@ class Importer(object):
         """
         raise NotImplementedError()
 
-    def remove_units(self, repo, units, remove_conduit):
+    def remove_units(self, repo, units):
         """
         Removes content units from the given repository.
 
@@ -229,20 +229,14 @@ class Importer(object):
         the units from the importer's working directory for the repository.
 
         This call will not result in the unit being deleted from Pulp itself.
-        The importer should, however, use the conduit to tell Pulp to remove
-        the association between the unit and the given repository.
 
         @param repo: metadata describing the repository
         @type  repo: L{pulp.server.content.plugins.data.Repository}
 
         @param units: list of objects describing the units to import in
                       this call
-        @type  units: list of L{pulp.server.content.plugins.data.Unit}
-
-        @param remove_conduit: provides access to relevant Pulp functionality
-        @type  remove_conduit: ?
         """
-        raise NotImplementedError()
+        pass
 
     def sync_repo(self, repo, sync_conduit, config):
         """
