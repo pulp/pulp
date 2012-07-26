@@ -33,6 +33,5 @@ import dispatch
 import error
 import link
 import consumer
-import repo
 
 __all__ = ['binding', 'content', 'dispatch', 'error', 'link', 'consumer']
