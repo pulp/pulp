@@ -179,6 +179,38 @@ class UnitAssociationCriteria(Model):
 
     @classmethod
     def from_client_input(cls, query):
+        """
+        Parses a unit association query document and assembles a corresponding
+        internal criteria object.
+
+        Example:
+        {
+          "type_ids" : ["rpm"],
+          "filters" : {
+            "unit" : <mongo spec syntax>,
+            "association" : <mongo spec syntax>
+          },
+          "sort" : {
+            "unit" : [ ["name", "ascending"], ["version", "descending"] ],
+            "association" : [ ["created", "descending"] ]
+          },
+          "limit" : 100,
+          "skip" : 200,
+          "fields" : {
+            "unit" : ["name", "version", "arch"],
+            "association" : ["created"]
+          },
+          "remove_duplicates" : True
+        }
+
+        @param query: user-provided query details
+        @type  query: dict
+
+        @return: criteria object for the unit association query
+        @rtype:  L{UnitAssociationCriteria}
+
+        @raises ValueError: on an invalid value in the query
+        """
         query = copy.copy(query)
 
         type_ids = query.pop('type_ids', None)
