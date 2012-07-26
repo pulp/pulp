@@ -66,6 +66,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Jul 26 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.24-1
+- Upgraded version of okaara (jason.dobies@redhat.com)
+- Upgraded okaara to 1.0.23 (jason.dobies@redhat.com)
+
+* Thu Jul 26 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.24-1
 - Added interruptable handling to prompt_password (jason.dobies@redhat.com)
 - Changed table and col width to be non-instance to make life a whole lot
   easier (jason.dobies@redhat.com)
