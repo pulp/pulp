@@ -467,8 +467,8 @@ class PulpCli(Cli):
 
     def run(self, args):
         try:
-            Cli.run(self, args)
-            return os.EX_OK
+            exit_code = Cli.run(self, args)
+            return exit_code
         except Exception, e:
             code = self.context.exception_handler.handle_exception(e)
             return code

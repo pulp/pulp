@@ -38,12 +38,21 @@ class LoginCommand(PulpCliCommand):
         self.context = context
 
         self.create_option('--username', _('server account username'), aliases=['-u'], required=True)
-        self.create_option('--password', _('server account password'), aliases=['-p'], required=True)
+        self.create_option('--password', _('server account password'), aliases=['-p'], required=False)
 
     def login(self, **kwargs):
         # Query the server
         username = kwargs['username']
         password = kwargs['password']
+
+        # Hidden, interactive prompt for the password if not specified
+        if password is None:
+            prompt_msg = 'Enter password: '
+            password = self.context.prompt.prompt_password(_(prompt_msg))
+            if password is self.context.prompt.ABORT:
+                self.context.prompt.render_spacer()
+                self.context.prompt.write(_('Login cancelled'))
+                return os.EX_NOUSER
 
         certificate = self.context.server.actions.login(username, password).response_body
 
