@@ -214,6 +214,8 @@ class CertGenerationManager(object):
         id = parsed[1]
 
         return username, id
+    
+#----------------------------------------------------------------------------------------------------
 
 def _make_priv_key():
     cmd = 'openssl genrsa 1024'

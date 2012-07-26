@@ -241,7 +241,7 @@ class UserManager(object):
         User.get_collection().save(user, safe=True)
         
         for resource, operations in role['permissions'].items():
-            factory.permission_manager() .grant(resource, user, operations)
+            factory.permission_manager().grant(resource, user, operations)
         return True
 
 
