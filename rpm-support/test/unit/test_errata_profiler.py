@@ -40,6 +40,7 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir)
         self.updateinfo_xml_path = os.path.join(self.data_dir, "test_errata_local_sync", "updateinfo.xml.gz")
+        self.updateinfo_unrelated_xml_path = os.path.join(self.data_dir, "test_errata_install", "updateinfo_nonapplicable.xml")
         self.consumer_id = "test_errata_profiler_consumer_id"
         self.profiles = self.get_test_profile()
         self.test_consumer = Consumer(self.consumer_id, self.profiles)
@@ -48,28 +49,22 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         super(TestErrataProfiler, self).tearDown()
         shutil.rmtree(self.temp_dir)
 
-    def create_rpm_unit(self, name, epoch, version, release, arch, checksum, 
-            checksumtype, metadata=None):
+    def create_rpm_dict(self, name, epoch, version, release, arch, checksum, checksumtype):
         unit_key = {"name":name, "epoch":epoch, "version":version, "release":release, 
                 "arch":arch, "checksum":checksum, "checksumtype":checksumtype}
-        if not metadata:
-            metadata = {"dummy_values":"values"}
-        return Unit(RPM_TYPE_ID, unit_key, metadata, None)
+        return {"unit-key":unit_key}
 
     def create_profile_entry(self, name, epoch, version, release, arch, vendor):
         return {"name":name, "epoch": epoch, "version":version, "release":release, 
                 "arch":arch, "vendor":vendor}
-        
-    def get_test_rpm_units(self):
-        rpm_units = []
-        u = self.create_rpm_unit("emoticons", '0', "0.1", "2", "x86_64", "366bb5e73a5905eacb82c96e0578f92b", "md5")
-        rpm_units.append(u)
-        u = self.create_rpm_unit("patb", '0', "0.1", "2", "x86_64", "f3c197a29d9b66c5b65c5d62b25db5b4", "md5")
-        rpm_units.append(u)
-        return rpm_units
 
     def get_test_errata_object(self):
         errata_from_xml = updateinfo.get_errata(self.updateinfo_xml_path)
+        self.assertTrue(len(errata_from_xml) > 0)
+        return errata_from_xml[0]
+
+    def get_test_errata_object_unrelated(self):
+        errata_from_xml = updateinfo.get_errata(self.updateinfo_unrelated_xml_path)
         self.assertTrue(len(errata_from_xml) > 0)
         return errata_from_xml[0]
 
@@ -108,19 +103,6 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
                 self.assertTrue(r.has_key(key))
                 self.assertTrue(r[key])
 
-    def test_find_unit_associated_to_consumer(self):
-        test_repo = profiler_mocks.get_repo("test_repo_id")
-        prof = RPMErrataProfiler()
-        dummy_unit_key = "dummy_value"
-        dummy_metadata = {"name":"value"}
-        existing_units = [ Unit(RPM_TYPE_ID, dummy_unit_key, dummy_metadata, None) ]
-        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo.id])
-        found_rpm = prof.find_unit_associated_to_consumer(RPM_TYPE_ID, dummy_unit_key, self.test_consumer, conduit)
-        self.assertTrue(found_rpm)
-        self.assertTrue(found_rpm.type_id, RPM_TYPE_ID)
-        self.assertTrue(found_rpm.unit_key, dummy_unit_key)
-        self.assertTrue(found_rpm.metadata, dummy_metadata)
-
     def test_rpms_applicable_to_consumer(self):
         errata_rpms = []
         prof = RPMErrataProfiler()
@@ -147,40 +129,56 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         # Setup test data
         errata_obj = self.get_test_errata_object()
         errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
-        expected_rpm_units = self.get_test_rpm_units()
         existing_units = [errata_unit]
-        existing_units.extend(expected_rpm_units)
         test_repo = profiler_mocks.get_repo("test_repo_id")
         conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
         example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
         # Test
         prof = RPMErrataProfiler()
-        translated_rpm_units = prof.translate(example_errata, self.test_consumer, conduit)
-        self.assertTrue(len(translated_rpm_units), len(expected_rpm_units))
+        applicable_rpms = prof.translate(example_errata, self.test_consumer, conduit)
+        self.assertTrue(len(applicable_rpms), 2)
 
-    def test_unit_applicable(self):
+    def test_translate_bad_unit_id(self):
+        bad_unit = Unit("BAD_UNIT_ID", {"id":"bad_id"}, {}, None)
+        prof = RPMErrataProfiler()
+        caught_exception = False
+        try: 
+            applicable_rpms = prof.translate(bad_unit, self.test_consumer, conduit)
+        except:
+            caught_exception = True
+        self.assertTrue(caught_exception)
+
+    def test_unit_applicable_true(self):
+        # Errata refers to RPMs which ARE part of our test consumer's profile
         errata_obj = self.get_test_errata_object()
         errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
-        expected_rpm_units = self.get_test_rpm_units()
         existing_units = [errata_unit]
-        existing_units.extend(expected_rpm_units)
         test_repo = profiler_mocks.get_repo("test_repo_id")
         conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
         example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
-        
+
         prof = RPMErrataProfiler()
         report = prof.unit_applicable(self.test_consumer, example_errata, None, conduit)
         self.assertTrue(report.applicable)
         self.assertEqual(report.unit, example_errata)
-        self.assertEqual(len(report.summary["applicable_rpms"]), 2)
-        self.assertEqual(len(report.details["rpms_to_upgrade"]), 2)
+
+    def test_unit_applicable_false(self):
+        # Errata refers to RPMs which are NOT part of our test consumer's profile
+        errata_obj = self.get_test_errata_object_unrelated()
+        errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
+        existing_units = [errata_unit]
+        test_repo = profiler_mocks.get_repo("test_repo_id")
+        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
+        example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
+
+        prof = RPMErrataProfiler()
+        report = prof.unit_applicable(self.test_consumer, example_errata, None, conduit)
+        self.assertFalse(report.applicable)
 
     def test_install_units(self):
         errata_obj = self.get_test_errata_object()
         errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
-        expected_rpm_units = self.get_test_rpm_units()
         existing_units = [errata_unit]
-        existing_units.extend(expected_rpm_units)
         test_repo = profiler_mocks.get_repo("test_repo_id")
         conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
         example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
@@ -188,20 +186,14 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         prof = RPMErrataProfiler()
         translated_units  = prof.install_units(self.test_consumer, [example_errata], None, None, conduit)
         self.assertEqual(len(translated_units), 2)
+        expected = []
+        for r in self.test_consumer.profiles[RPM_TYPE_ID]:
+            expected_name = "%s.%s" % (r["name"], r["arch"])
+            expected.append(expected_name)
+        for u in translated_units:
+            rpm_name = u["name"]
+            self.assertTrue(rpm_name in expected)
 
-    def test_update_units(self):
-        errata_obj = self.get_test_errata_object()
-        errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
-        expected_rpm_units = self.get_test_rpm_units()
-        existing_units = [errata_unit]
-        existing_units.extend(expected_rpm_units)
-        test_repo = profiler_mocks.get_repo("test_repo_id")
-        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
-        example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
-        
-        prof = RPMErrataProfiler()
-        translated_units  = prof.update_units(self.test_consumer, [example_errata], None, None, conduit)
-        self.assertEqual(len(translated_units), 2)
 
 
 

@@ -29,19 +29,9 @@ ERRATA_TYPE_ID="erratum"
 RPM_TYPE_ID="rpm"
 RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "checksum", "checksumtype")
 
-# TODO:
-# Consider test case of multiple errata
-#  errata-A refers to pkg-1.0
-#  errata-B refers to pkg-1.1
-#  What do we do?  pkg-1.1 is the latest and should be the one included
-#   we should detect pkg-1.1 and cull pkg-1.0 from list?
 
-# Consider consumer is bound to repo and picks up errata-A
-#  errata-A refers to pkg-A which is not part of the bound repos
-#  What is the behavior?
-#   For applicable, we can include it if something older than pkg-A was installed
-#   For install_units, we can't include it since we can't form a unit_key for a pkg we can't see in DB
-#    Do we silently drop the pkg, or do we raise an Exception, or something else?
+#TODO:
+# - What exceptions should we be raising?
 
 class RPMErrataProfiler(Profiler):
     def __init__(self):
@@ -81,7 +71,7 @@ class RPMErrataProfiler(Profiler):
     def install_units(self, consumer, units, options, config, conduit):
         """
         Translate the specified content units to be installed.
-        The specified content units are intented to be installed on the
+        The specified content units are intended to be installed on the
         specified consumer.  It is requested that the profiler translate
         the units as needed.
 
@@ -132,7 +122,7 @@ class RPMErrataProfiler(Profiler):
         @return: The translated units
         @rtype: list
         """
-        return self.translate_units(units, consumer, conduit)
+        raise NotImplementedError()
 
     def uninstall_units(self, consumer, units, options, config, conduit):
         """
@@ -187,35 +177,33 @@ class RPMErrataProfiler(Profiler):
         @rtype: L{pulp.plugins.model.ApplicabilityReport}
         """
         applicable = False
-        summary = {}
-        details = {}
-        summary["applicable_rpms"] = []
-        summary["rpms_to_upgrade"] = {}
-        if unit["type_id"] != ERRATA_TYPE_ID:
-            _LOG.warn("unit_applicable invoked with type_id [%s], expected [%s]" % (unit["type_id"], ERRATA_TYPE_ID))
-            return ApplicabilityReport(unit, applicable, summary, details)
-        errata = self.find_unit_associated_to_consumer(unit['type_id'], unit['unit_key'], consumer, conduit)
-        if not errata:
-            _LOG.warn("Unable to find errata with unit_key [%s] in bound repos [%s] to consumer [%s]" % \
-                    (unit["unit_key"], bound_repos, consumer.id))
-            return ApplicabilityReport(unit, applicable, summary, details)
-        #
-        # Look at the rpms available from the errata and determine if they apply to
-        # rpms installed on the consumer.
-        #
-        updated_rpms = self.get_rpms_from_errata(errata)
-        applicable_rpms, upgrade_details = self.rpms_applicable_to_consumer(consumer, updated_rpms)
-        summary["applicable_rpms"] = applicable_rpms
-        details["rpms_to_upgrade"] = upgrade_details
+        applicable_rpms = self.translate(unit, consumer, conduit)
         if applicable_rpms:
             applicable = True
-        return ApplicabilityReport(unit, applicable, summary, details)
+        return ApplicabilityReport(unit, applicable, {}, {})
+
 
     # -- Below are helper methods not part of the Profiler interface ----
 
     def translate_units(self, units, consumer, conduit):
         """
-        Translate a list of errata units into a list of rpm units
+        Will translate passed in errata unit_keys to a list of dictionaries
+        containing the associated RPM names applicable to the consumer.
+
+        @param units: A list of content units to be uninstalled.
+        @type units: list of:
+            { type_id:<str>, unit_key:<dict> }
+
+        @param consumer: A consumer.
+        @type consumer: L{pulp.server.plugins.model.Consumer}
+
+        @param conduit: provides access to relevant Pulp functionality
+        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
+
+        @return:    a list of dictionaries containing info on the 'translated units'.
+                    each dictionary contains a 'name' key which is refers 
+                    to the rpm name associated to the errata
+        @rtype [{'name':rpm_name}]
         """
         translated_units = []
         for unit in units:
@@ -228,6 +216,7 @@ class RPMErrataProfiler(Profiler):
         """
         Translates an erratum to a list of rpm units
         The rpm units refer to the upgraded packages referenced by the erratum
+        only those rpms which will upgrade an existing rpm on the consumer are returned
 
         @param unit: A content unit: { type_id:<str>, unit_key:<dict> }
         @type unit: dict
@@ -237,24 +226,30 @@ class RPMErrataProfiler(Profiler):
 
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
+
+        @return:    a list of dictionaries containing info on the 'translated units'.
+                    each dictionary contains a 'name' key which is refers 
+                    to the rpm name associated to the errata
+        @rtype [{'name':rpm_name}]
         """
+        if unit["type_id"] != ERRATA_TYPE_ID:
+            error_msg = _("unit_applicable invoked with type_id [%s], expected [%s]") % (unit["type_id"], ERRATA_TYPE_ID)
+            _LOG.error(error_msg)
+            raise Exception(error_msg)
         errata = self.find_unit_associated_to_consumer(unit["type_id"], unit["unit_key"], consumer, conduit)
         if not errata:
-            _LOG.warn("Unable to find errata with unit_key [%s] in bound repos [%s] to consumer [%s]" % \
-                    (unit["unit_key"], conduit.get_bindings(consumer.id), consumer.id))
-            return []
+            error_msg = _("Unable to find errata with unit_key [%s] in bound repos [%s] to consumer [%s]") % \
+                    (unit["unit_key"], conduit.get_bindings(consumer.id), consumer.id)
+            _LOG.error(error_msg)
+            raise Exception(error_msg)
         updated_rpms = self.get_rpms_from_errata(errata)
         applicable_rpms, upgrade_details = self.rpms_applicable_to_consumer(consumer, updated_rpms)
-        translated_units = []
-        #
-        # Translate each applicable rpm to an existing unit if it exists
-        #
+        # Return as list of name.arch values
+        ret_val = []
         for ar in applicable_rpms:
-            unit_key = self.form_rpm_unit_key(ar)
-            rpm_unit = self.find_unit_associated_to_consumer(RPM_TYPE_ID, unit_key, consumer, conduit)
-            if rpm_unit:
-                translated_units.append(rpm_unit)
-        return translated_units
+            data = "%s.%s" % (ar["name"], ar["arch"])
+            ret_val.append({"name":data})
+        return ret_val
 
     def find_unit_associated_to_consumer(self, unit_type, unit_key, consumer, conduit):
         criteria = UnitAssociationCriteria(type_ids=[unit_type], unit_filters={"unit_key":unit_key})
