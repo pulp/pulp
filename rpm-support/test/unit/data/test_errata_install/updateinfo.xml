@@ -22,6 +22,23 @@
 		</pkglist>
 	</update>
 	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
+		<id>grinder_test_2</id>
+		<title>Test Errata referring to grinder_test_package-2.0</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2012-7-25 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F14PTP">
+				<name>F14 Pulp Test Packages</name>
+                <package name="grinder_test_package" version="2.0" release="1.fc14" epoch="0" arch="noarch" src="grinder_test_package-2.0-1.fc14.src.rpm">
+					<filename>grinder_test_package-2.0-1.fc14.noarch.rpm</filename>
+					<sum type="md5">99f34d26f648d2765fa360b8d19cb020</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
 		<id>grinder_test_3</id>
 		<title>Test Errata referring to grinder_test_package-3.0</title>
 		<issued date="2010-11-7 00:00:00"/>
@@ -34,6 +51,23 @@
                 <package name="grinder_test_package" version="3.0" release="1.fc14" epoch="0" arch="noarch" src="grinder_test_package-3.0-1.fc14.src.rpm">
 					<filename>grinder_test_package-3.0-1.fc14.noarch.rpm</filename>
 					<sum type="md5">fd379f5e8e0b31035e0647fe6ee2994e</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
+		<id>grinder_test_4</id>
+		<title>Test Errata referring to grinder_test_package-4.0</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2012-7-25 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F14PTP">
+				<name>F14 Pulp Test Packages</name>
+                <package name="grinder_test_package" version="4.0" release="1.fc14" epoch="0" arch="noarch" src="grinder_test_package-4.0-1.fc14.src.rpm">
+					<filename>grinder_test_package-4.0-1.fc14.noarch.rpm</filename>
+					<sum type="md5">d89e83ed183fa55dfb0bd2eec14db93c</sum>
 				</package>
 			</collection>
 		</pkglist>
