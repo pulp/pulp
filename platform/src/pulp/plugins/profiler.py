@@ -152,8 +152,7 @@ class Profiler(object):
         @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param units: A list of content units to be installed.
-        @type units: list of:
-            { type_id:<str>, unit_key:<dict> }
+        @type units: list of: { type_id:<str>, unit_key:<dict> }
 
         @param options: Install options; based on unit type.
         @type options: dict
@@ -165,8 +164,9 @@ class Profiler(object):
         @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
         @return: The translated units
-        @rtype: list of:
-            { type_id:<str>, unit_key:<dict> }
+        @rtype: list of: { type_id:<str>, unit_key:<dict> }
+
+        @raise InvalidUnitsRequested: if one or more of the units cannot be installed
         """
         return units
 
@@ -188,8 +188,7 @@ class Profiler(object):
         @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param units: A list of content units to be updated.
-        @type units: list of:
-            { type_id:<str>, unit_key:<dict> }
+        @type units: list of: { type_id:<str>, unit_key:<dict> }
 
         @param options: Update options; based on unit type.
         @type options: dict
@@ -201,8 +200,9 @@ class Profiler(object):
         @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
         @return: The translated units
-        @rtype: list of:
-            { type_id:<str>, unit_key:<dict> }
+        @rtype: list of: { type_id:<str>, unit_key:<dict> }
+
+        @raise InvalidUnitsRequested: if one or more of the units cannot be updated
         """
         return units
 
@@ -224,8 +224,7 @@ class Profiler(object):
         @type consumer: L{pulp.server.plugins.model.Consumer}
 
         @param units: A list of content units to be uninstalled.
-        @type units: list of:
-            { type_id:<str>, unit_key:<dict> }
+        @type units: list of: { type_id:<str>, unit_key:<dict> }
 
         @param options: Update options; based on unit type.
         @type options: dict
@@ -237,8 +236,9 @@ class Profiler(object):
         @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
         @return: The translated units
-        @rtype: list of:
-            { type_id:<str>, unit_key:<dict> }
+        @rtype: list of: { type_id:<str>, unit_key:<dict> }
+
+        @raise InvalidUnitsRequested: if one or more of the units cannot be uninstalled
         """
         return units
 
