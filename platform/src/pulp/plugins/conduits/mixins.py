@@ -22,6 +22,7 @@ import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
+
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
@@ -109,7 +110,7 @@ class SingleRepoUnitsMixin(object):
 
         @param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
 
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
@@ -131,7 +132,7 @@ class MultipleRepoUnitsMixin(object):
 
         @param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
 
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
