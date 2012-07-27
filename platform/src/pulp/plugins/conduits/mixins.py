@@ -22,6 +22,9 @@ import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
+# Unused in this class but imported here so plugins don't have to reach
+# into server packages directly
+from   pulp.server.db.model.criteria import UnitAssociationCriteria
 
 # -- constants ----------------------------------------------------------------
 
