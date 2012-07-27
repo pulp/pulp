@@ -10,6 +10,33 @@
 # PARTICULAR PURPOSE. You should have received a copy of GPLv2 along with this
 # software; if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+class InvalidUnitsRequested(Exception):
+    """
+    Raised by install_units, update_units, or uninstall_units to indicate
+    the user request cannot be satisified for some reason (the unit does not
+    exist in Pulp, the unit would harm the consumer if installed/removed,
+    etc.).
+
+    This should be raised if any of the units specified in the request are
+    invalid. Multiple units can be specified as causing this exception.
+
+    The message must be suitable to be displayed to the user (for instance,
+    i18n-ified).
+    """
+
+    def __init__(self, units, message):
+        """
+        :param units: list of units that cannot be used in the operation
+        :type  units: list
+
+        :param message: message suitable for display to a user describing
+               why the operation was aborted
+        :type  message: str
+        """
+        Exception.__init__(self, message)
+        self.units = units
+        self.message = message
+
 
 class Profiler(object):
     """
@@ -23,43 +50,40 @@ class Profiler(object):
 
     Unit Translation:
 
-        An I{expansion} example.  In this case, each unit passed in has a
-        aggregate of units.  The translation would be to translate (expand) each
-        aggregation unit into the aggregated units:
+    One example of a unit translation is to expand a unit that references
+    other units into specific install requests for the aggregated units. The
+    example below describes how a request for an aggregate unit ("mypets")
+    would be translated into install requests for each related pet. The
+    install for the aggregate unit itself does not need to be included in the
+    results.
 
-          Each Unit In:
+    Requested Unit:
 
-            {type_id:"PETS", unit_key:{"name":"mypets"}}
+        {type_id:"PETS", unit_key:{"name":"mypets"}}
 
-          Translated To:
+    Translated Install Requests:
 
-            {type_id:"DOG", unit_key:{"name":"Rover"}}
-            {type_id:"DOG", unit_key:{"name":"Cujo"}}
-            {type_id:"CAT", unit_key:{"name":"Garfield"}}
+        {type_id:"DOG", unit_key:{"name":"Rover"}}
+        {type_id:"DOG", unit_key:{"name":"Cujo"}}
+        {type_id:"CAT", unit_key:{"name":"Garfield"}}
 
-        A I{meta type} example.  In this case, each unit passed in needs to be
-        translated into a type_id & unit_key that is appropriate for the
-        specified consumer:
+    Another example is using a unit as a meta type for multiple versions
+    of the unit. In this example, the "myapp" meta unit is used to refer to
+    the unit regardless of the destination consumer's platform. The job of
+    the profiler is to understand the consumer to which the request applies
+    and choose the appropriate format for the actual install request.
 
-          For a Linux consumer:
+    Requested Unit:
 
-            Each Unit In:
+        {type_id:"APP", unit_key:{"name":"myapp"}}
 
-              {type_id:"APP", unit_key:{"name":"myapp"}}
+    For a Linux Consumer:
 
-            Translated To:
+        {type_id:"TAR", unit_key:{"name":"myapp.tar"}}
 
-              {type_id:"TAR", unit_key:{"name":"myapp.tar"}}
+    For a Windows consumer:
 
-          For a Windows consumer:
-
-            Each Unit In:
-
-              {type_id:"APP", unit_key:{"name":"myapp"}}
-
-            Translated To:
-
-              {type_id:"ZIP", unit_key:{"name":"myapp.zip"}}
+        {type_id:"ZIP", unit_key:{"name":"myapp.zip"}}
     """
 
     # -- plugin lifecycle ------------------------------------------------------
@@ -218,9 +242,7 @@ class Profiler(object):
         """
         return units
 
-
     # -- applicability ---------------------------------------------------------
-
 
     def unit_applicable(self, consumer, unit, config, conduit):
         """
