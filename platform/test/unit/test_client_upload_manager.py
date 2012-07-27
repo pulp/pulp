@@ -19,7 +19,7 @@ import unittest
 
 from   pulp.bindings.exceptions import NotFoundException
 from   pulp.bindings.responses import Response
-import pulp.client.upload as upload_util
+import pulp.client.upload.manager as upload_util
 
 # -- constants ----------------------------------------------------------------
 

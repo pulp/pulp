@@ -134,8 +134,9 @@ class UploadManager(object):
         be sent to the server once the upload itself has completed as part of
         the import_upload call.
 
-        @param filename: full path to the file on disk to upload
-        @type  filename: str
+        @param filename: full path to the file on disk to upload; None if the
+               manager is being used to track a purely metadata unit
+        @type  filename: str, None
 
         @param repo_id: identifies the repository into which the unit is uploaded
         @type  repo_id: str
