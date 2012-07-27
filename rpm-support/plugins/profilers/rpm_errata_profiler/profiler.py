@@ -46,26 +46,12 @@ class RPMErrataProfiler(Profiler):
                 }
 
     def update_profile(self, consumer, profile, config, conduit):
-        """
-        Notification that the consumer has reported the installed unit
-        profile.  The profiler has this opportunity to translate the
-        reported profile.
+        raise NotImplementedError()
 
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
+    def update_units(self, consumer, units, options, config, conduit):
+        raise NotImplementedError()
 
-        @param profile: The reported profile.
-        @type profile: dict
-
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
-
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
-
-        @return: The translated profile.
-        @rtype: dict
-        """
+    def uninstall_units(self, consumer, units, options, config, conduit):
         raise NotImplementedError()
 
     def install_units(self, consumer, units, options, config, conduit):
@@ -91,66 +77,13 @@ class RPMErrataProfiler(Profiler):
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
-        @return: The translated units
-        @rtype: list
+        @return:    a list of dictionaries containing info on the 'translated units'.
+                    each dictionary contains a 'name' key which refers 
+                    to the rpm name.arch associated to the errata
+        @rtype:     [{'name':rpm_name.rpm_arch}]
         """
         return self.translate_units(units, consumer, conduit)
 
-    def update_units(self, consumer, units, options, config, conduit):
-        """
-        Translate the specified content units to be updated.
-        The specified content units are intented to be updated on the
-        specified consumer.  It is requested that the profiler translate
-        the units as needed.
-
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
-
-        @param units: A list of content units to be updated.
-        @type units: list of:
-            { type_id:<str>, unit_key:<dict> }
-
-        @param options: Update options; based on unit type.
-        @type options: dict
-
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
-
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
-
-        @return: The translated units
-        @rtype: list
-        """
-        raise NotImplementedError()
-
-    def uninstall_units(self, consumer, units, options, config, conduit):
-        """
-        Translate the specified content units to be uninstalled.
-        The specified content units are intented to be uninstalled on the
-        specified consumer.  It is requested that the profiler translate
-        the units as needed.
-
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
-
-        @param units: A list of content units to be uninstalled.
-        @type units: list of:
-            { type_id:<str>, unit_key:<dict> }
-
-        @param options: Update options; based on unit type.
-        @type options: dict
-        
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
-
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
-
-        @return: The translated units
-        @rtype: list
-        """
-        raise NotImplementedError()
 
     # -- applicability ---------------------------------------------------------
 
@@ -201,7 +134,7 @@ class RPMErrataProfiler(Profiler):
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return:    a list of dictionaries containing info on the 'translated units'.
-                    each dictionary contains a 'name' key which is refers 
+                    each dictionary contains a 'name' key which refers 
                     to the rpm name associated to the errata
         @rtype [{'name':rpm_name}]
         """
@@ -228,7 +161,7 @@ class RPMErrataProfiler(Profiler):
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
         @return:    a list of dictionaries containing info on the 'translated units'.
-                    each dictionary contains a 'name' key which is refers 
+                    each dictionary contains a 'name' key which refers 
                     to the rpm name associated to the errata
         @rtype [{'name':rpm_name}]
         """
@@ -296,15 +229,14 @@ class RPMErrataProfiler(Profiler):
 
                     Note:
                     This method does not take into consideration if the consumer
-                    is bound to the repo containing the RPM.  We will rely on an
-                    error being generated at a later install step if the consumer
-                    is not bound to an appropriate repo.
+                    is bound to the repo containing the RPM.
         @rtype: ([{}], {})
         """
         applicable_rpms = []
         older_rpms = {}
-        _LOG.info("Consumer <%s> has profiles with keys: %s" % (consumer.id, consumer.profiles.keys()))
         if not consumer.profiles.has_key(RPM_TYPE_ID):
+            _LOG.warn("Consumer [%s] is missing profile information for [%s], found profiles are: %s" % \
+                    (consumer.id, RPM_TYPE_ID, consumer.profiles.keys()))
             return applicable_rpms, older_rpms
         lookup = self.form_lookup_table(consumer.profiles[RPM_TYPE_ID])
         for errata_rpm in errata_rpms:
@@ -312,15 +244,6 @@ class RPMErrataProfiler(Profiler):
             if lookup.has_key(key):
                 installed_rpm = lookup[key]
                 if util.is_rpm_newer(errata_rpm, installed_rpm):
-                    # Errata RPM is newer, ensure that checksum info is present
-                    if not errata_rpm.has_key("sum"):
-                        _LOG.warn("Unable to process rpm from errata for translation since it's missing checksum info. [%s]" % (errata_rpm))
-                        continue
-                    # We expect that most rpm dictionaries will contain checksum info as: 'checksum' and 'checksumtype'
-                    # The rpm dictionaries embedded in an errata contains the data as 'sum' with a tuple of (checksumtype, checksum)
-                    # We are converting from this errata embedded format to what the rest of Pulp expects
-                    errata_rpm["checksum"] = errata_rpm["sum"][1]
-                    errata_rpm["checksumtype"] = errata_rpm["sum"][0]
                     applicable_rpms.append(errata_rpm)
                     older_rpms[key] = {"installed":installed_rpm, "available":errata_rpm}
         return applicable_rpms, older_rpms
