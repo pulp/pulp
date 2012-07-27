@@ -515,7 +515,7 @@ def do_get_repo_units(repo_id, criteria, exception_class):
     """
     try:
         association_query_manager = manager_factory.repo_unit_association_query_manager()
-        units = association_query_manager.get_units_across_types(repo_id, criteria=criteria)
+        units = association_query_manager.get_units(repo_id, criteria=criteria)
 
         all_units = []
 
