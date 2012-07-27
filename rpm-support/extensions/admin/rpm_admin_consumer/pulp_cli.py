@@ -11,6 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+
+from bind import BindCommand, UnbindCommand
 from errata import ErrataSection
 from group import GroupSection
 from package import PackageSection
@@ -18,8 +21,20 @@ from package import PackageSection
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    parentsection = context.cli.find_section('consumer')
-    parentsection.add_subsection(PackageSection(context))
-    parentsection.add_subsection(GroupSection(context))
-    parentsection.add_subsection(ErrataSection(context))
-    parentsection.remove_subsection('content')
+    parent_section = context.cli.find_section('consumer')
+
+    # New subsections
+    parent_section.add_subsection(PackageSection(context))
+    parent_section.add_subsection(GroupSection(context))
+    parent_section.add_subsection(ErrataSection(context))
+
+    # Replace the bind/unbind
+    parent_section.remove_command('bind')
+    m = 'binds a consumer to a repository'
+    parent_section.add_command(BindCommand(context, 'bind', _(m)))
+
+    parent_section.remove_command('unbind')
+    m = 'removes the binding between a consumer and a repository'
+    parent_section.add_command(UnbindCommand(context, 'unbind', _(m)))
+
+    parent_section.remove_subsection('content')
