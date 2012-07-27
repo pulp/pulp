@@ -19,13 +19,12 @@ Contains agent management classes
 
 import sys
 from pulp.server.managers import factory as managers
-from pulp.server.managers.pluginwrapper import PluginWrapper
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
-from pulp.plugins.profiler import Profiler
+from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import Consumer as ProfiledConsumer
-from pulp.server.exceptions import PulpExecutionException
+from pulp.server.exceptions import PulpExecutionException, PulpDataException
 from pulp.server.agent import PulpAgent
 from logging import getLogger
 
@@ -91,7 +90,7 @@ class AgentManager(object):
         for typeid, units in collated.items():
             pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.install_units(pc, units, options, cfg, conduit)
+            units = self.__invoke_plugin(profiler.install_units, pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -115,7 +114,7 @@ class AgentManager(object):
         for typeid, units in collated.items():
             pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.update_units(pc, units, options, cfg, conduit)
+            units = self.__invoke_plugin(profiler.update_units, pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -139,7 +138,7 @@ class AgentManager(object):
         for typeid, units in collated.items():
             pc = self.__profiled_consumer(id)
             profiler, cfg = self.__profiler(typeid)
-            units = profiler.uninstall_units(pc, units, options, cfg, conduit)
+            units = self.__invoke_plugin(profiler.uninstall_units, pc, units, options, cfg, conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
@@ -152,6 +151,14 @@ class AgentManager(object):
         @type id: str
         """
         _LOG.info(id)
+
+    def __invoke_plugin(self, call, *args, **kwargs):
+        try:
+            return call(*args, **kwargs)
+        except InvalidUnitsRequested, e:
+            raise PulpDataException(e.units, e.message)
+        except Exception:
+            raise PulpExecutionException(), None, sys.exc_info()[2]
 
     def __profiler(self, typeid):
         """
@@ -167,7 +174,7 @@ class AgentManager(object):
         except plugin_exceptions.PluginNotFound:
             plugin = Profiler()
             cfg = {}
-        return PluginWrapper(plugin), cfg
+        return plugin, cfg
 
     def __profiled_consumer(self, id):
         """
