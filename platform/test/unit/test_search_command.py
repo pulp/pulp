@@ -26,9 +26,16 @@ class TestSearchCommand(unittest.TestCase):
         self.assertEqual(self.command.name, 'search')
 
     def test_options_present(self):
-        OPTION_NAMES = set(('--limit', '--skip', '--filters', '--fields', '--sort'))
+        OPTION_NAMES = set(('--limit', '--skip', '--filters', '--fields',
+                            '--sort',))
+        FG_OPTION_NAMES = set(('--gt', '--gte', '--lt', '--lte', '--not',
+                               '--str-eq', '--int-eq', '--match', '--in'))
+
         options_present = set([option.name for option in self.command.options])
         self.assertEqual(OPTION_NAMES, options_present)
+
+        fg_options_present = set([option.name for option in self.command.option_groups[0].options])
+        self.assertEqual(FG_OPTION_NAMES, fg_options_present)
 
 
 class TestValidateSort(unittest.TestCase):

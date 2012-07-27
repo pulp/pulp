@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-from okaara.cli import CommandUsage
+from okaara.cli import CommandUsage, OptionGroup
 
 from pulp.client import validators
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
@@ -21,8 +21,10 @@ from pulp.server.compat import json
 
 _LIMIT_DESCRIPTION = _('max number of items to return')
 _SKIP_DESCRIPTION = _('number of items to skip')
-_FILTERS_DESCRIPTION = _('filters provided as JSON in mongo syntax')
-_FIELDS_DESCRIPTION = _("""comma-separated list of repository fields. Do not
+_FILTERS_DESCRIPTION = _("""filters provided as JSON in mongo syntax. This will
+override any options specified from the 'Filters' section
+below.""").replace('\n', ' ')
+_FIELDS_DESCRIPTION = _("""comma-separated list of resource fields. Do not
 include spaces. Default is all fields.""".replace('\n', ' '))
 _SORT_DESCRIPTION = _("""field name, a comma, and either the word "ascending" or
 "descending". The comma and direction are optional, and the direction
@@ -31,6 +33,12 @@ multiple fields, use this option multiple times. Each one will be applied in
 the order supplied.""".replace('\n', ' '))
 _SEARCH_DESCRIPTION = _("""search items while optionally specifying sort, limit,
 skip, and requested fields""".replace('\n', ' '))
+_USAGE = _("""These are basic filtering options that will be AND'd together.
+These will be ignored if --filters= is specified. Any option may be specified
+multiple times. The value for each option should be a field name and value to
+match against, specified as "name=value".
+Example: $ pulp-admin repo search --gt='content_unit_count=0'
+""").replace('\n', ' ')
 
 class SearchCommand(PulpCliCommand):
     def __init__(self, method, *args, **kwargs):
@@ -58,6 +66,38 @@ class SearchCommand(PulpCliCommand):
         self.add_option(PulpCliOption('--fields', _FIELDS_DESCRIPTION,
             required=False, validate_func=str,
             parse_func=lambda x: x.split(',')))
+
+
+        filter_group = OptionGroup('Filters', _(_USAGE))
+
+        m = 'match where a named attribute equals a string value exactly.'
+        filter_group.add_option(PulpCliOption('--str-eq', _(m), required=False, allow_multiple=True))
+
+        m = 'match where a named attribute equals an int value exactly.'
+        filter_group.add_option(PulpCliOption('--int-eq', _(m), required=False, allow_multiple=True))
+
+        m = 'for a named attribute, match a regular expression using the mongo regex engine.'
+        filter_group.add_option(PulpCliOption('--match', _(m), required=False, allow_multiple=True))
+
+        m = 'for a named attribute, match where value is in the provided list of values, expressed as one row of CSV'
+        filter_group.add_option(PulpCliOption('--in', _(m), required=False, allow_multiple=True))
+
+        m = 'field and expression to omit when determining units for inclusion'
+        filter_group.add_option(PulpCliOption('--not', _(m), required=False, allow_multiple=True))
+
+        m = 'matches resources whose value for the specified field is greater than the given value'
+        filter_group.add_option(PulpCliOption('--gt', _(m), required=False, allow_multiple=True))
+
+        m = 'matches resources whose value for the specified field is greater than or equal to the given value'
+        filter_group.add_option(PulpCliOption('--gte', _(m), required=False, allow_multiple=True))
+
+        m = 'matches resources whose value for the specified field is less than the given value'
+        filter_group.add_option(PulpCliOption('--lt', _(m), required=False, allow_multiple=True))
+
+        m = 'matches resources whose value for the specified field is less than or equal to the given value'
+        filter_group.add_option(PulpCliOption ('--lte', _(m), required=False, allow_multiple=True))
+
+        self.add_option_group(filter_group)
 
     @classmethod
     def _validate_sort(cls, sort_args):
