@@ -33,20 +33,19 @@ class TestResolveDeps(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
         super(TestResolveDeps, self).setUp()
-        self.init()
-
-    def tearDown(self):
-        super(TestResolveDeps, self).tearDown()
-        self.clean()
-
-    def init(self):
         self.temp_dir = tempfile.mkdtemp()
         self.working_dir = os.path.join(self.temp_dir, "working")
         self.pkg_dir = os.path.join(self.temp_dir, "packages")
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
 
+    def tearDown(self):
+        super(TestResolveDeps, self).tearDown()
+        self.clean()
+
     def clean(self):
         shutil.rmtree(self.temp_dir)
+        # clean up dir created by yum's repostorage
+        shutil.rmtree("test_resolve_deps")
 
     def test_resolve_deps(self):
         repo = mock.Mock(spec=Repository)
