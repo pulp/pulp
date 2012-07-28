@@ -25,7 +25,7 @@ def initialize(context):
 
     # Common Options
     d = 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed'
-    id_option = PulpCliOption('--id', _(d), required=True)
+    id_option = PulpCliOption('--consumer-id', _(d), required=True)
 
     d = 'user-readable display name for the consumer'
     name_option = PulpCliOption('--display-name', _(d), required=False)
@@ -97,7 +97,7 @@ class RegisterCommand(PulpCliCommand):
     def register(self, **kwargs):
 
         # Get consumer id
-        id = kwargs['id']
+        id = kwargs['consumer-id']
 
         # Check if this consumer is already registered
         existing_consumer = load_consumer_id(self.context)

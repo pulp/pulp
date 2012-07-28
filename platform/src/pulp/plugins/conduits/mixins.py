@@ -22,6 +22,10 @@ import pulp.server.dispatch.factory as dispatch_factory
 from   pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
+# Unused in this class but imported here so plugins don't have to reach
+# into server packages directly
+from   pulp.server.db.model.criteria import UnitAssociationCriteria
+
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
@@ -109,7 +113,7 @@ class SingleRepoUnitsMixin(object):
 
         @param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
 
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
@@ -131,7 +135,7 @@ class MultipleRepoUnitsMixin(object):
 
         @param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
 
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
@@ -511,7 +515,7 @@ def do_get_repo_units(repo_id, criteria, exception_class):
     """
     try:
         association_query_manager = manager_factory.repo_unit_association_query_manager()
-        units = association_query_manager.get_units_across_types(repo_id, criteria=criteria)
+        units = association_query_manager.get_units(repo_id, criteria=criteria)
 
         all_units = []
 

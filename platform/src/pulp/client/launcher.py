@@ -21,6 +21,7 @@ import logging
 import logging.handlers
 from   optparse import OptionParser
 import os
+import sys
 
 from   okaara.prompt import COLOR_CYAN, COLOR_LIGHT_CYAN
 
@@ -66,12 +67,25 @@ def main(config_filenames):
     config = _load_configuration(config_filenames)
     logger = _initialize_logging(config, debug=options.debug)
 
-    # REST Bindings
-    server = _create_bindings(config, logger, options.username, options.password)
-
-    # Client context
+    # General UI pieces
     prompt = _create_prompt(config)
     exception_handler = ExceptionHandler(prompt, config)
+
+    # REST Bindings
+    username = options.username
+    password = options.password
+    if username and not password:
+        prompt_msg = 'Enter password: '
+        password = prompt.prompt_password(_(prompt_msg))
+
+        if password is prompt.ABORT:
+            prompt.render_spacer()
+            prompt.write(_('Login cancelled'))
+            sys.exit(os.EX_NOUSER)
+
+    server = _create_bindings(config, logger, username, password)
+
+    # Client context
     context = ClientContext(server, config, logger, prompt, exception_handler)
     cli = PulpCli(context)
     context.cli = cli
@@ -139,6 +153,7 @@ def _initialize_logging(config, debug=False):
 def _create_bindings(config, logger, username, password):
     """
     @return: bindings with a fully configured Pulp connection
+    @rtype:  pulp.bindings.bindings.Bindings
     """
 
     # Extract all of the necessary values

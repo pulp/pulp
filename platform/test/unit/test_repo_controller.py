@@ -37,7 +37,6 @@ from pulp.server.db.model.repository import (
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
-import pulp.server.webservices.serialization.unit_criteria as repo_query_utils
 from pulp.server.webservices.controllers import repositories
 
 class RepoControllersTests(base.PulpWebserviceTests):
@@ -214,26 +213,26 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(len(ret[0]['importers']), 1)
         self.assertEqual(ret[0]['importers'][0]['id'], IMPORTERS[0]['id'])
 
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
-    def test_process_repos_calls_serialize(self, mock_child_link_obj):
-        mock_child_link_obj.return_value = {}
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
+    def test_process_repos_calls_serialize(self, mock_link_obj):
+        mock_link_obj.return_value = {}
         REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
         repositories.RepoCollection._process_repos(REPOS)
-        mock_child_link_obj.assert_called_once_with(REPOS[0]['id'])
+        mock_link_obj.assert_called_once_with(REPOS[0]['id'])
 
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj',
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
                 return_value={})
-    def test_process_repos_without_details(self, mock_child_link_obj):
+    def test_process_repos_without_details(self, mock_link_obj):
         REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
         ret = repositories.RepoCollection._process_repos(REPOS)
         self.assertTrue('importers' not in ret[0])
         self.assertTrue('distributors' not in ret[0])
 
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj',
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
         return_value={})
     @mock.patch.object(repositories, '_merge_related_objects')
     def test_process_repos_with_importers(self, mock_merge_related_objects,
-                                          mock_child_link_obj):
+                                          mock_link_obj):
         REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
         repositories.RepoCollection._process_repos(REPOS, importers=True)
         self.assertEqual(mock_merge_related_objects.call_count, 1)
@@ -241,11 +240,11 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertTrue(isinstance(mock_merge_related_objects.call_args[0][1],
             RepoImporterManager))
 
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj',
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
         return_value={})
     @mock.patch.object(repositories, '_merge_related_objects')
     def test_process_repos_with_distributors(self, mock_merge_related_objects,
-                                          mock_child_link_obj):
+                                          mock_link_obj):
         REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
         repositories.RepoCollection._process_repos(REPOS, distributors=True)
         self.assertEqual(mock_merge_related_objects.call_count, 1)
@@ -1505,7 +1504,7 @@ class UnitCriteriaTests(unittest.TestCase):
         }
 
         # Test
-        criteria = repo_query_utils.unit_association_criteria(query)
+        criteria = UnitAssociationCriteria.from_client_input(query)
 
         # Verify
         self.assertEqual(criteria.type_ids, ['rpm'])

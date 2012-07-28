@@ -14,6 +14,9 @@
 import sys
 import os
 import copy
+
+from okaara.cli import CommandUsage
+
 try:
     from urlparse import parse_qs
 except ImportError:
@@ -28,6 +31,41 @@ sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),
 import base_builtins
 from pulp_repo import pulp_cli
 
+class TestRepoSearch(base_builtins.PulpClientTests):
+    def setUp(self):
+        super(TestRepoSearch, self).setUp()
+        self.repo_section = pulp_cli.RepoSection(self.context)
+
+    def test_has_command(self):
+        """
+        Make sure the command was added to the section
+        """
+        self.assertTrue('search' in self.repo_section.commands)
+
+    @mock.patch('pulp.bindings.search.SearchAPI.search')
+    def test_calls_search_api(self, mock_search):
+        self.repo_section.search(limit=20)
+        self.assertEqual(mock_search.call_count, 1)
+        self.assertTrue('limit' in mock_search.call_args[1])
+        self.assertEqual(mock_search.call_args[1]['limit'], 20)
+
+    @mock.patch('pulp.bindings.search.SearchAPI.search', return_value=[1,2])
+    @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
+    def test_calls_render(self, mock_render, mock_search):
+        """
+        the values 1 and 2 are just stand-in unique values that would actually
+        be dict-like documents as returned by mongo. For this test, we just need
+        to know that a value gets passed from one place to another.
+        """
+        self.repo_section.search(limit=20)
+        self.assertEqual(mock_render.call_count, 2)
+        self.assertTrue(mock_render.call_args_list[0][0][0] in (1, 2))
+        self.assertTrue(mock_render.call_args_list[1][0][0] in (1, 2))
+
+    def test_invalid_input(self):
+        self.assertRaises(CommandUsage, self.repo_section.search, x=2)
+
+
 class TestRepoExtension(base_builtins.PulpClientTests):
     @property
     def REPO1(self):
@@ -41,6 +79,34 @@ class TestRepoExtension(base_builtins.PulpClientTests):
     def setUp(self):
         super(TestRepoExtension, self).setUp()
         self.repo_section = pulp_cli.RepoSection(self.context)
+
+    def test_create(self):
+        section = pulp_cli.RepoSection(mock.MagicMock())
+        ARGS = {
+            'repo-id' : 'repo1',
+            # note the '-' is intentional for CLI convenient instead of '_'
+            'display-name' : 'repo 1',
+            'description' : 'a great repo',
+            'note' : ['x=1', 'y=2']
+        }
+        section.create(**ARGS)
+
+        section.context.server.repo.create.assert_called_once_with(
+            ARGS['repo-id'], ARGS['display-name'], ARGS['description'],
+                {'x':'1', 'y':'2'})
+        self.assertEqual(section.prompt.render_success_message.call_count, 1)
+
+    def test_update_notes(self):
+        section = pulp_cli.RepoSection(mock.MagicMock())
+        DELTA = {'note' : ['x=1', 'y=2']}
+        PARAMS = copy.copy(DELTA)
+        PARAMS['repo-id'] = 'repo1'
+        section.update(**PARAMS)
+        section.context.server.repo.update.assert_called_once_with(
+            'repo1', {'delta':{'notes':{'x':'1', 'y':'2'}}})
+
+    def test_has_group_subsection(self):
+        self.assertTrue('group' in self.repo_section.subsections)
 
     def test_list_no_data(self):
         """

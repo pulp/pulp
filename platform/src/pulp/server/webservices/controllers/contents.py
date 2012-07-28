@@ -71,7 +71,7 @@ class ContentUnitsCollection(JSONController):
     @staticmethod
     def process_unit(unit):
         unit = serialization.content.content_unit_obj(unit)
-        unit.update(serialization.link.child_link_obj(unit['_id']))
+        unit.update(serialization.link.search_safe_link_obj(unit['_id']))
         unit.update({'children': serialization.content.content_unit_child_link_objs(unit)})
         return unit
 

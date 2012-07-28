@@ -197,7 +197,7 @@ class GeneralUnitSearchCommand(PulpCliCommand):
         self.context.prompt.render_title(self.title)
 
         # Query the server
-        all_units = self.context.server.repo_search.search(repo_id, criteria).response_body
+        all_units = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
 
         # We only care about the unit metadata, not the association stuff, so
         # strip out all the fluff and reduce the list to just the metadata entries
@@ -258,7 +258,7 @@ class ErrataCommand(PulpCliCommand):
             return
 
         # Query the server
-        all_units = self.context.server.repo_search.search(repo_id, criteria).response_body
+        all_units = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
 
         # We only care about the unit metadata, not the association stuff, so
         # strip out all the fluff and reduce the list to just the metadata entries
@@ -285,7 +285,7 @@ class ErrataCommand(PulpCliCommand):
         }
 
         # Query the server
-        errata = self.context.server.repo_search.search(repo_id, criteria).response_body
+        errata = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
 
         # Render the results
         if len(errata) is 0:
@@ -366,14 +366,14 @@ class DistributionCommand(PulpCliCommand):
         repo_id = kwargs.pop('repo-id')
         try:
             criteria = args_to_criteria_doc(kwargs, [TYPE_DISTRIBUTION])
-            LOG.debug('Criteria for distribution searc')
+            LOG.debug('Criteria for distribution search')
             LOG.debug(criteria)
         except InvalidCriteria, e:
             self.context.prompt.render_failure_message(e[0])
             return
 
         # Query the server
-        all_distros = self.context.server.repo_search.search(repo_id, criteria).response_body
+        all_distros = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
 
         # For the immediate future, there will be either 0 or 1 distributions,
         # but it's just as easy to loop here

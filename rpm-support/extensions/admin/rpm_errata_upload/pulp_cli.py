@@ -17,7 +17,8 @@ import os
 from gettext import gettext as _
 
 from   pulp.client.extensions.extensions import PulpCliCommand
-from   pulp_upload.pulp_cli import _upload_manager, _perform_upload
+import pulp.client.upload.manager as upload_lib
+from   pulp.client.upload.ui import perform_upload
 
 _LOG = logging.getLogger(__name__)
 
@@ -176,7 +177,7 @@ class CreateErratumCommand(PulpCliCommand):
         # Initialize all uploads
         upload_manager = _upload_manager(self.context)
         upload_id = upload_manager.initialize_upload(None, repo_id, ERRATA_TYPE_ID, unit_key, metadata)
-        _perform_upload(self.context, upload_manager, [upload_id])
+        perform_upload(self.context, upload_manager, [upload_id])
 
     def parse_package_csv(self, csvfile, errata_release):
         if not os.path.exists(csvfile):
@@ -232,3 +233,17 @@ class ParseException(Exception):
         self.msg = msg
         self.code = code
 
+def _upload_manager(context):
+    """
+    Instantiates and configures the upload manager. The context is used to
+    access any necessary configuration.
+
+    @return: initialized and ready to run upload manager instance
+    @rtype:  UploadManager
+    """
+    upload_working_dir = context.config['filesystem']['upload_working_dir']
+    upload_working_dir = os.path.expanduser(upload_working_dir)
+    chunk_size = int(context.config['server']['upload_chunk_size'])
+    upload_manager = upload_lib.UploadManager(upload_working_dir, context.server, chunk_size)
+    upload_manager.initialize()
+    return upload_manager

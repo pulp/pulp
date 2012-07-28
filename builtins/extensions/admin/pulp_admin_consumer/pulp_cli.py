@@ -13,9 +13,11 @@
 
 import time
 from gettext import gettext as _
+
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
-    PulpCliOption, PulpCliFlag, UnknownArgsParser
+    PulpCliOption, PulpCliFlag
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client.search import SearchCommand
 
 # -- framework hook -----------------------------------------------------------
 
@@ -54,7 +56,7 @@ class AdminConsumerSection(PulpCliSection):
         update_command.add_option(id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
-        d =  'adds/updates/deletes notes to programmtically identify the consumer; '
+        d =  'adds/updates/deletes notes to programmatically identify the consumer; '
         d += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
         d += 'be changed by specifying this option multiple times; notes are deleted by '
         d += 'specifying "" as the value'
@@ -71,7 +73,10 @@ class AdminConsumerSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the consumer information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
-        
+
+        # Search Command
+        self.add_command(SearchCommand(self.search))
+
         # Bind Command
         bind_command = PulpCliCommand('bind', 'binds a consumer to a repository distributor for consuming published content', self.bind)
         bind_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
@@ -149,7 +154,12 @@ class AdminConsumerSection(PulpCliSection):
         # manually based on the CLI flags.
         for c in consumer_list:
             self.prompt.render_document(c, filters=filters, order=order)
-            
+
+    def search(self, **kwargs):
+        consumer_list = self.context.server.consumer_search.search(**kwargs)
+        for consumer in consumer_list:
+            self.prompt.render_document(consumer)
+
     def bind(self, **kwargs):
         id = kwargs['id']
         repo_id = kwargs['repo-id']

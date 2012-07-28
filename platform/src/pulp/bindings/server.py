@@ -92,9 +92,32 @@ class PulpConnection(object):
     # protected request utilities ---------------------------------------------
 
     def _request(self, method, path, queries=(), body=None):
-        # make a request to the pulp server and return the response
-        # NOTE this throws a ConnectionException or one of the RequestExceptions (depending on response codes) 
-        # in case of unsuccessful request
+        """
+        make a HTTP request to the pulp server and return the response
+
+        :param method:  name of an HTTP method such as GET, POST, PUT, HEAD
+                        or DELETE
+        :type  method:  basestring
+
+        :param path:    URL for this request
+        :type  path:    basestring
+
+        :param queries: mapping object or a sequence of 2-element tuples,
+                        in either case representing key-value pairs to be used
+                        as query parameters on the URL.
+        :type  queries: mapping object or sequence of 2-element tuples
+
+        :param body:    Data structure that will be JSON serialized and send as
+                        the request's body.
+        :type  body:    Anything that is JSON-serializable.
+
+        :return:    Response object
+        :rtype:     pulp.bindings.responses.Response
+
+        :raises:    ConnectionException or one of the RequestExceptions
+                    (depending on response codes) in case of unsuccessful
+                    request
+        """
         url = self._build_url(path, queries)
         if not isinstance(body, (type(None), str,)):
             body = json.dumps(body)
@@ -129,6 +152,26 @@ class PulpConnection(object):
             raise code_class_mappings[response_code](response_body)
 
     def _build_url(self, path, queries=()):
+        """
+        Takes a relative path and query parameters, combines them with the
+        base path, and returns the result. Handles utf-8 encoding as necessary.
+
+        :param path:    relative path for this request, relative to
+                        self.base_prefix. NOTE: if this parameter starts with a
+                        leading '/', this method will strip it and treat it as
+                        relative. That is not a standards-compliant way to
+                        combine path segments, so be aware.
+        :type  path:    basestring
+
+        :param queries: mapping object or a sequence of 2-element tuples,
+                        in either case representing key-value pairs to be used
+                        as query parameters on the URL.
+        :type  queries: mapping object or sequence of 2-element tuples
+
+        :return:    path that is a composite of self.path_prefix, path, and
+                    queries. May be relative or absolute depending on the nature
+                    of self.path_prefix
+        """
         # build the request url from the path and queries dict or tuple
         if not path.startswith(self.path_prefix):
             if path.startswith('/'):

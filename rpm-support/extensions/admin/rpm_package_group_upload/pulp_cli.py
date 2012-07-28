@@ -12,9 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+import os
 
 from   pulp.client.extensions.extensions import PulpCliCommand
-from   pulp_upload.pulp_cli import _upload_manager, _perform_upload
+import pulp.client.upload.manager as upload_lib
+from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 PKG_GROUP_TYPE_ID="package_group"
@@ -145,7 +147,7 @@ class CreatePackageGroupCommand(PulpCliCommand):
         # Initialize all uploads
         upload_manager = _upload_manager(self.context)
         upload_id = upload_manager.initialize_upload(None, repo_id, PKG_GROUP_TYPE_ID, unit_key, metadata)
-        _perform_upload(self.context, upload_manager, [upload_id])
+        perform_upload(self.context, upload_manager, [upload_id])
 
 class CreatePackageCategoryCommand(PulpCliCommand):
     """
@@ -212,5 +214,19 @@ class CreatePackageCategoryCommand(PulpCliCommand):
         # Initialize all uploads
         upload_manager = _upload_manager(self.context)
         upload_id = upload_manager.initialize_upload(None, repo_id, PKG_CATEGORY_TYPE_ID, unit_key, metadata)
-        _perform_upload(self.context, upload_manager, [upload_id])
+        perform_upload(self.context, upload_manager, [upload_id])
 
+def _upload_manager(context):
+    """
+    Instantiates and configures the upload manager. The context is used to
+    access any necessary configuration.
+
+    @return: initialized and ready to run upload manager instance
+    @rtype:  UploadManager
+    """
+    upload_working_dir = context.config['filesystem']['upload_working_dir']
+    upload_working_dir = os.path.expanduser(upload_working_dir)
+    chunk_size = int(context.config['server']['upload_chunk_size'])
+    upload_manager = upload_lib.UploadManager(upload_working_dir, context.server, chunk_size)
+    upload_manager.initialize()
+    return upload_manager

@@ -73,7 +73,7 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         self.mixin = mixins.SingleRepoUnitsMixin(self.repo_id, mixins.DistributorConduitException)
 
     @mock.patch('pulp.plugins.types.database.type_definition')
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
     def test_get_units(self, mock_query_call, mock_type_def_call):
         # Setup
         mock_query_call.return_value = [
@@ -97,7 +97,7 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         self.assertEqual(mock_query_call.call_args[0][0], self.repo_id)
         self.assertEqual(mock_query_call.call_args[1]['criteria'], fake_criteria)
 
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
     def test_get_units_server_error(self, mock_query_call):
         # Setup
         mock_query_call.side_effect = Exception()
@@ -113,7 +113,7 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
         self.mixin = mixins.MultipleRepoUnitsMixin(mixins.ImporterConduitException)
 
     @mock.patch('pulp.plugins.types.database.type_definition')
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
     def test_get_units(self, mock_query_call, mock_type_def_call):
         # Setup
         mock_query_call.return_value = [
@@ -138,7 +138,7 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
         self.assertEqual(mock_query_call.call_args[0][0], repo_id)
         self.assertEqual(mock_query_call.call_args[1]['criteria'], fake_criteria)
 
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units_across_types')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
     def test_get_units_server_error(self, mock_query_call):
         # Setup
         mock_query_call.side_effect = Exception()

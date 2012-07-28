@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updates>
+	<update from="enhancements@redhat.com" status="final" type="enhancements" version="1">
+		<id>RHEA-2010:9999</id>
+		<title>test package enhancements</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2010-11-8 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F13PTP">
+				<name>F13 Pulp Test Packages</name>
+				<package name="emoticons" version="0.1" release="2" epoch="0" arch="x86_64" src="xen-3.0.3-80.el5_3.3.src.rpm">
+					<filename>emoticons-0.1-2.x86_64.rpm</filename>
+					<sum type="md5">366bb5e73a5905eacb82c96e0578f92b</sum>
+				</package>
+				<package name="patb" version="0.1" release="2" epoch="0" arch="x86_64" src="xen-3.0.3-80.el5_3.3.src.rpm">
+					<filename>patb-0.1-2.x86_64.rpm</filename>
+					<sum type="md5">f3c197a29d9b66c5b65c5d62b25db5b4</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
+		<id>grinder_test_2</id>
+		<title>Test Errata referring to grinder_test_package-2.0</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2012-7-25 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F14PTP">
+				<name>F14 Pulp Test Packages</name>
+                <package name="grinder_test_package" version="2.0" release="1.fc14" epoch="0" arch="noarch" src="grinder_test_package-2.0-1.fc14.src.rpm">
+					<filename>grinder_test_package-2.0-1.fc14.noarch.rpm</filename>
+					<sum type="md5">99f34d26f648d2765fa360b8d19cb020</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
+		<id>grinder_test_3</id>
+		<title>Test Errata referring to grinder_test_package-3.0</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2012-7-25 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F14PTP">
+				<name>F14 Pulp Test Packages</name>
+                <package name="grinder_test_package" version="3.0" release="1.fc14" epoch="0" arch="noarch" src="grinder_test_package-3.0-1.fc14.src.rpm">
+					<filename>grinder_test_package-3.0-1.fc14.noarch.rpm</filename>
+					<sum type="md5">fd379f5e8e0b31035e0647fe6ee2994e</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
+		<id>grinder_test_4</id>
+		<title>Test Errata referring to grinder_test_package-4.0</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2012-7-25 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="F14PTP">
+				<name>F14 Pulp Test Packages</name>
+                <package name="grinder_test_package" version="4.0" release="1.fc14" epoch="0" arch="noarch" src="grinder_test_package-4.0-1.fc14.src.rpm">
+					<filename>grinder_test_package-4.0-1.fc14.noarch.rpm</filename>
+					<sum type="md5">d89e83ed183fa55dfb0bd2eec14db93c</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+</updates>

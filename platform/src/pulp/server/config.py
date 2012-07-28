@@ -76,6 +76,7 @@ _default_values = {
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'false',
+        'storage_dir': '/var/lib/pulp/',
     },
     'tasks': {
         'concurrency_threshold': '9',
@@ -87,7 +88,7 @@ _default_values = {
 }
 
 # to add a default configuration file, list the full path here
-_config_files = ['/etc/pulp/repo_auth.conf', '/etc/pulp/server.conf']
+_config_files = ['/etc/pulp/server.conf']
 
 # configuration api -----------------------------------------------------------
 

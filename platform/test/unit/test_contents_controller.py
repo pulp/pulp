@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import os
 import shutil
 
@@ -21,22 +20,22 @@ import base
 import dummy_plugins
 from pulp.server.db.model.repository import Repo, RepoImporter
 import pulp.server.managers.factory as manager_factory
-import pulp.server.constants as pulp_constants
 from pulp.server.webservices.controllers.contents import ContentUnitsCollection
 
 
 class TestContentUnitsCollection(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.serialization.content.content_unit_obj')
-    @mock.patch('pulp.server.webservices.serialization.link.child_link_obj')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     @mock.patch('pulp.server.webservices.serialization.content.content_unit_child_link_objs')
-    def test_process_unit(self, mock_content_unit_child_link_objs, mock_child_link_obj, mock_content_unit_obj):
+    def test_process_unit(self, mock_content_unit_child_link_objs,
+                          mock_search_safe_link_obj, mock_content_unit_obj):
         """
         Make sure it calls the right serialization methods
         """
         UNIT = {'_id':'cu1'}
         ContentUnitsCollection.process_unit(UNIT)
         self.assertEqual(mock_content_unit_child_link_objs.call_count, 1)
-        self.assertEqual(mock_child_link_obj.call_count, 1)
+        self.assertEqual(mock_search_safe_link_obj.call_count, 1)
         self.assertEqual(mock_content_unit_obj.call_count, 1)
 
     @mock.patch(
@@ -98,9 +97,6 @@ class BaseUploadTest(base.PulpWebserviceTests):
         super(BaseUploadTest, self).setUp()
         self.upload_manager = manager_factory.content_upload_manager()
 
-        self.original_local_storage = pulp_constants.LOCAL_STORAGE
-        pulp_constants.LOCAL_STORAGE = '/tmp/pulp-contents-controller-test'
-
         upload_storage_dir = self.upload_manager._upload_storage_dir()
 
         if os.path.exists(upload_storage_dir):
@@ -111,10 +107,6 @@ class BaseUploadTest(base.PulpWebserviceTests):
 
     def tearDown(self):
         super(BaseUploadTest, self).tearDown()
-        if os.path.exists(pulp_constants.LOCAL_STORAGE):
-            shutil.rmtree(pulp_constants.LOCAL_STORAGE)
-
-        pulp_constants.LOCAL_STORAGE = self.original_local_storage
 
         dummy_plugins.reset()
 

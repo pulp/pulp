@@ -224,6 +224,7 @@ class ConsumerResourceTests(ConsumerControllersTests):
         self.assertEqual('consumer-1', body['id'])
         self.assertTrue('bindings' not in body)
         self.assertTrue('_href' in body)
+        print body['_href']
         self.assertTrue(body['_href'].endswith(PATH))
 
     @mock.patch('pulp.server.webservices.controllers.base.JSONController.params')
@@ -327,20 +328,4 @@ class ConsumerResourceTests(ConsumerControllersTests):
 
         # Verify
         self.assertEqual(404, status)
-
-
-class ConsumerPluginsTests(ConsumerControllersTests):
-
-    def setUp(self):
-        super(ConsumerPluginsTests, self).setUp()
-
-        plugin_api._create_manager()
-        dummy_plugins.install()
-
-        self.consumer_query_manager = manager_factory.consumer_query_manager()
-        self.consumer_bind_manager = manager_factory.consumer_bind_manager()
-
-    def tearDown(self):
-        super(ConsumerPluginsTests, self).tearDown()
-        dummy_plugins.reset()
 

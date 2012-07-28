@@ -60,7 +60,7 @@ def process_consumers(consumers, merge_bindings=False):
         bindings = managers.consumer_bind_manager().find_by_consumer_list(ids)
 
     for consumer in consumers:
-        consumer.update(serialization.link.current_link_obj())
+        consumer.update(serialization.link.search_safe_link_obj(consumer['id']))
         if merge_bindings:
             consumer['bindings'] = bindings[consumer['id']]
     return consumers
@@ -140,6 +140,7 @@ class ConsumerResource(JSONController):
 
         consumer = process_consumers(
             [consumer], self.params().get('bindings', False))[0]
+        consumer.update(serialization.link.current_link_obj())
 
         return self.ok(consumer)
 

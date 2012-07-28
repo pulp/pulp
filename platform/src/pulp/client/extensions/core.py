@@ -21,7 +21,6 @@ further subclassed by extensions.
 
 from gettext import gettext as _
 import math
-import os
 import sys
 
 from   okaara.cli import Cli
@@ -459,6 +458,12 @@ class PulpPrompt(Prompt):
                                   spin_tag=TAG_THREADED_SPINNER)
         return spinner
 
+    def write(self, content, new_line=True, center=False, color=None, tag=None,
+              skip_wrap=False):
+        content = encode_unicode(content)
+        Prompt.write(self, content, new_line, center, color, tag, skip_wrap)
+
+
 class PulpCli(Cli):
 
     def __init__(self, context):
@@ -467,8 +472,8 @@ class PulpCli(Cli):
 
     def run(self, args):
         try:
-            Cli.run(self, args)
-            return os.EX_OK
+            exit_code = Cli.run(self, args)
+            return exit_code
         except Exception, e:
             code = self.context.exception_handler.handle_exception(e)
             return code

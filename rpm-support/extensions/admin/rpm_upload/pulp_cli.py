@@ -17,7 +17,8 @@ import os
 import rpm
 
 from   pulp.client.extensions.extensions import PulpCliCommand
-from   pulp_upload.pulp_cli import _upload_manager, _perform_upload
+import pulp.client.upload.manager as upload_lib
+from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 
@@ -28,7 +29,9 @@ RPMTAG_NOSOURCE = 1051
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-
+    """
+    @type context:  pulp.client.extensions.core.ClientContext
+    """
     repo_section = context.cli.find_section('repo')
     uploads_section = repo_section.find_subsection('uploads')
 
@@ -131,7 +134,7 @@ class CreateRpmCommand(PulpCliCommand):
         self.prompt.render_spacer()
 
         # Start the upload process
-        _perform_upload(self.context, upload_manager, upload_ids)
+        perform_upload(self.context, upload_manager, upload_ids)
 
 def _generate_rpm_data(rpm_filename):
     """
@@ -219,3 +222,18 @@ def _generate_rpm_data(rpm_filename):
     metadata['description'] = headers['description']
 
     return unit_key, metadata
+
+def _upload_manager(context):
+    """
+    Instantiates and configures the upload manager. The context is used to
+    access any necessary configuration.
+
+    @return: initialized and ready to run upload manager instance
+    @rtype:  UploadManager
+    """
+    upload_working_dir = context.config['filesystem']['upload_working_dir']
+    upload_working_dir = os.path.expanduser(upload_working_dir)
+    chunk_size = int(context.config['server']['upload_chunk_size'])
+    upload_manager = upload_lib.UploadManager(upload_working_dir, context.server, chunk_size)
+    upload_manager.initialize()
+    return upload_manager

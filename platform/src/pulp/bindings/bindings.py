@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.bindings.actions import ActionsAPI
+from pulp.bindings.repo_groups import *
 from pulp.bindings.repository import *
 from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI
@@ -23,6 +24,9 @@ from pulp.bindings.auth import UserAPI
 class Bindings(object):
     
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
 
         # Please keep the following in alphabetical order to ease reading
         self.actions = ActionsAPI(pulp_connection)
@@ -31,15 +35,20 @@ class Bindings(object):
         self.consumer = ConsumerAPI(pulp_connection)
         self.consumer_content = ConsumerContentAPI(pulp_connection)
         self.consumer_history = ConsumerHistoryAPI(pulp_connection)
+        self.consumer_search = ConsumerSearchAPI(pulp_connection)
         self.repo = RepositoryAPI(pulp_connection)
-        self.repo_importer = RepositoryImporterAPI(pulp_connection)
-        self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
-        self.repo_history = RepositoryHistoryAPI(pulp_connection)
         self.repo_actions = RepositoryActionsAPI(pulp_connection)
-        self.repo_search = RepositoryUnitSearchAPI(pulp_connection)
+        self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
+        self.repo_group = RepoGroupAPI(pulp_connection)
+        self.repo_group_actions = RepoGroupActionAPI(pulp_connection)
+        self.repo_group_search = RepoGroupSearchAPI(pulp_connection)
+        self.repo_history = RepositoryHistoryAPI(pulp_connection)
+        self.repo_importer = RepositoryImporterAPI(pulp_connection)
         self.repo_publish_schedules = RepositoryPublishSchedulesAPI(pulp_connection)
+        self.repo_search = RepositorySearchAPI(pulp_connection)
         self.repo_sync_schedules = RepositorySyncSchedulesAPI(pulp_connection)
         self.repo_unit_associations = RepositoryUnitAssociationAPI(pulp_connection)
+        self.repo_unit_search = RepositoryUnitSearchAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
         self.uploads = UploadAPI(pulp_connection)

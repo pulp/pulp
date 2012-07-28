@@ -39,8 +39,8 @@ class DepSolver:
          Load the repos into repostore to query package dependencies
         """
         for repo in self.repos:
-            self.yrepo = yum.yumRepo.YumRepository(repo.id) # repo['id'])
-            self.yrepo.baseurl = ["file://%s" % str(repo.importer_working_dir)]  #repo['importer_working_dir'])]
+            self.yrepo = yum.yumRepo.YumRepository(repo.id)
+            self.yrepo.baseurl = ["file://%s" % str(repo.importer_working_dir)]
             self.yrepo.basecachedir = CACHE_DIR
             self._repostore.add(self.yrepo)
 

@@ -12,14 +12,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import os
 import shutil
 
 import base
 import mock_plugins
 
-import pulp.server.constants as pulp_constants
 from   pulp.plugins.model import Repository
 from   pulp.server.db.model.repository import Repo, RepoImporter
 from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
@@ -35,9 +33,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager = manager_factory.repo_manager()
         self.importer_manager = manager_factory.repo_importer_manager()
 
-        self.original_local_storage = pulp_constants.LOCAL_STORAGE
-        pulp_constants.LOCAL_STORAGE = '/tmp/pulp-content-upload-manager-test'
-
         upload_storage_dir = self.upload_manager._upload_storage_dir()
 
         if os.path.exists(upload_storage_dir):
@@ -47,11 +42,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
         mock_plugins.reset()
-
-        if os.path.exists(pulp_constants.LOCAL_STORAGE):
-            shutil.rmtree(pulp_constants.LOCAL_STORAGE)
-
-        pulp_constants.LOCAL_STORAGE = self.original_local_storage
 
     def clean(self):
         base.PulpServerTests.clean(self)

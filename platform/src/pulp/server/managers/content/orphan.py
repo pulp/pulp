@@ -16,8 +16,8 @@ import os
 import re
 from gettext import gettext as _
 
+from pulp.server import config as pulp_config
 from pulp.plugins.types import database as content_types_db
-from pulp.server import constants as pulp_constants
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
@@ -164,7 +164,8 @@ class OrphanManager(object):
         os.unlink(path)
 
         # delete parent directories on the path as long as they fall empty
-        root_content_regex = re.compile(os.path.join(pulp_constants.LOCAL_STORAGE, 'content', '[^/]+/?'))
+        storage_dir = pulp_config.config.get('server', 'storage_dir')
+        root_content_regex = re.compile(os.path.join(storage_dir, 'content', '[^/]+/?'))
         while True:
             path = os.path.dirname(path)
             if root_content_regex.match(path):

@@ -40,7 +40,6 @@ from pulp.client.extensions.exceptions import ExceptionHandler
 
 from pulp.common.config import Config
 
-from pulp.server import constants
 from pulp.server import config
 from pulp.server.auth import authorization
 from pulp.server.db import connection
@@ -57,8 +56,6 @@ from pulp.server.webservices.middleware.postponed import PostponedOperationMiddl
 # test configuration -----------------------------------------------------------
 
 SerialNumber.PATH = '/tmp/sn.dat'
-constants.LOCAL_STORAGE = '/tmp/pulp/'
-constants.CACHE_DIR = '/tmp/pulp/cache'
 
 
 def load_test_config():

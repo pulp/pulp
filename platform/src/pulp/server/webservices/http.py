@@ -194,11 +194,14 @@ def uri_path():
     return web.http.url(web.ctx.path)
 
 
-def extend_uri_path(suffix):
+def extend_uri_path(suffix, prefix=None):
     """
     Return the current URI path with the suffix appended to it
-    @type suffix: str
-    @param suffix: path fragment to be appended to the current path
+    @param suffix:  path fragment to be appended to the current path
+    @type suffix:   str
+    @param prefix:  optional link prefix to use, in case the current link
+                    is not what you want.
+    @type prefix:   basestring
     @return: full path with the suffix appended
     """
     # steps:
@@ -206,7 +209,7 @@ def extend_uri_path(suffix):
     # add the application prefix
     # all urls are paths, so need a trailing '/'
     # make sure the path is properly encoded
-    prefix = uri_path()
+    prefix = prefix or uri_path()
     try:
         suffix = urllib.pathname2url(suffix)
     except KeyError:
@@ -216,7 +219,7 @@ def extend_uri_path(suffix):
 
 def sub_uri_path(*args):
     """
-    Rerturn the current uri path with the last segments substitued by the
+    Return the current uri path with the last segments substituted by the
     arguments passed in.
     @param args: list of strings
     @type args: list [str, ...]

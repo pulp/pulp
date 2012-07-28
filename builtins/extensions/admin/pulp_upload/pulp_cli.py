@@ -16,9 +16,9 @@ import os
 
 from okaara.prompt import COLOR_GREEN, COLOR_YELLOW
 
-from   pulp.bindings.exceptions import ConflictException
 from   pulp.client.extensions.extensions import PulpCliCommand
-import pulp.client.upload as upload_lib
+import pulp.client.upload.manager as upload_lib
+from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 
@@ -60,7 +60,7 @@ class ResumeCommand(PulpCliCommand):
         self.context.prompt.render_title(_('Upload Requests'))
 
         # Determine which (if any) uploads are eligible to resume
-        upload_manager = _upload_manager(self.context)
+        upload_manager = configure_upload_manager(self.context)
         uploads = upload_manager.list_uploads()
 
         if len(uploads) is 0:
@@ -90,7 +90,7 @@ class ResumeCommand(PulpCliCommand):
 
         self.context.prompt.render_paragraph(_('Resuming upload for: %(u)s') % {'u' : ', '.join(selected_filenames)})
 
-        _perform_upload(self.context, upload_manager, selected_ids)
+        perform_upload(self.context, upload_manager, selected_ids)
 
 class ListCommand(PulpCliCommand):
     """
@@ -105,7 +105,7 @@ class ListCommand(PulpCliCommand):
         self.context.prompt.render_title(_('Upload Requests'))
 
         # Load upload request trackers
-        upload_manager = _upload_manager(self.context)
+        upload_manager = configure_upload_manager(self.context)
         uploads = upload_manager.list_uploads()
 
         # Punch out early if there are none
@@ -149,7 +149,7 @@ class CancelCommand(PulpCliCommand):
         force = kwargs['force'] or False
 
         # Load all requests
-        upload_manager = _upload_manager(self.context)
+        upload_manager = configure_upload_manager(self.context)
         uploads = upload_manager.list_uploads()
 
         # Punch out early if there are no requests we can act on
@@ -200,7 +200,7 @@ class CancelCommand(PulpCliCommand):
 
 # -- utility ------------------------------------------------------------------
 
-def _upload_manager(context):
+def configure_upload_manager(context):
     """
     Instantiates and configures the upload manager. The context is used to
     access any necessary configuration.
@@ -214,87 +214,3 @@ def _upload_manager(context):
     upload_manager = upload_lib.UploadManager(upload_working_dir, context.server, chunk_size)
     upload_manager.initialize()
     return upload_manager
-
-def _perform_upload(context, upload_manager, upload_ids):
-    """
-    Uploads (resumes if necessary) uploading the given upload requests. The
-    context is used to retrieve the bindings and this call will use the prompt
-    to display output to the screen.
-
-    @param context: framework provided context
-    @type  context: PulpCliContext
-
-    @param upload_manager: initialized upload manager instance
-    @type  upload_manager: UploadManager
-
-    @param upload_ids: list of upload IDs to handle
-    @type  upload_ids: list
-    """
-
-    d = 'Starting upload of selected packages. If this process is stopped through '\
-        'ctrl+c, the uploads will be paused and may be resumed later using the '\
-        'resume command or cancelled entirely using the cancel command.'
-    context.prompt.render_paragraph(_(d))
-
-    # Upload and import each upload. The try block is inside of the loop to
-    # allow uploads to continue even if one hits an exception. The exception
-    # handler is called directly to use the standard logging/display for
-    # exceptions but otherwise the next upload is allowed. The only variation
-    # is that a KeyboardInterrupt represents pausing the upload process.
-    for upload_id in upload_ids:
-        try:
-            tracker = upload_manager.get_upload(upload_id)
-            if tracker.source_filename:
-                # Upload the bits
-                context.prompt.write(_('Uploading: %(n)s') % {'n' : os.path.basename(tracker.source_filename)})
-                bar = context.prompt.create_progress_bar()
-
-                def progress_callback(item, total):
-                    msg = _('%(i)s/%(t)s bytes')
-                    bar.render(item, total, msg % {'i' : item, 't' : total})
-
-                upload_manager.upload(upload_id, progress_callback)
-
-                context.prompt.write(_('... completed'))
-                context.prompt.render_spacer()
-
-            # Import the upload request
-            context.prompt.write(_('Importing into the repository...'))
-
-            # If the import fails due to a conflict, this call will bubble up
-            # the appropriate exception to the middleware. It's best to let
-            # this bubble up as there's no reason to process any more uploads
-            # in the list; if one conflicted and this call is scoped to a
-            # particular repo, there's no reason to bother with the others as
-            # they will fail too.
-            try:
-                response = upload_manager.import_upload(upload_id)
-            except ConflictException:
-                upload_manager.delete_upload(upload_id, force=True)
-                raise
-
-            if response.is_async():
-                msg = 'Import postponed due to queued operations against the ' \
-                'repository. The progress of this import can be viewed in the ' \
-                'repository tasks list.'
-                context.prompt.render_warning_message(_(msg))
-
-                # Do not delete the upload here; we need it lying around for
-                # when the import is completed
-            else:
-                context.prompt.write(_('... completed'))
-                context.prompt.render_spacer()
-
-                # Delete the request
-                context.prompt.write(_('Deleting the upload request...'))
-                upload_manager.delete_upload(upload_id)
-                context.prompt.write(_('... completed'))
-                context.prompt.render_spacer()
-
-        except KeyboardInterrupt:
-            d = 'Uploading paused'
-            context.prompt.render_paragraph(_(d))
-            return
-
-        except Exception, e:
-            context.exception_handler.handle_exception(e)

@@ -36,13 +36,28 @@ class Criteria(Model):
         assert isinstance(sort, (list, tuple, NoneType))
         assert isinstance(limit, (int, NoneType))
         assert isinstance(skip, (int, NoneType))
-        assert isinstance(fields, (list, NoneType))
+        assert isinstance(fields, (list, tuple, NoneType))
 
         self.filters = filters
         self.sort = sort
         self.limit = limit
         self.skip = skip
         self.fields = fields
+
+    def as_dict(self):
+        """
+        @return:    the Criteria as a dict, suitable for serialization by
+                    something like JSON, and compatible as input to the
+                    from_client_input method.
+        @rtype:     dict
+        """
+        return {
+            'filters' : self.filters,
+            'sort' : self.sort,
+            'limit' : self.limit,
+            'skip' : self.skip,
+            'fields' : self.fields
+        }
 
     @classmethod
     def from_client_input(cls, doc):
@@ -58,6 +73,9 @@ class Criteria(Model):
         @return:    new Criteria instance based on provided data
         @rtype:     pulp.server.db.model.criteria.Criteria
         """
+        if not isinstance(doc, dict):
+            raise pulp_exceptions.InvalidValue(['criteria']), None, sys.exc_info()[2]
+
         doc = copy.copy(doc)
         filters = _validate_filters(doc.pop('filters', None))
         sort = _validate_sort(doc.pop('sort', None))
@@ -72,18 +90,6 @@ class Criteria(Model):
     def spec(self):
         if self.filters is None:
             return None
-
-        def _compile_regexs_for_not(spec):
-            if not isinstance(spec, (dict, list, tuple)):
-                return
-            if isinstance(spec, (list, tuple)):
-                map(_compile_regexs_for_not, spec)
-                return
-            for key, value in spec.items():
-                if key == '$not' and isinstance(value, basestring):
-                    spec[key] = re.compile(value)
-                _compile_regexs_for_not(value)
-
         spec = copy.copy(self.filters)
         _compile_regexs_for_not(spec)
         return spec
@@ -172,22 +178,104 @@ class UnitAssociationCriteria(Model):
         self.remove_duplicates = remove_duplicates
 
     @classmethod
-    def from_client_input(cls, doc):
-        doc = copy.copy(doc)
-        type_ids = doc.pop('type_ids', None)
-        association_filters = _validate_filters(doc.pop('association_filters', None))
-        unit_filters = _validate_filters(doc.pop('unit_filters', None))
-        association_sort = _validate_sort(doc.pop('association_sort', None))
-        unit_sort = _validate_sort(doc.pop('unit_sort', None))
-        limit = _validate_limit(doc.pop('limit', None))
-        skip = _validate_skip(doc.pop('skip', None))
-        association_fields = _validate_fields(doc.pop('association_fields', None))
-        unit_fields = _validate_fields(doc.pop('unit_fields', None))
-        remove_duplicates = bool(doc.pop('remove_duplicates', False))
-        if doc:
-            raise pulp_exceptions.InvalidValue(doc.keys())
+    def from_client_input(cls, query):
+        """
+        Parses a unit association query document and assembles a corresponding
+        internal criteria object.
+
+        Example:
+        {
+          "type_ids" : ["rpm"],
+          "filters" : {
+            "unit" : <mongo spec syntax>,
+            "association" : <mongo spec syntax>
+          },
+          "sort" : {
+            "unit" : [ ["name", "ascending"], ["version", "descending"] ],
+            "association" : [ ["created", "descending"] ]
+          },
+          "limit" : 100,
+          "skip" : 200,
+          "fields" : {
+            "unit" : ["name", "version", "arch"],
+            "association" : ["created"]
+          },
+          "remove_duplicates" : True
+        }
+
+        @param query: user-provided query details
+        @type  query: dict
+
+        @return: criteria object for the unit association query
+        @rtype:  L{UnitAssociationCriteria}
+
+        @raises ValueError: on an invalid value in the query
+        """
+        query = copy.copy(query)
+
+        type_ids = query.pop('type_ids', None)
+
+        filters = query.pop('filters', None)
+        if filters is None:
+            association_filters = None
+            unit_filters = None
+        else:
+            association_filters = _validate_filters(filters.pop('association', None))
+            unit_filters = _validate_filters(filters.pop('unit', None))
+
+        sort = query.pop('sort', None)
+        if sort is None:
+            association_sort = None
+            unit_sort = None
+        else:
+            association_sort = _validate_sort(sort.pop('association', None))
+            unit_sort = _validate_sort(sort.pop('unit', None))
+
+        limit = _validate_limit(query.pop('limit', None))
+        skip = _validate_skip(query.pop('skip', None))
+
+        fields = query.pop('fields', None)
+        if fields is None:
+            association_fields = None
+            unit_fields = None
+        else:
+            association_fields = _validate_fields(fields.pop('association', None))
+            unit_fields = _validate_fields(fields.pop('unit', None))
+
+        remove_duplicates = bool(query.pop('remove_duplicates', False))
+
+        # report any superfluous doc key, value pairs as errors
+        for d in (query, filters, sort, fields):
+            if not d:
+                continue
+            raise pulp_exceptions.InvalidValue(d.keys())
+
+        # XXX these are here for "backward compatibility", in the future, these
+        # should be removed and the corresponding association_spec and unit_spec
+        # properties should be used
+        if association_filters:
+            _compile_regexs_for_not(association_filters)
+        if unit_filters:
+            _compile_regexs_for_not(unit_filters)
+
         return cls(type_ids, association_filters, unit_filters, association_sort,
                    unit_sort, limit, skip, association_fields, unit_fields, remove_duplicates)
+
+    @property
+    def association_spec(self):
+        if self.association_filters is None:
+            return None
+        association_spec = copy.copy(self.association_filters)
+        _compile_regexs_for_not(association_spec)
+        return association_spec
+
+    @property
+    def unit_spec(self):
+        if self.unit_filters is None:
+            return None
+        unit_spec = copy.copy(self.unit_filters)
+        _compile_regexs_for_not(unit_spec)
+        return unit_spec
 
     def __str__(self):
         s = ''
@@ -214,13 +302,20 @@ def _validate_filters(filters):
 
 
 def _validate_sort(sort):
+    """
+    @type  sort:    list, tuple
+
+    @rtype: tuple
+    """
     if sort is None:
         return None
+    if not isinstance(sort, (list, tuple)):
+        raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
     try:
         valid_sort = []
         for entry in sort:
             if not isinstance(entry[0], basestring):
-                raise TypeError()
+                raise TypeError('Invalid field name [%s]' % str(entry[0]))
             flag = str(entry[1]).lower()
             direction = None
             if flag in ('ascending', '1'):
@@ -228,35 +323,39 @@ def _validate_sort(sort):
             if flag in ('descending', '-1'):
                 direction = pymongo.DESCENDING
             if direction is None:
-                raise ValueError()
+                raise ValueError('Invalid sort direction [%s]' % flag)
             valid_sort.append((entry[0], direction))
     except (TypeError, ValueError):
        raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
     else:
-        return tuple(valid_sort)
+        return valid_sort
 
 
 def _validate_limit(limit):
+    if isinstance(limit, bool):
+        raise pulp_exceptions.InvalidValue(['limit']), None, sys.exc_info()[2]
     if limit is None:
         return None
     try:
         limit = int(limit)
         if limit < 1:
             raise TypeError()
-    except TypeError:
+    except (TypeError, ValueError):
         raise pulp_exceptions.InvalidValue(['limit']), None, sys.exc_info()[2]
     else:
         return limit
 
 
 def _validate_skip(skip):
+    if isinstance(skip, bool):
+        raise pulp_exceptions.InvalidValue(['skip']), None, sys.exc_info()[2]
     if skip is None:
         return None
     try:
         skip = int(skip)
         if skip < 0:
             raise TypeError()
-    except TypeError:
+    except (TypeError, ValueError):
         raise pulp_exceptions.InvalidValue(['skip']), None, sys.exc_info()[2]
     else:
         return skip
@@ -266,6 +365,8 @@ def _validate_fields(fields):
     if fields is None:
         return None
     try:
+        if isinstance(fields, (basestring, dict)):
+            raise TypeError
         fields = list(fields)
         for f in fields:
             if not isinstance(f, basestring):
@@ -273,4 +374,16 @@ def _validate_fields(fields):
     except TypeError:
         raise pulp_exceptions.InvalidValue(['fields']), None, sys.exc_info()[2]
     return fields
+
+
+def _compile_regexs_for_not(spec):
+    if not isinstance(spec, (dict, list, tuple)):
+        return
+    if isinstance(spec, (list, tuple)):
+        map(_compile_regexs_for_not, spec)
+        return
+    for key, value in spec.items():
+        if key == '$not' and isinstance(value, basestring):
+            spec[key] = re.compile(value)
+        _compile_regexs_for_not(value)
 

@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.bindings.base import PulpAPI
+from pulp.bindings.search import SearchAPI
 
 # Default for update APIs to differentiate between None and not updating the value
 UNSPECIFIED = object()
@@ -21,6 +22,9 @@ class RepositoryAPI(PulpAPI):
     Connection class to access repo specific calls
     """
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/"
         
@@ -143,11 +147,19 @@ class RepositoryAPI(PulpAPI):
                 'distributor_configs' : distributor_configs,}
         return self.server.PUT(path, body)
 
+
+class RepositorySearchAPI(SearchAPI):
+    PATH = '/v2/repositories/search/'
+
+
 class RepositoryImporterAPI(PulpAPI):
     """
     Connection class to access repo importer specific calls
     """
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryImporterAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/importers/"
     
@@ -180,6 +192,9 @@ class RepositoryDistributorAPI(PulpAPI):
     Connection class to access repo distributor specific calls
     """
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryDistributorAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/distributors/"
     
@@ -213,6 +228,9 @@ class RepositoryHistoryAPI(PulpAPI):
     Connection class to access repo history specific calls
     """
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryHistoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/history/"
 
@@ -229,6 +247,9 @@ class RepositoryActionsAPI(PulpAPI):
     Connection class to access repo actions specific calls
     """
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryActionsAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/actions/"
 
@@ -253,6 +274,9 @@ class RepositoryUnitSearchAPI(PulpAPI):
     Connection class to access repo search specific calls
     """
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryUnitSearchAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/search/units/"
 
@@ -280,6 +304,9 @@ class RepositoryUnitAssociationAPI(PulpAPI):
 class RepositorySyncSchedulesAPI(PulpAPI):
 
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositorySyncSchedulesAPI, self).__init__(pulp_connection)
 
     def list_schedules(self, repo_id, importer_id):
@@ -321,6 +348,9 @@ class RepositorySyncSchedulesAPI(PulpAPI):
 class RepositoryPublishSchedulesAPI(PulpAPI):
 
     def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
         super(RepositoryPublishSchedulesAPI, self).__init__(pulp_connection)
 
     def list_schedules(self, repo_id, distributor_id):

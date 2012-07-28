@@ -534,3 +534,52 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
     def test_association_exists_false(self, mock_count):
         self.assertFalse(self.manager.association_exists('repo-1', 'type-1', 'unit-1'))
         self.assertEqual(mock_count.call_count, 1)
+
+    # unassociation via criteria tests -----------------------------------------
+
+#        criteria_doc = {'association_filters': None,
+#                        'unit_filters': None,
+#                        'association_sort': None,
+#                        'unit_sort': None,
+#                        'limit': None,
+#                        'skip': None,
+#                        'association_fields': None,
+#                        'unit_fields': None,
+#                        'remove_duplicates': True}
+
+
+    def test_unassociate_via_criteria(self):
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-3', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-1', OWNER_TYPE_IMPORTER, 'yum')
+        self.manager.associate_unit_by_id('repo-1', 'type-2', 'unit-2', OWNER_TYPE_IMPORTER, 'yum')
+
+        criteria_doc = {'filters': {'association': {'unit_id': {'$in': ['unit-1', 'unit-3']}}}}
+
+        criteria = UnitAssociationCriteria.from_client_input(criteria_doc)
+
+        self.manager.unassociate_by_criteria('repo-1', criteria, OWNER_TYPE_USER, 'admin')
+
+        self.assertFalse(self.manager.association_exists('repo-1', 'unit-1', 'type-1'))
+        self.assertTrue(self.manager.association_exists('repo-1', 'unit-2', 'type-1'))
+        self.assertFalse(self.manager.association_exists('repo-1', 'unit-3', 'type-1'))
+        self.assertTrue(self.manager.association_exists('repo-1', 'unit-1', 'type-2'))
+        self.assertTrue(self.manager.association_exists('repo-1', 'unit-2', 'type-2'))
+
+    def test_unassociate_via_criteria_no_matches(self):
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+        self.manager.associate_unit_by_id('repo-1', 'type-1', 'unit-2', OWNER_TYPE_USER, 'admin')
+
+        criteria_doc = {'type_ids': ['type-2']}
+
+        criteria = UnitAssociationCriteria.from_client_input(criteria_doc)
+
+        self.manager.unassociate_by_criteria('repo-1', criteria, OWNER_TYPE_USER, 'admin')
+
+        self.assertTrue(self.manager.association_exists('repo-1', 'unit-1', 'type-1'))
+        self.assertTrue(self.manager.association_exists('repo-1', 'unit-2', 'type-1'))
+
+    def test_unassociate_via_criteria_regex(self):
+        pass
+

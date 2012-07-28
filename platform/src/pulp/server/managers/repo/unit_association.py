@@ -353,9 +353,6 @@ class RepoUnitAssociationManager(object):
                 'owner_id' : owner_id,
                 }
 
-        # TODO: Contact the importer to tell it about the removal
-        # It's the remove_units call in the Importer API
-
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove(spec, safe=True)
 
@@ -364,6 +361,20 @@ class RepoUnitAssociationManager(object):
                 repo_id, unit_id, unit_type_id):
             manager = manager_factory.repo_manager()
             manager.update_unit_count(repo_id, -1)
+
+        try:
+            repo_query_manager = manager_factory.repo_query_manager()
+            repo = repo_query_manager.get_repository(repo_id)
+
+            content_query_manager = manager_factory.content_query_manager()
+            content_unit = content_query_manager.get_content_unit_by_id(unit_type_id, unit_id)
+
+            importer_manager = manager_factory.repo_importer_manager()
+            importer = importer_manager.get_importer(repo_id)
+
+            importer.remove_units(repo, [content_unit])
+        except:
+            _LOG.exception('Exception informing importer for [%s] of unassociation' % repo_id)
 
     def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
@@ -395,9 +406,6 @@ class RepoUnitAssociationManager(object):
                 'owner_id' : owner_id,
                 }
 
-        # TODO: Contact the importer to tell it about the removal
-        # It's the remove_units call in the Importer API
-
         unit_coll = RepoContentUnit.get_collection()
         unit_coll.remove(spec, safe=True)
 
@@ -408,6 +416,20 @@ class RepoUnitAssociationManager(object):
         if unique_count:
             manager_factory.repo_manager().update_unit_count(
                 repo_id, -unique_count)
+
+        try:
+            repo_query_manager = manager_factory.repo_query_manager()
+            repo = repo_query_manager.get_repository(repo_id)
+
+            content_query_manager = manager_factory.content_query_manager()
+            content_units = content_query_manager.get_multiple_units_by_ids(unit_type_id, unit_id_list)
+
+            importer_manager = manager_factory.repo_importer_manager()
+            importer = importer_manager.get_importer(repo_id)
+
+            importer.remove_units(repo, content_units)
+        except:
+            _LOG.exception('Exception informing importer for [%s] of unassociation' % repo_id)
 
     def unassociate_by_criteria(self, repo_id, criteria, owner_type, owner_id):
         """
@@ -430,9 +452,10 @@ class RepoUnitAssociationManager(object):
 
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
-            id_list.append(unit['id'])
+            id_list.append(unit['unit_id'])
 
         collection = RepoContentUnit.get_collection()
+        repo_manager = manager_factory.repo_manager()
 
         for unit_type_id, unit_ids in unit_map.items():
             spec = {'repo_id': repo_id,
@@ -447,8 +470,18 @@ class RepoUnitAssociationManager(object):
             if not unique_count:
                 continue
 
-            repo_manager = manager_factory.repo_manager()
             repo_manager.update_unit_count(repo_id, -unique_count)
+
+        try:
+            repo_query_manager = manager_factory.repo_query_manager()
+            repo = repo_query_manager.get_repository(repo_id)
+
+            importer_manager = manager_factory.repo_importer_manager()
+            importer = importer_manager.get_importer(repo_id)
+
+            importer.remove_units(repo, unassociate_units)
+        except:
+            _LOG.exception('Exception informing importer for [%s] of unassociation' % repo_id)
 
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):

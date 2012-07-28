@@ -71,6 +71,26 @@ def child_link_obj(*path_elements):
     link['_href'] = http.extend_uri_path(suffix)
     return link
 
+def search_safe_link_obj(resource_id):
+    """
+    Like child_link_obj, except this can be used with search results. If the
+    current request URL ends with 'search/', that gets stripped off before
+    creating the object link.  If it does not end with 'search/', this acts just
+    like child_link_obj.
+
+    @param resource_id: id of the resource to which you need a link
+    @type  resource_id: basestring
+
+    @return:    dict with '_href' key and corresponding value
+    @rtype:     dict
+    """
+    search_suffix = 'search/'
+    uri_path = http.uri_path()
+    if uri_path.endswith(search_suffix):
+        uri_path = uri_path[:-len(search_suffix)]
+    link = copy.copy(_LINK_OBJ_SKEL)
+    link['_href'] = http.extend_uri_path(resource_id, uri_path)
+    return link
 
 def sibling_link_obj(*path_replacements):
     """

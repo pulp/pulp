@@ -11,13 +11,107 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import mock
+
 import dummy_plugins
 import base
 import mock_plugins
-
+from pulp.server.db.model import criteria
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor, RepoGroupPublishResult
 from pulp.server.managers import factory as manager_factory
+
+class RepoGroupSearchTests(base.PulpWebserviceTests):
+    @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_post(self, mock_query, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        ret = self.post('/v2/repo_groups/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+        self.assertEqual(mock_params.call_count, 1)
+
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_get(self, mock_query):
+        ret = self.get('/v2/repo_groups/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+
+    @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query',
+        return_value=[{'id':'rg1'}])
+    def test_post_serialization(self, mock_query, mock_link, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        status, body = self.post('/v2/repo_groups/search/')
+        self.assertEqual(status, 200)
+        mock_link.assert_called_once_with('rg1')
+
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query',
+        return_value=[{'id':'rg1'}])
+    def test_get_serialization(self, mock_query, mock_link):
+        status, body = self.get('/v2/repo_groups/search/')
+        self.assertEqual(status, 200)
+        mock_link.assert_called_once_with('rg1')
+
+
+class RepoGroupAssociationTests(base.PulpWebserviceTests):
+    def setUp(self):
+        super(RepoGroupAssociationTests, self).setUp()
+        self.manager = manager_factory.repo_group_manager()
+
+    def clean(self):
+        super(RepoGroupAssociationTests, self).clean()
+        RepoGroup.get_collection().remove()
+
+    @mock.patch.object(Criteria, 'from_client_input', return_value=Criteria())
+    @mock.patch('pulp.server.managers.repo.group.cud.RepoGroupManager.associate')
+    def test_associate(self, mock_associate, mock_from_client):
+        # the CallRequest stuff made mocking out a repo group very difficult,
+        # so I punted on that.
+        self.manager.create_repo_group('rg1')
+
+        post_data = {'criteria': {'filters':{'id':{'$in':['repo1']}}}}
+        status, body = self.post('/v2/repo_groups/rg1/actions/associate/', post_data)
+        self.assertEqual(status, 200)
+
+        self.assertEqual(mock_associate.call_count, 1)
+        call_args = mock_associate.call_args[0]
+        self.assertEqual(call_args[0], 'rg1')
+        # verify that it created and used a Criteria instance
+        self.assertEqual(call_args[1], mock_from_client.return_value)
+        self.assertEqual(mock_from_client.call_args[0][0],
+                {'filters':{'id':{'$in':['repo1']}}})
+
+    @mock.patch.object(Criteria, 'from_client_input', return_value=Criteria())
+    @mock.patch('pulp.server.managers.repo.group.cud.RepoGroupManager.unassociate')
+    def test_unassociate(self, mock_unassociate, mock_from_client):
+        # the CallRequest stuff made mocking out a repo group very difficult,
+        # so I punted on that.
+        self.manager.create_repo_group('rg1')
+
+        post_data = {'criteria': {'filters':{'id':{'$in':['repo1']}}}}
+        status, body = self.post('/v2/repo_groups/rg1/actions/unassociate/', post_data)
+        self.assertEqual(status, 200)
+
+        self.assertEqual(mock_unassociate.call_count, 1)
+        call_args = mock_unassociate.call_args[0]
+        self.assertEqual(call_args[0], 'rg1')
+        # verify that it created and used a Criteria instance
+        self.assertEqual(call_args[1], mock_from_client.return_value)
+        self.assertEqual(mock_from_client.call_args[0][0],
+                {'filters':{'id':{'$in':['repo1']}}})
+
 
 class RepoGroupCollectionTests(base.PulpWebserviceTests):
 
@@ -108,6 +202,7 @@ class RepoGroupCollectionTests(base.PulpWebserviceTests):
         found = RepoGroup.get_collection().find_one({'id' : data['id']})
         self.assertEqual(found['repo_ids'], data['repo_ids'])
 
+
 class RepoGroupResourceTests(base.PulpWebserviceTests):
 
     def setUp(self):
@@ -192,6 +287,7 @@ class RepoGroupResourceTests(base.PulpWebserviceTests):
         self.assertTrue('a' in found['notes'])
         self.assertTrue('b' not in found['notes'])
 
+
 class RepoGroupDistributorsTests(base.PulpWebserviceTests):
 
     def setUp(self):
@@ -262,6 +358,7 @@ class RepoGroupDistributorsTests(base.PulpWebserviceTests):
 
         found = RepoGroupDistributor.get_collection().find_one({'id' : data['distributor_id']})
         self.assertTrue(found is not None)
+
 
 class RepoGroupDistributorTests(base.PulpWebserviceTests):
 
@@ -400,6 +497,7 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
+
 class PublishActionTests(base.PulpWebserviceTests):
 
     def setUp(self):
@@ -431,3 +529,46 @@ class PublishActionTests(base.PulpWebserviceTests):
         # Can't verify the status code due to the unit test framework
 #        self.assertEqual(200, status)
 #        self.assertEqual(1, dummy_plugins.DUMMY_GROUP_DISTRIBUTOR.call_count)
+
+class RepoGroupSearchTests(base.PulpWebserviceTests):
+    @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_post(self, mock_query, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        ret = self.post('/v2/repo_groups/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+        self.assertEqual(mock_params.call_count, 1)
+
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_get(self, mock_query):
+        ret = self.get('/v2/repo_groups/search/')
+        self.assertEqual(ret[0], 200)
+        self.assertEqual(mock_query.call_count, 1)
+        query_arg = mock_query.call_args[0][0]
+        self.assertTrue(isinstance(query_arg, criteria.Criteria))
+
+    @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query',
+        return_value=[{'id':'rg1'}])
+    def test_post_serialization(self, mock_query,
+                                mock_search_safe_link, mock_params):
+        mock_params.return_value = {
+            'criteria' : {}
+        }
+        status, body = self.post('/v2/repo_groups/search/')
+        self.assertEqual(status, 200)
+        mock_search_safe_link.assert_called_once_with('rg1')
+
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
+    @mock.patch('pulp.server.db.connection.PulpCollection.query',
+        return_value=[{'id':'rg1'}])
+    def test_get_serialization(self, mock_query, mock_search_safe_link):
+        status, body = self.get('/v2/repo_groups/search/')
+        self.assertEqual(status, 200)
+        mock_search_safe_link.assert_called_once_with('rg1')
