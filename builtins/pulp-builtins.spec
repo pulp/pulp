@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.313
+Version: 0.0.319
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -91,6 +91,15 @@ client capabilites.
 
 
 %changelog
+* Mon Jul 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.319-1
+- 843618 - Added interactive prompt when the password isn't specified
+  (jason.dobies@redhat.com)
+- Adding CLI support for repository groups (mhrivnak@redhat.com)
+- Repository Groups now have the criteria-based search REST API.
+  (mhrivnak@redhat.com)
+- 841584 - Temporarily turn the generic bind extension into RPM
+  (jason.dobies@redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
 - Version alignment.
 * Tue Jul 10 2012 Jeff Ortel <jortel@redhat.com> 0.0.312-3
