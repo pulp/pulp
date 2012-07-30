@@ -86,6 +86,9 @@ class RoleManager(object):
 
         @return: The updated object
         @rtype: dict
+        
+        @raise MissingResource: if the given role does not exist
+        @raise PulpDataException: if update keyword  is not supported
         """
  
         delta.pop('name', None)
@@ -117,14 +120,11 @@ class RoleManager(object):
 
         @param name: identifies the role being deleted
         @type  name: str
-        
-        @rtype: bool
-        @return: True on success
 
+        @raise InvalidValue: if any of the fields are unacceptable
         @raise MissingResource: if the given role does not exist
-        @raise InvalidValue: if role name is invalid
         """
-        # Raise exception if login is invalid
+        # Raise exception if role name is invalid
         if name is None or not isinstance(name, basestring):
             raise InvalidValue(['name'])
 
@@ -154,6 +154,18 @@ class RoleManager(object):
 
     def add_permissions_to_role(self, name, resource, operations):
         """
+        Add permissions to a role. 
+
+        @type name: str
+        @param name: name of role
+        
+        @type resource: str
+        @param resource: resource path to grant permissions to
+        
+        @type operations: list of allowed operations being granted
+        @param operations: list or tuple
+
+        @raise MissingResource: if the given role does not exist
         """
         role = Role.get_collection().find_one({'name' : name})
         if role is None:
@@ -169,6 +181,18 @@ class RoleManager(object):
 
     def remove_permissions_from_role(self, name, resource, operations):
         """
+        Remove permissions from a role. 
+        
+        @type name: str
+        @param name: name of role
+    
+        @type resource: str
+        @param resource: resource path to revoke permissions from
+        
+        @type operations: list of allowed operations being revoked
+        @param operations: list or tuple
+        
+        @raise MissingResource: if the given role does not exist
         """
         role = Role.get_collection().find_one({'name' : name})
         if role is None:
@@ -202,9 +226,16 @@ class RoleManager(object):
         
         @rtype: bool
         @return: True on success
+        
+        @raise MissingResource: if the given role or user does not exist
         """
-        role =  factory.role_query_manager().find_by_name(name)
-        user = factory.user_query_manager().find_by_login(login)
+        role = Role.get_collection().find_one({'name' : name})
+        if role is None:
+            raise MissingResource(name)
+
+        user = User.get_collection().find_one({'login' : login})
+        if user is None:
+            raise MissingResource(login)
        
         if name in user['roles']:
             return False
@@ -231,10 +262,17 @@ class RoleManager(object):
         
         @rtype: bool
         @return: True on success
+                        
+        @raise MissingResource: if the given role or user does not exist
         """
-      
-        role = factory.role_query_manager().find_by_name(name)
-        user = factory.user_query_manager().find_by_login(login)
+        role = Role.get_collection().find_one({'name' : name})
+        if role is None:
+            raise MissingResource(name)
+
+        user = User.get_collection().find_one({'login' : login})
+        if user is None:
+            raise MissingResource(login)
+
         if name == super_user_role and factory.user_query_manager().is_last_super_user(user):
             raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
                                      (super_user_role, login))
