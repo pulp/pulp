@@ -14,6 +14,7 @@
 """
 Contains permissions query classes
 """
+from gettext import gettext as _
 
 from pulp.server.db.model.auth import Permission
 from logging import getLogger

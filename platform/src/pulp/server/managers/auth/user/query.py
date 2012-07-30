@@ -15,6 +15,8 @@
 Contains users query classes
 """
 
+from gettext import gettext as _
+
 from pulp.server.db.model.auth import User, Role
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import super_user_role

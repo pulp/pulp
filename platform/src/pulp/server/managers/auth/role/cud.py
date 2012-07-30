@@ -15,6 +15,7 @@
 Contains the manager class and exceptions for operations surrounding the creation,
 update, and deletion on a Pulp Role.
 """
+from gettext import gettext as _
 
 import logging
 import re

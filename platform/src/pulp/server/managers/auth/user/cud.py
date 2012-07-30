@@ -16,12 +16,13 @@ Contains the manager class and exceptions for operations surrounding the creatio
 update, and deletion on a Pulp user.
 """
 
+from gettext import gettext as _
+
 import logging
 import re
 
 from pulp.server import config
 from pulp.server.db.model.auth import User
-from pulp.server.auth.authorization import _operations_not_granted_by_roles
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import super_user_role

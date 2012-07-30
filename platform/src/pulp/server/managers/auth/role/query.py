@@ -14,6 +14,7 @@
 """
 Contains roles query classes
 """
+from gettext import gettext as _
 
 from pulp.server.db.model.auth import Role
 from logging import getLogger
