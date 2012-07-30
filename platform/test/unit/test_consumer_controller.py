@@ -21,6 +21,8 @@ import base
 import logging
 import mock_plugins
 import mock_agent
+import json
+import urllib
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.loader import api as plugin_api
@@ -122,7 +124,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         params = {'details':True}
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
@@ -342,46 +344,101 @@ class TestSearch(base.PulpWebserviceTests):
         Bind.get_collection().remove()
         mock_plugins.reset()
 
-    def test_get(self):
-        """
-        Tests seaching and getting a list of consumers.
-        """
-        # Setup
-        manager = factory.consumer_manager()
+    def populate(self, bindings=False):
+        if bindings:
+            manager = factory.repo_manager()
+            repo = manager.create_repo(self.REPO_ID)
+            manager = factory.repo_distributor_manager()
+            manager.add_distributor(
+                self.REPO_ID,
+                self.DISTRIBUTOR_TYPE_ID,
+                {},
+                True,
+                distributor_id=self.DISTRIBUTOR_ID)
         for id in self.CONSUMER_IDS:
+            manager = factory.consumer_manager()
             manager.register(id)
+            if bindings:
+                manager = factory.consumer_bind_manager()
+                manager.bind(id, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+    def validate(self, body, bindings=False):
+        if bindings:
+            self.assertEqual(len(self.CONSUMER_IDS), len(body))
+            fetched = dict([(c['id'],c) for c in body])
+            for id in self.CONSUMER_IDS:
+                consumer = fetched[id]
+                self.assertEquals(consumer['id'], id)
+                self.assertTrue('_href' in consumer)
+                self.assertTrue('bindings' in consumer)
+                bindings = consumer['bindings']
+                self.assertEquals(len(bindings), 1)
+                self.assertEquals(bindings[0]['consumer_id'], id)
+                self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+        else:
+            self.assertEqual(len(self.CONSUMER_IDS), len(body))
+            fetched = dict([(c['id'],c) for c in body])
+            for id in self.CONSUMER_IDS:
+                consumer = fetched[id]
+                self.assertEquals(consumer['id'], id)
+                self.assertTrue('_href' in consumer)
+                self.assertFalse('bindings' in body)
+
+    def test_get(self):
+        # Setup
+        self.populate()
         # Test
         status, body = self.get('/v2/consumers/search/')
         # Verify
         self.assertEqual(200, status)
-        self.assertEqual(len(self.CONSUMER_IDS), len(body))
-        fetched = dict([(c['id'],c) for c in body])
-        for id in self.CONSUMER_IDS:
-            consumer = fetched[id]
-            self.assertEquals(consumer['id'], id)
-            self.assertFalse('bindings' in consumer)
-            self.assertTrue('_href' in consumer)
+        self.validate(body)
+
+    def test_get_with_details(self):
+        # Setup
+        self.populate(True)
+        # Test
+        status, body = self.get('/v2/consumers/search/?details=1')
+        # Verify
+        self.assertEqual(200, status)
+        self.validate(body, True)
+
+    def test_get_with_bindings(self):
+        # Setup
+        self.populate(True)
+        # Test
+        status, body = self.get('/v2/consumers/search/?bindings=1')
+        # Verify
+        self.assertEqual(200, status)
+        self.validate(body, True)
 
     def test_post(self):
-        """
-        Tests seaching and getting a list of consumers.
-        """
         # Setup
-        manager = factory.consumer_manager()
-        for id in self.CONSUMER_IDS+['extra1', 'extra2']:
-            manager.register(id)
+        self.populate()
         # Test
         body = {'criteria':self.CRITERIA}
         status, body = self.post('/v2/consumers/search/', body)
         # Verify
+        self.validate(body)
+
+    def test_post_with_details(self):
+        # Setup
+        self.populate(True)
+        # Test
+        body = {'criteria':self.CRITERIA, 'details':True}
+        status, body = self.post('/v2/consumers/search/', body)
+        # Verify
         self.assertEqual(200, status)
-        self.assertEqual(len(self.CONSUMER_IDS), len(body))
-        fetched = dict([(c['id'],c) for c in body])
-        for id in self.CONSUMER_IDS:
-            consumer = fetched[id]
-            self.assertEquals(consumer['id'], id)
-            self.assertFalse('bindings' in consumer)
-            self.assertTrue('_href' in consumer)
+        self.validate(body, True)
+
+    def test_post_with_bindings(self):
+        # Setup
+        self.populate(True)
+        # Test
+        body = {'criteria':self.CRITERIA, 'bindings':True}
+        status, body = self.post('/v2/consumers/search/', body)
+        # Verify
+        self.assertEqual(200, status)
+        self.validate(body, True)
 
 
 class BindTest(base.PulpWebserviceTests):

@@ -170,7 +170,8 @@ class ConsumerSearch(SearchController):
 
     def GET(self):
         body = web.input()
-        found = self._get_query_results_from_get()
+        ignored = ('details', 'bindings')
+        found = self._get_query_results_from_get(ignored)
         consumers = expand_consumers(body, found)
         for c in consumers:
             href = serialization.link.search_safe_link_obj(c['id'])
