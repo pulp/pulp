@@ -33,11 +33,6 @@ class PulpAuthorizationError(PulpException):
 CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
 operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
 
-super_user_role = 'super-users'
-consumer_users_role = 'consumer-users'
-
-
-
 # Temporarily moved this out of db into here; this is the only place using it
 # and it's going to be deleted.
 

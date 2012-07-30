@@ -19,7 +19,7 @@ import string
 from pulp.server.auth import principal
 from pulp.server.auth import authorization
 from pulp.server.managers import factory as manager_factory
-
+from pulp.server.managers.auth.role.cud import super_user_role
 from pulp.server.db.model.auth import User, Role
 import pulp.server.exceptions as exceptions
 
@@ -99,29 +99,29 @@ class RoleManagerTests(base.PulpServerTests):
     # test built in roles
 
     def test_super_users(self):
-        role = self.role_query_manager.find_by_name(authorization.super_user_role)
+        role = self.role_query_manager.find_by_name(super_user_role)
         self.assertFalse(role is None)
 
     def test_super_users_grant(self):
         s = self._create_resource()
         n = authorization.operation_to_name(authorization.READ)
-        self.role_manager.add_permissions_to_role(authorization.super_user_role, s, [n])
+        self.role_manager.add_permissions_to_role(super_user_role, s, [n])
         #self.assertRaises(authorization.PulpAuthorizationError,
         #                  self.role_manager.add_permissions_to_role,
-        #                  authorization.super_user_role, s, [n])
+        #                  super_user_role, s, [n])
 
     def test_super_users_revoke(self):
         s = self._create_resource()
         n = authorization.operation_to_name(authorization.READ)
-        self.role_manager.remove_permissions_from_role(authorization.super_user_role, s, [n])
+        self.role_manager.remove_permissions_from_role(super_user_role, s, [n])
 #        self.assertRaises(authorization.PulpAuthorizationError,
 #                          self.role_manager.remove_permissions_from_role,
-#                          authorization.super_user_role, s, [n])
+#                          super_user_role, s, [n])
 
     def test_super_user_permissions(self):
         u = self._create_user()
         s = self._create_resource()
-        r = authorization.super_user_role
+        r = super_user_role
         self.user_manager.add_user_to_role(r, u['login'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u, authorization.CREATE))
         self.assertTrue(self.user_query_manager.is_authorized(s, u, authorization.READ))
