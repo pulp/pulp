@@ -84,15 +84,15 @@ class RoleManagerTests(base.PulpServerTests):
     def test_add_user(self):
         u = self._create_user()
         r = self._create_role()
-        self.user_manager.add_user_to_role(r['name'], u['login'])
+        self.role_manager.add_user_to_role(r['name'], u['login'])
         user_names = [u['login'] for u in self.user_query_manager.get_users_belonging_to_role(r)]
         self.assertTrue(u['login'] in user_names)
 
     def test_remove_user(self):
         u = self._create_user()
         r = self._create_role()
-        self.user_manager.add_user_to_role(r['name'], u['login'])
-        self.user_manager.remove_user_from_role(r['name'], u['login'])
+        self.role_manager.add_user_to_role(r['name'], u['login'])
+        self.role_manager.remove_user_from_role(r['name'], u['login'])
         user_names = [u['login'] for u in self.user_query_manager.get_users_belonging_to_role(r)]
         self.assertFalse(u['login'] in user_names)
 
@@ -122,7 +122,7 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         s = self._create_resource()
         r = super_user_role
-        self.user_manager.add_user_to_role(r, u['login'])
+        self.role_manager.add_user_to_role(r, u['login'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u, authorization.CREATE))
         self.assertTrue(self.user_query_manager.is_authorized(s, u, authorization.READ))
         self.assertTrue(self.user_query_manager.is_authorized(s, u, authorization.UPDATE))
@@ -138,8 +138,8 @@ class RoleManagerTests(base.PulpServerTests):
         s = self._create_resource()
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.user_manager.add_user_to_role(r1['name'], u['login'])
-        self.user_manager.add_user_to_role(r2['name'], u['login'])
+        self.role_manager.add_user_to_role(r1['name'], u['login'])
+        self.role_manager.add_user_to_role(r2['name'], u['login'])
 
         self.role_manager.add_permissions_to_role(r1['name'], s, [n])
         self.role_manager.add_permissions_to_role(r2['name'], s, [n])
@@ -161,12 +161,12 @@ class RoleManagerTests(base.PulpServerTests):
         s = self._create_resource()
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.user_manager.add_user_to_role(r1['name'], u['login'])
-        self.user_manager.add_user_to_role(r2['name'], u['login'])
+        self.role_manager.add_user_to_role(r1['name'], u['login'])
+        self.role_manager.add_user_to_role(r2['name'], u['login'])
         self.role_manager.add_permissions_to_role(r1['name'], s, [n])
         self.role_manager.add_permissions_to_role(r2['name'], s, [n])
         self.assertTrue(self.user_query_manager.is_authorized(s, u, o))
-        self.user_manager.remove_user_from_role(r1['name'], u['login'])
+        self.role_manager.remove_user_from_role(r1['name'], u['login'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u, o))
 
     def test_non_unique_permission_delete(self):
@@ -176,8 +176,8 @@ class RoleManagerTests(base.PulpServerTests):
         s = self._create_resource()
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.user_manager.add_user_to_role(r1['name'], u['login'])
-        self.user_manager.add_user_to_role(r2['name'], u['login'])
+        self.role_manager.add_user_to_role(r1['name'], u['login'])
+        self.role_manager.add_user_to_role(r2['name'], u['login'])
         self.role_manager.add_permissions_to_role(r1['name'], s, [n])
         self.role_manager.add_permissions_to_role(r2['name'], s, [n])
         self.assertTrue(self.user_query_manager.is_authorized(s, u, o))

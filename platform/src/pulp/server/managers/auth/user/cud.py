@@ -145,10 +145,10 @@ class UserManager(object):
                 old_roles = user['roles']
                 for new_role in delta['roles']:
                     if new_role not in old_roles:
-                        self.add_user_to_role(new_role, login)
+                        factory.role_manager().add_user_to_role(new_role, login)
                 for old_role in old_roles:
                     if old_role not in delta['roles']:
-                        self.remove_user_from_role(old_role, login)
+                        factory.role_manager().remove_user_from_role(old_role, login)
                 user['roles'] = delta['roles']
 
         if invalid_values:
@@ -214,73 +214,8 @@ class UserManager(object):
             default_password = config.config.get('server', 'default_password')
             admin = factory.user_manager().create_user(login=default_login, password=default_password)
         
-        self.add_user_to_role(super_user_role, default_login)
+        factory.role_manager().add_user_to_role(super_user_role, default_login)
 
-    
-    def add_user_to_role(self, role_name, login):
-        """
-        Add a user to a role. This has the side-effect of granting all the
-        permissions granted to the role to the user.
-        
-        @type role_name: str
-        @param role_name: name of role
-        
-        @type login: str
-        @param login: login of user
-        
-        @rtype: bool
-        @return: True on success
-        """
-        role =  factory.role_query_manager().find_by_name(role_name)
-        user = factory.user_query_manager().find_by_login(login)
-       
-        if role_name in user['roles']:
-            return False
-
-        user['roles'].append(role_name)
-        User.get_collection().save(user, safe=True)
-        
-        for resource, operations in role['permissions'].items():
-            factory.permission_manager().grant(resource, user, operations)
-        return True
-
-
-    def remove_user_from_role(self, role_name, user_name):
-        """
-        Remove a user from a role. This has the side-effect of revoking all the
-        permissions granted to the role from the user, unless the permissions are
-        also granted by another role.
-        
-        @type role_name: str
-        @param role_name: name of role
-    
-        @type user_name: str
-        @param suer_name: name of user
-        
-        @rtype: bool
-        @return: True on success
-        """
-      
-        role = factory.role_query_manager().find_by_name(role_name)
-        user = factory.user_query_manager().find_by_login(user_name)
-        if role_name == super_user_role and factory.user_query_manager().is_last_super_user(user):
-            raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
-                                     (super_user_role, user_name))
-        
-        if role_name not in user['roles']:
-            return False
-
-        user['roles'].remove(role_name)
-        User.get_collection().save(user, safe=True)
-        
-        for resource, operations in role['permissions'].items():
-            other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
-            user_ops = _operations_not_granted_by_roles(resource,
-                                                        operations,
-                                                        other_roles)
-            factory.permission_manager().revoke(resource, user, user_ops)
-        return True
- 
 
 
 # -- functions ----------------------------------------------------------------

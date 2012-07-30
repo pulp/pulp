@@ -20,7 +20,7 @@ import logging
 import re
 
 from pulp.server.util import Delta
-from pulp.server.db.model.auth import Role
+from pulp.server.db.model.auth import Role, User
 from pulp.server.auth.authorization import _operations_not_granted_by_roles
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException
 from pulp.server.managers import factory
@@ -187,6 +187,72 @@ class RoleManager(object):
             del role['permissions'][resource]
         
         Role.get_collection().save(role, safe=True)
+        
+    
+    def add_user_to_role(self, name, login):
+        """
+        Add a user to a role. This has the side-effect of granting all the
+        permissions granted to the role to the user.
+        
+        @type name: str
+        @param name: name of role
+        
+        @type login: str
+        @param login: login of user
+        
+        @rtype: bool
+        @return: True on success
+        """
+        role =  factory.role_query_manager().find_by_name(name)
+        user = factory.user_query_manager().find_by_login(login)
+       
+        if name in user['roles']:
+            return False
+
+        user['roles'].append(name)
+        User.get_collection().save(user, safe=True)
+        
+        for resource, operations in role['permissions'].items():
+            factory.permission_manager().grant(resource, user, operations)
+        return True
+
+
+    def remove_user_from_role(self, name, login):
+        """
+        Remove a user from a role. This has the side-effect of revoking all the
+        permissions granted to the role from the user, unless the permissions are
+        also granted by another role.
+        
+        @type name: str
+        @param name: name of role
+    
+        @type login: str
+        @param login: name of user
+        
+        @rtype: bool
+        @return: True on success
+        """
+      
+        role = factory.role_query_manager().find_by_name(name)
+        user = factory.user_query_manager().find_by_login(login)
+        if name == super_user_role and factory.user_query_manager().is_last_super_user(user):
+            raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
+                                     (super_user_role, login))
+        
+        if name not in user['roles']:
+            return False
+
+        user['roles'].remove(name)
+        User.get_collection().save(user, safe=True)
+        
+        for resource, operations in role['permissions'].items():
+            other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
+            user_ops = _operations_not_granted_by_roles(resource,
+                                                        operations,
+                                                        other_roles)
+            factory.permission_manager().revoke(resource, user, user_ops)
+        return True
+ 
         
         
     def ensure_super_user_role(self):
