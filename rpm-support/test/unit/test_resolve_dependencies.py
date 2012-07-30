@@ -45,7 +45,8 @@ class TestResolveDeps(rpm_support_base.PulpRPMTests):
     def clean(self):
         shutil.rmtree(self.temp_dir)
         # clean up dir created by yum's repostorage
-        shutil.rmtree("test_resolve_deps")
+        if os.path.exists("./test_resolve_deps"):
+            shutil.rmtree("test_resolve_deps")
 
     def test_resolve_deps(self):
         repo = mock.Mock(spec=Repository)
