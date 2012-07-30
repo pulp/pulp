@@ -154,6 +154,29 @@ class OperationPostponed(PulpExecutionException):
         return {'call_report': self.call_report}
 
 
+class MultipleOperationsPostponed(PulpExecutionException):
+    """
+    Base class for handling multiple simultaneous asynchronous operations being
+    executed by the coordinator.
+    """
+    http_status_code = httplib.ACCEPTED
+
+    def __init__(self, call_report_list):
+        """
+        @param call_report_list: list of call reports, one for each operation
+        @type call_report_list: list
+        """
+        PulpExecutionException.__init__(self, call_report_list)
+        self.call_report_list = call_report_list
+
+    def __str__(self):
+        msg = _('Multiple Operations')
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        return {'call_report_list': self.call_report_list}
+
+
 class NotImplemented(PulpExecutionException):
     """
     Base class for exceptions raised in place-holders for future functionality

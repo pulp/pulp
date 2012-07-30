@@ -14,7 +14,7 @@
 import logging
 
 from pulp.server.compat import json, http_responses
-from pulp.server.exceptions import OperationPostponed
+from pulp.server.exceptions import MultipleOperationsPostponed, OperationPostponed
 from pulp.server.webservices import serialization
 
 
@@ -37,7 +37,6 @@ class PostponedOperationMiddleware(object):
         try:
             return self.app(environ, start_response)
         except OperationPostponed, e:
-            # TODO add some debugging logging
             serialized_call_report = e.call_report.serialize()
             href_obj = serialization.dispatch.task_href(e.call_report)
             serialized_call_report.update(href_obj)
@@ -46,3 +45,13 @@ class PostponedOperationMiddleware(object):
             start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
             start_response(start_str, [(k, v) for k, v in self.headers.items()])
             return [body]
+        except MultipleOperationsPostponed, e:
+            serialized_call_report_list = [r.serialize() for r in e.call_report_list]
+            for r in serialized_call_report_list:
+                r.update(serialization.dispatch.task_group_href(r))
+            body = json.dumps(serialized_call_report_list)
+            self.headers['Content-Length'] = str(len(body))
+            start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
+            start_response(start_str, [(k, v) for k, v in self.headers.items()])
+            return [body]
+
