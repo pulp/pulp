@@ -39,11 +39,19 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         self.working_dir = os.path.join(self.temp_dir, "working")
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir)
-        self.updateinfo_xml_path = os.path.join(self.data_dir, "test_errata_local_sync", "updateinfo.xml.gz")
+        self.updateinfo_xml_path = os.path.join(self.data_dir, "test_errata_install", "updateinfo.xml")
         self.updateinfo_unrelated_xml_path = os.path.join(self.data_dir, "test_errata_install", "updateinfo_nonapplicable.xml")
         self.consumer_id = "test_errata_profiler_consumer_id"
         self.profiles = self.get_test_profile()
         self.test_consumer = Consumer(self.consumer_id, self.profiles)
+        # i386 version of consumer to test arch issues
+        self.consumer_id_i386 = "%s.i386" % (self.consumer_id)
+        self.profiles_i386 = self.get_test_profile(arch="i386")
+        self.test_consumer_i386 = Consumer(self.consumer_id_i386, self.profiles_i386)
+        # consumer has been updated, and has the updated rpms installed
+        self.consumer_id_been_updated = "%s.been_updated" % (self.consumer_id)
+        self.profiles_been_updated = self.get_test_profile_been_updated()
+        self.test_consumer_been_updated = Consumer(self.consumer_id_been_updated, self.profiles_been_updated)
 
     def tearDown(self):
         super(TestErrataProfiler, self).tearDown()
@@ -58,20 +66,30 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         return {"name":name, "epoch": epoch, "version":version, "release":release, 
                 "arch":arch, "vendor":vendor}
 
-    def get_test_errata_object(self):
+    def get_test_errata_object(self, eid='RHEA-2010:9999'):
         errata_from_xml = updateinfo.get_errata(self.updateinfo_xml_path)
         self.assertTrue(len(errata_from_xml) > 0)
-        return errata_from_xml[0]
+        errata = {}
+        for e in errata_from_xml:
+            errata[e['id']] = e
+        self.assertTrue(eid in errata)
+        return errata[eid]
 
     def get_test_errata_object_unrelated(self):
         errata_from_xml = updateinfo.get_errata(self.updateinfo_unrelated_xml_path)
         self.assertTrue(len(errata_from_xml) > 0)
         return errata_from_xml[0]
 
-    def get_test_profile(self):
-        foo = self.create_profile_entry("emoticons", 0, "0.0.1", "1", "x86_64", "Test Vendor")
-        bar = self.create_profile_entry("patb", 0, "0.0.1", "1", "x86_64", "Test Vendor")
+    def get_test_profile(self, arch="x86_64"):
+        foo = self.create_profile_entry("emoticons", 0, "0.0.1", "1", arch, "Test Vendor")
+        bar = self.create_profile_entry("patb", 0, "0.0.1", "1", arch, "Test Vendor")
         return {RPM_TYPE_ID:[foo, bar]}
+
+    def get_test_profile_been_updated(self, arch="x86_64"):
+        foo = self.create_profile_entry("emoticons", 0, "0.1", "2", arch, "Test Vendor")
+        bar = self.create_profile_entry("patb", 0, "0.1", "2", arch, "Test Vendor")
+        return {RPM_TYPE_ID:[foo, bar]}
+
 
     def test_metadata(self):
         data = RPMErrataProfiler.metadata()
@@ -162,6 +180,32 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         self.assertTrue(report.applicable)
         self.assertEqual(report.unit, example_errata)
 
+    def test_unit_applicable_same_name_diff_arch(self):
+        # Errata refers to RPMs that are x86_64, the test consumer is i386
+        # the rpms installed share the same name as the errata, but the client arch is different
+        # so this errata is marked as unapplicable
+        errata_obj = self.get_test_errata_object()
+        errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
+        existing_units = [errata_unit]
+        test_repo = profiler_mocks.get_repo("test_repo_id")
+        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
+        example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
+        prof = RPMErrataProfiler()
+        report = prof.unit_applicable(self.test_consumer_i386, example_errata, None, conduit)
+        self.assertFalse(report.applicable)
+
+    def test_unit_applicable_updated_rpm_already_installed(self):
+        # Errata refers to RPMs already installed, i.e. the consumer has these exact NEVRA already
+        errata_obj = self.get_test_errata_object()
+        errata_unit = Unit(ERRATA_TYPE_ID, {"id":errata_obj["id"]}, errata_obj, None)
+        existing_units = [errata_unit]
+        test_repo = profiler_mocks.get_repo("test_repo_id")
+        conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
+        example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
+        prof = RPMErrataProfiler()
+        report = prof.unit_applicable(self.test_consumer_been_updated, example_errata, None, conduit)
+        self.assertFalse(report.applicable)
+
     def test_unit_applicable_false(self):
         # Errata refers to RPMs which are NOT part of our test consumer's profile
         errata_obj = self.get_test_errata_object_unrelated()
@@ -182,7 +226,6 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         test_repo = profiler_mocks.get_repo("test_repo_id")
         conduit = profiler_mocks.get_profiler_conduit(existing_units=existing_units, repo_bindings=[test_repo])
         example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
-        
         prof = RPMErrataProfiler()
         translated_units  = prof.install_units(self.test_consumer, [example_errata], None, None, conduit)
         self.assertEqual(len(translated_units), 2)
@@ -191,7 +234,7 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
             expected_name = "%s.%s" % (r["name"], r["arch"])
             expected.append(expected_name)
         for u in translated_units:
-            rpm_name = u["name"]
+            rpm_name = u["unit_key"]["name"]
             self.assertTrue(rpm_name in expected)
 
 

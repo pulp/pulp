@@ -29,16 +29,7 @@ def get_profiler_conduit(type_id=None, existing_units=None, repo_bindings=[]):
         if existing_units:
             for u in existing_units:
                 if criteria:
-                    if criteria.unit_filters:
-                        match = True
-                        for key in criteria.unit_filters:
-                            if not hasattr(u, key):
-                                match = False
-                            elif getattr(u, key) != criteria.unit_filters[key]:
-                                match = False
-                        if match:
-                            ret_val.append(u)
-                    elif u.type_id in criteria.type_ids:
+                    if u.type_id in criteria.type_ids:
                         ret_val.append(u)
                 else:
                     ret_val.append(u)
