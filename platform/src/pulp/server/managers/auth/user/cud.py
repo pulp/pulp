@@ -30,8 +30,6 @@ from pulp.server.managers.auth.password import PasswordManager
 
 # -- constants ----------------------------------------------------------------
 
-super_user_role = 'super-users'
-
 _USER_LOGIN_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
 _LOG = logging.getLogger(__name__)
