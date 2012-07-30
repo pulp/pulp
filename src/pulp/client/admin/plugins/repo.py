@@ -1986,7 +1986,6 @@ class KeyReader:
                 raise Exception, _('%s must be file/directory') % key
             keylist = []
             for path in paths:
-                print _('uploading %s') % path
                 f = open(path)
                 fn = os.path.basename(path)
                 content = f.read()
