@@ -85,7 +85,7 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_role()
         self.role_manager.add_user_to_role(r['name'], u['login'])
-        user_names = [u['login'] for u in self.user_query_manager.get_users_belonging_to_role(r)]
+        user_names = [u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r)]
         self.assertTrue(u['login'] in user_names)
 
     def test_remove_user(self):
@@ -93,7 +93,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_role()
         self.role_manager.add_user_to_role(r['name'], u['login'])
         self.role_manager.remove_user_from_role(r['name'], u['login'])
-        user_names = [u['login'] for u in self.user_query_manager.get_users_belonging_to_role(r)]
+        user_names = [u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r)]
         self.assertFalse(u['login'] in user_names)
 
     # test built in roles

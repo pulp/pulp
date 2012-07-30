@@ -79,7 +79,7 @@ class UserQueryManager(object):
         return users
     
     
-    def get_users_belonging_to_role(self, role):
+    def find_users_belonging_to_role(self, role):
         """
         Get a list of users belonging to the given role
         
@@ -161,7 +161,7 @@ class UserQueryManager(object):
 
         role = Role.get_collection().find_one({'name' : super_user_role})
 
-        users = self.get_users_belonging_to_role(role)
+        users = self.find_users_belonging_to_role(role)
         if not users:
             raise PulpDataException(_('no super users defined'))
         if len(users) >= 2:

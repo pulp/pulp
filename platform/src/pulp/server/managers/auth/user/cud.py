@@ -202,7 +202,7 @@ class UserManager(object):
         user_query_manager = factory.user_query_manager()
         role_query_manager = factory.role_query_manager()
 
-        super_users = user_query_manager.get_users_belonging_to_role( 
+        super_users = user_query_manager.find_users_belonging_to_role( 
                     role_query_manager.find_by_name(super_user_role))
         if super_users:
             return
