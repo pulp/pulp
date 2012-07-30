@@ -17,8 +17,8 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.313
-Release: 2%{?dist}
+Version: 0.0.319
+Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -233,6 +233,25 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Mon Jul 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.319-1
+- Date range support in ISO exporter to export errata and rpms based on errata
+  issue date (pkilambi@redhat.com)
+- Adding apache rules to expose /pulp/isos via http and https
+  (pkilambi@redhat.com)
+- Adding http/https publish flags in Iso Distributor to symlink the isos to
+  final serving location (pkilambi@redhat.com)
+- Adding support in Iso Distributor to wrap exported content into iso images
+  (pkilambi@redhat.com)
+- Support in ISO Distributor to export comps information (pkilambi@redhat.com)
+- Added RPM extension unbind command to mask the distributor ID
+  (jason.dobies@redhat.com)
+- Support in ISO Distributor to export errata, its packages and generate
+  updateinfo (pkilambi@redhat.com)
+- 840490 - Exception from 'link_errata_rpm_units': KeyError: 'sum'
+  (jmatthews@redhat.com)
+- 837361 - fix errtum skip during syncs (pkilambi@prad.rdu.redhat.com)
+- CLI update to include errata upload functionality (jmatthews@redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-2
 - Add iso distributor to .spec. (jortel@redhat.com)
 
