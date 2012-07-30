@@ -11,13 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
 from gettext import gettext as _
 from pulp.client import arg_utils
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.search import SearchCommand
+from pulp.client.search import SearchCommand, SearchCommandMinimal
 
 # -- framework hook -----------------------------------------------------------
 
@@ -264,30 +263,13 @@ class RepoGroupMemberSection(PulpCliSection):
         list_command.add_option(id_option)
         self.add_command(list_command)
 
-        add_command = SearchCommand(self.add, name='add', description=_('add repositories based on search parameters'))
+        add_command = SearchCommandMinimal(self.add, name='add', description=_('add repositories based on search parameters'))
         add_command.add_option(id_option)
-        self._strip_criteria_options(add_command)
         self.add_command(add_command)
 
-        remove_command = SearchCommand(self.remove, name='remove', description=_('remove repositories based on search parameters'))
+        remove_command = SearchCommandMinimal(self.remove, name='remove', description=_('remove repositories based on search parameters'))
         remove_command.add_option(id_option)
-        self._strip_criteria_options(remove_command)
         self.add_command(remove_command)
-
-    @staticmethod
-    def _strip_criteria_options(command):
-        """
-        We don't want to expose all of the criteria features here, so we remove
-        all of them except for search-related ones.
-
-        :param command: command instance from which we should remove criteria
-                        options.
-        :type  command: SearchCommand
-        """
-        OPTION_NAMES = set(('--fields', '--limit', '--skip', '--sort'))
-        for option in copy.copy(command.options):
-            if option.name in OPTION_NAMES:
-                command.options.remove(option)
 
     def list(self, **kwargs):
         self.prompt.render_title('Repository Group Members')

@@ -40,7 +40,11 @@ match against, specified as "name=value".
 Example: $ pulp-admin repo search --gt='content_unit_count=0'
 """).replace('\n', ' ')
 
-class SearchCommand(PulpCliCommand):
+class SearchCommandMinimal(PulpCliCommand):
+    """
+    This command contains only the search features provided by the server. See
+    SearchCommand for additional features such as sort, limit, skip, and fields.
+    """
     def __init__(self, method, *args, **kwargs):
         """
         @param method:  A method to call when this command is executed. See
@@ -49,24 +53,11 @@ class SearchCommand(PulpCliCommand):
         name = kwargs.pop('name', None) or 'search'
         description = kwargs.pop('description', None) or _SEARCH_DESCRIPTION
 
-        super(SearchCommand, self).__init__(name, description,
+        super(SearchCommandMinimal, self).__init__(name, description,
             method, *args, **kwargs)
-        self.add_option(PulpCliOption('--limit', _LIMIT_DESCRIPTION,
-            required=False, parse_func=int,
-            validate_func=validators.positive_int_validator))
-        self.add_option(PulpCliOption('--skip', _SKIP_DESCRIPTION,
-            required=False, parse_func=int,
-            validate_func=validators.positive_int_validator))
+
         self.add_option(PulpCliOption('--filters', _FILTERS_DESCRIPTION,
             required=False, parse_func=json.loads))
-        self.add_option(PulpCliOption('--sort', _SORT_DESCRIPTION,
-            required=False, allow_multiple=True,
-            validate_func=self._validate_sort,
-            parse_func=self._parse_sort))
-        self.add_option(PulpCliOption('--fields', _FIELDS_DESCRIPTION,
-            required=False, validate_func=str,
-            parse_func=lambda x: x.split(',')))
-
 
         filter_group = OptionGroup('Filters', _(_USAGE))
 
@@ -98,6 +89,25 @@ class SearchCommand(PulpCliCommand):
         filter_group.add_option(PulpCliOption ('--lte', _(m), required=False, allow_multiple=True))
 
         self.add_option_group(filter_group)
+
+    def add_full_criteria_options(self):
+        """
+        Add the full set of criteria-based search features to this command,
+        including limit, skip, sort, and fields.
+        """
+        self.add_option(PulpCliOption('--limit', _LIMIT_DESCRIPTION,
+            required=False, parse_func=int,
+            validate_func=validators.positive_int_validator))
+        self.add_option(PulpCliOption('--skip', _SKIP_DESCRIPTION,
+            required=False, parse_func=int,
+            validate_func=validators.positive_int_validator))
+        self.add_option(PulpCliOption('--sort', _SORT_DESCRIPTION,
+            required=False, allow_multiple=True,
+            validate_func=self._validate_sort,
+            parse_func=self._parse_sort))
+        self.add_option(PulpCliOption('--fields', _FIELDS_DESCRIPTION,
+            required=False, validate_func=str,
+            parse_func=lambda x: x.split(',')))
 
     @classmethod
     def _validate_sort(cls, sort_args):
@@ -160,3 +170,18 @@ class SearchCommand(PulpCliCommand):
         # one or zero members.
         direction = ''.join(pieces[1:2]) or 'ascending'
         return field_name, direction
+
+
+class SearchCommand(SearchCommandMinimal):
+    """
+    This command exposes the full feature set of the server's Criteria-based
+    search concept.
+    """
+    def __init__(self, method, *args, **kwargs):
+        """
+        @param method:  A method to call when this command is executed. See
+                        okaara docs for more info
+        """
+        super(SearchCommand, self).__init__(method, *args, **kwargs)
+        self.add_full_criteria_options()
+
