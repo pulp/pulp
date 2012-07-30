@@ -19,7 +19,7 @@
 
 Name:           pulp
 Version:        0.0.263
-Release:        24%{?dist}
+Release:        25%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -499,6 +499,9 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Mon Jul 30 2012 James Slagle <jslagle@redhat.com> 0.0.263-25
+- Remove debugging output (jslagle@redhat.com)
+
 * Thu Jul 19 2012 Wes Hayutin <whayutin@redhat.com> 0.0.263-24
 - bz 798281 add status call to service pulp-cds (whayutin@redhat.com)
 
