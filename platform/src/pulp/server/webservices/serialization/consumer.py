@@ -17,6 +17,12 @@ Module for profile serialization.
 
 import link
 
+
+def consumer(consumer):
+    serialized = dict(consumer)
+    link.current_link_obj()
+    return serialized
+
 def profile(profile):
     serialized = dict(profile)
     href = link.child_link_obj(

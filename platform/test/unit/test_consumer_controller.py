@@ -30,40 +30,358 @@ from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.webservices.controllers import consumers
 
 
-class ProcessConsumersTests(unittest.TestCase):
+class ConsumerTest(base.PulpWebserviceTests):
+
+    CONSUMER_ID = 'test-consumer'
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'dist-1'
+    DISTRIBUTOR_TYPE_ID = 'mock-distributor'
+
     def setUp(self):
-        factory.initialize()
+        base.PulpWebserviceTests.setUp(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        plugin_api._create_manager()
+        mock_plugins.install()
+        mock_agent.install()
 
-    @mock.patch(
-        'pulp.server.webservices.serialization.link.search_safe_link_obj',
-        return_value={'_href':'some/path'}
-    )
-    def test_without_merge(self, mock_link):
-        ret = consumers.process_consumers([{'id':'consumer1'}])
-        self.assertEqual(len(ret), 1)
-        self.assertEqual(mock_link.call_count, 1)
-        self.assertTrue('_href' in ret[0])
-        self.assertTrue('bindings' not in ret[0])
-        mock_link.assert_called_once_with('consumer1')
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        mock_plugins.reset()
 
-    @mock.patch(
-        'pulp.server.webservices.serialization.link.search_safe_link_obj',
-        return_value={'_href':'some/path'}
-    )
-    @mock.patch(
-        'pulp.server.managers.consumer.bind.BindManager.find_by_consumer_list',
-        return_value={'consumer1':[{'id':'binding1'}, {'id':'binding2'}]}
-    )
-    def test_with_merge(self, mock_find, mock_link):
-        items = [{'id':'consumer1'}]
-        ret = consumers.process_consumers(items, True)
-        self.assertEqual(mock_find.call_count, 1)
-        self.assertTrue('bindings' in ret[0])
-        self.assertEqual(len(ret[0]['bindings']), 2)
+    def test_get(self):
+        """
+        Tests retrieving a valid consumer.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        path = '/v2/consumers/%s/' % self.CONSUMER_ID
+        # Test
+        status, body = self.get(path)
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(self.CONSUMER_ID, body['id'])
+        self.assertTrue('bindings' not in body)
+        self.assertTrue('_href' in body)
+        self.assertTrue(body['_href'].endswith(path))
 
-    def test_without_consumers(self):
-        ret = consumers.process_consumers([])
-        self.assertEqual(ret, [])
+    def test_get_with_bindings(self):
+        """
+        Test consumer with bindings.
+        """
+        # Setup
+        manager = factory.repo_manager()
+        repo = manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            self.DISTRIBUTOR_TYPE_ID,
+            {},
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        params = {'bindings':True}
+        path = '/v2/consumers/%s/' % self.CONSUMER_ID
+        status, body = self.get(path, params=params)
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(self.CONSUMER_ID, body['id'])
+        self.assertTrue('_href' in body)
+        self.assertTrue(body['_href'].endswith(path))
+        self.assertTrue('bindings' in body)
+        bindings = body['bindings']
+        self.assertEquals(len(bindings), 1)
+        self.assertEquals(bindings[0]['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+
+    def test_get_with_details(self):
+        """
+        Test consumer with details.
+        """
+        # Setup
+        manager = factory.repo_manager()
+        repo = manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            self.DISTRIBUTOR_TYPE_ID,
+            {},
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        params = {'details':True}
+        path = '/v2/consumers/%s/' % self.CONSUMER_ID
+        status, body = self.get(path, params=params)
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(self.CONSUMER_ID, body['id'])
+        self.assertTrue('_href' in body)
+        self.assertTrue(body['_href'].endswith(path))
+        self.assertTrue('bindings' in body)
+        bindings = body['bindings']
+        self.assertEquals(len(bindings), 1)
+        self.assertEquals(bindings[0]['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+
+    def test_get_missing_consumer(self):
+        """
+        Tests that a 404 is returned when getting a consumer that doesn't exist.
+        """
+        # Test
+        status, body = self.get('/v2/consumers/foo/')
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_delete(self):
+        """
+        Tests unregistering an existing consumer.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        # Test
+        path = '/v2/consumers/%s/' % self.CONSUMER_ID
+        status, body = self.delete(path)
+        # Verify
+        self.assertEqual(200, status)
+
+        consumer = Consumer.get_collection().find_one({'id' : 'doomed'})
+        self.assertTrue(consumer is None)
+
+    def test_delete_missing_consumer(self):
+        """
+        Tests deleting a consumer that isn't there.
+        """
+        # Test
+        status, body = self.delete('/v2/consumers/fake/')
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_put(self):
+        """
+        Tests using put to update a consumer.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID, display_name='hungry')
+        path = '/v2/consumers/%s/' % self.CONSUMER_ID
+        body = {'delta' : {'display-name' : 'thanksgiving'}}
+        # Test
+        status, body = self.put(path, params=body)
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(body['display_name'], 'thanksgiving')
+        self.assertTrue(body['_href'].endswith(path))
+        collection = Consumer.get_collection()
+        consumer = collection.find_one({'id':self.CONSUMER_ID})
+        self.assertEqual(consumer['display_name'], 'thanksgiving')
+
+    def test_put_invalid_body(self):
+        """
+        Tests updating a consumer without passing the delta.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        manager.register('pie')
+        # Test
+        status, body = self.put('/v2/consumers/pie/', params={})
+        # Verify
+        self.assertEqual(400, status)
+
+    def test_put_missing_consumer(self):
+        """
+        Tests updating a consumer that doesn't exist.
+        """
+        # Test
+        body = {'delta' : {'pie' : 'apple'}}
+        status, body = self.put('/v2/consumers/not-there/', params=body)
+        # Verify
+        self.assertEqual(404, status)
+
+
+class ConsumersTest(base.PulpWebserviceTests):
+
+    CONSUMER_IDS = ('test-consumer_1', 'test-consumer_2')
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'dist-1'
+    DISTRIBUTOR_TYPE_ID = 'mock-distributor'
+
+    def setUp(self):
+        base.PulpWebserviceTests.setUp(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        plugin_api._create_manager()
+        mock_plugins.install()
+        mock_agent.install()
+
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        mock_plugins.reset()
+
+    def test_get(self):
+        """
+        Tests retrieving a list of consumers.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        # Test
+        status, body = self.get('/v2/consumers/')
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(len(self.CONSUMER_IDS), len(body))
+        fetched = dict([(c['id'],c) for c in body])
+        for id in self.CONSUMER_IDS:
+            consumer = fetched[id]
+            self.assertEquals(consumer['id'], id)
+            self.assertFalse('bindings' in consumer)
+            self.assertTrue('_href' in consumer)
+
+    def test_get_no_consumers(self):
+        """
+        Tests that an empty list is returned when no consumers are present.
+        """
+        # Test
+        status, body = self.get('/v2/consumers/')
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(0, len(body))
+
+    def test_post(self):
+        """
+        Tests using post to register a consumer.
+        """
+        # Setup
+        body = {
+            'id' : self.CONSUMER_IDS[0],
+            'display-name' : 'Consumer 1',
+            'description' : 'Test Consumer',
+        }
+        # Test
+        status, body = self.post('/v2/consumers/', params=body)
+        # Verify
+        self.assertEqual(201, status)
+        self.assertEqual(body['id'], self.CONSUMER_IDS[0])
+        collection = Consumer.get_collection()
+        consumer = collection.find_one({'id' : self.CONSUMER_IDS[0]})
+        self.assertTrue(consumer is not None)
+
+    def test_post_bad_data(self):
+        """
+        Tests registering a consumer with invalid data.
+        """
+        # Setup
+        body = {'id' : 'HA! This looks so totally invalid'}
+        # Test
+        status, body = self.post('/v2/consumers/', params=body)
+        print body
+        # Verify
+        self.assertEqual(400, status)
+
+    def test_post_conflict(self):
+        """
+        Tests creating a consumer with an existing ID.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_IDS[0])
+        body = {'id' : self.CONSUMER_IDS[0]}
+        # Test
+        status, body = self.post('/v2/consumers/', params=body)
+        # Verify
+        self.assertEqual(409, status)
+
+
+class TestSearch(base.PulpWebserviceTests):
+
+    CONSUMER_IDS = ['test-consumer_1', 'test-consumer_2']
+    REPO_ID = 'test-repo'
+    DISTRIBUTOR_ID = 'dist-1'
+    DISTRIBUTOR_TYPE_ID = 'mock-distributor'
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [('id','ascending')]
+    CRITERIA = dict(filters=FILTER, sort=SORT)
+
+    def setUp(self):
+        base.PulpWebserviceTests.setUp(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        plugin_api._create_manager()
+        mock_plugins.install()
+        mock_agent.install()
+
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Consumer.get_collection().remove()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        mock_plugins.reset()
+
+    def test_get(self):
+        """
+        Tests seaching and getting a list of consumers.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        # Test
+        status, body = self.get('/v2/consumers/search/')
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(len(self.CONSUMER_IDS), len(body))
+        fetched = dict([(c['id'],c) for c in body])
+        for id in self.CONSUMER_IDS:
+            consumer = fetched[id]
+            self.assertEquals(consumer['id'], id)
+            self.assertFalse('bindings' in consumer)
+            self.assertTrue('_href' in consumer)
+
+    def test_post(self):
+        """
+        Tests seaching and getting a list of consumers.
+        """
+        # Setup
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS+['extra1', 'extra2']:
+            manager.register(id)
+        # Test
+        body = {'criteria':self.CRITERIA}
+        status, body = self.post('/v2/consumers/search/', body)
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(len(self.CONSUMER_IDS), len(body))
+        fetched = dict([(c['id'],c) for c in body])
+        for id in self.CONSUMER_IDS:
+            consumer = fetched[id]
+            self.assertEquals(consumer['id'], id)
+            self.assertFalse('bindings' in consumer)
+            self.assertTrue('_href' in consumer)
 
 
 class BindTest(base.PulpWebserviceTests):

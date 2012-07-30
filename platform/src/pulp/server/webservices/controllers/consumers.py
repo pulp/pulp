@@ -37,146 +37,155 @@ from pulp.server.exceptions import MissingValue
 
 _LOG = logging.getLogger(__name__)
 
-def process_consumers(consumers, merge_bindings=False):
+
+def expand_consumers(options, consumers):
     """
-    Apply standard processing to consumers before returning them to a client.
-    This includes adding the '_href' link attribute, and optionally merging in
-    related bindings.
-
-    @param consumers:   list of consumers pulled from the database
-    @type  consumer:    list
-
-    @param merge_bindings:  iff True, add an attribute 'bindings' to each
-                            consumer, the value of which will be a list of
-                            related binding objects.
-    @type  merge_bindings:  bool
-
-    @return:    same list that was passed in, just for convenience. list members
-                are modified in-place
-    @rtype:     list
+    Expand a list of users based on flags specified in the
+    post body or query parameters.  The _href is always added by the
+    serialization function used.
+    Supported options:
+      details - synonym for: (bindings=True,)
+      bindings - include bindings
+    @param options: The (expanding) options.
+    @type options: dict
+    @param consumers: A list of consumers
+    @type consumers: list
+    @return: A list of expanded consumers.
+    @rtype: list
     """
-    ids = [consumer['id'] for consumer in consumers]
-    if merge_bindings:
-        bindings = managers.consumer_bind_manager().find_by_consumer_list(ids)
-
-    for consumer in consumers:
-        consumer.update(serialization.link.search_safe_link_obj(consumer['id']))
-        if merge_bindings:
-            consumer['bindings'] = bindings[consumer['id']]
+    if options.get('details', False):
+        options['bindings'] = True
+    # add bindings
+    if options.get('bindings', False):
+        ids = [c['id'] for c in consumers]
+        manager = managers.consumer_bind_manager()
+        bindings = manager.find_by_consumer_list(ids)
+        for consumer in consumers:
+            id = consumer['id']
+            consumer['bindings'] = \
+                [serialization.binding.serialize(b) for b in bindings.get(id, [])]
     return consumers
 
 
 # -- controllers --------------------------------------------------------------
 
-class ConsumersCollection(JSONController):
-    
-    # Scope: Collection
-    # GET:   Retrieves all consumers registered to the Pulp Server
-    # POST:  Register a consumer
+class Consumers(JSONController):
 
     @auth_required(READ)
     def GET(self):
-
-        query_manager = managers.consumer_query_manager()
-        consumers = query_manager.find_all()
-
-        process_consumers(consumers, self.params().get('bindings', False))
-
+        body = self.params()
+        manager = managers.consumer_query_manager()
+        consumers = expand_consumers(body, manager.find_all())
+        for c in consumers:
+            href = serialization.link.child_link_obj(c['id'])
+            c.update(href)
         return self.ok(consumers)
 
     @auth_required(CREATE)
     def POST(self):
-
-        # Pull all the consumer data
-        consumer_data = self.params()
-        id = consumer_data.get('id', None)
-        display_name = consumer_data.get('display_name', None)
-        description = consumer_data.get('description', None)
-        notes = consumer_data.get('notes', None)
-
-        # Creation
+        body = self.params()
+        id = body.get('id')
+        display_name = body.get('display_name')
+        description = body.get('description')
+        notes = body.get('notes')
         manager = managers.consumer_manager()
-        resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {id: dispatch_constants.RESOURCE_CREATE_OPERATION}
+        }
         args = [id, display_name, description, notes]
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-                action_tag('create')]
-        call_request = CallRequest(manager.register,
-                                   args,
-                                   resources=resources,
-                                   weight=weight,
-                                   tags=tags)
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+            action_tag('create'),
+        ]
+        call_request = CallRequest(
+            manager.register,
+            args,
+            resources=resources,
+            weight=weight,
+            tags=tags)
         return execution.execute_sync_created(self, call_request, id)
 
 
+class Consumer(JSONController):
+
+    @auth_required(READ)
+    def GET(self, id):
+        body = web.input()
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        consumer = expand_consumers(body, [consumer])[0]
+        href = serialization.link.current_link_obj()
+        consumer.update(href)
+        return self.ok(consumer)
+
+    @auth_required(DELETE)
+    def DELETE(self, id):
+        manager = managers.consumer_manager()
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {id: dispatch_constants.RESOURCE_DELETE_OPERATION}
+        }
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+            action_tag('delete'),
+        ]
+        call_request = CallRequest(
+            manager.unregister,
+            [id],
+            resources=resources,
+            tags=tags)
+        return self.ok(execution.execute(call_request))
+
+    @auth_required(UPDATE)
+    def PUT(self, id):
+        body = self.params()
+        delta = body.get('delta')
+        manager = managers.consumer_manager()
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_TYPE:
+                {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}
+        }
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+            action_tag('update')
+        ]
+        call_request = CallRequest(
+            manager.update,
+            [id, delta],
+            resources=resources,
+            tags=tags)
+        consumer = execution.execute(call_request)
+        href = serialization.link.current_link_obj()
+        consumer.update(href)
+        return self.ok(consumer)
+
+
 class ConsumerSearch(SearchController):
+
     def __init__(self):
         super(ConsumerSearch, self).__init__(
             managers.consumer_query_manager().find_by_criteria)
 
     def GET(self):
-        consumers = self._get_query_results_from_get()
-        process_consumers(consumers, self.params().get('bindings', False))
+        body = web.input()
+        found = self._get_query_results_from_get()
+        consumers = expand_consumers(body, found)
+        for c in consumers:
+            href = serialization.link.search_safe_link_obj(c['id'])
+            c.update(href)
         return self.ok(consumers)
 
     def POST(self):
-        consumers = self._get_query_results_from_post()
-        process_consumers(consumers, self.params().get('bindings', False))
+        body = self.params()
+        found = self._get_query_results_from_post()
+        consumers = expand_consumers(body, found)
+        for c in consumers:
+            href = serialization.link.search_safe_link_obj(c['id'])
+            c.update(href)
         return self.ok(consumers)
 
-
-class ConsumerResource(JSONController):
-
-    # Scope:   Resource
-    # GET:     Get Consumer details
-    # DELETE:  Unregister a consumer
-    # PUT:     Consumer update
-
-    @auth_required(READ)
-    def GET(self, id):
-
-        manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
-
-        consumer = process_consumers(
-            [consumer], self.params().get('bindings', False))[0]
-        consumer.update(serialization.link.current_link_obj())
-
-        return self.ok(consumer)
-
-    @auth_required(DELETE)
-    def DELETE(self, id):
-
-        manager = managers.consumer_manager()
-        
-        resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-                action_tag('delete')]
-        call_request = CallRequest(manager.unregister,
-                                   [id],
-                                   resources=resources,
-                                   tags=tags)
-        return self.ok(execution.execute(call_request))
-
-    @auth_required(UPDATE)
-    def PUT(self, id):
-
-        # Pull all the consumer update data
-        consumer_data = self.params()
-        delta = consumer_data.get('delta', None)
-
-        # Perform update        
-        manager = managers.consumer_manager()
-        resources = {dispatch_constants.RESOURCE_CONSUMER_TYPE: {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-                action_tag('update')]
-        call_request = CallRequest(manager.update,
-                                   [id, delta],
-                                   resources=resources,
-                                   tags=tags)
-        consumer = execution.execute(call_request)
-        consumer.update(serialization.link.current_link_obj())
-        return self.ok(consumer)
 
 
 class Bindings(JSONController):
@@ -652,36 +661,22 @@ class ContentApplicability(JSONController):
             report[k] = [serialization.consumer.applicability_report(r) for r in v]
         return self.ok(report)
 
-    def __rdict(self, report):
-        """
-        Serialized report dict.
-        @param report: A applicability report object.
-        @type report: ApplicabilityReport
-        @return: A dictionary representation of the report.
-        @rtype: dict
-        """
-        return dict(
-            unit=report.unit,
-            applicable=report.applicable,
-            summary=report.summary,
-            details=report.details)
-
 
 # -- web.py application -------------------------------------------------------
 
 
 urls = (
-    '/$', 'ConsumersCollection',
-    '/search/$', 'ConsumerSearch', # resource search
-    '/([^/]+)/$', 'ConsumerResource',
+    '/$', 'Consumers',
+    '/search/$', 'ConsumerSearch',
+    '/actions/content/applicability/$', 'ContentApplicability',
     '/([^/]+)/bindings/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
     '/([^/]+)/profiles/$', 'Profiles',
     '/([^/]+)/profiles/([^/]+)/$', 'Profile',
     '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
-    '/actions/content/applicability/$', 'ContentApplicability',
-    '/([^/]+)/history/$', 'ConsumerHistory',  
+    '/([^/]+)/history/$', 'ConsumerHistory',
+    '/([^/]+)/$', 'Consumer',
 )
 
 application = web.application(urls, globals())
