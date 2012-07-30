@@ -16,7 +16,6 @@ import datetime
 import logging
 import re
 import sys
-import os
 
 # Pulp
 from pulp.common import dateutils
@@ -523,8 +522,6 @@ class CdsApi(BaseApi):
         server_ca_certificate = None
         if config.config.has_option('security', 'ssl_ca_certificate'):
             ca_cert_file = config.config.get('security', 'ssl_ca_certificate')
-        elif os.path.isfile('/etc/pki/rhua/rhua-ssl-ca-cert.crt'):
-            ca_cert_file = '/etc/pki/rhua/rhua-ssl-ca-cert.crt'
 
             try:
                 f = open(ca_cert_file, 'r')
