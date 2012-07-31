@@ -32,10 +32,11 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
                         if u.type_id in criteria.type_ids:
                             ret_val.append(u)
                     else:
-                        start_date = criteria.unit_filters['issued']['$gte']
-                        end_date   = criteria.unit_filters['issued']['$lte']
-                        if start_date <= u.metadata['issued'] <= end_date:
-                            ret_val.append(u)
+                        if u.type_id == 'erratum':
+                            start_date = criteria.unit_filters['issued']['$gte']
+                            end_date   = criteria.unit_filters['issued']['$lte']
+                            if start_date <= u.metadata['issued'] <= end_date:
+                                ret_val.append(u)
                 else:
                     ret_val.append(u)
         return ret_val

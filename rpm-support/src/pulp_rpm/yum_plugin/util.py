@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import commands
 import hashlib
+import shutil
 import traceback
 import urlparse
 import yum
@@ -247,6 +248,30 @@ def create_symlink(source_path, symlink_path):
     _LOG.debug("creating symlink %s pointing to %s" % (symlink_path, source_path))
     os.symlink(source_path, symlink_path)
     return True
+
+def create_copy(source_path, target_path):
+    """
+    @param source_path source path
+    @type source_path str
+
+    @param target_path path of where we want the copy the file
+    @type target_path str
+
+    @return True on success, False on error
+    @rtype bool
+    """
+    if not os.path.isdir(os.path.dirname(target_path)):
+        os.makedirs(os.path.dirname(target_path))
+    if os.path.isfile(source_path):
+        _LOG.debug("Copying file from source %s to target path %s" % (source_path, target_path))
+        shutil.copy(source_path, target_path)
+        print "copying %s %s" % (source_path, target_path)
+        return True
+    if os.path.isdir(source_path):
+        _LOG.debug("Copying directory from source %s to target path %s" % (source_path, target_path))
+        shutil.copytree(source_path, target_path)
+        return True
+    return False
 
 def create_dirs(target):
     """

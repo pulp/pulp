@@ -13,6 +13,7 @@
 import os
 import gettext
 import logging
+import shutil
 import time
 import traceback
 from pulp_rpm.yum_plugin import util, updateinfo, metadata
@@ -181,7 +182,7 @@ class ISODistributor(Distributor):
             progress_status[type_id] = status
             publish_conduit.set_progress(progress_status)
 
-        repo_working_dir = os.path.join(repo.working_dir, repo.id)
+        repo_working_dir = repo.working_dir
 
         date_filter = self.create_date_range_filter(config)
         if date_filter:
@@ -254,16 +255,6 @@ class ISODistributor(Distributor):
 
             details["errors"] = rpm_errors + distro_errors + errata_errors
         # build iso
-        repo_iso_working_dir = "%s/%s/%s" % (repo.working_dir, "isos", repo.id)
-        try:
-            isogen = GenerateIsos(repo_working_dir, repo_iso_working_dir , prefix=repo.id, progress=progress_status)
-            progress_status = isogen.run()
-        except Exception,e:
-            progress_status["isos"]["state"] = "ERROR"
-            progress_status["error_details"].append(str(e))
-            return progress_status
-        progress_status["isos"]["state"] = "FINISHED"
-
         # Handle publish link for HTTPS
         https_publish_dir = self.get_https_publish_iso_dir(config)
         https_repo_publish_dir = os.path.join(https_publish_dir, repo.id).rstrip('/')
@@ -272,16 +263,18 @@ class ISODistributor(Distributor):
             self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, https_repo_publish_dir))
-                util.create_symlink(repo_iso_working_dir, https_repo_publish_dir)
+                isogen = GenerateIsos(repo_working_dir, https_repo_publish_dir, prefix=repo.id, progress=progress_status)
+                progress_status = isogen.run()
                 summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
+                progress_status["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
         else:
             self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
             if os.path.lexists(https_repo_publish_dir):
                 _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
-                util.remove_symlink(https_publish_dir, https_repo_publish_dir)
+                shutil.rmtree(https_repo_publish_dir)
 
         # Handle publish link for HTTP
         http_publish_dir = self.get_http_publish_iso_dir(config)
@@ -291,7 +284,8 @@ class ISODistributor(Distributor):
             self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, http_repo_publish_dir))
-                util.create_symlink(repo_iso_working_dir, http_repo_publish_dir)
+                isogen = GenerateIsos(repo_working_dir, http_repo_publish_dir, prefix=repo.id, progress=progress_status)
+                progress_status = isogen.run()
                 summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
             except:
@@ -300,7 +294,7 @@ class ISODistributor(Distributor):
             self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)
             if os.path.lexists(http_repo_publish_dir):
                 _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
-                util.remove_symlink(http_publish_dir, http_repo_publish_dir)
+                shutil.rmtree(http_repo_publish_dir)
         details["errors"] += metadata_errors
         # metadata generate skipped vs run
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
@@ -365,10 +359,10 @@ class ISODistributor(Distributor):
                 packages_progress_status["num_error"] += 1
                 packages_progress_status["items_left"] -= 1
                 continue
-            _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
+            _LOG.info("Unit exists at: %s we need to copy to: %s" % (source_path, symlink_path))
             try:
-                if not util.create_symlink(source_path, symlink_path):
-                    msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
+                if not util.create_copy(source_path, symlink_path): #util.create_symlink(source_path, symlink_path):
+                    msg = "Unable to create copy for: %s pointing to %s" % (symlink_path, source_path)
                     _LOG.error(msg)
                     errors.append((source_path, symlink_path, msg))
                     packages_progress_status["num_error"] += 1
@@ -410,9 +404,12 @@ class ISODistributor(Distributor):
         @rtype (bool, [str])
         """
         errors = []
+        errata_progress_status = self.init_progress()
         if not errata_units:
             return True, []
         try:
+            errata_progress_status['state'] = "IN_PROGRESS"
+            self.set_progress("errata", errata_progress_status, progress_callback)
             updateinfo_path = updateinfo.updateinfo(errata_units, repo_working_dir)
             if updateinfo_path:
                 repodata_dir = os.path.join(repo_working_dir, "repodata")
@@ -425,10 +422,13 @@ class ISODistributor(Distributor):
             msg = "Unable to run modifyrepo to include updateinfo at target location %s; Error: %s" % (repo_working_dir, str(mre))
             errors.append(msg)
             _LOG.error(msg)
+            errata_progress_status['state'] = "FAILED"
             return False, errors
         except Exception, e:
             errors.append(str(e))
+            errata_progress_status['state'] = "FAILED"
             return False, errors
+        errata_progress_status['state'] = "FINISHED"
         return True, []
 
     def _get_errata_rpms(self, errata_units, rpm_units):
@@ -495,8 +495,8 @@ class ISODistributor(Distributor):
                     distro_progress_status["items_left"] -= 1
                     continue
                 try:
-                    if not util.create_symlink(source_path, symlink_path):
-                        msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)
+                    if not util.create_copy(source_path, symlink_path): #util.create_symlink(source_path, symlink_path):
+                        msg = "Unable to create copy for: %s pointing to %s" % (symlink_path, source_path)
                         _LOG.error(msg)
                         errors.append((source_path, symlink_path, msg))
                         distro_progress_status['num_error'] += 1
