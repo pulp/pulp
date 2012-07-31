@@ -241,25 +241,81 @@ class ConsumersTest(base.PulpWebserviceTests):
         Bind.get_collection().remove()
         mock_plugins.reset()
 
+    def populate(self, bindings=False):
+        if bindings:
+            manager = factory.repo_manager()
+            repo = manager.create_repo(self.REPO_ID)
+            manager = factory.repo_distributor_manager()
+            manager.add_distributor(
+                self.REPO_ID,
+                self.DISTRIBUTOR_TYPE_ID,
+                {},
+                True,
+                distributor_id=self.DISTRIBUTOR_ID)
+        for id in self.CONSUMER_IDS:
+            manager = factory.consumer_manager()
+            manager.register(id)
+            if bindings:
+                manager = factory.consumer_bind_manager()
+                manager.bind(id, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+    def validate(self, body, bindings=False):
+        if bindings:
+            self.assertEqual(len(self.CONSUMER_IDS), len(body))
+            fetched = dict([(c['id'],c) for c in body])
+            for id in self.CONSUMER_IDS:
+                consumer = fetched[id]
+                self.assertEquals(consumer['id'], id)
+                self.assertTrue('_href' in consumer)
+                self.assertTrue('bindings' in consumer)
+                bindings = consumer['bindings']
+                self.assertEquals(len(bindings), 1)
+                self.assertEquals(bindings[0]['consumer_id'], id)
+                self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+        else:
+            self.assertEqual(len(self.CONSUMER_IDS), len(body))
+            fetched = dict([(c['id'],c) for c in body])
+            for id in self.CONSUMER_IDS:
+                consumer = fetched[id]
+                self.assertEquals(consumer['id'], id)
+                self.assertTrue('_href' in consumer)
+                self.assertFalse('bindings' in body)
+
     def test_get(self):
         """
         Tests retrieving a list of consumers.
         """
         # Setup
-        manager = factory.consumer_manager()
-        for id in self.CONSUMER_IDS:
-            manager.register(id)
+        self.populate()
         # Test
         status, body = self.get('/v2/consumers/')
         # Verify
         self.assertEqual(200, status)
-        self.assertEqual(len(self.CONSUMER_IDS), len(body))
-        fetched = dict([(c['id'],c) for c in body])
-        for id in self.CONSUMER_IDS:
-            consumer = fetched[id]
-            self.assertEquals(consumer['id'], id)
-            self.assertFalse('bindings' in consumer)
-            self.assertTrue('_href' in consumer)
+        self.validate(body)
+
+    def test_get_with_details(self):
+        """
+        Tests retrieving a list of consumers with details.
+        """
+        # Setup
+        self.populate(True)
+        # Test
+        status, body = self.get('/v2/consumers/?details=1')
+        # Verify
+        self.assertEqual(200, status)
+        self.validate(body, True)
+
+    def test_get_with_bindings(self):
+        """
+        Tests retrieving a list of consumers with bindings.
+        """
+        # Setup
+        self.populate(True)
+        # Test
+        status, body = self.get('/v2/consumers/?bindings=1')
+        # Verify
+        self.assertEqual(200, status)
+        self.validate(body, True)
 
     def test_get_no_consumers(self):
         """
@@ -316,73 +372,11 @@ class ConsumersTest(base.PulpWebserviceTests):
         self.assertEqual(409, status)
 
 
-class TestSearch(base.PulpWebserviceTests):
+class TestSearch(ConsumersTest):
 
-    CONSUMER_IDS = ['test-consumer_1', 'test-consumer_2']
-    REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'dist-1'
-    DISTRIBUTOR_TYPE_ID = 'mock-distributor'
-    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    FILTER = {'id':{'$in':ConsumersTest.CONSUMER_IDS}}
     SORT = [('id','ascending')]
     CRITERIA = dict(filters=FILTER, sort=SORT)
-
-    def setUp(self):
-        base.PulpWebserviceTests.setUp(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        plugin_api._create_manager()
-        mock_plugins.install()
-        mock_agent.install()
-
-    def tearDown(self):
-        base.PulpWebserviceTests.tearDown(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        mock_plugins.reset()
-
-    def populate(self, bindings=False):
-        if bindings:
-            manager = factory.repo_manager()
-            repo = manager.create_repo(self.REPO_ID)
-            manager = factory.repo_distributor_manager()
-            manager.add_distributor(
-                self.REPO_ID,
-                self.DISTRIBUTOR_TYPE_ID,
-                {},
-                True,
-                distributor_id=self.DISTRIBUTOR_ID)
-        for id in self.CONSUMER_IDS:
-            manager = factory.consumer_manager()
-            manager.register(id)
-            if bindings:
-                manager = factory.consumer_bind_manager()
-                manager.bind(id, self.REPO_ID, self.DISTRIBUTOR_ID)
-
-    def validate(self, body, bindings=False):
-        if bindings:
-            self.assertEqual(len(self.CONSUMER_IDS), len(body))
-            fetched = dict([(c['id'],c) for c in body])
-            for id in self.CONSUMER_IDS:
-                consumer = fetched[id]
-                self.assertEquals(consumer['id'], id)
-                self.assertTrue('_href' in consumer)
-                self.assertTrue('bindings' in consumer)
-                bindings = consumer['bindings']
-                self.assertEquals(len(bindings), 1)
-                self.assertEquals(bindings[0]['consumer_id'], id)
-                self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
-        else:
-            self.assertEqual(len(self.CONSUMER_IDS), len(body))
-            fetched = dict([(c['id'],c) for c in body])
-            for id in self.CONSUMER_IDS:
-                consumer = fetched[id]
-                self.assertEquals(consumer['id'], id)
-                self.assertTrue('_href' in consumer)
-                self.assertFalse('bindings' in body)
 
     def test_get(self):
         # Setup

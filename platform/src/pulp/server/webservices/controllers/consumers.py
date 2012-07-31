@@ -73,9 +73,9 @@ class Consumers(JSONController):
 
     @auth_required(READ)
     def GET(self):
-        body = self.params()
+        params = web.input()
         manager = managers.consumer_query_manager()
-        consumers = expand_consumers(body, manager.find_all())
+        consumers = expand_consumers(params, manager.find_all())
         for c in consumers:
             href = serialization.link.child_link_obj(c['id'])
             c.update(href)
@@ -112,10 +112,10 @@ class Consumer(JSONController):
 
     @auth_required(READ)
     def GET(self, id):
-        body = web.input()
+        params = web.input()
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
-        consumer = expand_consumers(body, [consumer])[0]
+        consumer = expand_consumers(params, [consumer])[0]
         href = serialization.link.current_link_obj()
         consumer.update(href)
         return self.ok(consumer)
@@ -169,10 +169,10 @@ class ConsumerSearch(SearchController):
             managers.consumer_query_manager().find_by_criteria)
 
     def GET(self):
-        body = web.input()
+        params = web.input()
         ignored = ('details', 'bindings')
         found = self._get_query_results_from_get(ignored)
-        consumers = expand_consumers(body, found)
+        consumers = expand_consumers(params, found)
         for c in consumers:
             href = serialization.link.search_safe_link_obj(c['id'])
             c.update(href)
