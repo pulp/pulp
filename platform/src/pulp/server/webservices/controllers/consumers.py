@@ -63,7 +63,7 @@ def expand_consumers(options, consumers):
         for consumer in consumers:
             id = consumer['id']
             consumer['bindings'] = \
-                [serialization.binding.serialize(b) for b in bindings.get(id, [])]
+                [b['repo_id'] for b in bindings.get(id, [])]
     return consumers
 
 

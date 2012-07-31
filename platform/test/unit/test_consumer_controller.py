@@ -104,8 +104,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertTrue('bindings' in body)
         bindings = body['bindings']
         self.assertEquals(len(bindings), 1)
-        self.assertEquals(bindings[0]['consumer_id'], self.CONSUMER_ID)
-        self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+        self.assertEquals(bindings[0], self.REPO_ID)
 
     def test_get_with_details(self):
         """
@@ -137,8 +136,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertTrue('bindings' in body)
         bindings = body['bindings']
         self.assertEquals(len(bindings), 1)
-        self.assertEquals(bindings[0]['consumer_id'], self.CONSUMER_ID)
-        self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+        self.assertEquals(bindings[0], self.REPO_ID)
 
     def test_get_missing_consumer(self):
         """
@@ -270,8 +268,7 @@ class ConsumersTest(base.PulpWebserviceTests):
                 self.assertTrue('bindings' in consumer)
                 bindings = consumer['bindings']
                 self.assertEquals(len(bindings), 1)
-                self.assertEquals(bindings[0]['consumer_id'], id)
-                self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+                self.assertEquals(bindings[0], self.REPO_ID)
         else:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
             fetched = dict([(c['id'],c) for c in body])
