@@ -21,6 +21,7 @@ from gettext import gettext as _
 import web
 
 # Pulp
+from pulp.common import dateutils
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
@@ -1040,7 +1041,7 @@ class RepoUnitAdvancedSearch(JSONController):
     def POST(self, repo_id):
         # Params
         params = self.params()
-        query = params.get('query', None)
+        query = params.get('criteria', None)
 
         repo_query_manager = manager_factory.repo_query_manager()
         repo = repo_query_manager.find_by_id(repo_id)
@@ -1048,7 +1049,7 @@ class RepoUnitAdvancedSearch(JSONController):
             raise exceptions.MissingResource(repo_id=repo_id)
 
         if query is None:
-            raise exceptions.MissingValue(['query'])
+            raise exceptions.MissingValue(['criteria'])
 
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)

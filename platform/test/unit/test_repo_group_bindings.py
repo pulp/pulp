@@ -84,14 +84,16 @@ class TestRepoGroupActionAPI(unittest.TestCase):
         self.assertFalse(self.api.PATH.startswith('/'))
 
     def test_associate(self):
-        ret = self.api.associate('rg1')
+        ret = self.api.associate('rg1', match=[('name', 'foo')])
+        EXPECTED = {'criteria': {'filters': {'name': {'$regex' : 'foo'}}}}
         self.api.server.POST.assert_called_once_with(
-            'v2/repo_groups/rg1/actions/associate/', {'criteria':{}})
+            'v2/repo_groups/rg1/actions/associate/', EXPECTED)
         self.assertEqual(ret, self.api.server.POST.return_value.response_body)
 
     def test_unassociate(self):
-        ret = self.api.unassociate('rg1')
+        ret = self.api.unassociate('rg1', match=[('name', 'foo')])
+        EXPECTED = {'criteria': {'filters': {'name': {'$regex' : 'foo'}}}}
         self.api.server.POST.assert_called_once_with(
-            'v2/repo_groups/rg1/actions/unassociate/', {'criteria':{}})
+            'v2/repo_groups/rg1/actions/unassociate/', EXPECTED)
         self.assertEqual(ret, self.api.server.POST.return_value.response_body)
 

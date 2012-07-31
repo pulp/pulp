@@ -12,12 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 from okaara.cli import CommandUsage, OptionGroup
 
 from pulp.client import validators
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
-from pulp.server.compat import json
+from pulp.client import parsers
 
 _LIMIT_DESCRIPTION = _('max number of items to return')
 _SKIP_DESCRIPTION = _('number of items to skip')
@@ -40,53 +44,75 @@ match against, specified as "name=value".
 Example: $ pulp-admin repo search --gt='content_unit_count=0'
 """).replace('\n', ' ')
 
-class SearchCommandMinimal(PulpCliCommand):
+class SearchCommand(PulpCliCommand):
     """
     This command contains only the search features provided by the server. See
     SearchCommand for additional features such as sort, limit, skip, and fields.
     """
-    def __init__(self, method, *args, **kwargs):
+    def __init__(self, method, filtering=True, criteria=True, *args, **kwargs):
         """
-        @param method:  A method to call when this command is executed. See
+        :param method:  A method to call when this command is executed. See
                         okaara docs for more info
+        :type  method:  callable
+        :param filtering:   If True, the command will add all filtering options
+        :type  filtering:   bool
+        :param criteria:    If True, the command will add all non-filter
+                            criteria options such as limit, seek, sort, etc.
+        :type  criteria:    bool
+
         """
         name = kwargs.pop('name', None) or 'search'
         description = kwargs.pop('description', None) or _SEARCH_DESCRIPTION
 
-        super(SearchCommandMinimal, self).__init__(name, description,
+        super(SearchCommand, self).__init__(name, description,
             method, *args, **kwargs)
 
+        if filtering:
+            self.add_filtering()
+        if criteria:
+            self.add_full_criteria_options()
+
+    def add_filtering(self):
         self.add_option(PulpCliOption('--filters', _FILTERS_DESCRIPTION,
             required=False, parse_func=json.loads))
 
         filter_group = OptionGroup('Filters', _(_USAGE))
 
         m = 'match where a named attribute equals a string value exactly.'
-        filter_group.add_option(PulpCliOption('--str-eq', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--str-eq', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'match where a named attribute equals an int value exactly.'
-        filter_group.add_option(PulpCliOption('--int-eq', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--int-eq', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'for a named attribute, match a regular expression using the mongo regex engine.'
-        filter_group.add_option(PulpCliOption('--match', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--match', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'for a named attribute, match where value is in the provided list of values, expressed as one row of CSV'
-        filter_group.add_option(PulpCliOption('--in', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--in', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'field and expression to omit when determining units for inclusion'
-        filter_group.add_option(PulpCliOption('--not', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--not', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'matches resources whose value for the specified field is greater than the given value'
-        filter_group.add_option(PulpCliOption('--gt', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--gt', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'matches resources whose value for the specified field is greater than or equal to the given value'
-        filter_group.add_option(PulpCliOption('--gte', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--gte', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'matches resources whose value for the specified field is less than the given value'
-        filter_group.add_option(PulpCliOption('--lt', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption('--lt', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         m = 'matches resources whose value for the specified field is less than or equal to the given value'
-        filter_group.add_option(PulpCliOption ('--lte', _(m), required=False, allow_multiple=True))
+        filter_group.add_option(PulpCliOption ('--lte', _(m), required=False,
+            allow_multiple=True, parse_func=self._parse_key_value))
 
         self.add_option_group(filter_group)
 
@@ -100,7 +126,7 @@ class SearchCommandMinimal(PulpCliCommand):
             validate_func=validators.positive_int_validator))
         self.add_option(PulpCliOption('--skip', _SKIP_DESCRIPTION,
             required=False, parse_func=int,
-            validate_func=validators.positive_int_validator))
+            validate_func=validators.non_negative_int_validator))
         self.add_option(PulpCliOption('--sort', _SORT_DESCRIPTION,
             required=False, allow_multiple=True,
             validate_func=self._validate_sort,
@@ -108,6 +134,26 @@ class SearchCommandMinimal(PulpCliCommand):
         self.add_option(PulpCliOption('--fields', _FIELDS_DESCRIPTION,
             required=False, validate_func=str,
             parse_func=lambda x: x.split(',')))
+
+    @staticmethod
+    def _parse_key_value(args):
+        """
+        parses the raw user input, taken as a list of strings in the format
+        'name=value', into a list of tuples in the format (name, value).
+
+        :param args:    list of raw strings passed by the user on the command
+                        line.
+        :type  args:    list of basestrings
+
+        :return:    new list of tuples in the format (name, value)
+        """
+        ret = []
+        for arg in args:
+            components = arg.split('=', 1)
+            if len(components) != 2:
+                raise ValueError('key and value must be separated by "="')
+            ret.append(components)
+        return ret
 
     @classmethod
     def _validate_sort(cls, sort_args):
@@ -172,16 +218,38 @@ class SearchCommandMinimal(PulpCliCommand):
         return field_name, direction
 
 
-class SearchCommand(SearchCommandMinimal):
-    """
-    This command exposes the full feature set of the server's Criteria-based
-    search concept.
-    """
+class UnitSearchCommand(SearchCommand):
     def __init__(self, method, *args, **kwargs):
-        """
-        @param method:  A method to call when this command is executed. See
-                        okaara docs for more info
-        """
-        super(SearchCommand, self).__init__(method, *args, **kwargs)
-        self.add_full_criteria_options()
+        super(UnitSearchCommand, self).__init__(method, *args, **kwargs)
 
+        self.add_option(PulpCliOption('--repo-id',
+            _('identifies the repository to search within'), required=True))
+
+        m = 'matches units added to the source repository on or after the given time; '\
+            'specified as a timestamp in iso8601 format'
+        self.create_option('--after', _(m), ['-a'], required=False,
+            allow_multiple=False, parse_func=parsers.iso8601)
+
+        m = 'matches units added to the source repository on or before the given time; '\
+            'specified as a timestamp in iso8601 format'
+        self.create_option('--before', _(m), ['-b'], required=False,
+            allow_multiple=False, parse_func=parsers.iso8601)
+
+
+class UnitCopyCommand(UnitSearchCommand):
+    def __init__(self, *args, **kwargs):
+        super(UnitCopyCommand, self).__init__(*args, criteria=False, **kwargs)
+        self.options = [opt for opt in self.options if opt.name != '--repo-id']
+
+        m = 'source repository from which units will be copied'
+        self.create_option('--from-repo-id', _(m), ['-f'], required=True)
+
+        m = 'destination repository to copy units into'
+        self.create_option('--to-repo-id', _(m), ['-t'], required=True)
+
+
+class UnitSearchAllCommand(UnitSearchCommand):
+    def __init__(self, *args, **kwargs):
+        super(UnitSearchAllCommand, self).__init__(*args, filtering=False, **kwargs)
+        OPTIONS_TO_REMOVE = set(['--sort', '--fields'])
+        self.options = [opt for opt in self.options if opt.name not in OPTIONS_TO_REMOVE]

@@ -246,9 +246,8 @@ class UnitAssociationCriteria(Model):
 
         # report any superfluous doc key, value pairs as errors
         for d in (query, filters, sort, fields):
-            if not d:
-                continue
-            raise pulp_exceptions.InvalidValue(d.keys())
+            if d:
+                raise pulp_exceptions.InvalidValue(d.keys())
 
         # XXX these are here for "backward compatibility", in the future, these
         # should be removed and the corresponding association_spec and unit_spec

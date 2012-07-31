@@ -182,6 +182,25 @@ def parse_iso8601_datetime(datetime_str):
         raise isodate.ISO8601Error(msg), None, sys.exc_info()[2]
 
 
+def parse_iso8601_datetime_or_date(value):
+    """
+    Parse an iso8601 string into either a datetime even if it only contains
+    date info
+
+    :param value: ISO8601 string
+    :type  value: basestring
+    :return: datetime
+    :rtype:  datetime
+    """
+    if not isinstance(value, basestring):
+        raise TypeError('must be a string')
+    try:
+        return parse_iso8601_datetime(value)
+    except isodate.ISO8601Error:
+        value = parse_iso8601_date(value)
+        return datetime.datetime.fromordinal(value.toordinal())
+
+
 def parse_iso8601_duration(duration_str):
     """
     Parse an iso8601 duration string.

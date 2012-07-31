@@ -16,7 +16,7 @@ from pulp.client import arg_utils
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.search import SearchCommand, SearchCommandMinimal
+from pulp.client.search import SearchCommand
 
 # -- framework hook -----------------------------------------------------------
 
@@ -263,11 +263,11 @@ class RepoGroupMemberSection(PulpCliSection):
         list_command.add_option(id_option)
         self.add_command(list_command)
 
-        add_command = SearchCommandMinimal(self.add, name='add', description=_('add repositories based on search parameters'))
+        add_command = SearchCommand(self.add, criteria=False, name='add', description=_('add repositories based on search parameters'))
         add_command.add_option(id_option)
         self.add_command(add_command)
 
-        remove_command = SearchCommandMinimal(self.remove, name='remove', description=_('remove repositories based on search parameters'))
+        remove_command = SearchCommand(self.remove, criteria=False, name='remove', description=_('remove repositories based on search parameters'))
         remove_command.add_option(id_option)
         self.add_command(remove_command)
 
@@ -350,13 +350,15 @@ class RepoGroupSection(PulpCliSection):
         if 'display-name' in kwargs:
             name = kwargs['display-name']
         description = kwargs['description']
+
         notes = None
         if kwargs['note'] is not None:
             notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)
-        self.prompt.render_success_message('Repository Group [%s] successfully created' % id)
+        self.prompt.render_success_message(
+            'Repository Group [%s] successfully created' % id)
 
     def update(self, **kwargs):
         # Assemble the delta for all options that were passed in
