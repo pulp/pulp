@@ -1,7 +1,7 @@
 Advanced Search For Repository Groups
 -------------------------------------
 
-Please see :ref:`search-api` for more details on how to perform these searches.
+Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on repository groups in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
