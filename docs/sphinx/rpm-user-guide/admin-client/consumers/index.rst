@@ -7,3 +7,4 @@ Consumers
    registration
    packages
    packagegroups
+   errata

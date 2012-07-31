@@ -23,17 +23,22 @@ class ConsumerAPI(PulpAPI):
         super(ConsumerAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/consumers/"
 
-    def consumers(self):
+    def consumers(self, **options):
+        """
+        options:
+          details (bool) - include all details
+          bindings (bool) - include bindings
+        """
         path = self.base_path
-        return self.server.GET(path)
+        return self.server.GET(path, options)
 
-    def register(self, id, display_name, description, notes):
+    def register(self, id, name, description, notes):
         path = self.base_path
-        repodata = {"id": id,
-                    "display_name": display_name,
-                    "description": description,
-                    "notes": notes,}
-        return self.server.POST(path, repodata)
+        body = {"id": id,
+                "display_name": name,
+                "description": description,
+                "notes": notes,}
+        return self.server.POST(path, body)
 
     def consumer(self, id):
         path = self.base_path + ("%s/" % id)

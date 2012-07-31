@@ -71,6 +71,7 @@ class AdminConsumerSection(PulpCliSection):
         # List Command
         list_command = PulpCliCommand('list', 'lists summary of consumers registered to the Pulp server', self.list)
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the consumer information is displayed'))
+        list_command.add_option(PulpCliFlag('--bindings', 'if specified, the bindings information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of consumer fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
 
@@ -132,27 +133,28 @@ class AdminConsumerSection(PulpCliSection):
             self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
 
     def list(self, **kwargs):
-
-        self.prompt.render_title('Consumers')
-
-        consumer_list = self.context.server.consumer.consumers().response_body
-
-        # Default flags to render_document_list
+        options = {}
+        binding = self.context.server.consumer
+        # query
+        for opt in ('details', 'bindings'):
+            if kwargs[opt]:
+                options[opt] = kwargs[opt]
+        response = binding.consumers(**options)
+        # filters & ordering
         filters = ['id', 'display_name', 'description', 'bindings', 'notes']
         order = filters
-
-        if kwargs['details'] is True:
+        if kwargs['details']:
+            order = filters[:2]
             filters = None
-            order = ['id', 'display-name']
-        elif kwargs['fields'] is not None:
+        elif kwargs['fields']:
             filters = kwargs['fields'].split(',')
+            if 'bindings' not in filters:
+                filters.append('bindings')
             if 'id' not in filters:
-                filters.append('id')
-            order = ['id']
-
-        # Manually loop over the repositories so we can interject the plugins
-        # manually based on the CLI flags.
-        for c in consumer_list:
+                filters.insert(0, 'id')
+        # render
+        self.prompt.render_title('Consumers')
+        for c in response.response_body:
             self.prompt.render_document(c, filters=filters, order=order)
 
     def search(self, **kwargs):

@@ -2,7 +2,7 @@ Retrieval
 =========
 
 Retrieve a Single Consumer
-----------------------------
+--------------------------
 
 Retrieves information on a single Pulp consumer. The returned data includes
 general consumer details.
@@ -10,8 +10,11 @@ general consumer details.
 | :method:`get`
 | :path:`/v2/consumers/<consumer_id>/`
 | :permission:`read`
-| :param_list:`get` include the key 'bindings' to have the 'bindings' attribute,
-  a list of related bindings, added to the returned consumer.
+| :param_list:`get`
+
+* :param:`details,bool,include all details about the consumer`
+* :param:`bindings,bool,include information about consumer bindings`
+
 | :response_list:`_`
 
 * :response_code:`200,if the consumer exists`
@@ -38,7 +41,7 @@ general consumer details.
 
 
 Retrieve All Consumers
--------------------------
+----------------------
 
 Returns information on all consumers in the Pulp server. Eventually this call
 will support query parameters to limit the results and provide searching capabilities.
@@ -48,8 +51,11 @@ where there are no consumers.
 | :method:`get`
 | :path:`/v2/consumers/`
 | :permission:`read`
-| :param_list:`get` include the key 'bindings' to have the 'bindings' attribute,
-  a list of related bindings, added to each returned consumer.
+| :param_list:`get`
+
+* :param:`details,bool,include all details about the consumer`
+* :param:`bindings,bool,include information about consumer bindings`
+
 | :response_list:`_`
 
 * :response_code:`200,containing the list of consumers`
@@ -90,7 +96,7 @@ where there are no consumers.
  ]
 
 Advanced Search for Consumers
---------------------------------
+-----------------------------
 
 Please see :ref:`search_api` for more details on how to perform these searches.
 
@@ -105,6 +111,11 @@ list is returned in the case where there are no consumers.
   structure as defined in :ref:`search_criteria`.  Optionally include the key
   "bindings" with any value that evaluates to True to have the "bindings"
   attribute added to each returned consumer.
+
+* :param:`criteria,object,the search criteria defined in` :ref:`search_criteria`
+* :param:`details,bool,include all details about the consumer`
+* :param:`bindings,bool,include information about consumer bindings`  
+
 | :response_list:`_`
 
 * :response_code:`200,containing the list of consumers`

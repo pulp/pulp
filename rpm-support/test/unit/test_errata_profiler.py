@@ -139,9 +139,9 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         self.assertTrue(applicable_rpms)
         self.assertTrue(old_rpms)
         self.assertEqual(len(applicable_rpms), 2)
-        self.assertTrue(old_rpms.has_key("emoticons.x86_64"))
-        self.assertEqual("emoticons", old_rpms["emoticons.x86_64"]["installed"]["name"])
-        self.assertEqual("0.0.1", old_rpms["emoticons.x86_64"]["installed"]["version"])
+        self.assertTrue(old_rpms.has_key("emoticons x86_64"))
+        self.assertEqual("emoticons", old_rpms["emoticons x86_64"]["installed"]["name"])
+        self.assertEqual("0.0.1", old_rpms["emoticons x86_64"]["installed"]["version"])
 
     def test_translate(self):
         # Setup test data
@@ -153,8 +153,9 @@ class TestErrataProfiler(rpm_support_base.PulpRPMTests):
         example_errata = {"unit_key":errata_unit.unit_key, "type_id":ERRATA_TYPE_ID}
         # Test
         prof = RPMErrataProfiler()
-        applicable_rpms = prof.translate(example_errata, self.test_consumer, conduit)
-        self.assertTrue(len(applicable_rpms), 2)
+        applicable_rpms, upgrade_details = prof.translate(example_errata, self.test_consumer, conduit)
+        self.assertEqual(len(applicable_rpms), 2)
+        self.assertEqual(len(upgrade_details), 2)
 
     def test_translate_bad_unit_id(self):
         bad_unit = Unit("BAD_UNIT_ID", {"id":"bad_id"}, {}, None)
