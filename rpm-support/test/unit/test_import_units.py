@@ -28,8 +28,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/"
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 import importer_mocks
 from yum_importer import importer_rpm
-from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
-from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
+from yum_importer.importer import YumImporter
+from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM
 from pulp_rpm.yum_plugin import util
 
 from pulp.plugins.model import Repository, Unit
@@ -94,15 +94,15 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         storage_path = '%s/pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm' % (self.pkg_dir)
         filename = os.path.basename(storage_path)
         unit_key = {"filename":filename}
-        source_units.append(Unit(RPM_TYPE_ID, unit_key, metadata, storage_path))
+        source_units.append(Unit(TYPE_ID_RPM, unit_key, metadata, storage_path))
         storage_path = '%s/pulp-test-package/0.3.1/1.fc11/x86_64/6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f/pulp-test-package-0.3.1-1.fc11.x86_64.rpm' % (self.pkg_dir)
         filename = os.path.basename(storage_path)
         unit_key = {"filename":filename}
-        source_units.append(Unit(RPM_TYPE_ID, unit_key, metadata, storage_path))
+        source_units.append(Unit(TYPE_ID_RPM, unit_key, metadata, storage_path))
         storage_path = '%s/pulp-test-package/0.2.1/1.fc11/x86_64/4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7/pulp-test-package-0.2.1-1.fc11.x86_64.rpm' % (self.pkg_dir)
         filename = os.path.basename(storage_path)
         unit_key = {"filename":filename}
-        source_units.append(Unit(RPM_TYPE_ID, unit_key, metadata, storage_path))
+        source_units.append(Unit(TYPE_ID_RPM, unit_key, metadata, storage_path))
         # Pass in the simulated source_units to the import_conduit
         import_conduit = importer_mocks.get_import_conduit(source_units=source_units)
         return importer, source_repo, source_units, import_conduit, config

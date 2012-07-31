@@ -25,10 +25,9 @@ import tempfile
 from yum_importer import errata
 from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter
-from yum_importer.importer import YUM_IMPORTER_TYPE_ID
 from pulp.plugins.model import Repository, Unit
-from yum_importer.importer_rpm import RPM_TYPE_ID
 
+from pulp_rpm.common.ids import TYPE_ID_RPM, TYPE_ID_IMPORTER_YUM, TYPE_ID_ERRATA
 import rpm_support_base
 
 class TestErrata(rpm_support_base.PulpRPMTests):
@@ -49,9 +48,9 @@ class TestErrata(rpm_support_base.PulpRPMTests):
 
     def test_metadata(self):
         metadata = YumImporter.metadata()
-        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
+        self.assertEquals(metadata["id"], TYPE_ID_IMPORTER_YUM)
         print metadata["types"]
-        self.assertTrue(errata.ERRATA_TYPE_ID in metadata["types"])
+        self.assertTrue(TYPE_ID_ERRATA in metadata["types"])
 
     def test_errata_sync(self):
         feed_url = "http://example.com/test_repo/"
@@ -85,7 +84,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         unit_key = dict()
         unit_key['id'] = "RHBA-2007:0112"
         metadata = {}
-        existing_units = [Unit(errata.ERRATA_TYPE_ID, unit_key, metadata, '')]
+        existing_units = [Unit(TYPE_ID_ERRATA, unit_key, metadata, '')]
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         created_existing_units = errata.get_existing_errata(sync_conduit)
         self.assertEquals(len(created_existing_units), 1)
@@ -99,7 +98,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         unit_key = dict()
         unit_key['id'] = "RHBA-2007:0112"
         metadata = {}
-        existing_units = [Unit(errata.ERRATA_TYPE_ID, unit_key, metadata, '')]
+        existing_units = [Unit(TYPE_ID_ERRATA, unit_key, metadata, '')]
         existing_units[0].updated = "2007-03-14 00:00:00"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         created_existing_units = errata.get_existing_errata(sync_conduit)
@@ -117,7 +116,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         unit_key = dict()
         unit_key['id'] = "RHBA-2007:0112"
         metadata = {}
-        existing_units = [Unit(errata.ERRATA_TYPE_ID, unit_key, metadata, '')]
+        existing_units = [Unit(TYPE_ID_ERRATA, unit_key, metadata, '')]
         existing_units[0].updated = "2007-03-13 00:00:00"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         created_existing_units = errata.get_existing_errata(sync_conduit)
@@ -131,7 +130,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         repo.working_dir = self.working_dir
         repo.id = "test_errata_local_sync"
         repo.checksumtype = 'sha'
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
@@ -143,8 +142,8 @@ class TestErrata(rpm_support_base.PulpRPMTests):
 
         existing_units = []
         for unit in [unit_key_a, unit_key_b]:
-            existing_units.append(Unit(RPM_TYPE_ID, unit, metadata, ''))
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
+            existing_units.append(Unit(TYPE_ID_RPM, unit, metadata, ''))
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, existing_units=existing_units, pkg_dir=self.pkg_dir)
         importerErrata = errata.ImporterErrata()
         status, summary, details = importerErrata.sync(repo, sync_conduit, config)
         self.assertEquals(len(details['link_report']['linked_units']), 2)
@@ -158,7 +157,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         repo.id = "test_link_errata_rpm_units_with_bad_data"
         repo.checksumtype = 'sha'
         self.simulate_sync(repo, repo_src_dir)
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=[], pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, existing_units=[], pkg_dir=self.pkg_dir)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         caught_exception = False
         try:

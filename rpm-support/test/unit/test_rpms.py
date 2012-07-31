@@ -30,11 +30,11 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 import importer_mocks
 import rpm_support_base
 
-from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.importer import YumImporter
 from yum_importer import importer_rpm
-from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 
 from pulp.plugins.model import Repository, Unit
+from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM
 from pulp_rpm.yum_plugin import util
 
 
@@ -167,7 +167,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         if not value:
             value = "test_value"
         rpm = {}
-        for k in RPM_UNIT_KEY:
+        for k in UNIT_KEY_RPM:
             rpm[k] = value
         for k in ("filename", "vendor", "description", "buildhost", "license",
                 "vendor", "requires", "provides", "pkgpath", "relativepath"):
@@ -176,8 +176,8 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
     
     def test_metadata(self):
         metadata = YumImporter.metadata()
-        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
-        self.assertTrue(RPM_TYPE_ID in metadata["types"])
+        self.assertEquals(metadata["id"], TYPE_ID_IMPORTER_YUM)
+        self.assertTrue(TYPE_ID_RPM in metadata["types"])
 
     def test_basic_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
@@ -315,11 +315,11 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         repo.working_dir = self.working_dir
         repo.id = "test_basic_sync"
         unit_key = {}
-        for k in RPM_UNIT_KEY:
+        for k in UNIT_KEY_RPM:
             unit_key[k] = "test_value"
         metadata = {"filename" : "test_value"}
-        existing_units = [Unit(RPM_TYPE_ID, unit_key, metadata, os.path.join(self.pkg_dir, "test_rel_path"))]
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
+        existing_units = [Unit(TYPE_ID_RPM, unit_key, metadata, os.path.join(self.pkg_dir, "test_rel_path"))]
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, existing_units=existing_units, pkg_dir=self.pkg_dir)
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
@@ -380,9 +380,9 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
 
     def test_get_existing_units(self):
         unit_key = {}
-        for k in RPM_UNIT_KEY:
+        for k in UNIT_KEY_RPM:
             unit_key[k] = "test_value"
-        existing_units = [Unit(RPM_TYPE_ID, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
+        existing_units = [Unit(TYPE_ID_RPM, unit_key, "test_metadata", os.path.join(self.pkg_dir, "test_rel_path"))]
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         actual_existing_units = importer_rpm.get_existing_units(sync_conduit)
         self.assertEquals(len(actual_existing_units), 1)
@@ -392,7 +392,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
 
     def test_get_available_rpms(self):
         rpm = {}
-        for k in RPM_UNIT_KEY:
+        for k in UNIT_KEY_RPM:
             rpm[k] = "test_value"
         available_rpms = importer_rpm.get_available_rpms([rpm])
         lookup_key = importer_rpm.form_lookup_key(rpm)
@@ -401,13 +401,13 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
     def test_get_orphaned_units(self):
         # Create A & B, Orphan B
         unit_key_a = {}
-        for k in RPM_UNIT_KEY:
+        for k in UNIT_KEY_RPM:
             unit_key_a[k] = "test_value"
         unit_key_b = {}
-        for k in RPM_UNIT_KEY:
+        for k in UNIT_KEY_RPM:
             unit_key_b[k] = "test_value_b"
-        unit_a = Unit(RPM_TYPE_ID, unit_key_a, "test_metadata", "test_rel_path")
-        unit_b = Unit(RPM_TYPE_ID, unit_key_b, "test_metadata", "test_rel_path")
+        unit_a = Unit(TYPE_ID_RPM, unit_key_a, "test_metadata", "test_rel_path")
+        unit_b = Unit(TYPE_ID_RPM, unit_key_b, "test_metadata", "test_rel_path")
         existing_units = {
                 importer_rpm.form_lookup_key(unit_key_a):unit_a, 
                 importer_rpm.form_lookup_key(unit_key_b):unit_b
@@ -431,7 +431,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         available_rpms[rpm_lookup_key_a] = rpm_a
         available_rpms[rpm_lookup_key_b] = rpm_b
 
-        unit_a = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path")
+        unit_a = Unit(TYPE_ID_RPM, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
@@ -445,7 +445,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         #
         # Repeat test but now nothing is new
         #
-        unit_b = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
+        unit_b = Unit(TYPE_ID_RPM, importer_rpm.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         existing_units[rpm_lookup_key_b] = unit_b
@@ -483,8 +483,8 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         available_rpms[rpm_lookup_key_a] = rpm_a
         available_rpms[rpm_lookup_key_b] = rpm_b
 
-        unit_a = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path_a")
-        unit_b = Unit(RPM_TYPE_ID, importer_rpm.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
+        unit_a = Unit(TYPE_ID_RPM, importer_rpm.form_rpm_unit_key(rpm_a), "test_metadata", "rel_path_a")
+        unit_b = Unit(TYPE_ID_RPM, importer_rpm.form_rpm_unit_key(rpm_b), "test_metadata", "rel_path_b")
         existing_units = {}
         existing_units[rpm_lookup_key_a] = unit_a
         existing_units[rpm_lookup_key_b] = unit_b
@@ -520,7 +520,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
             symlink_save_path = os.path.join(rpm["savepath"], rpm["filename"])
             self.assertTrue(os.path.lexists(symlink_save_path))
 
-            unit = Unit(RPM_TYPE_ID, 
+            unit = Unit(TYPE_ID_RPM, 
                     importer_rpm.form_rpm_unit_key(rpm), 
                     importer_rpm.form_rpm_metadata(rpm),
                     rpm_save_path)
@@ -535,7 +535,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_remove_old_packages"
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, pkg_dir=self.pkg_dir)
         ###
         # Test that old packages are not in rpmList and are never intended to be downloaded
         # Additionallity verify that already existing packages which are NOT orphaned are also
@@ -558,13 +558,13 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
 
         existing_units = []
         for rpm in rpm_items:
-            u = Unit(RPM_TYPE_ID, 
+            u = Unit(TYPE_ID_RPM, 
                     importer_rpm.form_rpm_unit_key(rpm), 
                     importer_rpm.form_rpm_metadata(rpm),
                     os.path.join(self.pkg_dir, rpm["pkgpath"], rpm["filename"]))
             existing_units.append(u)
         config = importer_mocks.get_basic_config(feed_url=feed_url, remove_old=True, num_old_packages=6)
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, existing_units=existing_units, pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, existing_units=existing_units, pkg_dir=self.pkg_dir)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         self.assertTrue(status)
@@ -945,7 +945,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_repo_newest"
-        sync_conduit = importer_mocks.get_sync_conduit(type_id=RPM_TYPE_ID, pkg_dir=self.pkg_dir)
+        sync_conduit = importer_mocks.get_sync_conduit(type_id=TYPE_ID_RPM, pkg_dir=self.pkg_dir)
 
         # newest set to True test
         config = importer_mocks.get_basic_config(feed_url=feed_url, newest=True)

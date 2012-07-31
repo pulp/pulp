@@ -21,18 +21,11 @@ from pulp.plugins.distributor import Distributor
 from iso_distributor.generate_iso import GenerateIsos
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 
+from pulp_rpm.common.ids import TYPE_ID_DISTRIBUTOR_ISO, TYPE_ID_DISTRO, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP,\
+        TYPE_ID_PKG_CATEGORY, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import comps_util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
-
-ISO_DISTRIBUTOR_TYPE_ID="iso_distributor"
-DISTRO_TYPE_ID="distribution"
-DRPM_TYPE_ID="drpm"
-ERRATA_TYPE_ID="erratum"
-PKG_GROUP_TYPE_ID="package_group"
-PKG_CATEGORY_TYPE_ID="package_category"
-RPM_TYPE_ID="rpm"
-SRPM_TYPE_ID="srpm"
 
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
@@ -69,9 +62,9 @@ class ISODistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id'           : ISO_DISTRIBUTOR_TYPE_ID,
+            'id'           : TYPE_ID_DISTRIBUTOR_ISO,
             'display_name' : 'Iso Distributor',
-            'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, DISTRO_TYPE_ID, PKG_CATEGORY_TYPE_ID, PKG_GROUP_TYPE_ID]
+            'types'        : [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_DISTRO, TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP]
         }
 
     def init_progress(self):
@@ -188,9 +181,9 @@ class ISODistributor(Distributor):
         if date_filter:
             # export errata by date and associated rpm units
             progress_status["errata"]["state"] = "STARTED"
-            criteria = UnitAssociationCriteria(type_ids=[ERRATA_TYPE_ID], unit_filters=date_filter)
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA], unit_filters=date_filter)
             errata_units = publish_conduit.get_units(criteria)
-            criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM])
             rpm_units = publish_conduit.get_units(criteria)
             rpm_units = self._get_errata_rpms(errata_units, rpm_units)
             rpm_status, rpm_errors = self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
@@ -208,17 +201,17 @@ class ISODistributor(Distributor):
         else:
             # export everything
             progress_status["rpms"]["state"] = "STARTED"
-            criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM])
             rpm_units = publish_conduit.get_units(criteria)
             rpm_status, rpm_errors = self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
             progress_status["rpms"]["state"] = "FINISHED"
 
             # package groups
             progress_status["packagegroups"]["state"] = "STARTED"
-            criteria = UnitAssociationCriteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY])
             existing_units = publish_conduit.get_units(criteria)
-            existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
-            existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
+            existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
+            existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
             groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
 
             # generate metadata
@@ -228,7 +221,7 @@ class ISODistributor(Distributor):
             progress_status["packagegroups"]["state"] = "FINISHED"
 
             progress_status["errata"]["state"] = "STARTED"
-            criteria = UnitAssociationCriteria(type_ids=[ERRATA_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
             errata_units = publish_conduit.get_units(criteria)
             rpm_units = self._get_errata_rpms(errata_units, rpm_units)
             self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
@@ -237,7 +230,7 @@ class ISODistributor(Distributor):
 
             # distro units
             progress_status["distribution"]["state"] = "STARTED"
-            criteria = UnitAssociationCriteria(type_ids=[DISTRO_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DISTRO])
             distro_units = publish_conduit.get_units(criteria)
             distro_status, distro_errors = self._export_distributions(distro_units, repo_working_dir, progress_callback=progress_callback)
             progress_status["distribution"]["state"] = "FINISHED"

@@ -20,6 +20,8 @@ import traceback
 
 from pulp.plugins.distributor import Distributor
 from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp_rpm.common.ids import TYPE_ID_DISTRO, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY,\
+        TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DISTRIBUTOR_YUM
 from pulp_rpm.yum_plugin import comps_util, util, metadata
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 
@@ -29,21 +31,12 @@ from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
-DISTRO_TYPE_ID="distribution"
-DRPM_TYPE_ID="drpm"
-ERRATA_TYPE_ID="erratum"
-PKG_GROUP_TYPE_ID="package_group"
-PKG_CATEGORY_TYPE_ID="package_category"
-RPM_TYPE_ID="rpm"
-SRPM_TYPE_ID="srpm"
-YUM_DISTRIBUTOR_TYPE_ID="yum_distributor"
-
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
                         "https_ca", "gpgkey", "generate_metadata",
                         "checksum_type", "skip", "https_publish_dir", "http_publish_dir"]
 
-SUPPORTED_UNIT_TYPES = [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, DISTRO_TYPE_ID]
+SUPPORTED_UNIT_TYPES = [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_DISTRO]
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/repos"
 CONFIG_REPO_AUTH="/etc/pulp/repo_auth.conf"
@@ -87,9 +80,9 @@ class YumDistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id'           : YUM_DISTRIBUTOR_TYPE_ID,
+            'id'           : TYPE_ID_DISTRIBUTOR_YUM,
             'display_name' : 'Yum Distributor',
-            'types'        : [RPM_TYPE_ID, SRPM_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, DISTRO_TYPE_ID, PKG_CATEGORY_TYPE_ID, PKG_GROUP_TYPE_ID]
+            'types'        : [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_DISTRO, TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP]
         }
 
     def validate_config(self, repo, config, related_repos):
@@ -394,8 +387,8 @@ class YumDistributor(Distributor):
         # Determine Content in this repo
         unfiltered_units = publish_conduit.get_units()
         # filter compatible units
-        rpm_units = filter(lambda u : u.type_id in [RPM_TYPE_ID, SRPM_TYPE_ID], unfiltered_units)
-        drpm_units = filter(lambda u : u.type_id == DRPM_TYPE_ID, unfiltered_units)
+        rpm_units = filter(lambda u : u.type_id in [TYPE_ID_RPM, TYPE_ID_SRPM], unfiltered_units)
+        drpm_units = filter(lambda u : u.type_id == TYPE_ID_DRPM, unfiltered_units)
         rpm_errors = []
         if 'rpm' not in skip_list:
             _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
@@ -415,7 +408,7 @@ class YumDistributor(Distributor):
         pkg_errors = rpm_errors + drpm_errors
         pkg_units = rpm_units +  drpm_units
         distro_errors = []
-        distro_units = filter(lambda u: u.type_id == DISTRO_TYPE_ID, unfiltered_units)
+        distro_units = filter(lambda u: u.type_id == TYPE_ID_DISTRO, unfiltered_units)
         if 'distribution' not in skip_list:
             # symlink distribution files if any under repo.working_dir
             distro_status, distro_errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
@@ -433,10 +426,10 @@ class YumDistributor(Distributor):
         existing_cats = []
         existing_groups = []
         if 'packagegroup' not in skip_list:
-            criteria = UnitAssociationCriteria(type_ids=[PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID])
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY])
             existing_units = publish_conduit.get_units(criteria)
-            existing_groups = filter(lambda u : u.type_id in [PKG_GROUP_TYPE_ID], existing_units)
-            existing_cats = filter(lambda u : u.type_id in [PKG_CATEGORY_TYPE_ID], existing_units)
+            existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
+            existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
             groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
         metadata_start_time = time.time()
         self.copy_importer_repodata(src_working_dir, repo.working_dir)

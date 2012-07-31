@@ -30,11 +30,11 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 import rpm_support_base
 import importer_mocks
 
-from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
+from yum_importer.importer import YumImporter
 from yum_importer import importer_rpm
-from yum_importer.importer_rpm import RPM_TYPE_ID, RPM_UNIT_KEY
 
 from pulp.plugins.model import Repository, Unit
+from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM
 from pulp_rpm.yum_plugin import util
 
 

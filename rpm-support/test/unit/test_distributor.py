@@ -25,8 +25,8 @@ from uuid import uuid4
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 
-from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
-    RPM_TYPE_ID, SRPM_TYPE_ID
+from yum_distributor.distributor import YumDistributor
+from pulp_rpm.common.ids import TYPE_ID_DISTRIBUTOR_YUM, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import util
 from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
@@ -85,9 +85,9 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
 
     def test_metadata(self):
         metadata = YumDistributor.metadata()
-        self.assertEquals(metadata["id"], YUM_DISTRIBUTOR_TYPE_ID)
-        self.assertTrue(RPM_TYPE_ID in metadata["types"])
-        self.assertTrue(SRPM_TYPE_ID in metadata["types"])
+        self.assertEquals(metadata["id"], TYPE_ID_DISTRIBUTOR_YUM)
+        self.assertTrue(TYPE_ID_RPM in metadata["types"])
+        self.assertTrue(TYPE_ID_SRPM in metadata["types"])
 
     def test_validate_config(self):
         repo = mock.Mock(spec=Repository)

@@ -17,18 +17,12 @@ Errata Support for Yum Importer
 import os
 import time
 import yum
+from pulp_rpm.common.ids import TYPE_ID_ERRATA, UNIT_KEY_ERRATA, METADATA_ERRATA
 from pulp_rpm.yum_plugin import util, updateinfo
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from yum_importer import importer_rpm
 
 _LOG = util.getLogger(__name__)
-
-ERRATA_TYPE_ID="erratum"
-ERRATA_UNIT_KEY = ("id",)
-
-ERRATA_METADATA = ("title", "description", "version", "release", "type", "status", "updated",
-                "issued", "severity", "references", "pkglist", "rights",  "summary",
-                "solution", "from_str", "pushcount", "reboot_suggested" )
 
 def get_available_errata(repo_dir):
     """
@@ -124,18 +118,18 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
         new_errata[key] = erratum
         unit_key  = form_errata_unit_key(erratum)
         metadata =  form_errata_metadata(erratum)
-        new_units[key] = sync_conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
+        new_units[key] = sync_conduit.init_unit(TYPE_ID_ERRATA, unit_key, metadata, None)
     return new_errata, new_units, sync_conduit
 
 def form_errata_unit_key(erratum):
     unit_key = {}
-    for key in ERRATA_UNIT_KEY:
+    for key in UNIT_KEY_ERRATA:
         unit_key[key] = erratum[key]
     return unit_key
 
 def form_errata_metadata(erratum):
     metadata = {}
-    for key in ERRATA_METADATA:
+    for key in METADATA_ERRATA:
         metadata[key] = erratum[key]
     return metadata
 
@@ -238,7 +232,7 @@ class ImporterErrata(object):
         progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
         set_progress(progress)
 
-        criteria = UnitAssociationCriteria(type_ids=[ERRATA_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
         existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
         _LOG.info("Existing Errata %s" % len(existing_errata))
         orphaned_units = get_orphaned_errata(available_errata, existing_errata)
