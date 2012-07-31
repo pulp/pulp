@@ -146,11 +146,12 @@ class AdminConsumerSection(PulpCliSection):
         if kwargs['details']:
             order = filters[:2]
             filters = None
-        else:
-            if kwargs['fields']:
-                filters = kwargs['fields'].split(',')
-                if 'id' not in filters:
-                    filters.insert(0, 'id')
+        elif kwargs['fields']:
+            filters = kwargs['fields'].split(',')
+            if 'bindings' not in filters:
+                filters.append('bindings')
+            if 'id' not in filters:
+                filters.insert(0, 'id')
         # render
         self.prompt.render_title('Consumers')
         for c in response.response_body:
