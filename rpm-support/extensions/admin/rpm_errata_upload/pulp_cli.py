@@ -90,7 +90,7 @@ class CreateErratumCommand(PulpCliCommand):
         self.create_option('--from', _(d), required=True)
 
         d = 'pushcount for this erratum; an integer, defaults to 1'
-        self.create_option('--pushcount', _(d), required=True, default=1)
+        self.create_option('--pushcount', _(d), required=False, default=1)
 
         d = 'reboot-suggested for this erratum will be true if this flag is specified'
         self.create_flag('--reboot-suggested', _(d))
