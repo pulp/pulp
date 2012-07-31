@@ -270,6 +270,9 @@ class Importer(object):
         """
         raise NotImplementedError()
 
+    def cancel_sync_repo(self, call_request, call_report):
+        raise NotImplementedError()
+
     def resolve_dependencies(self, repo, units, dependency_conduit, config):
         """
         Given a list of units, the importer will determine what other units in
