@@ -531,7 +531,7 @@ class YumImporter(Importer):
         summary['state'] = 'FINISHED'
         return True, summary, details
 
-    def cancel_sync_repo(self):
+    def cancel_sync_repo(self, call_request, call_report):
         self.canceled = True
         self.comps.cancel_sync()
         self.errata.cancel_sync()
