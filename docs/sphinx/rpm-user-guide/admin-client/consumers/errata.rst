@@ -6,7 +6,7 @@ registered consumers. All errata related commands are found under
 the ``consumer errata`` section of the client.
 
 An erratum is metadata communicating an update is available for a
-software package.  Erratum are typically formed to reflect a security fix,
+software package.  Errata are typically formed to reflect a security fix,
 bug fix, or feature enhancement.  Each erratum refers to a collection of 
 updated RPMs.
 
