@@ -31,6 +31,7 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
+from pulp.server.dispatch import constants as dispatch_constants
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers import factory as manager_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
@@ -58,6 +59,9 @@ class RepoPublishManager(object):
 
         call_request.kwargs['distributor_instance'] = distributor_instance
         call_request.kwargs['distributor_config'] = distributor_config
+
+        if distributor_instance is not None:
+            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor_instance.cancel_repo_publish)
 
     def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
         """

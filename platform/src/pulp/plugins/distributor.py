@@ -151,6 +151,9 @@ class Distributor(object):
         """
         raise NotImplementedError()
 
+    def cancel_publish_repo(self, call_request, call_report):
+        raise NotImplementedError()
+
     def create_consumer_payload(self, repo, config):
         """
         Called when a consumer binds to a repository using this distributor.
