@@ -61,7 +61,7 @@ class RepoPublishManager(object):
         call_request.kwargs['distributor_config'] = config
 
         if distributor is not None:
-            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor.cancel_repo_publish)
+            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor.cancel_publish_repo)
 
     def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
         """

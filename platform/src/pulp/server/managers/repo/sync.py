@@ -77,7 +77,7 @@ class RepoSyncManager(object):
         call_request.kwargs['importer_config'] = config
 
         if importer is not None:
-            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, importer.cancel_repo_sync)
+            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, importer.cancel_sync_repo)
 
     def sync(self, repo_id, importer_instance=None, importer_config=None, sync_config_override=None):
         """
