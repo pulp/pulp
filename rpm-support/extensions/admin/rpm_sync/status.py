@@ -144,7 +144,7 @@ class StatusRenderer(object):
         # by the if statements below.
 
         # Sync Steps
-        if 'importer' in progress_report:
+        if 'yum_importer' in progress_report:
             self.render_metadata_step(progress_report)
             self.render_download_step(progress_report)
             self.render_errata_step(progress_report)
@@ -165,7 +165,7 @@ class StatusRenderer(object):
         #    "state": "FINISHED"
         # }
 
-        current_state = progress_report['importer']['metadata']['state']
+        current_state = progress_report['yum_importer']['metadata']['state']
         def update_func(new_state):
             self.metadata_last_state = new_state
         self._render_general_spinner_step(self.metadata_spinner, current_state, self.metadata_last_state, _('Downloading metadata...'), update_func)
@@ -216,7 +216,7 @@ class StatusRenderer(object):
         #    },
         # }
 
-        data = progress_report['importer']['content']
+        data = progress_report['yum_importer']['content']
         state = data['state']
 
         # Render nothing if we haven't begun yet
@@ -323,7 +323,7 @@ class StatusRenderer(object):
         #    "num_errata": 0
         # }
 
-        current_state = progress_report['importer']['errata']['state']
+        current_state = progress_report['yum_importer']['errata']['state']
         def update_func(new_state):
             self.errata_last_state = new_state
         self._render_general_spinner_step(self.errata_spinner, current_state, self.errata_last_state, _('Importing errata...'), update_func)
@@ -420,7 +420,7 @@ class StatusRenderer(object):
         #    "num_new_categories": 0,
         # }
         
-        current_state = progress_report['importer']['comps']['state']
+        current_state = progress_report['yum_importer']['comps']['state']
         def update_func(new_state):
             self.comps_last_state = new_state
         self._render_general_spinner_step(self.comps_spinner, current_state, self.comps_last_state, _('Importing package groups/categories...'), update_func)
