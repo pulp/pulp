@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.319
+Version: 0.0.320
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,9 @@ exit 0
 %endif
 
 %changelog
+* Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
+- 
+
 * Mon Jul 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.319-1
 - CLI search now has user-friendly options (mhrivnak@redhat.com)
 - 843098 - Run all written content through encode_unicode first
