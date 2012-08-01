@@ -77,7 +77,7 @@ class RepoPublishManager(object):
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id, distributor=distributor_id)
 
         try:
             distributor_instance, plugin_config = \
