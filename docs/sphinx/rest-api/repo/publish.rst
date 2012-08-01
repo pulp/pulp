@@ -12,7 +12,8 @@ call always executes asynchronously and will return a :term:`call report`.
 | :permission:`update`
 | :param_list:`post`
 
-* :param:`override_config,object,distributor configuration values that override the distributor's default configuration for this publish`
+* :param:`id,str,identifies which distributor on the repository to publish`
+* :param:`?override_config,object,distributor configuration values that override the distributor's default configuration for this publish`
 
 | :response_list:`_`
 
@@ -24,6 +25,7 @@ call always executes asynchronously and will return a :term:`call report`.
 :sample_request:`_` ::
 
  {
+   "id": "distributor_1",
    "override_config": {},
  }
 
