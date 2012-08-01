@@ -73,13 +73,13 @@ class RepoSyncManager(object):
             importer = None
             config = None
 
-        call_request.kwargs['importer'] = importer
+        call_request.kwargs['importer_instance'] = importer
         call_request.kwargs['importer_config'] = config
 
         if importer is not None:
             call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, importer.cancel_repo_sync)
 
-    def sync(self, repo_id, importer=None, importer_config=None, sync_config_override=None):
+    def sync(self, repo_id, importer_instance=None, importer_config=None, sync_config_override=None):
         """
         Performs a synchronize operation on the given repository.
 
@@ -96,8 +96,8 @@ class RepoSyncManager(object):
         @param repo_id: identifies the repo to sync
         @type  repo_id: str
 
-        @param importer: the importer instance for this repo and this sync
-        @type importer: pulp.plugins.importer.Importer
+        @param importer_instance: the importer instance for this repo and this sync
+        @type importer_instance: pulp.plugins.importer.Importer
 
         @param importer_config: base configuration for the importer
         @type importer_config: dict
@@ -117,7 +117,7 @@ class RepoSyncManager(object):
         if repo is None:
             raise MissingResource(repo_id)
 
-        if importer is None:
+        if importer_instance is None:
             raise MissingResource(repo_id)
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -133,7 +133,7 @@ class RepoSyncManager(object):
         # Fire an events around the call
         fire_manager = manager_factory.event_fire_manager()
         fire_manager.fire_repo_sync_started(repo_id)
-        sync_result = self._do_sync(repo, importer, transfer_repo, conduit, call_config)
+        sync_result = self._do_sync(repo, importer_instance, transfer_repo, conduit, call_config)
         fire_manager.fire_repo_sync_finished(sync_result)
 
         if sync_result['result'] == RepoSyncResult.RESULT_FAILED:

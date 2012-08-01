@@ -52,16 +52,16 @@ class RepoPublishManager(object):
 
         try:
             repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-            distributor_instance, distributor_config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
         except MissingResource, plugin_exceptions.PluginNotFound:
-            distributor_instance = None
-            distributor_config = None
+            distributor = None
+            config = None
 
-        call_request.kwargs['distributor_instance'] = distributor_instance
-        call_request.kwargs['distributor_config'] = distributor_config
+        call_request.kwargs['distributor_instance'] = distributor
+        call_request.kwargs['distributor_config'] = config
 
-        if distributor_instance is not None:
-            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor_instance.cancel_repo_publish)
+        if distributor is not None:
+            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor.cancel_repo_publish)
 
     def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
         """
@@ -77,6 +77,12 @@ class RepoPublishManager(object):
 
         @param distributor_id: identifies the repo's distributor to publish
         @type  distributor_id: str
+
+        @param distributor_instance: the distributor instance for this repo and this publish
+        @type distributor_instance: pulp.plugins.distributor.Distributor
+
+        @param distributor_config: base configuration for the distributor
+        @type distributor_config: dict
 
         @param publish_config_override: optional config values to use for this
                                         publish call only
