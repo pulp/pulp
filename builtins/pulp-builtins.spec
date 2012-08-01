@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.319
+Version: 0.0.320
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -91,6 +91,9 @@ client capabilites.
 
 
 %changelog
+* Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
+- 
+
 * Mon Jul 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.319-1
 - 843618 - Added interactive prompt when the password isn't specified
   (jason.dobies@redhat.com)
