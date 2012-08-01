@@ -83,7 +83,7 @@ Release:           %(release)s
 Status:            %(status)s
 Reboot Suggested:  %(reboot)s
 
-Packages Affected:
+Updated Packages:
 %(pkgs)s
 
 References:
