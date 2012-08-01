@@ -964,7 +964,8 @@ class RepoUnassociate(JSONController):
 
         call_request = CallRequest(association_manager.unassociate_by_criteria,
                                    [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER, get_principal()['login']],
-                                   tags=tags)
+                                   tags=tags,
+                                   archive=True)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
 
         return execution.execute_async(self, call_request)
