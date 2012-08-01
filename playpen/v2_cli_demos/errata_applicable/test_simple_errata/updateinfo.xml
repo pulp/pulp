@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updates>
+	<update from="pulp-list@redhat.com" status="final" type="enhancements" version="1">
+		<id>test</id>
+		<title>Test Errata referring to test-package-0.2</title>
+		<issued date="2010-11-7 00:00:00"/>
+		<updated date="2012-7-25 00:00:00"/>
+		<description/>
+		<references/>
+		<pkglist>
+			<collection short="TestCollection">
+				<name>Pulp Test Packages</name>
+                <package name="test-package" version="0.2" release="1.el6" epoch="0" arch="noarch" src="test-package-0.2-1.el6.src.rpm">
+					<filename>test-package-0.2-1.el6.noarch.rpm</filename>
+					<sum type="md5">5b590cc95fdff14560034a1f334a4753</sum>
+				</package>
+			</collection>
+		</pkglist>
+	</update>
+</updates>
