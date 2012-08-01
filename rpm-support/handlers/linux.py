@@ -14,6 +14,9 @@
 import os
 from pulp.agent.lib.handler import SystemHandler
 from pulp.agent.lib.report import RebootReport
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 class LinuxHandler(SystemHandler):
@@ -28,7 +31,7 @@ class LinuxHandler(SystemHandler):
         report = RebootReport()
         apply = options.get('apply', True)
         if apply:
-            minutes = options.get('minutes', 1)
+            minutes = options.get('minutes', 10)
             command = 'shutdown -r +%d' % minutes
             log.info(command)
             os.system(command)
