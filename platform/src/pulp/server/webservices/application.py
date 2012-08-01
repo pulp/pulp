@@ -51,7 +51,7 @@ from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     agent, consumers, contents, dispatch, events, plugins, repo_groups,
-    repositories, root_actions, users)
+    repositories, roles, root_actions, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
@@ -68,6 +68,7 @@ URLS = (
     '/v2/queued_calls', dispatch.queued_call_application,
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
+    '/v2/roles', roles.application,
     '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,

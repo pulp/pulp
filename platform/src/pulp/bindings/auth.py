@@ -46,3 +46,43 @@ class UserAPI(PulpAPI):
         path = self.base_path + "%s/" % login
         body = {'delta' : delta}
         return self.server.PUT(path, body)
+
+class RoleAPI(PulpAPI):
+    """
+    Connection class to access role specific calls
+    """
+    def __init__(self, pulp_connection):
+        super(RoleAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/roles/"
+
+    def roles(self):
+        path = self.base_path
+        return self.server.GET(path)
+
+    def create(self, name):
+        path = self.base_path
+        roledata = {"name": name}
+        return self.server.POST(path, roledata)
+
+    def role(self, name):
+        path = self.base_path + ("%s/" % name)
+        return self.server.GET(path)
+
+    def delete(self, name):
+        path = self.base_path + "%s/" % name
+        return self.server.DELETE(path)
+
+    def update(self, name, delta):
+        path = self.base_path + "%s/" % name
+        body = {'delta' : delta}
+        return self.server.PUT(path, body)
+    
+    def add_user(self, name, login):
+        path = self.base_path + "%s/" % name + 'users/'
+        data = {"login": login}
+        return self.server.POST(path, data)
+    
+    def remove_user(self, name, login):
+        path = self.base_path + "%s/" % name + 'users/' +  "%s/" % login
+        return self.server.DELETE(path)
+

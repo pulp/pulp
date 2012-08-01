@@ -46,8 +46,13 @@ class RolesCollection(JSONController):
 
         role_query_manager = managers.role_query_manager()
         roles = role_query_manager.find_all()
-        role_names = [r['name'] for r in roles]
-        return self.ok(role_names)
+        for role in roles:
+            role['users'] = [u['login'] for u in
+                             managers.user_query_manager().find_users_belonging_to_role(role)]
+            for resource, operations in role['permissions'].items():
+                role['permissions'][resource] = [operation_to_name(o)
+                                                 for o in operations]
+        return self.ok(roles)
 
     @auth_required(CREATE)
     def POST(self):
