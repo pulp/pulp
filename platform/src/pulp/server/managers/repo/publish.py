@@ -43,7 +43,23 @@ _LOG = logging.getLogger(__name__)
 
 class RepoPublishManager(object):
 
-    def publish(self, repo_id, distributor_id, publish_config_override=None, base_progress_report=None):
+    def prep_publish(self, call_request, call_report):
+        repo_id = call_request.args[0]
+        distributor_id = call_request.args[1]
+
+        repo_distributor_manager = manager_factory.repo_distributor_manager()
+
+        try:
+            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+            distributor_instance, distributor_config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+        except MissingResource, plugin_exceptions.PluginNotFound:
+            distributor_instance = None
+            distributor_config = None
+
+        call_request.kwargs['distributor_instance'] = distributor_instance
+        call_request.kwargs['distributor_config'] = distributor_config
+
+    def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
         """
         Requests the given distributor publish the repository it is configured
         on.
@@ -79,16 +95,13 @@ class RepoPublishManager(object):
         if repo_distributor is None:
             raise MissingResource(repository=repo_id, distributor=distributor_id)
 
-        try:
-            distributor_instance, plugin_config = \
-                plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except plugin_exceptions.PluginNotFound:
+        if distributor_instance is None:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id, base_progress_report=base_progress_report)
 
-        call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'], publish_config_override)
+        call_config = PluginCallConfiguration(distributor_config, repo_distributor['config'], publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(repo_distributor['distributor_type_id'], repo_id, mkdir=True)
 
