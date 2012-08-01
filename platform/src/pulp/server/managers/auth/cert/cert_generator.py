@@ -27,45 +27,6 @@ ADMIN_PREFIX = 'admin:'
 ADMIN_SPLITTER = ':'
 
 
-class SerialNumber:
-
-    PATH = '/var/lib/pulp/sn.dat'
-    __mutex = RLock()
-    __metaclass__ = Singleton
-
-    def next(self):
-        """
-        Get the next serial#
-        @return: The next serial#
-        @rtype: int
-        """
-        self.__mutex.acquire()
-        try:
-            fp = open(self.PATH, 'a+')
-            try:
-                sn = int(fp.read()) + 1
-            except:
-                sn = 1
-            fp.seek(0)
-            fp.truncate(0)
-            fp.write(str(sn))
-            fp.close()
-            return sn
-        finally:
-            self.__mutex.release()
-
-    def reset(self):
-        """
-        Reset the serial number
-        """
-        self.__mutex.acquire()
-        try:
-            fp = open(self.PATH, 'w')
-            fp.write('0')
-            fp.close()
-        finally:
-            self.__mutex.release()
-
 class CertGenerationManager(object):
     
     def make_admin_user_cert(self, user):
@@ -214,6 +175,47 @@ class CertGenerationManager(object):
         id = parsed[1]
 
         return username, id
+
+
+class SerialNumber:
+
+    PATH = config.config.get('security', 'serial_number_path')
+    __mutex = RLock()
+    __metaclass__ = Singleton
+
+    def next(self):
+        """
+        Get the next serial#
+        @return: The next serial#
+        @rtype: int
+        """
+        self.__mutex.acquire()
+        try:
+            fp = open(self.PATH, 'a+')
+            try:
+                sn = int(fp.read()) + 1
+            except:
+                sn = 1
+            fp.seek(0)
+            fp.truncate(0)
+            fp.write(str(sn))
+            fp.close()
+            return sn
+        finally:
+            self.__mutex.release()
+
+    def reset(self):
+        """
+        Reset the serial number
+        """
+        self.__mutex.acquire()
+        try:
+            fp = open(self.PATH, 'w')
+            fp.write('0')
+            fp.close()
+        finally:
+            self.__mutex.release()
+
     
 #----------------------------------------------------------------------------------------------------
 
