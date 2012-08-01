@@ -177,7 +177,7 @@ class RepoPublishManager(object):
         """
 
         # Retrieve all auto publish distributors for the repo
-        auto_distributors = _auto_distributors(repo_id)
+        auto_distributors = self.auto_distributors(repo_id)
 
         if len(auto_distributors) is 0:
             return
@@ -270,6 +270,15 @@ class RepoPublishManager(object):
 
         return list(cursor)
 
+    def auto_distributors(self, repo_id):
+        """
+        Returns all distributors for the given repo that are configured for automatic
+        publishing.
+        """
+        dist_coll = RepoDistributor.get_collection()
+        auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
+        return auto_distributors
+
 # -- utilities ----------------------------------------------------------------
 
 def _now_timestamp():
@@ -281,11 +290,3 @@ def _now_timestamp():
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
 
-def _auto_distributors(repo_id):
-    """
-    Returns all distributors for the given repo that are configured for automatic
-    publishing.
-    """
-    dist_coll = RepoDistributor.get_collection()
-    auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
-    return auto_distributors
