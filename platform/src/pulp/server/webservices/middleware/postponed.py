@@ -46,9 +46,12 @@ class PostponedOperationMiddleware(object):
             start_response(start_str, [(k, v) for k, v in self.headers.items()])
             return [body]
         except MultipleOperationsPostponed, e:
-            serialized_call_report_list = [r.serialize() for r in e.call_report_list]
-            for r in serialized_call_report_list:
-                r.update(serialization.dispatch.task_group_href(r))
+            serialized_call_report_list = []
+            for call_report in e.call_report_list:
+                href_obj = serialization.dispatch.task_group_href(call_report)
+                serialized_call_report = call_report.serialize()
+                serialized_call_report.update(href_obj)
+                serialized_call_report_list.append(serialized_call_report)
             body = json.dumps(serialized_call_report_list)
             self.headers['Content-Length'] = str(len(body))
             start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
