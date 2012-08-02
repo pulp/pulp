@@ -28,6 +28,5 @@ echo "${DATA}"
 echo ""
 echo ""
 echo "Result:"
-#curl -s -S -k -H "Authorization: Basic $AUTH" -X POST -d "${DATA}" ${URL} | python -mjson.tool 
 curl -s -S -k -H "Authorization: Basic $AUTH" -X POST -d "${DATA}" ${URL} | ./display_results.py
 

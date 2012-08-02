@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import random
 import sys
 
 from optparse import OptionParser
@@ -26,11 +27,12 @@ def get_consumer_id(prefix, index, count):
     return "%s_%s" % (prefix, value)
 
 def get_even_profile():
+    random_num = random.randint(0,1000)
     profile = [{
             "vendor": "Pulp Team",
             "name": "test-package",
             "epoch": 0,
-            "version": "0.1",
+            "version": "0.0.%s" % (random_num),
             "release": "1.el6",
             "arch": "noarch",
             }]
