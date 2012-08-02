@@ -21,11 +21,12 @@ import base
 import logging
 import mock_plugins
 import mock_agent
-import json
 import urllib
+
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.compat import json
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.repository import Repo, RepoDistributor
