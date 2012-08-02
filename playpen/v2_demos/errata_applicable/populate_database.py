@@ -16,8 +16,14 @@ CONSUMER_MGR = factory.consumer_manager()
 PROFILE_MGR = factory.consumer_profile_manager()
 CONSUMER_BIND_MGR = factory.consumer_bind_manager()
 
-def get_consumer_id(prefix, index):
-    return "%s_%s" % (prefix, index)
+def get_consumer_id(prefix, index, count):
+    value = str(index)
+    desired_length = len(str(count))
+    num_length = len(value)
+    needed_padding = desired_length - num_length
+    for i in range(0, needed_padding):
+        value = "0"+value
+    return "%s_%s" % (prefix, value)
 
 def get_even_profile():
     profile = [{
@@ -44,7 +50,7 @@ def get_odd_profile():
 def delete_consumers(prefix, num):
     print "Consumers will be deleted with consumer id prefix <%s> from 0-%s" % (prefix, num)
     for index in range(0, num):
-        consumer_id = get_consumer_id(prefix, index)
+        consumer_id = get_consumer_id(prefix, index, num)
         try:
             consumer = CONSUMER_MGR.get_consumer(consumer_id)
             CONSUMER_MGR.unregister(consumer_id)
@@ -57,7 +63,7 @@ def delete_consumers(prefix, num):
 def create_consumers(prefix, num, repo_id):
     print "Create Consumers with id prefix <%s> from 0-%s" % (prefix, num)
     for index in range(0, num):
-        consumer_id = get_consumer_id(prefix, index)
+        consumer_id = get_consumer_id(prefix, index, num)
         try:
             CONSUMER_MGR.register(consumer_id)
         except DuplicateResource:
