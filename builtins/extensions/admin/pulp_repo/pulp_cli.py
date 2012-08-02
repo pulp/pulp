@@ -296,7 +296,8 @@ class RepoGroupMemberSection(PulpCliSection):
         criteria = {'fields':('repo_ids',), 'filters':{'id':group_id}}
         repo_group_list = self.context.server.repo_group_search.search(**criteria)
 
-        order = ['id', 'display_name', 'description']
+        filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
+        order = filters
 
         if len(repo_group_list) != 1:
             self.prompt.write('Repo group [%s] does not exist on the server' % group_id, tag='not-found')
@@ -305,7 +306,7 @@ class RepoGroupMemberSection(PulpCliSection):
             if repo_ids:
                 criteria = {'filters':{'id':{'$in':repo_ids}}}
                 repo_list = self.context.server.repo_search.search(**criteria)
-                self.prompt.render_document_list(repo_list, order=order)
+                self.prompt.render_document_list(repo_list, filters=filters, order=order)
 
     def add(self, **kwargs):
         group_id = kwargs.pop('group-id')
