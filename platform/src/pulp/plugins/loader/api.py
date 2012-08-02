@@ -37,8 +37,6 @@ _MANAGER = None
 _PLUGINS_ROOT = '/usr/lib/pulp/plugins'
 _DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/distributors'
 _IMPORTERS_DIR = _PLUGINS_ROOT + '/importers'
-_GROUP_DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/group_distributors'
-_GROUP_IMPORTERS_DIR = _PLUGINS_ROOT + '/group_importers'
 _PROFILERS_DIR = _PLUGINS_ROOT + '/profilers'
 _TYPES_DIR = _PLUGINS_ROOT + '/types'
 
