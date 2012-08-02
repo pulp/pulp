@@ -399,6 +399,10 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         # test http publish
         config = distributor_mocks.get_basic_config(http_publish_dir=self.http_publish_dir,
             start_date="2009-03-30 08:07:30", end_date="2012-03-30 08:07:30", generate_metadata=True)
+        def cleanup():
+            return
+        iso_distributor.cleanup = mock.Mock()
+        iso_distributor.cleanup.side_effect = cleanup
         report = iso_distributor.publish_repo(repo, publish_conduit, config)
         ftypes = util.get_repomd_filetypes("%s/%s" % (repo.working_dir, "repodata/repomd.xml"))
         self.assertTrue("updateinfo" in ftypes)

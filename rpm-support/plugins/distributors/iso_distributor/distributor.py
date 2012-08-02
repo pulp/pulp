@@ -27,9 +27,8 @@ from pulp_rpm.yum_plugin import comps_util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
-REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
-OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
-                        "https_ca", "https_publish_dir", "http_publish_dir"]
+REQUIRED_CONFIG_KEYS = []
+OPTIONAL_CONFIG_KEYS = ["generate_metadata", "http_publish_dir", "start_date", "end_date"]
 
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/isos"
 
@@ -242,9 +241,21 @@ class ISODistributor(Distributor):
         details["errors"] += metadata_errors
         # metadata generate skipped vs run
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (summary, details))
+        # remove exported content from working dirctory
+        self.cleanup()
         if details["errors"]:
             return publish_conduit.build_failure_report(summary, details)
         return publish_conduit.build_success_report(summary, details)
+
+    def cleanup(self):
+        """
+        remove exported content from working dirctory
+        """
+        try:
+            shutil.rmtree(self.repo_working_dir)
+            _LOG.debug("Cleaned up repo working directory %s" % self.repo_working_dir)
+        except (IOError, OSError), e:
+            _LOG.error("unable to clean up working directory; Error: %s" % e)
 
     def get_http_publish_iso_dir(self, config=None):
         """
@@ -339,9 +350,13 @@ class ISODistributor(Distributor):
         errata_progress_status = self.init_progress()
         if not errata_units:
             return True, []
+        errata_progress_status["num_success"] = 0
+        errata_progress_status["items_left"] = len(errata_units)
+        errata_progress_status["items_total"] = len(errata_units)
         try:
             errata_progress_status['state'] = "IN_PROGRESS"
             self.set_progress("errata", errata_progress_status, progress_callback)
+
             updateinfo_path = updateinfo.updateinfo(errata_units, repo_working_dir)
             if updateinfo_path:
                 repodata_dir = os.path.join(repo_working_dir, "repodata")
@@ -350,15 +365,21 @@ class ISODistributor(Distributor):
                     return False, []
                 _LOG.debug("Modifying repo for updateinfo")
                 metadata.modify_repo(repodata_dir,  updateinfo_path)
+            errata_progress_status["num_success"] = len(errata_units)
+            errata_progress_status["items_left"] = 0
         except metadata.ModifyRepoError, mre:
             msg = "Unable to run modifyrepo to include updateinfo at target location %s; Error: %s" % (repo_working_dir, str(mre))
             errors.append(msg)
             _LOG.error(msg)
             errata_progress_status['state'] = "FAILED"
+            errata_progress_status["num_success"] = 0
+            errata_progress_status["items_left"] = len(errata_units)
             return False, errors
         except Exception, e:
             errors.append(str(e))
             errata_progress_status['state'] = "FAILED"
+            errata_progress_status["num_success"] = 0
+            errata_progress_status["items_left"] = len(errata_units)
             return False, errors
         errata_progress_status['state'] = "FINISHED"
         return True, []
@@ -377,7 +398,6 @@ class ISODistributor(Distributor):
                         continue
                     pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
                     rpm_key = form_lookup_key(pinfo)
-                    print "RPM KEY",rpm_key
                     if rpm_key in existing_rpm_units.keys():
                         rpm_unit = existing_rpm_units[rpm_key]
                         _LOG.info("Found matching rpm unit %s" % rpm_unit)
