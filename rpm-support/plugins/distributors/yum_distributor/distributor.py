@@ -361,9 +361,10 @@ class YumDistributor(Distributor):
             return relative_url
         return repo.id
 
-    def cancel_publish_repo(self, repo):
+    def cancel_publish_repo(self, call_report, call_request):
         self.canceled = True
-        return metadata.cancel_createrepo(repo.working_dir)
+        repo_working_dir = getattr(self, 'repo_working_dir')
+        return metadata.cancel_createrepo(repo_working_dir)
 
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
@@ -380,6 +381,8 @@ class YumDistributor(Distributor):
         def progress_callback(type_id, status):
             progress_status[type_id] = status
             publish_conduit.set_progress(progress_status)
+
+        self.repo_working_dir = repo.working_dir
 
         if self.canceled:
             return publish_conduit.build_failure_report(summary, details)

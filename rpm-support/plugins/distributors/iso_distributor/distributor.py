@@ -132,9 +132,10 @@ class ISODistributor(Distributor):
 
         return True, None
 
-    def cancel_publish_repo(self, repo):
+    def cancel_publish_repo(self, call_request, call_report):
         self.canceled = True
-        return metadata.cancel_createrepo(repo.working_dir)
+        repo_working_dir = getattr(self, 'repo_working_dir')
+        return metadata.cancel_createrepo(repo_working_dir)
 
     def set_progress(self, type_id, status, progress_callback=None):
         if progress_callback:
@@ -175,7 +176,7 @@ class ISODistributor(Distributor):
             progress_status[type_id] = status
             publish_conduit.set_progress(progress_status)
 
-        repo_working_dir = repo.working_dir
+        self.repo_working_dir = repo_working_dir = repo.working_dir
 
         date_filter = self.create_date_range_filter(config)
         if date_filter:
