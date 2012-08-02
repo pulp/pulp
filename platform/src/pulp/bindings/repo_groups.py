@@ -101,16 +101,22 @@ class RepoGroupSearchAPI(SearchAPI):
     PATH = 'v2/repo_groups/search/'
 
 
-class RepoGroupActionAPI(PulpAPI):
+class RepoGroupActionAPI(SearchAPI):
     PATH = 'v2/repo_groups/%s/actions/'
 
     def associate(self, id, **kwargs):
-        path = self.PATH % (id) + 'associate/'
+        path = self.PATH % id + 'associate/'
+
+        filters = self._compose_filters(**kwargs)
+        if filters:
+            kwargs['filters'] = filters
+        self._strip_criteria_kwargs(kwargs)
+
         response = self.server.POST(path, {'criteria':kwargs})
         return response.response_body
 
     def unassociate(self, id, **kwargs):
-        path = self.PATH % (id) + 'unassociate/'
+        path = self.PATH % id + 'unassociate/'
         response = self.server.POST(path, {'criteria':kwargs})
         return response.response_body
 
