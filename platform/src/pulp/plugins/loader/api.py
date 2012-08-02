@@ -98,6 +98,15 @@ def list_content_types():
     return database.all_type_ids()
 
 
+def list_group_distributors():
+    """
+    Lists the loaded group distributors.
+    @return: dictionary of distributor IDs -> metadata
+    @rtype: dict{str: dict, ...}
+    """
+    assert _is_initialized()
+    return _MANAGER.group_distributors.get_loaded_plugins()
+
 def list_distributors():
     """
     List the loaded distributors.
@@ -106,6 +115,16 @@ def list_distributors():
     """
     assert _is_initialized()
     return _MANAGER.distributors.get_loaded_plugins()
+
+
+def list_group_importers():
+    """
+    Lists the loaded group importers.
+    @return: dictionary of importer IDs -> metadata
+    @rtype: dict{str: dict, ...}
+    """
+    assert _is_initialized()
+    return _MANAGER.group_importers.get_loaded_plugins()
 
 
 def list_importers():
