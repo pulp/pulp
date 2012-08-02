@@ -238,6 +238,9 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
         except PulpExecutionException, e:
             pass
 
+        # Clean Up
+        mock_plugins.MOCK_GROUP_DISTRIBUTOR.distributor_removed.side_effect = None
+
     # -- update ---------------------------------------------------------------
 
     def test_update_distributor_config(self):

@@ -21,6 +21,7 @@ from pymongo.errors import DuplicateKeyError
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.db.model.repository import Repo
+from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 
@@ -108,6 +109,12 @@ class RepoGroupManager(object):
         @type group_id: str
         """
         collection = validate_existing_repo_group(group_id)
+
+        # Delete all distributors on the group
+        distributor_manager = manager_factory.repo_group_distributor_manager()
+        distributors = distributor_manager.find_distributors(group_id)
+        for distributor in distributors:
+            distributor_manager.remove_distributor(group_id, distributor['id'])
 
         # Delete the working directory for the group
         working_dir = common_utils.repo_group_working_dir(group_id)
