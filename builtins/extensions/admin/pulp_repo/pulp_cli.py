@@ -363,7 +363,9 @@ class RepoGroupSection(PulpCliSection):
         if 'display-name' in kwargs:
             name = kwargs['display-name']
         description = kwargs['description']
-        notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
+        notes = None
+        if kwargs['note'] is not None:
+            notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)
