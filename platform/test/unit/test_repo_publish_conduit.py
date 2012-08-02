@@ -32,6 +32,8 @@ class RepoPublishConduitTests(base.PulpServerTests):
     def clean(self):
         super(RepoPublishConduitTests, self).clean()
 
+        mock_plugins.reset()
+
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
 

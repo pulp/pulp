@@ -497,7 +497,6 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
-
 class PublishActionTests(base.PulpWebserviceTests):
 
     def setUp(self):
@@ -529,6 +528,17 @@ class PublishActionTests(base.PulpWebserviceTests):
         # Can't verify the status code due to the unit test framework
 #        self.assertEqual(200, status)
 #        self.assertEqual(1, dummy_plugins.DUMMY_GROUP_DISTRIBUTOR.call_count)
+
+    def test_post_missing_distributor_id(self):
+        # Setup
+        group_id = 'group-1'
+        self.manager.create_repo_group(group_id)
+
+        # Test
+        status, body = self.post('/v2/repo_groups/%s/actions/publish/' % group_id, {})
+
+        # Verify
+        self.assertEqual(400, status)
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')

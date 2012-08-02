@@ -83,7 +83,8 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
-class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin, MultipleRepoUnitsMixin, PublishReportMixin):
+class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin,
+                              MultipleRepoUnitsMixin, PublishReportMixin):
 
     def __init__(self, group_id, distributor_id):
         RepoGroupDistributorScratchPadMixin.__init__(self, group_id, distributor_id)

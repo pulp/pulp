@@ -43,6 +43,7 @@ class RepoSyncConduitTests(base.PulpServerTests):
     def clean(self):
         super(RepoSyncConduitTests, self).clean()
         types_database.clean()
+        mock_plugins.reset()
 
         RepoContentUnit.get_collection().remove()
         Repo.get_collection().remove()

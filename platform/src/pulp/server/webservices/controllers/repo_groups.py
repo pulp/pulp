@@ -21,6 +21,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.exceptions import MissingValue
 from pulp.server.managers import factory as managers_factory
 from pulp.server.webservices import execution, serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -298,6 +299,9 @@ class PublishAction(JSONController):
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
 
+        if distributor_id is None:
+            raise MissingValue(['id'])
+
         publish_manager = managers_factory.repo_group_publish_manager()
 
         resources = {
@@ -314,7 +318,7 @@ class PublishAction(JSONController):
 
         call_request = CallRequest(publish_manager.publish,
                                    args=[repo_group_id, distributor_id],
-                                   kwargs={'publish_override_config' : overrides},
+                                   kwargs={'publish_config_override' : overrides},
                                    resources=resources,
                                    tags=tags,
                                    weight=weight,

@@ -156,7 +156,8 @@ def to_transfer_repo_group(group_data):
     @rtype:  pulp.plugins.model.RepositoryGroup
     """
     g = RepositoryGroup(group_data['id'], group_data['display_name'],
-                        group_data['description'], group_data['notes'])
+                        group_data['description'], group_data['notes'],
+                        group_data['repo_ids'])
     return g
 
 def to_related_repo_group(group_data, configs):
