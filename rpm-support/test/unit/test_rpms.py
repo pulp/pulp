@@ -258,7 +258,7 @@ class TestRPMs(rpm_support_base.PulpRPMTests):
         ###
         ### Issue Cancel
         ###
-        importer.cancel_sync_repo()
+        importer.cancel_sync_repo(None, None)
         # Wait for cancel of sync
         for i in range(45):
             if sync_thread.finished:
