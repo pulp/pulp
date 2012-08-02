@@ -77,7 +77,7 @@ class RepoSyncManager(object):
         try:
             repo_importer = importer_manager.get_importer(repo_id)
             importer, config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
-        except MissingResource, plugin_exceptions.PluginNotFound:
+        except (MissingResource, plugin_exceptions.PluginNotFound):
             importer = None
             config = None
         return importer, config

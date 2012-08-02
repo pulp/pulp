@@ -68,7 +68,7 @@ class RepoPublishManager(object):
         try:
             repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
             distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except MissingResource, plugin_exceptions.PluginNotFound:
+        except (MissingResource, plugin_exceptions.PluginNotFound):
             distributor = None
             config = None
         return distributor, config
