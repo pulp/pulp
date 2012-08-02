@@ -79,7 +79,7 @@ Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
 A collection of extensions used to provide generic admin
-client capabilites.
+client capabilities.
 
 %files consumer-extensions
 %defattr(-,root,root,-)
@@ -91,7 +91,7 @@ client capabilites.
 
 %changelog
 * Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
-- 
+-
 
 * Mon Jul 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.319-1
 - 843618 - Added interactive prompt when the password isn't specified
@@ -137,14 +137,14 @@ client capabilites.
   tree (dradez@redhat.com)
 
 * Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.309-1
-- 
+-
 
 * Thu Jun 28 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.308-1
 - 827201 - fixing consumer_history to use start_date and end_date filters in
   iso8601 format and history tests (skarmark@redhat.com)
 
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.307-1
-- 
+-
 
 * Fri Jun 22 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.306-1
 - Fixing consumer authorization problem because of no associated users with the
@@ -152,16 +152,16 @@ client capabilites.
   (skarmark@redhat.com)
 
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.305-1
-- 
+-
 
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.304-1
-- 
+-
 
 * Thu Jun 21 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.303-1
-- 
+-
 
 * Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.302-1
-- 
+-
 
 * Tue Jun 19 2012 Jay Dobies <jason.dobies@redhat.com> 0.0.301-1
 - few more (jason.connor@gmail.com)
