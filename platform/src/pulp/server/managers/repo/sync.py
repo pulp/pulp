@@ -64,20 +64,23 @@ class RepoSyncManager(object):
                                        # the repo_id as a keyword argument
                                        # jconnor (2012-07-30)
 
-        importer_manager = manager_factory.repo_importer_manager()
-
-        try:
-            repo_importer = importer_manager.get_importer(repo_id)
-            importer, config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
-        except MissingResource, plugin_exceptions.PluginNotFound:
-            importer = None
-            config = None
+        importer, config = self._get_importer_instance_and_config(repo_id)
 
         call_request.kwargs['importer_instance'] = importer
         call_request.kwargs['importer_config'] = config
 
         if importer is not None:
             call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, importer.cancel_sync_repo)
+
+    def _get_importer_instance_and_config(self, repo_id):
+        importer_manager = manager_factory.repo_importer_manager()
+        try:
+            repo_importer = importer_manager.get_importer(repo_id)
+            importer, config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+        except MissingResource, plugin_exceptions.PluginNotFound:
+            importer = None
+            config = None
+        return importer, config
 
     def sync(self, repo_id, importer_instance=None, importer_config=None, sync_config_override=None):
         """

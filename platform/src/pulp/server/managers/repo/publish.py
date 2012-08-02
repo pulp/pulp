@@ -45,23 +45,33 @@ _LOG = logging.getLogger(__name__)
 class RepoPublishManager(object):
 
     def prep_publish(self, call_request, call_report):
+        """
+        Task enqueue callback that sets the distributor instance and config
+        keyword arguments for a publish call request.
+        @param call_request: call request for the repo publish
+        @param call_report: call report for the repo publish
+        @return:
+        """
         repo_id = call_request.args[0]
         distributor_id = call_request.args[1]
 
-        repo_distributor_manager = manager_factory.repo_distributor_manager()
-
-        try:
-            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except MissingResource, plugin_exceptions.PluginNotFound:
-            distributor = None
-            config = None
+        distributor, config = self._get_distributor_instance_and_config(repo_id, distributor_id)
 
         call_request.kwargs['distributor_instance'] = distributor
         call_request.kwargs['distributor_config'] = config
 
         if distributor is not None:
             call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor.cancel_publish_repo)
+
+    def _get_distributor_instance_and_config(self, repo_id, distributor_id):
+        repo_distributor_manager = manager_factory.repo_distributor_manager()
+        try:
+            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+        except MissingResource, plugin_exceptions.PluginNotFound:
+            distributor = None
+            config = None
+        return distributor, config
 
     def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
         """
