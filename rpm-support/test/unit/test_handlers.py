@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platf
 
 import mock_yum
 from mock_yum import YumBase
+from rpm_support_base import PulpRPMTests
 from pulp.agent.lib.container import Container
 from pulp.agent.lib.dispatcher import Dispatcher
 
@@ -49,9 +50,10 @@ class Deployer:
             shutil.copy(path, target)
 
 
-class HandlerTest(TestCase):
+class HandlerTest(PulpRPMTests):
 
     def setUp(self):
+        PulpRPMTests.setUp(self)
         mock_yum.install()
         self.deployer = Deployer()
         dpath, hpath = self.deployer.install()
@@ -61,11 +63,12 @@ class HandlerTest(TestCase):
         os.system = Mock()
 
     def tearDown(self):
+        PulpRPMTests.tearDown(self)
         self.deployer.uninstall()
         os.system = self.__system
         YumBase.reset()
 
-class TestPackges(HandlerTest):
+class TestPackages(HandlerTest):
 
     TYPE_ID = 'rpm'
 
