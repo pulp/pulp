@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.320
+Version: 0.0.321
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -233,6 +233,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-1
+- 
+
 * Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
 - 843882 - Add missing logger. (jortel@redhat.com)
 - Added more detail to the package list for an erratum
