@@ -16,13 +16,13 @@ from pulp.bindings.repo_groups import *
 from pulp.bindings.repository import *
 from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI
-from pulp.bindings.tasks import TasksAPI
+from pulp.bindings.tasks import TasksAPI, TaskGroupsAPI
 from pulp.bindings.upload import UploadAPI
 from pulp.bindings.auth import UserAPI
 
 
 class Bindings(object):
-    
+
     def __init__(self, pulp_connection):
         """
         @type:   pulp_connection: pulp.bindings.server.PulpConnection
@@ -50,6 +50,7 @@ class Bindings(object):
         self.repo_unit_associations = RepositoryUnitAssociationAPI(pulp_connection)
         self.repo_unit_search = RepositoryUnitSearchAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
+        self.task_groups = TaskGroupsAPI(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
         self.uploads = UploadAPI(pulp_connection)
         self.user = UserAPI(pulp_connection)
