@@ -129,13 +129,16 @@ class PulpConnection(object):
             self.api_responses_logger.info('%s request to %s with parameters %s' % (method, url, body))
             self.api_responses_logger.info("Response status : %s \n" % response_code)
             self.api_responses_logger.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
-                
+
         if response_code >= 300:
             self._handle_exceptions(response_code, response_body)
         elif response_code == 200 or response_code == 201:
             body = response_body
         elif response_code == 202:
-            body = Task(response_body)
+            if isinstance(response_body, list):
+                body = [Task(t) for t in response_body]
+            else:
+                body = Task(response_body)
 
         return Response(response_code, body)
 
