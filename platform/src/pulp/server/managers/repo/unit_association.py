@@ -173,8 +173,7 @@ class RepoUnitAssociationManager(object):
             manager_factory.repo_manager().update_unit_count(
                 repo_id, unique_count)
 
-    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None,
-                            with_dependencies=False):
+    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None):
         """
         Creates associations in a repository based on the contents of a source
         repository. Units from the source repository can be filtered by
@@ -202,10 +201,6 @@ class RepoUnitAssociationManager(object):
         @param criteria: optional; if specified, will filter the units retrieved
                          from the source repository
         @type  criteria: L{Criteria}
-
-        @param with_dependencies: if true, the source repository will be queried
-               for dependencies on matching units and those will be copied as well
-        @type  with_dependencies: bool
 
         @raise MissingResource: if either of the specified repositories don't exist
         """
@@ -240,26 +235,6 @@ class RepoUnitAssociationManager(object):
             # If units were supposed to be filtered but none matched, we're done
             if len(associate_us) is 0:
                 return
-
-        # If the dependencies are to be copied too, retrieve those now
-        if with_dependencies:
-            dep_units = dependency_manager.resolve_dependencies_by_units(source_repo_id, associate_us, None)
-
-            # dep_units will be just the units themselves, but associate_us is
-            # the unit associations. Retrieve the associations here to resolve
-            # the difference.
-
-            unit_ids_by_type = {}
-            for u in dep_units:
-                type_units = unit_ids_by_type.setdefault(u['_content_type_id'], [])
-                type_units.append(u['_id'])
-
-            for type_id in unit_ids_by_type.keys():
-                spec = {'unit_id' : {'$in' : unit_ids_by_type[type_id]}}
-                criteria = UnitAssociationCriteria(association_filters=spec)
-                dep_associations = association_query_manager.get_units_by_type(source_repo_id, type_id, criteria)
-
-                associate_us += dep_associations
 
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units
