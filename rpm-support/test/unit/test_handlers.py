@@ -57,10 +57,12 @@ class HandlerTest(TestCase):
         dpath, hpath = self.deployer.install()
         container = Container(root=dpath, path=[hpath])
         self.dispatcher = Dispatcher(container)
+        self.__system = os.system
         os.system = Mock()
 
     def tearDown(self):
         self.deployer.uninstall()
+        os.system = self.__system
         YumBase.reset()
 
 class TestPackges(HandlerTest):
@@ -127,6 +129,7 @@ class TestPackges(HandlerTest):
         self.verify_succeeded(report, installed=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
 
     def test_install_notfound(self):
         # Setup
@@ -160,6 +163,7 @@ class TestPackges(HandlerTest):
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
+        YumBase.processTransaction.assert_called_once_with()
 
     def test_update(self):
         # Setup
@@ -175,7 +179,24 @@ class TestPackges(HandlerTest):
         self.verify_succeeded(report, updated=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        self.assertTrue(YumBase.processTransaction.called)
+        YumBase.processTransaction.assert_called_once_with()
+        
+    def test_update_noapply(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
+        options = {'apply':False}
+        report = self.dispatcher.update(units, options)
+        # Verify
+        self.verify_succeeded(report, updated=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
 
     def test_update_with_reboot(self):
         # Setup
@@ -193,7 +214,7 @@ class TestPackges(HandlerTest):
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 5)
         os.system.assert_called_once_with('shutdown -r +5')
-        self.assertTrue(YumBase.processTransaction.called)
+        YumBase.processTransaction.assert_called_once_with()
 
     def test_uninstall(self):
         # Setup
@@ -207,7 +228,22 @@ class TestPackges(HandlerTest):
         self.verify_succeeded(report, removed=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        self.assertTrue(YumBase.processTransaction.called)
+        YumBase.processTransaction.assert_called_once_with()
+        
+    def test_uninstall_noapply(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
+        options = {'apply':False}
+        report = self.dispatcher.uninstall(units, options)
+        # Verify
+        self.verify_succeeded(report, removed=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
 
     def test_uninstall_with_reboot(self):
         # Setup
@@ -223,7 +259,7 @@ class TestPackges(HandlerTest):
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
-        self.assertTrue(YumBase.processTransaction.called)
+        YumBase.processTransaction.assert_called_once_with()
 
 
 class TestGroups(HandlerTest):
@@ -266,7 +302,20 @@ class TestGroups(HandlerTest):
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        self.assertTrue(YumBase.processTransaction.called)
+        YumBase.processTransaction.assert_called_once_with()
+        
+    def test_install_noapply(self):
+        # Setup
+        groups = ['mygroup', 'pulp']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        options = {'apply':False}
+        report = self.dispatcher.install(units, options)
+        # Verify
+        self.verify_succeeded(report, installed=groups)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
 
     def test_install_notfound(self):
         # Setup
@@ -291,8 +340,8 @@ class TestGroups(HandlerTest):
         self.verify_succeeded(report, installed=groups)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
-        self.assertTrue(YumBase.processTransaction.called)
         os.system.assert_called_once_with('shutdown -r +1')
+        YumBase.processTransaction.assert_called_once_with()
 
     def test_uninstall(self):
         # Setup
@@ -306,6 +355,20 @@ class TestGroups(HandlerTest):
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
         YumBase.processTransaction.assert_called_once_with()
+        
+    def test_uninstall_noapply(self):
+        # Setup
+        groups = ['mygroup', 'pulp']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        options = {'apply':False}
+        report = self.dispatcher.uninstall(units, options)
+        # Verify
+        self.verify_succeeded(report, removed=groups)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
 
     def test_uninstall_with_reboot(self):
         # Setup
