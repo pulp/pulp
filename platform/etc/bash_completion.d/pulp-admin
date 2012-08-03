@@ -1,28 +1,10 @@
 # Bash completion script for pulp-admin
 
-_pulp_admin_baseopts()
-{
-    local opts='--help -u --username -p --password --host'
-    printf %s "$opts"
-}
-
-_repo_id()
-{
-    repos=`pulp-admin repo list | grep Id | awk '{print $2}' 2>/dev/null`
-    COMPREPLY=( $( compgen -W '${repos}' -- "$1" ) )
-    return 0
-}
-
-_consumer_id()
-{
-    consumers=`pulp-admin consumer list | grep Id | awk '{print $2}' 2>/dev/null`
-    COMPREPLY=( $( compgen -W '${consumers}' -- "$1" ) )
-    return 0
-}
-
 _pulp_admin()
 {
-    # Main copletion function
+    # Main completion function
+
+    # for (( i = 0; i < ${#COMP_WORDS[*]} - 1; i++ )); do
 
     COMPREPLY=()
     local cur prev
@@ -36,808 +18,360 @@ _pulp_admin()
         cur=$2 prev=$3 words=("${COMP_WORDS[@]}")
     fi
 
-    # Commands offered as completions
-    local cmds=( auth cds consumer consumergroup content distribution
-        errata filter package packagegroup permission repo repogroup
-        role user )
-
-    local i c cmd subcmd
-    # Figure out which command is being completed and set $cmd.
-    for (( i=1; i < ${#words[@]}-1; i++ )) ; do
-        [[ -n $cmd ]] && subcmd=${words[i]} && break
-        # Recognize additional commands and aliases
-        for c in ${cmds[@]}; do
-            [[ ${words[i]} == $c ]] && cmd=$c && break
-        done
-    done
-
-    # We need to check to see if we've seen any parameter that starts with -.
-    # We use this flag later to determine to complete command/subcommand names
-    # or parameters.
-    seen_param=0
-    for arg in ${COMP_WORDS[@]}; do
-        if [[ $arg == -* ]]; then
-            seen_param=1
+    
+    command=""
+    # command_length=${#COMP_WORDS[@]}
+    for i in `seq ${#COMP_WORDS[@]}`; do
+        if [[ ! ${COMP_WORDS[$i]} =~ --.* ]]; then
+                command="$command ${COMP_WORDS[$i]}"
+            # echo
+            # echo here0: $command
         fi
     done
 
-    # Repo id completion for --repoid and -r.
-    if [ "$prev" == --repoid ] || [ "$prev" == -r ] ; then
-        # Do not auto complete on -r for the repo command, -r means recursive
-        # for the repo command.
-        if [ "$cmd" != repo ]; then
-            _repo_id $cur 
-            return 0
-        fi
+    command=$(echo -n $command)
+
+    if [ ${cur}1 != "1" ]; then
+        command=${command%$cur}
+        command=$(echo -n $command)
+        # echo here0: ${#COMP_WORDS[@]}
+        # echo here0: $command
+    # else
+        # command=${COMP_WORDS[@]:1:$command_length}
+        # echo here1: $command
     fi
 
-    # Repo id completion for --id
-    if [ "$prev" == --id ] && [ "$cmd" == repo ]; then
-        _repo_id $cur
-        return 0
-    fi
+    completions=""
 
-    # Consumer id completion for --consumerid
-    if [ "$prev" == --consumerid ]; then
-        _consumer_id $cur 
-        return 0
-    fi
+    # echo
+    # echo cur: $cur
+    # echo prev: $prev
+    # echo words: $words
+    # echo COMP_WORDS[0]: ${COMP_WORDS[0]}
+    # echo COMP_WORDS: ${COMP_WORDS[@]}
+    # echo COMP_WORDS: ${COMP_WORDS[@]:1}
+    # echo command length: $command_length
+    # echo command: \"$command\"
+    # echo command length: ${#command}
 
-    # Consumer id completion for --id
-    if [ "$prev" == --id ] && [ "$cmd" == consumer ]; then
-        _consumer_id $cur
-        return 0
-    fi
 
-    # If we've seen a parameter that starts with - ($seen_param) or there are
-    # already 4 completed words, then we're doing parameter completion.
-    if [ $seen_param -eq 1 ] || [ ${#COMP_WORDS[@]} -eq 4 ]; then
-        case ${COMP_WORDS[1]} in
-
-            auth)
-                case ${COMP_WORDS[2]} in
-                    login)
-                        COMPREPLY=( $( compgen -W '-u --username -p --pasword' \
-                            -- "$cur" ) )
-                    ;;
-                    enable_global_repo_auth)
-                        COMPREPLY=( $( compgen -W '--ca --cert --key' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+    root_commands="login logout repo tasks consumer user server"
+    case "$command" in
+        "login")
+            completions="--username --password"
             ;;
-
-            cds)
-                case ${COMP_WORDS[2]} in
-                    register)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --name --description --cluster_id
-                            --interval --start --runs' \
-                            -- "$cur" ) )
-                    ;;
-                    unregister)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --force' \
-                            -- "$cur" ) )
-                    ;;
-                    update)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --name --description --cluster_id
-                            --remove_cluster --remove_sync_schedule --interval
-                            --start --runs' \
-                            -- "$cur" ) )
-                    ;;
-                    associate_repo|unassociate_repo)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    history)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --limit --event_type --sort --start_date
-                            --end_date' \
-                            -- "$cur" ) )
-                    ;;
-                    sync|info)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname' \
-                            -- "$cur" ) )
-                    ;;
-                    status)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --recent' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "logout")
+            completions=""
             ;;
-
-            consumer)
-                case ${COMP_WORDS[2]} in
-                    list)
-                        COMPREPLY=( $( compgen -W '
-                            --key --value' \
-                            -- "$cur" ) )
-                    ;;
-                    unregister|get_keyvalues)
-                        COMPREPLY=( $( compgen -W '
-                            --id' \
-                            -- "$cur" ) )
-                    ;;
-                    info)
-                        COMPREPLY=( $( compgen -W '
-                            --id --show-profile' \
-                            -- "$cur" ) )
-                    ;;
-                    bind|unbind)
-                        COMPREPLY=( $( compgen -W '
-                            --id --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    unbind)
-                        COMPREPLY=( $( compgen -W '
-                            --hostname --limit --event_type --sort --start_date
-                            --end_date' \
-                            -- "$cur" ) )
-                    ;;
-                    add_keyvalue|update_keyvalue)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key --value' \
-                            -- "$cur" ) )
-                    ;;
-                    delete_keyvalue)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key' \
-                            -- "$cur" ) )
-                    ;;
-                    history)
-                        COMPREPLY=( $( compgen -W '
-                            --event_type --limit --sort --start_date
-                            --end_date --id' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo search")
+            completions="--limit --skip --filters --sort --fields --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
             ;;
-
-            consumergroup)
-                case ${COMP_WORDS[2]} in
-                    create)
-                        COMPREPLY=( $( compgen -W '
-                            --id --description' \
-                            -- "$cur" ) )
-                    ;;
-                    delete)
-                        COMPREPLY=( $( compgen -W '
-                            --id' \
-                            -- "$cur" ) )
-                    ;;
-                    add_consumer|delete_consumer)
-                        COMPREPLY=( $( compgen -W '
-                            --id --consumerid' \
-                            -- "$cur" ) )
-                    ;;
-                    bind|unbind)
-                        COMPREPLY=( $( compgen -W '
-                            --id --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    add_keyvalue)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key --value --force' \
-                            -- "$cur" ) )
-                    ;;
-                    update_keyvalue)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key --value' \
-                            -- "$cur" ) )
-                    ;;
-                    delete_keyvalue)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo create")
+            completions="--repo-id --feed --display-name --description --note --auto-publish --only-newest --skip-types --verify-size --verify-checksum --remove-old --retain-old-count --relative-url --serve-http --serve-https --checksum-type --gpg-key --regenerate-metadata --feed-ca-cert --verify-feed-ssl --feed-cert --feed-key --host-ca --auth-ca --auth-cert --proxy-url --proxy-port --proxy-user --proxy-pass --max-speed --num-threads"
             ;;
-
-            content)
-                case ${COMP_WORDS[2]} in
-                    upload)
-                        COMPREPLY=( $( compgen -W '
-                            --dir -r --repoid --nosig --chunksize -v
-                            --verbose' \
-                            -- "$cur" ) )
-                    ;;
-                    list)
-                        COMPREPLY=( $( compgen -W '
-                            --orphaned --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    delete)
-                        COMPREPLY=( $( compgen -W '
-                            -f --filename --csv' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo list")
+            completions="--details"
             ;;
-
-            distribution)
-                case ${COMP_WORDS[2]} in
-                    list)
-                        COMPREPLY=( $( compgen -W '
-                            --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    info)
-                        COMPREPLY=( $( compgen -W '
-                            --id' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo update")
+            completions="--repo-id --feed --display-name --description --note --auto-publish --only-newest --skip-types --verify-size --verify-checksum --remove-old --retain-old-count --relative-url --serve-http --serve-https --checksum-type --gpg-key --regenerate-metadata --feed-ca-cert --verify-feed-ssl --feed-cert --feed-key --host-ca --auth-ca --auth-cert --proxy-url --proxy-port --proxy-user --proxy-pass --max-speed --num-threads"
             ;;
-
-            errata)
-                case ${COMP_WORDS[2]} in
-                    list)
-                        COMPREPLY=( $( compgen -W '
-                            --consumerid --repoid --type' \
-                            -- "$cur" ) )
-                    ;;
-                    delete)
-                        COMPREPLY=( $( compgen -W '
-                            --id --title --type --bzid --cve --orphaned' \
-                            -- "$cur" ) )
-                    ;;
-                    info)
-                        COMPREPLY=( $( compgen -W '
-                            --id' \
-                            -- "$cur" ) )
-                    ;;
-                    install)
-                        COMPREPLY=( $( compgen -W '
-                            --erratum -e -y --assumeyes --when --nowait
-                            --consumerid --consumergroupid' \
-                            -- "$cur" ) )
-                    ;;
-                    create)
-                        COMPREPLY=( $( compgen -W '
-                            --id --title --description --version --release
-                            --type --issued --status --updated --fromstr
-                            --effected-packages --pushcount --references
-                            --reboot --short --severity --rights --summary
-                            --solution' \
-                            -- "$cur" ) )
-                    ;;
-                    search)
-                        COMPREPLY=( $( compgen -W '
-                            --id --title --type --bzid --cve --orphaned' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo delete")
+            completions="--repo-id"
             ;;
-
-            filter)
-                case ${COMP_WORDS[2]} in
-                    create)
-                        COMPREPLY=( $( compgen -W '
-                            --id --type --description -p --package' \
-                            -- "$cur" ) )
-                    ;;
-                    delete)
-                        COMPREPLY=( $( compgen -W '
-                            --id --force' \
-                            -- "$cur" ) )
-                    ;;
-                    info)
-                        COMPREPLY=( $( compgen -W '
-                            --id' \
-                            -- "$cur" ) )
-                    ;;
-                    add_package|remove_package)
-                        COMPREPLY=( $( compgen -W '
-                            --id -p --package' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo tasks cancel")
+            completions="--task-id"
             ;;
-
-            package)
-                case ${COMP_WORDS[2]} in
-                    info)
-                        COMPREPLY=( $( compgen -W '
-                            -n --name --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    install)
-                        COMPREPLY=( $( compgen -W '
-                            -n --name --when --nowait --consumerid
-                            --consumergroupid' \
-                            -- "$cur" ) )
-                    ;;
-                    search)
-                        COMPREPLY=( $( compgen -W '
-                            -a --arch -e --epoch -f --filename -n --name -r
-                            --release -v --version -p --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    deplist)
-                        COMPREPLY=( $( compgen -W '
-                            -n --name -r --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo tasks list")
+            completions="--repo-id"
             ;;
-
-            packagegroup)
-                case ${COMP_WORDS[2]} in
-                    list|info)
-                        COMPREPLY=( $( compgen -W '
-                            -r --repoid -f --filter' \
-                            -- "$cur" ) )
-                    ;;
-                    create)
-                        COMPREPLY=( $( compgen -W '
-                            -r --repoid -n --name -d --description' \
-                            -- "$cur" ) )
-                    ;;
-                    delete)
-                        COMPREPLY=( $( compgen -W '
-                            --id -r --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    add_package)
-                        COMPREPLY=( $( compgen -W '
-                            --id -r --repoid -n --name -t --type --requires' \
-                            -- "$cur" ) )
-                    ;;
-                    delete_package)
-                        COMPREPLY=( $( compgen -W '
-                            --id -r --repoid -n --name -t --type' \
-                            -- "$cur" ) )
-                    ;;
-                    install)
-                        COMPREPLY=( $( compgen -W '
-                            --id --nowait --when --consumerid
-                            --consumergroupid' \
-                            -- "$cur" ) )
-                    ;;
-                    install_category)
-                        COMPREPLY=( $( compgen -W '
-                            --categoryid --consumerid --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    list_category)
-                        COMPREPLY=( $( compgen -W '
-                            -r --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    info_category|delete_category)
-                        COMPREPLY=( $( compgen -W '
-                            --categoryid -r --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    create_category)
-                        COMPREPLY=( $( compgen -W '
-                            --categoryid -r --repoid -n --name -d
-                            --description' \
-                            -- "$cur" ) )
-                    ;;
-                    add_group|delete_group)
-                        COMPREPLY=( $( compgen -W '
-                            --id --categoryid -r --repoid' \
-                            -- "$cur" ) )
-                    ;;
-                    import)
-                        COMPREPLY=( $( compgen -W '
-                            -r --repoid --comps' \
-                            -- "$cur" ) )
-                    ;;
-                    export)
-                        COMPREPLY=( $( compgen -W '
-                            -r --repoid -o --out' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo tasks details")
+            completions="--task-id"
             ;;
-
-            distribution)
-                case ${COMP_WORDS[2]} in
-                    show)
-                        COMPREPLY=( $( compgen -W '
-                            --resource' \
-                            -- "$cur" ) )
-                    ;;
-                    grant|revoke)
-                        COMPREPLY=( $( compgen -W '
-                            --resource --user --role -o --operations' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo tasks")
+            completions="cancel list details"
             ;;
-
-            repo)
-                case ${COMP_WORDS[2]} in
-                    list)
-                        COMPREPLY=( $( compgen -W '
-                            --groupid --note' \
-                            -- "$cur" ) )
-                    ;;
-                    content)
-                        COMPREPLY=( $( compgen -W '
-                            --id --consumerid' \
-                            -- "$cur" ) )
-                    ;;
-                    status|delete|cancel_sync|list_keys|list_metadata|cancel_export|info)
-                        COMPREPLY=( $( compgen -W '
-                            --id' \
-                            -- "$cur" ) )
-                    ;;
-                    create)
-                        COMPREPLY=( $( compgen -W '
-                            --id --name --arch --feed --feed_ca --feed_cert
-                            --feed_key
-                            --consumer_ca --consumer_cert --consumer_key
-                            --relativepath --groupid --gpgkeys
-                            --checksum_type --preserve_metadata
-                            --content_type' \
-                            -- "$cur" ) )
-                    ;;
-                    clone)
-                        COMPREPLY=( $( compgen -W '
-                            --id --clone_id --clone_name --feed --relativepath
-                            --groupid --timeout -F --foreground -f --filter' \
-                            -- "$cur" ) )
-                    ;;
-                    update)
-                        COMPREPLY=( $( compgen -W '
-                            --id --name --arch --feed --feed_ca --feed_cert
-                            --feed_key --remove_feed_cert --consumer_ca
-                            --consumer_cert --consumer_key
-                            --remove_consumer_cert --addgroup --rmgroup
-                            --addkeys --rmkeys' \
-                            -- "$cur" ) )
-                    ;;
-                    sync)
-                        COMPREPLY=( $( compgen -W '
-                            --id --show-schedule --delete-schedule --interval
-                            --runs --start --exclude --timeout --limit --threads
-                            -F --foreground' \
-                            -- "$cur" ) )
-                    ;;
-                    publish)
-                        COMPREPLY=( $( compgen -W '
-                            --id --enable --disable' \
-                            -- "$cur" ) )
-                    ;;
-                    add_package)
-                        COMPREPLY=( $( compgen -W '
-                            --id -p --package --source --csv -y --assumeyes -r
-                            --recursive' \
-                            -- "$cur" ) )
-                    ;;
-                    remove_package)
-                        COMPREPLY=( $( compgen -W '
-                            --id -p --package --csv -y --assumeyes -r
-                            --recursive' \
-                            -- "$cur" ) )
-                    ;;
-                    add_errata)
-                        COMPREPLY=( $( compgen -W '
-                            --id -e --errata --source -y --assumeyes -r
-                            --recursive' \
-                            -- "$cur" ) )
-                    ;;
-                    remove_errata)
-                        COMPREPLY=( $( compgen -W '
-                            --id -e --errata -y --asumeyes -r --recursive' \
-                            -- "$cur" ) )
-                    ;;
-                    add_distribution)
-                        COMPREPLY=( $( compgen -W '
-                            --id -d --distribution --source' \
-                            -- "$cur" ) )
-                    ;;
-                    remove_distribution)
-                        COMPREPLY=( $( compgen -W '
-                            --id -d --distribution' \
-                            -- "$cur" ) )
-                    ;;
-                    add_file)
-                        COMPREPLY=( $( compgen -W '
-                            --id -f --filename --source --csv' \
-                            -- "$cur" ) )
-                    ;;
-                    remove_file)
-                        COMPREPLY=( $( compgen -W '
-                            --id -f --filename --csv' \
-                            -- "$cur" ) )
-                    ;;
-                    add_filters|remove_filters)
-                        COMPREPLY=( $( compgen -W '
-                            --id -f --filter' \
-                            -- "$cur" ) )
-                    ;;
-                    generate_metadata)
-                        COMPREPLY=( $( compgen -W '
-                            --id --status' \
-                            -- "$cur" ) )
-                    ;;
-                    add_metadata)
-                        COMPREPLY=( $( compgen -W '
-                            --id --mdtype --path' \
-                            -- "$cur" ) )
-                    ;;
-                    download_metadata)
-                        COMPREPLY=( $( compgen -W '
-                            --id --mdtype -o --out' \
-                            -- "$cur" ) )
-                    ;;
-                    remove_metadata)
-                        COMPREPLY=( $( compgen -W '
-                            --id --mdtype' \
-                            -- "$cur" ) )
-                    ;;
-                    discovery)
-                        COMPREPLY=( $( compgen -W '
-                            -u --url --ca --cert -g --groupid -y --assumeyes
-                            -t --type' \
-                            -- "$cur" ) )
-                    ;;
-                    export)
-                        COMPREPLY=( $( compgen -W '
-                            --id -t --target_dir --generate-isos --overwrite' \
-                            -- "$cur" ) )
-                    ;;
-                    add_note|update_note)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key --value' \
-                            -- "$cur" ) )
-                    ;;
-                    delete_note)
-                        COMPREPLY=( $( compgen -W '
-                            --id --key' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo group search")
+            completions="--limit --skip --filters --sort --fields --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
             ;;
-
-            repogroup)
-                case ${COMP_WORDS[2]} in
-                    update)
-                        COMPREPLY=( $( compgen -W '
-                            --id --arch --feed_ca --feed_cert
-                            --feed_key --remove_feed_cert --consumer_ca
-                            --consumer_cert --consumer_key
-                            --remove_consumer_cert
-                            --addkeys --rmkeys --interval --start --runs
-                            --delete-schedule' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo group create")
+            completions="--group-id --display-name --description --note"
             ;;
-               
-            role)
-                case ${COMP_WORDS[2]} in
-                    info|create|delete)
-                        COMPREPLY=( $( compgen -W '
-                            --role' \
-                            -- "$cur" ) )
-                    ;;
-                    add|remove)
-                        COMPREPLY=( $( compgen -W '
-                            --role --user' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo group list")
+            completions="--details --fields"
             ;;
-
-            user)
-                case ${COMP_WORDS[2]} in
-                    create)
-                        COMPREPLY=( $( compgen -W '
-                            --username --password --ldap --name' \
-                            -- "$cur" ) )
-                    ;;
-                    delete)
-                        COMPREPLY=( $( compgen -W '
-                            --username' \
-                            -- "$cur" ) )
-                    ;;
-                    update)
-                        COMPREPLY=( $( compgen -W '
-                            --username --password -P --name' \
-                            -- "$cur" ) )
-                    ;;
-                esac
+        "repo group update")
+            completions="--group-id --display-name --description --note"
             ;;
-
-        esac
-        return 0
-    fi
-
-    # Do command completion.  We only get here if we're not doing parameter
-    # completion.
-    case $cmd in
-
-        auth)
-            case $prev in 
-                auth)
-                    COMPREPLY=( $( compgen -W 'login logout 
-                        enable_global_repo_auth disable_global_repo_auth' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo group delete")
+            completions="--group-id"
             ;;
-
-        cds)
-            case $prev in 
-                cds)
-                    COMPREPLY=( $( compgen -W '
-                        register unregister update associate_repo
-                        unassociate_repo list history sync status info' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo group members add")
+            completions="--filters --group-id --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
             ;;
-
-         consumer)
-            case $prev in 
-                consumer)
-                    COMPREPLY=( $( compgen -W '
-                        list info unregister bind unbind add_keyvalue
-                        delete_keyvalue get_keyvalues update_keyvalue history' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo group members list")
+            completions="--group-id"
             ;;
-
-         consumergroup)
-            case $prev in 
-                consumergroup)
-                    COMPREPLY=( $( compgen -W '
-                        list create delete add_consumer delete_consumer bind
-                        unbind add_keyvalue delete_keyvalue update_keyvalue' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo group members remove")
+            completions="--filters --group-id --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
             ;;
-
-         content)
-            case $prev in 
-                content)
-                    COMPREPLY=( $( compgen -W '
-                        upload list delete' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo group members")
+            completions="add list remove"
             ;;
-
-         distribution)
-            case $prev in 
-                distribution)
-                    COMPREPLY=( $( compgen -W '
-                        list info' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo group")
+            completions="search create list update delete members"
             ;;
-
-         errata)
-            case $prev in 
-                errata)
-                    COMPREPLY=( $( compgen -W '
-                        list search info install create delete' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync status")
+            completions="--repo-id"
             ;;
-
-         filter)
-            case $prev in 
-                filter)
-                    COMPREPLY=( $( compgen -W '
-                        list create delete info add_package remove_package' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync run")
+            completions="--repo-id --bg"
             ;;
-
-         package)
-            case $prev in 
-                package)
-                    COMPREPLY=( $( compgen -W '
-                        info install search deplist' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync schedules create")
+            completions="--schedule --failure-threshold --repo-id"
             ;;
-
-         packagegroup)
-            case $prev in 
-                packagegroup)
-                    COMPREPLY=( $( compgen -W '
-                        list info create delete add_package delete_package
-                        install install_category list_category info_category
-                        create_category delete_category add_group delete_group
-                        import export' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync schedules next")
+            completions="--quiet --repo-id"
             ;;
-
-         permission)
-            case $prev in 
-                permission)
-                    COMPREPLY=( $( compgen -W '
-                        show grant revoke' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync schedules list")
+            completions="--details --repo-id"
             ;;
-
-         repo)
-            case $prev in 
-                repo)
-                    COMPREPLY=( $( compgen -W '
-                        list status content create clone delete update sync
-                        cancel_sync list_keys publish add_package
-                        remove_package add_errata remove_errata
-                        add_distribution remove_distribution add_file
-                        remove_file add_filters remove_filters
-                        generate_metadata add_metadata list_metadata
-                        download_metadata remove_metadata discovery export
-                        cancel_export add_note delete_note update_note' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync schedules update")
+            completions="--schedule-id --schedule --failure-threshold --enabled --repo-id"
             ;;
-
-         repogroup)
-            case $prev in 
-                repogroup)
-                    COMPREPLY=( $( compgen -W '
-                        update' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync schedules delete")
+            completions="--schedule-id --repo-id"
             ;;
-
-         role)
-            case $prev in 
-                role)
-                    COMPREPLY=( $( compgen -W '
-                        list info create delete add remove' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync schedules")
+            completions="create next list update delete"
             ;;
-
-         user)
-            case $prev in 
-                user)
-                    COMPREPLY=( $( compgen -W '
-                        list create delete update' \
-                        -- "$cur" ) )
-                ;;
-            esac
-            return 0
+        "repo sync")
+            completions="status run schedules"
             ;;
-
+        "repo publish status")
+            completions="--repo-id"
+            ;;
+        "repo publish run")
+            completions="--repo-id --bg"
+            ;;
+        "repo publish schedules create")
+            completions="--schedule --failure-threshold --repo-id"
+            ;;
+        "repo publish schedules next")
+            completions="--quiet --repo-id"
+            ;;
+        "repo publish schedules list")
+            completions="--details --repo-id"
+            ;;
+        "repo publish schedules update")
+            completions="--schedule-id --schedule --failure-threshold --enabled --repo-id"
+            ;;
+        "repo publish schedules delete")
+            completions="--schedule-id --repo-id"
+            ;;
+        "repo publish schedules")
+            completions="create next list update delete"
+            ;;
+        "repo publish")
+            completions="status run schedules"
+            ;;
+        "repo uploads category")
+            completions="--repo-id --category-id --name --description --display-order --group -v"
+            ;;
+        "repo uploads group")
+            completions="--repo-id --group-id --name --description --cond-name --mand-name --opt-name --default-name --display-order --langonly --default --user-visible -v"
+            ;;
+        "repo uploads resume")
+            completions="-v"
+            ;;
+        "repo uploads list")
+            completions=""
+            ;;
+        "repo uploads cancel")
+            completions="--force"
+            ;;
+        "repo uploads rpm")
+            completions="--repo-id --file --dir -v"
+            ;;
+        "repo uploads errata")
+            completions="--repo-id --erratum-id --title --description --version --release --type --status --updated --issued --reference-csv --pkglist-csv --from --pushcount --reboot-suggested --severity --rights --summary --solution -v"
+            ;;
+        "repo uploads")
+            completions="category group resume list cancel rpm errata"
+            ;;
+        "repo units all")
+            completions="--repo-id --limit --skip"
+            ;;
+        "repo units srpm")
+            completions="--repo-id --fields --ascending --descending --limit --skip"
+            ;;
+        "repo units package_group")
+            completions="--repo-id --fields --ascending --descending --limit --skip"
+            ;;
+        "repo units package_category")
+            completions="--repo-id --fields --ascending --descending --limit --skip"
+            ;;
+        "repo units drpm")
+            completions="--repo-id --fields --ascending --descending --limit --skip"
+            ;;
+        "repo units distribution")
+            completions="--repo-id"
+            ;;
+        "repo units rpm")
+            completions="--repo-id --fields --ascending --descending --limit --skip"
+            ;;
+        "repo units errata")
+            completions="--repo-id --erratum-id --fields --ascending --descending --limit --skip"
+            ;;
+        "repo units")
+            completions="all srpm package_group package_category drpm distribution rpm errata"
+            ;;
+        "repo copy srpm")
+            completions="--from-repo-id --to-repo-id --dry-run --match --not --gt --gte --lt --lte --after --before"
+            ;;
+        "repo copy rpm")
+            completions="--from-repo-id --to-repo-id --dry-run --match --not --gt --gte --lt --lte --after --before"
+            ;;
+        "repo copy drpm")
+            completions="--from-repo-id --to-repo-id --dry-run --match --not --gt --gte --lt --lte --after --before"
+            ;;
+        "repo copy")
+            completions="srpm rpm drpm"
+            ;;
+        "repo")
+            completions="search create list update delete tasks group sync publish uploads units copy"
+            ;;
+        "tasks cancel")
+            completions="--task-id"
+            ;;
+        "tasks list")
+            completions=""
+            ;;
+        "tasks details")
+            completions="--task-id"
+            ;;
+        "tasks")
+            completions="cancel list details"
+            ;;
+        "consumer unbind")
+            completions="--consumer-id --repo-id"
+            ;;
+        "consumer search")
+            completions="--limit --skip --filters --sort --fields --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
+            ;;
+        "consumer unregister")
+            completions="--id"
+            ;;
+        "consumer bind")
+            completions="--consumer-id --repo-id"
+            ;;
+        "consumer list")
+            completions="--details --bindings --fields"
+            ;;
+        "consumer update")
+            completions="--id --display-name --description --note"
+            ;;
+        "consumer history")
+            completions="--id --event-type --limit --sort --start-date --end-date"
+            ;;
+        "consumer package-group install")
+            completions="--name --import-keys --id --no-commit --reboot"
+            ;;
+        "consumer package-group uninstall")
+            completions="--name --id --no-commit --reboot"
+            ;;
+        "consumer package-group")
+            completions="install uninstall"
+            ;;
+        "consumer group search")
+            completions="--limit --skip --filters --sort --fields --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
+            ;;
+        "consumer group create")
+            completions="--group-id --display-name --description --note"
+            ;;
+        "consumer group list")
+            completions="--details --fields"
+            ;;
+        "consumer group update")
+            completions="--group-id --display-name --description --note"
+            ;;
+        "consumer group delete")
+            completions="--group-id"
+            ;;
+        "consumer group members add")
+            completions="--filters --group-id --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
+            ;;
+        "consumer group members list")
+            completions="--group-id"
+            ;;
+        "consumer group members remove")
+            completions="--filters --group-id --str-eq --int-eq --match --in --not --gt --gte --lt --lte"
+            ;;
+        "consumer group members")
+            completions="add list remove"
+            ;;
+        "consumer group")
+            completions="search create list update delete members"
+            ;;
+        "consumer errata install")
+            completions="--errata-id --import-keys --id --no-commit --reboot"
+            ;;
+        "consumer errata")
+            completions="install"
+            ;;
+        "consumer package update")
+            completions="--name --import-keys --all --id --no-commit --reboot"
+            ;;
+        "consumer package install")
+            completions="--name --import-keys --id --no-commit --reboot"
+            ;;
+        "consumer package uninstall")
+            completions="--name --id --no-commit --reboot"
+            ;;
+        "consumer package")
+            completions="update install uninstall"
+            ;;
+        "consumer")
+            completions="unbind search unregister bind list update history package-group group errata package"
+            ;;
+        "user create")
+            completions="--login --password --name"
+            ;;
+        "user list")
+            completions="--details --fields"
+            ;;
+        "user update")
+            completions="--login --name"
+            ;;
+        "user delete")
+            completions="--login"
+            ;;
+        "user")
+            completions="create list update delete"
+            ;;
+        "server importers")
+            completions=""
+            ;;
+        "server distributors")
+            completions=""
+            ;;
+        "server types")
+            completions=""
+            ;;
+        "server")
+            completions="importers distributors types"
+            ;;
     esac
 
-    COMPREPLY=( $( compgen -W '$( _pulp_admin_baseopts ) ${cmds[@]}' -- "$cur" ) )
+    # echo completions: $completions
+    # echo COMP_WORDS length: ${#COMP_WORDS[@]}
+                            
+    if [ ${#COMP_WORDS[@]} -eq 2 ]; then
+        COMPREPLY=( $( compgen -W '$root_commands' -- "$cur" ) )
+    else
+        COMPREPLY=( $( compgen -W '$completions' -- "$cur" ) )
+    fi
+
+    return 0
 
 } &&
 
