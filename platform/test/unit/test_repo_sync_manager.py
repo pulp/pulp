@@ -99,7 +99,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
         # Test
-        self.sync_manager.sync('repo-1', sync_config_override=None)
+        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
+        self.sync_manager.sync('repo-1', importer, config, sync_config_override=None)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -152,7 +153,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = SyncReport(False, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
 
         # Test
-        self.assertRaises(PulpExecutionException, self.sync_manager.sync, 'repo-1')
+        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
+        self.assertRaises(PulpExecutionException, self.sync_manager.sync, 'repo-1', importer, config)
 
         # Verify
         history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
@@ -179,7 +181,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         sync_config_override = {'clint' : 'hawkeye'}
-        self.sync_manager.sync('repo-1', sync_config_override=sync_config_override)
+        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
+        self.sync_manager.sync('repo-1', importer, config, sync_config_override=sync_config_override)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -281,7 +284,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         try:
-            self.sync_manager.sync('gonna-bail')
+            importer, config = self.sync_manager._get_importer_instance_and_config('gonna-bail')
+            self.sync_manager.sync('gonna-bail', importer, config)
         except repo_sync_manager.PulpExecutionException, e:
             print(e) # for coverage
 
@@ -316,7 +320,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = None
 
-    def test_sync_with_auto_publish(self):
+    def _test_sync_with_auto_publish(self):
         """
         Tests that the autodistribute call is properly called at the tail end
         of a successful sync.
@@ -329,13 +333,14 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.importer_manager.set_importer('repo', 'mock-importer', {})
 
         # Test
-        self.sync_manager.sync('repo')
+        importer, config = self.sync_manager._get_importer_instance_and_config('repo')
+        self.sync_manager.sync('repo', importer, config)
 
         # Verify
         self.assertEqual('repo', MockRepoPublishManager.repo_id)
         self.assertEqual({}, MockRepoPublishManager.base_progress_report)
 
-    def test_sync_with_auto_publish_error(self):
+    def _test_sync_with_auto_publish_error(self):
         """
         Tests that the autodistribute exception is propagated when one or more auto publish calls fail.
         """
@@ -367,7 +372,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None # sloppy plugin
 
         # Test
-        self.sync_manager.sync('repo-1')
+        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
+        self.sync_manager.sync('repo-1', importer, config)
 
         # Verify
 

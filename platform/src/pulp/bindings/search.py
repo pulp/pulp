@@ -124,11 +124,14 @@ class SearchAPI(PulpAPI):
         filters = self._compose_filters(**kwargs)
         if filters:
             kwargs['filters'] = filters
+        self._strip_criteria_kwargs(kwargs)
+        response = self.server.POST(self.PATH, {'criteria':kwargs})
+        return response.response_body
+
+    def _strip_criteria_kwargs(self, kwargs):
         for field_name in kwargs.keys():
             if field_name not in self._CRITERIA_ARGS:
                 del kwargs[field_name]
-        response = self.server.POST(self.PATH, {'criteria':kwargs})
-        return response.response_body
 
     @classmethod
     def _compose_filters(cls, **kwargs):

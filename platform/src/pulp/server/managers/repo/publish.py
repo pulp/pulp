@@ -31,6 +31,7 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
+from pulp.server.dispatch import constants as dispatch_constants
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers import factory as manager_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
@@ -43,7 +44,36 @@ _LOG = logging.getLogger(__name__)
 
 class RepoPublishManager(object):
 
-    def publish(self, repo_id, distributor_id, publish_config_override=None, base_progress_report=None):
+    def prep_publish(self, call_request, call_report):
+        """
+        Task enqueue callback that sets the distributor instance and config
+        keyword arguments for a publish call request.
+        @param call_request: call request for the repo publish
+        @param call_report: call report for the repo publish
+        @return:
+        """
+        repo_id = call_request.args[0]
+        distributor_id = call_request.args[1]
+
+        distributor, config = self._get_distributor_instance_and_config(repo_id, distributor_id)
+
+        call_request.kwargs['distributor_instance'] = distributor
+        call_request.kwargs['distributor_config'] = config
+
+        if distributor is not None:
+            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor.cancel_publish_repo)
+
+    def _get_distributor_instance_and_config(self, repo_id, distributor_id):
+        repo_distributor_manager = manager_factory.repo_distributor_manager()
+        try:
+            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+        except (MissingResource, plugin_exceptions.PluginNotFound):
+            distributor = None
+            config = None
+        return distributor, config
+
+    def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
         """
         Requests the given distributor publish the repository it is configured
         on.
@@ -57,6 +87,12 @@ class RepoPublishManager(object):
 
         @param distributor_id: identifies the repo's distributor to publish
         @type  distributor_id: str
+
+        @param distributor_instance: the distributor instance for this repo and this publish
+        @type distributor_instance: pulp.plugins.distributor.Distributor
+
+        @param distributor_config: base configuration for the distributor
+        @type distributor_config: dict
 
         @param publish_config_override: optional config values to use for this
                                         publish call only
@@ -77,18 +113,15 @@ class RepoPublishManager(object):
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id, distributor=distributor_id)
 
-        try:
-            distributor_instance, plugin_config = \
-                plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except plugin_exceptions.PluginNotFound:
+        if distributor_instance is None:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id, base_progress_report=base_progress_report)
 
-        call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'], publish_config_override)
+        call_config = PluginCallConfiguration(distributor_config, repo_distributor['config'], publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(repo_distributor['distributor_type_id'], repo_id, mkdir=True)
 
@@ -177,7 +210,7 @@ class RepoPublishManager(object):
         """
 
         # Retrieve all auto publish distributors for the repo
-        auto_distributors = _auto_distributors(repo_id)
+        auto_distributors = self.auto_distributors(repo_id)
 
         if len(auto_distributors) is 0:
             return
@@ -270,6 +303,15 @@ class RepoPublishManager(object):
 
         return list(cursor)
 
+    def auto_distributors(self, repo_id):
+        """
+        Returns all distributors for the given repo that are configured for automatic
+        publishing.
+        """
+        dist_coll = RepoDistributor.get_collection()
+        auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
+        return auto_distributors
+
 # -- utilities ----------------------------------------------------------------
 
 def _now_timestamp():
@@ -281,11 +323,3 @@ def _now_timestamp():
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
 
-def _auto_distributors(repo_id):
-    """
-    Returns all distributors for the given repo that are configured for automatic
-    publishing.
-    """
-    dist_coll = RepoDistributor.get_collection()
-    auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
-    return auto_distributors

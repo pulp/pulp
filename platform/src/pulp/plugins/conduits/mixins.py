@@ -24,7 +24,7 @@ import pulp.server.managers.factory as manager_factory
 
 # Unused in this class but imported here so plugins don't have to reach
 # into server packages directly
-from   pulp.server.db.model.criteria import UnitAssociationCriteria
+from   pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 
 # -- constants ----------------------------------------------------------------
 

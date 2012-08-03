@@ -17,10 +17,11 @@ import traceback
 import unittest
 
 from base import PulpAsyncServerTests
+import mock_plugins
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.repo_group import RepoGroup
+from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -54,6 +55,7 @@ class RepoGroupTests(PulpAsyncServerTests):
         self.manager = None
         Repo.get_collection().remove(safe=True)
         RepoGroup.get_collection().remove(safe=True)
+        RepoGroupDistributor.get_collection().remove(safe=True)
 
     def _create_repo(self, repo_id):
         manager = managers_factory.repo_manager()
@@ -61,6 +63,14 @@ class RepoGroupTests(PulpAsyncServerTests):
 
 
 class RepoGroupCUDTests(RepoGroupTests):
+
+    def setUp(self):
+        super(RepoGroupCUDTests, self).setUp()
+        mock_plugins.install()
+
+    def tearDown(self):
+        super(RepoGroupCUDTests, self).tearDown()
+        mock_plugins.reset()
 
     def test_create(self):
         group_id = 'create_group'
@@ -171,6 +181,24 @@ class RepoGroupCUDTests(RepoGroupTests):
         # Ensure the working dir was deleted
         self.assertTrue(not os.path.exists(working_dir))
 
+    def test_delete_with_distributor(self):
+        # Setup
+        group_id = 'doomed'
+        self.manager.create_repo_group(group_id)
+
+        distributor_id = 'doomed-dist'
+        dist_manager = managers_factory.repo_group_distributor_manager()
+        dist_manager.add_distributor(group_id, 'mock-group-distributor', {}, distributor_id=distributor_id)
+
+        distributor = RepoGroupDistributor.get_collection().find_one({'id' : distributor_id})
+        self.assertTrue(distributor is not None)
+
+        # Test
+        self.manager.delete_repo_group(group_id)
+
+        # Verify
+        distributor = RepoGroupDistributor.get_collection().find_one({'id' : distributor_id})
+        self.assertTrue(distributor is None)
 
 class RepoGroupMembershipTests(RepoGroupTests):
 

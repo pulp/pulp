@@ -16,13 +16,10 @@ Distribution Support for Yum Importer
 """
 import os
 from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp_rpm.common.ids import TYPE_ID_DISTRO, UNIT_KEY_DISTRO, METADATA_DISTRO
 from pulp_rpm.yum_plugin import util
 
 _LOG = util.getLogger(__name__)
-DISTRO_TYPE_ID="distribution"
-
-DISTRO_UNIT_KEY = ("id", "family", "variant", "version", "arch")
-DISTRO_METADATA = ("files",)
 
 def get_available_distributions(distro_items):
     """
@@ -49,7 +46,7 @@ def get_existing_distro_units(sync_conduit):
     @rtype {():pulp.server.content.plugins.model.Unit}
     """
     existing_distro_units = {}
-    criteria = UnitAssociationCriteria(type_ids=[DISTRO_TYPE_ID])
+    criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DISTRO])
     for u in sync_conduit.get_units(criteria):
         key = form_lookup_distro_key(u.unit_key)
         existing_distro_units[key] = u
@@ -81,7 +78,7 @@ def get_new_distros_and_units(available_distros, existing_distro_units, sync_con
             unit_key = form_distro_unit_key(distro)
             metadata = form_distro_metadata(distro)
             pkg_path = distro["id"]
-            new_units[key] = sync_conduit.init_unit(DISTRO_TYPE_ID, unit_key, metadata, pkg_path)
+            new_units[key] = sync_conduit.init_unit(TYPE_ID_DISTRO, unit_key, metadata, pkg_path)
             for ksfile in distro['files']:
                 pkgpath = os.path.join(new_units[key].storage_path, ksfile["relativepath"])
                 ksfile["pkgpath"] = os.path.dirname(pkgpath)
@@ -125,13 +122,13 @@ def form_lookup_distro_key(dinfo):
 
 def form_distro_unit_key(distro):
     unit_key = {}
-    for key in DISTRO_UNIT_KEY:
+    for key in UNIT_KEY_DISTRO:
         unit_key[key] = distro[key]
     return unit_key
 
 def form_distro_metadata(distro):
     metadata = {}
-    for key in DISTRO_METADATA:
+    for key in METADATA_DISTRO:
         metadata[key] = distro[key]
     return metadata
 

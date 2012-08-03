@@ -15,7 +15,8 @@ from datetime import  timedelta
 
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.exceptions import ConflictingOperation, OperationPostponed
+from pulp.server.exceptions import (
+    ConflictingOperation, MultipleOperationsPostponed, OperationPostponed)
 
 # execution wrapper api --------------------------------------------------------
 
@@ -154,3 +155,15 @@ def execute_sync_created(controller, call_request, location, timeout=timedelta(s
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
         raise call_report.exception, None, call_report.traceback
     return controller.created(location, call_report.result)
+
+
+def execute_multiple(call_request_list):
+    """
+    Execute multiple calls as a task group via the coordinator.
+    @param call_request_list: list of call request instances
+    @type call_request_list: list
+    """
+    coordinator = dispatch_factory.coordinator()
+    call_report_list = coordinator.execute_multiple_calls(call_request_list)
+    raise MultipleOperationsPostponed(call_report_list)
+

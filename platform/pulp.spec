@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.313
-Release: 2%{?dist}
+Version: 0.0.320
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -260,7 +260,7 @@ The Pulp REST API bindings for python.
 Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: python-%{name}-common = %{version}
-Requires: python-okaara >= 1.0.18
+Requires: python-okaara >= 1.0.24
 Obsoletes: pulp-client-lib
 
 %description -n python-pulp-client-lib
@@ -420,6 +420,42 @@ exit 0
 %endif
 
 %changelog
+* Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
+- 
+
+* Mon Jul 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.319-1
+- CLI search now has user-friendly options (mhrivnak@redhat.com)
+- 843098 - Run all written content through encode_unicode first
+  (jason.dobies@redhat.com)
+- 843618 - Added interactive prompt when the password isn't specified
+  (jason.dobies@redhat.com)
+- Adding CLI support for repository groups (mhrivnak@redhat.com)
+- Repository Groups now have the criteria-based search REST API.
+  (mhrivnak@redhat.com)
+- Repository REST API action : unit unassociate implemented at
+  /repositories/<repo_id>/actions/unassociate/ (jason.connor@gmail.com)
+- 842348 - Making updates to repo group notes apply a delta to the existing
+  notes field instead of completely replacing it. (mhrivnak@redhat.com)
+- 842860 - detecting and sending correct error message when trying to delete
+  last superuser (skarmark@redhat.com)
+- 842854 - updated automatic user permissions to v2 resources and added
+  v2/actions/ so that user can login and update successfully
+  (skarmark@redhat.com)
+- 842848 - added the capability to obfuscate the call_request args and kwargs
+  so that the log will not show them (jason.connor@gmail.com)
+- 841208 - pulp-consumer RPM doesn't create needed directory:
+  /etc/pki/pulp/consumer (jmatthews@redhat.com)
+- 840482 - fixed fix for repos without an importer (jason.connor@gmail.com)
+- 840482 - added removal of sync and publish schedules on repo deletion
+  (jason.connor@gmail.com)
+- 839389 - Correct error message (jason.dobies@redhat.com)
+- Criteria-based search is now available for Content Units under
+  /pulp/api/v2/content/units/<type>/search/ (mhrivnak@redhat.com)
+- Implementation of repo group distributor managers (jason.dobies@redhat.com)
+- 827200 - Removed Binding.PUT(). (jortel@redhat.com)
+- The SearchController can now accept Criteria-based searches through GET
+  requests. (mhrivnak@redhat.com)
+
 * Thu Jul 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.313-1
 - - Move the repo working dirs under "repos" to make room for the group
   working dirs (jason.dobies@redhat.com)

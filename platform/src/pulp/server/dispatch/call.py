@@ -188,7 +188,7 @@ class CallRequest(object):
 
             except Exception, e:
                 msg =_('Exception encountered while pickling: %(f)s') % {'f': field}
-                _LOG.error(field)
+                _LOG.error(msg)
                 _LOG.exception(e)
                 return None
 

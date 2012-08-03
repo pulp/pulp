@@ -62,7 +62,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config, False, distributor_id='dist-2')
 
         # Test
-        self.publish_manager.publish('repo-1', 'dist-1', None)
+        distributor, config = self.publish_manager._get_distributor_instance_and_config('repo-1', 'dist-1')
+        self.publish_manager.publish('repo-1', 'dist-1', distributor, config, None)
 
         # Verify
 
@@ -115,7 +116,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(False, 'Summary of the publish', 'Details of the publish')
 
         # Test
-        self.publish_manager.publish('repo-1', 'dist-1', None)
+        distributor, config = self.publish_manager._get_distributor_instance_and_config('repo-1', 'dist-1')
+        self.publish_manager.publish('repo-1', 'dist-1', distributor, config, None)
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
@@ -147,7 +149,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         publish_overrides = {'key-1' : 'new-1', 'key-3' : 'new-3'}
-        self.publish_manager.publish('repo-1', 'dist-2', publish_overrides)
+        distributor, config = self.publish_manager._get_distributor_instance_and_config('repo-1', 'dist-2')
+        self.publish_manager.publish('repo-1', 'dist-2', distributor, config, publish_overrides)
 
         # Verify call into mock
         call_args = mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_args[0]
@@ -181,10 +184,11 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         try:
-            self.publish_manager.publish('no-dist', 'fake-dist')
+            distributor, config = self.publish_manager._get_distributor_instance_and_config('no-dist', 'fake-dist')
+            self.publish_manager.publish('no-dist', 'fake-dist', distributor, config)
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
-            self.assertTrue('no-dist' == e.resources['resource_id'])
+            self.assertTrue('no-dist' == e.resources['repository'])
             print(e) # for coverage
 
     def test_publish_bad_distributor(self):
@@ -202,7 +206,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         try:
-            self.publish_manager.publish('repo', 'dist-1', None)
+            distributor, config = self.publish_manager._get_distributor_instance_and_config('repo', 'dist-1')
+            self.publish_manager.publish('repo', 'dist-1', distributor, config, None)
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('repo' == e.resources['resource_id'])
@@ -222,10 +227,11 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         try:
-            self.publish_manager.publish('repo', 'dist-1')
+            distributor, config = self.publish_manager._get_distributor_instance_and_config('repo', 'dist-1')
+            self.publish_manager.publish('repo', 'dist-1', distributor, config)
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
-            self.assertTrue('repo' == e.resources['resource_id'])
+            self.assertTrue('repo' == e.resources['repository'])
             print(e) # for coverage
 
     def test_publish_with_error(self):
@@ -241,7 +247,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Test
         try:
-            self.publish_manager.publish('gonna-bail', 'bad-dist')
+            distributor, config = self.publish_manager._get_distributor_instance_and_config('gonna-bail', 'bad-dist')
+            self.publish_manager.publish('gonna-bail', 'bad-dist', distributor, config)
             self.fail('Expected exception was not raised')
         except publish_manager.PulpExecutionException, e:
             print(e) # for coverage
@@ -269,7 +276,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
 
-    def test_auto_publish_for_repo(self):
+    def _test_auto_publish_for_repo(self):
         """
         Tests automatically publishing for a repo that has both auto and non-auto
         distributors configured.
@@ -378,7 +385,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = None # lame plugin
 
         # Test
-        self.publish_manager.publish('sloppy', 'slop')
+        distributor, config = self.publish_manager._get_distributor_instance_and_config('sloppy', 'slop')
+        self.publish_manager.publish('sloppy', 'slop', distributor, config)
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'sloppy'}))
@@ -436,7 +444,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
     # -- utility tests --------------------------------------------------------
 
-    def test_auto_distributors(self):
+    def _test_auto_distributors(self):
         """
         Tests that the query for distributors on a repo that are configured for automatic distribution is correct.
         """

@@ -23,9 +23,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 import importer_mocks
 import rpm_support_base
 from yum_importer import importer_rpm
-from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
-from yum_importer.distribution import  DISTRO_TYPE_ID
+from yum_importer.importer import YumImporter
 from pulp.plugins.model import Repository
+from pulp_rpm.common.ids import TYPE_ID_DISTRO, TYPE_ID_IMPORTER_YUM
 
 class TestDistribution(rpm_support_base.PulpRPMTests):
 
@@ -41,8 +41,8 @@ class TestDistribution(rpm_support_base.PulpRPMTests):
 
     def test_metadata(self):
         metadata = YumImporter.metadata()
-        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
-        self.assertTrue(DISTRO_TYPE_ID in metadata["types"])
+        self.assertEquals(metadata["id"], TYPE_ID_IMPORTER_YUM)
+        self.assertTrue(TYPE_ID_DISTRO in metadata["types"])
 
     def test_distributions_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"

@@ -19,20 +19,19 @@ import os
 import shutil
 import time
 
-from yum_importer.comps import ImporterComps, PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID
-from yum_importer.distribution import DISTRO_TYPE_ID
-from yum_importer.drpm import DRPM_TYPE_ID
-from yum_importer.errata import ImporterErrata, ERRATA_TYPE_ID, link_errata_rpm_units
-from yum_importer.importer_rpm import ImporterRPM, RPM_TYPE_ID, SRPM_TYPE_ID, get_existing_units
+from yum_importer.comps import ImporterComps
+from yum_importer.errata import ImporterErrata, link_errata_rpm_units
+from yum_importer.importer_rpm import ImporterRPM, get_existing_units
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import SyncReport
+from pulp_rpm.common.ids import TYPE_ID_IMPORTER_YUM, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_DISTRO,\
+        TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import util, depsolver
 
 _ = gettext.gettext
 _LOG = util.getLogger(__name__)
 
-YUM_IMPORTER_TYPE_ID="yum_importer"
 
 REQUIRED_CONFIG_KEYS = []
 OPTIONAL_CONFIG_KEYS = ['feed_url', 'ssl_verify', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key',
@@ -77,9 +76,9 @@ class YumImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id'           : YUM_IMPORTER_TYPE_ID,
+            'id'           : TYPE_ID_IMPORTER_YUM,
             'display_name' : 'Yum Importer',
-            'types'        : [DISTRO_TYPE_ID, DRPM_TYPE_ID, ERRATA_TYPE_ID, PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID, RPM_TYPE_ID, SRPM_TYPE_ID]
+            'types'        : [TYPE_ID_DISTRO, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_RPM, TYPE_ID_SRPM]
         }
 
     def validate_config(self, repo, config, related_repos):
@@ -385,11 +384,11 @@ class YumImporter(Importer):
 
     def _upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
         _LOG.info("Invoking upload_unit with file_path: %s; metadata: %s; unit_key: %s; type_id: %s" % (file_path, metadata, unit_key, type_id))
-        if type_id == RPM_TYPE_ID:
+        if type_id == TYPE_ID_RPM:
             return self._upload_unit_rpm(repo, unit_key, metadata, file_path, conduit, config)
-        elif type_id == ERRATA_TYPE_ID:
+        elif type_id == TYPE_ID_ERRATA:
             return self._upload_unit_erratum(repo, unit_key, metadata, conduit, config)
-        elif type_id in (PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID):
+        elif type_id in (TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY):
             return self._upload_unit_pkg_group_or_category(repo, type_id, unit_key, metadata, conduit, config)
         else:
             return False, {}, {}
@@ -407,7 +406,7 @@ class YumImporter(Importer):
             return False, summary, details
         relative_path = "%s/%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
                                                         unit_key['release'], unit_key['arch'], unit_key['checksum'], metadata['filename'])
-        u = conduit.init_unit(RPM_TYPE_ID, unit_key, metadata, relative_path)
+        u = conduit.init_unit(TYPE_ID_RPM, unit_key, metadata, relative_path)
         new_path = u.storage_path
         try:
             if os.path.exists(new_path):
@@ -455,7 +454,7 @@ class YumImporter(Importer):
         summary = {'num_units_saved' : 0}
         details = {'errors' : []}
         try:
-            u = conduit.init_unit(ERRATA_TYPE_ID, unit_key, metadata, None)
+            u = conduit.init_unit(TYPE_ID_ERRATA, unit_key, metadata, None)
             conduit.save_unit(u)
             summary['num_units_saved'] += 1
             link_errata_rpm_units(conduit, {unit_key['id']: u})
@@ -515,7 +514,7 @@ class YumImporter(Importer):
         solved, unsolved = dsolve.processResults(results)
         dep_pkgs_map = {}
         _LOG.info(" results from depsolver %s" % results)
-        criteria = UnitAssociationCriteria(type_ids=[RPM_TYPE_ID])
+        criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM])
         existing_units = get_existing_units(dependency_conduit, criteria)
         for dep, pkgs in solved.items():
             dep_pkgs_map[dep] = []
@@ -532,7 +531,7 @@ class YumImporter(Importer):
         summary['state'] = 'FINISHED'
         return True, summary, details
 
-    def cancel_sync_repo(self):
+    def cancel_sync_repo(self, call_request, call_report):
         self.canceled = True
         self.comps.cancel_sync()
         self.errata.cancel_sync()

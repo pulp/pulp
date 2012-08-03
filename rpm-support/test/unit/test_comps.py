@@ -33,10 +33,11 @@ import importer_mocks
 import rpm_support_base
 from yum_distributor.distributor import YumDistributor
 from yum_importer import comps
-from yum_importer.comps import ImporterComps, PKG_GROUP_METADATA, PKG_CATEGORY_METADATA,\
-                                PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID
+from yum_importer.comps import ImporterComps
 from yum_importer.importer import YumImporter
+from pulp_rpm.common.ids import METADATA_PKG_GROUP, METADATA_PKG_CATEGORY, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY
 from pulp_rpm.yum_plugin import comps_util
+
 
 
 class TestComps(rpm_support_base.PulpRPMTests):
@@ -58,7 +59,7 @@ class TestComps(rpm_support_base.PulpRPMTests):
 
     def create_dummy_pkg_group_unit(self, repo_id, pkg_grp_id):
         random_int = int(random.random())
-        type_id = PKG_GROUP_TYPE_ID
+        type_id = TYPE_ID_PKG_GROUP
         unit_key = {}
         unit_key["id"] = pkg_grp_id
         unit_key["repo_id"] = repo_id
@@ -82,7 +83,7 @@ class TestComps(rpm_support_base.PulpRPMTests):
         
     def create_dummy_pkg_category_unit(self, repo_id, pkg_cat_id, grpids):
         random_int = int(random.random())
-        type_id = PKG_CATEGORY_TYPE_ID
+        type_id = TYPE_ID_PKG_CATEGORY
         unit_key = {}
         unit_key["id"] = pkg_cat_id
         unit_key["repo_id"] = repo_id
@@ -218,11 +219,11 @@ class TestComps(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(categories), 2)
         for g in groups.values():
             keys = g.keys()
-            for key_name in PKG_GROUP_METADATA:
+            for key_name in METADATA_PKG_GROUP:
                 self.assertTrue(key_name in keys)
         for c in categories.values():
             keys = c.keys()
-            for key_name in PKG_CATEGORY_METADATA:
+            for key_name in METADATA_PKG_CATEGORY:
                 self.assertTrue(key_name in keys)
 
         repo_dir = os.path.join(self.data_dir, "pulp_unittest")
@@ -232,11 +233,11 @@ class TestComps(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(categories), 0)
         for g in groups.values():
             keys = g.keys()
-            for key_name in PKG_GROUP_METADATA:
+            for key_name in METADATA_PKG_GROUP:
                 self.assertTrue(key_name in keys)
         for c in categories.values():
             keys = c.keys()
-            for key_name in PKG_CATEGORY_METADATA:
+            for key_name in METADATA_PKG_CATEGORY:
                 self.assertTrue(key_name in keys)
 
         repo_dir = os.path.join(self.data_dir, "pulp_unittest")
@@ -246,11 +247,11 @@ class TestComps(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(categories), 2)
         for g in groups.values():
             keys = g.keys()
-            for key_name in PKG_GROUP_METADATA:
+            for key_name in METADATA_PKG_GROUP:
                 self.assertTrue(key_name in keys)
         for c in categories.values():
             keys = c.keys()
-            for key_name in PKG_CATEGORY_METADATA:
+            for key_name in METADATA_PKG_CATEGORY:
                 self.assertTrue(key_name in keys)
 
     def test_get_available_with_gzipped_comps(self):
@@ -263,11 +264,11 @@ class TestComps(rpm_support_base.PulpRPMTests):
 
         for g in groups.values():
             keys = g.keys()
-            for key_name in PKG_GROUP_METADATA:
+            for key_name in METADATA_PKG_GROUP:
                 self.assertTrue(key_name in keys)
         for c in categories.values():
             keys = c.keys()
-            for key_name in PKG_CATEGORY_METADATA:
+            for key_name in METADATA_PKG_CATEGORY:
                 self.assertTrue(key_name in keys)
 
     def test_get_orphaned(self):

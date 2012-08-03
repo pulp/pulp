@@ -115,7 +115,7 @@ def load_plugins(path, base_class, module_name):
 
     if not module_found:
         msg = _('Cannot load plugin: %(n)s has no module: %(p)s.%(m)s')
-        _LOG.error(msg % {'n': module_name.title(), 'p': package_name, 'm': module_name})
+        _LOG.info(msg % {'n': module_name.title(), 'p': package_name, 'm': module_name})
         return None
 
     # load and return the plugin class and configuration

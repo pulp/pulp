@@ -90,7 +90,7 @@ class CreateErratumCommand(PulpCliCommand):
         self.create_option('--from', _(d), required=True)
 
         d = 'pushcount for this erratum; an integer, defaults to 1'
-        self.create_option('--pushcount', _(d), required=True, default=1)
+        self.create_option('--pushcount', _(d), required=False, default=1)
 
         d = 'reboot-suggested for this erratum will be true if this flag is specified'
         self.create_flag('--reboot-suggested', _(d))
@@ -128,9 +128,14 @@ class CreateErratumCommand(PulpCliCommand):
         summary = kwargs['summary']
         solution = kwargs['solution']
         from_str = kwargs['from']
+        pkglist = []
+        references = []
         try:
-            pkglist = self.parse_package_csv(kwargs['pkglist-csv'], release)
-            references = self.parse_reference_csv(kwargs['reference-csv'])
+            pkg_csv_file = kwargs['pkglist-csv']
+            pkglist = self.parse_package_csv(pkg_csv_file, release)
+            ref_csv_file = kwargs['reference-csv']
+            if ref_csv_file:
+                references = self.parse_reference_csv(ref_csv_file)
         except ParseException, e:
             self.context.prompt.render_failure_message(e.msg)
             return e.code
@@ -180,7 +185,7 @@ class CreateErratumCommand(PulpCliCommand):
         perform_upload(self.context, upload_manager, [upload_id])
 
     def parse_package_csv(self, csvfile, errata_release):
-        if not os.path.exists(csvfile):
+        if not csvfile or not os.path.exists(csvfile):
             msg = _("Package list CSV file [%s] not found") % (csvfile)
             raise ParseException(msg, os.EX_IOERR)
         plist = parse_csv(csvfile)
@@ -189,9 +194,9 @@ class CreateErratumCommand(PulpCliCommand):
             if not len(p) == 9:
                 msg = _("Bad format [%s] in csv [%s], %s arguments, expected 9") % (p, csvfile, len(p))
                 raise ParseException(msg, os.EX_DATAERR)
-            name,version,release,epoch,arch,filename,sums,type,sourceurl = p
+            name,version,release,epoch,arch,filename,sums,ptype,sourceurl = p
             pdict = dict(name=name, version=version, release=release, 
-                        epoch=epoch, arch=arch, filename=filename, sums=sums, type=type, src=sourceurl)
+                        epoch=epoch, arch=arch, filename=filename, sums=sums, type=ptype, src=sourceurl)
             pkgs.append(pdict)
         plistdict = {'packages' : pkgs,
                     'name'     : errata_release,
@@ -200,7 +205,7 @@ class CreateErratumCommand(PulpCliCommand):
         return [plistdict]
 
     def parse_reference_csv(self, csvfile):
-        if not os.path.exists(csvfile):
+        if not csvfile or not os.path.exists(csvfile):
             msg = _("References CSV file [%s] not found") % (csvfile)
             raise ParseException(msg, os.EX_IOERR)
         references = []
@@ -209,8 +214,8 @@ class CreateErratumCommand(PulpCliCommand):
             if not len(ref) == 4:
                 msg = _("Bad format [%s] in csv [%s], %s arguments, expected 4") % (ref, csvfile, len(ref))
                 raise ParseException(msg, os.EX_DATAERR)
-            href,type,id,title = ref
-            refdict = dict(href=href,type=type,id=id,title=title)
+            href,csvtype,id,title = ref
+            refdict = dict(href=href,type=csvtype,id=id,title=title)
             references.append(refdict)
         return references
 

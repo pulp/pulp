@@ -23,8 +23,8 @@ import unittest
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 import importer_mocks
 from yum_importer import comps
-from yum_importer.comps import PKG_GROUP_TYPE_ID, PKG_CATEGORY_TYPE_ID
 from yum_importer.importer import YumImporter
+from pulp_rpm.common.ids import TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY
 from pulp_rpm.yum_plugin import util
 
 from pulp.plugins.model import Repository
@@ -91,11 +91,11 @@ class TestUploadUnit(rpm_support_base.PulpRPMTests):
         repo_src_dir = os.path.join(self.data_dir, "test_comps_import_with_dots_in_pkg_names")
         sync_conduit = importer_mocks.get_sync_conduit()
         avail_groups, avail_cats = comps.get_available(repo_src_dir)
-        if type_id == PKG_GROUP_TYPE_ID:
+        if type_id == TYPE_ID_PKG_GROUP:
             groups, group_units = comps.get_new_group_units(avail_groups, {}, sync_conduit, repo)
             self.assertTrue(len(group_units) > 0)
             return group_units.values()[0]
-        elif type_id == PKG_CATEGORY_TYPE_ID:
+        elif type_id == TYPE_ID_PKG_CATEGORY:
             cats, cat_units = comps.get_new_category_units(avail_cats, {}, sync_conduit, repo)
             self.assertTrue(len(cat_units) > 0)
             return cat_units.values()[0]
@@ -110,7 +110,7 @@ class TestUploadUnit(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config()
         importer = YumImporter()
         file_path = None
-        type_id = PKG_GROUP_TYPE_ID
+        type_id = TYPE_ID_PKG_GROUP
         unit = self.get_pkg_group_or_category(repo, type_id)
         status, summary, details = importer._upload_unit(repo, type_id, unit.unit_key, unit.metadata, file_path, upload_conduit, config)
         self.assertTrue(status)
@@ -124,7 +124,7 @@ class TestUploadUnit(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config()
         importer = YumImporter()
         file_path = None
-        type_id = PKG_CATEGORY_TYPE_ID
+        type_id = TYPE_ID_PKG_CATEGORY
         unit = self.get_pkg_group_or_category(repo, type_id)
         status, summary, details = importer._upload_unit(repo, type_id, unit.unit_key, unit.metadata, file_path, upload_conduit, config)
         self.assertTrue(status)

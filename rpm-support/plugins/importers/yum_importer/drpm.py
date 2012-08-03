@@ -16,13 +16,14 @@ DeltaRPM Support for Yum Importer
 """
 import os
 from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp_rpm.common.ids import TYPE_ID_DRPM, UNIT_KEY_DRPM, METADATA_DRPM
 from pulp_rpm.yum_plugin import util
 
 _LOG = util.getLogger(__name__)
-DRPM_TYPE_ID="drpm"
-DRPM_UNIT_KEY = ("epoch", "version", "release",  "filename", "checksum", "checksumtype")
+TYPE_ID_DRPM="drpm"
+UNIT_KEY_DRPM = ("epoch", "version", "release",  "filename", "checksum", "checksumtype")
 
-DRPM_METADATA = ("size", "sequence", "new_package")
+METADATA_DRPM = ("size", "sequence", "new_package")
 
 
 def get_available_drpms(drpm_items):
@@ -48,7 +49,7 @@ def get_existing_drpm_units(sync_conduit):
    @rtype {():pulp.server.content.plugins.model.Unit}
    """
    existing_drpm_units = {}
-   criteria = UnitAssociationCriteria(type_ids=[DRPM_TYPE_ID])
+   criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DRPM])
    for u in sync_conduit.get_units(criteria):
        key = form_lookup_drpm_key(u.unit_key)
        existing_drpm_units[key] = u
@@ -79,13 +80,13 @@ def get_new_drpms_and_units(available_drpms, existing_units, sync_conduit):
             new_drpms[key] = drpm
             unit_key = form_drpm_unit_key(drpm)
             metadata = form_drpm_metadata(drpm)
-            new_units[key] = sync_conduit.init_unit(DRPM_TYPE_ID, unit_key, metadata, pkgpath)
+            new_units[key] = sync_conduit.init_unit(TYPE_ID_DRPM, unit_key, metadata, pkgpath)
             drpm["pkgpath"] = os.path.dirname(new_units[key].storage_path).split("/drpms")[0]
     return new_drpms, new_units
 
 def form_drpm_metadata(drpm):
     metadata = {}
-    for key in DRPM_METADATA:
+    for key in METADATA_DRPM:
         metadata[key] = drpm[key]
     return metadata
 
@@ -98,7 +99,7 @@ def form_lookup_drpm_key(drpm):
 
 def form_drpm_unit_key(rpm):
     unit_key = {}
-    for key in DRPM_UNIT_KEY:
+    for key in UNIT_KEY_DRPM:
         unit_key[key] = rpm[key]
     return unit_key
 

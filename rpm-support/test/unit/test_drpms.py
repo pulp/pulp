@@ -21,10 +21,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 import importer_mocks
 
 from yum_importer import drpm, importer_rpm
-from yum_importer.importer import YumImporter, YUM_IMPORTER_TYPE_ID
-from yum_importer.drpm import DRPM_UNIT_KEY
+from yum_importer.importer import YumImporter
 from pulp.plugins.model import Repository
-
+from pulp_rpm.common.ids import UNIT_KEY_DRPM, TYPE_ID_IMPORTER_YUM, TYPE_ID_DRPM
 import rpm_support_base
 
 class TestDRPMS(rpm_support_base.PulpRPMTests):
@@ -41,8 +40,8 @@ class TestDRPMS(rpm_support_base.PulpRPMTests):
 
     def test_metadata(self):
         metadata = YumImporter.metadata()
-        self.assertEquals(metadata["id"], YUM_IMPORTER_TYPE_ID)
-        self.assertTrue(drpm.DRPM_TYPE_ID in metadata["types"])
+        self.assertEquals(metadata["id"], TYPE_ID_IMPORTER_YUM)
+        self.assertTrue(TYPE_ID_DRPM in metadata["types"])
 
     def test_drpm_sync(self):
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_drpm_repo/"
@@ -76,7 +75,7 @@ class TestDRPMS(rpm_support_base.PulpRPMTests):
 
     def test_get_available_drpms(self):
         deltarpm = {}
-        for k in DRPM_UNIT_KEY:
+        for k in UNIT_KEY_DRPM:
             deltarpm[k] = "test_drpm"
         available_drpms = drpm.get_available_drpms([deltarpm])
         lookup_key = drpm.form_lookup_drpm_key(deltarpm)

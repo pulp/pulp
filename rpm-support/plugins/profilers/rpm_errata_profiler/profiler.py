@@ -17,21 +17,13 @@ Profiler plugin to support RPM Errata functionality
 import gettext
 
 from pulp.plugins.model import ApplicabilityReport
-from pulp.plugins.profiler import Profiler
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
+from pulp.plugins.conduits.mixins import UnitAssociationCriteria
+from pulp_rpm.common.ids import TYPE_ID_PROFILER_RPM_ERRATA, TYPE_ID_ERRATA, TYPE_ID_RPM, UNIT_KEY_RPM
 from pulp_rpm.yum_plugin import util
 
 _ = gettext.gettext
 _LOG = util.getLogger(__name__)
-
-PROFILER_TYPE_ID="rpm_errata_profiler"
-ERRATA_TYPE_ID="erratum"
-RPM_TYPE_ID="rpm"
-RPM_UNIT_KEY = ("name", "epoch", "version", "release", "arch", "checksum", "checksumtype")
-
-
-#TODO:
-# - What exceptions should we be raising?
 
 class RPMErrataProfiler(Profiler):
     def __init__(self):
@@ -40,13 +32,13 @@ class RPMErrataProfiler(Profiler):
     @classmethod
     def metadata(cls):
         return { 
-                'id': PROFILER_TYPE_ID,
+                'id': TYPE_ID_PROFILER_RPM_ERRATA,
                 'display_name': "RPM Errata Profiler",
-                'types': [ERRATA_TYPE_ID],
+                'types': [TYPE_ID_ERRATA],
                 }
 
     def update_profile(self, consumer, profile, config, conduit):
-        raise NotImplementedError()
+        pass
 
     def update_units(self, consumer, units, options, config, conduit):
         raise NotImplementedError()
@@ -79,8 +71,8 @@ class RPMErrataProfiler(Profiler):
 
         @return:    a list of dictionaries containing info on the 'translated units'.
                     each dictionary contains a 'name' key which refers 
-                    to the rpm name.arch associated to the errata
-        @rtype:     [{'name':rpm_name.rpm_arch}]
+                    to the rpm name associated to the errata
+        @rtype [{'unit_key':{'name':name.arch}, 'type_id':'rpm'}]
         """
         return self.translate_units(units, consumer, conduit)
 
@@ -110,10 +102,12 @@ class RPMErrataProfiler(Profiler):
         @rtype: L{pulp.plugins.model.ApplicabilityReport}
         """
         applicable = False
-        applicable_rpms = self.translate(unit, consumer, conduit)
+        applicable_rpms, upgrade_details = self.translate(unit, consumer, conduit)
         if applicable_rpms:
             applicable = True
-        return ApplicabilityReport(unit, applicable, {}, {})
+        summary = {}
+        details = {"applicable_rpms": applicable_rpms, "upgrade_details":upgrade_details}
+        return ApplicabilityReport(unit, applicable, summary, details)
 
 
     # -- Below are helper methods not part of the Profiler interface ----
@@ -136,11 +130,11 @@ class RPMErrataProfiler(Profiler):
         @return:    a list of dictionaries containing info on the 'translated units'.
                     each dictionary contains a 'name' key which refers 
                     to the rpm name associated to the errata
-        @rtype [{'name':rpm_name}]
+        @rtype [{'unit_key':{'name':name.arch}, 'type_id':'rpm'}]
         """
         translated_units = []
         for unit in units:
-            values = self.translate(unit, consumer, conduit)
+            values, upgrade_details = self.translate(unit, consumer, conduit)
             if values:
                 translated_units.extend(values)
         return translated_units
@@ -160,32 +154,41 @@ class RPMErrataProfiler(Profiler):
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profile.ProfilerConduit}
 
-        @return:    a list of dictionaries containing info on the 'translated units'.
-                    each dictionary contains a 'name' key which refers 
-                    to the rpm name associated to the errata
-        @rtype [{'name':rpm_name}]
+        @return:    a tuple consisting of
+                        list of dictionaries containing info on the 'translated units'.
+                        each dictionary contains a 'name' key which refers 
+                        to the rpm name associated to the errata
+
+                        dictionary containing information on what existing rpms will be upgraded
+
+        @rtype ([{'unit_key':{'name':name.arch}, 'type_id':'rpm'}], {'name arch':{'available':{}, 'installed':{}}   })
         """
-        if unit["type_id"] != ERRATA_TYPE_ID:
-            error_msg = _("unit_applicable invoked with type_id [%s], expected [%s]") % (unit["type_id"], ERRATA_TYPE_ID)
+        if unit["type_id"] != TYPE_ID_ERRATA:
+            error_msg = _("unit_applicable invoked with type_id [%s], expected [%s]") % (unit["type_id"], TYPE_ID_ERRATA)
             _LOG.error(error_msg)
-            raise Exception(error_msg)
+            raise InvalidUnitsRequested([unit], error_msg)
         errata = self.find_unit_associated_to_consumer(unit["type_id"], unit["unit_key"], consumer, conduit)
         if not errata:
             error_msg = _("Unable to find errata with unit_key [%s] in bound repos [%s] to consumer [%s]") % \
                     (unit["unit_key"], conduit.get_bindings(consumer.id), consumer.id)
             _LOG.error(error_msg)
-            raise Exception(error_msg)
+            raise InvalidUnitsRequested([unit], error_msg)
         updated_rpms = self.get_rpms_from_errata(errata)
+        _LOG.info("Errata <%s> refers to %s updated rpms of: %s" % (errata.unit_key['id'], len(updated_rpms), updated_rpms))
         applicable_rpms, upgrade_details = self.rpms_applicable_to_consumer(consumer, updated_rpms)
+        if applicable_rpms:
+            _LOG.info("Rpms: <%s> were found to be related to errata <%s> and applicable to consumer <%s>" % (applicable_rpms, errata, consumer.id))
         # Return as list of name.arch values
         ret_val = []
         for ar in applicable_rpms:
-            data = "%s.%s" % (ar["name"], ar["arch"])
-            ret_val.append({"name":data})
-        return ret_val
+            pkg_name = "%s.%s" % (ar["name"], ar["arch"])
+            data = {"unit_key":{"name":pkg_name}, "type_id":TYPE_ID_RPM}
+            ret_val.append(data)
+        _LOG.info("Translated errata <%s> to <%s>" % (errata, ret_val))
+        return ret_val, upgrade_details
 
     def find_unit_associated_to_consumer(self, unit_type, unit_key, consumer, conduit):
-        criteria = UnitAssociationCriteria(type_ids=[unit_type], unit_filters={"unit_key":unit_key})
+        criteria = UnitAssociationCriteria(type_ids=[unit_type], unit_filters=unit_key)
         return self.find_unit_associated_to_consumer_by_criteria(criteria, consumer, conduit)
 
     def find_unit_associated_to_consumer_by_criteria(self, criteria, consumer, conduit):
@@ -195,6 +198,7 @@ class RPMErrataProfiler(Profiler):
         bound_repo_ids = conduit.get_bindings(consumer.id)
         for repo_id in bound_repo_ids:
             result = conduit.get_units(repo_id, criteria)
+            _LOG.info("Found %s items when searching in repo <%s> for <%s>" % (len(result), repo_id, criteria))
             if result:
                 return result[0]
         return None
@@ -209,6 +213,7 @@ class RPMErrataProfiler(Profiler):
         """
         rpms = []
         if not errata.metadata.has_key("pkglist"):
+            _LOG.warning("metadata for errata <%s> lacks a 'pkglist'" % (errata.unit_key['id']))
             return rpms
         for pkgs in errata.metadata['pkglist']:
             for rpm in pkgs["packages"]:
@@ -234,18 +239,22 @@ class RPMErrataProfiler(Profiler):
         """
         applicable_rpms = []
         older_rpms = {}
-        if not consumer.profiles.has_key(RPM_TYPE_ID):
+        if not consumer.profiles.has_key(TYPE_ID_RPM):
             _LOG.warn("Consumer [%s] is missing profile information for [%s], found profiles are: %s" % \
-                    (consumer.id, RPM_TYPE_ID, consumer.profiles.keys()))
+                    (consumer.id, TYPE_ID_RPM, consumer.profiles.keys()))
             return applicable_rpms, older_rpms
-        lookup = self.form_lookup_table(consumer.profiles[RPM_TYPE_ID])
+        lookup = self.form_lookup_table(consumer.profiles[TYPE_ID_RPM])
         for errata_rpm in errata_rpms:
-            key = "%s.%s" % (errata_rpm["name"], errata_rpm["arch"])
+            key = self.form_lookup_key(errata_rpm)
             if lookup.has_key(key):
                 installed_rpm = lookup[key]
-                if util.is_rpm_newer(errata_rpm, installed_rpm):
+                is_newer = util.is_rpm_newer(errata_rpm, installed_rpm)
+                _LOG.info("Found a match of rpm <%s> installed on consumer, is %s newer than %s, %s" % (key, errata_rpm, installed_rpm, is_newer))
+                if is_newer:
                     applicable_rpms.append(errata_rpm)
                     older_rpms[key] = {"installed":installed_rpm, "available":errata_rpm}
+            else:
+                _LOG.info("rpm %s was not found in consumer profile of %s" % (key, consumer.id))
         return applicable_rpms, older_rpms
 
     def form_lookup_table(self, rpms):
@@ -253,13 +262,20 @@ class RPMErrataProfiler(Profiler):
         for r in rpms:
             # Assuming that only 1 name.arch is allowed to be installed on a machine
             # therefore we will handle only one name.arch in the lookup table
-            key = "%s.%s" % (r["name"], r["arch"])
+            key = self.form_lookup_key(r)
             lookup[key] = r
         return lookup
 
+    def form_lookup_key(self, item):
+        #
+        # This key needs to avoid usage of a "." since it may be stored in mongo
+        # when the upgrade_details are returned for an ApplicableReport
+        #
+        return "%s %s" % (item['name'], item['arch'])
+
     def form_rpm_unit_key(self, rpm_dict):
         unit_key = {}
-        for key in RPM_UNIT_KEY:
+        for key in UNIT_KEY_RPM:
             unit_key[key] = rpm_dict[key]
         return unit_key
 

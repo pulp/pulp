@@ -290,9 +290,15 @@ class RepoGroupMemberSection(PulpCliSection):
                 command.options.remove(option)
 
     def list(self, **kwargs):
+        self.prompt.render_title('Repository Group Members')
+
         group_id = kwargs['group-id']
         criteria = {'fields':('repo_ids',), 'filters':{'id':group_id}}
         repo_group_list = self.context.server.repo_group_search.search(**criteria)
+
+        filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
+        order = filters
+
         if len(repo_group_list) != 1:
             self.prompt.write('Repo group [%s] does not exist on the server' % group_id, tag='not-found')
         else:
@@ -300,8 +306,7 @@ class RepoGroupMemberSection(PulpCliSection):
             if repo_ids:
                 criteria = {'filters':{'id':{'$in':repo_ids}}}
                 repo_list = self.context.server.repo_search.search(**criteria)
-                for repo in repo_list:
-                    self.prompt.render_document(repo)
+                self.prompt.render_document_list(repo_list, filters=filters, order=order)
 
     def add(self, **kwargs):
         group_id = kwargs.pop('group-id')
@@ -363,7 +368,9 @@ class RepoGroupSection(PulpCliSection):
         if 'display-name' in kwargs:
             name = kwargs['display-name']
         description = kwargs['description']
-        notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
+        notes = None
+        if kwargs['note'] is not None:
+            notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)

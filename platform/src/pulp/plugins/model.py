@@ -89,11 +89,12 @@ class RepositoryGroup(object):
     @type working_dir: str
     """
 
-    def __init__(self, id, display_name, description, notes, working_dir=None):
+    def __init__(self, id, display_name, description, notes, repo_ids, working_dir=None):
         self.id = id
         self.display_name = display_name
         self.description = description
         self.notes = notes
+        self.repo_ids = repo_ids
         self.working_dir = working_dir
 
     def __str__(self):

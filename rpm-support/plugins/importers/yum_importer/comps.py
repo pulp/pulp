@@ -19,30 +19,17 @@ import os
 import sys
 import time
 import yum
+from pulp_rpm.common.ids import TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, UNIT_KEY_PKG_GROUP, \
+        METADATA_PKG_GROUP, UNIT_KEY_PKG_CATEGORY, METADATA_PKG_CATEGORY
 from pulp_rpm.yum_plugin import comps_util, util
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 
 _LOG = util.getLogger(__name__)
 
-PKG_GROUP_TYPE_ID="package_group"
-PKG_CATEGORY_TYPE_ID="package_category"
-
-#We are adding the 'repo_id' to unit_key for each group/category
-#to ensure that each group/category is defined only for that given repo_id
-#We do not want to allow sharing a single group or category between repos.
-PKG_GROUP_UNIT_KEY = ("id", "repo_id")
-PKG_GROUP_METADATA = (  "name", "description", "default", "user_visible", "langonly", "display_order", \
-                        "mandatory_package_names", "conditional_package_names",
-                        "optional_package_names", "default_package_names",
-                        "translated_description", "translated_name")
-
-PKG_CATEGORY_UNIT_KEY = ("id", "repo_id")
-PKG_CATEGORY_METADATA = (   "name", "description", "display_order", "translated_name", "translated_description", \
-                            "packagegroupids")
 
 def form_group_unit_key(grp, repo_id):
     unit_key = {}
-    for key in PKG_GROUP_UNIT_KEY:
+    for key in UNIT_KEY_PKG_GROUP:
         if key == "repo_id":
             unit_key["repo_id"] = repo_id
         else:
@@ -51,13 +38,13 @@ def form_group_unit_key(grp, repo_id):
 
 def form_group_metadata(grp):
     metadata = {}
-    for key in PKG_GROUP_METADATA:
+    for key in METADATA_PKG_GROUP:
         metadata[key] = grp[key]
     return metadata
 
 def form_category_unit_key(cat, repo_id):
     unit_key = {}
-    for key in PKG_CATEGORY_UNIT_KEY:
+    for key in UNIT_KEY_PKG_CATEGORY:
         if key == "repo_id":
             unit_key["repo_id"] = repo_id
         else:
@@ -66,7 +53,7 @@ def form_category_unit_key(cat, repo_id):
 
 def form_category_metadata(cat):
     metadata = {}
-    for key in PKG_CATEGORY_METADATA:
+    for key in METADATA_PKG_CATEGORY:
         metadata[key] = cat[key]
     return metadata
 
@@ -131,7 +118,7 @@ def get_new_category_units(available_categories, existing_categories, sync_condu
             new_cats[key] = cat
             unit_key  = form_category_unit_key(cat, repo.id)
             metadata =  form_category_metadata(cat)
-            new_units[key] = sync_conduit.init_unit(PKG_CATEGORY_TYPE_ID, unit_key, metadata, None)
+            new_units[key] = sync_conduit.init_unit(TYPE_ID_PKG_CATEGORY, unit_key, metadata, None)
     return new_cats, new_units
 
 def get_new_group_units(available_groups, existing_groups, sync_conduit, repo):
@@ -161,7 +148,7 @@ def get_new_group_units(available_groups, existing_groups, sync_conduit, repo):
             new_groups[key] = grp
             unit_key  = form_group_unit_key(grp, repo.id)
             metadata =  form_group_metadata(grp)
-            new_units[key] = sync_conduit.init_unit(PKG_GROUP_TYPE_ID, unit_key, metadata, None)
+            new_units[key] = sync_conduit.init_unit(TYPE_ID_PKG_GROUP, unit_key, metadata, None)
     return new_groups, new_units
 
 def get_groups_metadata_file(repo_dir, md_types=None):
@@ -264,7 +251,7 @@ def get_existing_groups(sync_conduit):
      @rtype {():pulp.server.content.plugins.model.Unit}
     """
     existing_units = {}
-    criteria = UnitAssociationCriteria(type_ids=PKG_GROUP_TYPE_ID)
+    criteria = UnitAssociationCriteria(type_ids=TYPE_ID_PKG_GROUP)
     for u in sync_conduit.get_units(criteria=criteria):
         key = u.unit_key['id']
         existing_units[key] = u
@@ -281,7 +268,7 @@ def get_existing_categories(sync_conduit):
      @rtype {():pulp.server.content.plugins.model.Unit}
     """
     existing_units = {}
-    criteria = UnitAssociationCriteria(type_ids=PKG_CATEGORY_TYPE_ID)
+    criteria = UnitAssociationCriteria(type_ids=TYPE_ID_PKG_CATEGORY)
     for u in sync_conduit.get_units(criteria=criteria):
         key = u.unit_key['id']
         existing_units[key] = u

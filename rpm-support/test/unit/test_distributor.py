@@ -25,8 +25,8 @@ from uuid import uuid4
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/")
 
-from yum_distributor.distributor import YumDistributor, YUM_DISTRIBUTOR_TYPE_ID,\
-    RPM_TYPE_ID, SRPM_TYPE_ID
+from yum_distributor.distributor import YumDistributor
+from pulp_rpm.common.ids import TYPE_ID_DISTRIBUTOR_YUM, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import util
 from pulp.plugins.model import RelatedRepository, Repository, Unit
 from pulp.plugins.config import PluginCallConfiguration
@@ -85,9 +85,9 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
 
     def test_metadata(self):
         metadata = YumDistributor.metadata()
-        self.assertEquals(metadata["id"], YUM_DISTRIBUTOR_TYPE_ID)
-        self.assertTrue(RPM_TYPE_ID in metadata["types"])
-        self.assertTrue(SRPM_TYPE_ID in metadata["types"])
+        self.assertEquals(metadata["id"], TYPE_ID_DISTRIBUTOR_YUM)
+        self.assertTrue(TYPE_ID_RPM in metadata["types"])
+        self.assertTrue(TYPE_ID_SRPM in metadata["types"])
 
     def test_validate_config(self):
         repo = mock.Mock(spec=Repository)
@@ -330,7 +330,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         #
         # Now test flipping so https is disabled and http is enabled
         #
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, 
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir,
                 http_publish_dir=self.http_publish_dir, relative_url=relative_url, http=True, https=False)
         report = distributor.publish_repo(repo, publish_conduit, config)
         self.assertTrue(report.success_flag)
@@ -437,8 +437,8 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         repo_i = RelatedRepository("repo_i_id", [config_i])
 
         existing_urls = distributor.form_rel_url_lookup_table([repo_a, repo_d, repo_e, repo_f, repo_g, repo_h])
-        self.assertEqual(existing_urls, {'simple': {'repo_id': repo_d.id, 'url': url_d}, 
-            'abc': {'de': {'fg': {'repo_id': repo_a.id, 'url': url_a}}}, 
+        self.assertEqual(existing_urls, {'simple': {'repo_id': repo_d.id, 'url': url_d},
+            'abc': {'de': {'fg': {'repo_id': repo_a.id, 'url': url_a}}},
             repo_e.id : {'repo_id': repo_e.id, 'url': repo_e.id}, # url_e is empty so we default to use repo id
             repo_h.id : {'repo_id': repo_h.id, 'url': repo_h.id}, # urk_h is None so we default to use repo id
             'bar': {'repo_id': repo_g.id, 'url':url_g}, 'foo': {'repo_id': repo_f.id, 'url': url_f}})
@@ -450,7 +450,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         self.assertEqual(existing_urls, {'abc': {'de': {'kj': {'repo_id': repo_b.id, 'url': url_b}, 'fg': {'repo_id': repo_a.id, 'url': url_a}}}})
 
         existing_urls = distributor.form_rel_url_lookup_table([repo_a, repo_b, repo_c])
-        self.assertEqual(existing_urls, {'abc': {'de': {'kj': {'repo_id': repo_b.id, 'url':url_b}, 
+        self.assertEqual(existing_urls, {'abc': {'de': {'kj': {'repo_id': repo_b.id, 'url':url_b},
             'fg': {'repo_id': repo_a.id, 'url':url_a}}, 'jk': {'fg': {'gfgf': {'gfgf': {'gfre': {'repo_id': repo_c.id, 'url':url_c}}}}}}})
 
         # Add test for exception on duplicate with repos passed in
@@ -471,7 +471,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         # Add test for exception on conflict with a subdir from an existing repo
         caught = False
         try:
-            existing_urls = distributor.form_rel_url_lookup_table([repo_a, conflict_repo_a]) 
+            existing_urls = distributor.form_rel_url_lookup_table([repo_a, conflict_repo_a])
         except Exception, e:
             caught = True
         self.assertTrue(caught)
@@ -483,7 +483,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         repo.id = "test_basic_repo_publish_rel_path_conflict"
         num_units = 10
         relative_url = "rel_a/rel_b/rel_a/"
-        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, 
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir,
                 relative_url=relative_url, http=False, https=True)
 
         url_a = relative_url
@@ -671,7 +671,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
                 self.distributor.publish_repo(self.repo, self.publish_conduit, self.config)
 
             def cancel(self):
-                return self.distributor.cancel_publish_repo(self.repo)
+                return self.distributor.cancel_publish_repo(None, None)
 
         working_dir = os.path.join(self.temp_dir, "test_cancel_publish")
 
@@ -689,8 +689,8 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
                 temp_name = os.path.join(working_dir, temp_name)
                 if not os.path.exists(temp_name):
                     os.symlink(source_rpm, temp_name)
-    
-            config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, 
+
+            config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir,
                 http_publish_dir=self.http_publish_dir, relative_url="rel_temp/",
                 generate_metadata=True, http=True, https=False)
             test_thread = TestPublishThread(working_dir, self.pkg_dir, config)

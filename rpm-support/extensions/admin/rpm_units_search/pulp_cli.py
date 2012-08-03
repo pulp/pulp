@@ -83,7 +83,7 @@ Release:           %(release)s
 Status:            %(status)s
 Reboot Suggested:  %(reboot)s
 
-Packages Affected:
+Updated Packages:
 %(pkgs)s
 
 References:
@@ -313,7 +313,7 @@ class ErrataCommand(PulpCliCommand):
                         description +=  '\n\n'
 
             # Reformat packages affected
-            package_name_list = ['  ' + p['name'] for p in erratum['pkglist'][0]['packages']]
+            package_list = ['  %s-%s:%s.%s' % (p['name'], p['epoch'], p['version'], p['arch']) for p in erratum['pkglist'][0]['packages']]
 
             # Reformat reboot flag
             if erratum['reboot_suggested']:
@@ -343,7 +343,7 @@ class ErrataCommand(PulpCliCommand):
                 'release' : erratum['release'],
                 'status' : erratum['status'],
                 'reboot' : reboot,
-                'pkgs' : '\n'.join(package_name_list),
+                'pkgs' : '\n'.join(package_list),
                 'refs' : references,
             }
 
