@@ -5,3 +5,4 @@ Consumer Client User Guide
    :maxdepth: 2
 
    introduction
+   registration
