@@ -49,7 +49,7 @@ class Deployer:
             shutil.copy(path, target)
 
 
-class TestHandlers(TestCase):
+class HandlerTest(TestCase):
 
     def setUp(self):
         mock_yum.install()
@@ -61,58 +61,267 @@ class TestHandlers(TestCase):
 
     def tearDown(self):
         self.deployer.uninstall()
+        YumBase.reset()
 
-    def validate(self, report, installed=None, updated=None, removed=None):
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 3)
-        self.assertEquals(len(report.details), 1)
-        report = report.details['rpm']
-        self.assertTrue(report['status'])
-        self.assertEquals(len(report['details']['resolved']), 1)
-        if installed:
+class TestPackges(HandlerTest):
+
+    TYPE_ID = 'rpm'
+
+    def verify_succeeded(self, report, installed=[], updated=[], removed=[]):
+        resolved = []
+        deps = []
+        for unit in installed:
+            resolved.append(unit)
             deps = YumBase.INSTALL_DEPS
-        elif updated:
+        for unit in updated:
+            resolved.append(unit)
             deps = YumBase.UPDATE_DEPS
-        elif removed:
+        for unit in removed:
+            resolved.append(unit)
             deps = YumBase.REMOVE_DEPS
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, len(resolved)+len(deps))
+        self.assertEquals(len(report.details), 1)
+        report = report.details[self.TYPE_ID]
+        self.assertTrue(report['status'])
+        self.assertEquals(len(report['details']['resolved']), len(resolved))
         self.assertEquals(len(report['details']['deps']), len(deps))
 
-    def test_install(self):
-        units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'ksh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'gofer'}},
-            {'type_id':'rpm', 'unit_key':{'name':'okaara'}},
-        ]
-        report = self.dispatcher.install(units, {})
-        self.validate(report, installed=units)
-        self.assertFalse(report.reboot['scheduled'])
+    def verify_failed(self, report):
+        self.assertFalse(report.status)
+        self.assertEquals(report.chgcnt, 0)
+        self.assertEquals(len(report.details), 1)
+        report = report.details[self.TYPE_ID]
+        self.assertFalse(report['status'])
+        self.assertTrue('message' in report['details'])
+        self.assertTrue('trace' in report['details'])
 
-    def test_install_reboot(self):
+    def test_install(self):
+        # Setup
         units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'ksh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'gofer'}},
-            {'type_id':'rpm', 'unit_key':{'name':'okaara'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
+        # Test
+        report = self.dispatcher.install(units, {})
+        # Verify
+        self.verify_succeeded(report, installed=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        YumBase.processTransaction.assert_called_once_with()
+
+    def test_install_noapply(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
+        options = {'apply':False}
+        report = self.dispatcher.install(units, options)
+        # Verify
+        self.verify_succeeded(report, installed=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+
+    def test_install_notfound(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':YumBase.UNKNOWN_PKG}},
+        ]
+        # Test
+        report = self.dispatcher.install(units, {})
+        # Verify
+        self.verify_failed(report)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
+
+    def test_install_with_reboot(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
         options = {'reboot':True}
         report = self.dispatcher.install(units, options)
-        self.validate(report, installed=units)
+        # Verify
+        self.verify_succeeded(report, installed=units)
         self.assertTrue(report.reboot['scheduled'])
+        self.assertEquals(report.reboot['details']['minutes'], 1)
+        os.system.assert_called_once_with('shutdown -r +1')
 
     def test_update(self):
+        # Setup
         units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'ksh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'gofer'}},
-            {'type_id':'rpm', 'unit_key':{'name':'okaara'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
+        # Test
         report = self.dispatcher.update(units, {})
-        self.validate(report, updated=units)
+        # Verify
+        self.verify_succeeded(report, updated=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertTrue(YumBase.processTransaction.called)
+
+    def test_update_with_reboot(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
+        options = {'reboot':True, 'minutes':5}
+        report = self.dispatcher.update(units, options)
+        # Verify
+        self.verify_succeeded(report, updated=units)
+        self.assertTrue(report.reboot['scheduled'])
+        self.assertEquals(report.reboot['details']['minutes'], 5)
+        os.system.assert_called_once_with('shutdown -r +5')
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_uninstall(self):
+        # Setup
         units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
+        # Test
         report = self.dispatcher.uninstall(units, {})
-        self.validate(report, removed=units)
+        # Verify
+        self.verify_succeeded(report, removed=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertTrue(YumBase.processTransaction.called)
+
+    def test_uninstall_with_reboot(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'kmod'}},
+        ]
+        # Test
+        options = {'reboot':True}
+        report = self.dispatcher.uninstall(units, options)
+        # Verify
+        self.verify_succeeded(report, removed=units)
+        self.assertTrue(report.reboot['scheduled'])
+        self.assertEquals(report.reboot['details']['minutes'], 1)
+        os.system.assert_called_once_with('shutdown -r +1')
+        self.assertTrue(YumBase.processTransaction.called)
+
+
+class TestGroups(HandlerTest):
+
+    TYPE_ID = 'package_group'
+
+    def verify_succeeded(self, report, installed=[], removed=[]):
+        resolved = []
+        deps = []
+        for group in installed:
+            resolved += [str(p) for p in YumBase.GROUPS[group]]
+            deps = YumBase.INSTALL_DEPS
+        for group in removed:
+            resolved += [str(p) for p in YumBase.GROUPS[group]]
+            deps = YumBase.REMOVE_DEPS
+        self.assertTrue(report.status)
+        self.assertEquals(report.chgcnt, len(resolved)+len(deps))
+        self.assertEquals(len(report.details), 1)
+        report = report.details[self.TYPE_ID]
+        self.assertTrue(report['status'])
+        self.assertEquals(len(report['details']['resolved']), len(resolved))
+        self.assertEquals(len(report['details']['deps']), len(deps))
+
+    def verify_failed(self, report):
+        self.assertFalse(report.status)
+        self.assertEquals(report.chgcnt, 0)
+        self.assertEquals(len(report.details), 1)
+        report = report.details[self.TYPE_ID]
+        self.assertFalse(report['status'])
+        self.assertTrue('message' in report['details'])
+        self.assertTrue('trace' in report['details'])
+
+    def test_install(self):
+        # Setup
+        groups = ['mygroup', 'pulp']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        report = self.dispatcher.install(units, {})
+        # Verify
+        self.verify_succeeded(report, installed=groups)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertTrue(YumBase.processTransaction.called)
+
+    def test_install_notfound(self):
+        # Setup
+        groups = ['mygroup', 'pulp', 'xxxx']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        report = self.dispatcher.install(units, {})
+        # Verify
+        self.verify_failed(report)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        self.assertFalse(YumBase.processTransaction.called)
+
+    def test_install_with_reboot(self):
+        # Setup
+        groups = ['mygroup']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        options = {'reboot':True}
+        report = self.dispatcher.install(units, options)
+        # Verify
+        self.verify_succeeded(report, installed=groups)
+        self.assertTrue(report.reboot['scheduled'])
+        self.assertEquals(report.reboot['details']['minutes'], 1)
+        self.assertTrue(YumBase.processTransaction.called)
+        os.system.assert_called_once_with('shutdown -r +1')
+
+    def test_uninstall(self):
+        # Setup
+        groups = ['mygroup', 'pulp']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        report = self.dispatcher.uninstall(units, {})
+        # Verify
+        self.verify_succeeded(report, removed=groups)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        YumBase.processTransaction.assert_called_once_with()
+
+    def test_uninstall_with_reboot(self):
+        # Setup
+        groups = ['mygroup']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        options = {'reboot':True}
+        report = self.dispatcher.uninstall(units, options)
+        # Verify
+        self.verify_succeeded(report, removed=groups)
+        self.assertTrue(report.reboot['scheduled'])
+        self.assertEquals(report.reboot['details']['minutes'], 1)
+        os.system.assert_called_once_with('shutdown -r +1')
+        YumBase.processTransaction.assert_called_once_with()
+
+
+class TestBind(TestCase):
+    # TBD
+    pass
