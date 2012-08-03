@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 0.0.321
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -67,6 +67,7 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
 %{_usr}/lib/pulp/admin/extensions/pulp_upload/
 %{_usr}/lib/pulp/admin/extensions/pulp_user/
+%{_usr}/lib/pulp/admin/extensions/pulp_server_info/
 %doc
 
 
