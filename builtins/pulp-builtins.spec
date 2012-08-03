@@ -91,6 +91,9 @@ client capabilities.
 
 
 %changelog
+* Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-2
+- packaging, add pulp_server_info extension. 
+
 * Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-1
 - 
 
