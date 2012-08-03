@@ -130,6 +130,23 @@ class TestPackges(HandlerTest):
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
         self.assertFalse(YumBase.processTransaction.called)
+        
+    def test_install_importkeys(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
+        options = {'importkeys':True}
+        report = self.dispatcher.install(units, options)
+        # Verify
+        self.verify_succeeded(report, installed=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        YumBase.processTransaction.assert_called_once_with()
 
     def test_install_notfound(self):
         # Setup
@@ -197,6 +214,23 @@ class TestPackges(HandlerTest):
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
         self.assertFalse(YumBase.processTransaction.called)
+        
+    def test_update_importkeys(self):
+        # Setup
+        units = [
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'zsh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'ksh'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'gofer'}},
+            {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
+        ]
+        # Test
+        options = {'importkeys':True}
+        report = self.dispatcher.update(units, options)
+        # Verify
+        self.verify_succeeded(report, updated=units)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        YumBase.processTransaction.assert_called_once_with()
 
     def test_update_with_reboot(self):
         # Setup
@@ -298,6 +332,19 @@ class TestGroups(HandlerTest):
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
         report = self.dispatcher.install(units, {})
+        # Verify
+        self.verify_succeeded(report, installed=groups)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(os.system.called)
+        YumBase.processTransaction.assert_called_once_with()
+        
+    def test_install_importkeys(self):
+        # Setup
+        groups = ['mygroup', 'pulp']
+        units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
+        # Test
+        options = {'importkeys':True}
+        report = self.dispatcher.install(units, options)
         # Verify
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
