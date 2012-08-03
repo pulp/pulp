@@ -72,7 +72,6 @@ class TestRepoGroupMemberSection(unittest.TestCase):
         self.section.list(**params)
 
         # verify
-        self.assertEqual(
-            self.section.context.server.repo_search.search.call_count, 1)
-        self.section.prompt.render_document.assert_called_once_with({'id':'repo1'})
+        self.assertEqual(self.section.context.server.repo_search.search.call_count, 1)
+        self.assertEqual(self.section.prompt.render_document_list.call_count, 1)
 
