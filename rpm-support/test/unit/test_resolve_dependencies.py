@@ -50,8 +50,7 @@ class TestResolveDeps(rpm_support_base.PulpRPMTests):
 
     def test_resolve_deps(self):
         repo = mock.Mock(spec=Repository)
-        repo.working_dir = self.working_dir
-        repo.importer_working_dir = "%s/%s" % (self.data_dir, "test_resolve_deps")
+        repo.working_dir = "%s/%s" % (self.data_dir, "test_resolve_deps")
         repo.id = "test_resolve_deps"
 
         unit_key_a = {'id' : '','name' :'pulp-server', 'version' :'0.0.309', 'release' : '1.fc17', 'epoch':'0', 'arch' : 'noarch', 'checksumtype' : 'sha256',
@@ -66,8 +65,7 @@ class TestResolveDeps(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config()
         importer = YumImporter()
         units = [Unit(RPM_TYPE_ID, unit_key_b, {}, '')]
-        report = importer.resolve_dependencies(repo, units, dependency_conduit, config)
-        self.assertTrue(report.success_flag)
-        self.assertTrue(report.summary is not None)
-        self.assertTrue(report.details is not None)
-        self.assertEqual(len(list(itertools.chain(*report.summary['resolved'].values()))), 1)
+        result = importer.resolve_dependencies(repo, units, dependency_conduit, config)
+        print result
+        self.assertEqual(len(list(itertools.chain(*result['resolved'].values()))), 1)
+        self.assertEqual(len(list(itertools.chain(*result['unresolved'].values()))), 0)

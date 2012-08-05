@@ -29,11 +29,13 @@ class LinuxHandler(SystemHandler):
         Schedule a system reboot.
         """
         report = RebootReport()
+        details = {}
         apply = options.get('apply', True)
         if apply:
-            minutes = options.get('minutes', 10)
+            minutes = options.get('minutes', 1)
             command = 'shutdown -r +%d' % minutes
             log.info(command)
             os.system(command)
-        report.succeeded()
+            details = dict(minutes=minutes)
+        report.succeeded(details=details)
         return report

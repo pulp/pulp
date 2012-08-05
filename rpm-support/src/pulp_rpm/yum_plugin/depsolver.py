@@ -40,7 +40,7 @@ class DepSolver:
         """
         for repo in self.repos:
             self.yrepo = yum.yumRepo.YumRepository(repo.id)
-            self.yrepo.baseurl = ["file://%s" % str(repo.importer_working_dir)]
+            self.yrepo.baseurl = ["file://%s" % str(repo.working_dir)]
             self.yrepo.basecachedir = CACHE_DIR
             self._repostore.add(self.yrepo)
 

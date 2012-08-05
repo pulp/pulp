@@ -57,9 +57,9 @@ class Task(object):
     Contains the data received from a call to the server that describes an
     asynchronous call queued or running on the server.
 
-    This class provides a number of utility methods for interpretting the state
+    This class provides a number of utility methods for interpreting the state
     of the task which should be used whenever possible instead of manually
-    interpretting the structure of the data within.
+    interpreting the structure of the data within.
     """
 
     def __init__(self, response_body):

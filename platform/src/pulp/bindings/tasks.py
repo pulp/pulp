@@ -118,3 +118,37 @@ class TasksAPI(PulpAPI):
         publish_tag = tag_util.action_tag(tag_util.ACTION_PUBLISH_TYPE)
         return self.get_all_tasks(tags=[repo_tag, publish_tag])
 
+
+class TaskGroupsAPI(PulpAPI):
+
+    def __int__(self, pulp_connection):
+        super(TaskGroupsAPI, self).__init__(pulp_connection)
+
+    def cancel_task_group(self, task_group_id):
+        """
+        Cancel a given task group. The individual tasks must support cancellation
+        or must not have begun.
+
+        @param task_group_id: ID of the task group to cancel
+        @type task_group_id: str
+        @return: response
+        @rtype: Response
+        """
+        path = '/v2/task_groups/%s/' % task_group_id
+        response = self.server.DELETE(path)
+        return response
+
+    def get_task_group(self, task_group_id):
+        """
+        Retrieves the status of all tasks in the task group.
+
+        @param task_group_id: ID of the task group to retrieve
+        @type task_group_id: str
+        @return: response with the status of all tasks in the task group in its body
+        @rtype: Response
+        """
+        path = 'v2/task_groups/%s/' % task_group_id
+        response = self.server.GET(path)
+        response.response_body = [Task(t) for t in response.response_body]
+        return response
+

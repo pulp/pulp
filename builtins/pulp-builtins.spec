@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.320
-Release: 1%{?dist}
+Version: 0.0.321
+Release: 2%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -67,6 +67,7 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
 %{_usr}/lib/pulp/admin/extensions/pulp_upload/
 %{_usr}/lib/pulp/admin/extensions/pulp_user/
+%{_usr}/lib/pulp/admin/extensions/pulp_server_info/
 %doc
 
 
@@ -90,6 +91,12 @@ client capabilities.
 
 
 %changelog
+* Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-2
+- packaging, add pulp_server_info extension. 
+
+* Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-1
+- 
+
 * Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
 -
 

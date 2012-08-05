@@ -485,22 +485,7 @@ class YumImporter(Importer):
 
     def resolve_dependencies(self, repo, units, dependency_conduit, config):
         _LOG.info("Resolve Dependencies Invoked")
-        try:
-            status, summary, details = self._resolve_dependencies(repo, units, dependency_conduit, config)
-            if status:
-                report = SyncReport(True, 0, 0, 0, summary, details)
-            else:
-                report = SyncReport(False, 0, 0, 0, summary, details)
-        except Exception, e:
-            _LOG.error("Caught Exception: %s" % (e))
-            summary = {}
-            summary["error"] = str(e)
-            report = SyncReport(False, 0, 0, 0, summary, None)
-        return report
-
-    def _resolve_dependencies(self, repo, units, dependency_conduit, config):
-        summary = {}
-        details = {'errors' : []}
+        result_dict = {}
         pkglist =  []
         for unit in units:
             if unit.type_id == 'rpm':
@@ -524,12 +509,11 @@ class YumImporter(Importer):
                 epkg = existing_units[pkg]
                 dep_pkgs_map[dep].append(epkg)
         _LOG.debug("deps packages suggested %s" % solved)
-        summary['resolved'] = dep_pkgs_map
-        summary['unresolved'] = unsolved
-        details['printable_dependency_result'] = dsolve.printable_result(results)
+        result_dict['resolved'] = dep_pkgs_map
+        result_dict['unresolved'] = unsolved
+        result_dict['printable_dependency_result'] = dsolve.printable_result(results)
         dsolve.cleanup()
-        summary['state'] = 'FINISHED'
-        return True, summary, details
+        return result_dict
 
     def cancel_sync_repo(self, call_request, call_report):
         self.canceled = True

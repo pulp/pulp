@@ -57,7 +57,8 @@ class RunSyncCommand(PulpCliCommand):
         else:
             # Trigger the actual sync
             response = self.context.server.repo_actions.sync(repo_id, None)
-            task_id = response.response_body.task_id
+            sync_task = tasks.sync_task_in_sync_task_group(response.response_body)
+            task_id = sync_task.task_id
 
         if foreground:
             status.display_status(self.context, task_id)

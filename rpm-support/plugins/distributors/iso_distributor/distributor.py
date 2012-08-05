@@ -31,6 +31,7 @@ REQUIRED_CONFIG_KEYS = ["http", "https"]
 OPTIONAL_CONFIG_KEYS = ["generate_metadata", "https_publish_dir","http_publish_dir", "start_date", "end_date"]
 
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/isos"
+HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/isos"
 
 ###
 # Config Options Explained
@@ -51,13 +52,12 @@ HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/isos"
 # - implement ability to skip content types from exports
 # - ability to cancel exports
 # - iso naming is standardized; provide optional override
-# - start/end dates are date strings same format as in updateinfo,
-#   should we consider converting them to iso standard when storing in db and converting them back?
 
 class ISODistributor(Distributor):
 
     def __init__(self):
         super(ISODistributor, self).__init__()
+        self.canceled = False
 
     @classmethod
     def metadata(cls):
@@ -183,6 +183,9 @@ class ISODistributor(Distributor):
 
         self.repo_working_dir = repo_working_dir = repo.working_dir
 
+        if self.canceled:
+            return publish_conduit.build_failure_report(summary, details)
+
         date_filter = self.create_date_range_filter(config)
         if date_filter:
             # export errata by date and associated rpm units
@@ -194,6 +197,8 @@ class ISODistributor(Distributor):
             rpm_units = self._get_errata_rpms(errata_units, rpm_units)
             rpm_status, rpm_errors = self._export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
             progress_status["rpms"]["state"] = "FINISHED"
+            if self.canceled:
+                return publish_conduit.build_failure_report(summary, details)
             # generate metadata
             metadata_status, metadata_errors = metadata.generate_metadata(
                     repo, publish_conduit, config, progress_callback)
@@ -220,7 +225,8 @@ class ISODistributor(Distributor):
             existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
             existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
             groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
-
+            if self.canceled:
+                return publish_conduit.build_failure_report(summary, details)
             # generate metadata
             metadata_status, metadata_errors = metadata.generate_metadata(
                     repo, publish_conduit, config, progress_callback, groups_xml_path)

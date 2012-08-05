@@ -15,6 +15,9 @@
 Functions for working with sync/publish tasks in the server.
 """
 
+from pulp.common import tags
+
+
 def relevant_existing_task_id(existing_sync_tasks):
     """
     Analyzes the list of existing sync tasks to determine which should be
@@ -49,3 +52,20 @@ def relevant_existing_task_id(existing_sync_tasks):
 
     return task_id
 
+
+def sync_task_in_sync_task_group(tasks):
+    """
+    Grok through the tasks returned from the server's repo sync call and find
+    the task that pertains to the sync itself.
+
+    @param tasks: list of tasks
+    @type tasks: list
+    @return: task for the sync
+    @rtype: Task
+    """
+    sync_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
+    for t in tasks:
+        if sync_tag in t.tags:
+            return t
+    # XXX raise an exception? jconnor (2012-08-03)
+    return None

@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.320
+Version: 0.0.321
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,10 @@ exit 0
 %endif
 
 %changelog
+* Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-1
+- Changed dependency resolution API to return the plugin report directly
+  (jason.dobies@redhat.com)
+
 * Wed Aug 01 2012 Jeff Ortel <jortel@redhat.com> 0.0.320-1
 - 
 
