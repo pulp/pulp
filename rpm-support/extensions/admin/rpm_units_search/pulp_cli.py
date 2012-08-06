@@ -313,7 +313,7 @@ class ErrataCommand(PulpCliCommand):
                         description +=  '\n\n'
 
             # Reformat packages affected
-            package_list = ['  %s-%s:%s.%s' % (p['name'], p['epoch'], p['version'], p['arch']) for p in erratum['pkglist'][0]['packages']]
+            package_list = ['  %s-%s:%s-%s.%s' % (p['name'], p['epoch'], p['version'], p['release'], p['arch']) for p in erratum['pkglist'][0]['packages']]
 
             # Reformat reboot flag
             if erratum['reboot_suggested']:
