@@ -47,16 +47,16 @@ class RoleSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        name_option = PulpCliOption('--name', 'uniquely identifies the role; only alphanumeric, -, and _ allowed', required=True)
+        id_option = PulpCliOption('--role-id', 'uniquely identifies the role; only alphanumeric, -, and _ allowed', required=True)
 
         # Create command
         create_command = PulpCliCommand('create', 'creates a role', self.create)
-        create_command.add_option(name_option)
+        create_command.add_option(id_option)
         self.add_command(create_command)
 
         # Delete Command
         delete_command = PulpCliCommand('delete', 'deletes a role', self.delete)
-        delete_command.add_option(PulpCliOption('--name', 'identifies the role to be deleted', required=True))
+        delete_command.add_option(PulpCliOption('--role-id', 'identifies the role to be deleted', required=True))
         self.add_command(delete_command)
 
         # List Command
@@ -68,14 +68,14 @@ class RoleSection(PulpCliSection):
         # 
 
     def create(self, **kwargs):
-        name = kwargs['name']
+        name = kwargs['role-id']
 
         # Call the server
         self.context.server.role.create(name)
         self.prompt.render_success_message('Role [%s] successfully created' % name)
 
     def delete(self, **kwargs):
-        name = kwargs['name']
+        name = kwargs['role-id']
         try:
             self.context.server.role.delete(name)
             self.prompt.render_success_message('Role [%s] successfully deleted' % name)
@@ -113,23 +113,23 @@ class UserSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
         
         # Common Options
-        name_option = PulpCliOption('--name', 'identifies the role', required=True)
+        id_option = PulpCliOption('--role-id', 'identifies the role', required=True)
         login_option = PulpCliOption('--login', 'identifies the user', required=True)
         
         # AddUser command
         add_user_command = PulpCliCommand('add', 'adds user to a role', self.add_user)
-        add_user_command.add_option(name_option)
+        add_user_command.add_option(id_option)
         add_user_command.add_option(login_option)
         self.add_command(add_user_command)
         
         # RemoveUser command
         remove_user_command = PulpCliCommand('remove', 'removes user from a role', self.remove_user)
-        remove_user_command.add_option(name_option)
+        remove_user_command.add_option(id_option)
         remove_user_command.add_option(login_option)
         self.add_command(remove_user_command)
         
     def add_user(self, **kwargs):
-        name = kwargs['name']
+        name = kwargs['role-id']
         login = kwargs['login']
 
         # Call the server
@@ -137,7 +137,7 @@ class UserSection(PulpCliSection):
         self.prompt.render_success_message('User [%s] successfully added to role [%s]' % (login, name))
 
     def remove_user(self, **kwargs):
-        name = kwargs['name']
+        name = kwargs['role-id']
         login = kwargs['login']
 
         # Call the server
