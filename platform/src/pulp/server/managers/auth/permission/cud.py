@@ -19,7 +19,7 @@ from gettext import gettext as _
 
 import logging
 
-from pulp.server.db.model.auth import Permission
+from pulp.server.db.model.auth import Permission, User
 from pulp.server.auth.authorization import _get_operations
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException, PulpExecutionException
 from pulp.server.managers import factory
@@ -123,24 +123,32 @@ class PermissionManager(object):
         Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
 
 
-    def grant(self, resource, user, operations):
+    def grant(self, resource, login, operations):
         """
         Grant permission on a resource for a user and a set of operations.
         
         @type resource: str
         @param resource: uri path representing a pulp resource
         
-        @type user: L{pulp.server.db.model.auth.User} instance
-        @param user: user to grant permissions to
+        @type user: str
+        @param user: login of user to grant permissions to
         
         @type operations: list or tuple
         @param operations:list of allowed operations being granted
         """
+        user = User.get_collection().find_one({'login' : login})
+        if user is None:
+            raise MissingResource(user=login)
+        
         # Get or create permission if it doesn't already exist
         permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:
             permission = self.create_permission(resource)
-        
+            
+        _LOG.info("$$$$$$$$$$ resource %s login %s" % (resource, login))
+        _LOG.info("$$$$$$$$$$ operations %s" % operations)
+        _LOG.info("$$$$$$$$$$ permission %s" % permission)
+
         current_ops = permission['users'].setdefault(user['login'], [])
         for o in operations:
             if o in current_ops:
@@ -149,19 +157,23 @@ class PermissionManager(object):
 
         Permission.get_collection().save(permission, safe=True)
 
-    def revoke(self, resource, user, operations):
+    def revoke(self, resource, login, operations):
         """
         Revoke permission on a resource for a user and a set of operations.
         
         @type resource: str
         @param resource: uri path representing a pulp resource
         
-        @type user: L{pulp.server.db.model.User} instance
-        @param user: user to revoke permissions from
+        @type user: str
+        @param user: login of user to revoke permissions from
         
         @type operations: list or tuple
         @param operations:list of allowed operations being revoked
         """
+        user = User.get_collection().find_one({'login' : login})
+        if user is None:
+            raise MissingResource(user=user)
+
         permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:
             return
@@ -205,7 +217,7 @@ class PermissionManager(object):
                                (user, resource))
             
         operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
-        self.grant(resource, user, operations)
+        self.grant(resource, user['login'], operations)
         return True
 
 
@@ -217,12 +229,12 @@ class PermissionManager(object):
         @param login: login of the new user
         @type  login: str
         """
-        user = factory.user_query_manager().find_by_login(login)
-        self.grant('/users/%s/' % login, user, [READ, UPDATE])
-        self.grant('/users/admin_certificate/', user, [READ])
-        self.grant('/v2/actions/', user, [READ, UPDATE])
-        self.grant('/v2/users/%s/' % login, user, [READ, UPDATE])
-        self.grant('/v2/users/admin_certificate/', user, [READ])
+        self.grant('/users/%s/' % login, login, [READ, UPDATE])
+        self.grant('/users/admin_certificate/', login, [READ])
+        self.grant('/v2/actions/login/', login, [READ, UPDATE])
+        self.grant('/v2/actions/logout/', login, [READ, UPDATE])
+        self.grant('/v2/users/%s/' % login, login, [READ, UPDATE])
+        self.grant('/v2/users/admin_certificate/', login, [READ])
         
 
     def revoke_permission_from_user(self, resource, login, operation_names):
@@ -240,9 +252,8 @@ class PermissionManager(object):
         @rtype: bool
         @return: True on success
         """
-        user = factory.user_query_manager().find_by_login(login)
         operations = _get_operations(operation_names)
-        self.revoke(resource, user, operations)
+        self.revoke(resource, login, operations)
         return True
         
     
@@ -256,11 +267,10 @@ class PermissionManager(object):
         @rtype: bool
         @return: True on success
         """
-        user = factory.user_query_manager().find_by_login(login)
         for permission in factory.permission_query_manager().find_all():
-            if user['login'] not in permission['users']:
+            if login not in permission['users']:
                 continue
-            del permission['users'][user['login']]
+            del permission['users'][login]
             Permission.get_collection().save(permission, safe=True)
             
         return True

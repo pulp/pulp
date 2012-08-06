@@ -144,7 +144,7 @@ class RoleManager(object):
             for user in users:
                 other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
                 user_ops = _operations_not_granted_by_roles(resource, operations, other_roles)
-                factory.permission_manager().revoke(resource, user, user_ops)
+                factory.permission_manager().revoke(resource, user['login'], user_ops)
 
         for user in users:
             user['roles'].remove(name)
@@ -245,7 +245,7 @@ class RoleManager(object):
         User.get_collection().save(user, safe=True)
         
         for resource, operations in role['permissions'].items():
-            factory.permission_manager().grant(resource, user, operations)
+            factory.permission_manager().grant(resource, login, operations)
         return True
 
 
@@ -289,14 +289,14 @@ class RoleManager(object):
             user_ops = _operations_not_granted_by_roles(resource,
                                                         operations,
                                                         other_roles)
-            factory.permission_manager().revoke(resource, user, user_ops)
+            factory.permission_manager().revoke(resource, login, user_ops)
         return True
  
         
         
     def ensure_super_user_role(self):
         """
-        Assure the super user role exists.
+        Ensure that the super user role exists.
         """
         role_query_manager = factory.role_query_manager()
         role = role_query_manager.find_by_name(super_user_role)

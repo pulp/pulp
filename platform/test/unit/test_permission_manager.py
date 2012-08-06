@@ -77,7 +77,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.CREATE
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u, [n])
+        self.permission_manager.grant(r, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
 
     def test_user_read_failure(self):
@@ -91,7 +91,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u, [n])
+        self.permission_manager.grant(r, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
 
     def test_user_update_failure(self):
@@ -105,7 +105,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.UPDATE
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u, [n])
+        self.permission_manager.grant(r, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
 
     def test_user_delete_failure(self):
@@ -119,7 +119,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.DELETE
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u, [n])
+        self.permission_manager.grant(r, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
 
     def test_user_execute_failure(self):
@@ -133,7 +133,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.EXECUTE
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u, [n])
+        self.permission_manager.grant(r, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
 
     def test_user_permission_revoke(self):
@@ -141,9 +141,9 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u, [n])
+        self.permission_manager.grant(r, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
-        self.permission_manager.revoke(r, u, [n])
+        self.permission_manager.revoke(r, u['login'], [n])
         self.assertFalse(self.user_query_manager.is_authorized(r, u, o))
 
     def test_parent_permissions(self):
@@ -152,7 +152,7 @@ class RoleManagerTests(base.PulpServerTests):
         p = r.rsplit('/', 2)[0] + '/'
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant(p, u, [n])
+        self.permission_manager.grant(p, u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
 
     def test_root_permissions(self):
@@ -160,7 +160,7 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         o = authorization.READ
         n = authorization.operation_to_name(o)
-        self.permission_manager.grant('/', u, [n])
+        self.permission_manager.grant('/', u['login'], [n])
         self.assertTrue(self.user_query_manager.is_authorized(r, u, o))
         
 

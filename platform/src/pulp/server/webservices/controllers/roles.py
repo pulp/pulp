@@ -86,7 +86,7 @@ class RoleResource(JSONController):
     @auth_required(READ)
     def GET(self, name):
 
-        manager = managers.role_query_manager()()
+        manager = managers.role_query_manager()
         role = manager.find_by_name(name)
        
         role['users'] = [u['login'] for u in

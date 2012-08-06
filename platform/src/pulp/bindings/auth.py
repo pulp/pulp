@@ -86,3 +86,43 @@ class RoleAPI(PulpAPI):
         path = self.base_path + "%s/" % name + 'users/' +  "%s/" % login
         return self.server.DELETE(path)
 
+class PermissionAPI(PulpAPI):
+    """
+    Connection class to access permission specific calls
+    """
+    def __init__(self, pulp_connection):
+        super(PermissionAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/permissions/"
+    
+    def permission(self, resource):
+        path = self.base_path 
+        query_parameters = {'resource' : resource} 
+        return self.server.GET(path, query_parameters)
+    
+    def grant_to_user(self, resource, login, operations):
+        path = self.base_path + "user/grant/"
+        data = {"resource": resource, 
+                "login": login,
+                "operations": operations}
+        return self.server.POST(path, data)
+    
+    def grant_to_role(self, resource, name, operations):
+        path = self.base_path + "role/grant/"
+        data = {"resource": resource, 
+                "name": name,
+                "operations": operations}
+        return self.server.POST(path, data)
+    
+    def revoke_from_user(self, resource, login, operations):
+        path = self.base_path + "user/revoke/"
+        data = {"resource": resource, 
+                "login": login,
+                "operations": operations}
+        return self.server.POST(path, data)
+    
+    def revoke_from_role(self, resource, name, operations):
+        path = self.base_path + "role/revoke/"
+        data = {"resource": resource, 
+                "name": name,
+                "operations": operations}
+        return self.server.POST(path, data)
