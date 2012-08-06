@@ -292,6 +292,7 @@ class ISODistributor(Distributor):
                 progress_status = isogen.run()
                 summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
+                progress_status["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:
