@@ -82,10 +82,12 @@ class PermissionSection(PulpCliSection):
         
         if login is None and role_id is None:
             self.prompt.render_failure_message('No user login or role id specified to grant permissions to.')
-        
+            return
+
         if login and role_id:
             self.prompt.render_failure_message('Both user login and role id specified. Please specify either user login OR role id.')
-       
+            return
+
         if login:
             self.context.server.permission.grant_to_user(resource, login, operations)
             self.prompt.render_success_message('Permissions [%s : %s] successfully granted to user [%s]' % (resource, operations, login))
@@ -101,14 +103,16 @@ class PermissionSection(PulpCliSection):
         
         if login is None and role_id is None:
             self.prompt.render_failure_message('No user login or role id specified to revoke permissions from.')
-        
+            return
+
         if login and role_id:
             self.prompt.render_failure_message('Both user login and role id specified. Please specify either user login OR role id.')
-       
+            return
+
         if login:
-            self.context.server.permission.grant_to_user(resource, login, operations)
+            self.context.server.permission.revoke_from_user(resource, login, operations)
             self.prompt.render_success_message('Permissions [%s : %s] successfully revoked from user [%s]' % (resource, operations, login))
         else:
-            self.context.server.permission.grant_to_role(resource, role_id, operations)
+            self.context.server.permission.revoke_from_role(resource, role_id, operations)
             self.prompt.render_success_message('Permissions [%s : %s] successfully revoked from role [%s]' % (resource, operations, role_id))
 
