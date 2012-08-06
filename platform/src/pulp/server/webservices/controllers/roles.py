@@ -179,7 +179,7 @@ class RoleUser(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
                 action_tag('remove_user_from_role')]
         call_request = CallRequest(role_manager.remove_user_from_role,
-                                   [name],
+                                   [name, login],
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
