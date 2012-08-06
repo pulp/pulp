@@ -14,6 +14,7 @@
 from pulp.bindings.actions import ActionsAPI
 from pulp.bindings.repo_groups import *
 from pulp.bindings.repository import *
+from pulp.bindings.consumer_groups import *
 from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI
 from pulp.bindings.tasks import TasksAPI, TaskGroupsAPI
@@ -34,6 +35,11 @@ class Bindings(object):
         self.profile = ProfilesAPI(pulp_connection)
         self.consumer = ConsumerAPI(pulp_connection)
         self.consumer_content = ConsumerContentAPI(pulp_connection)
+        self.consumer_group = ConsumerGroupAPI(pulp_connection)
+        self.consumer_group_search = ConsumerGroupSearchAPI(pulp_connection)
+        self.consumer_group_actions = ConsumerGroupActionAPI(pulp_connection)
+        self.consumer_group_bind = ConsumerGroupBindAPI(pulp_connection)
+        self.consumer_group_content = ConsumerGroupContentAPI(pulp_connection)
         self.consumer_history = ConsumerHistoryAPI(pulp_connection)
         self.consumer_search = ConsumerSearchAPI(pulp_connection)
         self.repo = RepositoryAPI(pulp_connection)

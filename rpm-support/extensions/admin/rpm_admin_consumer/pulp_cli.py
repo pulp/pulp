@@ -13,6 +13,9 @@
 
 from gettext import gettext as _
 
+from consumer_group_bind import (ConsumerGroupBindCommand,
+                                 ConsumerGroupUnbindCommand)
+from consumer_group_package import ConsumerGroupPackageSection
 from bind import BindCommand, UnbindCommand
 from errata import ErrataSection
 from group import GroupSection
@@ -38,3 +41,19 @@ def initialize(context):
     parent_section.add_command(UnbindCommand(context, 'unbind', _(m)))
 
     parent_section.remove_subsection('content')
+
+    # Replace the bind/unbind command for consumer groups
+    consumer_group_section = parent_section.find_subsection('group')
+
+    consumer_group_section.remove_command('bind')
+    m = _('binds each consumer in a consumer group to a repository')
+    consumer_group_section.add_command(
+        ConsumerGroupBindCommand(context, 'bind', m))
+
+    consumer_group_section.remove_command('unbind')
+    m = _('unbinds each consumer in a consumer group from a repository')
+    consumer_group_section.add_command(
+        ConsumerGroupUnbindCommand(context, 'unbind', m))
+
+    # New subsections for group subsection
+    consumer_group_section.add_subsection(ConsumerGroupPackageSection(context))

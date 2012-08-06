@@ -29,8 +29,10 @@ do so may indirectly break other tests.
 TYPE_CDS                    = 'cds-manager'
 TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
-TYPE_CONSUMER_APPLICABILITY = 'consumer-applicability-manager',
+TYPE_CONSUMER_APPLICABILITY = 'consumer-applicability-manager'
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
+TYPE_CONSUMER_GROUP         = 'consumer-group-manager'
+TYPE_CONSUMER_GROUP_QUERY   = 'consumer-group-query-manager'
 TYPE_CONSUMER_HISTORY       = 'consumer-history-manager'
 TYPE_CONSUMER_PROFILE       = 'consumer-profile-manager'
 TYPE_CONSUMER_QUERY         = 'consumer-query-manager'
@@ -110,6 +112,18 @@ def consumer_bind_manager():
     @rtype: L{pulp.server.managers.consumer.bind.BindManager}
     """
     return get_manager(TYPE_CONSUMER_BIND)
+
+def consumer_group_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.group.ConsumerGroupManager}
+    """
+    return get_manager(TYPE_CONSUMER_GROUP)
+
+def consumer_group_query_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.group.ConsumerGroupQueryManager}
+    """
+    return get_manager(TYPE_CONSUMER_GROUP_QUERY)
 
 def consumer_query_manager():
     """
@@ -274,6 +288,8 @@ def initialize():
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.applicability import ApplicabilityManager
     from pulp.server.managers.consumer.bind import BindManager
+    from pulp.server.managers.consumer.group.cud import ConsumerGroupManager
+    from pulp.server.managers.consumer.group.query import ConsumerGroupQueryManager
     from pulp.server.managers.consumer.history import ConsumerHistoryManager
     from pulp.server.managers.consumer.profile import ProfileManager
     from pulp.server.managers.consumer.query import ConsumerQueryManager
@@ -306,6 +322,8 @@ def initialize():
         TYPE_CONSUMER_AGENT: AgentManager,
         TYPE_CONSUMER_APPLICABILITY: ApplicabilityManager,
         TYPE_CONSUMER_BIND: BindManager,
+        TYPE_CONSUMER_GROUP: ConsumerGroupManager,
+        TYPE_CONSUMER_GROUP_QUERY: ConsumerGroupQueryManager,
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
         TYPE_CONSUMER_PROFILE: ProfileManager,
         TYPE_CONSUMER_QUERY: ConsumerQueryManager,

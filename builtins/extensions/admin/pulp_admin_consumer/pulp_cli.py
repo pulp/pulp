@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import time
 from gettext import gettext as _
 
@@ -24,6 +25,7 @@ from pulp.client.search import SearchCommand
 def initialize(context):
     consumer_section = AdminConsumerSection(context)
     consumer_section.add_subsection(ContentSection(context))
+    consumer_section.add_subsection(ConsumerGroupSection(context))
     context.cli.add_section(consumer_section)
     
 # -- common exceptions --------------------------------------------------------
@@ -544,3 +546,214 @@ class UninstallContent(PollingCommand):
                     message=report['details']['message'])
                 order = ['status', 'message']
                 prompt.render_document(d, order=order)
+
+class ConsumerGroupMemberSection(PulpCliSection):
+    def __init__(self, context):
+        super(ConsumerGroupMemberSection, self).__init__('members', _('manage members of consumer groups'))
+        self.context = context
+        self.prompt = context.prompt
+
+        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True)
+
+        list_command = PulpCliCommand('list', _('list of consumers in a particular group'), self.list)
+        list_command.add_option(id_option)
+        self.add_command(list_command)
+
+        add_command = SearchCommand(self.add, name='add', 
+            description=_('add consumers based on search parameters'))
+        add_command.add_option(id_option)
+        self._strip_criteria_options(add_command)
+        self.add_command(add_command)
+
+        remove_command = SearchCommand(self.remove, name='remove', 
+            description=_('remove consumers based on search parameters'))
+        remove_command.add_option(id_option)
+        self._strip_criteria_options(remove_command)
+        self.add_command(remove_command)
+
+    @staticmethod
+    def _strip_criteria_options(command):
+        """
+        We don't want to expose all of the criteria features here, so we remove
+        all of them except for search-related ones.
+
+        :param command: command instance from which we should remove criteria
+                        options.
+        :type  command: SearchCommand
+        """
+        OPTION_NAMES = set(('--fields', '--limit', '--skip', '--sort'))
+        for option in copy.copy(command.options):
+            if option.name in OPTION_NAMES:
+                command.options.remove(option)
+
+    def list(self, **kwargs):
+        consumer_group_id = kwargs['consumer-group-id']
+        criteria = {'fields':('consumer_ids',),
+            'filters':{'id':consumer_group_id}}
+        consumer_group_list = self.context.server.consumer_group_search.search(**criteria)
+        if len(consumer_group_list) != 1:
+            self.prompt.write(
+                'Consumer group [%s] does not exist on the server' % 
+                consumer_group_id, tag='not-found')
+        else:
+            consumer_ids = consumer_group_list[0].get('consumer_ids')
+            if consumer_ids:
+                criteria = {'filters':{'id':{'$in':consumer_ids}}}
+                consumer_list = self.context.server.consumer_search.search(**criteria)
+                for consumer in consumer_list:
+                    self.prompt.render_document(consumer)
+
+    def add(self, **kwargs):
+        consumer_group_id = kwargs.pop('consumer-group-id')
+        self.context.server.consumer_group_actions.associate(consumer_group_id, **kwargs)
+        msg = _("Consumer Group [%(c)s] membership updated")
+        self.context.prompt.render_success_message(msg % \
+            {'c' : consumer_group_id})
+
+    def remove(self, **kwargs):
+        consumer_group_id = kwargs.pop('consumer-group-id')
+        self.context.server.consumer_group_actions.unassociate(consumer_group_id, **kwargs)
+        msg = _("Consumer Group [%(c)s] membership updated")
+        self.context.prompt.render_success_message(msg % \
+            {'c' : consumer_group_id})
+
+class ConsumerGroupSection(PulpCliSection):
+    def __init__(self, context):
+        PulpCliSection.__init__(self, 'group', _('consumer group commands'))
+
+        self.context = context
+        self.prompt = context.prompt # for easier access
+
+        self.add_subsection(ConsumerGroupMemberSection(context))
+
+        # Common Options
+        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), required=True)
+        name_option = PulpCliOption('--display-name', _('user-readable display name for the consumer group'), required=False)
+        description_option = PulpCliOption('--description', _('user-readable description for the consumer group'), required=False)
+
+        note_desc =  'adds/updates/deletes notes to programmatically identify the resource; '
+        note_desc += 'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
+        note_desc += 'be changed by specifying this option multiple times; notes are deleted by '
+        note_desc += 'specifying "" as the value'
+        note_option = PulpCliOption('--note', _(note_desc), required=False, allow_multiple=True)
+
+        # Create Command
+        create_command = PulpCliCommand('create', _('creates a new consumer group'), self.create)
+        create_command.add_option(id_option)
+        create_command.add_option(name_option)
+        create_command.add_option(description_option)
+        create_command.add_option(note_option)
+        self.add_command(create_command)
+
+        # Update Command
+        update_command = PulpCliCommand('update', _('changes metadata on an existing consumer group'), self.update)
+        update_command.add_option(id_option)
+        update_command.add_option(name_option)
+        update_command.add_option(description_option)
+        update_command.add_option(note_option)
+        self.add_command(update_command)
+
+        # Delete Command
+        delete_command = PulpCliCommand('delete', _('deletes a consumer group'), self.delete)
+        delete_command.add_option(id_option)
+        self.add_command(delete_command)
+
+        # List Command
+        list_command = PulpCliCommand('list', _('lists summary of consumer groups registered to the Pulp server'), self.list)
+        list_command.add_option(PulpCliFlag('--details', _('if specified, all the consumer group information is displayed')))
+        list_command.add_option(PulpCliOption('--fields', _('comma-separated list of consumer group fields; if specified, only the given fields will displayed'), required=False))
+        self.add_command(list_command)
+
+        # Search Command
+        self.add_command(SearchCommand(self.search))
+
+        # Bind Command
+        bind_command = PulpCliCommand('bind', 
+            _('binds each consumer in a consumer group to a repository '
+              'distributor for consuming published content'),
+            self.bind)
+        bind_command.add_option(id_option)
+        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+        bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        self.add_command(bind_command)
+
+    def create(self, **kwargs):
+        # Collect input
+        consumer_group_id = kwargs['consumer-group-id']
+        name = consumer_group_id
+        if 'display-name' in kwargs:
+            name = kwargs['display-name']
+        description = kwargs['description']
+        notes = kwargs.get('notes', None)
+        if notes:
+            notes = arg_utils.args_to_notes_dict(notes, include_none=True)
+
+        # Call the server
+        self.context.server.consumer_group.create(consumer_group_id, name, description, notes)
+        self.prompt.render_success_message(
+            'Consumer Group [%s] successfully created' % consumer_group_id)
+
+    def update(self, **kwargs):
+        # Assemble the delta for all options that were passed in
+        delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
+        delta.pop('consumer-group-id') # not needed in the delta
+
+        if delta.pop('note', None) is not None:
+            delta['notes'] = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
+        try:
+            self.context.server.consumer_group.update(kwargs['consumer-group-id'], delta)
+            self.prompt.render_success_message(
+                'Consumer group [%s] successfully updated' %
+                kwargs['consumer-group-id'])
+        except NotFoundException:
+            self.prompt.write(
+                'Consumer group [%s] does not exist on the server' %
+                kwargs['consumer-group-id'], tag='not-found')
+
+    def delete(self, **kwargs):
+        id = kwargs['consumer-group-id']
+
+        try:
+            self.context.server.consumer_group.delete(id)
+            self.prompt.render_success_message('Consumer group [%s] successfully deleted' % id)
+        except NotFoundException:
+            self.prompt.write('Consumer group [%s] does not exist on the server' % id, tag='not-found')
+
+    def list(self, **kwargs):
+        self.prompt.render_title('Consumer Groups')
+
+        consumer_group_list = self.context.server.consumer_group.consumer_groups().response_body
+
+        # Default flags to render_document_list
+        filters = ['id', 'display_name', 'description', 'consumer_ids', 'notes']
+        order = filters
+
+        if kwargs['fields'] is not None:
+            filters = kwargs['fields'].split(',')
+            if 'id' not in filters:
+                filters.append('id')
+            order = ['id']
+
+        # Manually loop over the consumers so we can interject the plugins
+        # manually based on the CLI flags.
+        for consumer_group in consumer_group_list:
+            self.prompt.render_document(consumer_group, filters=filters, order=order)
+
+    def search(self, **kwargs):
+        consumer_group_list = self.context.server.consumer_group_search.search(**kwargs)
+        for consumer in consumer_group_list:
+            self.prompt.render_document(consumer)
+
+    def bind(self, **kwargs):
+        consumer_group_id = kwargs['id']
+        repo_id = kwargs['repo-id']
+        distributor_id = kwargs['distributor-id']
+        try:
+            self.context.server.consumer_group_bind.bind(id, repo_id, distributor_id)
+            self.prompt.render_success_message('Consumer Group [%s] '
+                'successfully bound to repository distributor [%s : %s]' \
+                % (consumer_group_id, repo_id, distributor_id))
+        except NotFoundException:
+            self.prompt.write('Consumer Group [%s] does not exist on the '
+                'server' % consumer_group_id, tag='not-found')
+

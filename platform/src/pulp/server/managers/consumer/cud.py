@@ -93,12 +93,12 @@ class ConsumerManager(object):
         return create_me
 
 
-    def unregister(self, id):
+    def unregister(self, consumer_id):
         """
         Unregisters given consumer.
 
-        @param id: identifies the consumer being unregistered
-        @type  id: str
+        @param consumer_id: identifies the consumer being unregistered
+        @type  consumer_id: str
 
         @raises MissingResource: if the given consumer does not exist
         @raises OperationFailed: if any part of the unregister process fails;
@@ -106,28 +106,33 @@ class ConsumerManager(object):
         @raises PulpExecutionException: if error during updating database collection
         """
 
-        self.get_consumer(id)
+        self.get_consumer(consumer_id)
         
         # Remove associate bind
         manager = factory.consumer_bind_manager()
-        manager.consumer_deleted(id)
+        manager.consumer_deleted(consumer_id)
         
         # Remove associated profiles
         manager = factory.consumer_profile_manager()
-        manager.consumer_deleted(id)
+        manager.consumer_deleted(consumer_id)
 
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()
-        agent_consumer.unregistered(id)
+        agent_consumer.unregistered(consumer_id)
 
         # Database Updates
         try:
-            Consumer.get_collection().remove({'id' : id}, safe=True)
+            Consumer.get_collection().remove({'id' : consumer_id}, safe=True)
         except Exception:
-            _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
+            _LOG.exception('Error updating database collection while removing '
+                'consumer [%s]' % consumer_id)
             raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
 
-        factory.consumer_history_manager().record_event(id, 'consumer_unregistered')
+        # remove the consumer from any groups it was a member of
+        group_manager = factory.consumer_group_manager()
+        group_manager.remove_consumer_from_groups(consumer_id)
+
+        factory.consumer_history_manager().record_event(consumer_id, 'consumer_unregistered')
 
         # To do - Update consumergroups after we add consumergroup support in V2
 
