@@ -107,7 +107,7 @@ class RepoGroupActionAPI(SearchAPI):
     def associate(self, id, **kwargs):
         path = self.PATH % id + 'associate/'
 
-        filters = self._compose_filters(**kwargs)
+        filters = self.compose_filters(**kwargs)
         if filters:
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
@@ -117,6 +117,12 @@ class RepoGroupActionAPI(SearchAPI):
 
     def unassociate(self, id, **kwargs):
         path = self.PATH % id + 'unassociate/'
+
+        filters = self.compose_filters(**kwargs)
+        if filters:
+            kwargs['filters'] = filters
+        self._strip_criteria_kwargs(kwargs)
+
         response = self.server.POST(path, {'criteria':kwargs})
         return response.response_body
 

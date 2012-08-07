@@ -14,7 +14,8 @@
 from gettext import gettext as _
 import logging
 
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption, PulpCliSection
+from pulp.client.search import UnitSearchCommand, UnitSearchAllCommand
 
 # -- constants ----------------------------------------------------------------
 
@@ -110,30 +111,75 @@ def initialize(context):
     # Replace the generic units command with a full section of commands
     repo_section = context.cli.find_section('repo')
     repo_section.remove_command('units')
+    repo_section.add_subsection(UnitSection(context))
 
-    units_section = repo_section.create_subsection('units', 'list/search for RPM-related content in a repository')
 
-    # Unit Commands
-    all_command = GeneralUnitSearchCommand(context, 'all', _('search for all content in a repository'), _('Repository Units'), ALL_TYPES)
-    rpm_command = GeneralUnitSearchCommand(context, 'rpm', _('search for RPMs in a repository'), _('Repository RPMs'), [TYPE_RPM])
-    srpm_command = GeneralUnitSearchCommand(context, 'srpm', _('search for SRPMs in a repository'), _('Repository SRPMs'), [TYPE_SRPM])
-    drpm_command = GeneralUnitSearchCommand(context, 'drpm', _('search for DRPMs in a repository'), _('Repository DRPMs'), [TYPE_DRPM])
-    errata_command = ErrataCommand(context, 'errata', _('search errata in a repository'))
-    distro_command = DistributionCommand(context, 'distribution', _('list distributions in a repository'))
-    package_group_command = GeneralUnitSearchCommand(context, 'package_group', _('search for package groups in a repository'), _('Package Group Units'), [TYPE_PACKAGE_GROUP])
-    package_category_command = GeneralUnitSearchCommand(context, 'package_category', _('search for package categories (groups of package groups) in a repository'), 
-            _('Package Category Units'), [TYPE_PACKAGE_CATEGORY])
+class UnitSection(PulpCliSection):
+    def __init__(self, context):
+        """
+        @param context:
+        @type  context: pulp.client.extensions.core.ClientContext
+        """
+        super(UnitSection, self).__init__('units', _('list/search for RPM-related content in a repository'))
+        self.context = context
 
-    units_section.add_command(all_command)
-    units_section.add_command(rpm_command)
-    units_section.add_command(srpm_command)
-    units_section.add_command(drpm_command)
-    units_section.add_command(errata_command)
-    units_section.add_command(distro_command)
-    units_section.add_command(package_group_command)
-    units_section.add_command(package_category_command)
+        m = _('search for units in a repository')
+        self.add_command(UnitSearchAllCommand(self.all, name='all', description=m))
 
-# -- commands -----------------------------------------------------------------
+        m = _('search for RPMs in a repository')
+        self.add_command(UnitSearchCommand(self.rpm, name='rpm', description=m))
+
+        m = _('search for SRPMs in a repository')
+        self.add_command(UnitSearchCommand(self.srpm, name='srpm', description=m))
+
+        m = _('search for DRPMs in a repository')
+        self.add_command(UnitSearchCommand(self.drpm, name='drpm', description=m))
+
+        m = _('search for package groups in a repository')
+        self.add_command(UnitSearchCommand(self.package_group, name='package_group', description=m))
+
+        m = _('search for package categories (groups of package groups) in a repository')
+        self.add_command(UnitSearchCommand(self.package_category, name='package_category', description=m))
+
+        # legacy commands that should probably get replaced
+        self.add_command(ErrataCommand(context, 'errata', _('search errata in a repository')))
+        self.add_command(DistributionCommand(context, 'distribution', _('list distributions in a repository')))
+
+    def all(self, **kwargs):
+        self._content_command(ALL_TYPES, **kwargs)
+
+    def rpm(self, **kwargs):
+        self._content_command([TYPE_RPM], **kwargs)
+
+    def srpm(self, **kwargs):
+        self._content_command([TYPE_SRPM], **kwargs)
+
+    def drpm(self, **kwargs):
+        self._content_command([TYPE_DRPM], **kwargs)
+
+    def package_group(self, **kwargs):
+        self._content_command([TYPE_PACKAGE_GROUP], **kwargs)
+
+    def package_category(self, **kwargs):
+        self._content_command([TYPE_PACKAGE_CATEGORY], **kwargs)
+
+    def _content_command(self, type_ids, **kwargs):
+        """
+        This is a generic command that will perform a search for any type or
+        types of content.
+
+        :param type_ids:    list of type IDs that the command should operate on
+        :type  type_ids:    list
+
+        :param kwargs:  CLI options as input by the user and passed in by okaara
+        :type  kwargs:  dict
+        """
+        repo_id = kwargs.pop('repo-id')
+        kwargs['type_ids'] = type_ids
+        units = self.context.server.repo_unit.search(repo_id, **kwargs).response_body
+        for unit in units:
+            self.context.prompt.render_document(unit)
+
 
 class InvalidCriteria(Exception):
     """
@@ -142,75 +188,6 @@ class InvalidCriteria(Exception):
     and i18n'ed to be displayed directly to the user.
     """
     pass
-
-class GeneralUnitSearchCommand(PulpCliCommand):
-    """
-    Each instance of this command is scoped to a particular unit type during
-    instantiation. The title and type_ids will be used in the usage and output
-    to customize this command for that type.
-
-    Multiple types may be specified as well if aggregate searching is desired.
-    In that case, this implementation will not configure itself with options
-    that are incompatible with searching across types.
-    """
-
-    def __init__(self, context, name, description, title, type_ids):
-        PulpCliCommand.__init__(self, name, description, self.search)
-
-        self.context = context
-        self.title = title
-
-        if not isinstance(type_ids, (list, tuple)):
-            type_ids = [type_ids]
-        self.type_ids = type_ids
-
-        # Groups and options
-        add_required_group(self)
-
-        if len(self.type_ids) == 1:
-            # The display group options only apply when dealing with a single
-            # type, so don't even add them if we know otherwise
-            default_fields = FIELDS_BY_TYPE[self.type_ids[0]]
-            add_display_group(self, default_fields)
-
-        add_pagination_group(self)
-
-    def search(self, **kwargs):
-        """
-        Parses the user arguments and assemble the proper query against the
-        requested repo.
-        """
-
-        # Data collection
-        repo_id = kwargs.pop('repo-id')
-
-        try:
-            criteria = args_to_criteria_doc(kwargs, self.type_ids)
-            LOG.debug('Criteria for unit search')
-            LOG.debug(criteria)
-        except InvalidCriteria, e:
-            self.context.prompt.render_failure_message(e[0])
-            return
-
-        # Title is i18n translated when it's passed in so don't do it here.
-        # Put this after the criteria parse in case there's an error in the args.
-        self.context.prompt.render_title(self.title)
-
-        # Query the server
-        all_units = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
-
-        # We only care about the unit metadata, not the association stuff, so
-        # strip out all the fluff and reduce the list to just the metadata entries
-        units = [u['metadata'] for u in all_units]
-
-        # Render the results
-        if len(units) > 0:
-            order = None
-            if len(self.type_ids) == 1:
-                order = ORDER_BY_TYPE[self.type_ids[0]]
-            self.context.prompt.render_document_list(units, order=order)
-        else:
-            self.context.prompt.render_paragraph(_('No units found'))
 
 
 class ErrataCommand(PulpCliCommand):

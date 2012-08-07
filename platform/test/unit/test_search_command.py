@@ -16,26 +16,39 @@ import unittest
 import mock
 from okaara.cli import CommandUsage
 
-from pulp.client.search import SearchCommand
+from pulp.client.search import SearchCommand, UnitSearchCommand, UnitCopyCommand, UnitSearchAllCommand
 
 class TestSearchCommand(unittest.TestCase):
+    OPTION_NAMES = set(('--limit', '--skip', '--filters', '--fields',
+                        '--sort',))
+    FG_OPTION_NAMES = set(('--gt', '--gte', '--lt', '--lte', '--not',
+                           '--str-eq', '--int-eq', '--match', '--in'))
+
     def setUp(self):
-        self.command = SearchCommand(mock.MagicMock)
+        self.command = SearchCommand(mock.MagicMock())
 
     def test_name(self):
         self.assertEqual(self.command.name, 'search')
 
     def test_options_present(self):
-        OPTION_NAMES = set(('--limit', '--skip', '--filters', '--fields',
-                            '--sort',))
-        FG_OPTION_NAMES = set(('--gt', '--gte', '--lt', '--lte', '--not',
-                               '--str-eq', '--int-eq', '--match', '--in'))
-
         options_present = set([option.name for option in self.command.options])
-        self.assertEqual(OPTION_NAMES, options_present)
+        self.assertEqual(self.OPTION_NAMES, options_present)
 
         fg_options_present = set([option.name for option in self.command.option_groups[0].options])
-        self.assertEqual(FG_OPTION_NAMES, fg_options_present)
+        self.assertEqual(self.FG_OPTION_NAMES, fg_options_present)
+
+    def test_without_filtering(self):
+        self.command = SearchCommand(mock.MagicMock(), filtering=False)
+        self.assertEqual(len(self.command.option_groups), 0)
+
+        options_present = set([option.name for option in self.command.options])
+        self.assertTrue('--filters' not in options_present)
+
+    def test_without_criteria(self):
+        self.command = SearchCommand(mock.MagicMock(), criteria=False)
+        self.assertEqual(len(self.command.option_groups), 1)
+        options_present = set([option.name for option in self.command.options])
+        self.assertEqual(options_present, set(['--filters']))
 
 
 class TestValidateSort(unittest.TestCase):
@@ -88,4 +101,66 @@ class TestExplodePieces(unittest.TestCase):
         field_name, direction = SearchCommand._explode_sort_arg_pieces('name,')
         self.assertEqual(field_name, 'name')
         self.assertEqual(direction, 'ascending')
+
+
+class TestParseKeyValue(unittest.TestCase):
+    def test_basic(self):
+        ret = SearchCommand._parse_key_value(['id=repo1'])
+        self.assertEqual(ret, [['id', 'repo1']])
+
+    def test_multiple_equals(self):
+        # the second '=' should not be split
+        ret = SearchCommand._parse_key_value(['id=repo=1'])
+        self.assertEqual(ret, [['id', 'repo=1']])
+
+    def test_no_equals(self):
+        self.assertRaises(ValueError, SearchCommand._parse_key_value, ['idrepo1'])
+
+    def test_multiple_args(self):
+        ret = SearchCommand._parse_key_value(['id=repo1', 'name=foo'])
+        self.assertEqual(ret, [['id', 'repo1'], ['name', 'foo']])
+
+
+class TestUnitSearchCommand(unittest.TestCase):
+    def setUp(self):
+        self.command = UnitSearchCommand(mock.MagicMock())
+
+    def test_command_presence(self):
+        options_present = set([option.name for option in self.command.options])
+        self.assertTrue('--after' in options_present)
+        self.assertTrue('--before' in options_present)
+        self.assertTrue('--repo-id' in options_present)
+
+    def test_inherits_search(self):
+        # make sure this inherits features that were tested elsewhere.
+        self.assertTrue(isinstance(self.command, SearchCommand))
+
+
+class TestUnitCopyCommand(unittest.TestCase):
+    def setUp(self):
+        self.command = UnitCopyCommand(mock.MagicMock())
+
+    def test_command_presence(self):
+        options_present = set([option.name for option in self.command.options])
+        self.assertTrue('--from-repo-id' in options_present)
+        self.assertTrue('--to-repo-id' in options_present)
+        self.assertTrue('--repo-id' not in options_present)
+
+    def test_inherits_search(self):
+        # make sure this inherits features that were tested elsewhere.
+        self.assertTrue(isinstance(self.command, SearchCommand))
+
+
+class TestUnitSearchAllCommand(unittest.TestCase):
+    def setUp(self):
+        self.command = UnitSearchAllCommand(mock.MagicMock())
+
+    def test_command_presence(self):
+        options_present = set([option.name for option in self.command.options])
+        self.assertTrue('--sort' not in options_present)
+        self.assertTrue('--fields' not in options_present)
+
+    def test_inherits_search(self):
+        # make sure this inherits features that were tested elsewhere.
+        self.assertTrue(isinstance(self.command, UnitSearchCommand))
 
