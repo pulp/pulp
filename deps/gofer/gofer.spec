@@ -241,6 +241,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Tue Aug 07 2012 Jeff Ortel <jortel@redhat.com> 0.71-1
+- Update to latest: 0.71, no Requires: changes needed in Pulp. (jortel@redhat.com)
+
 * Tue Jul 31 2012 Jeff Ortel <jortel@redhat.com> 0.71-1
 - Port ruby-gofer to rubygem-qpid. (jortel@redhat.com)
 - Make /usr/share/gofer/plugins the primary plugin location. Based on fedora
