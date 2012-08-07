@@ -33,3 +33,24 @@ class TestPositiveInt(unittest.TestCase):
 
     def test_none(self):
         self.assertRaises(TypeError, validators.positive_int_validator, None)
+
+
+class TestNonNegativeInt(unittest.TestCase):
+    def test_positive(self):
+        validators.non_negative_int_validator(2)
+
+    def test_zero(self):
+        validators.non_negative_int_validator(0)
+
+    def test_negative(self):
+        self.assertRaises(ValueError, validators.non_negative_int_validator, -2)
+
+    def test_string(self):
+        self.assertRaises(ValueError, validators.non_negative_int_validator, 'a')
+
+    def test_empty_string(self):
+        self.assertRaises(ValueError, validators.non_negative_int_validator, '')
+
+    def test_none(self):
+        self.assertRaises(TypeError, validators.non_negative_int_validator, None)
+

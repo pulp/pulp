@@ -54,4 +54,4 @@ class TestConsumerSearch(base_builtins.PulpClientTests):
         self.assertTrue(mock_render.call_args_list[1][0][0] in (1, 2))
 
     def test_invalid_input(self):
-        self.assertRaises(CommandUsage, self.consumer_section.search, x=2)
+        self.assertRaises(ValueError, self.consumer_section.search, x=2)

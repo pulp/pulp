@@ -18,6 +18,8 @@ from okaara.cli import CommandUsage
 from pulp.bindings.base import PulpAPI
 
 class Operator(object):
+    value_parser = str
+
     def __init__(self, mongo_name):
         """
 
@@ -26,39 +28,22 @@ class Operator(object):
         """
         self.mongo_name = mongo_name
 
-    @staticmethod
-    def _split_arg(arg):
-        """
-        Split an argument into field name and value components
-
-        :param arg: argument value passed on the command line
-        :type  arg: basestring
-
-        :return:    2-member list of field name and value
-        :rtype:     list
-        """
-        ret = arg.split('=', 1)
-        if len(ret) != 2:
-            raise CommandUsage()
-        return ret
-
     def compose_filters(self, args):
         """
         Compose a filter clause that will be used to create a mongo spec
 
-        :param args:    list of raw values passed by the user on the command
-                        line, which should be in the form "name=value"
-        :type  args:    list of basestring
+        :param args:    list of tuples in the form (name, value) corresponding
+                        to user input specified as "name=value"
+        :type  args:    list of tuples
 
         :return:    list of clauses that can be combined with a "$and" operator
                     to create a mongo spec.
         """
+        args = args or []
         clauses = []
-        for arg in args or []:
-            try:
-                field_name, value = self._split_arg(arg)
-            except (TypeError, ValueError):
-                raise CommandUsage
+        for arg in args:
+            field_name, value = arg[0], arg[1]
+            value = self.value_parser(value)
             if self.mongo_name:
                 clauses.append({field_name: {self.mongo_name: value}})
             else:
@@ -69,25 +54,15 @@ class Operator(object):
 
 
 class IntOperator(Operator):
-    @staticmethod
-    def _split_arg(arg):
-        """
-        In addition to what Operator._split_arg does, this will cast the value
-        to be an int
-        """
-        field_name, value = Operator._split_arg(arg)
-        return (field_name, int(value))
+    value_parser = int
 
+
+@staticmethod
+def _csv_parse(x):
+    return csv.reader((x,)).next()
 
 class CSVOperator(Operator):
-    @staticmethod
-    def _split_arg(arg):
-        """
-        In addition to what Operator._split_arg does, this will parse the value
-        portion from CSV into a list of values.
-        """
-        field_name, value = Operator._split_arg(arg)
-        return (field_name, csv.reader((value,)).next())
+    value_parser = _csv_parse
 
 
 class SearchAPI(PulpAPI):
@@ -99,10 +74,12 @@ class SearchAPI(PulpAPI):
         'not' : Operator('$not'),
         'gt' : IntOperator('$gt'),
         'lt' : IntOperator('$lt'),
-        'gte' : Operator('$gte'),
-        'lte' : Operator('$lte'),
+        'gte' : IntOperator('$gte'),
+        'lte' : IntOperator('$lte'),
         'match' : Operator('$regex'),
-        'in' : CSVOperator('$in')
+        'in' : CSVOperator('$in'),
+        'str-gte' : Operator('$gte'),
+        'str-lte' : Operator('$lte'),
     }
     _CRITERIA_ARGS = set(('filters', 'sort', 'limit', 'skip', 'fields'))
     _FILTER_ARGS = set(_OPERATORS.keys())
@@ -120,8 +97,11 @@ class SearchAPI(PulpAPI):
         @return:    response body from the server
         """
         if not set(kwargs.keys()) <= self._ALL_ARGS:
-            raise CommandUsage()
-        filters = self._compose_filters(**kwargs)
+            # okaara should have caught this already, but this will prevent
+            # undefined behavior in case the search command had defined options
+            # this class doesn't know about.
+            raise ValueError()
+        filters = self.compose_filters(**kwargs)
         if filters:
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
@@ -134,7 +114,7 @@ class SearchAPI(PulpAPI):
                 del kwargs[field_name]
 
     @classmethod
-    def _compose_filters(cls, **kwargs):
+    def compose_filters(cls, **kwargs):
         """
         Parse all of the arguments supplied on the command line, generating a
         spec suitable for passing to mongo.
