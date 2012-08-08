@@ -304,7 +304,7 @@ class YumImporter(Importer):
         _LOG.info("%s units from %s have been associated to %s" % (len(units), source_repo.id, dest_repo.id))
 
 
-    def remove_units(self, repo, units, remove_conduit):
+    def remove_units(self, repo, units):
         """
         @param repo: metadata describing the repository
         @type  repo: L{pulp.plugins.data.Repository}
@@ -489,7 +489,6 @@ class YumImporter(Importer):
         pkglist =  []
         for unit in units:
             if unit.type_id == 'rpm':
-                print "%s-%s-%s.%s" % (unit.unit_key['name'], unit.unit_key['version'], unit.unit_key['release'], unit.unit_key['arch'])
                 pkglist.append("%s-%s-%s.%s" % (unit.unit_key['name'], unit.unit_key['version'], unit.unit_key['release'], unit.unit_key['arch']))
         dsolve = depsolver.DepSolver([repo], pkgs=pkglist)
         if config.get('recursive'):
@@ -507,12 +506,13 @@ class YumImporter(Importer):
                 if not existing_units.has_key(pkg):
                     continue
                 epkg = existing_units[pkg]
-                dep_pkgs_map[dep].append(epkg)
+                dep_pkgs_map[dep].append(epkg.unit_key)
         _LOG.debug("deps packages suggested %s" % solved)
         result_dict['resolved'] = dep_pkgs_map
         result_dict['unresolved'] = unsolved
         result_dict['printable_dependency_result'] = dsolve.printable_result(results)
         dsolve.cleanup()
+        _LOG.info("result dict %s" % result_dict)
         return result_dict
 
     def cancel_sync_repo(self, call_request, call_report):
