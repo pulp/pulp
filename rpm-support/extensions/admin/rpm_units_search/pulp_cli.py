@@ -14,7 +14,7 @@
 from gettext import gettext as _
 import logging
 
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption, PulpCliSection
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
 from pulp.client.search import UnitSearchCommand, UnitSearchAllCommand
 
 # -- constants ----------------------------------------------------------------
@@ -36,7 +36,7 @@ FIELDS_RPM = ('arch', 'buildhost', 'checksum', 'checksumtype', 'description',
               'epoch', 'filename', 'license', 'name', 'provides', 'release',
               'requires', 'vendor', 'version')
 FIELDS_ERRATA = ('id', 'title', 'summary', 'severity', 'type', 'description')
-FIELDS_PACKAGE_GROUP = ('id', 'name', 'description', 'mandatory_package_names', 'conditional_package_names', \
+FIELDS_PACKAGE_GROUP = ('id', 'name', 'description', 'mandatory_package_names', 'conditional_package_names',
                         'optional_package_names', 'default_package_names', 'user_visible')
 FIELDS_PACKAGE_CATEGORY = ('id', 'name', 'description', 'packagegroupids')
 
@@ -99,6 +99,8 @@ REFERENCES_TEMPLATE = _('''  ID:   %(i)s
 
 ''')
 
+CONTEXT = None # set by initialize
+
 LOG = logging.getLogger(__name__)
 
 # -- plugin hook --------------------------------------------------------------
@@ -108,77 +110,77 @@ def initialize(context):
     global LOG
     LOG = context.logger
 
+    global CONTEXT
+    CONTEXT = context
+
     # Replace the generic units command with a full section of commands
     repo_section = context.cli.find_section('repo')
     repo_section.remove_command('units')
-    repo_section.add_subsection(UnitSection(context))
 
+    units_section = repo_section.find_subsection('units')
+    add_commands(units_section)
 
-class UnitSection(PulpCliSection):
-    def __init__(self, context):
-        """
-        @param context:
-        @type  context: pulp.client.extensions.core.ClientContext
-        """
-        super(UnitSection, self).__init__('units', _('list/search for RPM-related content in a repository'))
-        self.context = context
+def add_commands(units_section):
+    """
+    @param context:
+    @type  context: pulp.client.extensions.core.ClientContext
+    """
 
-        m = _('search for units in a repository')
-        self.add_command(UnitSearchAllCommand(self.all, name='all', description=m))
+    m = _('search for units in a repository')
+    units_section.add_command(UnitSearchAllCommand(all, name='all', description=m))
 
-        m = _('search for RPMs in a repository')
-        self.add_command(UnitSearchCommand(self.rpm, name='rpm', description=m))
+    m = _('search for RPMs in a repository')
+    units_section.add_command(UnitSearchCommand(rpm, name='rpm', description=m))
 
-        m = _('search for SRPMs in a repository')
-        self.add_command(UnitSearchCommand(self.srpm, name='srpm', description=m))
+    m = _('search for SRPMs in a repository')
+    units_section.add_command(UnitSearchCommand(srpm, name='srpm', description=m))
 
-        m = _('search for DRPMs in a repository')
-        self.add_command(UnitSearchCommand(self.drpm, name='drpm', description=m))
+    m = _('search for DRPMs in a repository')
+    units_section.add_command(UnitSearchCommand(drpm, name='drpm', description=m))
 
-        m = _('search for package groups in a repository')
-        self.add_command(UnitSearchCommand(self.package_group, name='package_group', description=m))
+    m = _('search for package groups in a repository')
+    units_section.add_command(UnitSearchCommand(package_group, name='package_group', description=m))
 
-        m = _('search for package categories (groups of package groups) in a repository')
-        self.add_command(UnitSearchCommand(self.package_category, name='package_category', description=m))
+    m = _('search for package categories (groups of package groups) in a repository')
+    units_section.add_command(UnitSearchCommand(package_category, name='package_category', description=m))
 
-        # legacy commands that should probably get replaced
-        self.add_command(ErrataCommand(context, 'errata', _('search errata in a repository')))
-        self.add_command(DistributionCommand(context, 'distribution', _('list distributions in a repository')))
+    units_section.add_command(ErrataCommand(CONTEXT, 'errata', _('search errata in a repository')))
+    units_section.add_command(DistributionCommand(CONTEXT, 'distribution', _('list distributions in a repository')))
 
-    def all(self, **kwargs):
-        self._content_command(ALL_TYPES, **kwargs)
+def all(**kwargs):
+    _content_command(ALL_TYPES, **kwargs)
 
-    def rpm(self, **kwargs):
-        self._content_command([TYPE_RPM], **kwargs)
+def rpm(**kwargs):
+    _content_command([TYPE_RPM], **kwargs)
 
-    def srpm(self, **kwargs):
-        self._content_command([TYPE_SRPM], **kwargs)
+def srpm(**kwargs):
+    _content_command([TYPE_SRPM], **kwargs)
 
-    def drpm(self, **kwargs):
-        self._content_command([TYPE_DRPM], **kwargs)
+def drpm(**kwargs):
+    _content_command([TYPE_DRPM], **kwargs)
 
-    def package_group(self, **kwargs):
-        self._content_command([TYPE_PACKAGE_GROUP], **kwargs)
+def package_group(**kwargs):
+    _content_command([TYPE_PACKAGE_GROUP], **kwargs)
 
-    def package_category(self, **kwargs):
-        self._content_command([TYPE_PACKAGE_CATEGORY], **kwargs)
+def package_category(**kwargs):
+    _content_command([TYPE_PACKAGE_CATEGORY], **kwargs)
 
-    def _content_command(self, type_ids, **kwargs):
-        """
-        This is a generic command that will perform a search for any type or
-        types of content.
+def _content_command(type_ids, **kwargs):
+    """
+    This is a generic command that will perform a search for any type or
+    types of content.
 
-        :param type_ids:    list of type IDs that the command should operate on
-        :type  type_ids:    list
+    :param type_ids:    list of type IDs that the command should operate on
+    :type  type_ids:    list
 
-        :param kwargs:  CLI options as input by the user and passed in by okaara
-        :type  kwargs:  dict
-        """
-        repo_id = kwargs.pop('repo-id')
-        kwargs['type_ids'] = type_ids
-        units = self.context.server.repo_unit.search(repo_id, **kwargs).response_body
-        for unit in units:
-            self.context.prompt.render_document(unit)
+    :param kwargs:  CLI options as input by the user and passed in by okaara
+    :type  kwargs:  dict
+    """
+    repo_id = kwargs.pop('repo-id')
+    kwargs['type_ids'] = type_ids
+    units = CONTEXT.server.repo_unit.search(repo_id, **kwargs).response_body
+    for unit in units:
+        CONTEXT.prompt.render_document(unit)
 
 
 class InvalidCriteria(Exception):

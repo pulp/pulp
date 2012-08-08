@@ -21,7 +21,8 @@ from pulp.client.search import SearchCommand
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    context.cli.add_section(RepoSection(context))
+    repo_section = RepoSection(context)
+    context.cli.add_section(repo_section)
 
 # -- common options -----------------------------------------------------------
 
@@ -82,15 +83,11 @@ class RepoSection(PulpCliSection):
         # Search Command
         self.add_command(SearchCommand(self.search))
 
-        # List Units Command
-        units_command = PulpCliCommand('units', _('lists content units in the repository'), self.units)
-        units_command.add_option(id_option)
-        self.add_command(units_command)
-
         # Subsections
         self.add_subsection(ImporterSection(context))
         self.add_subsection(SyncSection(context))
         self.add_subsection(RepoGroupSection(context))
+        self.create_subsection('units', _('list/search for RPM-related content in a repository'))
 
     def create(self, **kwargs):
 
