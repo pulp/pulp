@@ -238,7 +238,8 @@ class UnitSearchCommand(SearchCommand):
 
 class UnitCopyCommand(UnitSearchCommand):
     def __init__(self, *args, **kwargs):
-        super(UnitCopyCommand, self).__init__(*args, criteria=False, **kwargs)
+        kwargs['criteria'] = False
+        super(UnitCopyCommand, self).__init__(*args, **kwargs)
         self.options = [opt for opt in self.options if opt.name != '--repo-id']
 
         m = 'source repository from which units will be copied'
@@ -250,6 +251,7 @@ class UnitCopyCommand(UnitSearchCommand):
 
 class UnitSearchAllCommand(UnitSearchCommand):
     def __init__(self, *args, **kwargs):
-        super(UnitSearchAllCommand, self).__init__(*args, filtering=False, **kwargs)
+        kwargs['filtering'] = False
+        super(UnitSearchAllCommand, self).__init__(*args, **kwargs)
         OPTIONS_TO_REMOVE = set(['--sort', '--fields'])
         self.options = [opt for opt in self.options if opt.name not in OPTIONS_TO_REMOVE]
