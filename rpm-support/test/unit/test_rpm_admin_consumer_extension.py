@@ -94,7 +94,7 @@ class TestPackages(rpm_support_base.PulpClientTests):
         self.server_mock.request = Mock(side_effect=Request('install'))
         # Test
         args = {
-            'id':'xyz',
+            'consumer-id':'xyz',
             'name':['zsh'],
             'no-commit':False,
             'import-keys':False,
@@ -116,7 +116,7 @@ class TestPackages(rpm_support_base.PulpClientTests):
         self.server_mock.request = Mock(side_effect=Request('update'))
         # Test
         args = {
-            'id':'xyz',
+            'consumer-id':'xyz',
             'name':['zsh'],
             'no-commit':False,
             'import-keys':False,
@@ -139,7 +139,7 @@ class TestPackages(rpm_support_base.PulpClientTests):
         self.server_mock.request = Mock(side_effect=Request('uninstall'))
         # Test
         args = {
-            'id':'xyz',
+            'consumer-id':'xyz',
             'name':['zsh'],
             'no-commit':False,
             'importkeys':False,
@@ -167,7 +167,7 @@ class TestGroups(rpm_support_base.PulpClientTests):
         self.server_mock.request = Mock(side_effect=Request('install'))
         # Test
         args = {
-            'id':'xyz',
+            'consumer-id':'xyz',
             'name':['Test Group'],
             'no-commit':False,
             'import-keys':False,
@@ -189,7 +189,7 @@ class TestGroups(rpm_support_base.PulpClientTests):
         self.server_mock.request = Mock(side_effect=Request('uninstall'))
         # Test
         args = {
-            'id':'xyz',
+            'consumer-id':'xyz',
             'name':['Test Group'],
             'no-commit':False,
             'importkeys':False,
