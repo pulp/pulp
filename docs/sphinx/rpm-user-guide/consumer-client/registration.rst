@@ -1,7 +1,7 @@
-Registration and Unregistration
-===============================
+Consumer Registration
+=====================
 
-The Pulp consumer client can be used to register new :term:`consumer` s or
+The Pulp consumer client can be used to register a new :term:`consumer` or
 to unregister an existing consumer.  Once the :term:`registration` has succeeded,
 a consumer is placed into the Pulp server's inventory and associated with
 credentials for accessing content.  These credentials are stored on the

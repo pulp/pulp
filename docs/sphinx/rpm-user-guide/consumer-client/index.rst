@@ -6,3 +6,4 @@ Consumer Client User Guide
 
    introduction
    registration
+   bind

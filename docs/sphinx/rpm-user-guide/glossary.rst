@@ -10,6 +10,11 @@ Glossary
     & control API which is used by the Pulp server to affect content changes
     on the consumer.  It also sends scheduled reports concerning consumer
     status and installed content profiles to the Pulp server.
+    
+  binding
+    An association between a :term:`consumer` and a :term:`repository`
+    :term:`distributor` for the purpose of installing :term:`content units <content unit>`
+    on the specified consumer.
 
   consumer
     A managed system that is the consumer of content.  Consumption refers
@@ -27,10 +32,6 @@ Glossary
     based on the desired approach of the distributor. A repository may have
     more than one distributor associated with it at a given time.
     
-  registration
-    The association of a :term:`consumer` to a Pulp server.  Once registered,
-    a consumer has access to content.
-    
   importer
     Server-side plugin that provides support for synchronizing content from an
     external source and importing that content into the Pulp server. Importers
@@ -41,6 +42,15 @@ Glossary
     ISO Date format that is able to specify an optional number of recurrences,
     an optional start time, and a time interval. More information can be
     found :ref:`in the conventions section of this guide <date-and-time>`.
+    
+  pulp.repo
+    The ``pulp.repo`` file is a :term:`yum` configuration file that is located
+    in ``/etc/yum.respos.d``.  It is managed by Pulp which ensures that it contains
+    entries corresponding to Pulp :term:`repository` :term:`bindings <binding>`.
+
+  registration
+    The association of a :term:`consumer` to a Pulp server.  Once registered,
+    a consumer has access to content.
 
   repository
     A collection of content units. A repository's supported types is dictated
@@ -52,3 +62,12 @@ Glossary
     A list of :term:`content unit` installed on a :term:`consumer`.  The
     structure and content of each item in the profile varies based on the
     unit type.
+    
+  yum
+    The Yellowdog Updater, Modified (YUM) is an rpm based, package manager.
+    It can automatically perform system updates, including dependency analysis
+    and obsolete processing based on "repository" metadata. It can also 
+    perform installation of new packages, removal of old packages and perform
+    queries on the installed and/or available packages among many other 
+    commands/services (see below). yum is similar to other high level package
+    managers like apt-get and smart.
