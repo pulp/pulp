@@ -15,23 +15,19 @@ from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliSection
 from pulp.client.search import UnitCopyCommand
+from pulp_rpm.common.ids import TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM
 
 # -- constants ----------------------------------------------------------------
 
-TYPE_RPM = 'rpm'
-TYPE_SRPM = 'srpm'
-TYPE_DRPM = 'drpm'
-
 LOG = None # set by context
 
-RPM_USAGE_DESC = 'Packages to copy from the source repository are determined by '\
-                 'applying regular expressions for inclusion (match) and exclusion (not). '\
-                 'Criteria are specified in the format "field=regex", for example "name=python.*". '\
-                 'Except for the date checks, all arguments may be specified multiple times to further '\
-                 'refine the matching criteria. '\
-                 'Valid fields are: name, epoch, version, release, arch, buildhost, checksum, '\
-                 'description, filename, license, and vendor.'
-RPM_USAGE_DESC = _(RPM_USAGE_DESC)
+RPM_USAGE_DESC = _('Packages to copy from the source repository are determined by '
+                   'applying regular expressions for inclusion (match) and exclusion (not). '
+                   'Criteria are specified in the format "field=regex", for example "name=python.*". '
+                   'Except for the date checks, all arguments may be specified multiple times to further '
+                   'refine the matching criteria. '
+                   'Valid fields are: name, epoch, version, release, arch, buildhost, checksum, '
+                   'description, filename, license, and vendor.')
 
 # -- plugin hook --------------------------------------------------------------
 
@@ -59,21 +55,21 @@ class CopySection(PulpCliSection):
         self.add_command(UnitCopyCommand(self.drpm, name='drpm', description=m))
 
     def rpm(self, **kwargs):
-        self._copy(TYPE_RPM, **kwargs)
+        self._copy(TYPE_ID_RPM, **kwargs)
 
     def srpm(self, **kwargs):
-        self._copy(TYPE_SRPM, **kwargs)
+        self._copy(TYPE_ID_SRPM, **kwargs)
 
     def drpm(self, **kwargs):
-        self._copy(TYPE_DRPM, **kwargs)
+        self._copy(TYPE_ID_DRPM, **kwargs)
 
     def _copy(self, type_id, **kwargs):
         """
         This is a generic command that will perform a search for any type of
         content and copy it from one repository to another
 
-        :param type_ids:    list of type IDs that the command should operate on
-        :type  type_ids:    list
+        :param type_id: type of unit being copied
+        :type  type_id: str
 
         :param kwargs:  CLI options as input by the user and passed in by
                         okaara. These are search options defined elsewhere that
@@ -87,13 +83,13 @@ class CopySection(PulpCliSection):
         # If rejected an exception will bubble up and be handled by middleware
         response = self.context.server.repo_unit.copy(from_repo, to_repo, **kwargs)
 
-        progress_msg = 'Progress on this task can be viewed using the '\
-                       'commands under "repo tasks".'
-        progress_msg = _(progress_msg)
+        progress_msg = _('Progress on this task can be viewed using the '
+                         'commands under "repo tasks".')
+
         if response.response_body.is_postponed():
-            d = 'Unit copy postponed due to another operation on the destination '\
-                'repository. '
-            d = _(d) + progress_msg
+            d = _('Unit copy postponed due to another operation on the destination '
+                'repository. ')
+            d += progress_msg
             self.context.prompt.render_paragraph(d)
             self.context.prompt.render_reasons(response.response_body.reasons)
         else:
