@@ -35,6 +35,11 @@ _default_values = {
         'seeds': 'localhost:27017',
         'operation_retries': '2',
     },
+    'email': {
+        'host': 'localhost',
+        'port': '25',
+        'enabled' : 'false'
+    },
     'events': {
         'send_enabled': 'false',
         'recv_enabled': 'false',
