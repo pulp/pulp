@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.321
+Version: 0.0.322
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -233,6 +233,12 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
+- 845109 - changing consumer id admin client extensions option to --consumer-id
+  instead of --id (skarmark@redhat.com)
+- unit search within a repository through the CLI now used the standard
+  criteria features. (mhrivnak@redhat.com)
+
 * Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-1
 - 
 
