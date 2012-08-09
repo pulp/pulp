@@ -24,51 +24,45 @@ import rpm_units_search.pulp_cli
 
 class TestUnitSection(unittest.TestCase):
     def setUp(self):
-        self.section = rpm_units_search.pulp_cli.UnitSection(mock.MagicMock())
-
-    def test_command_presence(self):
-        NAMES = ('all', 'rpm', 'drpm', 'srpm', 'package_group',
-                 'package_category', 'errata', 'distribution')
-        for name in NAMES:
-            self.assertTrue(name in self.section.commands)
+        rpm_units_search.pulp_cli.CONTEXT = mock.MagicMock()
+        rpm_units_search.pulp_cli.CONTEXT.server = mock.MagicMock()
 
     def test_content_command(self):
         # setup
         return_value = mock.MagicMock()
         return_value.response_body = ['unit1']
-        self.section.context.server.repo_unit.search.return_value = return_value
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.return_value = return_value
 
-        self.section._content_command(['rpm'], **{'repo-id': 'repo1'})
-        self.section.context.server.repo_unit.search.assert_called_once_with('repo1', type_ids=['rpm'])
-        self.section.context.prompt.render_document.assert_called_once_with('unit1')
+        rpm_units_search.pulp_cli._content_command(['rpm'], **{'repo-id': 'repo1'})
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.assert_called_once_with('repo1', type_ids=['rpm'])
 
-    @mock.patch.object(rpm_units_search.pulp_cli.UnitSection, '_content_command')
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
     def test_rpm(self, mock_command):
-        self.section.rpm(a=1, b=2)
+        rpm_units_search.pulp_cli.rpm(a=1, b=2)
         mock_command.assert_called_once_with(
             [rpm_units_search.pulp_cli.TYPE_RPM], a=1, b=2)
 
-    @mock.patch.object(rpm_units_search.pulp_cli.UnitSection, '_content_command')
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
     def test_srpm(self, mock_command):
-        self.section.srpm(a=1, b=2)
+        rpm_units_search.pulp_cli.srpm(a=1, b=2)
         mock_command.assert_called_once_with(
             [rpm_units_search.pulp_cli.TYPE_SRPM], a=1, b=2)
 
-    @mock.patch.object(rpm_units_search.pulp_cli.UnitSection, '_content_command')
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
     def test_drpm(self, mock_command):
-        self.section.drpm(a=1, b=2)
+        rpm_units_search.pulp_cli.drpm(a=1, b=2)
         mock_command.assert_called_once_with(
             [rpm_units_search.pulp_cli.TYPE_DRPM], a=1, b=2)
 
-    @mock.patch.object(rpm_units_search.pulp_cli.UnitSection, '_content_command')
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
     def test_package_group(self, mock_command):
-        self.section.package_group(a=1, b=2)
+        rpm_units_search.pulp_cli.package_group(a=1, b=2)
         mock_command.assert_called_once_with(
             [rpm_units_search.pulp_cli.TYPE_PACKAGE_GROUP], a=1, b=2)
 
-    @mock.patch.object(rpm_units_search.pulp_cli.UnitSection, '_content_command')
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
     def test_package_category(self, mock_command):
-        self.section.package_category(a=1, b=2)
+        rpm_units_search.pulp_cli.package_category(a=1, b=2)
         mock_command.assert_called_once_with(
             [rpm_units_search.pulp_cli.TYPE_PACKAGE_CATEGORY], a=1, b=2)
 
