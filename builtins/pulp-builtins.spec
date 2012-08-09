@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.321
-Release: 2%{?dist}
+Version: 0.0.322
+Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -91,6 +91,13 @@ client capabilities.
 
 
 %changelog
+* Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
+- 845327 - changing basic consumer extension commands like unregister, update
+  etc. to accept --consumer-id as an option instead of --id
+  (skarmark@redhat.com)
+- unit search within a repository through the CLI now used the standard
+  criteria features. (mhrivnak@redhat.com)
+
 * Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-2
 - packaging, add pulp_server_info extension. 
 
