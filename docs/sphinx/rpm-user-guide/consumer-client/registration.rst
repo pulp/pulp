@@ -5,10 +5,10 @@ The Pulp consumer client may be used to register a new :term:`consumer` or
 to unregister an existing consumer.  Once the :term:`registration` has succeeded,
 a consumer is placed into the Pulp server's inventory and associated with
 credentials for accessing content.  These credentials are stored on the
-consumer's filesystem.  Registration will cause the :term:`agent` to become
-active.  When activated, the agent will establish communication with the Pulp
-server and begin processing command & control requests.  The agent will also
-begin scheduled reporting.
+consumer's filesystem.  Upon successful registration, the :term:`agent` to become
+active if installed and running.  When activated, the agent will establish
+communication with the Pulp server and begin processing command & control 
+requests.  The agent will also begin scheduled reporting.
 
 Registering a New Consumer
 --------------------------
