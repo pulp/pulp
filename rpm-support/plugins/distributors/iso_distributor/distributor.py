@@ -126,7 +126,7 @@ class ISODistributor(Distributor):
             if key == 'iso_prefix':
                 iso_prefix = config.get('iso_prefix')
                 if iso_prefix is not None and (not isinstance(iso_prefix, str) or not self._is_valid_prefix(iso_prefix)):
-                    msg = _("iso_prefix is not a valid string; valid supported characters include %s" % ISO_NAME_REGEX)
+                    msg = _("iso_prefix is not a valid string; valid supported characters include %s" % ISO_NAME_REGEX.pattern)
                     _LOG.error(msg)
                     return False, msg
         publish_dir = config.get("https_publish_dir")
