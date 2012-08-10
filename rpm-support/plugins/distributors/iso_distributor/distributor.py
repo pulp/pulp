@@ -13,6 +13,7 @@
 import os
 import gettext
 import logging
+import re
 import shutil
 import time
 import traceback
@@ -32,6 +33,7 @@ OPTIONAL_CONFIG_KEYS = ["generate_metadata", "https_publish_dir","http_publish_d
 
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/isos"
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/isos"
+ISO_NAME_REGEX = re.compile(r'^[_A-Za-z0-9-]+$')
 
 ###
 # Config Options Explained
@@ -123,8 +125,8 @@ class ISODistributor(Distributor):
                     return False, msg
             if key == 'iso_prefix':
                 iso_prefix = config.get('iso_prefix')
-                if iso_prefix is not None and not isinstance(iso_prefix, str):
-                    msg = _("iso_prefix is not a string")
+                if iso_prefix is not None and (not isinstance(iso_prefix, str) or not self._is_valid_prefix(iso_prefix)):
+                    msg = _("iso_prefix is not a valid string; valid supported characters include %s" % ISO_NAME_REGEX)
                     _LOG.error(msg)
                     return False, msg
         publish_dir = config.get("https_publish_dir")
@@ -153,6 +155,12 @@ class ISODistributor(Distributor):
     def set_progress(self, type_id, status, progress_callback=None):
         if progress_callback:
             progress_callback(type_id, status)
+
+    def _is_valid_prefix(self, iso_prefix):
+        """
+        @return: True if the given iso_prefix is a valid match; False otherwise
+        """
+        return ISO_NAME_REGEX.match(iso_prefix) is not None
 
     def create_date_range_filter(self, config):
         start_date = None
