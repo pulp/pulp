@@ -33,7 +33,7 @@ class PackageSection(PulpCliSection):
         for Command in (Install, Update, Uninstall):
             command = Command(context)
             command.create_option(
-                '--id',
+                '--consumer-id',
                 _('identifies the consumer'),
                 required=True)
             command.create_flag(
@@ -65,7 +65,7 @@ class Install(PollingCommand):
             _('import GPG keys as needed'))
 
     def run(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         apply = (not kwargs['no-commit'])
         importkeys = kwargs['import-keys']
         reboot = kwargs['reboot']
@@ -78,13 +78,13 @@ class Install(PollingCommand):
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
-        self.install(id, units, options)
+        self.install(consumer_id, units, options)
 
-    def install(self, id, units, options):
+    def install(self, consumer_id, units, options):
         prompt = self.context.prompt
         server = self.context.server
         try:
-            response = server.consumer_content.install(id, units=units, options=options)
+            response = server.consumer_content.install(consumer_id, units=units, options=options)
             task = response.response_body
             msg = _('Install task created with id [%s]') % task.task_id
             prompt.render_success_message(msg)
@@ -94,9 +94,9 @@ class Install(PollingCommand):
                 return
             if self.postponed(task):
                 return
-            self.process(id, task)
+            self.process(consumer_id, task)
         except NotFoundException:
-            msg = _('Consumer [%s] not found') % id
+            msg = _('Consumer [%s] not found') % consumer_id
             prompt.write(msg, tag='not-found')
 
     def succeeded(self, id, task):
@@ -156,7 +156,7 @@ class Update(PollingCommand):
             aliases=['-a'])
 
     def run(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         all = kwargs['all']
         names = kwargs['name']
         apply = (not kwargs['no-commit'])
@@ -170,7 +170,7 @@ class Update(PollingCommand):
             reboot=reboot,)
         if all: # ALL
             unit = dict(type_id=TYPE_ID, unit_key=None)
-            self.update(id, [unit], options)
+            self.update(consumer_id, [unit], options)
             return
         if names is None:
             names = []
@@ -178,9 +178,9 @@ class Update(PollingCommand):
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
-        self.update(id, units, options)
+        self.update(consumer_id, units, options)
 
-    def update(self, id, units, options):
+    def update(self, consumer_id, units, options):
         prompt = self.context.prompt
         server = self.context.server
         if not units:
@@ -188,7 +188,7 @@ class Update(PollingCommand):
             prompt.render_failure_message(_(msg))
             return
         try:
-            response = server.consumer_content.update(id, units=units, options=options)
+            response = server.consumer_content.update(consumer_id, units=units, options=options)
             task = response.response_body
             msg = _('Update task created with id [%s]') % task.task_id
             prompt.render_success_message(msg)
@@ -198,9 +198,9 @@ class Update(PollingCommand):
                 return
             if self.postponed(task):
                 return
-            self.process(id, task)
+            self.process(consumer_id, task)
         except NotFoundException:
-            msg = _('Consumer [%s] not found') % id
+            msg = _('Consumer [%s] not found') % consumer_id
             prompt.write(msg, tag='not-found')
 
     def succeeded(self, id, task):
@@ -253,7 +253,7 @@ class Uninstall(PollingCommand):
             aliases=['-n'])
 
     def run(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         apply = (not kwargs['no-commit'])
         reboot = kwargs['reboot']
         units = []
@@ -264,13 +264,13 @@ class Uninstall(PollingCommand):
             unit_key = dict(name=name)
             unit = dict(type_id=TYPE_ID, unit_key=unit_key)
             units.append(unit)
-        self.uninstall(id, units, options)
+        self.uninstall(consumer_id, units, options)
 
-    def uninstall(self, id, units, options):
+    def uninstall(self, consumer_id, units, options):
         prompt = self.context.prompt
         server = self.context.server
         try:
-            response = server.consumer_content.uninstall(id, units=units, options=options)
+            response = server.consumer_content.uninstall(consumer_id, units=units, options=options)
             task = response.response_body
             msg = _('Uninstall task created with id [%s]') % task.task_id
             prompt.render_success_message(msg)
@@ -280,9 +280,9 @@ class Uninstall(PollingCommand):
                 return
             if self.postponed(task):
                 return
-            self.process(id, task)
+            self.process(consumer_id, task)
         except NotFoundException:
-            msg = _('Consumer [%s] not found') % id
+            msg = _('Consumer [%s] not found') % consumer_id
             prompt.write(msg, tag='not-found')
 
     def succeeded(self, id, task):

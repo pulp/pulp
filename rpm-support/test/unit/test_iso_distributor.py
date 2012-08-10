@@ -287,6 +287,22 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)
         isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
         self.assertEqual(len(isos_list), 1)
+        # make sure the iso name defaults to repoid
+        self.assertTrue( isos_list[0].startswith(repo.id))
+
+        # test isoprefix:
+        iso_prefix = "mock-iso-prefix"
+        config = distributor_mocks.get_basic_config(http_publish_dir=self.http_publish_dir, https_publish_dir=self.https_publish_dir, http=True, https=False, iso_prefix=iso_prefix)
+        repo.id= "test_mock_iso_prefix"
+        report = iso_distributor.publish_repo(repo, publish_conduit, config)
+
+        self.assertTrue(os.path.exists("%s/%s" % (self.http_publish_dir, repo.id)))
+        self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)
+        isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
+        self.assertEqual(len(isos_list), 1)
+        print isos_list
+        # make sure the iso name uses the prefix
+        self.assertTrue( isos_list[0].startswith(iso_prefix))
 
     def test_iso_export_by_date_range(self):
         feed_url = "file://%s/test_errata_local_sync/" % self.data_dir
@@ -417,3 +433,16 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)
         isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
         self.assertEqual(len(isos_list), 1)
+
+    def test_validate_config_iso_prefix(self):
+        repo = mock.Mock(spec=Repository)
+        repo.id = "testrepo"
+        distributor = ISODistributor()
+        # test invalid iso prefix
+        config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="my_iso*_name_/")
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+        # test valid iso prefix
+        config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="My_iso_name-01")
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)

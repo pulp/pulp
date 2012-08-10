@@ -50,7 +50,7 @@ class TestResolveDeps(rpm_support_base.PulpRPMTests):
 
     def test_resolve_deps(self):
         repo = mock.Mock(spec=Repository)
-        repo.working_dir = "%s/%s" % (self.data_dir, "test_resolve_deps")
+        repo.working_dir = self.data_dir
         repo.id = "test_resolve_deps"
 
         unit_key_a = {'id' : '','name' :'pulp-server', 'version' :'0.0.309', 'release' : '1.fc17', 'epoch':'0', 'arch' : 'noarch', 'checksumtype' : 'sha256',

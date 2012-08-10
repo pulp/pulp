@@ -233,7 +233,7 @@ class RepoUnitAssociationQueryManager(object):
         spec = {'repo_id' : repo_id,
                 'unit_type_id' : type_id}
 
-        # Stip out the type ID and repo fields if they were accidentally specified in the criteria
+        # Strip out the type ID and repo fields if they were accidentally specified in the criteria
         association_spec = criteria.association_filters
         association_spec.pop('unit_type_id', None)
         association_spec.pop('repo_id', None)

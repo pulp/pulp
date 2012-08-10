@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
 from gettext import gettext as _
 from pulp.client import arg_utils
 
@@ -22,7 +21,8 @@ from pulp.client.search import SearchCommand
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    context.cli.add_section(RepoSection(context))
+    repo_section = RepoSection(context)
+    context.cli.add_section(repo_section)
 
 # -- common options -----------------------------------------------------------
 
@@ -83,15 +83,11 @@ class RepoSection(PulpCliSection):
         # Search Command
         self.add_command(SearchCommand(self.search))
 
-        # List Units Command
-        units_command = PulpCliCommand('units', _('lists content units in the repository'), self.units)
-        units_command.add_option(id_option)
-        self.add_command(units_command)
-
         # Subsections
         self.add_subsection(ImporterSection(context))
         self.add_subsection(SyncSection(context))
         self.add_subsection(RepoGroupSection(context))
+        self.create_subsection('units', _('list/search for RPM-related content in a repository'))
 
     def create(self, **kwargs):
 
@@ -264,30 +260,13 @@ class RepoGroupMemberSection(PulpCliSection):
         list_command.add_option(id_option)
         self.add_command(list_command)
 
-        add_command = SearchCommand(self.add, name='add', description=_('add repositories based on search parameters'))
+        add_command = SearchCommand(self.add, criteria=False, name='add', description=_('add repositories based on search parameters'))
         add_command.add_option(id_option)
-        self._strip_criteria_options(add_command)
         self.add_command(add_command)
 
-        remove_command = SearchCommand(self.remove, name='remove', description=_('remove repositories based on search parameters'))
+        remove_command = SearchCommand(self.remove, criteria=False, name='remove', description=_('remove repositories based on search parameters'))
         remove_command.add_option(id_option)
-        self._strip_criteria_options(remove_command)
         self.add_command(remove_command)
-
-    @staticmethod
-    def _strip_criteria_options(command):
-        """
-        We don't want to expose all of the criteria features here, so we remove
-        all of them except for search-related ones.
-
-        :param command: command instance from which we should remove criteria
-                        options.
-        :type  command: SearchCommand
-        """
-        OPTION_NAMES = set(('--fields', '--limit', '--skip', '--sort'))
-        for option in copy.copy(command.options):
-            if option.name in OPTION_NAMES:
-                command.options.remove(option)
 
     def list(self, **kwargs):
         self.prompt.render_title('Repository Group Members')
@@ -368,13 +347,15 @@ class RepoGroupSection(PulpCliSection):
         if 'display-name' in kwargs:
             name = kwargs['display-name']
         description = kwargs['description']
+
         notes = None
         if kwargs['note'] is not None:
             notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)
-        self.prompt.render_success_message('Repository Group [%s] successfully created' % id)
+        self.prompt.render_success_message(
+            'Repository Group [%s] successfully created' % id)
 
     def update(self, **kwargs):
         # Assemble the delta for all options that were passed in

@@ -1,14 +1,14 @@
-Registration and Unregistration
-===============================
+Consumer Registration
+=====================
 
-The Pulp consumer client can be used to register new :term:`consumer` s or
+The Pulp consumer client may be used to register a new :term:`consumer` or
 to unregister an existing consumer.  Once the :term:`registration` has succeeded,
 a consumer is placed into the Pulp server's inventory and associated with
 credentials for accessing content.  These credentials are stored on the
-consumer's filesystem.  Registration will cause the :term:`agent` to become
-active.  When activated, the agent will establish communication with the Pulp
-server and begin processing command & control requests.  The agent will also
-begin scheduled reporting.
+consumer's filesystem.  Upon successful registration, the :term:`agent` to become
+active if installed and running.  When activated, the agent will establish
+communication with the Pulp server and begin processing command & control 
+requests.  The agent will also begin scheduled reporting.
 
 Registering a New Consumer
 --------------------------
@@ -60,3 +60,30 @@ The following options are supported:
   are removed regardless of whether the Pulp server can be notified of the
   unregistration.  These artifacts include credentials such as X.509 certificates
   and repository access files.
+
+  
+Check Registration Status
+-------------------------
+
+The ``status`` command is used to check the :term:`registration` status of the
+consumer.
+
+
+Update a Registered Consumer
+----------------------------
+
+The ``update`` command is used to update information about a previously
+:term:`registered <registration>` consumer.
+
+``--display-name``
+  User-friendly name for the consumer.
+  
+``--description``
+    Arbitrary, user-friendly text used to indicate the usage and content
+    of the consumer.
+
+``--note``
+  Adds a single key-value pair to the consumer's metadata. Multiple pairs can
+  be specified by specifying this option more than once. The value of this option
+  must be specified as the key and its value separated by an equal sign. Example
+  usage: ``--note k1=v1 --note k2=v2``.

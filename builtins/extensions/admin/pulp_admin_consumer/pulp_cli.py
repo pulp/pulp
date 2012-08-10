@@ -47,13 +47,13 @@ class AdminConsumerSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        id_option = PulpCliOption('--id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
+        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
         name_option = PulpCliOption('--display-name', 'user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', 'user-readable description for the consumer', required=False)
 
         # Update Command
         update_command = PulpCliCommand('update', 'changes metadata on an existing consumer', self.update)
-        update_command.add_option(id_option)
+        update_command.add_option(consumer_id_option)
         update_command.add_option(name_option)
         update_command.add_option(description_option)
         d =  'adds/updates/deletes notes to programmatically identify the consumer; '
@@ -65,7 +65,7 @@ class AdminConsumerSection(PulpCliSection):
 
         # Unregister Command
         unregister_command = PulpCliCommand('unregister', 'unregisters a consumer', self.unregister)
-        unregister_command.add_option(PulpCliOption('--id', 'identifies the consumer to be unregistered', required=True))
+        unregister_command.add_option(PulpCliOption('--consumer-id', 'identifies the consumer to be unregistered', required=True))
         self.add_command(unregister_command)
 
         # List Command
@@ -80,21 +80,21 @@ class AdminConsumerSection(PulpCliSection):
 
         # Bind Command
         bind_command = PulpCliCommand('bind', 'binds a consumer to a repository distributor for consuming published content', self.bind)
-        bind_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
+        bind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(bind_command)
 
         # Unbind Command
         unbind_command = PulpCliCommand('unbind', 'unbinds a consumer from a repository distributor', self.unbind)
-        unbind_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
+        unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(unbind_command)
         
         # History Retrieval Command
         history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
-        history_command.add_option(PulpCliOption('--id', 'consumer id', required=True))
+        history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         d = 'limits displayed history entries to the given type;'
         d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
         d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
@@ -111,26 +111,26 @@ class AdminConsumerSection(PulpCliSection):
 
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('id') # not needed in the delta
+        delta.pop('consumer-id') # not needed in the delta
         if 'note' in delta.keys():
             if delta['note']:
                 delta['notes'] = self._parse_notes(delta['note'])
             delta.pop('note')
 
         try:
-            self.context.server.consumer.update(kwargs['id'], delta)
-            self.prompt.render_success_message('Consumer [%s] successfully updated' % kwargs['id'])
+            self.context.server.consumer.update(kwargs['consumer-id'], delta)
+            self.prompt.render_success_message('Consumer [%s] successfully updated' % kwargs['consumer-id'])
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % kwargs['id'], tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % kwargs['consumer-id'], tag='not-found')
 
     def unregister(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
 
         try:
-            self.context.server.consumer.unregister(id)
-            self.prompt.render_success_message('Consumer [%s] successfully unregistered' % id)
+            self.context.server.consumer.unregister(consumer_id)
+            self.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
     def list(self, **kwargs):
         options = {}
@@ -163,29 +163,29 @@ class AdminConsumerSection(PulpCliSection):
             self.prompt.render_document(consumer)
 
     def bind(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
         try:
-            self.context.server.bind.bind(id, repo_id, distributor_id)
-            self.prompt.render_success_message('Consumer [%s] successfully bound to repository distributor [%s : %s]' % (id, repo_id, distributor_id))
+            self.context.server.bind.bind(consumer_id, repo_id, distributor_id)
+            self.prompt.render_success_message('Consumer [%s] successfully bound to repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
     def unbind(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
         try:
-            self.context.server.bind.unbind(id, repo_id, distributor_id)
-            self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (id, repo_id, distributor_id))
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id)
+            self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
     def history(self, **kwargs):
-        self.prompt.render_title(_('Consumer History [%(i)s]') % {'i' : kwargs['id']})
+        self.prompt.render_title(_('Consumer History [%(i)s]') % {'i' : kwargs['consumer-id']})
 
-        history_list = self.context.server.consumer_history.history(kwargs['id'], kwargs['event-type'], kwargs['limit'], kwargs['sort'],
+        history_list = self.context.server.consumer_history.history(kwargs['consumer-id'], kwargs['event-type'], kwargs['limit'], kwargs['sort'],
                                                             kwargs['start-date'], kwargs['end-date']).response_body
         filters = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
         order = filters
@@ -194,19 +194,19 @@ class AdminConsumerSection(PulpCliSection):
 
 
     def install(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         units = []
         for name in kwargs['name']:
             unit_key = dict(name=name)
             unit = dict(type_id='rpm', unit_key=unit_key)
             units.append(unit)
         try:
-            task = self.context.server.consumer_content.install(id, units=units)
+            task = self.context.server.consumer_content.install(consumer_id, units=units)
             self.prompt.render_success_message('Install task created with id [%s]' % task.task_id)
             # Wait for task to finish
-            self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' % (kwargs['name'], id))
+            self.prompt.render_success_message('Content units [%s] successfully installed on consumer [%s]' % (kwargs['name'], consumer_id))
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % id, tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
 
     def _parse_notes(self, notes_list):
@@ -247,7 +247,7 @@ class ContentSection(PulpCliSection):
         for Command in (InstallContent, UpdateContent, UninstallContent):
             command = Command(context)
             command.create_option(
-                '--id',
+                '--consumer-id',
                 _('identifies the consumer'),
                 required=True)
             command.create_option(
@@ -345,7 +345,7 @@ class InstallContent(PollingCommand):
         self.context = context
 
     def run(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         type_id = kwargs['type']
         apply = (not kwargs['no-commit'])
         options = dict(
@@ -355,7 +355,7 @@ class InstallContent(PollingCommand):
             unit_key = dict(name=name)
             unit = dict(type_id=type_id, unit_key=unit_key)
             units.append(unit)
-        self.install(id, units, options)
+        self.install(consumer_id, units, options)
 
     def install(self, id, units, options):
         prompt = self.context.prompt
@@ -416,7 +416,7 @@ class UpdateContent(PollingCommand):
         self.context = context
 
     def run(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         type_id = kwargs['type']
         apply = (not kwargs['no-commit'])
         options = dict(
@@ -426,7 +426,7 @@ class UpdateContent(PollingCommand):
             unit_key = dict(name=name)
             unit = dict(type_id=type_id, unit_key=unit_key)
             units.append(unit)
-        self.update(id, units, options)
+        self.update(consumer_id, units, options)
 
     def update(self, id, units, options):
         prompt = self.context.prompt
@@ -487,7 +487,7 @@ class UninstallContent(PollingCommand):
         self.context = context
 
     def run(self, **kwargs):
-        id = kwargs['id']
+        consumer_id = kwargs['consumer-id']
         type_id = kwargs['type']
         apply = (not kwargs['no-commit'])
         options = dict(
@@ -497,7 +497,7 @@ class UninstallContent(PollingCommand):
             unit_key = dict(name=name)
             unit = dict(type_id=type_id, unit_key=unit_key)
             units.append(unit)
-        self.uninstall(id, units, options)
+        self.uninstall(consumer_id, units, options)
 
     def uninstall(self, id, units, options):
         prompt = self.context.prompt

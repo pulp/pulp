@@ -24,11 +24,9 @@ from yum.repos import RepoStorage
 import util
 log = util.getLogger(__name__)
 
-CACHE_DIR="/tmp/pulp/cache"
-
 class DepSolver:
-    def __init__(self, repos, pkgs=[]):
-        self.pkgs = pkgs
+    def __init__(self, repos, pkgs=None):
+        self.pkgs = pkgs or []
         self.repos = repos
         self._repostore = RepoStorage(self)
         self.setup()
@@ -39,9 +37,9 @@ class DepSolver:
          Load the repos into repostore to query package dependencies
         """
         for repo in self.repos:
-            self.yrepo = yum.yumRepo.YumRepository(repo.id)
-            self.yrepo.baseurl = ["file://%s" % str(repo.working_dir)]
-            self.yrepo.basecachedir = CACHE_DIR
+            self.yrepo = yum.yumRepo.YumRepository(str(repo.id))
+            self.yrepo.baseurl = ["file://%s/%s/" % (str(repo.working_dir), str(repo.id))]
+            self.yrepo.basecachedir = "%s/cache/" % str(repo.working_dir)
             self._repostore.add(self.yrepo)
 
     def loadPackages(self):
@@ -54,10 +52,10 @@ class DepSolver:
 
     def cleanup(self):
         """
-         clean up the repo metadata cache from /var/lib/pulp/cache/
+         clean up the repo metadata cache from /var/lib/pulp/working/<repoid>/cache/
         """
-        for repo in self._repostore.repos:
-            cachedir = "%s/%s" % (CACHE_DIR, repo)
+        for repo in self.repos:
+            cachedir = "%s/cache" % str(repo.working_dir)
             shutil.rmtree(cachedir)
 
     def getDependencylist(self):

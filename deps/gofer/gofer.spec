@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.70
+Version: 0.71
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -60,13 +60,14 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/init.d
 mkdir -p %{buildroot}/%{_var}/log/%{name}
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/journal/watchdog
-mkdir -p %{buildroot}/%{_libdir}/%{name}/plugins
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
+mkdir -p %{buildroot}/%{_usr}/share/%{name}/plugins
 
 cp bin/%{name}d %{buildroot}/usr/bin
 cp etc/init.d/%{name}d %{buildroot}/%{_sysconfdir}/init.d
 cp etc/%{name}/*.conf %{buildroot}/%{_sysconfdir}/%{name}
 cp etc/%{name}/plugins/*.conf %{buildroot}/%{_sysconfdir}/%{name}/plugins
-cp src/plugins/*.py %{buildroot}/%{_libdir}/%{name}/plugins
+cp src/plugins/*.py %{buildroot}/%{_usr}/share/%{name}/plugins
 
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 
@@ -75,14 +76,17 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
+%dir %{_sysconfdir}/%{name}/
+%dir %{_usr}/lib/%{name}/plugins/
+%dir %{_usr}/share/%{name}/plugins/
 %dir %{_sysconfdir}/%{name}/conf.d/
+%dir %{_var}/log/%{name}/
 %{python_sitelib}/%{name}/agent/
 %{_bindir}/%{name}d
 %attr(755,root,root) %{_sysconfdir}/init.d/%{name}d
 %config(noreplace) %{_sysconfdir}/%{name}/agent.conf
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/builtin.conf
-%{_libdir}/%{name}/plugins/builtin.*
-%{_var}/log/%{name}
+%{_usr}/share/%{name}/plugins/builtin.*
 %doc LICENSE
 
 %post
@@ -131,9 +135,9 @@ Contains gofer python lib modules.
 Summary: Gofer ruby lib modules
 Group: Development/Languages
 BuildRequires: ruby
-Requires: ruby-qpid
 Requires: rubygems
 Requires: rubygem(json)
+Requires: rubygem(qpid) >= 0.16.0
 
 %description -n ruby-%{name}
 Contains gofer ruby lib modules.
@@ -164,7 +168,7 @@ The system plug-in provides system functionality.
 %files -n gofer-system
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/system.conf
-%{_libdir}/%{name}/plugins/system.*
+%{_usr}/share/%{name}/plugins/system.*
 %doc LICENSE
 
 
@@ -186,7 +190,7 @@ for asynchronous RMI calls.
 %files -n gofer-watchdog
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/watchdog.conf
-%{_libdir}/%{name}/plugins/watchdog.*
+%{_usr}/share/%{name}/plugins/watchdog.*
 %{_var}/lib/%{name}/journal/watchdog
 %doc LICENSE
 
@@ -209,7 +213,7 @@ This plug-in provides RMI access to libvirt functionality.
 %files -n gofer-virt
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/virt.conf
-%{_libdir}/%{name}/plugins/virt.*
+%{_usr}/share/%{name}/plugins/virt.*
 %doc LICENSE
 
 
@@ -231,16 +235,20 @@ This plug-in provides RMI access to package (RPM) management.
 %files -n gofer-package
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/package.conf
-%{_libdir}/%{name}/plugins/package.*
+%{_usr}/share/%{name}/plugins/package.*
 %doc LICENSE
 
 
 
 %changelog
-* Tue Jun 12 2012 Jeff Ortel <jortel@redhat.com> 0.70-1
-- bump gofer to: 0.70 (jortel@redhat.com)
-- Renamed dependency RPMs (jason.dobies@redhat.com)
+* Tue Aug 07 2012 Jeff Ortel <jortel@redhat.com> 0.71-1
+- Update to latest: 0.71, no Requires: changes needed in Pulp. (jortel@redhat.com)
 
+* Tue Jul 31 2012 Jeff Ortel <jortel@redhat.com> 0.71-1
+- Port ruby-gofer to rubygem-qpid. (jortel@redhat.com)
+- Make /usr/share/gofer/plugins the primary plugin location. Based on fedora
+  packaging guidelines referencing FHS standards. (jortel@redhat.com)
+- Discontinue {_libdir} macro for plugins. (jortel@redhat.com)
 * Tue Jun 12 2012 Jeff Ortel <jortel@redhat.com> 0.70-1
 - Refit mocks for reparent of Envelope & Options to (object).
   (jortel@redhat.com)

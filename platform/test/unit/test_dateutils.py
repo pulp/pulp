@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -14,6 +14,7 @@
 
 import datetime
 import unittest
+import isodate
 
 from pulp.common import dateutils
 
@@ -133,3 +134,23 @@ class ISO8601Tester(unittest.TestCase):
         self.assertEqual(i1, i2)
         self.assertEqual(t1, t2)
         self.assertEqual(r1, r2)
+
+class TestParseDatetimeOrDate(unittest.TestCase):
+    def test_value_error(self):
+        # I know, this isn't actually a ValueError, but it should be!
+        self.assertRaises(isodate.ISO8601Error, dateutils.parse_iso8601_datetime_or_date, 'abc')
+
+    def test_type_error(self):
+        self.assertRaises(TypeError, dateutils.parse_iso8601_datetime_or_date, 123)
+
+    def test_invalid_date(self):
+        self.assertRaises(isodate.ISO8601Error, dateutils.parse_iso8601_datetime_or_date, '2012-15-90')
+
+    def test_date(self):
+        ret = dateutils.parse_iso8601_datetime_or_date('2012-03-15')
+        self.assertTrue(isinstance(ret, datetime.datetime))
+
+    def test_datetime(self):
+        ret = dateutils.parse_iso8601_datetime_or_date('2012-07-31T09:43:15')
+        self.assertTrue(isinstance(ret, datetime.datetime))
+

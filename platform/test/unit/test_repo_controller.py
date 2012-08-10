@@ -1152,7 +1152,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
             'remove_duplicates' : 'True'
         }
 
-        params = {'query' : query}
+        params = {'criteria' : query}
         status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
 
         # Verify
@@ -1184,7 +1184,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
         query = {'type_ids' : ['rpm', 'errata']}
 
-        params = {'query' : query}
+        params = {'criteria' : query}
         status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
 
         # Verify
@@ -1203,7 +1203,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
     def test_post_bad_query(self):
         # Test
-        params = {'query' : {'limit' : 'fus'}}
+        params = {'criteria' : {'limit' : 'fus'}}
         status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
 
         # Verify

@@ -13,27 +13,59 @@
 
 import os
 import sys
+import unittest
+
+import mock
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 
 import rpm_support_base
 import rpm_units_search.pulp_cli
 
-class GeneralUnitSearchCommandTests(rpm_support_base.PulpClientTests):
+class TestUnitSection(unittest.TestCase):
+    def setUp(self):
+        rpm_units_search.pulp_cli.CONTEXT = mock.MagicMock()
+        rpm_units_search.pulp_cli.CONTEXT.server = mock.MagicMock()
 
-    def test_search(self):
-        # Setup
-        command = rpm_units_search.pulp_cli.GeneralUnitSearchCommand(self.context, 'name', 'desc', 'title', ['rpm'])
-        self.server_mock.request.return_value = (200, {})
+    def test_content_command(self):
+        # setup
+        return_value = mock.MagicMock()
+        return_value.response_body = ['unit1']
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.return_value = return_value
 
-        # Test
-        command.search(**{'repo-id' : 'repo-1'})
+        rpm_units_search.pulp_cli._content_command(['rpm'], **{'repo-id': 'repo1'})
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.assert_called_once_with('repo1', type_ids=['rpm'])
 
-        # Verify
-        # TODO: ran out of time, revisit in the future
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_rpm(self, mock_command):
+        rpm_units_search.pulp_cli.rpm(a=1, b=2)
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_RPM], a=1, b=2)
 
-        # Cleanup
-        self.server_mock.request.return_value = None
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_srpm(self, mock_command):
+        rpm_units_search.pulp_cli.srpm(a=1, b=2)
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_SRPM], a=1, b=2)
+
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_drpm(self, mock_command):
+        rpm_units_search.pulp_cli.drpm(a=1, b=2)
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_DRPM], a=1, b=2)
+
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_package_group(self, mock_command):
+        rpm_units_search.pulp_cli.package_group(a=1, b=2)
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_PACKAGE_GROUP], a=1, b=2)
+
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_package_category(self, mock_command):
+        rpm_units_search.pulp_cli.package_category(a=1, b=2)
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_PACKAGE_CATEGORY], a=1, b=2)
+
 
 class RpmUnitsSearchUtilityTests(rpm_support_base.PulpClientTests):
 

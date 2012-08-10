@@ -269,37 +269,105 @@ class RepositoryActionsAPI(PulpAPI):
         data = {'source_repo_id' : source_repo_id,}
         return self.server.POST(path, data)
 
-class RepositoryUnitSearchAPI(PulpAPI):
+class RepositoryUnitAPI(PulpAPI):
     """
-    Connection class to access repo search specific calls
+    Connection class to access repo unit specific calls
     """
+
+    COPY_PATH = 'v2/repositories/%s/actions/associate/'
+    SEARCH_PATH = 'v2/repositories/%s/search/units/'
+
     def __init__(self, pulp_connection):
         """
         @type:   pulp_connection: pulp.bindings.server.PulpConnection
         """
-        super(RepositoryUnitSearchAPI, self).__init__(pulp_connection)
-        self.base_path = "/v2/repositories/%s/search/units/"
+        super(RepositoryUnitAPI, self).__init__(pulp_connection)
 
-    def search(self, repo_id, query):
-        path = self.base_path % repo_id
-        data = {'query': query,}
+    @staticmethod
+    def _generate_search_criteria(**kwargs):
+        """
+        This composes arguments to a UnitAssociationCriteria, which is different
+        and more complex than a normal Criteria.
+
+        :param kwargs:  options input by the user on the CLI and passed through
+                        by okaara
+        :type  kwargs:  dict
+        :return:    dict of options that can be sent to the REST API
+                    representing a UnitAssociationCriteria
+        :rtype:     dict
+        """
+        criteria = {'filters': {'unit': SearchAPI.compose_filters(**kwargs)}}
+        criteria['type_ids'] = kwargs['type_ids']
+
+        # build the association filters
+        association_fake_kwargs = {}
+        for arg, operator in (('after', 'str-gte'), ('before', 'str-lte')):
+            value = kwargs.pop(arg, None)
+            if value:
+                association_fake_kwargs[operator] = [('created', value)]
+
+        # use compose_filters() to create the actual mongo spec, which requires
+        # simulating the **kwargs that okaara would pass in.
+        if association_fake_kwargs:
+            criteria['filters']['association'] = SearchAPI.compose_filters(**association_fake_kwargs)
+
+        return criteria
+
+    def search(self, repo_id, **kwargs):
+        """
+        Perform a search of RepoContentUnits
+
+        :param repo_id: id of repo to search within
+        :type  repo_id: basestring
+        :param kwargs:  search options input by the user and passed in by okaara
+        :type  kwargs:  dict
+
+        :return:    server response
+        """
+        criteria = self._generate_search_criteria(**kwargs)
+
+        sort = kwargs.pop('sort', None)
+        if sort:
+            criteria.setdefault('sort', {})['association'] = sort
+
+        fields = kwargs.pop('fields', None)
+        if fields:
+            criteria.setdefault('fields', {})['unit'] = fields
+
+        limit = kwargs.pop('limit', None)
+        if limit:
+            criteria['limit'] = limit
+
+        skip = kwargs.pop('skip', None)
+        if skip:
+            criteria['skip'] = skip
+
+        path = self.SEARCH_PATH % repo_id
+        data = {'criteria': criteria}
         return self.server.POST(path, data)
 
-class RepositoryUnitAssociationAPI(PulpAPI):
-    """
-    Connection class to manipulate repository unit associations.
-    """
+    def copy(self, source_repo_id, destination_repo_id, **kwargs):
+        """
+        Perform a search of RepoContentUnits in the source repo, and copy the
+        results to the destination repo.
 
-    def __init__(self, pulp_connection):
-        super(RepositoryUnitAssociationAPI, self).__init__(pulp_connection)
+        :param source_repo_id:  id of repo to search within
+        :type  source_repo_id:  basestring
+        :param destination_repo_id: id of repo into which units should be copied
+        :type  destination_repo_id: basestring
+        :param kwargs:  search options input by the user and passed in by okaara
+        :type  kwargs:  dict
 
-    def copy_units(self, source_repo_id, destination_repo_id, criteria):
-        url = '/v2/repositories/%s/actions/associate/' % destination_repo_id
-        body = {
+        :return:    server response
+        """
+        criteria = self._generate_search_criteria(**kwargs)
+        data = {
             'source_repo_id' : source_repo_id,
             'criteria' : criteria
         }
-        return self.server.POST(url, body)
+        path = self.COPY_PATH % destination_repo_id
+        return self.server.POST(path, data)
+
 
 class RepositorySyncSchedulesAPI(PulpAPI):
 

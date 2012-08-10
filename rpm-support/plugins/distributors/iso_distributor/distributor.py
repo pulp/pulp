@@ -13,6 +13,7 @@
 import os
 import gettext
 import logging
+import re
 import shutil
 import time
 import traceback
@@ -28,10 +29,11 @@ _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 REQUIRED_CONFIG_KEYS = ["http", "https"]
-OPTIONAL_CONFIG_KEYS = ["generate_metadata", "https_publish_dir","http_publish_dir", "start_date", "end_date"]
+OPTIONAL_CONFIG_KEYS = ["generate_metadata", "https_publish_dir","http_publish_dir", "start_date", "end_date", "iso_prefix"]
 
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/isos"
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/isos"
+ISO_NAME_REGEX = re.compile(r'^[_A-Za-z0-9-]+$')
 
 ###
 # Config Options Explained
@@ -45,6 +47,7 @@ HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/isos"
 # http_publish_dir      - Optional parameter to override the HTTP_PUBLISH_DIR, mainly used for unit tests
 # skip                  - List of what content types to skip during export, options:
 #                         ["rpm", "drpm", "errata", "distribution", "packagegroup"]
+# iso_prefix            - prefix to use in the generated iso naming, default: <repoid>-<current_date>.iso
 # -- plugins ------------------------------------------------------------------
 
 # TODO:
@@ -120,6 +123,12 @@ class ISODistributor(Distributor):
                     msg = _("https_ca is not a valid certificate")
                     _LOG.error(msg)
                     return False, msg
+            if key == 'iso_prefix':
+                iso_prefix = config.get('iso_prefix')
+                if iso_prefix is not None and (not isinstance(iso_prefix, str) or not self._is_valid_prefix(iso_prefix)):
+                    msg = _("iso_prefix is not a valid string; valid supported characters include %s" % ISO_NAME_REGEX.pattern)
+                    _LOG.error(msg)
+                    return False, msg
         publish_dir = config.get("https_publish_dir")
         if publish_dir:
             if not os.path.exists(publish_dir) or not os.path.isdir(publish_dir):
@@ -146,6 +155,12 @@ class ISODistributor(Distributor):
     def set_progress(self, type_id, status, progress_callback=None):
         if progress_callback:
             progress_callback(type_id, status)
+
+    def _is_valid_prefix(self, iso_prefix):
+        """
+        @return: True if the given iso_prefix is a valid match; False otherwise
+        """
+        return ISO_NAME_REGEX.match(iso_prefix) is not None
 
     def create_date_range_filter(self, config):
         start_date = None
@@ -261,12 +276,13 @@ class ISODistributor(Distributor):
         # build iso and publish via HTTPS
         https_publish_dir = self.get_https_publish_iso_dir(config)
         https_repo_publish_dir = os.path.join(https_publish_dir, repo.id).rstrip('/')
+        prefix = config.get('iso_prefix') or repo.id
         if config.get("https"):
             # Publish for HTTPS
             self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, https_repo_publish_dir))
-                isogen = GenerateIsos(repo_working_dir, https_repo_publish_dir, prefix=repo.id, progress=progress_status)
+                isogen = GenerateIsos(repo_working_dir, https_repo_publish_dir, prefix=prefix, progress=progress_status)
                 progress_status = isogen.run()
                 summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
@@ -288,10 +304,11 @@ class ISODistributor(Distributor):
             self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, http_repo_publish_dir))
-                isogen = GenerateIsos(repo_working_dir, http_repo_publish_dir, prefix=repo.id, progress=progress_status)
+                isogen = GenerateIsos(repo_working_dir, http_repo_publish_dir, prefix=prefix, progress=progress_status)
                 progress_status = isogen.run()
                 summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
+                progress_status["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:

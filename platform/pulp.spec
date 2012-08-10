@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.321
+Version: 0.0.322
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,10 @@ exit 0
 %endif
 
 %changelog
+* Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
+- unit search within a repository through the CLI now used the standard
+  criteria features. (mhrivnak@redhat.com)
+
 * Fri Aug 03 2012 Jeff Ortel <jortel@redhat.com> 0.0.321-1
 - Changed dependency resolution API to return the plugin report directly
   (jason.dobies@redhat.com)
