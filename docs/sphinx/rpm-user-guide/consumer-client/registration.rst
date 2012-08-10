@@ -60,3 +60,30 @@ The following options are supported:
   are removed regardless of whether the Pulp server can be notified of the
   unregistration.  These artifacts include credentials such as X.509 certificates
   and repository access files.
+
+  
+Check Registration Status
+-------------------------
+
+The ``status`` command is used to check the :term:`registration` status of the
+consumer.
+
+
+Update a Registered Consumer
+----------------------------
+
+The ``update`` command is used to update information about a previously
+:term:`registered <registration>` consumer.
+
+``--display-name``
+  User-friendly name for the consumer.
+  
+``--description``
+    Arbitrary, user-friendly text used to indicate the usage and content
+    of the consumer.
+
+``--note``
+  Adds a single key-value pair to the consumer's metadata. Multiple pairs can
+  be specified by specifying this option more than once. The value of this option
+  must be specified as the key and its value separated by an equal sign. Example
+  usage: ``--note k1=v1 --note k2=v2``.

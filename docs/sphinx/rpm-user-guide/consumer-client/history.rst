@@ -1,12 +1,12 @@
 History
 =======
 
-The consumer history command may be used to view the :term:`consumer's <consumer>`
+The consumer ``history`` command is used to view the :term:`consumer's <consumer>`
 history.  A consumer's history is expressed as a chronologically ordered set of
 pre-defined events.  Each event represents an action taken on the consumer or an
 activity in which the consumer participates.
 
-Supported Events:
+Consumer history events explained:
 
 ``consumer_registered``
   The consumer has been registered to the Pulp server.

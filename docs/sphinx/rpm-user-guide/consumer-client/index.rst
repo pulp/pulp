@@ -8,3 +8,4 @@ Consumer Client User Guide
    registration
    bind
    history
+   update
