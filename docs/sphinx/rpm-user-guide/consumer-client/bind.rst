@@ -1,7 +1,7 @@
 Repository Binding
 ==================
 
-The Pulp consumer client can be used to manage Pulp :term:`bindings <binding>`
+The Pulp consumer client may be used to manage Pulp :term:`bindings <binding>`
 for the registered consumer.  Binding to a Pulp repository creates an association
 between the consumer and the specified repository on the Pulp server.  The binding
 enables the consumer to access content using :term:`yum`.  Following a successful
