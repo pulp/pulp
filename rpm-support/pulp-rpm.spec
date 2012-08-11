@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.322
+Version: 0.0.323
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -233,6 +233,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Sat Aug 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-1
+- iso prefix override option to override iso naming (pkilambi@redhat.com)
+
 * Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
 - 845109 - changing consumer id admin client extensions option to --consumer-id
   instead of --id (skarmark@redhat.com)
