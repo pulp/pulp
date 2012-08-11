@@ -23,5 +23,11 @@ IMPORTER_ID_PUPPET = 'puppet_importer'
 # ID of the puppet module type definition (must match what's in puppet.json)
 TYPE_PUPPET_MODULE = 'puppet_module'
 
-# Configuratoin key for the directory from which to sync modules
+# Configuration key for the directory from which to sync modules
 CONFIG_DIR = 'dir'
+
+# Configuration key for whether or not to remove modules that were previously
+# synchronized but were not on a subsequent sync
+CONFIG_REMOVE_MISSING = 'remove_missing'
+DEFAULT_REMOVE_MISSING = False
+

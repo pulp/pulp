@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-import constants
+import pulp_puppet.common import constants
 import sync
 import validation
 

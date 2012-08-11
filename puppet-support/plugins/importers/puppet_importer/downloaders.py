@@ -25,7 +25,7 @@ retrieve_module(config, module_metadata, destination)
 
 import os
 
-import constants
+from pulp_puppet.common import constants
 
 METADATA_FILENAME = 'modules.json'
 

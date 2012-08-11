@@ -11,18 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-try:
-    import json as _json
-except ImportError:
-    import simplejson as _json
-json = _json
 
-from datetime import datetime
-from gettext import gettext as _
+from   datetime import datetime
+from   gettext import gettext as _
 import sys
 import traceback
 
 import downloaders
+from  pulp_puppet.common.model import RepositoryMetadata
 
 # -- constants ----------------------------------------------------------------
 
@@ -105,7 +101,7 @@ class PuppetModuleSyncRun(object):
 
         # Parse the retrieved metadata
         try:
-            parsed = json.loads(metadata_json)
+            metadata = RepositoryMetadata.from_json(metadata_json)
         except Exception, e:
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error parsing repository modules metadata document')
@@ -129,9 +125,9 @@ class PuppetModuleSyncRun(object):
 
         self.progress_report.update_progress()
 
-        return parsed
+        return metadata
 
-    def _import_modules(self, modules_list):
+    def _import_modules(self, metadata):
         pass
 
     def _create_downloader(self):

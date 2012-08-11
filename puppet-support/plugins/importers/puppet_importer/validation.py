@@ -14,7 +14,7 @@
 from gettext import gettext as _
 import os
 
-import constants
+from pulp_puppet.common import constants
 
 def validate(config):
     """
