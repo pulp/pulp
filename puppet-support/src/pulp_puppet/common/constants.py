@@ -23,8 +23,25 @@ IMPORTER_ID_PUPPET = 'puppet_importer'
 # ID of the puppet module type definition (must match what's in puppet.json)
 TYPE_PUPPET_MODULE = 'puppet_module'
 
+# -- storage and hosting ------------------------------------------------------
+
+# Location in the repository where a module will be hosted
+# Substitutions: author first character, author
+HOSTED_MODULE_FILE_RELATIVE_PATH = 'system/releases/%s/%s'
+
+# Name template for a module
+# Substitutions: author, name, version
+MODULE_FILENAME = '%s-%s-%s.tar.gz'
+
+# Location in Pulp where modules will be stored (the filename includes all
+# of the uniqueness of the module, so we can keep this flat)
+# Substitutions: filename
+STORAGE_MODULE_RELATIVE_PATH = '%s'
+
+# -- configuration keys -------------------------------------------------------
+
 # Configuration key for the directory from which to sync modules
-CONFIG_DIR = 'dir'
+CONFIG_SOURCE_DIR = 'dir'
 
 # Configuration key for whether or not to remove modules that were previously
 # synchronized but were not on a subsequent sync

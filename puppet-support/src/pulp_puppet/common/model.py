@@ -22,6 +22,8 @@ except ImportError:
     import simplejson as _json
 json = _json
 
+from pulp_puppet.common import constants
+
 
 class RepositoryMetadata(object):
 
@@ -100,6 +102,14 @@ class Module(object):
 
         return module
 
+    @staticmethod
+    def generate_unit_key(name, version, author):
+        return {
+            'name'    : name,
+            'version' : version,
+            'author'  : author,
+        }
+
     def __init__(self, name, version, author):
 
         # Unit Key Fields
@@ -150,11 +160,7 @@ class Module(object):
         Returns the unit key for this module that will uniquely identify
         it in Pulp.
         """
-        return {
-            'name'    : self.name,
-            'version' : self.version,
-            'author'  : self.author,
-        }
+        return self.generate_unit_key(self.name, self.version, self.author)
 
     def unit_metadata(self):
         """
@@ -168,3 +174,13 @@ class Module(object):
             'project_url' : self.project_url,
             'releases'    : self.releases,
         }
+
+    def filename(self):
+        """
+        Generates the filename for the given module.
+
+        :return: puppet standard filename for this module
+        :rtype:  str
+        """
+        f = constants.MODULE_FILENAME % (self.author, self.name, self.version)
+        return f

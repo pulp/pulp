@@ -24,10 +24,15 @@ retrieve_module(config, module_metadata, destination)
 """
 
 import os
+import shutil
 
 from pulp_puppet.common import constants
 
+# -- constants ----------------------------------------------------------------
+
 METADATA_FILENAME = 'modules.json'
+
+# -- exceptions ---------------------------------------------------------------
 
 class MetadataNotFound(Exception):
 
@@ -36,6 +41,14 @@ class MetadataNotFound(Exception):
         self.location = location
 
 
+class ModuleNotFound(Exception):
+
+    def __init__(self, location):
+        Exception.__init__(self, location)
+        self.location = location
+
+# -- downloader implementations -----------------------------------------------
+
 class LocalDownloader(object):
     """
     Used when the source for puppet modules is a directory local to the Pulp
@@ -43,8 +56,11 @@ class LocalDownloader(object):
     """
 
     def retrieve_metadata(self, config):
+        """
+        See module-level docstrings for description.
+        """
 
-        source_dir = config.get(constants.CONFIG_DIR)
+        source_dir = config.get(constants.CONFIG_SOURCE_DIR)
         metadata_filename = os.path.join(source_dir, METADATA_FILENAME)
 
         if not os.path.exists(metadata_filename):
@@ -56,8 +72,23 @@ class LocalDownloader(object):
 
         return contents
 
-    def retrieve_module(self, config, module_metadata, destination):
-        pass
+    def retrieve_module(self, config, module, destination):
+        """
+        See module-level docstrings for description.
+        """
+
+        # Determine the full path to the module
+        source_dir = config.get(constants.CONFIG_SOURCE_DIR)
+        module_path = constants.HOSTED_MODULE_FILE_RELATIVE_PATH % (module.author[0], module.author)
+        module_filename = module.filename()
+        full_filename = os.path.join(source_dir, module_path, module_filename)
+
+        if not os.path.exists(full_filename):
+            raise ModuleNotFound(full_filename)
+
+        # Copy into the final destination as provided by Pulp
+        shutil.copy(full_filename, destination)
+
 
 class HttpDownloader(object):
     """
@@ -67,9 +98,19 @@ class HttpDownloader(object):
     # To be implemented when support for this is required
     pass
 
+
 class HttpsDownloader(object):
     """
     Used when the source for puppet modules is a remote source over HTTPS.
+    """
+
+    # To be implemented when support for this is required
+    pass
+
+
+class GitDownloader(object):
+    """
+    Used when the source for puppet modules is a git repository.
     """
 
     # To be implemented when support for this is required
