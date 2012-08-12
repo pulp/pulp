@@ -15,6 +15,7 @@ from gettext import gettext as _
 
 import copier
 import sync
+import upload
 import validation
 from   pulp_puppet.common import constants
 
@@ -44,3 +45,6 @@ class PuppetModuleImporter(Importer):
                      units=None):
         copier.copy_units(import_conduit, units)
 
+    def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit,
+                    config):
+        upload.handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit)
