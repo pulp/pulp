@@ -13,9 +13,10 @@
 
 from gettext import gettext as _
 
-import pulp_puppet.common import constants
+import copier
 import sync
 import validation
+from   pulp_puppet.common import constants
 
 from pulp.plugins.importer import Importer
 
@@ -38,3 +39,8 @@ class PuppetModuleImporter(Importer):
         sync_runner = sync.PuppetModuleSyncRun(repo, sync_conduit, config)
         report = sync_runner.perform_sync()
         return report
+
+    def import_units(self, source_repo, dest_repo, import_conduit, config,
+                     units=None):
+        copier.copy_units(import_conduit, units)
+
