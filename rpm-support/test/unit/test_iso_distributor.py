@@ -446,3 +446,68 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="My_iso_name-01")
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
+
+    def test_skip_types_export(self):
+        repo = mock.Mock(spec=Repository)
+        repo.id = "testrepo"
+        repo.working_dir = self.repo_working_dir
+        distributor = ISODistributor()
+        config = distributor_mocks.get_basic_config(http=True, https=False, skip=["rpm", "errata", "packagegroup"])
+        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=[], pkg_dir=self.pkg_dir)
+        report = distributor.publish_repo(repo, publish_conduit, config)
+        print report.summary
+        summary_keys = {"rpm" : ["num_package_units_attempted", "num_package_units_exported", "num_package_units_errors"],
+                        "distribution" : ["num_distribution_units_attempted", "num_distribution_units_exported", "num_distribution_units_errors"],
+                        "packagegroup" : ["num_package_groups_exported", "num_package_categories_exported"],
+                        "erratum" : ["num_errata_units_exported"],}
+        # check rpm,packagegroup,erratum info is skipped
+        for key in summary_keys["rpm"] + summary_keys["packagegroup"] + summary_keys["erratum"]:
+            self.assertTrue(key not in report.summary)
+        # check distro info is present and not skipped
+        for key in summary_keys["distribution"]:
+            self.assertTrue(key in report.summary)
+
+    def test_publish_progress(self):
+        global progress_status
+        progress_status = None
+
+        def set_progress(progress):
+            global progress_status
+            progress_status = progress
+        PROGRESS_FIELDS = ["num_success", "num_error", "items_left", "items_total", "error_details"]
+        publish_conduit = distributor_mocks.get_publish_conduit(pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http_publish_dir=self.http_publish_dir,
+            generate_metadata=True, http=True, https=False)
+        distributor = ISODistributor()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "test_progress_sync"
+        publish_conduit.set_progress = mock.Mock()
+        publish_conduit.set_progress.side_effect = set_progress
+        distributor.publish_repo(repo, publish_conduit, config)
+
+        self.assertTrue(progress_status is not None)
+        self.assertTrue("rpms" in progress_status)
+        self.assertTrue(progress_status["rpms"].has_key("state"))
+        self.assertEqual(progress_status["rpms"]["state"], "FINISHED")
+        for field in PROGRESS_FIELDS:
+            self.assertTrue(field in progress_status["rpms"])
+
+        self.assertTrue("distribution" in progress_status)
+        self.assertTrue(progress_status["distribution"].has_key("state"))
+        self.assertEqual(progress_status["distribution"]["state"], "FINISHED")
+        for field in PROGRESS_FIELDS:
+            self.assertTrue(field in progress_status["distribution"])
+
+        self.assertTrue("errata" in progress_status)
+        self.assertTrue(progress_status["errata"].has_key("state"))
+        self.assertEqual(progress_status["errata"]["state"], "FINISHED")
+
+        self.assertTrue("isos" in progress_status)
+        self.assertTrue(progress_status["isos"].has_key("state"))
+        self.assertEqual(progress_status["isos"]["state"], "FINISHED")
+
+        self.assertTrue("publish_http" in progress_status)
+        self.assertEqual(progress_status["publish_http"]["state"], "FINISHED")
+        self.assertTrue("publish_https" in progress_status)
+        self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")
