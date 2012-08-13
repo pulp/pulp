@@ -234,6 +234,8 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-2
+- bump release for QE build.
 * Sat Aug 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-1
 - iso prefix override option to override iso naming (pkilambi@redhat.com)
 
