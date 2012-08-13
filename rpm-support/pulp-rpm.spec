@@ -162,6 +162,7 @@ client capabilites with RPM specific features.
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
 %{_usr}/lib/pulp/admin/extensions/rpm_sync/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
+%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_search/
 %{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
