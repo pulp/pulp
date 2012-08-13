@@ -91,9 +91,9 @@ class PuppetModuleSyncRun(object):
         # Retrieve the metadata from the source
         try:
             downloader = self._create_downloader()
-            metadata_json = downloader.retrieve_metadata(self.progress_report,
-                                                         self.is_cancelled_call,
-                                                         self.config)
+            metadata_json_docs = downloader.retrieve_metadata(self.progress_report,
+                                                              self.is_cancelled_call,
+                                                              self.config)
         except Exception, e:
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error downloading metadata')
@@ -108,9 +108,11 @@ class PuppetModuleSyncRun(object):
 
             return None
 
-        # Parse the retrieved metadata
+        # Parse the retrieved metadata documents
         try:
-            metadata = RepositoryMetadata.from_json(metadata_json)
+            metadata = RepositoryMetadata()
+            for doc in metadata_json_docs:
+                metadata.update_from_json(doc)
         except Exception, e:
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error parsing repository modules metadata document')

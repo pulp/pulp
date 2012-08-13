@@ -27,11 +27,14 @@ from pulp_puppet.common import constants
 
 class RepositoryMetadata(object):
 
-    @classmethod
-    def from_json(cls, metadata_json):
+    def __init__(self):
+        self.modules = []
+
+    def update_from_json(self, metadata_json):
         """
-        Parses the repository metadata JSON document into an object
-        representation.
+        Updates this metadata instance with modules found in the given JSON
+        document. This can be called multiple times to merge multiple
+        repository metadata JSON documents into this instance.
 
         :return: object representing the repository and all of its modules
         :rtype:  RepositoryMetadata
@@ -39,18 +42,11 @@ class RepositoryMetadata(object):
 
         parsed = json.loads(metadata_json)
 
-        repo_metadata = cls()
-
         # The contents of the metadata document is a list of dictionaries,
         # each represnting a single module.
         for module_dict in parsed:
             module = Module.from_dict(module_dict)
-            repo_metadata.modules.append(module)
-
-        return repo_metadata
-
-    def __init__(self):
-        self.modules = []
+            self.modules.append(module)
 
     def to_json(self):
         """
