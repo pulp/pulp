@@ -511,3 +511,44 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         self.assertEqual(progress_status["publish_http"]["state"], "FINISHED")
         self.assertTrue("publish_https" in progress_status)
         self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")
+
+    def test_generate_isos(self):
+        repo = mock.Mock(spec=Repository)
+        repo.id = "test_repo_for_export"
+        repo.working_dir = self.repo_iso_working_dir
+        global progress_status
+        progress_status = None
+        def set_progress(progress):
+            global progress_status
+            progress_status = progress
+        publish_conduit = distributor_mocks.get_publish_conduit(pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http_publish_dir=self.http_publish_dir,
+            generate_metadata=True, http=True, https=False, prefix="test-isos")
+        distributor = ISODistributor()
+        def cleanup():
+            return
+        distributor.cleanup = mock.Mock()
+        distributor.cleanup.side_effect = cleanup
+        publish_conduit.set_progress = mock.Mock()
+        publish_conduit.set_progress.side_effect = set_progress
+        progress_status = distributor.init_progress()
+        distributor.publish_repo(repo, publish_conduit, config)
+        distributor.generate_isos(repo.working_dir,"%s/%s" % (self.http_publish_dir, repo.id), prefix="test-isos")
+
+        self.assertTrue("isos" in progress_status)
+        self.assertTrue(progress_status["isos"].has_key("state"))
+        self.assertEqual(progress_status["isos"]["state"], "FINISHED")
+        self.assertEqual(progress_status["isos"]["num_success"], 1)
+        self.assertTrue(progress_status["isos"]["size_total"] is not None)
+        self.assertEqual(progress_status["isos"]["size_left"], 0)
+        self.assertEqual(progress_status["isos"]["items_total"], 1)
+        self.assertEqual(progress_status["isos"]["items_left"], 0)
+
+        print progress_status
+        self.assertTrue(os.path.exists("%s/%s" % (self.http_publish_dir, repo.id)))
+        self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)
+        isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
+        print isos_list
+        self.assertEqual(len(isos_list), 2)
+        # make sure the iso name defaults to repoid
+        self.assertTrue( isos_list[0].startswith("test-isos"))

@@ -71,10 +71,10 @@ class GenerateIsos(object):
             msg = "Generating iso images for exported content (%s/%s)" % (i+1, imgcount)
             log.info(msg)
             if progress_callback is not None:
-                self.progress["step"] = msg
+                self.progress["isos"]["step"] = msg
                 progress_callback(self.progress)
-            grafts = self.__grafts(imgs[i])
-            pathfiles_fd, pathfiles = self.__pathspecs(grafts)
+            grafts = self.get_grafts(imgs[i])
+            pathfiles_fd, pathfiles = self.get_pathspecs(grafts)
             filename = get_iso_filename(self.output_dir, self.prefix, i+1)
             cmd = self.get_mkisofs_template() % (string.join([pathfiles]), filename)
             status, out = run_command(cmd)
@@ -113,14 +113,14 @@ class GenerateIsos(object):
         """
         return "mkisofs -r -D -graft-points -path-list %s -o %s"
 
-    def __grafts(self, img_files):
+    def get_grafts(self, img_files):
         grafts = []
         for f in img_files:
             relpath = os.path.dirname(f[len(self.target_dir):])
             grafts.append("%s/=%s" % (relpath, f))
         return grafts
 
-    def __pathspecs(self, grafts):
+    def get_pathspecs(self, grafts):
         pathfiles_fd, pathfiles = tempfile.mkstemp(dir = '/tmp', prefix = 'pulpiso-')
         for graft in grafts:
             os.write(pathfiles_fd, graft)
@@ -128,42 +128,39 @@ class GenerateIsos(object):
         os.close(pathfiles_fd)
         return pathfiles_fd, pathfiles
 
-def get_iso_filename(output_dir, prefix, count):
-    if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
-    ctime = datetime.datetime.now()
-    return "%s/%s-%s-%02d.iso" % (output_dir, prefix, ctime.strftime("%Y%m%d"), count)
+    def get_iso_filename(self, output_dir, prefix, count):
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+        ctime = datetime.datetime.now()
+        return "%s/%s-%s-%02d.iso" % (output_dir, prefix, ctime.strftime("%Y%m%d"), count)
 
-def run_command(cmd):
-    """
-    Run a command and log the output
-    """
-    log.info("executing command %s" % cmd)
-    status, out = commands.getstatusoutput(cmd)
-    return status, out
+    def run_command(self, cmd):
+        """
+        Run a command and log the output
+        """
+        log.info("executing command %s" % cmd)
+        status, out = commands.getstatusoutput(cmd)
+        return status, out
 
-def list_dir_with_size(top_directory):
-    """
-     Get the target directory filepaths and sizes
-     with cumulative dir size
-    """
-    total_size = 0
-    top_directory = os.path.abspath(os.path.normpath(top_directory))
-    if not os.access(top_directory, os.R_OK | os.X_OK):
-        raise Exception("Cannot read from directory %s" % top_directory)
-    if not os.path.isdir(top_directory):
-        raise Exception("%s not a directory" % top_directory)
-    filelist = []
-    for root, dirs, files in os.walk(top_directory):
-        for file in files:
-            fpath = "%s/%s" % (root, file)
-            size = os.stat(fpath)[ST_SIZE]
-            filelist.append((fpath, size))
-            total_size += size
-    return filelist, total_size
-
-def generate_checksum_manifest(iso_dir_path):
-    pass
+    def list_dir_with_size(self, top_directory):
+        """
+        Get the target directory filepaths and sizes
+        with cumulative dir size
+        """
+        total_size = 0
+        top_directory = os.path.abspath(os.path.normpath(top_directory))
+        if not os.access(top_directory, os.R_OK | os.X_OK):
+            raise Exception("Cannot read from directory %s" % top_directory)
+        if not os.path.isdir(top_directory):
+            raise Exception("%s not a directory" % top_directory)
+        filelist = []
+        for root, dirs, files in os.walk(top_directory):
+            for file in files:
+                fpath = "%s/%s" % (root, file)
+                size = os.stat(fpath)[ST_SIZE]
+                filelist.append((fpath, size))
+                total_size += size
+        return filelist, total_size
 
 if __name__== '__main__':
     import sys

@@ -15,8 +15,10 @@ import gettext
 import logging
 import re
 import shutil
+import string
 import time
 import traceback
+import math
 from pulp_rpm.yum_plugin import util, updateinfo, metadata
 from pulp.plugins.distributor import Distributor
 from iso_distributor.generate_iso import GenerateIsos
@@ -305,8 +307,7 @@ class ISODistributor(Distributor):
             self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo.id, https_repo_publish_dir))
-                isogen = GenerateIsos(repo_working_dir, https_repo_publish_dir, prefix=prefix, progress=progress_status)
-                progress_status = isogen.run()
+                iso_status, iso_errors = self.generate_isos(repo_working_dir, https_repo_publish_dir, prefix=prefix, progress_callback=progress_callback)
                 summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
                 progress_status["isos"]["state"] = "FINISHED"
@@ -327,8 +328,8 @@ class ISODistributor(Distributor):
             self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo.id, http_repo_publish_dir))
-                isogen = GenerateIsos(repo_working_dir, http_repo_publish_dir, prefix=prefix, progress=progress_status)
-                progress_status = isogen.run()
+                iso_status, iso_errors = self.generate_isos(repo_working_dir, http_repo_publish_dir, prefix=prefix, progress_callback=progress_callback)
+                print iso_status, iso_errors
                 summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
                 progress_status["isos"]["state"] = "FINISHED"
@@ -583,6 +584,51 @@ class ISODistributor(Distributor):
             return False, errors
         distro_progress_status["state"] = "FINISHED"
         self.set_progress("distribution", distro_progress_status, progress_callback)
+        return True, []
+
+    def generate_isos(self, repo_working_dir, publish_dir, prefix, progress_callback=None):
+        """
+         generate iso images for the exported directory
+        """
+        iso_progress_status = self.init_progress()
+        iso_progress_status['state'] = "IN_PROGRESS"
+        self.set_progress("isos", iso_progress_status, progress_callback)
+        isogen = GenerateIsos(repo_working_dir, publish_dir, prefix=prefix, progress=progress_callback)
+        # get size and filelists of the target directory
+        filelist, total_dir_size = isogen.list_dir_with_size(repo_working_dir)
+        _LOG.debug("Total target directory size to create isos %s" % total_dir_size)
+        # media size
+        img_size = isogen.get_image_type_size(total_dir_size)
+        # compute no.of images it takes per media image size
+        imgcount = int(math.ceil(total_dir_size/float(img_size)))
+        # get the filelists per image by size
+        imgs = isogen.compute_image_files(filelist, imgcount, img_size)
+        iso_progress_status['items_total'] = imgcount
+        iso_progress_status['items_left'] = imgcount
+        iso_progress_status["size_total"] = total_dir_size
+        iso_progress_status["size_left"] = total_dir_size
+        for i in range(imgcount):
+            self.set_progress("isos", iso_progress_status, progress_callback)
+            msg = "Generating iso images for exported content (%s/%s)" % (i+1, imgcount)
+            _LOG.info(msg)
+            grafts = isogen.get_grafts(imgs[i])
+            pathfiles_fd, pathfiles = isogen.get_pathspecs(grafts)
+            filename = isogen.get_iso_filename(publish_dir, prefix, i+1)
+            cmd = isogen.get_mkisofs_template() % (string.join([pathfiles]), filename)
+            status, out = isogen.run_command(cmd)
+            if status != 0:
+                _LOG.error("Error creating iso %s" % filename)
+            _LOG.info("successfully created iso %s" % filename)
+            _LOG.debug("status code: %s; output: %s" % (status, out))
+            os.unlink(pathfiles)
+            iso_progress_status['items_left'] -= 1
+            iso_progress_status['num_success'] += 1
+            if iso_progress_status["size_left"] > img_size:
+                iso_progress_status["size_left"] -= img_size
+            else:
+                iso_progress_status["size_left"] = 0
+        iso_progress_status["state"] = "FINISHED"
+        self.set_progress("isos", iso_progress_status, progress_callback)
         return True, []
 
 def form_lookup_key(rpm):
