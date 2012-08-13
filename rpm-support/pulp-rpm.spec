@@ -235,6 +235,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-4
+- bump release
+
 * Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-3
 - Exclude /etc/bash_completion.d/*
 * Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-2
