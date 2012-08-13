@@ -11,43 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-"""
-Contains protocol handlers for retrieving puppet modules from various
-sources. Each downloader class must implement the following methods:
-
-retrieve_metadata(config)
-  Returns the contents of the source's metadata file describing available modules.
-
-retrieve_module(config, module_metadata, destination)
-  Copies the specified module bits into the given location. This may involve
-  downloading the module from an external source.
-"""
-
 import os
 import shutil
 
+from exceptions import MetadataNotFound, ModuleNotFound
 from pulp_puppet.common import constants
-
-# -- constants ----------------------------------------------------------------
-
-METADATA_FILENAME = 'modules.json'
-
-# -- exceptions ---------------------------------------------------------------
-
-class MetadataNotFound(Exception):
-
-    def __init__(self, location):
-        Exception.__init__(self, location)
-        self.location = location
-
-
-class ModuleNotFound(Exception):
-
-    def __init__(self, location):
-        Exception.__init__(self, location)
-        self.location = location
-
-# -- downloader implementations -----------------------------------------------
 
 class LocalDownloader(object):
     """
@@ -61,7 +29,7 @@ class LocalDownloader(object):
         """
 
         source_dir = config.get(constants.CONFIG_SOURCE_DIR)
-        metadata_filename = os.path.join(source_dir, METADATA_FILENAME)
+        metadata_filename = os.path.join(source_dir, constants.METADATA_FILENAME)
 
         if not os.path.exists(metadata_filename):
             raise MetadataNotFound(metadata_filename)
@@ -88,30 +56,3 @@ class LocalDownloader(object):
 
         # Copy into the final destination as provided by Pulp
         shutil.copy(full_filename, destination)
-
-
-class HttpDownloader(object):
-    """
-    Used when the source for puppet modules is a remote source over HTTP.
-    """
-
-    # To be implemented when support for this is required
-    pass
-
-
-class HttpsDownloader(object):
-    """
-    Used when the source for puppet modules is a remote source over HTTPS.
-    """
-
-    # To be implemented when support for this is required
-    pass
-
-
-class GitDownloader(object):
-    """
-    Used when the source for puppet modules is a git repository.
-    """
-
-    # To be implemented when support for this is required
-    pass

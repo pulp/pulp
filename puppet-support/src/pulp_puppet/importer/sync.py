@@ -16,9 +16,9 @@ from   gettext import gettext as _
 import sys
 import traceback
 
-import downloaders
 from   pulp_puppet.common import constants
 from   pulp_puppet.common.model import RepositoryMetadata, Module
+from   pulp_puppet.importer.downloaders import factory as downloader_factory
 
 from   pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
@@ -269,11 +269,9 @@ class PuppetModuleSyncRun(object):
         :return: one of the *Downloader classes in the downloaders module
         """
 
-        # This will eventually check the config and make a decision. For now,
-        # we're only supporting local directory import so simply return that
-        # downloader.
-
-        return downloaders.LocalDownloader()
+        feed = self.config.get(constants.CONFIG_FEED)
+        downloader = downloader_factory.get_downloader(feed)
+        return downloader
 
     def _should_remove_missing(self):
         """

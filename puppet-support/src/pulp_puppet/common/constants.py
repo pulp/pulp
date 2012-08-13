@@ -17,6 +17,8 @@ this will be pulled into a common dependency across all of the puppet
 support plugins (importers, distributors, extensions).
 """
 
+# -- ids ----------------------------------------------------------------------
+
 # ID used to refer to the puppet importer
 IMPORTER_ID_PUPPET = 'puppet_importer'
 
@@ -24,6 +26,9 @@ IMPORTER_ID_PUPPET = 'puppet_importer'
 TYPE_PUPPET_MODULE = 'puppet_module'
 
 # -- storage and hosting ------------------------------------------------------
+
+# Name of the hosted file describing the contents of the repository
+METADATA_FILENAME = 'modules.json'
 
 # Location in the repository where a module will be hosted
 # Substitutions: author first character, author
@@ -40,8 +45,8 @@ STORAGE_MODULE_RELATIVE_PATH = '%s'
 
 # -- configuration keys -------------------------------------------------------
 
-# Configuration key for the directory from which to sync modules
-CONFIG_SOURCE_DIR = 'dir'
+# Configuration key for the location from which to sync modules
+CONFIG_FEED = 'feed'
 
 # Configuration key for whether or not to remove modules that were previously
 # synchronized but were not on a subsequent sync

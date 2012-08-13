@@ -12,9 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-import os
 
 from pulp_puppet.common import constants
+from pulp_puppet.importer.downloaders import factory as downloader_factory
 
 def validate(config):
     """
@@ -25,7 +25,7 @@ def validate(config):
     """
 
     validations = (
-        _validate_source_dir,
+        _validate_feed,
         _validate_remove_missing,
     )
 
@@ -37,22 +37,17 @@ def validate(config):
     return True, None
 
 
-def _validate_source_dir(config):
+def _validate_feed(config):
     """
     Validates the location of the puppet modules.
     """
 
-    dir = config.get(constants.CONFIG_SOURCE_DIR)
-    data = {'d' : dir}
+    feed = config.get(constants.CONFIG_FEED)
 
-    if dir is None:
-        return False, _('Puppet module directory must be specified under the key <%(k)s>') % {'k' : constants.CONFIG_SOURCE_DIR}
+    is_valid = downloader_factory.is_valid_feed(feed)
 
-    if not os.path.exists(dir):
-        return False, _('Directory <%(d)s> does not exist') % data
-
-    if not os.access(dir, os.R_OK):
-        return False, _('Directory <%(d)s> cannot be read by the Pulp server') % data
+    if not is_valid:
+        return False, _('The feed <%(f)s> is invalid') % {'f' : feed}
 
     return True, None
 

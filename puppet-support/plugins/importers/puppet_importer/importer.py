@@ -13,13 +13,10 @@
 
 from gettext import gettext as _
 
-import copier
-import sync
-import upload
-import validation
-from   pulp_puppet.common import constants
-
 from pulp.plugins.importer import Importer
+
+from pulp_puppet.common import constants
+from pulp_puppet.importer import validation, sync, upload, copier
 
 # -- plugins ------------------------------------------------------------------
 
