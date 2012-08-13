@@ -56,7 +56,7 @@ class RepositoryMetadata(object):
         """
         Serializes the repository metadata into its JSON representation.
         """
-        module_dicts = [m.to_json(m) for m in self.modules]
+        module_dicts = [m.to_dict() for m in self.modules]
         serialized = json.dumps(module_dicts)
 
         return serialized
@@ -75,35 +75,22 @@ class Module(object):
         :rtype:  Module
         """
 
-        # Example Metadata Snippet:
-        # {"tag_list": ["postfix","applications"],
-        #  "project_url":"http://www.example42.com",
-        #  "name":"postfix",
-        #  "author":"lab42",
-        #  "releases":[{"version":"0.0.1"},{"version":"0.0.2"}]
-        #  "desc":"Test Postfix module.",
-        #  "version":"0.0.2",
-        #  "full_name":"lab42/postfix"}
-
         # The unique identifier fields are all required and should be present
         name    = module_dict.get('name')
         version = module_dict.get('version')
         author  = module_dict.get('author')
 
         module = Module(name, version, author)
-
-        # I'm not sure how many of the remaining fields are optional, so
-        # assume any can be missing and use None as the value in that case
-        module.full_name = module_dict.get('full_name', None)
-        module.description = module_dict.get('desc', None)
-        module.tag_list = module_dict.get('tag_list', None)
-        module.project_url = module_dict.get('project_url', None)
-        module.releases = module_dict.get('releases', None)
+        module.update_from_dict(module_dict)
 
         return module
 
     @staticmethod
     def generate_unit_key(name, version, author):
+        """
+        Formats the module unique pieces into the Pulp unit key.
+        :rtype: dict
+        """
         return {
             'name'    : name,
             'version' : version,
@@ -117,62 +104,82 @@ class Module(object):
         self.version = version
         self.author = author
 
-        # Extra Metadata Fields
-        self.full_name = None
+        # From Repository Metadata
+        self.tags = None
+
+        # From Module Metadata
+        self.source = None
+        self.license = None
+        self.summary = None
         self.description = None
-        self.tag_list = None
-        self.project_url = None
-        self.releases = None
+        self.project_page = None
+        self.types = None # list of something I don't know yet :)
+        self.dependencies = None # list of dicts of name to version_requirement
+        self.checksums = None # dict of file name (with relative path) to checksum
 
     def to_dict(self):
         """
         Returns a dict view on the module in the same format as was parsed from
-        from_dict.
+        update_from_dict.
 
         :return: dict view on the module
         :rtype:  dict
         """
-
-        # Example Metadata Snippet:
-        # {"tag_list": ["postfix","applications"],
-        #  "project_url":"http://www.example42.com",
-        #  "name":"postfix",
-        #  "author":"lab42",
-        #  "releases":[{"version":"0.0.1"},{"version":"0.0.2"}]
-        #  "desc":"Test Postfix module.",
-        #  "version":"0.0.2",
-        #  "full_name":"lab42/postfix"}
-
-        d = {
-            'tag_list'    : self.tag_list,
-            'project_url' : self.project_url,
-            'name'        : self.name,
-            'author'      : self.author,
-            'releases '   : self.releases,
-            'desc'        : self.description,
-            'version'     : self.version,
-            'full_name'   : self.full_name,
-        }
+        d = self.unit_key()
+        d.update(self.unit_metadata())
         return d
+
+    def update_from_json(self, metadata_json):
+        """
+        Takes the module's metadata in JSON format and merges it into this
+        instance.
+
+        :param metadata_json: module metadata in JSON
+        :type  metadata_json: str
+        """
+        parsed = json.loads(metadata_json)
+        self.update_from_dict(parsed)
+
+    def update_from_dict(self, module_dict):
+        """
+        Updates the instance variables with the values in the given dict.
+        """
+
+        # Found in the repository metadata for the module
+        self.tags = module_dict.get('tag_list', None)
+
+        # Found in the module metadata itself
+        self.source = module_dict.get('source', None)
+        self.license = module_dict.get('license', None)
+        self.summary = module_dict.get('summary', None)
+        self.description = module_dict.get('description', None)
+        self.project_page = module_dict.get('project_page', None)
+        self.types = module_dict.get('types', [])
+        self.dependencies = module_dict.get('dependencies', [])
+        self.checksums = module_dict.get('checksums', {})
 
     def unit_key(self):
         """
         Returns the unit key for this module that will uniquely identify
-        it in Pulp.
+        it in Pulp. This is the unique key for the inventoried module in Pulp.
         """
         return self.generate_unit_key(self.name, self.version, self.author)
 
     def unit_metadata(self):
         """
         Returns all non-unit key metadata that should be stored in Pulp
-        for this module.
+        for this module. This is how the module will be inventoried in Pulp.
         """
         return {
-            'full_name'   : self.full_name,
-            'description' : self.description,
-            'tag_list'    : self.tag_list,
-            'project_url' : self.project_url,
-            'releases'    : self.releases,
+            'description'  : self.description,
+            'tag_list'     : self.tags,
+            'source'       : self.source,
+            'license '     : self.license,
+            'summary'      : self.summary,
+            'project_page' : self.project_page,
+            'types'        : self.types,
+            'dependencies' : self.dependencies,
+            'checksums'    : self.checksums,
         }
 
     def filename(self):

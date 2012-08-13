@@ -28,7 +28,10 @@ TYPE_PUPPET_MODULE = 'puppet_module'
 # -- storage and hosting ------------------------------------------------------
 
 # Name of the hosted file describing the contents of the repository
-METADATA_FILENAME = 'modules.json'
+REPO_METADATA_FILENAME = 'modules.json'
+
+# File name inside of a module where its metadata is found
+MODULE_METADATA_FILENAME = 'metadata.json'
 
 # Location in the repository where a module will be hosted
 # Substitutions: author first character, author

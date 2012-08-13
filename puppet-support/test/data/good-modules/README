@@ -1,0 +1,3 @@
+Both the source and the built modules are located in each of the subdirectories.
+The built tarballs can be found under the pkg/ directory for each module. Also
+in that directory is the exploded module itself that produced that exact tarball.

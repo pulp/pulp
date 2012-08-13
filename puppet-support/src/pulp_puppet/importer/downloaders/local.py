@@ -29,7 +29,7 @@ class LocalDownloader(object):
         """
 
         source_dir = config.get(constants.CONFIG_SOURCE_DIR)
-        metadata_filename = os.path.join(source_dir, constants.METADATA_FILENAME)
+        metadata_filename = os.path.join(source_dir, constants.REPO_METADATA_FILENAME)
 
         if not os.path.exists(metadata_filename):
             raise MetadataNotFound(metadata_filename)
