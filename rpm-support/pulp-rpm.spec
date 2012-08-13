@@ -156,6 +156,7 @@ client capabilites with RPM specific features.
 
 %files admin-extensions
 %defattr(-,root,root,-)
+%{_sysconfdir}/bash_completion.d/pulp-admin
 %{_usr}/lib/pulp/admin/extensions/rpm_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
 %{_usr}/lib/pulp/admin/extensions/rpm_sync/
