@@ -18,7 +18,7 @@
 
 Name: pulp-rpm
 Version: 0.0.323
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -70,7 +70,9 @@ mkdir -p %{buildroot}/%{_usr}/lib/yum-plugins/
 mkdir -p %{buildroot}/%{_var}/www
 
 # Configuration
-cp -R etc/* %{buildroot}/%{_sysconfdir}
+cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+cp -R etc/yum %{buildroot}/%{_sysconfdir}
 
 # WSGI
 cp -R srv %{buildroot}
@@ -156,7 +158,6 @@ client capabilites with RPM specific features.
 
 %files admin-extensions
 %defattr(-,root,root,-)
-%{_sysconfdir}/bash_completion.d/pulp-admin
 %{_usr}/lib/pulp/admin/extensions/rpm_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
 %{_usr}/lib/pulp/admin/extensions/rpm_sync/
