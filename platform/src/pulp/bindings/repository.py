@@ -275,6 +275,7 @@ class RepositoryUnitAPI(PulpAPI):
     """
 
     COPY_PATH = 'v2/repositories/%s/actions/associate/'
+    REMOVE_PATH = 'v2/repositories/%s/actions/unassociate/'
     SEARCH_PATH = 'v2/repositories/%s/search/units/'
 
     def __init__(self, pulp_connection):
@@ -296,8 +297,10 @@ class RepositoryUnitAPI(PulpAPI):
                     representing a UnitAssociationCriteria
         :rtype:     dict
         """
-        criteria = {'filters': {'unit': SearchAPI.compose_filters(**kwargs)}}
-        criteria['type_ids'] = kwargs['type_ids']
+        criteria = {
+            'filters': {'unit': SearchAPI.compose_filters(**kwargs)},
+            'type_ids' : kwargs['type_ids'],
+        }
 
         # build the association filters
         association_fake_kwargs = {}
@@ -366,6 +369,25 @@ class RepositoryUnitAPI(PulpAPI):
             'criteria' : criteria
         }
         path = self.COPY_PATH % destination_repo_id
+        return self.server.POST(path, data)
+
+    def remove(self, repo_id, **kwargs):
+        """
+        Removes units from a repository. The units to remove are conveyed
+        using criteria and are passed into this call through the kwargs
+        argument.
+
+        :param repo_id: identifies the repo to search
+        :type  repo_id: str
+        :param kwargs: search options input by the user
+        :type  kwargs: dict
+
+        :return: server response
+        """
+        criteria = self._generate_search_criteria(**kwargs)
+        data = {'criteria' : criteria}
+
+        path = self.REMOVE_PATH % repo_id
         return self.server.POST(path, data)
 
 

@@ -221,7 +221,7 @@ class Importer(object):
         """
         raise NotImplementedError()
 
-    def remove_units(self, repo, units):
+    def remove_units(self, repo, units, config):
         """
         Removes content units from the given repository.
 
@@ -235,6 +235,10 @@ class Importer(object):
 
         @param units: list of objects describing the units to import in
                       this call
+        @type  units: list
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
         """
         pass
 
