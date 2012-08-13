@@ -10,15 +10,3 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-"""
-Contains protocol handlers for retrieving puppet modules from various
-sources. Each downloader class must implement the following methods:
-
-retrieve_metadata(config)
-  Returns the contents of the source's metadata file describing available modules.
-
-retrieve_module(config, module_metadata, destination)
-  Copies the specified module bits into the given location. This may involve
-  downloading the module from an external source.
-"""

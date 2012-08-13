@@ -22,6 +22,10 @@ from pulp_puppet.importer import validation, sync, upload, copier
 
 class PuppetModuleImporter(Importer):
 
+    def __init__(self):
+        super(PuppetModuleImporter, self).__init__()
+        self.sync_cancelled = False
+
     @classmethod
     def metadata(cls):
         return {
@@ -34,7 +38,8 @@ class PuppetModuleImporter(Importer):
         return validation.validate(config)
 
     def sync_repo(self, repo, sync_conduit, config):
-        sync_runner = sync.PuppetModuleSyncRun(repo, sync_conduit, config)
+        self.sync_cancelled = False
+        sync_runner = sync.PuppetModuleSyncRun(repo, sync_conduit, config, self.is_sync_cancelled)
         report = sync_runner.perform_sync()
         return report
 
@@ -45,3 +50,16 @@ class PuppetModuleImporter(Importer):
     def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit,
                     config):
         upload.handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit)
+
+    def cancel_sync_repo(self, call_request, call_report):
+        self.sync_cancelled = True
+
+    def is_sync_cancelled(self):
+        """
+        Hook back into this plugin to check if a cancel request has been issued
+        for a sync.
+
+        :return: true if the sync should stop running; false otherwise
+        :rtype: bool
+        """
+        return self.sync_cancelled

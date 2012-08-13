@@ -23,12 +23,12 @@ class LocalDownloader(object):
     server.
     """
 
-    def retrieve_metadata(self, config):
+    def retrieve_metadata(self, progress_report, is_cancelled_call, config):
         """
         See module-level docstrings for description.
         """
 
-        source_dir = config.get(constants.CONFIG_SOURCE_DIR)
+        source_dir = config.get(constants.CONFIG_FEED)
         metadata_filename = os.path.join(source_dir, constants.REPO_METADATA_FILENAME)
 
         if not os.path.exists(metadata_filename):
@@ -40,13 +40,13 @@ class LocalDownloader(object):
 
         return contents
 
-    def retrieve_module(self, config, module, destination):
+    def retrieve_module(self, progress_report, is_cancelled_call, config, module, destination):
         """
         See module-level docstrings for description.
         """
 
         # Determine the full path to the module
-        source_dir = config.get(constants.CONFIG_SOURCE_DIR)
+        source_dir = config.get(constants.CONFIG_FEED)
         module_path = constants.HOSTED_MODULE_FILE_RELATIVE_PATH % (module.author[0], module.author)
         module_filename = module.filename()
         full_filename = os.path.join(source_dir, module_path, module_filename)

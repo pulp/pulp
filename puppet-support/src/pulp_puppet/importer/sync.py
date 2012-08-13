@@ -16,11 +16,11 @@ from   gettext import gettext as _
 import sys
 import traceback
 
-from   pulp_puppet.common import constants
-from   pulp_puppet.common.model import RepositoryMetadata, Module
-from   pulp_puppet.importer.downloaders import factory as downloader_factory
+from pulp_puppet.common import constants
+from pulp_puppet.common.model import RepositoryMetadata, Module
+from pulp_puppet.importer.downloaders import factory as downloader_factory
 
-from   pulp.plugins.conduits.mixins import UnitAssociationCriteria
+from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
 # -- constants ----------------------------------------------------------------
 
@@ -35,10 +35,11 @@ INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
 
 class PuppetModuleSyncRun(object):
 
-    def __init__(self, repo, sync_conduit, config):
+    def __init__(self, repo, sync_conduit, config, is_cancelled_call):
         self.repo = repo
         self.sync_conduit = sync_conduit
         self.config = config
+        self.is_cancelled_call = is_cancelled_call
 
         self.progress_report = ProgressReport(sync_conduit)
 
@@ -64,7 +65,7 @@ class PuppetModuleSyncRun(object):
             self._import_modules(metadata)
         finally:
             # One final progress update before finishing
-            self._update_progress()
+            self.progress_report.update_progress()
 
             report = self.progress_report.build_final_report()
             return report
@@ -83,14 +84,16 @@ class PuppetModuleSyncRun(object):
         :rtype:  RepositoryMetadata
         """
         self.progress_report.metadata_state = STATE_RUNNING
-        self._update_progress()
+        self.progress_report.update_progress()
 
         start_time = datetime.now()
 
         # Retrieve the metadata from the source
         try:
             downloader = self._create_downloader()
-            metadata_json = downloader.retrieve_metadata(self.config)
+            metadata_json = downloader.retrieve_metadata(self.progress_report,
+                                                         self.is_cancelled_call,
+                                                         self.config)
         except Exception, e:
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error downloading metadata')
@@ -101,7 +104,7 @@ class PuppetModuleSyncRun(object):
             duration = end_time - start_time
             self.progress_report.metadata_execution_time = duration
 
-            self._update_progress()
+            self.progress_report.update_progress()
 
             return None
 
@@ -118,7 +121,7 @@ class PuppetModuleSyncRun(object):
             duration = end_time - start_time
             self.progress_report.metadata_execution_time = duration
 
-            self._update_progress()
+            self.progress_report.update_progress()
 
             return None
 
@@ -129,7 +132,7 @@ class PuppetModuleSyncRun(object):
         duration = end_time - start_time
         self.progress_report.metadata_execution_time = duration
 
-        self._update_progress()
+        self.progress_report.update_progress()
 
         return metadata
 
@@ -149,7 +152,7 @@ class PuppetModuleSyncRun(object):
         self.progress_report.modules_total_count = len(metadata.modules)
         self.progress_report.modules_finished_count = 0
         self.progress_report.modules_error_count = 0
-        self._update_progress()
+        self.progress_report.update_progress()
 
         start_time = datetime.now()
 
@@ -166,7 +169,7 @@ class PuppetModuleSyncRun(object):
             duration = end_time - start_time
             self.progress_report.modules_execution_time = duration
 
-            self._update_progress()
+            self.progress_report.update_progress()
 
             return None
 
@@ -177,7 +180,7 @@ class PuppetModuleSyncRun(object):
         duration = end_time - start_time
         self.progress_report.metadata_execution_time = duration
 
-        self._update_progress()
+        self.progress_report.update_progress()
 
     def _do_import_modules(self, metadata):
         """
@@ -210,7 +213,7 @@ class PuppetModuleSyncRun(object):
             except Exception, e:
                 self.progress_report.add_failed_module(module, sys.exc_info()[3])
 
-            self._update_progress()
+            self.progress_report.update_progress()
 
         # Remove missing units if the configuration indicates to do so
         if self._should_remove_missing():
@@ -234,10 +237,12 @@ class PuppetModuleSyncRun(object):
         unit_metadata = module.unit_metadata()
         relative_path = constants.STORAGE_MODULE_RELATIVE_PATH % module.filename()
 
-        unit = self.sync_conduit.init_unit(type_id, unit_key, unit_metadata, relative_path)
+        unit = self.sync_conduit.init_unit(type_id, unit_key, unit_metadata,
+                                           relative_path)
 
         # Download the bits
-        downloader.retrieve_module(self.config, module, unit.storage_path)
+        downloader.retrieve_module(self.progress_report, self.is_cancelled_call,
+                                   self.config, module, unit.storage_path)
 
         # If the bits downloaded successfully, save the unit in Pulp
         self.sync_conduit.save_unit(unit)
@@ -286,13 +291,6 @@ class PuppetModuleSyncRun(object):
         else:
             return self.config.get(constants.CONFIG_REMOVE_MISSING).lower() == 'true'
 
-    def _update_progress(self):
-        """
-        Sends the current state of the progress report to Pulp.
-        """
-        report = self.progress_report.build_progress_report()
-        self.sync_conduit.set_progress(report)
-
 # -- private classes ----------------------------------------------------------
 
 class ProgressReport(object):
@@ -310,6 +308,9 @@ class ProgressReport(object):
 
         # Metadata download & parsing
         self.metadata_state = STATE_NOT_STARTED
+        self.metadata_query_finished_count = None
+        self.metadata_query_total_count = None
+        self.metadata_current_query = None
         self.metadata_execution_time = None
         self.metadata_error_message = None
         self.metadata_exception = None
@@ -325,6 +326,13 @@ class ProgressReport(object):
         self.modules_error_message = None # overall execution error
         self.modules_exception = None
         self.modules_traceback = None
+
+    def update_progress(self):
+        """
+        Sends the current state of the progress report to Pulp.
+        """
+        report = self.build_progress_report()
+        self.conduit.set_progress(report)
 
     def build_final_report(self):
         """
@@ -388,6 +396,9 @@ class ProgressReport(object):
     def _metadata_section(self):
         metadata_report = {
             'state' : self.metadata_state,
+            'current_query' : self.metadata_current_query,
+            'query_finished_count' : self.metadata_query_finished_count,
+            'query_total_count' : self.metadata_query_total_count,
             'error_message' : self.metadata_error_message,
             'error' : self.format_exception(self.metadata_exception),
             'traceback' : self.format_traceback(self.metadata_traceback),
