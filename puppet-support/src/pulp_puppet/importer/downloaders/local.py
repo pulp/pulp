@@ -15,7 +15,7 @@ import os
 import shutil
 
 from base import BaseDownloader
-from exceptions import MetadataNotFoundException, ModuleNotFoundException
+from exceptions import FileNotFoundException
 from pulp_puppet.common import constants
 
 
@@ -34,7 +34,7 @@ class LocalDownloader(BaseDownloader):
         metadata_filename = os.path.join(source_dir, constants.REPO_METADATA_FILENAME)
 
         if not os.path.exists(metadata_filename):
-            raise MetadataNotFoundException(metadata_filename)
+            raise FileNotFoundException(metadata_filename)
 
         f = open(metadata_filename, 'r')
         contents = f.read()
@@ -54,7 +54,7 @@ class LocalDownloader(BaseDownloader):
         full_filename = os.path.join(source_dir, module_path, module_filename)
 
         if not os.path.exists(full_filename):
-            raise ModuleNotFoundException(full_filename)
+            raise FileNotFoundException(full_filename)
 
         # Copy into the final destination as provided by Pulp
         shutil.copy(full_filename, destination)

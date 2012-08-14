@@ -58,11 +58,3 @@ CONFIG_QUERIES = 'queries'
 # not on a subsequent sync
 CONFIG_REMOVE_MISSING = 'remove_missing'
 DEFAULT_REMOVE_MISSING = False
-
-# CA certificate to use to verify the host's SSL certificate
-CONFIG_HOST_SSL_CA_CERT = 'host_ssl_ca_cert'
-
-# Whether or not to verify the host's SSL certificate
-CONFIG_HOST_VERIFY_SSL = 'host_verify_ssl'
-DEFAULT_HOST_VERIFY_SSL = False
-

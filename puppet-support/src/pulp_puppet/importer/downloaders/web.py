@@ -19,7 +19,6 @@ import shutil
 from base import BaseDownloader
 import exceptions
 from pulp_puppet.common import constants
-from pulp_puppet.importer.config import get_boolean
 
 # -- constants ----------------------------------------------------------------
 
@@ -76,6 +75,9 @@ class HttpDownloader(BaseDownloader):
         :rtype:  list
         """
         feed = self.config.get(constants.CONFIG_FEED)
+        # Puppet forge is sensitive about a double slash, so strip the trailing here
+        if feed.endswith('/'):
+            feed = feed[:-1]
         base_url = feed + '/' + constants.REPO_METADATA_FILENAME
 
         all_urls = []
@@ -102,6 +104,8 @@ class HttpDownloader(BaseDownloader):
             # Chop off the last & that was added
             single_url = single_url[:-1]
             all_urls.append(single_url)
+        else:
+            all_urls.append(base_url)
 
         return all_urls
 
@@ -119,16 +123,16 @@ class HttpDownloader(BaseDownloader):
         """
         curl = self._create_and_configure_curl()
 
-        curl.setopt(curl.URL, url)
-        curl.setopt(curl.WRITEFUNCTION, destination.update)
+        curl.setopt(pycurl.URL, url)
+        curl.setopt(pycurl.WRITEFUNCTION, destination.update)
         curl.perform()
         status = curl.getinfo(curl.HTTP_CODE)
         curl.close()
 
         if status == 401:
-            raise exceptions.Unauthorized(url)
+            raise exceptions.UnauthorizedException(url)
         elif status == 404:
-            raise exceptions.MetadataNotFoundException(url)
+            raise exceptions.FileNotFoundException(url)
         elif status != 200:
             raise exceptions.FileRetrievalException(url)
 
@@ -148,31 +152,20 @@ class HttpDownloader(BaseDownloader):
         # Eventually, add here support for:
         # - callback on bytes downloaded
         # - bandwidth limitations
+        # - SSL verification for hosts on SSL
         # - client SSL certificate
         # - proxy support
         # - callback support for resuming partial downloads
 
-        curl.setopt(curl.VERBOSE, 0)
+        curl.setopt(pycurl.VERBOSE, 0)
 
         # TODO: Add in reference to is cancelled hook to be able to abort the download
 
         # Close out the connection on our end in the event the remote host
         # stops responding. This is interpretted as "If less than 1000 bytes are
         # sent in a 5 minute interval, abort the connection."
-        curl.setopt(curl.LOW_SPEED_LIMIT, 1000)
-        curl.setopt(curl.LOW_SPEED_TIME, 5 * 60)
-
-        # If a CA certificate is provided to verify the host, configure it now
-        host_ssl_cert = self.config.get(constants.CONFIG_HOST_SSL_CA_CERT)
-        if host_ssl_cert:
-            curl.setopt(curl.CAINFO, host_ssl_cert)
-
-        # Verification of the host's SSL certificate
-        verify_flag = get_boolean(self.config, constants.CONFIG_HOST_VERIFY_SSL)
-        if verify_flag:
-            curl.setopt(curl.SSL_VERIFYPEER, 1)
-        else:
-            curl.setopt(curl.SSL_VERIFYPEER, 0)
+        curl.setopt(pycurl.LOW_SPEED_LIMIT, 1000)
+        curl.setopt(pycurl.LOW_SPEED_TIME, 5 * 60)
 
         return curl
 

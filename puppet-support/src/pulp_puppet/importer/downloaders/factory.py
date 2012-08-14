@@ -29,7 +29,7 @@ import logging
 import urlparse
 
 from exceptions import UnsupportedFeedType, InvalidFeed
-from http import HttpDownloader
+from web import HttpDownloader
 from local import LocalDownloader
 
 # -- constants ----------------------------------------------------------------

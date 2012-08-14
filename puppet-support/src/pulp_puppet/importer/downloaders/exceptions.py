@@ -40,21 +40,15 @@ class FileRetrievalException(Exception):
         self.location = location
 
 
-class MetadataNotFoundException(FileRetrievalException):
+class FileNotFoundException(FileRetrievalException):
     """
-    Raised if a metadata document cannot be found.
-    """
-    pass
-
-
-class ModuleNotFoundException(FileRetrievalException):
-    """
-    Raised if a module cannot be found.
+    Raised if a requested file cannot be found.
     """
     pass
 
 
-class Unauthorized(FileRetrievalException):
+
+class UnauthorizedException(FileRetrievalException):
     """
     Raised if a file fails to be retrieved because it could not be read
     (e.g. 401 from a web request, no read perms for a local read).
