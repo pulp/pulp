@@ -14,7 +14,6 @@
 import base
 
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.auth.cert.certificate import Certificate
 
 class UserCertificateControllerTests(base.PulpWebserviceTests):
 
@@ -31,7 +30,7 @@ class UserCertificateControllerTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(200, status)
 
-        certificate = Certificate(content=str(body))
+        certificate = manager_factory.certificate_manager(content=str(body))
         cn = certificate.subject()['CN']
         username, id = cert_generation_manager.decode_admin_user(cn)
 

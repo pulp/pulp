@@ -27,6 +27,7 @@ do so may indirectly break other tests.
 
 # Keys used to look up a specific builtin manager (please alphabetize)
 TYPE_CDS                    = 'cds-manager'
+TYPE_CERTIFICATE            = 'certificate-manager'
 TYPE_CERT_GENERATION        = 'cert-generation-manager'
 TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
@@ -42,6 +43,7 @@ TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
 TYPE_DEPENDENCY             = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
+TYPE_PASSWORD               = 'password-manager'
 TYPE_PERMISSION             = 'permission-manager'
 TYPE_PERMISSION_QUERY       = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
@@ -93,6 +95,13 @@ class InvalidType(Exception):
 
 # Be sure to add an entry to test_syntactic_sugar_methods in test_manager_factory.py
 # to verify the correct type of manager is returned.
+
+def certificate_manager(content=None):
+    """
+    @rtype: L{pulp.server.managers.auth.cert.certificate.CertificateManager}
+    """
+    return get_manager(TYPE_CERTIFICATE, content)
+
 
 def cert_generation_manager():
     """
@@ -183,6 +192,12 @@ def event_listener_manager():
     @rtype: L{pulp.server.managers.event.crud.EventListenerManager}
     """
     return get_manager(TYPE_EVENT_LISTENER)
+
+def password_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.password.PasswordManager}
+    """
+    return get_manager(TYPE_PASSWORD)
 
 def permission_manager():
     """
@@ -312,9 +327,11 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
+    from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
     from pulp.server.managers.auth.user.cud import UserManager
     from pulp.server.managers.auth.user.query import UserQueryManager
+    from pulp.server.managers.auth.password import PasswordManager
     from pulp.server.managers.auth.permission.cud import PermissionManager
     from pulp.server.managers.auth.permission.query import PermissionQueryManager
     from pulp.server.managers.auth.role.cud import RoleManager
@@ -351,6 +368,7 @@ def initialize():
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {
+        TYPE_CERTIFICATE : CertificateManager,
         TYPE_CERT_GENERATION: CertGenerationManager,
         TYPE_CONSUMER: ConsumerManager,
         TYPE_CONSUMER_AGENT: AgentManager,
@@ -366,6 +384,7 @@ def initialize():
         TYPE_DEPENDENCY: DependencyManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
+        TYPE_PASSWORD: PasswordManager,
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
@@ -390,7 +409,7 @@ def initialize():
     _CLASSES.update(builtins)
 
 
-def get_manager(type_key):
+def get_manager(type_key, init_args=None):
     """
     Returns a manager instance of the given type according to the current
     manager class mappings.
@@ -417,7 +436,10 @@ def get_manager(type_key):
         return _INSTANCES[type_key]
 
     cls = _CLASSES[type_key]
-    manager = cls()
+    if init_args:
+        manager = cls(init_args)
+    else:
+        manager = cls()
 
     return manager
 

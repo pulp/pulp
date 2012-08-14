@@ -26,8 +26,6 @@ from pulp.server.db.model.auth import User
 from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
 
-from pulp.server.managers.auth.password import PasswordManager
-
 # -- constants ----------------------------------------------------------------
 
 _USER_LOGIN_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -84,7 +82,7 @@ class UserManager(object):
         # Encode plain-text password
         hashed_password = None
         if password:
-            hashed_password = PasswordManager().hash_password(password)
+            hashed_password = factory.password_manager().hash_password(password)
 
         # Creation
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)
@@ -129,7 +127,7 @@ class UserManager(object):
             if delta['password'] is None or invalid_type(delta['password'], basestring):
                 invalid_values.append('password')
             else:
-                user['password'] = PasswordManager().hash_password(delta['password'])
+                user['password'] = factory.password_manager().hash_password(delta['password'])
 
         if 'name' in delta:
             if delta['name'] is None or invalid_type(delta['name'], basestring):

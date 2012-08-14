@@ -13,14 +13,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base
-import unittest
 
-from pulp.server.managers.auth.password import PasswordManager
+from pulp.server.managers import factory as manager_factory
 
 class PasswordManagerTests(base.PulpServerTests):
     def setUp(self):
         super(PasswordManagerTests, self).setUp()
-        self.password_manager = PasswordManager()
+        self.password_manager = manager_factory.password_manager()
 
     def test_unicode_password(self):
         password = u"some password"

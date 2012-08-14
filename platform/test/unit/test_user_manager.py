@@ -17,7 +17,6 @@ import base
 from pulp.server.auth import principal
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
-from pulp.server.managers.auth.cert.certificate import Certificate
 
 from pulp.server.db.model.auth import User
 import pulp.server.exceptions as exceptions
@@ -62,7 +61,7 @@ class UserManagerTests(base.PulpServerTests):
         # Verify
         self.assertTrue(cert is not None)
 
-        certificate = Certificate(content=cert)
+        certificate = manager_factory.certificate_manager(content=cert)
         cn = certificate.subject()['CN']
         username, id = self.cert_generation_manager.decode_admin_user(cn)
 

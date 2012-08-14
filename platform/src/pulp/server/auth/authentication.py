@@ -21,8 +21,6 @@ import oauth2
 
 from pulp.server.managers import factory
 from pulp.server.auth import ldap_connection
-from pulp.server.managers.auth.cert.certificate import Certificate
-from pulp.server.managers.auth.password import PasswordManager
 from pulp.server.config import config
 from pulp.server.exceptions import PulpException
 
@@ -102,7 +100,7 @@ def _check_username_password_local(username, password=None):
         _log.error('This is an ldap user %s' % user)
         return None
     if password is not None:
-        if not PasswordManager().check_password(user['password'], password):
+        if not factory.password_manager().check_password(user['password'], password):
             _log.error('Password for user [%s] was incorrect' % username)
             return None
     return user
@@ -135,7 +133,7 @@ def check_user_cert(cert_pem):
     @rtype: L{pulp.server.db.model.User} instance or None
     @return: user corresponding to the credentials
     """
-    cert = Certificate(content=cert_pem)
+    cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
     if not encoded_user:
@@ -153,7 +151,7 @@ def check_user_cert(cert_pem):
 
 def check_consumer_cert_no_user(cert_pem):
     # TODO document me
-    cert = Certificate(content=cert_pem)
+    cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
     if encoded_user is None:
@@ -167,7 +165,7 @@ def check_consumer_cert_no_user(cert_pem):
 
 def check_consumer_cert(cert_pem):
     # TODO document me
-    cert = Certificate(content=cert_pem)
+    cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
     if encoded_user is None:
