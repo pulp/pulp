@@ -51,6 +51,9 @@ STORAGE_MODULE_RELATIVE_PATH = '%s'
 # Configuration key for the location from which to sync modules
 CONFIG_FEED = 'feed'
 
+# Configuration key for the list of queries to run on the feed
+CONFIG_QUERIES = 'queries'
+
 # Configuration key for whether or not to remove modules that were previously
 # synchronized but were not on a subsequent sync
 CONFIG_REMOVE_MISSING = 'remove_missing'

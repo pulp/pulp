@@ -27,6 +27,7 @@ def validate(config):
     validations = (
         _validate_feed,
         _validate_remove_missing,
+        _validate_queries,
     )
 
     for v in validations:
@@ -42,12 +43,31 @@ def _validate_feed(config):
     Validates the location of the puppet modules.
     """
 
+    # The feed is optional
+    if constants.CONFIG_FEED not in config.keys():
+        return True, None
+
+    # Ask the downloader factory to validate the feed has a supported downloader
     feed = config.get(constants.CONFIG_FEED)
-
     is_valid = downloader_factory.is_valid_feed(feed)
-
     if not is_valid:
         return False, _('The feed <%(f)s> is invalid') % {'f' : feed}
+
+    return True, None
+
+
+def _validate_queries(config):
+    """
+    Validates the query parameters to apply to the source feed.
+    """
+
+    # The queries are optional
+    if constants.CONFIG_QUERIES not in config.keys():
+        return True, None
+
+    queries = config.get(constants.CONFIG_QUERIES)
+    if not isinstance(queries, (list, tuple)):
+        return False, _('The value for <%(q)s> must be specified as a list') % {'q' : constants.CONFIG_QUERIES}
 
     return True, None
 
@@ -57,11 +77,12 @@ def _validate_remove_missing(config):
     Validates the remove missing modules value if it is specified.
     """
 
+    # The flag is optional
     if constants.CONFIG_REMOVE_MISSING not in config.keys():
         return True, None
 
+    # Make sure it's a boolean
     str = config.get(constants.CONFIG_REMOVE_MISSING)
-
     if str.lower() not in ('true', 'false'):
         return False, _('The value for <%(r)s> must be either "true" or "false"') % {'r' : constants.CONFIG_REMOVE_MISSING}
 

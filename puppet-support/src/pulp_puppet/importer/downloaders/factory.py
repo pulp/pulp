@@ -29,6 +29,7 @@ import logging
 import urlparse
 
 from exceptions import UnsupportedFeedType, InvalidFeed
+from http import HttpDownloader
 from local import LocalDownloader
 
 # -- constants ----------------------------------------------------------------
@@ -36,6 +37,7 @@ from local import LocalDownloader
 # Mapping from feed prefix to downloader class
 MAPPINGS = {
     'file' : LocalDownloader,
+    'http' : HttpDownloader,
 }
 
 _LOG = logging.getLogger(__name__)
