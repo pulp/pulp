@@ -73,6 +73,7 @@ class SuccessfulMetadataTests(unittest.TestCase):
         }
         self.assertEqual(self.module.checksums, expected_checksums)
 
+
 class NegativeMetadataTests(unittest.TestCase):
 
     def setUp(self):

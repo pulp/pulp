@@ -17,6 +17,7 @@ import unittest
 from pulp_puppet.common import constants
 from pulp_puppet.importer import validation
 
+
 class FeedTests(unittest.TestCase):
 
     def test_validate_feed(self):

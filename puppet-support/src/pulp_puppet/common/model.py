@@ -52,8 +52,20 @@ class RepositoryMetadata(object):
         """
         Serializes the repository metadata into its JSON representation.
         """
+
+        # Assemble all of the modules in dictionary form
         module_dicts = [m.to_dict() for m in self.modules]
-        serialized = json.dumps(module_dicts)
+
+        # For each module, we only want a small subset of data that goes in the
+        # repo metadata document
+        limited_module_dicts = []
+        included_fields = ('name', 'author', 'version', 'tag_list')
+        for m in module_dicts:
+            clean_module = dict([(k, v) for k, v in m.items() if k in included_fields])
+            limited_module_dicts.append(clean_module)
+
+        # Serialize the dictionaries into a single JSON document
+        serialized = json.dumps(limited_module_dicts)
 
         return serialized
 
