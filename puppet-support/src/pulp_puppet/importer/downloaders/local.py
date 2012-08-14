@@ -14,21 +14,23 @@
 import os
 import shutil
 
+from base import BaseDownloader
 from exceptions import MetadataNotFound, ModuleNotFound
 from pulp_puppet.common import constants
 
-class LocalDownloader(object):
+
+class LocalDownloader(BaseDownloader):
     """
     Used when the source for puppet modules is a directory local to the Pulp
     server.
     """
 
-    def retrieve_metadata(self, progress_report, is_cancelled_call, config):
+    def retrieve_metadata(self, progress_report):
         """
         See module-level docstrings for description.
         """
 
-        source_dir = config.get(constants.CONFIG_FEED)
+        source_dir = self.config.get(constants.CONFIG_FEED)
         metadata_filename = os.path.join(source_dir, constants.REPO_METADATA_FILENAME)
 
         if not os.path.exists(metadata_filename):
@@ -40,13 +42,13 @@ class LocalDownloader(object):
 
         return contents
 
-    def retrieve_module(self, progress_report, is_cancelled_call, config, module, destination):
+    def retrieve_module(self, progress_report, module, destination):
         """
         See module-level docstrings for description.
         """
 
         # Determine the full path to the module
-        source_dir = config.get(constants.CONFIG_FEED)
+        source_dir = self.config.get(constants.CONFIG_FEED)
         module_path = constants.HOSTED_MODULE_FILE_RELATIVE_PATH % (module.author[0], module.author)
         module_filename = module.filename()
         full_filename = os.path.join(source_dir, module_path, module_filename)

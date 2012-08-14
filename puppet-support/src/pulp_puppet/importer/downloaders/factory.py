@@ -44,12 +44,25 @@ _LOG = logging.getLogger(__name__)
 
 # -- public -------------------------------------------------------------------
 
-def get_downloader(feed):
+def get_downloader(feed, repo, conduit, config, is_cancelled_call):
     """
     Returns an instance of the correct downloader to use for the given feed.
 
     :param feed: location from which to sync modules
     :type  feed: str
+
+    :param repo: describes the repository being synchronized
+    :type  repo: pulp.plugins.model.Repository
+
+    :param conduit: sync conduit used during the sync process
+    :type  conduit: pulp.plugins.conduits.repo_sync.RepoSyncConduit
+
+    :param config: configuration of the importer and call
+    :type  config: pulp.plugins.config.PluginCallConfiguration
+
+    :param is_cancelled_call: callback into the plugin to check if the sync
+           has been cancelled
+    :type  is_cancelled_call: func
 
     :return: downloader instance to use for the given feed
 
@@ -63,7 +76,7 @@ def get_downloader(feed):
     if feed_type not in MAPPINGS:
         raise UnsupportedFeedType(feed_type)
 
-    downloader = MAPPINGS[feed_type]()
+    downloader = MAPPINGS[feed_type](repo, conduit, config, is_cancelled_call)
     return downloader
 
 def is_valid_feed(feed):

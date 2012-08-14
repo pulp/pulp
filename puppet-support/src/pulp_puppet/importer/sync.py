@@ -91,9 +91,7 @@ class PuppetModuleSyncRun(object):
         # Retrieve the metadata from the source
         try:
             downloader = self._create_downloader()
-            metadata_json_docs = downloader.retrieve_metadata(self.progress_report,
-                                                              self.is_cancelled_call,
-                                                              self.config)
+            metadata_json_docs = downloader.retrieve_metadata(self.progress_report)
         except Exception, e:
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error downloading metadata')
@@ -243,8 +241,7 @@ class PuppetModuleSyncRun(object):
                                            relative_path)
 
         # Download the bits
-        downloader.retrieve_module(self.progress_report, self.is_cancelled_call,
-                                   self.config, module, unit.storage_path)
+        downloader.retrieve_module(self.progress_report, module, unit.storage_path)
 
         # If the bits downloaded successfully, save the unit in Pulp
         self.sync_conduit.save_unit(unit)
@@ -277,7 +274,8 @@ class PuppetModuleSyncRun(object):
         """
 
         feed = self.config.get(constants.CONFIG_FEED)
-        downloader = downloader_factory.get_downloader(feed)
+        downloader = downloader_factory.get_downloader(feed, self.repo, self.sync_conduit,
+                                                       self.config, self.is_cancelled_call)
         return downloader
 
     def _should_remove_missing(self):

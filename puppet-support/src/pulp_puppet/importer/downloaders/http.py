@@ -11,19 +11,37 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-class HttpDownloader(object):
+import pycurl
+
+from base import BaseDownloader
+
+# -- constants ----------------------------------------------------------------
+
+# Relative to the importer working directory
+DOWNLOAD_TMP_DIR = 'http-downloads'
+
+# -- downloader implementations -----------------------------------------------
+
+class HttpDownloader(BaseDownloader):
     """
     Used when the source for puppet modules is a remote source over HTTP.
     """
 
-    # To be implemented when support for this is required
-    pass
+    def retrieve_metadata(self, progress_report):
+        pass
+
+    def retrieve_module(self, progress_report, module, destination):
+        pass
 
 
-class HttpsDownloader(object):
+class HttpsDownloader(BaseDownloader):
     """
     Used when the source for puppet modules is a remote source over HTTPS.
     """
 
     # To be implemented when support for this is required
     pass
+
+# -----------------------------------------------------------------------------
+
+def create_download_tmp_dir():
