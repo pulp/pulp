@@ -13,24 +13,50 @@
 
 
 class InvalidFeed(Exception):
-    def __init__(self, feed):
-        Exception.__init__(self, feed)
+    def __init__(self, feed, *args):
+        Exception.__init__(self, feed, *args)
         self.feed = feed
 
 
 class UnsupportedFeedType(Exception):
-    def __init__(self, feed_type):
-        Exception.__init__(self, feed_type)
+    def __init__(self, feed_type, *args):
+        Exception.__init__(self, feed_type, *args)
         self.feed_type = feed_type
 
+# -- file retrieval exceptions ------------------------------------------------
 
-class MetadataNotFound(Exception):
-    def __init__(self, location):
-        Exception.__init__(self, location)
+class FileRetrievalException(Exception):
+    """
+    Base class for all exceptions related to trying to retrieve files, either
+    metadata documents or modules. This should only directly be used if there
+    is no more specific subclass.
+    """
+    def __init__(self, location, *args):
+        """
+        :param location: where the document was attempted to be read from
+        :type  location: str
+        """
+        Exception.__init__(self, location, *args)
         self.location = location
 
 
-class ModuleNotFound(Exception):
-    def __init__(self, location):
-        Exception.__init__(self, location)
-        self.location = location
+class MetadataNotFoundException(FileRetrievalException):
+    """
+    Raised if a metadata document cannot be found.
+    """
+    pass
+
+
+class ModuleNotFoundException(FileRetrievalException):
+    """
+    Raised if a module cannot be found.
+    """
+    pass
+
+
+class Unauthorized(FileRetrievalException):
+    """
+    Raised if a file fails to be retrieved because it could not be read
+    (e.g. 401 from a web request, no read perms for a local read).
+    """
+    pass

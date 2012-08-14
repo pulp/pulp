@@ -16,7 +16,7 @@ from gettext import gettext as _
 from pulp.plugins.importer import Importer
 
 from pulp_puppet.common import constants
-from pulp_puppet.importer import validation, sync, upload, copier
+from pulp_puppet.importer import config, sync, upload, copier
 
 # -- plugins ------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ class PuppetModuleImporter(Importer):
         }
 
     def validate_config(self, repo, config, related_repos):
-        return validation.validate(config)
+        return config.validate(config)
 
     def sync_repo(self, repo, sync_conduit, config):
         self.sync_cancelled = False

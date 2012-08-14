@@ -36,8 +36,9 @@ from local import LocalDownloader
 
 # Mapping from feed prefix to downloader class
 MAPPINGS = {
-    'file' : LocalDownloader,
-    'http' : HttpDownloader,
+    'file'  : LocalDownloader,
+    'http'  : HttpDownloader,
+    'https' : HttpDownloader,
 }
 
 _LOG = logging.getLogger(__name__)
