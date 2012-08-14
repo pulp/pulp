@@ -49,7 +49,6 @@ from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.auth.role.cud import super_user_role
 from pulp.server.webservices import http
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
@@ -188,7 +187,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         # test runs, so we can't just create the user in the class level setup.
         user_manager = manager_factory.user_manager()
         roles = []
-        roles.append(super_user_role)
+        roles.append(manager_factory.role_manager().super_user_role)
         user_manager.create_user(login='ws-user', password='ws-user', roles=roles)
 
     def tearDown(self):

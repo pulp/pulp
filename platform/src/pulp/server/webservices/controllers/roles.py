@@ -59,21 +59,21 @@ class RolesCollection(JSONController):
 
         # Pull all the roles data
         role_data = self.params()
-        name = role_data.get('name', None)
+        role_id = role_data.get('id', None)
 
         # Creation
         manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {name: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [name]
+        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
+        args = [role_id]
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
+        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('create')]
         call_request = CallRequest(manager.create_role,
                                    args,
                                    resources=resources,
                                    weight=weight,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, name)
+        return execution.execute_sync_created(self, call_request, role_id)
 
 
 class RoleResource(JSONController):
@@ -84,10 +84,10 @@ class RoleResource(JSONController):
     # PUT:     Role update
 
     @auth_required(READ)
-    def GET(self, name):
+    def GET(self, role_id):
 
         manager = managers.role_query_manager()
-        role = manager.find_by_name(name)
+        role = manager.find_by_id(role_id)
        
         role['users'] = [u['login'] for u in
                          managers.user_query_manager().find_users_belonging_to_role(role)]
@@ -98,21 +98,21 @@ class RoleResource(JSONController):
 
 
     @auth_required(DELETE)
-    def DELETE(self, name):
+    def DELETE(self, role_id):
 
         manager = managers.role_manager()
         
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {name: dispatch_constants.RESOURCE_DELETE_OPERATION}}
+        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
                 action_tag('delete')]
         call_request = CallRequest(manager.delete_role,
-                                   [name],
+                                   [role_id],
                                    resources=resources,
                                    tags=tags)
         return self.ok(execution.execute(call_request))
 
     @auth_required(UPDATE)
-    def PUT(self, name):
+    def PUT(self, role_id):
 
         # Pull all the role update data
         role_data = self.params()
@@ -120,11 +120,11 @@ class RoleResource(JSONController):
 
         # Perform update        
         manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {name: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
+        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('update')]
         call_request = CallRequest(manager.update_role,
-                                   [name, delta],
+                                   [role_id, delta],
                                    resources=resources,
                                    tags=tags)
         role = execution.execute(call_request)
@@ -148,7 +148,7 @@ class RoleUsers(JSONController):
         return self.ok(role_users)
 
     @auth_required(CREATE)
-    def POST(self, name):
+    def POST(self, role_id):
 
         # Params (validation will occur in the manager)
         params = self.params()
@@ -156,11 +156,11 @@ class RoleUsers(JSONController):
 
         role_manager = managers.role_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
+        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('add_user_to_role')]
 
         call_request = CallRequest(role_manager.add_user_to_role,
-                                   [name, login],
+                                   [role_id, login],
                                    resources=resources,
                                    tags=tags)
         return execution.execute_sync_created(self, call_request, 'user')

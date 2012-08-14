@@ -43,31 +43,31 @@ class RoleQueryManager(object):
         return all_roles
 
 
-    def find_by_name(self, name):
+    def find_by_id(self, role_id):
         """
         Returns a serialized version of the given role if it exists.
-        If a role cannot be found with the given name, None is returned.
+        If a role cannot be found with the given id, None is returned.
 
         @return: serialized data describing the role
         @rtype:  dict or None
         """
-        role = Role.get_collection().find_one({'name' : name})
+        role = Role.get_collection().find_one({'id' : role_id})
         return role
 
 
  
-    def get_other_roles(self, role, role_names):
+    def get_other_roles(self, role, role_ids):
         """
-        Get a list of role instance corresponding to the role names, excluding the
+        Get a list of role instances corresponding to the role ids, excluding the
         given role instance
         
         @type role: L{pulp.server.model.db.Role} instance
         @param role: role to exclude
     
-        @type role_names: list or tuple of str's
+        @type role_ids: list or tuple of str's
     
         @rtype: list of L{pulp.server.model.db.Role} instances
         @return: list of roles
         """
-        return [self.find_by_name(n) for n in role_names if n != role['name']]
+        return [self.find_by_id(n) for n in role_ids if n != role['id']]
 

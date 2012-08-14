@@ -119,7 +119,7 @@ def auth_required(operation=None, super_user_only=False):
 
             # forth, check authorization
             user_query_manager = UserQueryManager()
-            if super_user_only and not user_query_manager.is_superuser(user):
+            if super_user_only and not user_query_manager.is_superuser(user['login']):
                 return self.unauthorized(author_fail_msg)
 
             # if the operation is None, don't check authorization
@@ -128,7 +128,7 @@ def auth_required(operation=None, super_user_only=False):
                     value = method(self, *args, **kwargs)
                     clear_principal()
                     return value
-                elif user_query_manager.is_authorized(http.resource_path(), user, operation):
+                elif user_query_manager.is_authorized(http.resource_path(), user['login'], operation):
                     pass
                 else:
                     return self.unauthorized(author_fail_msg)

@@ -31,16 +31,16 @@ from pulp.server.auth.principal import (
 
 _LOG = logging.getLogger(__name__)
 
-CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
-operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
-
-
 # -- classes ------------------------------------------------------------------
 
 class PermissionManager(object):
     """
     Performs permission related functions relating to CRUD operations.
     """
+    
+    def __init__(self):
+        self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE = range(5)
+
 
     def create_permission(self, resource_uri):
         """
@@ -216,7 +216,7 @@ class PermissionManager(object):
             raise PulpExecutionException(_('Cannot grant automatic permissions for [%s] on resource [%s]') %
                                (user, resource))
             
-        operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
+        operations = [self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE]
         self.grant(resource, user['login'], operations)
         return True
 
@@ -229,12 +229,12 @@ class PermissionManager(object):
         @param login: login of the new user
         @type  login: str
         """
-        self.grant('/users/%s/' % login, login, [READ, UPDATE])
-        self.grant('/users/admin_certificate/', login, [READ])
-        self.grant('/v2/actions/login/', login, [READ, UPDATE])
-        self.grant('/v2/actions/logout/', login, [READ, UPDATE])
-        self.grant('/v2/users/%s/' % login, login, [READ, UPDATE])
-        self.grant('/v2/users/admin_certificate/', login, [READ])
+        self.grant('/users/%s/' % login, login, [self.READ, self.UPDATE])
+        self.grant('/users/admin_certificate/', login, [self.READ])
+        self.grant('/v2/actions/login/', login, [self.READ, self.UPDATE])
+        self.grant('/v2/actions/logout/', login, [self.READ, self.UPDATE])
+        self.grant('/v2/users/%s/' % login, login, [self.READ, self.UPDATE])
+        self.grant('/v2/users/admin_certificate/', login, [self.READ])
         
 
     def revoke_permission_from_user(self, resource, login, operation_names):
