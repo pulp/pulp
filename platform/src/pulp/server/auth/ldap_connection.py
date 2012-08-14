@@ -18,7 +18,6 @@ import ldap.modlist
 
 from pulp.server.config import config
 from pulp.server.managers import factory
-from pulp.server.auth import authorization
 
 log = logging.getLogger(__name__)
 

@@ -40,6 +40,7 @@ class PermissionManager(object):
     
     def __init__(self):
         self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE = range(5)
+        self.operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
 
 
     def create_permission(self, resource_uri):

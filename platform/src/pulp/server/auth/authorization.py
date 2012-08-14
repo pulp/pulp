@@ -18,7 +18,7 @@ import logging
 from gettext import gettext as _
 
 from pulp.server.auth.principal import (
-    get_principal, is_system_principal, SystemPrincipal)
+    get_principal, SystemPrincipal)
 from pulp.server.exceptions import PulpException
 
 from pulp.server.managers import factory
@@ -31,7 +31,6 @@ class PulpAuthorizationError(PulpException):
 # operations api --------------------------------------------------------------
 
 CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
-operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
 
 # Temporarily moved this out of db into here; this is the only place using it
 # and it's going to be deleted.
@@ -46,9 +45,9 @@ def name_to_operation(name):
     @return: operation value
     """
     name = name.upper()
-    if name not in operation_names:
+    if name not in factory.permission_manager().operation_names:
         return None
-    return operation_names.index(name)
+    return factory.permission_manager().operation_names.index(name)
 
 
 def names_to_operations(names):
@@ -75,9 +74,9 @@ def operation_to_name(operation):
     @rtype: str or None
     @return: operation name
     """
-    if operation < CREATE or operation > EXECUTE:
+    if operation < factory.permission_manager().CREATE or operation > factory.permission_manager().EXECUTE:
         return None
-    return operation_names[operation]
+    return factory.permission_manager().operation_names[operation]
 
 # utilities -------------------------------------------------------------------
 
