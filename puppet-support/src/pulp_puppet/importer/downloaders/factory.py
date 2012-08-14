@@ -38,7 +38,6 @@ from local import LocalDownloader
 MAPPINGS = {
     'file'  : LocalDownloader,
     'http'  : HttpDownloader,
-    'https' : HttpDownloader,
 }
 
 _LOG = logging.getLogger(__name__)
