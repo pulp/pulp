@@ -84,14 +84,9 @@ class HttpDownloader(BaseDownloader):
 
         queries = self.config.get(constants.CONFIG_QUERIES)
         if queries:
-            # I think we can get away with a single URL that contains all of the
-            # query strings. The behavior appears to be to OR all of them. In
-            # the future this may change to return separate URLs per query if
-            # that has better behavior. jdob, Aug 14, 2012
-
-            single_url = copy.copy(base_url)
-            single_url += '?'
             for query in queries:
+                query_url = copy.copy(base_url)
+                query_url += '?'
 
                 # The config supports either single queries or tuples of them.
                 # If it's a single, wrap it in a list so we can handle them the same
@@ -99,11 +94,11 @@ class HttpDownloader(BaseDownloader):
                     query = [query]
 
                 for query_term in query:
-                    single_url += 'q=%s&' % query_term
+                    query_url += 'q=%s&' % query_term
 
-            # Chop off the last & that was added
-            single_url = single_url[:-1]
-            all_urls.append(single_url)
+                # Chop off the last & that was added
+                query_url = query_url[:-1]
+                all_urls.append(query_url)
         else:
             all_urls.append(base_url)
 

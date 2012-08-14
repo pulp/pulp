@@ -15,14 +15,14 @@ import mock
 import unittest
 
 from pulp_puppet.common import constants
-from pulp_puppet.importer import validation
+from pulp_puppet.importer import config
 
 
 class FeedTests(unittest.TestCase):
 
     def test_validate_feed(self):
         # Test
-        result, msg = validation._validate_feed({constants.CONFIG_FEED : 'http://localhost'})
+        result, msg = config._validate_feed({constants.CONFIG_FEED : 'http://localhost'})
 
         # Verify
         self.assertTrue(result)
@@ -30,7 +30,7 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed_missing(self):
         # Test
-        result, msg = validation._validate_feed({})
+        result, msg = config._validate_feed({})
 
         # Verify
         self.assertTrue(result)
@@ -38,7 +38,7 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed_invalid(self):
         # Test
-        result, msg = validation._validate_feed({constants.CONFIG_FEED : 'bad-feed'})
+        result, msg = config._validate_feed({constants.CONFIG_FEED : 'bad-feed'})
 
         # Verify
         self.assertTrue(not result)
@@ -50,7 +50,7 @@ class QueriesTests(unittest.TestCase):
 
     def test_validate_queries(self):
         # Test
-        result, msg = validation._validate_queries({constants.CONFIG_QUERIES : ['httpd', 'mysql']})
+        result, msg = config._validate_queries({constants.CONFIG_QUERIES : ['httpd', 'mysql']})
 
         # Verify
         self.assertTrue(result)
@@ -58,7 +58,7 @@ class QueriesTests(unittest.TestCase):
 
     def test_validate_queries_missing(self):
         # Test
-        result, msg = validation._validate_queries({})
+        result, msg = config._validate_queries({})
 
         # Verify
         self.assertTrue(result)
@@ -66,7 +66,7 @@ class QueriesTests(unittest.TestCase):
 
     def test_validate_queries_invalid(self):
         # Test
-        result, msg = validation._validate_queries({constants.CONFIG_QUERIES : 'non-list'})
+        result, msg = config._validate_queries({constants.CONFIG_QUERIES : 'non-list'})
 
         # Verify
         self.assertTrue(not result)
@@ -78,7 +78,7 @@ class RemoveMissingTests(unittest.TestCase):
 
     def test_validate_remove_missing(self):
         # Test
-        result, msg = validation._validate_remove_missing({constants.CONFIG_REMOVE_MISSING : 'true'})
+        result, msg = config._validate_remove_missing({constants.CONFIG_REMOVE_MISSING : 'true'})
 
         # Verify
         self.assertTrue(result)
@@ -86,7 +86,7 @@ class RemoveMissingTests(unittest.TestCase):
 
     def test_validate_remove_missing_missing(self):
         # Test
-        result, msg = validation._validate_remove_missing({})
+        result, msg = config._validate_remove_missing({})
 
         # Verify
         self.assertTrue(result)
@@ -94,7 +94,7 @@ class RemoveMissingTests(unittest.TestCase):
 
     def test_validate_remove_missing_invalid(self):
         # Test
-        result, msg = validation._validate_remove_missing({constants.CONFIG_REMOVE_MISSING : 'foo'})
+        result, msg = config._validate_remove_missing({constants.CONFIG_REMOVE_MISSING : 'foo'})
 
         # Verify
         self.assertTrue(not result)
@@ -104,9 +104,9 @@ class RemoveMissingTests(unittest.TestCase):
 
 class FullValidationTests(unittest.TestCase):
 
-    @mock.patch('pulp_puppet.importer.validation._validate_feed')
-    @mock.patch('pulp_puppet.importer.validation._validate_queries')
-    @mock.patch('pulp_puppet.importer.validation._validate_remove_missing')
+    @mock.patch('pulp_puppet.importer.config._validate_feed')
+    @mock.patch('pulp_puppet.importer.config._validate_queries')
+    @mock.patch('pulp_puppet.importer.config._validate_remove_missing')
     def test_validate(self, missing, queries, feed):
         """
         Tests that the validate() call aggregates to all of the specific test
@@ -121,9 +121,9 @@ class FullValidationTests(unittest.TestCase):
             x.return_value = True, None
 
         # Test
-        config = {}
-        validation.validate(config)
+        c = {}
+        config.validate(c)
 
         # Verify
         for x in all_mock_calls:
-            x.assert_called_once_with(config)
+            x.assert_called_once_with(c)

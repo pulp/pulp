@@ -96,7 +96,7 @@ def _validate_remove_missing(config):
         return True, None
 
     # Make sure it's a boolean
-    parsed = config.get(constants.CONFIG_REMOVE_MISSING)
+    parsed = get_boolean(config, constants.CONFIG_REMOVE_MISSING)
     if parsed is None:
         return False, _('The value for <%(r)s> must be either "true" or "false"') % {'r' : constants.CONFIG_REMOVE_MISSING}
 

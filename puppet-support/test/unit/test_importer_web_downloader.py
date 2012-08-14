@@ -61,9 +61,9 @@ class HttpDownloaderTests(unittest.TestCase):
         urls = self.downloader._create_metadata_download_urls()
 
         # Verify
-        self.assertEqual(1, len(urls))
-        expected = TEST_SOURCE + 'modules.json?q=a&q=b&q=c'
-        self.assertEqual(urls[0], expected)
+        self.assertEqual(2, len(urls))
+        self.assertEqual(urls[0], TEST_SOURCE + 'modules.json?q=a')
+        self.assertEqual(urls[1], TEST_SOURCE + 'modules.json?q=b&q=c')
 
     def test_create_metadata_download_urls_no_queries(self):
         # Test

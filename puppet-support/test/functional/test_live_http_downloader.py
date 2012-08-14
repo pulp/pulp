@@ -48,28 +48,33 @@ class LiveHttpDownloaderTests(unittest.TestCase):
             shutil.rmtree(self.working_dir)
 
     def test_retrieve_metadata(self):
-        self._run_test()
+        docs = self._run_test()
+        self.assertEqual(1, len(docs))
 
     def test_retrieve_metadata_with_vague_query(self):
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['httpd']
-        self._run_test()
+        docs = self._run_test()
+        self.assertEqual(1, len(docs))
 
     def test_retrieve_metadata_with_specific_query(self):
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['thias/php']
-        self._run_test()
+        docs = self._run_test()
+        self.assertEqual(1, len(docs))
 
     def test_retrieve_metadata_with_multiple_specific_queries(self):
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['thias/php', 'larstobi/dns']
-        self._run_test()
+        docs = self._run_test()
+        self.assertEqual(2, len(docs))
 
     def _run_test(self):
         # Test
         docs = self.downloader.retrieve_metadata(self.mock_progress_report)
 
         # Verify
-        self.assertEqual(1, len(docs))
-
         parsed = model.RepositoryMetadata()
-        parsed.update_from_json(docs[0])
+        for d in docs:
+            parsed.update_from_json(d)
 
         print('Number of Modules: %s' % len(parsed.modules))
+
+        return docs
