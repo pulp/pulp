@@ -21,7 +21,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository
 
 from pulp_puppet.common import constants, model
-from pulp_puppet.importer.downloaders.web import HttpDownloader
+from pulp_puppet.importer.downloaders.web import HttpDownloader, DOWNLOAD_TMP_DIR
 
 TEST_SOURCE = 'http://forge.puppetlabs.com/'
 
@@ -48,25 +48,35 @@ class LiveHttpDownloaderTests(unittest.TestCase):
             shutil.rmtree(self.working_dir)
 
     def test_retrieve_metadata(self):
-        docs = self._run_test()
+        docs = self._run_metadata_test()
         self.assertEqual(1, len(docs))
 
     def test_retrieve_metadata_with_vague_query(self):
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['httpd']
-        docs = self._run_test()
+        docs = self._run_metadata_test()
         self.assertEqual(1, len(docs))
 
     def test_retrieve_metadata_with_specific_query(self):
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['thias/php']
-        docs = self._run_test()
+        docs = self._run_metadata_test()
         self.assertEqual(1, len(docs))
 
     def test_retrieve_metadata_with_multiple_specific_queries(self):
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['thias/php', 'larstobi/dns']
-        docs = self._run_test()
+        docs = self._run_metadata_test()
         self.assertEqual(2, len(docs))
 
-    def _run_test(self):
+    def test_retrieve_module(self):
+        module = model.Module('php', '0.2.1', 'thias')
+
+        # Test
+        self.downloader.retrieve_module(self.mock_progress_report, module)
+
+        # Verify
+        expected_file = os.path.join(self.working_dir, DOWNLOAD_TMP_DIR, module.filename())
+        self.assertTrue(os.path.exists(expected_file))
+
+    def _run_metadata_test(self):
         # Test
         docs = self.downloader.retrieve_metadata(self.mock_progress_report)
 

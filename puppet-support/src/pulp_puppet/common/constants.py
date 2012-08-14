@@ -35,7 +35,7 @@ MODULE_METADATA_FILENAME = 'metadata.json'
 
 # Location in the repository where a module will be hosted
 # Substitutions: author first character, author
-HOSTED_MODULE_FILE_RELATIVE_PATH = 'system/releases/%s/%s'
+HOSTED_MODULE_FILE_RELATIVE_PATH = 'system/releases/%s/%s/'
 
 # Name template for a module
 # Substitutions: author, name, version

@@ -14,11 +14,10 @@
 import copy
 import os
 import pycurl
-import shutil
 
-from base import BaseDownloader
+from   base import BaseDownloader
 import exceptions
-from pulp_puppet.common import constants
+from   pulp_puppet.common import constants
 
 # -- constants ----------------------------------------------------------------
 
@@ -34,14 +33,19 @@ class HttpDownloader(BaseDownloader):
 
     def retrieve_metadata(self, progress_report):
         """
+        Retrieves all metadata documents needed to fulfill the configuration
+        set for the repository. The progress report will be updated as the
+        downloads take place.
 
         :param progress_report: used to communicate the progress of this operation
         :type  progress_report: pulp_puppet.importer.sync.ProgressReport
-        @return:
+
+        :return: list of JSON documents describing all modules to import
+        :rtype:  list
         """
         urls = self._create_metadata_download_urls()
 
-        # Update the
+        # Update the progress report to reflect the number of queries it will take
         progress_report.metadata_query_finished_count = 0
         progress_report.metadata_query_total_count = len(urls)
 
@@ -50,12 +54,11 @@ class HttpDownloader(BaseDownloader):
             progress_report.metadata_current_query = url
             progress_report.update_progress()
 
-            content = InMemoryDownloadedContent()
 
             # Let any exceptions from this bubble up, the caller will update
             # the progress report as necessary
+            content = InMemoryDownloadedContent()
             self._download_file(url, content)
-
             all_metadata_documents.append(content.content)
 
             progress_report.metadata_query_finished_count += 1
@@ -63,8 +66,35 @@ class HttpDownloader(BaseDownloader):
         progress_report.update_progress() # to get the final finished count out there
         return all_metadata_documents
 
-    def retrieve_module(self, progress_report, module, destination):
-        pass
+    def retrieve_module(self, progress_report, module):
+        """
+        Retrieves the given module and returns where on disk it can be
+        found. It is the caller's job to relocate this file to where Pulp
+        wants it to live as its final resting place.
+
+        :param progress_report: used if any updates need to be made as the
+               download runs
+        :type  progress_report: pulp_puppet.importer.sync.ProgressReport
+
+        :param module: module to download
+        :type  module: pulp_puppet.common.model.Module
+
+        :return: full path to the temporary location where the module file is
+        :rtype:  str
+        """
+        url = self._create_module_url(module)
+
+        module_tmp_dir = _create_download_tmp_dir(self.repo.working_dir)
+        module_tmp_filename = os.path.join(module_tmp_dir, module.filename())
+
+        content = StoredDownloadedContent(module_tmp_filename)
+        content.open()
+        try:
+            self._download_file(url, content)
+        finally:
+            content.close()
+
+        return module_tmp_filename
 
     def _create_metadata_download_urls(self):
         """
@@ -103,6 +133,16 @@ class HttpDownloader(BaseDownloader):
             all_urls.append(base_url)
 
         return all_urls
+
+    def _create_module_url(self, module):
+        url = self.config.get(constants.CONFIG_FEED)
+        if not url.endswith('/'):
+            url += '/'
+
+        url += constants.HOSTED_MODULE_FILE_RELATIVE_PATH % (module.author[0], module.author)
+        url += module.filename()
+        return url
+
 
     def _download_file(self, url, destination):
         """
@@ -176,12 +216,43 @@ class InMemoryDownloadedContent(object):
     def update(self, buffer):
         self.content += buffer
 
+class StoredDownloadedContent(object):
+    """
+    Stores content on disk as it is retrieved by PyCurl. This currently does
+    not support resuming a download and will need to be revisited to add
+    that support.
+    """
+    def __init__(self, filename):
+        self.filename = filename
+
+        self.offset = 0
+        self.file = None
+
+    def open(self):
+        """
+        Sets the content object to be able to accept and store data sent to
+        its update method.
+        """
+        self.file = open(self.filename, 'a+')
+
+    def update(self, buffer):
+        """
+        Callback passed to PyCurl to use to write content as it is read.
+        """
+        self.file.seek(self.offset)
+        self.file.write(buffer)
+        self.offset += len(buffer)
+
+    def close(self):
+        """
+        Closes the underlying file backing this content unit.
+        """
+        self.file.close()
+
 # -- utilities ----------------------------------------------------------------
 
 def _create_download_tmp_dir(repo_working_dir):
     tmp_dir = os.path.join(repo_working_dir, DOWNLOAD_TMP_DIR)
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
-
-    os.mkdir(tmp_dir)
+    if not os.path.exists(tmp_dir):
+        os.mkdir(tmp_dir)
     return tmp_dir

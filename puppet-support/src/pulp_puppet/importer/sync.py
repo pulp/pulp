@@ -189,6 +189,7 @@ class PuppetModuleSyncRun(object):
         continue. This method will only raise an exception in an extreme case
         where it cannot react and continue.
         """
+        # TODO: Add progress report calls to indicate it's running
 
         downloader = self._create_downloader()
 
@@ -241,10 +242,12 @@ class PuppetModuleSyncRun(object):
                                            relative_path)
 
         # Download the bits
-        downloader.retrieve_module(self.progress_report, module, unit.storage_path)
+        downloader.retrieve_module(self.progress_report, module)
 
         # If the bits downloaded successfully, save the unit in Pulp
         self.sync_conduit.save_unit(unit)
+
+        # TODO: copy the bits to the final location
 
     def _resolve_new_units(self, existing_unit_keys, found_unit_keys):
         """
