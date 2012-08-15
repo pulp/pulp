@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.322
+Version: 0.0.323
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,9 @@ exit 0
 %endif
 
 %changelog
+* Sat Aug 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-1
+- 
+
 * Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
 - unit search within a repository through the CLI now used the standard
   criteria features. (mhrivnak@redhat.com)

@@ -17,8 +17,8 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.322
-Release: 1%{?dist}
+Version: 0.0.323
+Release: 4%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -70,7 +70,9 @@ mkdir -p %{buildroot}/%{_usr}/lib/yum-plugins/
 mkdir -p %{buildroot}/%{_var}/www
 
 # Configuration
-cp -R etc/* %{buildroot}/%{_sysconfdir}
+cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+cp -R etc/yum %{buildroot}/%{_sysconfdir}
 
 # WSGI
 cp -R srv %{buildroot}
@@ -160,6 +162,7 @@ client capabilites with RPM specific features.
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
 %{_usr}/lib/pulp/admin/extensions/rpm_sync/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
+%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_search/
 %{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
@@ -233,6 +236,16 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-4
+- bump release
+
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-3
+- Exclude /etc/bash_completion.d/*
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-2
+- bump release for QE build.
+* Sat Aug 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-1
+- iso prefix override option to override iso naming (pkilambi@redhat.com)
+
 * Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
 - 845109 - changing consumer id admin client extensions option to --consumer-id
   instead of --id (skarmark@redhat.com)

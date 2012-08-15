@@ -44,6 +44,9 @@ match against, specified as "name=value".
 Example: $ pulp-admin repo search --gt='content_unit_count=0'
 """).replace('\n', ' ')
 
+ALL_CRITERIA_ARGS = ('filters', 'after', 'before', 'str-eq', 'int-eq', 'match',
+                     'in', 'not', 'gt', 'gte', 'lt', 'lte')
+
 class SearchCommand(PulpCliCommand):
     """
     This command contains only the search features provided by the server. See
@@ -78,40 +81,40 @@ class SearchCommand(PulpCliCommand):
 
         filter_group = OptionGroup('Filters', _(_USAGE))
 
-        m = 'match where a named attribute equals a string value exactly.'
-        filter_group.add_option(PulpCliOption('--str-eq', _(m), required=False,
+        m = _('match where a named attribute equals a string value exactly.')
+        filter_group.add_option(PulpCliOption('--str-eq', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'match where a named attribute equals an int value exactly.'
-        filter_group.add_option(PulpCliOption('--int-eq', _(m), required=False,
+        m = _('match where a named attribute equals an int value exactly.')
+        filter_group.add_option(PulpCliOption('--int-eq', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'for a named attribute, match a regular expression using the mongo regex engine.'
-        filter_group.add_option(PulpCliOption('--match', _(m), required=False,
+        m = _('for a named attribute, match a regular expression using the mongo regex engine.')
+        filter_group.add_option(PulpCliOption('--match', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'for a named attribute, match where value is in the provided list of values, expressed as one row of CSV'
-        filter_group.add_option(PulpCliOption('--in', _(m), required=False,
+        m = _('for a named attribute, match where value is in the provided list of values, expressed as one row of CSV')
+        filter_group.add_option(PulpCliOption('--in', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'field and expression to omit when determining units for inclusion'
-        filter_group.add_option(PulpCliOption('--not', _(m), required=False,
+        m = _('field and expression to omit when determining units for inclusion')
+        filter_group.add_option(PulpCliOption('--not', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'matches resources whose value for the specified field is greater than the given value'
-        filter_group.add_option(PulpCliOption('--gt', _(m), required=False,
+        m = _('matches resources whose value for the specified field is greater than the given value')
+        filter_group.add_option(PulpCliOption('--gt', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'matches resources whose value for the specified field is greater than or equal to the given value'
-        filter_group.add_option(PulpCliOption('--gte', _(m), required=False,
+        m = _('matches resources whose value for the specified field is greater than or equal to the given value')
+        filter_group.add_option(PulpCliOption('--gte', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'matches resources whose value for the specified field is less than the given value'
-        filter_group.add_option(PulpCliOption('--lt', _(m), required=False,
+        m = _('matches resources whose value for the specified field is less than the given value')
+        filter_group.add_option(PulpCliOption('--lt', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
-        m = 'matches resources whose value for the specified field is less than or equal to the given value'
-        filter_group.add_option(PulpCliOption ('--lte', _(m), required=False,
+        m = _('matches resources whose value for the specified field is less than or equal to the given value')
+        filter_group.add_option(PulpCliOption ('--lte', m, required=False,
             allow_multiple=True, parse_func=self._parse_key_value))
 
         self.add_option_group(filter_group)
@@ -134,6 +137,21 @@ class SearchCommand(PulpCliCommand):
         self.add_option(PulpCliOption('--fields', _FIELDS_DESCRIPTION,
             required=False, validate_func=str,
             parse_func=lambda x: x.split(',')))
+
+    @staticmethod
+    def ensure_criteria(kwargs):
+        """
+        Ensures at least one of the criteria options is specified in the
+        given arguments. Other values may be specified in here and not
+        affect the outcome.
+
+        @param kwargs: keyword arguments parsed by the framework
+
+        @raise CommandUsage: if there isn't at least one criteria argument
+        """
+        criteria_args = [k for k, v in kwargs.items() if k in ALL_CRITERIA_ARGS and v is not None]
+        if len(criteria_args) == 0:
+            raise CommandUsage()
 
     @staticmethod
     def _parse_key_value(args):
@@ -247,6 +265,12 @@ class UnitCopyCommand(UnitSearchCommand):
 
         m = 'destination repository to copy units into'
         self.create_option('--to-repo-id', _(m), ['-t'], required=True)
+
+
+class UnitRemoveCommand(UnitSearchCommand):
+    def __init__(self, *args, **kwargs):
+        kwargs['criteria'] = False
+        super(UnitRemoveCommand, self).__init__(*args, **kwargs)
 
 
 class UnitSearchAllCommand(UnitSearchCommand):

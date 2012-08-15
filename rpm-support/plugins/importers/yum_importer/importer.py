@@ -304,7 +304,7 @@ class YumImporter(Importer):
         _LOG.info("%s units from %s have been associated to %s" % (len(units), source_repo.id, dest_repo.id))
 
 
-    def remove_units(self, repo, units):
+    def remove_units(self, repo, units, config):
         """
         @param repo: metadata describing the repository
         @type  repo: L{pulp.plugins.data.Repository}
@@ -318,7 +318,7 @@ class YumImporter(Importer):
         _LOG.info("remove_units invoked for %s units" % (len(units)))
         for u in units:
             # Assuming Pulp will delete u.storage_path from filesystem
-            sym_link = os.path.join(repo.working_dir, repo.id, u.unit_key["filename"])
+            sym_link = os.path.join(repo.working_dir, repo.id, u.metadata["filename"])
             if os.path.lexists(sym_link):
                 os.unlink(sym_link)
     # -- actions --------------------------------------------------------------

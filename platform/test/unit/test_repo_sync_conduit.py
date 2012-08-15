@@ -19,6 +19,7 @@ import mock_plugins
 
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import SyncReport
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
@@ -42,8 +43,6 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoSyncConduitTests, self).clean()
-        types_database.clean()
-        mock_plugins.reset()
 
         RepoContentUnit.get_collection().remove()
         Repo.get_collection().remove()
@@ -62,7 +61,14 @@ class RepoSyncConduitTests(base.PulpServerTests):
         self.query_manager = query_manager.ContentQueryManager()
 
         self.repo_manager.create_repo('repo-1')
+        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
         self.conduit = RepoSyncConduit('repo-1', 'test-importer', 'importer', 'importer-id')
+
+    def tearDown(self):
+        super(RepoSyncConduitTests, self).tearDown()
+
+        types_database.clean()
+        mock_plugins.reset()
 
     def test_str(self):
         """

@@ -139,10 +139,10 @@ def add_commands(units_section):
     units_section.add_command(UnitSearchCommand(drpm, name='drpm', description=m))
 
     m = _('search for package groups in a repository')
-    units_section.add_command(UnitSearchCommand(package_group, name='package_group', description=m))
+    units_section.add_command(UnitSearchCommand(package_group, name='package-group', description=m))
 
     m = _('search for package categories (groups of package groups) in a repository')
-    units_section.add_command(UnitSearchCommand(package_category, name='package_category', description=m))
+    units_section.add_command(UnitSearchCommand(package_category, name='package-category', description=m))
 
     units_section.add_command(ErrataCommand(CONTEXT, 'errata', _('search errata in a repository')))
     units_section.add_command(DistributionCommand(CONTEXT, 'distribution', _('list distributions in a repository')))
