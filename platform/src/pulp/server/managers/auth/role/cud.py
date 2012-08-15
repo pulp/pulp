@@ -262,15 +262,14 @@ class RoleManager(object):
             raise MissingResource(login)
        
         if role_id in user['roles']:
-            return False
+            return
 
         user['roles'].append(role_id)
         User.get_collection().save(user, safe=True)
         
         for resource, operations in role['permissions'].items():
             factory.permission_manager().grant(resource, login, operations)
-        return True
-
+        
 
     def remove_user_from_role(self, role_id, login):
         """
@@ -302,8 +301,8 @@ class RoleManager(object):
                                      (self.super_user_role, login))
 
         if role_id not in user['roles']:
-            return False
-
+            return
+        
         user['roles'].remove(role_id)
         User.get_collection().save(user, safe=True)
 
@@ -313,7 +312,6 @@ class RoleManager(object):
                                                         operations,
                                                         other_roles)
             factory.permission_manager().revoke(resource, login, user_ops)
-        return True
  
         
         

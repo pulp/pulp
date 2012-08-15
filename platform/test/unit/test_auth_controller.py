@@ -432,7 +432,6 @@ class RoleUsersTests(AuthControllersTests):
         self.assertEqual(200, status)
         self.assertEqual(1, len(body))
         
-        print body
 
     def test_get_no_users(self):
         """
@@ -478,7 +477,6 @@ class RoleUsersTests(AuthControllersTests):
 
         # Verify
         self.assertEqual(201, status)
-        self.assertTrue(body)
 
         user = User.get_collection().find_one({'login' : 'user-1'})
         self.assertTrue(user is not None)
@@ -516,7 +514,7 @@ class RoleUsersTests(AuthControllersTests):
 
     def test_post_bad_request_invalid_data(self):
         """
-        Tests adding an importer but specifying incorrect metadata.
+        Tests adding a user but specifying non-existing user.
         """
 
         # Setup
@@ -531,6 +529,52 @@ class RoleUsersTests(AuthControllersTests):
 
         # Verify
         self.assertEqual(404, status)
+        
+class RoleUserTests(AuthControllersTests):
 
+
+    def test_delete(self):
+        """
+        Tests removing a user from a role.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id = 'role-1')
+        self.user_manager.create_user(login = 'user-1', roles = ['role-1'])
+
+
+        # Test
+        status, body = self.delete('/v2/roles/role-1/users/user-1/')
+
+        # Verify
+        self.assertEqual(200, status)
+
+        user = User.get_collection().find_one({'login' : 'user-1'})
+        self.assertFalse('role-1' in user['roles'])
+
+    def test_delete_missing_role(self):
+        """
+        Tests deleting a user from a role that doesn't exist.
+        """
+
+        # Test
+        status, body = self.delete('/v2/roles/dummy/users/dummy/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_delete_missing_user(self):
+        """
+        Tests deleting a user from a role that doesn't have one.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id = 'role-1')
+
+        # Test
+        status, body = self.delete('/v2/roles/role-1/users/dummy/')
+
+        # Verify
+        self.assertEqual(404, status)
 
 

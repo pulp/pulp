@@ -195,7 +195,8 @@ class RoleUser(JSONController):
     def DELETE(self, role_id, login):
 
         role_manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
+        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION},
+                     dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('remove_user_from_role')]
         call_request = CallRequest(role_manager.remove_user_from_role,
