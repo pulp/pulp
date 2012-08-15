@@ -134,7 +134,7 @@ class PermissionManager(object):
         @type user: str
         @param user: login of user to grant permissions to
         
-        @type operations: list or tuple
+        @type operations: list or tuple of integers
         @param operations:list of allowed operations being granted
         """
         user = User.get_collection().find_one({'login' : login})
@@ -146,10 +146,6 @@ class PermissionManager(object):
         if permission is None:
             permission = self.create_permission(resource)
             
-        _LOG.info("$$$$$$$$$$ resource %s login %s" % (resource, login))
-        _LOG.info("$$$$$$$$$$ operations %s" % operations)
-        _LOG.info("$$$$$$$$$$ permission %s" % permission)
-
         current_ops = permission['users'].setdefault(user['login'], [])
         for o in operations:
             if o in current_ops:
@@ -168,7 +164,7 @@ class PermissionManager(object):
         @type user: str
         @param user: login of user to revoke permissions from
         
-        @type operations: list or tuple
+        @type operations: list or tuple of integers
         @param operations:list of allowed operations being revoked
         """
         user = User.get_collection().find_one({'login' : login})

@@ -155,7 +155,7 @@ class RoleManager(object):
             user['roles'].remove(role_id)
             factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
       
-        Role.get_collection().remove({'name' : role_id}, safe=True)
+        Role.get_collection().remove({'id' : role_id}, safe=True)
 
 
     def add_permissions_to_role(self, role_id, resource, operations):
@@ -173,6 +173,9 @@ class RoleManager(object):
 
         @raise MissingResource: if the given role does not exist
         """
+        if role_id == self.super_user_role:
+            raise PulpDataException(_('super-users role cannot be changed'))
+        
         role = Role.get_collection().find_one({'id' : role_id})
         if role is None:
             raise MissingResource(role_id)
@@ -182,6 +185,10 @@ class RoleManager(object):
             if o in current_ops:
                 continue
             current_ops.append(o)
+            
+        users = factory.user_query_manager().find_users_belonging_to_role(role_id)
+        for user in users:
+            factory.permission_manager().grant(resource, user['login'], operations)
             
         Role.get_collection().save(role, safe=True)
 
@@ -200,6 +207,9 @@ class RoleManager(object):
         
         @raise MissingResource: if the given role does not exist
         """
+        if role_id == self.super_user_role:
+            raise PulpDataException(_('super-users role cannot be changed'))
+
         role = Role.get_collection().find_one({'id' : role_id})
         if role is None:
             raise MissingResource(role_id)
@@ -211,6 +221,14 @@ class RoleManager(object):
             if o not in current_ops:
                 continue
             current_ops.remove(o)
+            
+        users = factory.user_query_manager().find_users_belonging_to_role(role_id)
+        for user in users:
+            other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
+            user_ops = _operations_not_granted_by_roles(resource,
+                                                    operations,
+                                                    other_roles)
+            factory.permission_manager().revoke(resource, user['login'], user_ops)
         
         # in no more allowed operations, remove the resource
         if not current_ops:
@@ -288,7 +306,7 @@ class RoleManager(object):
 
         user['roles'].remove(role_id)
         User.get_collection().save(user, safe=True)
-        
+
         for resource, operations in role['permissions'].items():
             other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
             user_ops = _operations_not_granted_by_roles(resource,
@@ -305,10 +323,10 @@ class RoleManager(object):
         """
         role = Role.get_collection().find_one({'id' : self.super_user_role})
         if role is None:
-            role = self.create_role(self.super_user_role)
+            role = self.create_role(self.super_user_role, 'Super Users', 'Role to indicate users with admin privileges')
             pm = factory.permission_manager()
-            self.add_permissions_to_role(role['id'], '/', [pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE])
-
+            role['permissions'] = {'/':[pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE]}
+            Role.get_collection().save(role, safe=True)
 
 # -- functions ----------------------------------------------------------------
 

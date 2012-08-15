@@ -20,7 +20,7 @@ from pulp.server.auth import principal
 from pulp.server.auth import authorization
 from pulp.server.managers import factory as manager_factory
 from pulp.server.db.model.auth import Role
-import pulp.server.exceptions as exceptions
+from pulp.server.exceptions import PulpDataException
 
 
 # -- test cases ---------------------------------------------------------------
@@ -103,19 +103,17 @@ class RoleManagerTests(base.PulpServerTests):
 
     def test_super_users_grant(self):
         s = self._create_resource()
-        n = authorization.operation_to_name(authorization.READ)
-        self.role_manager.add_permissions_to_role(self.role_manager.super_user_role, s, [n])
-        #self.assertRaises(authorization.PulpAuthorizationError,
-        #                  self.role_manager.add_permissions_to_role,
-        #                  super_user_role, s, [n])
+        o = authorization.READ
+        self.assertRaises(PulpDataException,
+                          self.role_manager.add_permissions_to_role,
+                          self.role_manager.super_user_role, s, [o])
 
     def test_super_users_revoke(self):
         s = self._create_resource()
-        n = authorization.operation_to_name(authorization.READ)
-        self.role_manager.remove_permissions_from_role(self.role_manager.super_user_role, s, [n])
-#        self.assertRaises(authorization.PulpAuthorizationError,
-#                          self.role_manager.remove_permissions_from_role,
-#                          super_user_role, s, [n])
+        o = authorization.READ
+        self.assertRaises(PulpDataException,
+                          self.role_manager.remove_permissions_from_role,
+                          self.role_manager.super_user_role, s, [o])
 
     def test_super_user_permissions(self):
         u = self._create_user()
@@ -136,20 +134,12 @@ class RoleManagerTests(base.PulpServerTests):
         r2 = self._create_role()
         s = self._create_resource()
         o = authorization.READ
-        n = authorization.operation_to_name(o)
         self.role_manager.add_user_to_role(r1['id'], u['login'])
         self.role_manager.add_user_to_role(r2['id'], u['login'])
-
-        self.role_manager.add_permissions_to_role(r1['id'], s, [n])
-        self.role_manager.add_permissions_to_role(r2['id'], s, [n])
-        
-        print self.role_query_manager.find_by_id(r1['id'])
-        print "$$$$$$$$$$$$$$"
-        print s, u, o
-        print "$$$$$$$$$$$$$$"
-        print self.permission_query_manager.find_by_resource(s)
+        self.role_manager.add_permissions_to_role(r1['id'], s, [o])
+        self.role_manager.add_permissions_to_role(r2['id'], s, [o])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
-        self.role_manager.remove_permissions_from_role(r1['id'], s, [n])
+        self.role_manager.remove_permissions_from_role(r1['id'], s, [o])
         u = self.user_query_manager.find_by_login(u['login'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
 
@@ -159,11 +149,10 @@ class RoleManagerTests(base.PulpServerTests):
         r2 = self._create_role()
         s = self._create_resource()
         o = authorization.READ
-        n = authorization.operation_to_name(o)
         self.role_manager.add_user_to_role(r1['id'], u['login'])
         self.role_manager.add_user_to_role(r2['id'], u['login'])
-        self.role_manager.add_permissions_to_role(r1['id'], s, [n])
-        self.role_manager.add_permissions_to_role(r2['id'], s, [n])
+        self.role_manager.add_permissions_to_role(r1['id'], s, [o])
+        self.role_manager.add_permissions_to_role(r2['id'], s, [o])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
         self.role_manager.remove_user_from_role(r1['id'], u['login'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
@@ -177,8 +166,8 @@ class RoleManagerTests(base.PulpServerTests):
         n = authorization.operation_to_name(o)
         self.role_manager.add_user_to_role(r1['id'], u['login'])
         self.role_manager.add_user_to_role(r2['id'], u['login'])
-        self.role_manager.add_permissions_to_role(r1['id'], s, [n])
-        self.role_manager.add_permissions_to_role(r2['id'], s, [n])
+        self.role_manager.add_permissions_to_role(r1['id'], s, [o])
+        self.role_manager.add_permissions_to_role(r2['id'], s, [o])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
         self.role_manager.delete_role(r1['id'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))

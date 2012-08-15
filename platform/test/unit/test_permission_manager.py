@@ -20,8 +20,7 @@ from pulp.server.auth import principal
 from pulp.server.auth import authorization
 from pulp.server.managers import factory as manager_factory
 
-from pulp.server.db.model.auth import User, Role
-import pulp.server.exceptions as exceptions
+from pulp.server.db.model.auth import Role
 
 
 # -- test cases ---------------------------------------------------------------
@@ -76,8 +75,7 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.CREATE
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u['login'], [n])
+        self.permission_manager.grant(r, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_user_read_failure(self):
@@ -90,8 +88,7 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u['login'], [n])
+        self.permission_manager.grant(r, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_user_update_failure(self):
@@ -104,8 +101,7 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.UPDATE
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u['login'], [n])
+        self.permission_manager.grant(r, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_user_delete_failure(self):
@@ -118,8 +114,7 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.DELETE
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u['login'], [n])
+        self.permission_manager.grant(r, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_user_execute_failure(self):
@@ -132,18 +127,16 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.EXECUTE
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u['login'], [n])
+        self.permission_manager.grant(r, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_user_permission_revoke(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(r, u['login'], [n])
+        self.permission_manager.grant(r, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
-        self.permission_manager.revoke(r, u['login'], [n])
+        self.permission_manager.revoke(r, u['login'], [o])
         self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_parent_permissions(self):
@@ -151,16 +144,14 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_resource()
         p = r.rsplit('/', 2)[0] + '/'
         o = authorization.READ
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant(p, u['login'], [n])
+        self.permission_manager.grant(p, u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
     def test_root_permissions(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        n = authorization.operation_to_name(o)
-        self.permission_manager.grant('/', u['login'], [n])
+        self.permission_manager.grant('/', u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
         
 
