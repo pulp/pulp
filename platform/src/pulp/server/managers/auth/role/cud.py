@@ -144,7 +144,7 @@ class RoleManager(object):
             raise PulpDataException(_('Role %s cannot be changed') % role_id)
 
         # Remove respective roles from users
-        users = factory.user_query_manager().find_users_belonging_to_role(role)
+        users = factory.user_query_manager().find_users_belonging_to_role(role_id)
         for resource, operations in role['permissions'].items():
             for user in users:
                 other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])

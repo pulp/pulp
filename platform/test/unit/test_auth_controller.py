@@ -62,7 +62,7 @@ class UserCollectionTests(AuthControllersTests):
         self.assertEqual(3, len(body))
         self.assertTrue('password' not in body[0])
         self.assertTrue('_href' in body[0])
-        self.assertTrue(body[1]['_href'].find('users/dummy-') >= 0)
+
 
     def test_get_no_users(self):
         """
@@ -247,7 +247,7 @@ class RoleCollectionTests(AuthControllersTests):
         self.assertEqual(200, status)
         self.assertEqual(3, len(body))
         self.assertTrue('_href' in body[0])
-        self.assertTrue(body[1]['_href'].find('roles/dummy-') >= 0)
+
 
     def test_get_no_roles(self):
         """
@@ -412,5 +412,125 @@ class RoleResourceTests(AuthControllersTests):
 
         # Verify
         self.assertEqual(404, status)
+        
+
+class RoleUsersTests(AuthControllersTests):
+   
+    def test_get(self):
+        """
+        Tests getting the list of users belonging to a valid role.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id = 'role-1')
+        self.user_manager.create_user(login = 'user-1', roles = ['role-1'])
+
+        # Test
+        status, body = self.get('/v2/roles/role-1/users/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(1, len(body))
+        
+        print body
+
+    def test_get_no_users(self):
+        """
+        Tests an empty list is returned for a role with no users.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id = 'role-1')
+
+        # Test
+        status, body = self.get('/v2/roles/role-1/users/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(0, len(body))
+
+    def test_get_missing_role(self):
+        """
+        Tests getting users for a role that doesn't exist.
+        """
+
+        # Test
+        status, body = self.get('/v2/roles/not_there/users/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_post(self):
+        """
+        Tests adding a user to a role.
+        """
+
+        # Setup
+        self.user_manager.create_user(login = 'user-1')
+        self.role_manager.create_role(role_id = 'role-1')
+
+        req_body = {
+            'login' : 'user-1',
+        }
+
+        # Test
+        status, body = self.post('/v2/roles/role-1/users/', params=req_body)
+
+        # Verify
+        self.assertEqual(201, status)
+        self.assertTrue(body)
+
+        user = User.get_collection().find_one({'login' : 'user-1'})
+        self.assertTrue(user is not None)
+        self.assertEqual(user['roles'], ['role-1'])
+
+
+    def test_post_missing_role(self):
+        """
+        Tests adding an user to a role that doesn't exist.
+        """
+
+        # Test
+        req_body = {
+            'login' : 'dummy-user',
+        }
+
+        status, body = self.post('/v2/roles/blah/users/', params=req_body)
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_post_bad_request_missing_data(self):
+        """
+        Tests adding a user but not specifying the required data.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id = 'role-1')
+
+        # Test
+        status, body = self.post('/v2/roles/role-1/users/', params={})
+
+        # Verify
+        self.assertEqual(400, status)
+
+    def test_post_bad_request_invalid_data(self):
+        """
+        Tests adding an importer but specifying incorrect metadata.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id = 'role-1')
+
+        req_body = {
+            'login' : 'missing-user'
+        }
+
+        # Test
+        status, body = self.post('/v2/roles/role-1/users/', params=req_body)
+
+        # Verify
+        self.assertEqual(404, status)
+
 
 

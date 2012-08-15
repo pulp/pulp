@@ -17,11 +17,11 @@ Contains users query classes
 
 from gettext import gettext as _
 
-from pulp.server.db.model.auth import User, Permission
+from pulp.server.db.model.auth import User, Permission, Role
 from pulp.server.managers import factory
 from logging import getLogger
 
-from pulp.server.exceptions import PulpDataException
+from pulp.server.exceptions import PulpDataException, MissingResource
 
 # -- constants ----------------------------------------------------------------
 
@@ -90,6 +90,10 @@ class UserQueryManager(object):
         @rtype: list of L{pulp.server.db.model.auth.User} instances
         @return: list of users that are members of the given role
         """
+        role = Role.get_collection().find_one({'id' : role_id})
+        if role is None:
+            raise MissingResource(role_id)
+        
         users = []
         for user in self.find_all():
             if role_id in user['roles']:
@@ -108,6 +112,9 @@ class UserQueryManager(object):
         @return: True if the user is a super user, False otherwise
         """
         user = User.get_collection().find_one({'login' : login})
+        if user is None:
+            raise MissingResource(login)
+        
         role_manager = factory.role_manager()
         return role_manager.super_user_role in user['roles']
 

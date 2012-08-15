@@ -50,7 +50,7 @@ class RolesCollection(JSONController):
         roles = role_query_manager.find_all()
         for role in roles:
             role['users'] = [u['login'] for u in
-                             managers.user_query_manager().find_users_belonging_to_role(role)]
+                             managers.user_query_manager().find_users_belonging_to_role(role['id'])]
             for resource, operations in role['permissions'].items():
                 role['permissions'][resource] = [operation_to_name(o)
                                                  for o in operations]
@@ -105,7 +105,7 @@ class RoleResource(JSONController):
             raise exceptions.MissingResource(role_id)
         
         role['users'] = [u['login'] for u in
-                         managers.user_query_manager().find_users_belonging_to_role(role)]
+                         managers.user_query_manager().find_users_belonging_to_role(role['id'])]
         for resource, operations in role['permissions'].items():
             role['permissions'][resource] = [operation_to_name(o)
                                              for o in operations]
@@ -159,10 +159,10 @@ class RoleUsers(JSONController):
     # POST:   Add user to a role
 
     @auth_required(READ)
-    def GET(self, name):
+    def GET(self, role_id):
         user_query_manager = managers.user_query_manager()
 
-        role_users = user_query_manager.find_users_belonging_to_role()
+        role_users = user_query_manager.find_users_belonging_to_role(role_id)
         return self.ok(role_users)
 
     @auth_required(CREATE)
@@ -171,6 +171,8 @@ class RoleUsers(JSONController):
         # Params (validation will occur in the manager)
         params = self.params()
         login = params.get('login', None)
+        if login is None:
+            raise exceptions.InvalidValue(login)
 
         role_manager = managers.role_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
@@ -190,14 +192,14 @@ class RoleUser(JSONController):
     # DELETE: Remove user from a role
 
     @auth_required(UPDATE)
-    def DELETE(self, name, login):
+    def DELETE(self, role_id, login):
 
         role_manager = managers.role_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
+        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('remove_user_from_role')]
         call_request = CallRequest(role_manager.remove_user_from_role,
-                                   [name, login],
+                                   [role_id, login],
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
