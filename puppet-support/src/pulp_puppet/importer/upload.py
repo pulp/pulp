@@ -18,6 +18,24 @@ from pulp_puppet.common import constants
 from pulp_puppet.common.model import Module
 
 def handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit):
+    """
+    Handles an upload unit request to the importer. This call is responsible
+    for moving the unit from its temporary location where Pulp stored the
+    upload to the final storage location (as dictated by Pulp) for the unit.
+    This call will also update the database in Pulp to reflect the unit
+    and its association to the repository.
+
+    :param type_id: type of unit being uploaded
+    :type  type_id: str
+    :param unit_key: unique identifier for the unit
+    :type  unit_key: dict
+    :param metadata: extra data about the unit
+    :type  metadata: dict
+    :param file_path: temporary location of the uploaded file
+    :type  file_path: str
+    :param conduit: for calls back into Pulp
+    :type  conduit: pulp.plugins.conduit.upload.UploadConduit
+    """
 
     if type_id != constants.TYPE_PUPPET_MODULE:
         raise NotImplementedError()
@@ -36,7 +54,7 @@ def handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit):
     unit = conduit.init_unit(type_id, unit_key, unit_metadata, relative_path)
 
     # Copy from the upload temporary location into where Pulp wants it to live
-    shutil.copy(file_path, unit)
+    shutil.copy(file_path, unit.storage_path)
 
     # Save the unit into the destination repository
     conduit.save_unit(unit)
