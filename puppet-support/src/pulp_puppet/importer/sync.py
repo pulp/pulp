@@ -13,6 +13,7 @@
 
 from   datetime import datetime
 from   gettext import gettext as _
+import shutil
 import sys
 import traceback
 
@@ -189,8 +190,6 @@ class PuppetModuleSyncRun(object):
         continue. This method will only raise an exception in an extreme case
         where it cannot react and continue.
         """
-        # TODO: Add progress report calls to indicate it's running
-
         downloader = self._create_downloader()
 
         # Ease lookup of modules
@@ -241,13 +240,18 @@ class PuppetModuleSyncRun(object):
         unit = self.sync_conduit.init_unit(type_id, unit_key, unit_metadata,
                                            relative_path)
 
-        # Download the bits
-        downloader.retrieve_module(self.progress_report, module)
+        try:
+            # Download the bits
+            downloaded_filename = downloader.retrieve_module(self.progress_report, module)
 
-        # If the bits downloaded successfully, save the unit in Pulp
-        self.sync_conduit.save_unit(unit)
+            # Copy them to the final location
+            shutil.copy(downloaded_filename, unit.storage_path)
 
-        # TODO: copy the bits to the final location
+            # If the bits downloaded successfully, save the unit in Pulp
+            self.sync_conduit.save_unit(unit)
+        finally:
+            # Clean up the temporary module
+            downloader.cleanup_module(downloaded_filename)
 
     def _resolve_new_units(self, existing_unit_keys, found_unit_keys):
         """

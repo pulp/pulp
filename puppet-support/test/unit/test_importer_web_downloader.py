@@ -18,8 +18,7 @@ import shutil
 import tempfile
 import unittest
 
-from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Repository
+import base_downloader
 
 from pulp_puppet.common import constants, model
 from pulp_puppet.importer.downloaders import exceptions, web
@@ -27,32 +26,12 @@ from pulp_puppet.importer.downloaders.web import HttpDownloader
 
 TEST_SOURCE = 'http://forge.puppetlabs.com/'
 
-class HttpDownloaderTests(unittest.TestCase):
+class HttpDownloaderTests(base_downloader.BaseDownloaderTests):
 
     def setUp(self):
-        self.working_dir = tempfile.mkdtemp(prefix='http-downloader-tests')
-        self.repo = Repository('test-repo', working_dir=self.working_dir)
-
-        repo_config = {
-            constants.CONFIG_FEED : TEST_SOURCE,
-        }
-        self.config = PluginCallConfiguration({}, repo_config)
-
-        self.mock_cancelled_callback = mock.MagicMock().is_cancelled
-        self.mock_cancelled_callback.return_value = False
-
+        super(HttpDownloaderTests, self).setUp()
+        self.config.repo_plugin_config[constants.CONFIG_FEED] = TEST_SOURCE
         self.downloader = HttpDownloader(self.repo, None, self.config, self.mock_cancelled_callback)
-
-        self.mock_progress_report = mock.MagicMock()
-
-        self.author = 'jdob'
-        self.name = 'pulp'
-        self.version = '2.0.0'
-        self.module = model.Module(self.name, self.version, self.author)
-
-    def tearDown(self):
-        if os.path.exists(self.working_dir):
-            shutil.rmtree(self.working_dir)
 
     @mock.patch('pycurl.Curl')
     def test_retrieve_metadata(self, mock_curl_constructor):

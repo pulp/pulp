@@ -26,35 +26,46 @@ class LocalDownloader(BaseDownloader):
     """
 
     def retrieve_metadata(self, progress_report):
-        """
-        See module-level docstrings for description.
-        """
-
         source_dir = self.config.get(constants.CONFIG_FEED)
         metadata_filename = os.path.join(source_dir, constants.REPO_METADATA_FILENAME)
 
+        # Only do one query for this implementation
+        progress_report.metadata_query_finished_count = 0
+        progress_report.metadata_query_total_count = 1
+        progress_report.metadata_current_query = metadata_filename
+        progress_report.update_progress()
+
         if not os.path.exists(metadata_filename):
+            # The caller will take care of stuffing this error into the
+            # progress report
             raise FileNotFoundException(metadata_filename)
 
         f = open(metadata_filename, 'r')
         contents = f.read()
         f.close()
 
-        return contents
+        progress_report.metadata_query_finished_count += 1
+        progress_report.update_progress()
 
-    def retrieve_module(self, progress_report, module, destination):
-        """
-        See module-level docstrings for description.
-        """
+        return [contents]
 
-        # Determine the full path to the module
+    def retrieve_module(self, progress_report, module):
+
+        # Determine the full path to the existing module on disk. This assumes
+        # a structure where the modules are located in the same directory as
+        # specified in the feed.
+
         source_dir = self.config.get(constants.CONFIG_FEED)
-        module_path = constants.HOSTED_MODULE_FILE_RELATIVE_PATH % (module.author[0], module.author)
         module_filename = module.filename()
-        full_filename = os.path.join(source_dir, module_path, module_filename)
+        full_filename = os.path.join(source_dir, module_filename)
 
         if not os.path.exists(full_filename):
             raise FileNotFoundException(full_filename)
 
-        # Copy into the final destination as provided by Pulp
-        shutil.copy(full_filename, destination)
+        return full_filename
+
+    def cleanup_module(self, module):
+        # We don't want to delete the original location on disk, so do
+        # nothing here.
+        pass
+

@@ -98,6 +98,20 @@ class HttpDownloader(BaseDownloader):
 
         return module_tmp_filename
 
+    def cleanup_module(self, module):
+        """
+        Called once the unit has been copied into Pulp's storage location to
+        let the downloader do any post-processing it needs (for instance,
+        deleting any temporary copies of the file).
+
+        :param module: module to clean up
+        :type  module: pulp_puppet.common.model.Module
+        """
+        module_tmp_dir = _create_download_tmp_dir(self.repo.working_dir)
+        module_tmp_filename = os.path.join(module_tmp_dir, module.filename())
+        if os.path.exists(module_tmp_filename):
+            os.remove(module_tmp_filename)
+
     def _create_metadata_download_urls(self):
         """
         Uses the plugin configuration to determine a list of URLs for all

@@ -1,0 +1,18 @@
+[
+    {"tag_list":["testing","pulp"],
+        "project_url":"Irrelevant - Not stored in Pulp",
+        "name":"valid",
+        "author":"jdob",
+        "releases":[{"version":"1.1.0"}],
+        "desc":"Irrelevant - Not stored in Pulp",
+        "version":"1.1.0",
+        "full_name":"jdob/valid"},
+    {"tag_list":["testing"],
+        "project_url":"Irrelevant - Not stored in Pulp",
+        "name":"good",
+        "author":"adob",
+        "releases":[],
+        "desc":"Irrelevant - Not stored in Pulp",
+        "version":"2.0.0",
+        "full_name":"adob/good"}
+]
