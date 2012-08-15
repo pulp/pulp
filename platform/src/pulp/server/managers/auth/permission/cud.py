@@ -23,8 +23,7 @@ from pulp.server.db.model.auth import Permission, User
 from pulp.server.auth.authorization import _get_operations
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException, PulpExecutionException
 from pulp.server.managers import factory
-from pulp.server.auth.principal import (
-    get_principal, is_system_principal)
+from pulp.server.auth.principal import (get_principal, is_system_principal)
 
 
 # -- constants ----------------------------------------------------------------

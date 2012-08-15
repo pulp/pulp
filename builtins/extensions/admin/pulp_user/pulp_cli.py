@@ -11,8 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import time
-import getpass
+import os
 
 from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
@@ -76,21 +75,22 @@ class UserSection(PulpCliSection):
     def create(self, **kwargs):
         login = kwargs['login']
         if kwargs['password']:
-            newpassword = kwargs['password']
+            password = kwargs['password']
         else:
-            while True:
-                newpassword = getpass.getpass("Enter password for user [%s] : " % login)
-                newpassword_confirm = getpass.getpass("Re-enter password for user [%s]: " % login)
-                if newpassword == "" or newpassword_confirm == "":
-                    self.prompt.render_failure_message("User password cannot be empty")
-                elif newpassword == newpassword_confirm:
-                    break
-                else:
-                    self.prompt.render_failure_message("Passwords do not match")
+            # Hidden, interactive prompt for the password if not specified
+            prompt_msg = "Enter password for user [%s] : " % login
+            verify_msg = "Re-enter password for user [%s]: " % login
+            unmatch_msg = "Passwords do not match"
+            password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg), _(unmatch_msg))
+            if password is self.context.prompt.ABORT:
+                self.context.prompt.render_spacer()
+                self.context.prompt.write(_('Create user cancelled'))
+                return os.EX_NOUSER
+
         name = kwargs['name'] or login
 
         # Call the server
-        self.context.server.user.create(login, newpassword, name)
+        self.context.server.user.create(login, password, name)
         self.prompt.render_success_message('User [%s] successfully created' % login)
 
     def update(self, **kwargs):
