@@ -28,6 +28,7 @@ from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+import pulp.server.exceptions as exceptions
 
 
 # -- constants ----------------------------------------------------------------
@@ -47,6 +48,8 @@ class UsersCollection(JSONController):
 
         query_manager = managers.user_query_manager()
         users = query_manager.find_all()
+        for user in users:
+            user.update(serialization.link.child_link_obj(user['login']))
 
         return self.ok(users)
 
@@ -94,8 +97,11 @@ class UserResource(JSONController):
     @auth_required(READ)
     def GET(self, login):
 
-        query_manager = managers.user_query_manager()
-        user = query_manager.find_by_login(login)
+        user = managers.user_query_manager().find_by_login(login)
+        if user is None:
+            raise exceptions.MissingResource(login)
+        
+        user.update(serialization.link.current_link_obj())
 
         return self.ok(user)
 

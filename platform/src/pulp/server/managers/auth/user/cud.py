@@ -94,7 +94,8 @@ class UserManager(object):
 
         # Retrieve the user to return the SON object
         created = User.get_collection().find_one({'login' : login})
-
+        created.pop('password')
+        
         return created
 
 
