@@ -27,7 +27,7 @@ class LocalDownloaderTests(base_downloader.BaseDownloaderTests):
 
     def setUp(self):
         super(LocalDownloaderTests, self).setUp()
-        self.config.repo_plugin_config[constants.CONFIG_FEED] = VALID_REPO_DIR
+        self.config.repo_plugin_config[constants.CONFIG_FEED] = 'file://' + VALID_REPO_DIR
         self.downloader = LocalDownloader(self.repo, None, self.config, self.mock_cancelled_callback)
 
     def test_retrieve_metadata(self):
@@ -48,7 +48,7 @@ class LocalDownloaderTests(base_downloader.BaseDownloaderTests):
 
     def test_retrieve_metadata_no_metadata_found(self):
         # Setup
-        self.config.repo_plugin_config[constants.CONFIG_FEED] = INVALID_REPO_DIR
+        self.config.repo_plugin_config[constants.CONFIG_FEED] = 'file://' + INVALID_REPO_DIR
 
         # Test
         try:

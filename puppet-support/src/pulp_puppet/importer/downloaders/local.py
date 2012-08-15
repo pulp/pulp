@@ -26,7 +26,7 @@ class LocalDownloader(BaseDownloader):
     """
 
     def retrieve_metadata(self, progress_report):
-        source_dir = self.config.get(constants.CONFIG_FEED)
+        source_dir = self.config.get(constants.CONFIG_FEED)[len('file://'):]
         metadata_filename = os.path.join(source_dir, constants.REPO_METADATA_FILENAME)
 
         # Only do one query for this implementation
@@ -55,7 +55,7 @@ class LocalDownloader(BaseDownloader):
         # a structure where the modules are located in the same directory as
         # specified in the feed.
 
-        source_dir = self.config.get(constants.CONFIG_FEED)
+        source_dir = self.config.get(constants.CONFIG_FEED)[len('file://'):]
         module_filename = module.filename()
         full_filename = os.path.join(source_dir, module_filename)
 

@@ -56,12 +56,14 @@ class PuppetModuleSyncRun(object):
         completed.
 
         :return: the report object to return to Pulp from the sync call
+        :rtype:  pulp.plugins.model.SyncReport
         """
 
         try:
             metadata = self._parse_metadata()
             if not metadata:
-                return
+                report = self.progress_report.build_final_report()
+                return report
 
             self._import_modules(metadata)
         finally:
@@ -120,7 +122,7 @@ class PuppetModuleSyncRun(object):
 
             end_time = datetime.now()
             duration = end_time - start_time
-            self.progress_report.metadata_execution_time = duration
+            self.progress_report.metadata_execution_time = duration.seconds
 
             self.progress_report.update_progress()
 
@@ -131,7 +133,7 @@ class PuppetModuleSyncRun(object):
 
         end_time = datetime.now()
         duration = end_time - start_time
-        self.progress_report.metadata_execution_time = duration
+        self.progress_report.metadata_execution_time = duration.seconds
 
         self.progress_report.update_progress()
 
@@ -168,18 +170,18 @@ class PuppetModuleSyncRun(object):
 
             end_time = datetime.now()
             duration = end_time - start_time
-            self.progress_report.modules_execution_time = duration
+            self.progress_report.modules_execution_time = duration.seconds
 
             self.progress_report.update_progress()
 
             return None
 
         # Last update to the progress report before returning
-        self.progress_report.metadata_state = STATE_SUCCESS
+        self.progress_report.modules_state = STATE_SUCCESS
 
         end_time = datetime.now()
         duration = end_time - start_time
-        self.progress_report.metadata_execution_time = duration
+        self.progress_report.modules_execution_time = duration.seconds
 
         self.progress_report.update_progress()
 
@@ -190,16 +192,26 @@ class PuppetModuleSyncRun(object):
         continue. This method will only raise an exception in an extreme case
         where it cannot react and continue.
         """
+
+        def unit_key_str(unit_key_dict):
+            """
+            Converts the unit key dict form into a single string that can be
+            used as the key in a dict lookup.
+            """
+            template = '%s-%s-%s'
+            return template % (unit_key_dict['name'], unit_key_dict['version'],
+                               unit_key_dict['author'])
+
         downloader = self._create_downloader()
 
         # Ease lookup of modules
-        modules_by_key = dict([(m.unit_key(), m) for m in metadata.modules])
+        modules_by_key = dict([(unit_key_str(m.unit_key()), m) for m in metadata.modules])
 
         # Collect information about the repository's modules before changing it
         module_criteria = UnitAssociationCriteria(type_ids=[constants.TYPE_PUPPET_MODULE])
         existing_units = self.sync_conduit.get_units(criteria=module_criteria)
         existing_modules = [Module.from_dict(x) for x in existing_units]
-        existing_module_keys = [m.unit_key() for m in existing_modules]
+        existing_module_keys = [unit_key_str(m.unit_key()) for m in existing_modules]
 
         new_unit_keys = self._resolve_new_units(existing_module_keys, modules_by_key.keys())
         remove_unit_keys = self._resolve_remove_units(existing_module_keys, modules_by_key.keys())
@@ -251,7 +263,7 @@ class PuppetModuleSyncRun(object):
             self.sync_conduit.save_unit(unit)
         finally:
             # Clean up the temporary module
-            downloader.cleanup_module(downloaded_filename)
+            downloader.cleanup_module(module)
 
     def _resolve_new_units(self, existing_unit_keys, found_unit_keys):
         """
@@ -350,8 +362,8 @@ class ProgressReport(object):
         """
 
         # Report fields
-        total_execution_time = None
-        if self.metadata_execution_time and self.modules_execution_time:
+        total_execution_time = -1
+        if self.metadata_execution_time is not None and self.modules_execution_time is not None:
             total_execution_time = self.metadata_execution_time + self.modules_execution_time
 
         summary = {

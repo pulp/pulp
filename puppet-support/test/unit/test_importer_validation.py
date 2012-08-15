@@ -112,11 +112,9 @@ class FullValidationTests(unittest.TestCase):
         Tests that the validate() call aggregates to all of the specific test
         calls.
         """
-        all_mock_calls = locals()
-        all_mock_calls.pop('self')
-        all_mock_calls = all_mock_calls.values()
-
         # Setup
+        all_mock_calls = (missing, queries, feed)
+
         for x in all_mock_calls:
             x.return_value = True, None
 
