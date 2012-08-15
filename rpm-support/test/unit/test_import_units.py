@@ -21,6 +21,7 @@ import sys
 import tempfile
 import time
 import unittest
+import itertools
 
 from grinder.BaseFetch import BaseFetch
 
@@ -89,22 +90,54 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         #
         # Simulate what import_conduit.get_source_repos would return
         #
-        metadata = {}
         source_units = []
         storage_path = '%s/pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm' % (self.pkg_dir)
         filename = os.path.basename(storage_path)
-        unit_key = {"filename":filename}
+        unit_key = {
+            'name':'pulp-dot-2.0-test',
+            'version':'0.1.2',
+            'release':'1.fc11',
+            'epoch':'0',
+            'arch':'x86_64',
+            'checksum':'435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979',
+            'checksumtype':'sha256',
+        }
+        metadata = {
+            'filename':filename
+        }
         source_units.append(Unit(TYPE_ID_RPM, unit_key, metadata, storage_path))
         storage_path = '%s/pulp-test-package/0.3.1/1.fc11/x86_64/6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f/pulp-test-package-0.3.1-1.fc11.x86_64.rpm' % (self.pkg_dir)
         filename = os.path.basename(storage_path)
-        unit_key = {"filename":filename}
+        unit_key = {
+            'name':'pulp-test-package',
+            'version':'0.3.1',
+            'release':'1.fc11',
+            'epoch':'0',
+            'arch':'x86_64',
+            'checksum':'6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
+            'checksumtype':'sha256',
+        }
+        metadata = {
+            'filename':filename
+        }
         source_units.append(Unit(TYPE_ID_RPM, unit_key, metadata, storage_path))
         storage_path = '%s/pulp-test-package/0.2.1/1.fc11/x86_64/4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7/pulp-test-package-0.2.1-1.fc11.x86_64.rpm' % (self.pkg_dir)
         filename = os.path.basename(storage_path)
-        unit_key = {"filename":filename}
+        unit_key = {
+            'name':'pulp-test-package',
+            'version':'0.2.1',
+            'release':'1.fc11',
+            'epoch':'0',
+            'arch':'x86_64',
+            'checksum':'4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7',
+            'checksumtype':'sha256',
+        }
+        metadata = {
+            'filename':filename
+        }
         source_units.append(Unit(TYPE_ID_RPM, unit_key, metadata, storage_path))
         # Pass in the simulated source_units to the import_conduit
-        import_conduit = importer_mocks.get_import_conduit(source_units=source_units)
+        import_conduit = importer_mocks.get_import_conduit(source_units=source_units, existing_units=source_units)
         return importer, source_repo, source_units, import_conduit, config
 
     def test_basic_import(self):
@@ -163,3 +196,107 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         for link in sym_links:
             self.assertTrue(os.path.islink(link))
 
+
+
+class TestImportDependencies(rpm_support_base.PulpRPMTests):
+
+    UNIT_KEY_A = {
+        'id' : '',
+        'name' :'pulp-server',
+        'version' :'0.0.309',
+        'release' : '1.fc17',
+        'epoch':'0',
+        'arch' : 'noarch',
+        'checksumtype' : 'sha256',
+        'checksum': 'ee5afa0aaf8bd2130b7f4a9b35f4178336c72e95358dd33bda8acaa5f28ea6e9',
+        'type_id' : 'rpm'
+    }
+    UNIT_KEY_B = {
+        'id' : '',
+        'name' :'pulp-rpm-server',
+        'version' :'0.0.309',
+        'release' :'1.fc17',
+        'epoch':'0',
+        'arch' : 'noarch',
+        'checksumtype' :'sha256',
+        'checksum': '1e6c3a3bae26423fe49d26930b986e5f5ee25523c13f875dfcd4bf80f770bf56',
+        'type_id' : 'rpm'
+    }
+
+    def setUp(self):
+        super(TestImportDependencies, self).setUp()
+        self.temp_dir = tempfile.mkdtemp()
+        self.working_dir = os.path.join(self.temp_dir, "working")
+        self.pkg_dir = os.path.join(self.temp_dir, "packages")
+        self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "data"))
+
+    def tearDown(self):
+        super(TestImportDependencies, self).tearDown()
+        self.clean()
+
+    def clean(self):
+        shutil.rmtree(self.temp_dir)
+        # clean up dir created by yum's repostorage
+        if os.path.exists("./test_resolve_deps"):
+            shutil.rmtree("test_resolve_deps")
+
+    def get_files_in_dir(self, pattern, path):
+        files = []
+        for d,_,_ in os.walk(path):
+            files.extend(glob.glob(os.path.join(d,pattern)))
+        return files
+
+    def existing_units(self):
+        units = []
+        for unit in [self.UNIT_KEY_A, self.UNIT_KEY_B]:
+            unit = Unit(TYPE_ID_RPM, unit, {}, '')
+            units.append(unit)
+        return units
+
+    def test_import(self):
+        # Setup
+        existing_units = self.existing_units()
+        # REPO A (source)
+        repoA = mock.Mock(spec=Repository)
+        repoA.working_dir = self.data_dir
+        repoA.id = "test_resolve_deps"
+        # REPO B (target)
+        repoB = mock.Mock(spec=Repository)
+        repoB.working_dir = self.working_dir
+        repoB.id = "repoB"
+        units = [Unit(TYPE_ID_RPM, self.UNIT_KEY_B, {}, '')]
+        conduit = importer_mocks.get_import_conduit(units, existing_units=existing_units)
+        config = importer_mocks.get_basic_config()
+        importer = YumImporter()
+        # Test
+        result = importer.import_units(repoA, repoB, conduit, config, units)
+        # Verify
+        associated_units = [mock_call[0][0] for mock_call in conduit.associate_unit.call_args_list]
+        self.assertEqual(len(associated_units), len(units))
+        for u in associated_units:
+            self.assertTrue(u in units)
+
+    def test_import_with_dependencies(self):
+        # Setup
+        existing_units = self.existing_units()
+        # REPO A (source)
+        repoA = mock.Mock(spec=Repository)
+        repoA.working_dir = self.data_dir
+        repoA.id = "test_resolve_deps"
+        # REPO B (target)
+        repoB = mock.Mock(spec=Repository)
+        repoB.working_dir = self.working_dir
+        repoB.id = "repo_b"
+        units = [Unit(TYPE_ID_RPM, self.UNIT_KEY_B, {}, '')]
+        conduit = importer_mocks.get_import_conduit(units, existing_units=existing_units)
+        config = importer_mocks.get_basic_config()
+        config.plugin_config['recursive'] = True
+        config.plugin_config['resolve_dependencies'] = True
+        importer = YumImporter()
+        # Test
+        result = importer.import_units(repoA, repoB, conduit, config, units)
+        # Verify
+        associated_units = [mock_call[0][0] for mock_call in conduit.associate_unit.call_args_list]
+        self.assertEqual(len(associated_units), len(existing_units))
+        for u in associated_units:
+            self.assertTrue(u in units)
