@@ -28,6 +28,8 @@ from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+import pulp.server.exceptions as exceptions
+
 
 # -- constants ----------------------------------------------------------------
 
@@ -52,6 +54,10 @@ class RolesCollection(JSONController):
             for resource, operations in role['permissions'].items():
                 role['permissions'][resource] = [operation_to_name(o)
                                                  for o in operations]
+                
+        for role in roles:
+            role.update(serialization.link.child_link_obj(role['id']))
+
         return self.ok(roles)
 
     @auth_required(CREATE)
@@ -60,11 +66,13 @@ class RolesCollection(JSONController):
         # Pull all the roles data
         role_data = self.params()
         role_id = role_data.get('id', None)
+        display_name = role_data.get('display_name', None)
+        description = role_data.get('description', None)
 
         # Creation
         manager = managers.role_manager()
         resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [role_id]
+        args = [role_id, display_name, description]
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('create')]
@@ -73,7 +81,12 @@ class RolesCollection(JSONController):
                                    resources=resources,
                                    weight=weight,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, role_id)
+        
+        role = execution.execute_sync(call_request)
+        role_link = serialization.link.child_link_obj(role_id)
+        role.update(role_link)
+        
+        return self.created(role_id, role)
 
 
 class RoleResource(JSONController):
@@ -88,12 +101,17 @@ class RoleResource(JSONController):
 
         manager = managers.role_query_manager()
         role = manager.find_by_id(role_id)
-       
+        if role is None:
+            raise exceptions.MissingResource(role_id)
+        
         role['users'] = [u['login'] for u in
                          managers.user_query_manager().find_users_belonging_to_role(role)]
         for resource, operations in role['permissions'].items():
             role['permissions'][resource] = [operation_to_name(o)
                                              for o in operations]
+
+        role.update(serialization.link.current_link_obj())
+
         return self.ok(role)
 
 
@@ -103,7 +121,7 @@ class RoleResource(JSONController):
         manager = managers.role_manager()
         
         resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, role_id),
                 action_tag('delete')]
         call_request = CallRequest(manager.delete_role,
                                    [role_id],

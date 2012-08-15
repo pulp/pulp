@@ -66,7 +66,7 @@ class UserCollectionTests(AuthControllersTests):
 
     def test_get_no_users(self):
         """
-        Tests that an empty list is returned when no users are present.
+        Tests that a list with admin user is returned when no users are present.
         """
 
         # Test
@@ -229,291 +229,188 @@ class UserResourceTests(AuthControllersTests):
         self.assertEqual(404, status)
 
 
-#class RepoPluginsTests(RepoControllersTests):
-#
-#    def setUp(self):
-#        super(RepoPluginsTests, self).setUp()
-#
-#        plugin_api._create_manager()
-#        dummy_plugins.install()
-#
-#        self.importer_manager = manager_factory.repo_importer_manager()
-#        self.distributor_manager = manager_factory.repo_distributor_manager()
-#        self.sync_manager = manager_factory.repo_sync_manager()
-#        self.publish_manager = manager_factory.repo_publish_manager()
-#
-#    def tearDown(self):
-#        super(RepoPluginsTests, self).tearDown()
-#        dummy_plugins.reset()
-#
-#    def clean(self):
-#        super(RepoPluginsTests, self).clean()
-#        RepoImporter.get_collection().remove(safe=True)
-#        RepoDistributor.get_collection().remove(safe=True)
-#        RepoSyncResult.get_collection().remove(safe=True)
-#        RepoPublishResult.get_collection().remove(safe=True)
-#
-#
-#class RepoImportersTests(RepoPluginsTests):
-#
-#    def test_get(self):
-#        """
-#        Tests getting the list of importers for a valid repo with importers.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('stuffing')
-#        self.importer_manager.set_importer('stuffing', 'dummy-importer', {})
-#
-#        # Test
-#        status, body = self.get('/v2/repositories/stuffing/importers/')
-#
-#        # Verify
-#        self.assertEqual(200, status)
-#        self.assertEqual(1, len(body))
-#
-#    def test_get_no_importers(self):
-#        """
-#        Tests an empty list is returned for a repo with no importers.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('potatoes')
-#
-#        # Test
-#        status, body = self.get('/v2/repositories/potatoes/importers/')
-#
-#        # Verify
-#        self.assertEqual(200, status)
-#        self.assertEqual(0, len(body))
-#
-#    def test_get_missing_repo(self):
-#        """
-#        Tests getting importers for a repo that doesn't exist.
-#        """
-#
-#        # Test
-#        status, body = self.get('/v2/repositories/not_there/importers/')
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_post(self):
-#        """
-#        Tests adding an importer to a repo.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('gravy')
-#
-#        req_body = {
-#            'importer_type_id' : 'dummy-importer',
-#            'importer_config' : {'foo' : 'bar'},
-#        }
-#
-#        # Test
-#        status, body = self.post('/v2/repositories/gravy/importers/', params=req_body)
-#
-#        # Verify
-#        self.assertEqual(201, status)
-#        self.assertEqual(body['importer_type_id'], req_body['importer_type_id'])
-#        self.assertEqual(body['repo_id'], 'gravy')
-#        self.assertEqual(body['config'], req_body['importer_config'])
-#
-#        importer = RepoImporter.get_collection().find_one({'repo_id' : 'gravy'})
-#        self.assertTrue(importer is not None)
-#        self.assertEqual(importer['importer_type_id'], req_body['importer_type_id'])
-#        self.assertEqual(importer['config'], req_body['importer_config'])
-#
-#    def test_post_missing_repo(self):
-#        """
-#        Tests adding an importer to a repo that doesn't exist.
-#        """
-#
-#        # Test
-#        req_body = {
-#            'importer_type_id' : 'dummy-importer',
-#            'importer_config' : {'foo' : 'bar'},
-#        }
-#        status, body = self.post('/v2/repositories/blah/importers/', params=req_body)
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_post_bad_request_missing_data(self):
-#        """
-#        Tests adding an importer but not specifying the required data.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('icecream')
-#
-#        # Test
-#        status, body = self.post('/v2/repositories/icecream/importers/', params={})
-#
-#        # Verify
-#        self.assertEqual(400, status)
-#
-#    def test_post_bad_request_invalid_data(self):
-#        """
-#        Tests adding an importer but specifying incorrect metadata.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('walnuts')
-#        req_body = {
-#            'importer_type_id' : 'not-a-real-importer'
-#        }
-#
-#        # Test
-#        status, body = self.post('/v2/repositories/walnuts/importers/', params=req_body)
-#
-#        # Verify
-#        self.assertEqual(400, status)
-#
-#class RepoImporterTests(RepoPluginsTests):
-#
-#    def test_get(self):
-#        """
-#        Tests getting an importer that exists.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('pie')
-#        self.importer_manager.set_importer('pie', 'dummy-importer', {})
-#
-#        # Test
-#        status, body = self.get('/v2/repositories/pie/importers/dummy-importer/')
-#
-#        # Verify
-#        self.assertEqual(200, status)
-#        self.assertEqual(body['id'], 'dummy-importer')
-#
-#    def test_get_missing_repo(self):
-#        """
-#        Tests getting the importer for a repo that doesn't exist.
-#        """
-#
-#        # Test
-#        status, body = self.get('/v2/repositories/not-there/importers/irrelevant')
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_get_missing_importer(self):
-#        """
-#        Tests getting the importer for a repo that doesn't have one.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('cherry_pie')
-#
-#        # Test
-#        status, body = self.get('/v2/repositories/cherry_pie/importers/not_there/')
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_delete(self):
-#        """
-#        Tests removing an importer from a repo.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('blueberry_pie')
-#        self.importer_manager.set_importer('blueberry_pie', 'dummy-importer', {})
-#
-#        # Test
-#        status, body = self.delete('/v2/repositories/blueberry_pie/importers/dummy-importer/')
-#
-#        # Verify
-#        self.assertEqual(200, status)
-#
-#        importer = RepoImporter.get_collection().find_one({'repo_id' : 'blueberry_pie'})
-#        self.assertTrue(importer is None)
-#
-#    def test_delete_missing_repo(self):
-#        """
-#        Tests deleting the importer from a repo that doesn't exist.
-#        """
-#
-#        # Test
-#        status, body = self.delete('/v2/repositories/bad_pie/importers/dummy-importer/')
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_delete_missing_importer(self):
-#        """
-#        Tests deleting an importer from a repo that doesn't have one.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('apple_pie')
-#
-#        # Test
-#        status, body = self.delete('/v2/repositories/apple_pie/importers/dummy-importer/')
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_update_importer_config(self):
-#        """
-#        Tests successfully updating an importer's config.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('pumpkin_pie')
-#        self.importer_manager.set_importer('pumpkin_pie', 'dummy-importer', {})
-#
-#        # Test
-#        new_config = {'importer_config' : {'ice_cream' : True}}
-#        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/', params=new_config)
-#
-#        # Verify
-#        self.assertEqual(200, status)
-#        self.assertEqual(body['id'], 'dummy-importer')
-#
-#        importer = RepoImporter.get_collection().find_one({'repo_id' : 'pumpkin_pie'})
-#        self.assertTrue(importer is not None)
-#
-#    def test_update_missing_repo(self):
-#        """
-#        Tests updating an importer config on a repo that doesn't exist.
-#        """
-#
-#        # Test
-#        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/', params={'importer_config' : {}})
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_update_missing_importer(self):
-#        """
-#        Tests updating a repo that doesn't have an importer.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('pie')
-#
-#        # Test
-#        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', params={'importer_config' : {}})
-#
-#        # Verify
-#        self.assertEqual(404, status)
-#
-#    def test_update_bad_request(self):
-#        """
-#        Tests updating with incorrect parameters.
-#        """
-#
-#        # Setup
-#        self.repo_manager.create_repo('pie')
-#        self.importer_manager.set_importer('pie', 'dummy-importer', {})
-#
-#        # Test
-#        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', params={})
-#
-#        # Verify
-#        self.assertEqual(400, status)
+class RoleCollectionTests(AuthControllersTests):
+
+    def test_get(self):
+        """
+        Tests retrieving a list of roles.
+        """
+
+        # Setup
+        self.role_manager.create_role(role_id='dummy-1')
+        self.role_manager.create_role(role_id='dummy-2')
+
+        # Test
+        status, body = self.get('/v2/roles/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(3, len(body))
+        self.assertTrue('_href' in body[0])
+        self.assertTrue(body[1]['_href'].find('roles/dummy-') >= 0)
+
+    def test_get_no_roles(self):
+        """
+        Tests that an super-user-role is returned when no other roles are present.
+        """
+
+        # Test
+        status, body = self.get('/v2/roles/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(1, len(body))
+
+
+    def test_post(self):
+        """
+        Tests using post to create a role.
+        """
+
+        # Setup
+        params = {
+            'id' : 'role-1',
+            'display_name' : 'Role 1',
+            'description' : 'Role 1 description',
+        }
+
+        # Test
+        status, body = self.post('/v2/roles/', params=params)
+
+        # Verify
+        self.assertEqual(201, status)
+
+        self.assertEqual(body['id'], 'role-1')
+
+        role = Role.get_collection().find_one({'id' : 'role-1'})
+        self.assertTrue(role is not None)
+        self.assertEqual(params['display_name'], role['display_name'])
+        self.assertEqual(params['description'], role['description'])
+
+
+    def test_post_bad_data(self):
+        """
+        Tests a create role with invalid data.
+        """
+
+        # Setup
+        body = {'id' : 'HA! This looks so totally invalid :)'}
+
+        # Test
+        status, body = self.post('/v2/roles/', params=body)
+
+        # Verify
+        self.assertEqual(400, status)
+
+
+    def test_post_conflict(self):
+        """
+        Tests creating a role with an existing id.
+        """
+
+        # Setup
+        self.role_manager.create_role('existing')
+
+        body = {'id' : 'existing'}
+
+        # Test
+        status, body = self.post('/v2/roles/', params=body)
+
+        # Verify
+        self.assertEqual(409, status)
+
+class RoleResourceTests(AuthControllersTests):
+
+    def test_get(self):
+        """
+        Tests retrieving a valid role.
+        """
+
+        # Setup
+        self.role_manager.create_role('role-1')
+
+        # Test
+        status, body = self.get('/v2/roles/role-1/')
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual('role-1', body['id'])
+        self.assertTrue('_href' in body)
+        self.assertTrue(body['_href'].endswith('roles/role-1/'))
+
+
+    def test_get_missing_role(self):
+        """
+        Tests that a 404 is returned when getting a role that doesn't exist.
+        """
+
+        # Test
+        status, body = self.get('/v2/roles/foo/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_delete(self):
+        """
+        Tests deleting an existing role.
+        """
+
+        # Setup
+        self.role_manager.create_role('doomed')
+
+        # Test
+        status, body = self.delete('/v2/roles/doomed/')
+
+        # Verify
+        self.assertEqual(200, status)
+
+        role = Role.get_collection().find_one({'id' : 'doomed'})
+        self.assertTrue(role is None)
+
+    def test_delete_missing_role(self):
+        """
+        Tests deleting a role that isn't there.
+        """
+
+        # Test
+        status, body = self.delete('/v2/roles/fake/')
+
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_put(self):
+        """
+        Tests using put to update a role.
+        """
+
+        # Setup
+        self.role_manager.create_role('role-1', display_name='original name')
+
+        req_body = {'delta' : {'display_name' : 'new name', 'description': 'new description'}}
+
+        # Test
+        status, body = self.put('/v2/roles/role-1/', params=req_body)
+
+        # Verify
+        self.assertEqual(200, status)
+
+        self.assertEqual(body['display_name'], req_body['delta']['display_name'])
+        
+        role = Role.get_collection().find_one({'id' : 'role-1'})
+        self.assertEqual(role['display_name'], req_body['delta']['display_name'])
+        self.assertEqual(role['description'], req_body['delta']['description'])
+        
+
+    def test_put_missing_role(self):
+        """
+        Tests updating a role that doesn't exist.
+        """
+
+        # Test
+        req_body = {'delta' : {'pie' : 'apple'}}
+        status, body = self.put('/v2/roles/not-there/', params=req_body)
+
+        # Verify
+        self.assertEqual(404, status)
+
 
