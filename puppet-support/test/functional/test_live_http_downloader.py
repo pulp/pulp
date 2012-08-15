@@ -21,6 +21,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository
 
 from pulp_puppet.common import constants, model
+from pulp_puppet.importer import metadata
 from pulp_puppet.importer.downloaders.web import HttpDownloader, DOWNLOAD_TMP_DIR
 
 TEST_SOURCE = 'http://forge.puppetlabs.com/'
@@ -73,8 +74,15 @@ class LiveHttpDownloaderTests(unittest.TestCase):
         self.downloader.retrieve_module(self.mock_progress_report, module)
 
         # Verify
-        expected_file = os.path.join(self.working_dir, DOWNLOAD_TMP_DIR, module.filename())
+        module_dir = os.path.join(self.working_dir, DOWNLOAD_TMP_DIR)
+        expected_file = os.path.join(module_dir, module.filename())
         self.assertTrue(os.path.exists(expected_file))
+
+        # Extract the metadata to make sure the tar is valid and we can open it
+        metadata.extract_metadata(module, module_dir, self.working_dir)
+
+        # Spot check that something from the metadata was stuffed into the module
+        self.assertTrue(module.checksums is not None)
 
     def _run_metadata_test(self):
         # Test
