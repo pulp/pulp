@@ -54,7 +54,6 @@ class HttpDownloader(BaseDownloader):
             progress_report.metadata_current_query = url
             progress_report.update_progress()
 
-
             # Let any exceptions from this bubble up, the caller will update
             # the progress report as necessary
             content = InMemoryDownloadedContent()
@@ -91,8 +90,11 @@ class HttpDownloader(BaseDownloader):
         content.open()
         try:
             self._download_file(url, content)
-        finally:
             content.close()
+        except Exception, e:
+            content.close()
+            content.delete()
+            raise
 
         return module_tmp_filename
 
@@ -135,6 +137,15 @@ class HttpDownloader(BaseDownloader):
         return all_urls
 
     def _create_module_url(self, module):
+        """
+        Generates the URL for a module at the configured source.
+
+        :param module: module instance being downloaded
+        :type  module: pulp_puppet.common.model.Module
+
+        :return: full URL to download the module
+        :rtype:  str
+        """
         url = self.config.get(constants.CONFIG_FEED)
         if not url.endswith('/'):
             url += '/'
@@ -142,7 +153,6 @@ class HttpDownloader(BaseDownloader):
         url += constants.HOSTED_MODULE_FILE_RELATIVE_PATH % (module.author[0], module.author)
         url += module.filename()
         return url
-
 
     def _download_file(self, url, destination):
         """
@@ -248,6 +258,13 @@ class StoredDownloadedContent(object):
         Closes the underlying file backing this content unit.
         """
         self.file.close()
+
+    def delete(self):
+        """
+        Deletes the stored file.
+        """
+        if os.path.exists(self.filename):
+            os.remove(self.filename)
 
 # -- utilities ----------------------------------------------------------------
 
