@@ -27,6 +27,8 @@ from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+import pulp.server.exceptions as exceptions
+
 
 # -- constants ----------------------------------------------------------------
 
@@ -42,16 +44,19 @@ class PermissionCollection(JSONController):
     @auth_required(READ)
     def GET(self):
         query_params = web.input()
-        resource = query_params.get('resource')
-        permissions = managers.permission_query_manager().find_by_resource(resource)
-        if permissions is None:
-            permissions = managers.permission_manager().create_permission(resource)
+        resource = query_params.get('resource', None)
+        if resource is None:
+            raise exceptions.InvalidValue(resource)
+
+        permission = managers.permission_query_manager().find_by_resource(resource)
+        if permission is None:
+            permission = {}
         else:
-            users = permissions['users']
+            users = permission['users']
             for user, ops in users.items():
                 users[user] = [operation_to_name(o) for o in ops]
         
-        return self.ok(permissions)
+        return self.ok(permission)
 
 
 class GrantToUser(JSONController):
@@ -67,23 +72,27 @@ class GrantToUser(JSONController):
         login = params.get('login', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
+        
+        _check_invalid_params({'login':login,
+                               'resource':resource,
+                               'operation_names':operation_names})
+            
         operations = _get_operations(operation_names)
         
         # Grant permission synchronously
         permission_manager = managers.permission_manager()
-        
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_READ_OPERATION},
-                     dispatch_constants.RESOURCE_PERMISSION_TYPE: {resource: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource),
                 resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('grant_permission_to_user')]
 
         call_request = CallRequest(permission_manager.grant,
                                    [resource, login, operations],
-                                   resources=resources,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, 'resource')
-
+        call_request.reads_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
+        call_request.updates_resource(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource)
+        
+        return self.ok(execution.execute_sync(call_request))
+        
 
 class RevokeFromUser(JSONController):
 
@@ -98,23 +107,27 @@ class RevokeFromUser(JSONController):
         login = params.get('login', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
+        
+        _check_invalid_params({'login':login,
+                               'resource':resource,
+                               'operation_names':operation_names})
+        
         operations = _get_operations(operation_names)
         
         # Grant permission synchronously
         permission_manager = managers.permission_manager()
         
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_READ_OPERATION},
-                     dispatch_constants.RESOURCE_PERMISSION_TYPE: {resource: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource),
                 resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('revoke_permission_from_user')]
 
         call_request = CallRequest(permission_manager.revoke,
                                    [resource, login, operations],
-                                   resources=resources,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, 'resource')
-
+        call_request.reads_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
+        call_request.updates_resource(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource)
+        
+        return self.ok(execution.execute_sync(call_request))
 
 class GrantToRole(JSONController):
 
@@ -126,24 +139,28 @@ class GrantToRole(JSONController):
 
         # Params
         params = self.params()
-        name = params.get('name', None)
+        role_id = params.get('role_id', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
+        
+        _check_invalid_params({'role_id':role_id,
+                               'resource':resource,
+                               'operation_names':operation_names})
+
         operations = _get_operations(operation_names)
         
         # Grant permission synchronously
         role_manager = managers.role_manager()
         
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {name: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
+        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('grant_permission_to_role')]
 
         call_request = CallRequest(role_manager.add_permissions_to_role,
-                                   [name, resource, operations],
-                                   resources=resources,
+                                   [role_id, resource, operations],
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, 'resource')
+        call_request.updates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
 
+        return self.ok(execution.execute_sync(call_request))
 
 class RevokeFromRole(JSONController):
 
@@ -155,25 +172,40 @@ class RevokeFromRole(JSONController):
 
         # Params
         params = self.params()
-        name = params.get('name', None)
+        role_id = params.get('role_id', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
+        
+        _check_invalid_params({'role_id':role_id,
+                               'resource':resource,
+                               'operation_names':operation_names})
+
         operations = _get_operations(operation_names)
         
         # Grant permission synchronously
         role_manager = managers.role_manager()
         
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {name: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, name),
+        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('remove_permission_from_role')]
 
         call_request = CallRequest(role_manager.remove_permissions_from_role,
-                                   [name, resource, operations],
-                                   resources=resources,
+                                   [role_id, resource, operations],
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, 'resource')
+        call_request.updates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
+        
+        return self.ok(execution.execute_sync(call_request))
 
 
+def _check_invalid_params(params):
+    # Raise InvalidValue if any of the params are None
+    
+    invalid_values = []
+    for key, value in params:
+        if value is None:
+            invalid_values.append(key)
+
+    if invalid_values:
+        raise exceptions.InvalidValue(invalid_values)
 
 # -- web.py application -------------------------------------------------------
 
