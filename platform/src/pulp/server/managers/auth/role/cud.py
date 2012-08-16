@@ -321,7 +321,7 @@ class RoleManager(object):
         """
         role = Role.get_collection().find_one({'id' : self.super_user_role})
         if role is None:
-            role = self.create_role(self.super_user_role, 'Super Users', 'Role to indicate users with admin privileges')
+            role = self.create_role(self.super_user_role, 'Super Users', 'Role indicates users with admin privileges')
             pm = factory.permission_manager()
             role['permissions'] = {'/':[pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE]}
             Role.get_collection().save(role, safe=True)

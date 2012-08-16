@@ -269,7 +269,7 @@ class RoleCollectionTests(AuthControllersTests):
 
         # Setup
         params = {
-            'id' : 'role-1',
+            'role_id' : 'role-1',
             'display_name' : 'Role 1',
             'description' : 'Role 1 description',
         }
@@ -294,7 +294,7 @@ class RoleCollectionTests(AuthControllersTests):
         """
 
         # Setup
-        body = {'id' : 'HA! This looks so totally invalid :)'}
+        body = {'role_id' : 'HA! This looks so totally invalid :)'}
 
         # Test
         status, body = self.post('/v2/roles/', params=body)
@@ -311,7 +311,7 @@ class RoleCollectionTests(AuthControllersTests):
         # Setup
         self.role_manager.create_role('existing')
 
-        body = {'id' : 'existing'}
+        body = {'role_id' : 'existing'}
 
         # Test
         status, body = self.post('/v2/roles/', params=body)

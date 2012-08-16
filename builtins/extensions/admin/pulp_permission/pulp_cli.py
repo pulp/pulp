@@ -11,8 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import time
-import getpass
 
 from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
@@ -71,7 +69,8 @@ class PermissionSection(PulpCliSection):
         resource = kwargs['resource']
         self.prompt.render_title('Permissions for %s' % resource)
         permission = self.context.server.permission.permission(resource).response_body
-        self.prompt.render_document(permission['users'])
+        if 'users' in permission:
+            self.prompt.render_document(permission['users'])
             
 
     def grant(self, **kwargs):

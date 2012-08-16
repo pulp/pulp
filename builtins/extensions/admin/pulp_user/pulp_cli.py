@@ -123,7 +123,7 @@ class UserSection(PulpCliSection):
         order = filters
 
         if kwargs['details'] is True:
-            filters = None
+            filters = ['login', 'name', 'roles']
             order = ['login', 'name']
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
