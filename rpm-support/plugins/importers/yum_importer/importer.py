@@ -18,13 +18,14 @@ import gettext
 import os
 import shutil
 import time
+import itertools
 
 from yum_importer.comps import ImporterComps
 from yum_importer.errata import ImporterErrata, link_errata_rpm_units
 from yum_importer.importer_rpm import ImporterRPM, get_existing_units
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.plugins.importer import Importer
-from pulp.plugins.model import SyncReport
+from pulp.plugins.model import Unit, SyncReport
 from pulp_rpm.common.ids import TYPE_ID_IMPORTER_YUM, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_DISTRO,\
         TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import util, depsolver
@@ -249,6 +250,14 @@ class YumImporter(Importer):
                     msg = _("%s is not a valid checksum type" % checksum_type)
                     _LOG.error(msg)
                     return False, msg
+
+            if key == 'resolve_dependencies':
+                value = config.get(key)
+                if value is not None and not isinstance(value, bool) :
+                    msg = _("%S should be a bool; got '%s' instead" % (key, value))
+                    _LOG.error(msg)
+                    return False, msg
+
         return True, None
 
     def importer_added(self, repo, config):
@@ -276,7 +285,14 @@ class YumImporter(Importer):
         @param units: optional list of pre-filtered units to import
         @type  units: list of L{pulp.plugins.data.Unit}
         """
-        if not units:
+        if units:
+            # units specified so need to make sure deps are included
+            if config.get('resolve_dependencies'):
+                missing_deps = \
+                    self.find_missing_dependencies(source_repo, units, import_conduit, config)
+                _LOG.info('Import adding (missing) deps:\n%s', missing_deps)
+                units += missing_deps
+        else:
             # If no units are passed in, assume we will use all units from source repo
             units = import_conduit.get_source_units()
         _LOG.info("Importing %s units from %s to %s" % (len(units), source_repo.id, dest_repo.id))
@@ -285,8 +301,8 @@ class YumImporter(Importer):
             # therefore they have already been downloaded and written to the correct location on the filesystem
             # i.e. we are assuming unit.storage_path is correct and points to the actual unit if appropriate (non-errata, etc).
             #
-            if u.unit_key.has_key("filename") and u.storage_path:
-                sym_link = os.path.join(dest_repo.working_dir, dest_repo.id, u.unit_key["filename"])
+            if u.metadata.has_key("filename") and u.storage_path:
+                sym_link = os.path.join(dest_repo.working_dir, dest_repo.id, u.metadata["filename"])
                 if os.path.lexists(sym_link):
                     remove_link = True
                     if os.path.islink(sym_link):
@@ -486,10 +502,7 @@ class YumImporter(Importer):
     def resolve_dependencies(self, repo, units, dependency_conduit, config):
         _LOG.info("Resolve Dependencies Invoked")
         result_dict = {}
-        pkglist =  []
-        for unit in units:
-            if unit.type_id == 'rpm':
-                pkglist.append("%s-%s-%s.%s" % (unit.unit_key['name'], unit.unit_key['version'], unit.unit_key['release'], unit.unit_key['arch']))
+        pkglist =  self.pkglist(units)
         dsolve = depsolver.DepSolver([repo], pkgs=pkglist)
         if config.get('recursive'):
             results = dsolve.getRecursiveDepList()
@@ -521,3 +534,77 @@ class YumImporter(Importer):
         self.errata.cancel_sync()
         self.importer_rpm.cancel_sync()
 
+    def pkglist(self, units):
+        """
+        Convert model units to NEVRA package names.
+        @param units: A list of content units.
+            Each unit is: L{pulp.server.plugins.model.Unit}
+        @type units: list
+        @return: A list of fully qualified package names: NEVRA.
+        @rtype: list
+        """
+        pkglist = []
+        for unit in units:
+            if unit.type_id != TYPE_ID_RPM:
+                continue
+            pkglist.append("%s-%s-%s.%s" % \
+                (unit.unit_key['name'],
+                 unit.unit_key['version'],
+                 unit.unit_key['release'],
+                 unit.unit_key['arch']))
+        return pkglist
+
+    def keylist(self, unit_keys):
+        """
+        Convert a list of unit key (dict) into a list of unit key (tuple)
+        that can be used to index into the dict of existing units.
+        @param unit_keys: A list of unit keys.
+            Each key is an NEVRA dict.
+        @type unit_keys: list
+        @return: A list of key (tuples).
+        @rtype: list
+        """
+        keylist = []
+        for key in unit_keys:
+            keylist.append(
+                (key['name'],
+                 key['epoch'],
+                 key['version'],
+                 key['release'],
+                 key['arch'],
+                 key['checksumtype'],
+                 key['checksum']))
+        return keylist
+
+    def find_missing_dependencies(self, repo, units, conduit, config):
+        """
+        Find dependencies within the specified repository that are not
+        included in the specified I{units} list.  This method is intended to
+        be used by import_units() to ensure that all dependencies of imported
+        units are satisfied.
+        @param repo: A plugin repo model object.
+        @type repo: L{pulp.plugins.model.Repository}
+        @param units: A list of content units.
+            Unit is: L{pulp.plugins.model.Unit}
+        @type units: list
+        @param conduit: An import conduit.
+        @type conduit: L{pulp.plugins.conduits.unit_import.ImportConduit}
+        @param config: plugin configuration
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        @return: The list of missing dependencies (units).
+            Unit is: L{pulp.plugins.model.Unit}
+        @rtype: list
+        """
+        missing_deps = []
+        deps = self.resolve_dependencies(repo, units, conduit, config)
+        resolved = itertools.chain(*deps['resolved'].values())
+        if resolved:
+            keylist = self.keylist(resolved)
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM])
+            inventory = get_existing_units(conduit, criteria)
+            for key in keylist:
+                unit = inventory.get(key)
+                if unit is None:
+                    continue
+                missing_deps.append(unit)
+        return missing_deps

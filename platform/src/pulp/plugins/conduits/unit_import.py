@@ -20,7 +20,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import ImporterConduitException, ImporterScratchPadMixin, RepoScratchPadMixin
+from pulp.plugins.conduits.mixins import ImporterConduitException, ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepoUnitsMixin
 import pulp.plugins.conduits._common as common_utils
 import pulp.plugins.types.database as types_db
 from pulp.server.db.model.repository import RepoContentUnit
@@ -42,7 +42,7 @@ class UnitImportConduitException(ImporterConduitException):
 
 # -- classes ------------------------------------------------------------------
 
-class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin):
+class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepoUnitsMixin):
     """
     Used to interact with the Pulp server while importing units into a
     repository. Instances of this class should *not* be cached between import
@@ -58,6 +58,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin):
     def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id):
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
         RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
+        SingleRepoUnitsMixin.__init__(self, source_repo_id, ImporterConduitException)
 
         self.source_repo_id = source_repo_id
         self.dest_repo_id = dest_repo_id

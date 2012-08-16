@@ -65,15 +65,15 @@ class Importer(object):
 
         @param repo: metadata describing the repository to which the
                      configuration applies
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param config: plugin configuration instance; the proposed repo
                        configuration is found within
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @param related_repos: list of other repositories using this distributor
                type; empty list if there are none; entries are of type
-               L{pulp.server.content.plugins.data.RelatedRepository}
+               L{pulp.server.plugins.model.RelatedRepository}
         @type  related_repos: list
 
         @return: tuple of (bool, str) to describe the result
@@ -94,10 +94,10 @@ class Importer(object):
         on the importer will be unavailable for the given repository.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.model.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
         """
         pass
 
@@ -120,10 +120,10 @@ class Importer(object):
         be wiped by Pulp.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.model.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
         """
         pass
 
@@ -159,7 +159,7 @@ class Importer(object):
         create one or more relationships between existing units.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param type_id: type of unit being uploaded
         @type  type_id: str
@@ -176,13 +176,13 @@ class Importer(object):
         @type  file_path: str
 
         @param conduit: provides access to relevant Pulp functionality
-        @type  conduit: L{pulp.server.content.conduits.unit_add.UnitAddConduit}
+        @type  conduit: L{pulp.server.conduits.unit_add.UnitAddConduit}
 
         @param config: plugin configuration for the repository
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @return: report of the details of the sync
-        @rtype:  L{pulp.server.content.plugins.model.SyncReport}
+        @rtype:  L{pulp.server.plugins.model.SyncReport}
         """
         raise NotImplementedError()
 
@@ -204,20 +204,20 @@ class Importer(object):
 
         @param source_repo: metadata describing the repository containing the
                units to import
-        @type  source_repo: L{pulp.server.content.plugins.data.Repository}
+        @type  source_repo: L{pulp.server.plugins.model.Repository}
 
         @param dest_repo: metadata describing the repository to import units
                into
-        @type  dest_repo: L{pulp.server.content.plugins.data.Repository}
+        @type  dest_repo: L{pulp.server.plugins.model.Repository}
 
         @param import_conduit: provides access to relevant Pulp functionality
-        @type  import_conduit: L{pulp.server.content.conduits.unit_import.ImportUnitConduit}
+        @type  import_conduit: L{pulp.server.conduits.unit_import.ImportUnitConduit}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @param units: optional list of pre-filtered units to import
-        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+        @type  units: list of L{pulp.server.plugins.model.Unit}
         """
         raise NotImplementedError()
 
@@ -231,7 +231,7 @@ class Importer(object):
         This call will not result in the unit being deleted from Pulp itself.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param units: list of objects describing the units to import in
                       this call
@@ -261,16 +261,16 @@ class Importer(object):
         attribute in the report if applicable.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param sync_conduit: provides access to relevant Pulp functionality
-        @type  sync_conduit: L{pulp.server.content.conduits.repo_sync.RepoSyncConduit}
+        @type  sync_conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @return: report of the details of the sync
-        @rtype:  L{pulp.server.content.plugins.model.SyncReport}
+        @rtype:  L{pulp.server.plugins.model.SyncReport}
         """
         raise NotImplementedError()
 
@@ -288,21 +288,21 @@ class Importer(object):
         units referenced by it.
 
         @param repo: describes the repository in which to search for dependencies
-        @type  repo: L{pulp.server.content.plugins.data.Repository}
+        @type  repo: L{pulp.server.plugins.model.Repository}
 
         @param units: list of units to find dependencies for; entries in the list
                are of type
-        @type  units: list of L{pulp.server.content.plugins.data.Unit}
+        @type  units: list of L{pulp.server.plugins.model.Unit}
 
         @param dependency_conduit: used to query into the server
-        @type  dependency_conduit: L{pulp.server.content.conduits.dependency.DependencyResolutionConduit}
+        @type  dependency_conduit: L{pulp.server.conduits.dependency.DependencyResolutionConduit}
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
         @return: list of relevant units retrieved from the conduit calls; empty
                  list if no dependencies are found
-        @rtype:  list of L{pulp.server.content.plugins.data.Unit}
+        @rtype:  list of L{pulp.server.plugins.model.Unit}
         """
         raise NotImplementedError()
 

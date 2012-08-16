@@ -255,6 +255,10 @@ class RepoUnitAssociationManager(object):
         # Invoke the importer
         importer_instance, plugin_config = plugin_api.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
+        # Custom options for dependency resolution
+        plugin_config['recursive'] = True
+        plugin_config['resolve_dependencies'] = True
+
         call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'])
         conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
 
