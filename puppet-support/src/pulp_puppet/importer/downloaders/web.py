@@ -12,8 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
+import logging
 import os
 import pycurl
+
+from pulp.common.util import encode_unicode
 
 from   base import BaseDownloader
 import exceptions
@@ -23,6 +26,8 @@ from   pulp_puppet.common import constants
 
 # Relative to the importer working directory
 DOWNLOAD_TMP_DIR = 'http-downloads'
+
+_LOG = logging.getLogger(__name__)
 
 # -- downloader implementations -----------------------------------------------
 
@@ -51,6 +56,7 @@ class HttpDownloader(BaseDownloader):
 
         all_metadata_documents = []
         for url in urls:
+            _LOG.info('Retrieving URL <%s>' % url)
             progress_report.metadata_current_query = url
             progress_report.update_progress()
 
@@ -181,6 +187,7 @@ class HttpDownloader(BaseDownloader):
         @return:
         """
         curl = self._create_and_configure_curl()
+        url = encode_unicode(url) # because of how the config is stored in pulp
 
         curl.setopt(pycurl.URL, url)
         curl.setopt(pycurl.WRITEFUNCTION, destination.update)
