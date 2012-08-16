@@ -14,15 +14,19 @@
 from   datetime import datetime
 from   gettext import gettext as _
 import logging
+import os
 import shutil
 import sys
 import traceback
 
+from pulp.common.util import encode_unicode
+from pulp.plugins.conduits.mixins import UnitAssociationCriteria
+
 from pulp_puppet.common import constants
 from pulp_puppet.common.model import RepositoryMetadata, Module
+from pulp_puppet.importer.configuration import  get_boolean
 from pulp_puppet.importer.downloaders import factory as downloader_factory
 
-from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
 # -- constants ----------------------------------------------------------------
 
@@ -61,6 +65,7 @@ class PuppetModuleSyncRun(object):
         :return: the report object to return to Pulp from the sync call
         :rtype:  pulp.plugins.model.SyncReport
         """
+        _LOG.info('Beginning sync for repository <%s>' % self.repo.id)
 
         try:
             metadata = self._parse_metadata()
@@ -89,6 +94,8 @@ class PuppetModuleSyncRun(object):
         :return: object representation of the metadata
         :rtype:  RepositoryMetadata
         """
+        _LOG.info('Beginning metadata retrieval for repository <%s>' % self.repo.id)
+
         self.progress_report.metadata_state = STATE_RUNNING
         self.progress_report.update_progress()
 
@@ -99,10 +106,11 @@ class PuppetModuleSyncRun(object):
             downloader = self._create_downloader()
             metadata_json_docs = downloader.retrieve_metadata(self.progress_report)
         except Exception, e:
+            _LOG.exception('Exception while retrieving metadata for repository <%s>' % self.repo.id)
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error downloading metadata')
             self.progress_report.metadata_exception = e
-            self.progress_report.metadata_traceback = sys.exc_info()[3]
+            self.progress_report.metadata_traceback = sys.exc_info()[2]
 
             end_time = datetime.now()
             duration = end_time - start_time
@@ -118,10 +126,11 @@ class PuppetModuleSyncRun(object):
             for doc in metadata_json_docs:
                 metadata.update_from_json(doc)
         except Exception, e:
+            _LOG.exception('Exception parsing metadata for repository <%s>' % self.repo.id)
             self.progress_report.metadata_state = STATE_FAILED
             self.progress_report.metadata_error_message = _('Error parsing repository modules metadata document')
             self.progress_report.metadata_exception = e
-            self.progress_report.metadata_traceback = sys.exc_info()[3]
+            self.progress_report.metadata_traceback = sys.exc_info()[2]
 
             end_time = datetime.now()
             duration = end_time - start_time
@@ -154,6 +163,8 @@ class PuppetModuleSyncRun(object):
                containing the modules to import
         :type  metadata: RepositoryMetadata
         """
+        _LOG.info('Retrieving modules for repository <%s>' % self.repo.id)
+
         self.progress_report.modules_state = STATE_RUNNING
         self.progress_report.modules_total_count = len(metadata.modules)
         self.progress_report.modules_finished_count = 0
@@ -166,10 +177,11 @@ class PuppetModuleSyncRun(object):
         try:
             self._do_import_modules(metadata)
         except Exception, e:
+            _LOG.exception('Exception importing modules for repository <%s>' % self.repo.id)
             self.progress_report.modules_state = STATE_FAILED
             self.progress_report.modules_error_message = _('Error retrieving modules')
             self.progress_report.modules_exception = e
-            self.progress_report.modules_traceback = sys.exc_info()[3]
+            self.progress_report.modules_traceback = sys.exc_info()[2]
 
             end_time = datetime.now()
             duration = end_time - start_time
@@ -177,7 +189,7 @@ class PuppetModuleSyncRun(object):
 
             self.progress_report.update_progress()
 
-            return None
+            return
 
         # Last update to the progress report before returning
         self.progress_report.modules_state = STATE_SUCCESS
@@ -202,8 +214,9 @@ class PuppetModuleSyncRun(object):
             used as the key in a dict lookup.
             """
             template = '%s-%s-%s'
-            return template % (unit_key_dict['name'], unit_key_dict['version'],
-                               unit_key_dict['author'])
+            return template % (encode_unicode(unit_key_dict['name']),
+                               encode_unicode(unit_key_dict['version']),
+                               encode_unicode(unit_key_dict['author']))
 
         downloader = self._create_downloader()
 
@@ -213,7 +226,7 @@ class PuppetModuleSyncRun(object):
         # Collect information about the repository's modules before changing it
         module_criteria = UnitAssociationCriteria(type_ids=[constants.TYPE_PUPPET_MODULE])
         existing_units = self.sync_conduit.get_units(criteria=module_criteria)
-        existing_modules = [Module.from_dict(x) for x in existing_units]
+        existing_modules = [Module.from_unit(x) for x in existing_units]
         existing_module_keys = [unit_key_str(m.unit_key()) for m in existing_modules]
 
         new_unit_keys = self._resolve_new_units(existing_module_keys, modules_by_key.keys())
@@ -226,13 +239,17 @@ class PuppetModuleSyncRun(object):
                 self._add_new_module(downloader, module)
                 self.progress_report.modules_finished_count += 1
             except Exception, e:
-                self.progress_report.add_failed_module(module, sys.exc_info()[3])
+                self.progress_report.add_failed_module(module, sys.exc_info()[2])
 
             self.progress_report.update_progress()
 
         # Remove missing units if the configuration indicates to do so
         if self._should_remove_missing():
-            existing_units_by_key = [Module.generate_unit_key(u.metadata['name'], u.metadata['version'], u.metadata['author']) for u in existing_units]
+            existing_units_by_key = {}
+            for u in existing_units:
+                unit_key = Module.generate_unit_key(u.unit_key['name'], u.unit_key['version'], u.unit_key['author'])
+                s = unit_key_str(unit_key)
+                existing_units_by_key[s] = u
 
             for key in remove_unit_keys:
                 doomed = existing_units_by_key[key]
@@ -256,17 +273,30 @@ class PuppetModuleSyncRun(object):
                                            relative_path)
 
         try:
-            # Download the bits
-            downloaded_filename = downloader.retrieve_module(self.progress_report, module)
+            if not self._module_exists(unit.storage_path):
+                # Download the bits
+                downloaded_filename = downloader.retrieve_module(self.progress_report, module)
 
-            # Copy them to the final location
-            shutil.copy(downloaded_filename, unit.storage_path)
+                # Copy them to the final location
+                shutil.copy(downloaded_filename, unit.storage_path)
 
-            # If the bits downloaded successfully, save the unit in Pulp
+            # Save the unit and associate it to the repository
             self.sync_conduit.save_unit(unit)
         finally:
             # Clean up the temporary module
             downloader.cleanup_module(module)
+
+    def _module_exists(self, filename):
+        """
+        Determines if the module at the given filename is already downloaded.
+
+        :param filename: full path to the module in Pulp
+        :type  filename: str
+
+        :return: true if the module file already exists; false otherwise
+        :rtype:  bool
+        """
+        return os.path.exists(filename)
 
     def _resolve_new_units(self, existing_unit_keys, found_unit_keys):
         """
@@ -311,7 +341,7 @@ class PuppetModuleSyncRun(object):
         if constants.CONFIG_REMOVE_MISSING not in self.config.keys():
             return constants.DEFAULT_REMOVE_MISSING
         else:
-            return self.config.get(constants.CONFIG_REMOVE_MISSING).lower() == 'true'
+            return get_boolean(self.config, constants.CONFIG_REMOVE_MISSING)
 
 # -- private classes ----------------------------------------------------------
 
@@ -410,8 +440,9 @@ class ProgressReport(object):
         Updates the progress report that a module failed to be imported.
         """
         self.modules_error_count += 1
-        ind_errors = self.modules_individual_errors or {}
-        ind_errors[module.unit_key()] = self.format_traceback(traceback)
+        self.modules_individual_errors = self.modules_individual_errors or {}
+        error_key = '%s-%s-%s' % (module.name, module.version, module.author)
+        self.modules_individual_errors[error_key] = self.format_traceback(traceback)
 
     # -- report creation methods ----------------------------------------------
 
@@ -464,10 +495,7 @@ class ProgressReport(object):
         :return: string representtion of the exception
         :rtype:  str
         """
-        if e:
-            return e[0]
-        else:
-            return None
+        return str(e)
 
     @staticmethod
     def format_traceback(tb):

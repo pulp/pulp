@@ -46,6 +46,17 @@ class MockConduit(mock.MagicMock):
         storage_path = os.path.join(MOCK_PULP_STORAGE_LOCATION, relative_path)
         return Unit(type_id, unit_key, unit_metadata, storage_path)
 
+
+class UnitsMockConduit(MockConduit):
+
+    def get_units(self, criteria=None):
+        units = [
+            Unit(constants.TYPE_PUPPET_MODULE, {'name' : 'valid', 'version' : '1.1.0', 'author' : 'jdob'}, {}, ''),
+            Unit(constants.TYPE_PUPPET_MODULE, {'name' : 'good', 'version' : '2.0.0', 'author' : 'adob'}, {}, ''),
+        ]
+        return units
+
+
 class PuppetModuleSyncRunTests(unittest.TestCase):
 
     def setUp(self):
@@ -113,9 +124,139 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertEqual(pr.metadata_state, sync.STATE_FAILED)
         self.assertEqual(pr.metadata_query_total_count, 1)
         self.assertEqual(pr.metadata_query_finished_count, 0)
-        self.assertEqual(pr.metadata_execution_time, None)
 
         self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
         self.assertEqual(pr.modules_total_count, None)
         self.assertEqual(pr.modules_finished_count, None)
-        self.assertEqual(pr.modules_execution_time, None)
+
+    @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._resolve_remove_units')
+    def test_perform_sync_with_remove_units(self, mock_resolve):
+        # Setup
+        remove_me = 'valid-1.1.0-jdob'
+        mock_resolve.return_value = [remove_me]
+
+        self.conduit = UnitsMockConduit()
+        self.run.sync_conduit = self.conduit
+
+        self.config.repo_plugin_config[constants.CONFIG_REMOVE_MISSING] = 'true'
+
+        # Test
+        report = self.run.perform_sync()
+
+        # Verify
+        self.assertEqual(1, self.conduit.remove_unit.call_count)
+
+    @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._parse_metadata')
+    def test_perform_sync_no_metadata(self, mock_parse):
+        # Setup
+        mock_parse.return_value = None
+
+        # Test
+        report = self.run.perform_sync()
+
+        # Verify
+        self.assertTrue(report is not None)
+        self.assertTrue(not report.success_flag)
+
+        pr = self.run.progress_report
+        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+
+    @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._create_downloader')
+    def test_parse_metadata_retrieve_exception(self, mock_create):
+        # Setup
+        mock_create.side_effect = Exception()
+
+        # Test
+        report = self.run.perform_sync()
+
+        # Verify
+        self.assertTrue(not report.success_flag)
+
+        pr = self.run.progress_report
+        self.assertEqual(pr.metadata_state, sync.STATE_FAILED)
+        self.assertEqual(pr.metadata_query_total_count, None)
+        self.assertEqual(pr.metadata_query_finished_count, None)
+        self.assertTrue(pr.metadata_execution_time is not None)
+        self.assertTrue(pr.metadata_error_message is not None)
+        self.assertTrue(pr.metadata_exception is not None)
+        self.assertTrue(pr.metadata_traceback is not None)
+
+        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+
+    @mock.patch('pulp_puppet.importer.downloaders.local.LocalDownloader.retrieve_metadata')
+    def test_parse_metadata_parse_exception(self, mock_retrieve):
+        # Setup
+        mock_retrieve.return_value = ['not parsable json']
+
+        # Test
+        report = self.run.perform_sync()
+
+        # Test
+        self.assertTrue(not report.success_flag)
+
+        pr = self.run.progress_report
+        self.assertEqual(pr.metadata_state, sync.STATE_FAILED)
+        self.assertTrue(pr.metadata_execution_time is not None)
+        self.assertTrue(pr.metadata_error_message is not None)
+        self.assertTrue(pr.metadata_exception is not None)
+        self.assertTrue(pr.metadata_traceback is not None)
+
+        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+
+    @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._do_import_modules')
+    def test_import_modules_exception(self, mock_import):
+        # Setup
+        mock_import.side_effect = Exception()
+
+        # Test
+        report = self.run.perform_sync()
+
+        # Verify
+        self.assertTrue(not report.success_flag)
+
+        pr = self.run.progress_report
+        self.assertEqual(pr.metadata_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.metadata_query_total_count, 1)
+        self.assertEqual(pr.metadata_query_finished_count, 1)
+        self.assertTrue(pr.metadata_execution_time is not None)
+        self.assertTrue(pr.metadata_error_message is None)
+        self.assertTrue(pr.metadata_exception is None)
+        self.assertTrue(pr.metadata_traceback is None)
+
+        self.assertEqual(pr.modules_state, sync.STATE_FAILED)
+        self.assertEqual(pr.modules_total_count, 2)
+        self.assertEqual(pr.modules_finished_count, 0)
+        self.assertTrue(pr.modules_execution_time is not None)
+        self.assertTrue(pr.modules_error_message is not None)
+        self.assertTrue(pr.modules_exception is not None)
+        self.assertTrue(pr.modules_traceback is not None)
+
+    @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._add_new_module')
+    def test_do_import_add_exception(self, mock_add):
+        # Setup
+        mock_add.side_effect = Exception()
+
+        # Test
+        report = self.run.perform_sync()
+
+        # Verify
+
+        # Failed modules still represent a successful sync and import modules
+        # step as far as states are concerned. But at the individual module
+        # level, the errors should be stored per failed module and the counts
+        # accurately reflect successes v. failures.
+
+        self.assertTrue(report.success_flag)
+
+        pr = self.run.progress_report
+        self.assertEqual(pr.metadata_state, sync.STATE_SUCCESS)
+
+        self.assertEqual(pr.modules_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.modules_total_count, 2)
+        self.assertEqual(pr.modules_finished_count, 0)
+        self.assertEqual(pr.modules_error_count, 2)
+        self.assertEqual(len(pr.modules_individual_errors), 2)
+        self.assertTrue(pr.modules_execution_time is not None)
+        self.assertTrue(pr.modules_error_message is None)
+        self.assertTrue(pr.modules_exception is None)
+        self.assertTrue(pr.modules_traceback is None)

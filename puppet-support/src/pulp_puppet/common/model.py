@@ -22,6 +22,8 @@ except ImportError:
     import simplejson as _json
 json = _json
 
+import copy
+
 from pulp_puppet.common import constants
 
 
@@ -92,6 +94,22 @@ class Module(object):
         module.update_from_dict(module_dict)
 
         return module
+
+    @classmethod
+    def from_unit(cls, pulp_unit):
+        """
+        Converts a Pulp unit into a Module representation.
+
+        :param pulp_unit: unit returned from the Pulp conduit
+        :type  pulp_unit: pulp.plugins.model.Unit
+
+        :return: object representation of the given module
+        :rtype:  Module
+        """
+        unit_as_dict = copy.copy(pulp_unit.unit_key)
+        unit_as_dict.update(pulp_unit.metadata)
+
+        return cls.from_dict(unit_as_dict)
 
     @staticmethod
     def generate_unit_key(name, version, author):

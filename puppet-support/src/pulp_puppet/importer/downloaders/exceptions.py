@@ -39,6 +39,10 @@ class FileRetrievalException(Exception):
         Exception.__init__(self, location, *args)
         self.location = location
 
+    def __str__(self):
+        template = '%s: %s'
+        return template % (self.__class__.__name__, self.location)
+
 
 class FileNotFoundException(FileRetrievalException):
     """
