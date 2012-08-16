@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.324
+Version: 2.0.1
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
