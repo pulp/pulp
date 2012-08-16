@@ -53,7 +53,7 @@ class PermissionSection(PulpCliSection):
         grant_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
         grant_command.add_option(PulpCliOption('--login', 'login of the user to which access to given resource is being granted', required=False))
         grant_command.add_option(PulpCliOption('--role-id', 'id of the role to which access to given resource is being granted', required=False))
-        grant_command.add_option(PulpCliOption('-o', 'type of permissions being granted', required=True, allow_multiple=True))
+        grant_command.add_option(PulpCliOption('-o', 'type of permissions being granted, valid permissions: create, read, update, delete, execute', required=True, allow_multiple=True))
         self.add_command(grant_command)
         
         # Revoke Command
@@ -61,16 +61,18 @@ class PermissionSection(PulpCliSection):
         revoke_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
         revoke_command.add_option(PulpCliOption('--login', 'login of the user from which access to given resource is being revoked', required=False))
         revoke_command.add_option(PulpCliOption('--role-id', 'id of the role from which access to given resource is being revoked', required=False))
-        revoke_command.add_option(PulpCliOption('-o', 'type of permissions being revoked', required=True, allow_multiple=True))
+        revoke_command.add_option(PulpCliOption('-o', 'type of permissions being revoked, valid permissions: create, read, update, delete, execute', required=True, allow_multiple=True))
         self.add_command(revoke_command)
 
     
     def list(self, **kwargs):
         resource = kwargs['resource']
         self.prompt.render_title('Permissions for %s' % resource)
-        permission = self.context.server.permission.permission(resource).response_body
-        if 'users' in permission:
-            self.prompt.render_document(permission['users'])
+        permissions = self.context.server.permission.permission(resource).response_body
+        if permissions:
+            permission = permissions[0]
+            if 'users' in permission:
+                self.prompt.render_document(permission['users'])
             
 
     def grant(self, **kwargs):

@@ -59,9 +59,11 @@ class RoleAPI(PulpAPI):
         path = self.base_path
         return self.server.GET(path)
 
-    def create(self, role_id):
+    def create(self, role_id, display_name=None, description=None):
         path = self.base_path
-        roledata = {"id": role_id}
+        roledata = {"role_id": role_id, 
+                    "display_name": display_name, 
+                    "description": description}
         return self.server.POST(path, roledata)
 
     def role(self, role_id):
@@ -100,28 +102,28 @@ class PermissionAPI(PulpAPI):
         return self.server.GET(path, query_parameters)
     
     def grant_to_user(self, resource, login, operations):
-        path = self.base_path + "user/grant/"
+        path = self.base_path + "actions/grant_to_user/"
         data = {"resource": resource, 
                 "login": login,
                 "operations": operations}
         return self.server.POST(path, data)
     
     def grant_to_role(self, resource, role_id, operations):
-        path = self.base_path + "role/grant/"
+        path = self.base_path + "actions/grant_to_role/"
         data = {"resource": resource, 
                 "role_id": role_id,
                 "operations": operations}
         return self.server.POST(path, data)
     
     def revoke_from_user(self, resource, login, operations):
-        path = self.base_path + "user/revoke/"
+        path = self.base_path + "actions/revoke_from_user/"
         data = {"resource": resource, 
                 "login": login,
                 "operations": operations}
         return self.server.POST(path, data)
     
     def revoke_from_role(self, resource, role_id, operations):
-        path = self.base_path + "role/revoke/"
+        path = self.base_path + "actions/revoke_from_role/"
         data = {"resource": resource, 
                 "role_id": role_id,
                 "operations": operations}

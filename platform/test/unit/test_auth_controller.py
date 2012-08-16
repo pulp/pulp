@@ -87,7 +87,6 @@ class UserCollectionTests(AuthControllersTests):
             'login' : 'user-1',
             'name' : 'User 1',
             'password' : 'test-password',
-            'roles': [self.role_manager.super_user_role],
         }
 
         # Test
@@ -101,7 +100,6 @@ class UserCollectionTests(AuthControllersTests):
         user = User.get_collection().find_one({'login' : 'user-1'})
         self.assertTrue(user is not None)
         self.assertEqual(params['name'], user['name'])
-        self.assertEqual(params['roles'], user['roles'])
         self.assertTrue(self.password_manager.check_password(user['password'], params['password']))
 
     def test_post_bad_data(self):

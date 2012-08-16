@@ -61,12 +61,11 @@ class UsersCollection(JSONController):
         login = user_data.get('login', None)
         password = user_data.get('password', None)
         name = user_data.get('name', None)
-        roles = user_data.get('roles', None)
 
         # Creation
         manager = managers.user_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [login, password, name, roles]
+        args = [login, password, name]
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('create')]

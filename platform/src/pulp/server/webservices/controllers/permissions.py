@@ -45,18 +45,21 @@ class PermissionCollection(JSONController):
     def GET(self):
         query_params = web.input()
         resource = query_params.get('resource', None)
+        
+        permissions = []
         if resource is None:
-            raise exceptions.InvalidValue(resource)
-
-        permission = managers.permission_query_manager().find_by_resource(resource)
-        if permission is None:
-            permission = {}
+            permissions =  managers.permission_query_manager().find_all()
         else:
+            permission = managers.permission_query_manager().find_by_resource(resource)
+            if permission is not None:
+                permissions = [permission]
+            
+        for permission in permissions:
             users = permission['users']
             for user, ops in users.items():
                 users[user] = [operation_to_name(o) for o in ops]
         
-        return self.ok(permission)
+        return self.ok(permissions)
 
 
 class GrantToUser(JSONController):
@@ -200,7 +203,7 @@ def _check_invalid_params(params):
     # Raise InvalidValue if any of the params are None
     
     invalid_values = []
-    for key, value in params:
+    for key, value in params.items():
         if value is None:
             invalid_values.append(key)
 
@@ -213,11 +216,11 @@ def _check_invalid_params(params):
 urls = (
     '/$', 'PermissionCollection',
     
-    '/user/grant/$', 'GrantToUser',
-    '/user/revoke/$', 'RevokeFromUser',
+    '/actions/grant_to_user/$', 'GrantToUser',
+    '/actions/revoke_from_user/$', 'RevokeFromUser',
     
-    '/role/grant/$', 'GrantToRole',
-    '/role/revoke/$', 'RevokeFromRole',
+    '/actions/grant_to_role/$', 'GrantToRole',
+    '/actions/revoke_from_role/$', 'RevokeFromRole',
     
 )
 

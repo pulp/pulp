@@ -52,7 +52,16 @@ class RoleSection(PulpCliSection):
         # Create command
         create_command = PulpCliCommand('create', 'creates a role', self.create)
         create_command.add_option(id_option)
+        create_command.add_option(PulpCliOption('--display-name', 'user-friendly name for the role', required=False))
+        create_command.add_option(PulpCliOption('--description', 'user-friendly text describing the role', required=False))
         self.add_command(create_command)
+
+        # Update command
+        update_command = PulpCliCommand('update', 'updates a role', self.update)
+        update_command.add_option(PulpCliOption('--role-id', 'identifies the role to be updated', required=True))
+        update_command.add_option(PulpCliOption('--display-name', 'user-friendly name for the role', required=False))
+        update_command.add_option(PulpCliOption('--description', 'user-friendly text describing the role', required=False))
+        self.add_command(update_command)
 
         # Delete Command
         delete_command = PulpCliCommand('delete', 'deletes a role', self.delete)
@@ -65,14 +74,31 @@ class RoleSection(PulpCliSection):
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
         
-        # 
-
     def create(self, **kwargs):
         role_id = kwargs['role-id']
+        display_name = None
+        description = None
+        if 'display-name' in kwargs:
+            display_name = kwargs['display-name']
+        if 'description' in kwargs:
+            description = kwargs['description']
 
         # Call the server
-        self.context.server.role.create(role_id)
+        self.context.server.role.create(role_id, display_name, description)
         self.prompt.render_success_message('Role [%s] successfully created' % role_id)
+        
+    def update(self, **kwargs):
+        role_id = kwargs['role-id']
+
+        delta = {}
+        if 'display-name' in kwargs:
+            delta['display_name'] = kwargs['display-name']
+        if 'description' in kwargs:
+            delta['description'] = kwargs['description']
+            
+        # Call the server
+        self.context.server.role.update(role_id, delta)
+        self.prompt.render_success_message('Role [%s] successfully updated' % role_id)
 
     def delete(self, **kwargs):
         role_id = kwargs['role-id']
@@ -89,11 +115,11 @@ class RoleSection(PulpCliSection):
         role_list = self.context.server.role.roles().response_body
 
         # Default flags to render_document_list
-        filters = ['id']
+        filters = ['id', 'users']
         order = filters
 
         if kwargs['details'] is True:
-            filters = ['id','users','permissions']
+            filters = ['id','display_name','description','users','permissions']
             order = filters
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
