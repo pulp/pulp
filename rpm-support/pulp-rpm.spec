@@ -236,6 +236,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 2.0.1-1
+- tagged for CR.
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
 - Add support to depsolve and include missing dependencies during import from
   another repository. (jortel@redhat.com)
