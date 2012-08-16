@@ -114,3 +114,29 @@ def topological_sort(graph):
         _recursive_topological_sort(vertex)
 
     return sorted_vertices
+
+
+class Delta(dict):
+    """
+    The delta of a model object.
+    Contains the primary key and keys/values specified in the filter.
+    """
+
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __init__(self, obj, filter=()):
+        """
+        @param obj: A model object (dict).
+        @type obj: Model|dict
+        @param filter: A list of dictionary keys to include
+                       in the delta.
+        @type filter: str|list
+        """
+        dict.__init__(self)
+        if isinstance(filter, basestring):
+            filter = (filter,)
+        for k,v in obj.items():
+            if k in filter:
+                self[k] = v

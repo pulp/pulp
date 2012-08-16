@@ -17,8 +17,8 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.323
-Release: 4%{?dist}
+Version: 0.0.324
+Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -162,6 +162,7 @@ client capabilites with RPM specific features.
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
 %{_usr}/lib/pulp/admin/extensions/rpm_sync/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
+%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_search/
 %{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
@@ -235,6 +236,11 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
+- Add support to depsolve and include missing dependencies during import from
+  another repository. (jortel@redhat.com)
+- Added remove units extension (jason.dobies@redhat.com)
+
 * Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-4
 - bump release
 

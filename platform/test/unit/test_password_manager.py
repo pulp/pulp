@@ -12,23 +12,26 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import unittest
+import base
 
-from pulp.server.auth.password_util import hash_password, check_password
+from pulp.server.managers import factory as manager_factory
 
-class TestUtil(unittest.TestCase):
+class PasswordManagerTests(base.PulpServerTests):
+    def setUp(self):
+        super(PasswordManagerTests, self).setUp()
+        self.password_manager = manager_factory.password_manager()
 
     def test_unicode_password(self):
         password = u"some password"
-        hashed = hash_password(password)
+        hashed = self.password_manager.hash_password(password)
         self.assertNotEqual(hashed, password)
 
     def test_hash_password(self):
         password = "some password"
-        hashed = hash_password(password)
+        hashed = self.password_manager.hash_password(password)
         self.assertNotEqual(hashed, password)
         
     def test_check_password(self):
         password = "some password"
-        hashed = hash_password(password)
-        self.assertTrue(check_password(hashed, password))
+        hashed = self.password_manager.hash_password(password)
+        self.assertTrue(self.password_manager.check_password(hashed, password))

@@ -23,9 +23,9 @@ import logging
 from gettext import gettext as _
 
 from pulp.server.auth.authentication import (
-    check_username_password, check_user_cert, check_consumer_cert, check_consumer_cert_no_user,
+    check_username_password, check_user_cert, check_consumer_cert_no_user,
     check_oauth)
-from pulp.server.auth.authorization import is_authorized, is_superuser
+from pulp.server.managers import factory
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps
 from pulp.server.webservices import http
@@ -118,7 +118,8 @@ def auth_required(operation=None, super_user_only=False):
                     return False
 
             # forth, check authorization
-            if super_user_only and not is_superuser(user):
+            user_query_manager = factory.user_query_manager()
+            if super_user_only and not user_query_manager.is_superuser(user['login']):
                 return self.unauthorized(author_fail_msg)
 
             # if the operation is None, don't check authorization
@@ -127,7 +128,7 @@ def auth_required(operation=None, super_user_only=False):
                     value = method(self, *args, **kwargs)
                     clear_principal()
                     return value
-                elif is_authorized(http.resource_path(), user, operation):
+                elif user_query_manager.is_authorized(http.resource_path(), user['login'], operation):
                     pass
                 else:
                     return self.unauthorized(author_fail_msg)

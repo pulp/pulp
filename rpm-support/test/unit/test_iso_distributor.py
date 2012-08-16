@@ -533,6 +533,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         publish_conduit.set_progress.side_effect = set_progress
         progress_status = distributor.init_progress()
         distributor.publish_repo(repo, publish_conduit, config)
+        repo.id= "test_mock_iso_prefix"
         distributor.generate_isos(repo.working_dir,"%s/%s" % (self.http_publish_dir, repo.id), prefix="test-isos")
 
         self.assertTrue("isos" in progress_status)
@@ -549,6 +550,6 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         self.assertEquals(len(os.listdir(self.https_publish_dir)), 0)
         isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
         print isos_list
-        self.assertEqual(len(isos_list), 2)
+        self.assertEqual(len(isos_list), 1)
         # make sure the iso name defaults to repoid
         self.assertTrue( isos_list[0].startswith("test-isos"))

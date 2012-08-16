@@ -41,7 +41,7 @@ class RepoImporterManager(object):
 
         importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
         if importer is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id)
 
         return importer
 

@@ -18,7 +18,7 @@ from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI
 from pulp.bindings.tasks import TasksAPI, TaskGroupsAPI
 from pulp.bindings.upload import UploadAPI
-from pulp.bindings.auth import UserAPI
+from pulp.bindings.auth import UserAPI, RoleAPI, PermissionAPI
 
 
 class Bindings(object):
@@ -36,6 +36,7 @@ class Bindings(object):
         self.consumer_content = ConsumerContentAPI(pulp_connection)
         self.consumer_history = ConsumerHistoryAPI(pulp_connection)
         self.consumer_search = ConsumerSearchAPI(pulp_connection)
+        self.permission = PermissionAPI(pulp_connection)
         self.repo = RepositoryAPI(pulp_connection)
         self.repo_actions = RepositoryActionsAPI(pulp_connection)
         self.repo_distributor = RepositoryDistributorAPI(pulp_connection)
@@ -48,6 +49,7 @@ class Bindings(object):
         self.repo_search = RepositorySearchAPI(pulp_connection)
         self.repo_sync_schedules = RepositorySyncSchedulesAPI(pulp_connection)
         self.repo_unit = RepositoryUnitAPI(pulp_connection)
+        self.role = RoleAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
         self.task_groups = TaskGroupsAPI(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)

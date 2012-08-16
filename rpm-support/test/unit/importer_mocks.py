@@ -44,12 +44,22 @@ def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
 
     return sync_conduit
 
-def get_import_conduit(source_units=None):
+def get_import_conduit(source_units=None, existing_units=None):
     def get_source_units(criteria=None):
         return source_units
-
+    def get_units(criteria=None):
+        ret_val = []
+        if existing_units:
+            for u in existing_units:
+                if criteria:
+                    if u.type_id in criteria.type_ids:
+                        ret_val.append(u)
+                else:
+                    ret_val.append(u)
+        return ret_val
     import_conduit = mock.Mock(spec=ImportUnitConduit)
     import_conduit.get_source_units.side_effect = get_source_units
+    import_conduit.get_units.side_effect = get_units
     return import_conduit
 
 def get_upload_conduit(type_id=None, unit_key=None, metadata=None, relative_path=None, pkg_dir=None):

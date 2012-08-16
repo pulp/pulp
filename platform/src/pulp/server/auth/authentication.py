@@ -19,16 +19,10 @@ import logging
 
 import oauth2
 
-from pulp.server.managers.auth.user import UserManager
-from pulp.server.auth import cert_generator, ldap_connection
-from pulp.server.auth.authorization import consumer_users_role
-from pulp.server.auth.cert_generator import verify_cert
-from pulp.server.auth.certificate import Certificate
-from pulp.server.auth.password_util import check_password
+from pulp.server.managers import factory
+from pulp.server.auth import ldap_connection
 from pulp.server.config import config
 from pulp.server.exceptions import PulpException
-
-_user_manager = UserManager()
 
 _log = logging.getLogger(__name__)
 
@@ -78,7 +72,8 @@ def _check_username_password_ldap(username, password=None):
         user = ldap_server.authenticate_user(ldap_base, username, password,
                                              filter=ldap_filter)
     else:
-        user = _user_manager.find_by_login(username)
+        user_query_manager = factory.user_query_manager()
+        user = user_query_manager.find_by_login(username)
     if user is None:
         return None
     return user
@@ -95,7 +90,8 @@ def _check_username_password_local(username, password=None):
     @rtype: L{pulp.server.db.model.User} instance or None
     @return: user corresponding to the credentials
     """
-    user = _user_manager.find_by_login(username)
+    user_query_manager = factory.user_query_manager()
+    user = user_query_manager.find_by_login(username)
     if user is None:
         _log.error('User [%s] specified in certificate was not found in the system' %
                    username)
@@ -104,7 +100,7 @@ def _check_username_password_local(username, password=None):
         _log.error('This is an ldap user %s' % user)
         return None
     if password is not None:
-        if not check_password(user['password'], password):
+        if not factory.password_manager().check_password(user['password'], password):
             _log.error('Password for user [%s] was incorrect' % username)
             return None
     return user
@@ -137,29 +133,31 @@ def check_user_cert(cert_pem):
     @rtype: L{pulp.server.db.model.User} instance or None
     @return: user corresponding to the credentials
     """
-    cert = Certificate(content=cert_pem)
+    cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
     if not encoded_user:
         return None
-    if not verify_cert(cert_pem):
+    cert_gen_manager = factory.cert_generation_manager()
+    if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
     try:
-        username, id = cert_generator.decode_admin_user(encoded_user)
+        username, id = cert_gen_manager.decode_admin_user(encoded_user)
     except PulpException:
         return None
     return check_username_password(username)
 
 def check_consumer_cert_no_user(cert_pem):
     # TODO document me
-    cert = Certificate(content=cert_pem)
+    cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
     if encoded_user is None:
         return None
-    if not verify_cert(cert_pem):
+    cert_gen_manager = factory.cert_generation_manager()
+    if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
@@ -167,17 +165,18 @@ def check_consumer_cert_no_user(cert_pem):
 
 def check_consumer_cert(cert_pem):
     # TODO document me
-    cert = Certificate(content=cert_pem)
+    cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
     if encoded_user is None:
         return None
-    if not verify_cert(cert_pem):
+    cert_gen_manager = factory.cert_generation_manager()
+    if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
     user = check_username_password(encoded_user)
-    if user is None or consumer_users_role not in user['roles']:
+    if user is None:
         return None
     return user
 
