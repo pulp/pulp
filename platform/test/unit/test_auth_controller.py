@@ -474,7 +474,7 @@ class RoleUsersTests(AuthControllersTests):
         status, body = self.post('/v2/roles/role-1/users/', params=req_body)
 
         # Verify
-        self.assertEqual(201, status)
+        self.assertEqual(200, status)
 
         user = User.get_collection().find_one({'login' : 'user-1'})
         self.assertTrue(user is not None)
