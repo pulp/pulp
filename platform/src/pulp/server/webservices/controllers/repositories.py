@@ -914,6 +914,7 @@ class RepoAssociate(JSONController):
         # Params
         params = self.params()
         source_repo_id = params.get('source_repo_id', None)
+        overrides = params.get('override_config', None)
 
         if source_repo_id is None:
             raise exceptions.MissingValue(['source_repo_id'])
@@ -934,7 +935,7 @@ class RepoAssociate(JSONController):
                 action_tag('associate')]
         call_request = CallRequest(association_manager.associate_from_repo,
                                    [source_repo_id, dest_repo_id],
-                                   {'criteria': criteria},
+                                   {'criteria': criteria, 'import_config_override': overrides},
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
