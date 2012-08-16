@@ -165,7 +165,7 @@ class RoleUsers(JSONController):
         role_users = user_query_manager.find_users_belonging_to_role(role_id)
         return self.ok(role_users)
 
-    @auth_required(CREATE)
+    @auth_required(UPDATE)
     def POST(self, role_id):
 
         # Params (validation will occur in the manager)
@@ -183,7 +183,7 @@ class RoleUsers(JSONController):
                                    [role_id, login],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_sync_created(self, call_request, 'user')
+        return self.ok(execution.execute_sync(call_request))
 
 
 class RoleUser(JSONController):
@@ -204,7 +204,7 @@ class RoleUser(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        return  self.ok(execution.execute_sync(call_request))
 
 
 
