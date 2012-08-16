@@ -65,7 +65,7 @@ class RolesCollection(JSONController):
 
         # Pull all the roles data
         role_data = self.params()
-        role_id = role_data.get('id', None)
+        role_id = role_data.get('role_id', None)
         display_name = role_data.get('display_name', None)
         description = role_data.get('description', None)
 

@@ -59,31 +59,31 @@ class RoleAPI(PulpAPI):
         path = self.base_path
         return self.server.GET(path)
 
-    def create(self, name):
+    def create(self, role_id):
         path = self.base_path
-        roledata = {"name": name}
+        roledata = {"id": role_id}
         return self.server.POST(path, roledata)
 
-    def role(self, name):
-        path = self.base_path + ("%s/" % name)
+    def role(self, role_id):
+        path = self.base_path + ("%s/" % role_id)
         return self.server.GET(path)
 
-    def delete(self, name):
-        path = self.base_path + "%s/" % name
+    def delete(self, role_id):
+        path = self.base_path + "%s/" % role_id
         return self.server.DELETE(path)
 
-    def update(self, name, delta):
-        path = self.base_path + "%s/" % name
+    def update(self, role_id, delta):
+        path = self.base_path + "%s/" % role_id
         body = {'delta' : delta}
         return self.server.PUT(path, body)
     
-    def add_user(self, name, login):
-        path = self.base_path + "%s/" % name + 'users/'
+    def add_user(self, role_id, login):
+        path = self.base_path + "%s/" % role_id + 'users/'
         data = {"login": login}
         return self.server.POST(path, data)
     
-    def remove_user(self, name, login):
-        path = self.base_path + "%s/" % name + 'users/' +  "%s/" % login
+    def remove_user(self, role_id, login):
+        path = self.base_path + "%s/" % role_id + 'users/' +  "%s/" % login
         return self.server.DELETE(path)
 
 class PermissionAPI(PulpAPI):
@@ -106,10 +106,10 @@ class PermissionAPI(PulpAPI):
                 "operations": operations}
         return self.server.POST(path, data)
     
-    def grant_to_role(self, resource, name, operations):
+    def grant_to_role(self, resource, role_id, operations):
         path = self.base_path + "role/grant/"
         data = {"resource": resource, 
-                "name": name,
+                "role_id": role_id,
                 "operations": operations}
         return self.server.POST(path, data)
     
@@ -120,9 +120,9 @@ class PermissionAPI(PulpAPI):
                 "operations": operations}
         return self.server.POST(path, data)
     
-    def revoke_from_role(self, resource, name, operations):
+    def revoke_from_role(self, resource, role_id, operations):
         path = self.base_path + "role/revoke/"
         data = {"resource": resource, 
-                "name": name,
+                "role_id": role_id,
                 "operations": operations}
         return self.server.POST(path, data)

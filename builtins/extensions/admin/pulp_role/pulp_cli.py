@@ -68,19 +68,19 @@ class RoleSection(PulpCliSection):
         # 
 
     def create(self, **kwargs):
-        name = kwargs['role-id']
+        role_id = kwargs['role-id']
 
         # Call the server
-        self.context.server.role.create(name)
-        self.prompt.render_success_message('Role [%s] successfully created' % name)
+        self.context.server.role.create(role_id)
+        self.prompt.render_success_message('Role [%s] successfully created' % role_id)
 
     def delete(self, **kwargs):
-        name = kwargs['role-id']
+        role_id = kwargs['role-id']
         try:
-            self.context.server.role.delete(name)
-            self.prompt.render_success_message('Role [%s] successfully deleted' % name)
+            self.context.server.role.delete(role_id)
+            self.prompt.render_success_message('Role [%s] successfully deleted' % role_id)
         except NotFoundException:
-            self.prompt.write('Role [%s] does not exist on the server' % name, tag='not-found')
+            self.prompt.write('Role [%s] does not exist on the server' % role_id, tag='not-found')
 
     def list(self, **kwargs):
 
@@ -89,17 +89,17 @@ class RoleSection(PulpCliSection):
         role_list = self.context.server.role.roles().response_body
 
         # Default flags to render_document_list
-        filters = ['name']
+        filters = ['id']
         order = filters
 
         if kwargs['details'] is True:
-            filters = ['name','users','permissions']
+            filters = ['id','users','permissions']
             order = filters
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
-            if 'name' not in filters:
-                filters.append('name')
-            order = ['name']
+            if 'id' not in filters:
+                filters.append('id')
+            order = ['id']
 
         for r in role_list:
             self.prompt.render_document(r, filters=filters, order=order)
@@ -129,18 +129,18 @@ class UserSection(PulpCliSection):
         self.add_command(remove_user_command)
         
     def add_user(self, **kwargs):
-        name = kwargs['role-id']
+        role_id = kwargs['role-id']
         login = kwargs['login']
 
         # Call the server
-        self.context.server.role.add_user(name, login)
-        self.prompt.render_success_message('User [%s] successfully added to role [%s]' % (login, name))
+        self.context.server.role.add_user(role_id, login)
+        self.prompt.render_success_message('User [%s] successfully added to role [%s]' % (login, role_id))
 
     def remove_user(self, **kwargs):
-        name = kwargs['role-id']
+        role_id = kwargs['role-id']
         login = kwargs['login']
 
         # Call the server
-        self.context.server.role.remove_user(name, login)
-        self.prompt.render_success_message('User [%s] successfully removed from role [%s]' % (login, name))
+        self.context.server.role.remove_user(role_id, login)
+        self.prompt.render_success_message('User [%s] successfully removed from role [%s]' % (login, role_id))
 
