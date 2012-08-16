@@ -93,6 +93,9 @@ client capabilities.
 
 
 %changelog
+* Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 2.0.1-1
+- tagged for CR.
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
 - 
 
