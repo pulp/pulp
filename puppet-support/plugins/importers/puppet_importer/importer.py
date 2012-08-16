@@ -12,11 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+import logging
 
 from pulp.plugins.importer import Importer
 
 from pulp_puppet.common import constants
-from pulp_puppet.importer import config, sync, upload, copier
+from pulp_puppet.importer import configuration, sync, upload, copier
+
+_LOG = logging.getLogger(__name__)
 
 # -- plugins ------------------------------------------------------------------
 
@@ -35,7 +38,7 @@ class PuppetModuleImporter(Importer):
         }
 
     def validate_config(self, repo, config, related_repos):
-        return config.validate(config)
+        return configuration.validate(config)
 
     def sync_repo(self, repo, sync_conduit, config):
         self.sync_cancelled = False

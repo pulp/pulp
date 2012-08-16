@@ -13,6 +13,7 @@
 
 from   datetime import datetime
 from   gettext import gettext as _
+import logging
 import shutil
 import sys
 import traceback
@@ -31,6 +32,8 @@ STATE_SUCCESS = 'success'
 STATE_FAILED = 'failed'
 
 INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
+
+_LOG = logging.getLogger(__name__)
 
 # -- public classes -----------------------------------------------------------
 
