@@ -23,10 +23,10 @@ class User(Model):
     @type login: str
 
     @ivar password: encrypted password for login credentials
-    @ivar password: str
+    @type password: str
 
     @ivar name: user's full name
-    @ivar name: str
+    @type name: str
 
     @ivar roles: list of roles user belongs to
     @type roles: list of str
@@ -51,20 +51,28 @@ class Role(Model):
     Users that are added to this role will inherit all the permissions associated
     with the role.
 
-    @ivar name: role's name, must be unique for each role
-    @type name: str
+    @ivar id: role's id, must be unique for each role
+    @type id: str
+
+    @ivar display_name: user-readable name of the role
+    @type display_name: str
+
+    @ivar description: free form text used to describe the role
+    @type description: str
 
     @ivar permissions: dictionary of resource: tuple of allowed operations
     @type permissions: dict
     """
 
     collection_name = 'roles'
-    unique_indices = ('name',)
+    unique_indices = ('id',)
 
-    def __init__(self, name, permissions=None):
+    def __init__(self, id, display_name=None, description=None, permissions=None):
         super(Role, self).__init__()
 
-        self.name = name
+        self.id = id
+        self.display_name = display_name or id
+        self.description = description
         self.permissions = permissions or {}
 
 
@@ -76,7 +84,7 @@ class Permission(Model):
     @ivar resource: uri path of resource
     @type resource: str
 
-    @ivar users: dictionary of user id: tuple of allowed operations
+    @ivar users: dictionary of user login: tuple of allowed operations
     @type users: dict
     """
 

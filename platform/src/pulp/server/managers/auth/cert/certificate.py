@@ -30,7 +30,7 @@ from pulp.common.util import encode_unicode
 
 log = logging.getLogger(__name__)
 
-class Certificate(object):
+class CertificateManager(object):
     """
     Represents and x.509 certificate.
     @ivar x509: The M2Crypto.X509 backing object.
@@ -551,7 +551,7 @@ class OID(object):
         return '.'.join(self.part)
 
 
-class RedhatCertificate(Certificate):
+class RedhatCertificate(CertificateManager):
     """
     Represents a Red Hat certificate.
     @cvar REDHAT: The Red Hat base OID.
@@ -561,7 +561,7 @@ class RedhatCertificate(Certificate):
     REDHAT = '1.3.6.1.4.1.2312.9'
 
     def update(self, content):
-        Certificate.update(self, content)
+        CertificateManager.update(self, content)
         redhat = OID(self.REDHAT)
         n = len(redhat)
         self.__redhat = self.extensions().ltrim(n)
@@ -578,7 +578,7 @@ class RedhatCertificate(Certificate):
             return self.extensions()
 
     def bogus(self):
-        bogus = Certificate.bogus(self)
+        bogus = CertificateManager.bogus(self)
         if self.serialNumber() < 1:
             bogus.append('Serial Number must be > 0')
         cn = self.subject().get('CN')
@@ -636,7 +636,7 @@ class ProductCertificate(RedhatCertificate):
         s = []
         s.append('RAW:')
         s.append('===================================')
-        s.append(Certificate.__str__(self))
+        s.append(CertificateManager.__str__(self))
         s.append('MODEL:')
         s.append('===================================')
         s.append('Serial#: %s' % self.serialNumber())

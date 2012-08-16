@@ -290,8 +290,8 @@ class TestImportDependencies(rpm_support_base.PulpRPMTests):
         units = [Unit(TYPE_ID_RPM, self.UNIT_KEY_B, {}, '')]
         conduit = importer_mocks.get_import_conduit(units, existing_units=existing_units)
         config = importer_mocks.get_basic_config()
-        config.plugin_config['recursive'] = True
-        config.plugin_config['resolve_dependencies'] = True
+        config.override_config['recursive'] = True
+        config.override_config['resolve_dependencies'] = True
         importer = YumImporter()
         # Test
         result = importer.import_units(repoA, repoB, conduit, config, units)

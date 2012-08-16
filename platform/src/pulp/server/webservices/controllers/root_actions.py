@@ -24,6 +24,7 @@ import web
 
 # Pulp
 from pulp.server.auth.authorization import READ
+from pulp.server.auth import principal
 from pulp.server.managers import factory
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -38,9 +39,9 @@ class LoginController(JSONController):
 
     @auth_required(READ)
     def POST(self):
-        user_manager = factory.user_manager()
-
-        certificate = user_manager.generate_user_certificate()
+        user = principal.get_principal()
+        key, certificate = factory.cert_generation_manager().make_admin_user_cert(user)
+        certificate = key + certificate
         return self.ok(certificate)
 
 # -- web.py application -------------------------------------------------------

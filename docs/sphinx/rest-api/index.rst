@@ -13,6 +13,8 @@ APIs
    content/index
    dispatch/index
    event/index
+   user/index
+   role/index
 
 Documentation
 -------------

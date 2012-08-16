@@ -43,16 +43,15 @@ logs.start_logging()
 db_connection.initialize()
 
 from pulp.server.agent.direct.services import Services as AgentServices
-from pulp.server.auth.admin import ensure_admin
-from pulp.server.auth.authorization import ensure_builtin_roles
+
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    agent, consumers, contents, dispatch, events, plugins, repo_groups,
-    repositories, root_actions, users)
+    agent, consumers, contents, dispatch, events, permissions, plugins, repo_groups,
+    repositories, roles, root_actions, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
@@ -65,10 +64,12 @@ URLS = (
     '/v2/consumers', consumers.application,
     '/v2/content', contents.application,
     '/v2/events', events.application,
+    '/v2/permissions', permissions.application,
     '/v2/plugins', plugins.application,
     '/v2/queued_calls', dispatch.queued_call_application,
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
+    '/v2/roles', roles.application,
     '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,
@@ -102,8 +103,10 @@ def _initialize_pulp():
     dispatch_factory.initialize()
 
     # ensure necessary infrastructure
-    ensure_builtin_roles()
-    ensure_admin()
+    role_manager = manager_factory.role_manager()
+    role_manager.ensure_super_user_role()
+    user_manager = manager_factory.user_manager()
+    user_manager.ensure_admin()
 
     # agent services
     AgentServices.start()

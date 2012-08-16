@@ -174,7 +174,7 @@ class RepoUnitAssociationManager(object):
             manager_factory.repo_manager().update_unit_count(
                 repo_id, unique_count)
 
-    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None):
+    def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None, import_config_override=None):
         """
         Creates associations in a repository based on the contents of a source
         repository. Units from the source repository can be filtered by
@@ -202,6 +202,10 @@ class RepoUnitAssociationManager(object):
         @param criteria: optional; if specified, will filter the units retrieved
                          from the source repository
         @type  criteria: L{UnitAssociationCriteria}
+        
+        @param import_config_override: optional config containing values to use
+                                     for this import only
+        @type  import_config_override: dict
 
         @raise MissingResource: if either of the specified repositories don't exist
         """
@@ -255,11 +259,7 @@ class RepoUnitAssociationManager(object):
         # Invoke the importer
         importer_instance, plugin_config = plugin_api.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
-        # Custom options for dependency resolution
-        plugin_config['recursive'] = True
-        plugin_config['resolve_dependencies'] = True
-
-        call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'])
+        call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'], import_config_override)
         conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
 
         try:
