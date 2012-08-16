@@ -14,15 +14,6 @@
 """
 Determines the correct downloader implementation to return based on the
 feed type.
-
-Each downloader class must implement the following methods:
-
-retrieve_metadata(progress_report, is_cancelled_call, config)
-  Returns the contents of the source's metadata file describing available modules.
-
-retrieve_module(progress_report, is_cancelled_call, config, module_metadata, destination)
-  Copies the specified module bits into the given location. This may involve
-  downloading the module from an external source.
 """
 
 import logging
