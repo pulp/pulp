@@ -16,6 +16,7 @@ with an importer that supports the type of units being copied.
 
 * :param:`source_repo_id,str,repository from which to copy units`
 * :param:`?criteria,criteria document,filters which units to copy from the source repository`
+* :param:`?override_config,object,importer configuration values that override the importer's default configuration`
 
 | :response_list:`_`
 
@@ -34,7 +35,11 @@ with an importer that supports the type of units being copied.
           '$and': [{'name': {'$regex': 'p.*'}}, {'version': {'$gt': '1.0'}}]
         }
       }
-    }
+    },
+   'override_config': {
+     'resolve_dependencies: true,
+     'recursive': true
+    },
   }
 
 

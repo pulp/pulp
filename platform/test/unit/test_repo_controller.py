@@ -1277,9 +1277,11 @@ class RepoAssociateTests(RepoControllersTests):
     def _test_post_with_criteria(self):
 
         # Test
+        overrides = { 'abc':'123' }
         criteria = {'filters' : {'unit' : {'key-1' : 'fus'}}}
         params = {'source_repo_id' : 'source-repo-1',
-                  'criteria' : criteria}
+                  'criteria' : criteria,
+                  'config_overrides' : overrides}
 
         status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
 
@@ -1290,10 +1292,12 @@ class RepoAssociateTests(RepoControllersTests):
         args = self.association_manager_dummy.args
         kwargs = self.association_manager_dummy.kwargs
         self.assertEqual(2, len(args))
-        self.assertEqual(1, len(kwargs))
+        self.assertEqual(2, len(kwargs))
         self.assertEqual('source-repo-1', args[0])
         self.assertEqual('dest-repo-1', args[1])
         self.assertEqual({'key-1' : 'fus'}, kwargs['criteria'].unit_filters)
+        for k,v in overrides.items():
+            self.assertEqual(kwargs['import_config_override'][k], v)
 
     def test_post_missing_source_repo(self):
 

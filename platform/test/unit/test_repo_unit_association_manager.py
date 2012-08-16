@@ -243,13 +243,17 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3', OWNER_TYPE_USER, 'admin')
 
         # Test
+        overrides = { 'abc': '123'}
         criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
-        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
+        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria, import_config_override=overrides)
 
         # Verify
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
 
+        args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
         kwargs = mock_plugins.MOCK_IMPORTER.import_units.call_args[1]
+        for k,v in overrides.items():
+            self.assertEqual(args[3].get(k), v)
         self.assertEqual(1, len(kwargs['units']))
         self.assertEqual(kwargs['units'][0].id, 'unit-2')
 
