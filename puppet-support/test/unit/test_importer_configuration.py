@@ -113,15 +113,58 @@ class FullValidationTests(unittest.TestCase):
         calls.
         """
         # Setup
-        all_mock_calls = (missing, queries, feed)
+        all_mock_calls = (feed, missing, queries)
 
         for x in all_mock_calls:
             x.return_value = True, None
 
         # Test
         c = {}
-        configuration.validate(c)
+        result, msg = configuration.validate(c)
 
         # Verify
+        self.assertTrue(result)
+        self.assertTrue(msg is None)
+
         for x in all_mock_calls:
             x.assert_called_once_with(c)
+
+    @mock.patch('pulp_puppet.importer.configuration._validate_feed')
+    @mock.patch('pulp_puppet.importer.configuration._validate_queries')
+    @mock.patch('pulp_puppet.importer.configuration._validate_remove_missing')
+    def test_validate_with_failure(self, missing, queries, feed):
+        """
+        Tests that the validate() call aggregates to all of the specific test
+        calls.
+        """
+        # Setup
+        all_mock_calls = (feed, missing, queries)
+
+        for x in all_mock_calls:
+            x.return_value = True, None
+        all_mock_calls[1].return_value = False, 'foo'
+
+        # Test
+        c = {}
+        result, msg = configuration.validate(c)
+
+        # Verify
+        self.assertTrue(not result)
+        self.assertEqual(msg, 'foo')
+
+        all_mock_calls[0].assert_called_once_with(c)
+        all_mock_calls[1].assert_called_once_with(c)
+        self.assertEqual(0, all_mock_calls[2].call_count)
+
+
+class UtilitiesTests(unittest.TestCase):
+
+    def test_get_boolean_false(self):
+        # Setup
+        data = {'not-bool' : 'false'}
+
+        # Test
+        result = configuration.get_boolean(data, data.keys()[0])
+
+        # Verify
+        self.assertTrue(not result)

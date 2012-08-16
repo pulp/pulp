@@ -116,6 +116,22 @@ class HttpDownloaderTests(base_downloader.BaseDownloaderTests):
             expected_filename = os.path.join(expected_filename, self.module.filename())
             self.assertTrue(not os.path.exists(os.path.join(expected_filename)))
 
+    @mock.patch('pycurl.Curl')
+    def test_cleanup_module(self, mock_curl_constructor):
+        # Setup
+        mock_curl = mock.MagicMock()
+        mock_curl.getinfo.return_value = 200 # simulate a successful download
+        mock_curl_constructor.return_value = mock_curl
+
+        stored_filename = self.downloader.retrieve_module(self.mock_progress_report, self.module)
+
+        # Test
+        self.downloader.cleanup_module(self.module)
+
+        # Verify
+        self.assertTrue(not os.path.exists(stored_filename))
+
+
     def test_create_metadata_download_urls(self):
         # Setup
         self.config.repo_plugin_config[constants.CONFIG_QUERIES] = ['a', ['b', 'c']]
