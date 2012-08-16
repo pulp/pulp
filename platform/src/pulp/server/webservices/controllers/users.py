@@ -28,6 +28,7 @@ from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+import pulp.server.exceptions as exceptions
 
 
 # -- constants ----------------------------------------------------------------
@@ -45,8 +46,10 @@ class UsersCollection(JSONController):
     @auth_required(READ)
     def GET(self):
 
-        manager = managers.user_manager()
-        users = manager.find_all()
+        query_manager = managers.user_query_manager()
+        users = query_manager.find_all()
+        for user in users:
+            user.update(serialization.link.child_link_obj(user['login']))
 
         return self.ok(users)
 
@@ -58,12 +61,11 @@ class UsersCollection(JSONController):
         login = user_data.get('login', None)
         password = user_data.get('password', None)
         name = user_data.get('name', None)
-        roles = user_data.get('roles', None)
 
         # Creation
         manager = managers.user_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [login, password, name, roles]
+        args = [login, password, name]
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('create')]
@@ -73,7 +75,15 @@ class UsersCollection(JSONController):
                                    weight=weight,
                                    tags=tags,
                                    obfuscate_args=True)
-        return execution.execute_sync_created(self, call_request, login)
+        user = execution.execute_sync(call_request)
+        user_link = serialization.link.child_link_obj(login)
+        user.update(user_link)
+        
+        # Grant permissions
+        permission_manager = managers.permission_manager()
+        permission_manager.grant_automatic_permissions_for_resource(user_link)
+        
+        return self.created(login, user)
 
 
 class UserResource(JSONController):
@@ -86,8 +96,11 @@ class UserResource(JSONController):
     @auth_required(READ)
     def GET(self, login):
 
-        manager = managers.user_manager()
-        user = manager.find_by_login(login)
+        user = managers.user_query_manager().find_by_login(login)
+        if user is None:
+            raise exceptions.MissingResource(login)
+        
+        user.update(serialization.link.current_link_obj())
 
         return self.ok(user)
 

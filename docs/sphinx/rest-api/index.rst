@@ -13,6 +13,7 @@ APIs
    content/index
    dispatch/index
    event/index
+   user/index
 
 Documentation
 -------------

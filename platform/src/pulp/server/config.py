@@ -67,6 +67,7 @@ _default_values = {
         #'oauth_secret': '',
         'user_cert_expiration': '7',
         'consumer_cert_expiration': '3650',
+        'serial_number_path': '/var/lib/pulp/sn.dat',
     },
     'server': {
         'server_name': 'localhost',

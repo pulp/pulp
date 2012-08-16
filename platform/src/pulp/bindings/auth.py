@@ -46,3 +46,85 @@ class UserAPI(PulpAPI):
         path = self.base_path + "%s/" % login
         body = {'delta' : delta}
         return self.server.PUT(path, body)
+
+class RoleAPI(PulpAPI):
+    """
+    Connection class to access role specific calls
+    """
+    def __init__(self, pulp_connection):
+        super(RoleAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/roles/"
+
+    def roles(self):
+        path = self.base_path
+        return self.server.GET(path)
+
+    def create(self, role_id, display_name=None, description=None):
+        path = self.base_path
+        roledata = {"role_id": role_id, 
+                    "display_name": display_name, 
+                    "description": description}
+        return self.server.POST(path, roledata)
+
+    def role(self, role_id):
+        path = self.base_path + ("%s/" % role_id)
+        return self.server.GET(path)
+
+    def delete(self, role_id):
+        path = self.base_path + "%s/" % role_id
+        return self.server.DELETE(path)
+
+    def update(self, role_id, delta):
+        path = self.base_path + "%s/" % role_id
+        body = {'delta' : delta}
+        return self.server.PUT(path, body)
+    
+    def add_user(self, role_id, login):
+        path = self.base_path + "%s/" % role_id + 'users/'
+        data = {"login": login}
+        return self.server.POST(path, data)
+    
+    def remove_user(self, role_id, login):
+        path = self.base_path + "%s/" % role_id + 'users/' +  "%s/" % login
+        return self.server.DELETE(path)
+
+class PermissionAPI(PulpAPI):
+    """
+    Connection class to access permission specific calls
+    """
+    def __init__(self, pulp_connection):
+        super(PermissionAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/permissions/"
+    
+    def permission(self, resource):
+        path = self.base_path 
+        query_parameters = {'resource' : resource} 
+        return self.server.GET(path, query_parameters)
+    
+    def grant_to_user(self, resource, login, operations):
+        path = self.base_path + "actions/grant_to_user/"
+        data = {"resource": resource, 
+                "login": login,
+                "operations": operations}
+        return self.server.POST(path, data)
+    
+    def grant_to_role(self, resource, role_id, operations):
+        path = self.base_path + "actions/grant_to_role/"
+        data = {"resource": resource, 
+                "role_id": role_id,
+                "operations": operations}
+        return self.server.POST(path, data)
+    
+    def revoke_from_user(self, resource, login, operations):
+        path = self.base_path + "actions/revoke_from_user/"
+        data = {"resource": resource, 
+                "login": login,
+                "operations": operations}
+        return self.server.POST(path, data)
+    
+    def revoke_from_role(self, resource, role_id, operations):
+        path = self.base_path + "actions/revoke_from_role/"
+        data = {"resource": resource, 
+                "role_id": role_id,
+                "operations": operations}
+        return self.server.POST(path, data)
