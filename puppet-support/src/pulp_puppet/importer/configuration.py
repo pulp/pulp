@@ -16,11 +16,12 @@ from gettext import gettext as _
 from pulp_puppet.common import constants
 from pulp_puppet.importer.downloaders import factory as downloader_factory
 
-# -- validation ---------------------------------------------------------------
-
 def validate(config):
     """
     Validates the configuration for the puppet module importer.
+
+    :param config: configuration passed in by Pulp
+    :type  config: pulp.plugins.config.PluginCallConfiguration
 
     :return: the expected return from the plugin's validate_config method
     :rtype:  tuple

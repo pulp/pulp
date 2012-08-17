@@ -16,6 +16,7 @@ from gettext import gettext as _
 from pulp.plugins.distributor import Distributor
 
 from pulp_puppet.common import constants
+from pulp_puppet.distributor import configuration
 
 # -- plugins ------------------------------------------------------------------
 
@@ -31,3 +32,7 @@ class PuppetModuleDistributor(Distributor):
             'display_name' : _('Puppet Distributor'),
             'types' : [constants.TYPE_PUPPET_MODULE]
         }
+
+    def validate_config(self, repo, config, related_repos):
+        config.default_config = configuration.DEFAULT_CONFIG
+        return configuration.validate(config)

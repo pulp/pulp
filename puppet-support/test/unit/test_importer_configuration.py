@@ -24,7 +24,8 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed(self):
         # Test
-        result, msg = configuration._validate_feed({constants.CONFIG_FEED : 'http://localhost'})
+        config = PluginCallConfiguration({constants.CONFIG_FEED : 'http://localhost'}, {})
+        result, msg = configuration._validate_feed(config)
 
         # Verify
         self.assertTrue(result)
@@ -32,7 +33,8 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed_missing(self):
         # Test
-        result, msg = configuration._validate_feed({})
+        config = PluginCallConfiguration({}, {})
+        result, msg = configuration._validate_feed(config)
 
         # Verify
         self.assertTrue(result)
@@ -128,7 +130,7 @@ class FullValidationTests(unittest.TestCase):
             x.return_value = True, None
 
         # Test
-        c = {}
+        c = PluginCallConfiguration({}, {})
         result, msg = configuration.validate(c)
 
         # Verify

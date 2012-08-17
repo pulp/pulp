@@ -49,7 +49,7 @@ MODULE_FILENAME = '%s-%s-%s.tar.gz'
 # Substitutions: filename
 STORAGE_MODULE_RELATIVE_PATH = '%s'
 
-# -- configuration keys -------------------------------------------------------
+# -- importer configuration keys ----------------------------------------------
 
 # Location from which to sync modules
 CONFIG_FEED = 'feed'
@@ -61,3 +61,13 @@ CONFIG_QUERIES = 'queries'
 # not on a subsequent sync
 CONFIG_REMOVE_MISSING = 'remove_missing'
 DEFAULT_REMOVE_MISSING = False
+
+# -- distributor configuration keys -------------------------------------------
+
+# Controls if modules will be served over HTTP
+CONFIG_SERVE_HTTP = 'serve_http'
+DEFAULT_SERVE_HTTP = True
+
+# Controls if modules will be served over HTTP
+CONFIG_SERVE_HTTPS = 'serve_https'
+DEFAULT_SERVE_HTTPS = False
