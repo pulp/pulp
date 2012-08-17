@@ -72,7 +72,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
                    clone_id2 = 'clone-some-id-none'):
 
         repo = self.repo_api.create(id, 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/stable/6Server/x86_64/')
         self.assertTrue(repo is not None)
         try:
             repo_sync._sync(repo['id'])
@@ -173,7 +173,7 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
                            clone_id2 = 'clone-publish-default'):
 
         repo = self.repo_api.create(id, 'some name', 'i386',
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/testing/fedora-15/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/stable/6Server/x86_64/')
         self.assertTrue(repo is not None)
         try:
             repo_sync._sync(repo['id'])
@@ -191,4 +191,45 @@ class TestRepoSyncSchedule(testutil.PulpAsyncTest):
         repo_sync.clone(repo['id'], clone_id2, 'clone-publish-false')
         clone_repo = self.repo_api.repository(clone_id2)
         self.assertEquals(clone_repo['publish'], True)
+
+    def test_repo_clone_re_sync(self):
+        repo = self.repo_api.create("some-id", 'some name', 'i386',
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/v1/stable/6Server/x86_64/')
+        self.assertTrue(repo is not None)
+        try:
+            repo_sync._sync(repo['id'])
+        except Exception:
+            raise
+        clone_id = "clone-id-re-sync"
+        # Try repo cloning default case: feed = parent
+        try:
+            repo_sync.clone(repo['id'], clone_id, 'clone-id-re-sync')
+            clone_repo = self.repo_api.repository(clone_id)
+        except Exception, e:
+            print "Exception caught: ", e
+            self.assertTrue(False)
+            raise
+        running_clone = self.check_if_running_clone(clone_id)
+        while running_clone:
+            time.sleep(2)
+            running_clone = self.check_if_running_clone(clone_id)
+            print "Clone still running"
+
+        # Check that local storage has dir and rpms
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + clone_id)
+        assert(len(dirList) > 0)
+        found = self.repo_api.repository(clone_id)
+        packages = found['packages']
+        assert(packages is not None)
+        # now sync the cloned repo
+        try:
+            repo_sync._sync(clone_id)
+        except Exception:
+            raise
+        clone_repo_dup = self.repo_api.repository(clone_id)
+        self.assertTrue(len(found['packages']) == len(clone_repo_dup["packages"]))
+
+
+
+
 
