@@ -1,0 +1,11 @@
+name    'adob-good'
+version '2.0.0'
+source 'http://example.org/adob-good/source'
+author 'adob'
+license 'Apache License, Version 2.0'
+summary 'Good Module Summary'
+description 'Good Module Description'
+project_page 'http://example.org/adob-good'
+
+## Add dependencies, if any:
+# dependency 'username/name', '>= 1.2.0'
