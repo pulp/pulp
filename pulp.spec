@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.11
+Version:        1.1.12
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Fri Aug 17 2012 Jeff Ortel <jortel@redhat.com> 1.1.12-1
+- 848828 - Improve performance of re-promotions on parent cloned repos
+  (pkilambi@redhat.com)
+
 * Fri Jun 29 2012 Jay Dobies <jason.dobies@redhat.com> 1.1.11-1
 - 836640 - The storage of the relative URL changed so we need to update the
   relative URL checking to match that (jason.dobies@redhat.com)
