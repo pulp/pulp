@@ -2561,12 +2561,14 @@ class RepoApi(BaseApi):
 
     def has_parent(self, id):
         """
-        Check if a repo has a parent
+        Check if a repo has a parent feed
         @param id: repository Id
         @return: True if success; else False
         """
         parent_repos = self.repositories({'clone_ids' : id})
-        if len(parent_repos):
+        in_repo = self.repository(id)
+        # check if the parent exists and the clone repo feed is pointing to local
+        if len(parent_repos) and in_repo["source"]["type"] == 'local':
             return True
         return False
  
