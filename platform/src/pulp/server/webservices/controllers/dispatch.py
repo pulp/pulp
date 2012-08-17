@@ -171,6 +171,7 @@ class TaskGroupResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_group_id):
+        link = serialization.link.link_obj('/pulp/api/v2/task_groups/%s/' % task_group_id)
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(task_group_id=task_group_id)
         serialized_call_reports = [c.serialize() for c in call_reports]
@@ -178,6 +179,7 @@ class TaskGroupResource(JSONController):
         serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
         if not serialized_call_reports:
             raise TaskGroupNotFound(task_group_id)
+        map(lambda r: r.update(link), serialized_call_reports)
         return self.ok(serialized_call_reports)
 
 
