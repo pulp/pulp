@@ -204,7 +204,7 @@ class BaseSynchronizer(object):
         raise NotImplementedError('base synchronizer class method called')
 
     def process_packages_from_source(self, dir, repo_id, skip_dict=None, progress_callback=None):
-        if self.is_clone:
+        if self.is_clone or self.repo_api.has_parent(repo_id):
             # clone or re-clone operation
             added_packages = self.clone_packages_from_source(repo_id, skip_dict)
             if self.do_update_metadata:
@@ -288,10 +288,11 @@ class BaseSynchronizer(object):
         return newpkg
 
     def clone_packages_from_source(self, repo_id, skip=None):
-        if not self.is_clone:
-            # parent clone not set, noting to import
-            return {}
-        parent_repo = self.repo_api.repository(self.parent)
+        if not self.parent:
+            parent_repo = self.repo_api.repositories({'clone_ids' : repo_id})[0]
+        else:
+            parent_repo = self.repo_api.repository(self.parent)
+        log.info("found parent repo %s" % self.parent)
         repo = self.repo_api.repository(repo_id)
         added_packages = {}
         if "yum" not in repo['content_types']:
@@ -709,7 +710,8 @@ class BaseSynchronizer(object):
             repo_file_path = "%s/%s" % (dst_repo_dir, filename) #os.path.basename(pkg))
             if not os.path.islink(repo_file_path):
                 pulp.server.util.create_rel_symlink(real_src_file_path, repo_file_path)
-        #    self.progress['num_download'] += 1
+                self.progress['num_download'] += 1
+                self.progress["num_success"] += 1
 
 class YumSynchronizer(BaseSynchronizer):
     """
@@ -721,9 +723,9 @@ class YumSynchronizer(BaseSynchronizer):
         self.yum_repo_grinder_lock = Lock()
 
     def __getstate__(self):
-	state = self.__dict__.copy()
-	state.pop('yum_repo_grinder_lock', None)
-	return state
+        state = self.__dict__.copy()
+        state.pop('yum_repo_grinder_lock', None)
+        return state
 
     def remote(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
@@ -1026,9 +1028,7 @@ class YumSynchronizer(BaseSynchronizer):
             try:
                 rpm_name = os.path.basename(pkg_relativepath)
                 self._create_clone(pkg_relativepath, src_repo_dir, dst_repo_dir)
-                self.progress['num_download'] += 1
                 self.progress['details']["rpm"]["num_success"] += 1
-                self.progress["num_success"] += 1
                 self.progress["item_type"] = BaseFetch.RPM
                 self.progress["item_name"] = rpm_name
             except (IOError, OSError):
@@ -1127,13 +1127,13 @@ class YumSynchronizer(BaseSynchronizer):
         log.debug("Copying treeinfo file from %s to %s" % (treecfg, dist_tree_path))
         try:
             skip_copy = False
-            if os.path.exists(dist_tree_path) and not self.is_clone:
+            if os.path.exists(dist_tree_path):
                 dst_treecfg_checksum = pulp.server.util.get_file_checksum(filename=dist_tree_path)
                 src_treecfg_checksum = pulp.server.util.get_file_checksum(filename=treecfg)
                 if src_treecfg_checksum == dst_treecfg_checksum:
                     log.info("treecfg file %s already exists with same checksum. skip import" % dist_tree_path)
                     skip_copy = True
-            if not skip_copy and not self.is_clone:
+            if not skip_copy:
                 if not os.path.isdir(os.path.dirname(dist_tree_path)):
                     os.makedirs(os.path.dirname(dist_tree_path))
                 shutil.copy(treecfg, dist_tree_path)
@@ -1156,15 +1156,7 @@ class YumSynchronizer(BaseSynchronizer):
                 skip_copy = False
                 rel_file_path = imfile.split('/images/')[-1]
                 dst_file_path = os.path.join(distro_path, rel_file_path)
-                if self.is_clone:
-                    src_repo_img_dir = "%s/%s" % (src_repo_dir, "images")
-                    dst_repo_img_dir =  "%s/%s" % (dst_repo_dir, "images")
-                    self._create_clone(rel_file_path, src_repo_img_dir, dst_repo_img_dir)
-                    self.progress['num_download'] += 1
-                    self.progress['details']["tree_file"]["num_success"] += 1
-                    self.progress["num_success"] += 1
-                    skip_copy = True
-                elif os.path.exists(dst_file_path):
+                if os.path.exists(dst_file_path):
                     dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
                     src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
                     if src_file_checksum == dst_file_checksum:
@@ -1181,6 +1173,70 @@ class YumSynchronizer(BaseSynchronizer):
                     self.progress['details']["tree_file"]["num_success"] += 1
                     self.progress["num_success"] += 1
                     log.debug("Imported file %s " % dst_file_path)
+                repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", dst_file_path.split(distro_path)[-1])
+                if not os.path.islink(repo_dist_path):
+                    log.info("Creating a symlink to repo location from [%s] to [%s]" % (dst_file_path, repo_dist_path))
+                    pulp.server.util.create_rel_symlink(dst_file_path, repo_dist_path)
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
+                self._add_error_details(imfile, "tree_file", error_info)
+
+            self.progress['step'] = ProgressReport.DownloadItems
+            item_size = self._calculate_bytes(src_repo_dir, [imfile])
+            self.progress['size_left'] -= item_size
+            self.progress['items_left'] -= 1
+            self.progress['details']["tree_file"]["items_left"] -= 1
+            self.progress['details']["tree_file"]["size_left"] -= item_size
+            if progress_callback is not None:
+                progress_callback(self.progress)
+
+    def _clone_distributions(self, dst_repo_dir, src_repo_dir, progress_callback=None):
+        imlist = self.list_tree_files(src_repo_dir)
+        if not imlist:
+            log.info("No image files to import")
+            return
+        # compute and import treeinfo
+        treecfg = None
+        for tree_info_name in ['treeinfo', '.treeinfo']:
+            treecfg = os.path.join(src_repo_dir, tree_info_name)
+            if os.path.exists(treecfg):
+                break
+            else:
+                treecfg = None
+        if not treecfg:
+            log.info("No treeinfo file found in the source tree; no distributions to process")
+            return
+        treeinfo = parse_treeinfo(treecfg)
+        ks_label = "ks-%s-%s-%s-%s" % (treeinfo['family'], treeinfo['variant'],
+                                               treeinfo['version'], treeinfo['arch'] or "noarch")
+        distro_path = "%s/%s" % (pulp.server.util.top_distribution_location(), ks_label)
+        if not os.path.exists(distro_path):
+            os.makedirs(distro_path)
+        dist_tree_path = os.path.join(distro_path, tree_info_name)
+        log.debug("Copying treeinfo file from %s to %s" % (treecfg, dist_tree_path))
+
+        repo_treefile_path = os.path.join(dst_repo_dir, tree_info_name)
+        if not os.path.islink(repo_treefile_path):
+            log.info("creating a symlink for treeinfo file from %s to %s" % (dist_tree_path, repo_treefile_path))
+            pulp.server.util.create_rel_symlink(dist_tree_path, repo_treefile_path)
+
+        # process ks files associated to distribution
+        for imfile in imlist:
+            try:
+                if self.stopped:
+                    raise CancelException()
+                rel_file_path = imfile.split('/images/')[-1]
+                dst_file_path = os.path.join(distro_path, rel_file_path)
+                src_repo_img_dir = "%s/%s" % (src_repo_dir, "images")
+                dst_repo_img_dir =  "%s/%s" % (dst_repo_dir, "images")
+                self._create_clone(rel_file_path, src_repo_img_dir, dst_repo_img_dir)
+                self.progress['details']["tree_file"]["num_success"] += 1
+                self.progress["num_success"] += 1
                 repo_dist_path = "%s/%s/%s" % (dst_repo_dir, "images", dst_file_path.split(distro_path)[-1])
                 if not os.path.islink(repo_dist_path):
                     log.info("Creating a symlink to repo location from [%s] to [%s]" % (dst_file_path, repo_dist_path))
@@ -1288,7 +1344,7 @@ class YumSynchronizer(BaseSynchronizer):
 
             if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
                 log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                if self.is_clone:
+                if self.is_clone or self.repo_api.has_parent(repo_id):
                     self._clone_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, 
                             blacklist_packages, progress_callback)
                     log.debug("Completed _clone_rpms(%s,%s)" %
@@ -1305,9 +1361,12 @@ class YumSynchronizer(BaseSynchronizer):
                 log.info("Skipping package imports from sync process")
             # process distributions
             if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
-                log.debug("Starting _sync_distributions(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                self._sync_distributions(dst_repo_dir, src_repo_dir, progress_callback)
-                log.debug("Completed _sync_distributions(%s,%s)" % (dst_repo_dir, src_repo_dir))
+                if self.is_clone or self.repo_api.has_parent(repo_id):
+                    self._clone_distributions(dst_repo_dir, src_repo_dir, progress_callback)
+                    log.debug("Completed _clone_distributions(%s,%s)" % (dst_repo_dir, src_repo_dir))
+                else:
+                    self._sync_distributions(dst_repo_dir, src_repo_dir, progress_callback)
+                    log.debug("Completed _sync_distributions(%s,%s)" % (dst_repo_dir, src_repo_dir))
             else:
                 log.info("Skipping distribution imports from sync process")
 
