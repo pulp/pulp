@@ -79,7 +79,7 @@ class TaskQueue(object):
                 for task in ready_tasks:
                     self._run_ready_task(task)
                 self._cancel_tasks()
-                self._clear_completed_task_cache()
+                self._purge_completed_task_cache()
             except Exception, e:
                 msg = _('Exception in task queue dispatcher thread:\n%(e)s')
                 _LOG.critical(msg % {'e': traceback.format_exception(*sys.exc_info())})
@@ -133,12 +133,13 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
-    def _clear_completed_task_cache(self):
+    def _purge_completed_task_cache(self):
         """
-        Clear expired tasks from the completed tasks cache.
+        Purge expired tasks from the completed tasks cache.
         """
         expired_cutoff = datetime.now(dateutils.utc_tz()) - self.completed_task_cache_life
         index = 0 # index of the first non-expired cached task
+        # the tasks stored in the cache are in ascending order of finish time
         for i, task in enumerate(self.__completed_tasks):
             if task.call_report.finish_time > expired_cutoff:
                 index = i
@@ -366,6 +367,8 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            return itertools.chain(self.__running_tasks[:], self.__waiting_tasks[:])
+            return itertools.chain(self.__completed_tasks[:],
+                                   self.__running_tasks[:],
+                                   self.__waiting_tasks[:])
         finally:
             self.__lock.release()
