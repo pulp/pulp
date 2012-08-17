@@ -97,3 +97,25 @@ class PluginCallConfiguration:
             return self.plugin_config[key]
 
         return default
+
+    def get_boolean(self, key):
+        """
+        Parses the given key as a boolean value. If the key is not present or
+        is not one of the acceptable values for representing a boolean, None
+        is returned.
+
+        :param key: key to look up in the configuration
+        :type  key: str
+
+        :return: boolean representation of the value if it can be parsed; None otherwise
+        :rtype:  bool, None
+        """
+        str = self.get(key)
+        if str is not None:
+            str = str.lower()
+            if str == 'true':
+                return True
+            elif str == 'false':
+                return False
+        return None
+

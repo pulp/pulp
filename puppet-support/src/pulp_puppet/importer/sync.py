@@ -24,7 +24,6 @@ from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
 from pulp_puppet.common import constants
 from pulp_puppet.common.model import RepositoryMetadata, Module
-from pulp_puppet.importer.configuration import  get_boolean
 from pulp_puppet.importer.downloaders import factory as downloader_factory
 
 
@@ -341,7 +340,7 @@ class PuppetModuleSyncRun(object):
         if constants.CONFIG_REMOVE_MISSING not in self.config.keys():
             return constants.DEFAULT_REMOVE_MISSING
         else:
-            return get_boolean(self.config, constants.CONFIG_REMOVE_MISSING)
+            return self.config.get_boolean(constants.CONFIG_REMOVE_MISSING)
 
 # -- private classes ----------------------------------------------------------
 

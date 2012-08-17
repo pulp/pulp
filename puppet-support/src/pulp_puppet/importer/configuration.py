@@ -16,18 +16,6 @@ from gettext import gettext as _
 from pulp_puppet.common import constants
 from pulp_puppet.importer.downloaders import factory as downloader_factory
 
-# -- utility ------------------------------------------------------------------
-
-def get_boolean(config, key):
-    str = config.get(key)
-    if str is not None:
-        str = str.lower()
-        if str == 'true':
-            return True
-        elif str == 'false':
-            return False
-    return None
-
 # -- validation ---------------------------------------------------------------
 
 def validate(config):
@@ -96,7 +84,7 @@ def _validate_remove_missing(config):
         return True, None
 
     # Make sure it's a boolean
-    parsed = get_boolean(config, constants.CONFIG_REMOVE_MISSING)
+    parsed = config.get_boolean(constants.CONFIG_REMOVE_MISSING)
     if parsed is None:
         return False, _('The value for <%(r)s> must be either "true" or "false"') % {'r' : constants.CONFIG_REMOVE_MISSING}
 

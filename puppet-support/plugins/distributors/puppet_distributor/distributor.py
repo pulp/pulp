@@ -10,3 +10,24 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+from gettext import gettext as _
+
+from pulp.plugins.distributor import Distributor
+
+from pulp_puppet.common import constants
+
+# -- plugins ------------------------------------------------------------------
+
+class PuppetModuleDistributor(Distributor):
+    def __init__(self):
+        super(PuppetModuleDistributor, self).__init__()
+        self.publish_cancelled = False
+
+    @classmethod
+    def metadata(cls):
+        return {
+            'id' : constants.IMPORTER_ID_PUPPET,
+            'display_name' : _('Puppet Distributor'),
+            'types' : [constants.TYPE_PUPPET_MODULE]
+        }

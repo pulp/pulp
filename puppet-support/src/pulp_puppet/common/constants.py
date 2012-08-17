@@ -22,6 +22,9 @@ support plugins (importers, distributors, extensions).
 # ID used to refer to the puppet importer
 IMPORTER_ID_PUPPET = 'puppet_importer'
 
+# ID used to refer to the puppet distributor
+DISTRIBUTOR_ID_PUPPET = 'puppet_distributor'
+
 # ID of the puppet module type definition (must match what's in puppet.json)
 TYPE_PUPPET_MODULE = 'puppet_module'
 
