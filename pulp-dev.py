@@ -231,11 +231,13 @@ def install(opts):
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
     os.system('chown -R apache:apache /var/lib/pulp/published')
+    os.system('chown -R apache:apache /var/www/pulp_puppet')
 
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
+
     # Update for certs
     os.system('chown -R apache:apache /etc/pki/pulp')
 
