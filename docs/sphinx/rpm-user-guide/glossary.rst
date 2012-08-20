@@ -7,7 +7,7 @@ Glossary
 
   agent
     A daemon (service) running on a consumer.  The agent provides a command
-    & control API which is used by the Pulp server to affect content changes
+    & control API which is used by the Pulp server to initiate content changes
     on the consumer.  It also sends scheduled reports concerning consumer
     status and installed content profiles to the Pulp server.
     
@@ -42,15 +42,13 @@ Glossary
     ISO Date format that is able to specify an optional number of recurrences,
     an optional start time, and a time interval. More information can be
     found :ref:`in the conventions section of this guide <date-and-time>`.
-    
-  pulp.repo
-    The ``pulp.repo`` file is a :term:`yum` configuration file that is located
-    in ``/etc/yum.respos.d``.  It is managed by Pulp which ensures that it contains
-    entries corresponding to Pulp :term:`repository` :term:`bindings <binding>`.
 
   registration
     The association of a :term:`consumer` to a Pulp server.  Once registered,
-    a consumer has access to content.
+    a consumer is added to Pulp's inventory and may be :term:`bound <binding>` to
+    Pulp provided :term:`repositories <repository>`.  :term:`Content <content unit>`
+    installs, updates and uninstalls may be initiated from the Pulp server on
+    consumers running the Pulp :term:`agent`.
 
   repository
     A collection of content units. A repository's supported types is dictated
@@ -69,5 +67,5 @@ Glossary
     and obsolete processing based on "repository" metadata. It can also 
     perform installation of new packages, removal of old packages and perform
     queries on the installed and/or available packages among many other 
-    commands/services (see below). yum is similar to other high level package
+    commands/services. yum is similar to other high level package
     managers like apt-get and smart.
