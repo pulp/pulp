@@ -21,7 +21,6 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, SyncReport, Unit
 
 from pulp_puppet.common import constants
-from pulp_puppet.importer import sync
 from pulp_puppet.importer.sync import PuppetModuleSyncRun
 
 # -- constants ----------------------------------------------------------------
@@ -95,17 +94,29 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(report.summary['total_execution_time'] is not None)
         self.assertTrue(report.summary['total_execution_time'] > -1)
 
+        self.assertEqual(report.details['total_count'], 2)
+        self.assertEqual(report.details['finished_count'], 2)
+        self.assertEqual(report.details['error_count'], 0)
+
         # Progress Reporting
         pr = self.run.progress_report
-        self.assertEqual(pr.metadata_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
         self.assertEqual(pr.metadata_query_total_count, 1)
         self.assertEqual(pr.metadata_query_finished_count, 1)
         self.assertTrue(pr.metadata_execution_time is not None)
+        self.assertEqual(pr.metadata_error_message, None)
+        self.assertEqual(pr.metadata_exception, None)
+        self.assertEqual(pr.metadata_traceback, None)
 
-        self.assertEqual(pr.modules_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.modules_state, constants.STATE_SUCCESS)
         self.assertEqual(pr.modules_total_count, 2)
+        self.assertEqual(pr.modules_error_count, 0)
         self.assertEqual(pr.modules_finished_count, 2)
         self.assertTrue(pr.modules_execution_time is not None)
+        self.assertEqual(pr.modules_error_message, None)
+        self.assertEqual(pr.modules_exception, None)
+        self.assertEqual(pr.modules_traceback, None)
+        self.assertEqual(pr.modules_individual_errors, None)
 
         # Number of times update was called on the progress report
         self.assertEqual(self.conduit.set_progress.call_count, 9)
@@ -121,11 +132,11 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(not report.success_flag)
 
         pr = self.run.progress_report
-        self.assertEqual(pr.metadata_state, sync.STATE_FAILED)
+        self.assertEqual(pr.metadata_state, constants.STATE_FAILED)
         self.assertEqual(pr.metadata_query_total_count, 1)
         self.assertEqual(pr.metadata_query_finished_count, 0)
 
-        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+        self.assertEqual(pr.modules_state, constants.STATE_NOT_STARTED)
         self.assertEqual(pr.modules_total_count, None)
         self.assertEqual(pr.modules_finished_count, None)
 
@@ -159,7 +170,7 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(not report.success_flag)
 
         pr = self.run.progress_report
-        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+        self.assertEqual(pr.modules_state, constants.STATE_NOT_STARTED)
 
     @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._create_downloader')
     def test_parse_metadata_retrieve_exception(self, mock_create):
@@ -173,7 +184,7 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(not report.success_flag)
 
         pr = self.run.progress_report
-        self.assertEqual(pr.metadata_state, sync.STATE_FAILED)
+        self.assertEqual(pr.metadata_state, constants.STATE_FAILED)
         self.assertEqual(pr.metadata_query_total_count, None)
         self.assertEqual(pr.metadata_query_finished_count, None)
         self.assertTrue(pr.metadata_execution_time is not None)
@@ -181,7 +192,7 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(pr.metadata_exception is not None)
         self.assertTrue(pr.metadata_traceback is not None)
 
-        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+        self.assertEqual(pr.modules_state, constants.STATE_NOT_STARTED)
 
     @mock.patch('pulp_puppet.importer.downloaders.local.LocalDownloader.retrieve_metadata')
     def test_parse_metadata_parse_exception(self, mock_retrieve):
@@ -195,13 +206,13 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(not report.success_flag)
 
         pr = self.run.progress_report
-        self.assertEqual(pr.metadata_state, sync.STATE_FAILED)
+        self.assertEqual(pr.metadata_state, constants.STATE_FAILED)
         self.assertTrue(pr.metadata_execution_time is not None)
         self.assertTrue(pr.metadata_error_message is not None)
         self.assertTrue(pr.metadata_exception is not None)
         self.assertTrue(pr.metadata_traceback is not None)
 
-        self.assertEqual(pr.modules_state, sync.STATE_NOT_STARTED)
+        self.assertEqual(pr.modules_state, constants.STATE_NOT_STARTED)
 
     @mock.patch('pulp_puppet.importer.sync.PuppetModuleSyncRun._do_import_modules')
     def test_import_modules_exception(self, mock_import):
@@ -215,7 +226,7 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(not report.success_flag)
 
         pr = self.run.progress_report
-        self.assertEqual(pr.metadata_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
         self.assertEqual(pr.metadata_query_total_count, 1)
         self.assertEqual(pr.metadata_query_finished_count, 1)
         self.assertTrue(pr.metadata_execution_time is not None)
@@ -223,7 +234,7 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(pr.metadata_exception is None)
         self.assertTrue(pr.metadata_traceback is None)
 
-        self.assertEqual(pr.modules_state, sync.STATE_FAILED)
+        self.assertEqual(pr.modules_state, constants.STATE_FAILED)
         self.assertEqual(pr.modules_total_count, 2)
         self.assertEqual(pr.modules_finished_count, 0)
         self.assertTrue(pr.modules_execution_time is not None)
@@ -249,9 +260,9 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(report.success_flag)
 
         pr = self.run.progress_report
-        self.assertEqual(pr.metadata_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
 
-        self.assertEqual(pr.modules_state, sync.STATE_SUCCESS)
+        self.assertEqual(pr.modules_state, constants.STATE_SUCCESS)
         self.assertEqual(pr.modules_total_count, 2)
         self.assertEqual(pr.modules_finished_count, 0)
         self.assertEqual(pr.modules_error_count, 2)

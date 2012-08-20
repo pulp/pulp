@@ -22,6 +22,9 @@ support plugins (importers, distributors, extensions).
 # ID used to refer to the puppet importer
 IMPORTER_ID_PUPPET = 'puppet_importer'
 
+# ID used to refer to the puppet distributor
+DISTRIBUTOR_ID_PUPPET = 'puppet_distributor'
+
 # ID of the puppet module type definition (must match what's in puppet.json)
 TYPE_PUPPET_MODULE = 'puppet_module'
 
@@ -46,7 +49,16 @@ MODULE_FILENAME = '%s-%s-%s.tar.gz'
 # Substitutions: filename
 STORAGE_MODULE_RELATIVE_PATH = '%s'
 
-# -- configuration keys -------------------------------------------------------
+# -- progress states ----------------------------------------------------------
+
+STATE_NOT_STARTED = 'not-started'
+STATE_RUNNING = 'running'
+STATE_SUCCESS = 'success'
+STATE_FAILED = 'failed'
+
+INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
+
+# -- importer configuration keys ----------------------------------------------
 
 # Location from which to sync modules
 CONFIG_FEED = 'feed'
@@ -58,3 +70,21 @@ CONFIG_QUERIES = 'queries'
 # not on a subsequent sync
 CONFIG_REMOVE_MISSING = 'remove_missing'
 DEFAULT_REMOVE_MISSING = False
+
+# -- distributor configuration keys -------------------------------------------
+
+# Controls if modules will be served over HTTP
+CONFIG_SERVE_HTTP = 'serve_http'
+DEFAULT_SERVE_HTTP = True
+
+# Controls if modules will be served over HTTP
+CONFIG_SERVE_HTTPS = 'serve_https'
+DEFAULT_SERVE_HTTPS = False
+
+# Local directory the web server will serve for HTTP repositories
+CONFIG_HTTP_DIR = 'http_dir'
+DEFAULT_HTTP_DIR = '/var/www/pulp_puppet/http/repos'
+
+# Local directory the web server will serve for HTTPS repositories
+CONFIG_HTTPS_DIR = 'https_dir'
+DEFAULT_HTTPS_DIR = '/var/www/pulp_puppet/https/repos'

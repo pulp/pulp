@@ -51,6 +51,9 @@ class PluginCallConfiguration:
         self.repo_plugin_config = repo_plugin_config or {}
         self.override_config = override_config or {}
 
+        # May be set by the plugin in code to populate its defaults
+        self.default_config = {}
+
     def keys(self):
         """
         Aggregates configuration keys across all three configuration sources
@@ -60,9 +63,10 @@ class PluginCallConfiguration:
         @rtype:  list
         """
         keys = set()
-        keys.update(self.plugin_config.keys())
-        keys.update(self.repo_plugin_config.keys())
-        keys.update(self.override_config.keys())
+
+        for c in self._all_configs():
+            keys.update(c.keys())
+
         return list(keys)
 
     def get(self, key, default=None):
@@ -72,6 +76,7 @@ class PluginCallConfiguration:
           1. override config
           2. repo config
           3. plugin config
+          4. default config
 
         If the key is not found in any of the sources, the specified default
         value is returned. If there is no default provided, None is returned.
@@ -87,13 +92,49 @@ class PluginCallConfiguration:
         @rtype:  object
         """
 
-        if key in self.override_config:
-            return self.override_config[key]
-
-        if key in self.repo_plugin_config:
-            return self.repo_plugin_config[key]
-
-        if key in self.plugin_config:
-            return self.plugin_config[key]
+        # Find the first config (ordered by priority) where the key is present
+        for c in self._all_configs():
+            if key in c:
+                return c[key]
 
         return default
+
+    def get_boolean(self, key):
+        """
+        Parses the given key as a boolean value. If the key is not present or
+        is not one of the acceptable values for representing a boolean, None
+        is returned.
+
+        :param key: key to look up in the configuration
+        :type  key: str
+
+        :return: boolean representation of the value if it can be parsed; None otherwise
+        :rtype:  bool, None
+        """
+
+        str = self.get(key)
+
+        # Handle the case where it's already a boolean
+        if isinstance(str, bool):
+            return str
+
+        # If we're here, need to parse the string version of a boolean
+        if str is not None:
+            str = str.lower()
+            if str == 'true':
+                return True
+            elif str == 'false':
+                return False
+        return None
+
+    def _all_configs(self):
+        """
+        Returns a single ordered list of all configurations to use in a lookup.
+        The ordering in here defines the priority of the configurations and
+        should not be changed.
+
+        :return: list of configuration objects in this instance
+        :rtype:  list
+        """
+        return (self.override_config, self.repo_plugin_config,
+                self.plugin_config, self.default_config)
