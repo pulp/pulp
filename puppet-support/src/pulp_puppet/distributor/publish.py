@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 from   datetime import datetime
 from   gettext import gettext as _
 import logging
@@ -229,7 +230,8 @@ class PuppetModulePublishRun(object):
             symlink_filename = os.path.join(symlink_path, os.path.basename(module.storage_path))
 
             try:
-                os.makedirs(symlink_path)
+                if not os.path.exists(symlink_path):
+                    os.makedirs(symlink_path)
                 os.symlink(module.storage_path, symlink_filename)
                 self.progress_report.modules_finished_count += 1
             except Exception, e:
@@ -249,7 +251,9 @@ class PuppetModulePublishRun(object):
         metadata = RepositoryMetadata()
 
         for m in modules:
-            module = Module.from_dict(m.metadata)
+            combined = copy.copy(m.unit_key)
+            combined.update(m.metadata)
+            module = Module.from_dict(combined)
             metadata.modules.append(module)
 
         # Write the JSON representation of the metadata to the repository
