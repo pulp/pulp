@@ -1,0 +1,65 @@
+Tips for how we generated this test data.
+We used test scripts under pulp/playpen/certs
+
+
+$ ./setup.sh 
+Running: openssl genrsa -out ./certs/Pulp_CA.key 2048
+Running: openssl req -new -x509 -days 10950 -key ./certs/Pulp_CA.key -out ./certs/Pulp_CA.cert -subj '/C=US/ST=NC/L=Raleigh/O=Red Hat/OU=Pulp/CN=Pulp-Root-CA'
+CA Key: ./certs/Pulp_CA.key
+CA Cert: ./certs/Pulp_CA.cert
+Running: openssl genrsa -out ./certs/Pulp_server.key 2048
+Running: openssl req -new -key ./certs/Pulp_server.key -out ./certs/Pulp_server.csr -subj '/C=US/ST=NC/L=Raleigh/O=Red Hat/OU=Pulp/CN=jwm-laptop'
+Running: openssl x509 -req -days 10950 -CA ./certs/Pulp_CA.cert -CAkey ./certs/Pulp_CA.key -in ./certs/Pulp_server.csr -out ./certs/Pulp_server.cert -CAserial ./certs/Pulp_CA.srl
+Server Cert: ./certs/Pulp_server.cert
+Server Key: ./certs/Pulp_server.key
+Running: openssl genrsa -out ./certs/Pulp_client.key 2048
+Running: openssl req -new -key ./certs/Pulp_client.key -out ./certs/Pulp_client.csr -subj '/C=US/ST=NC/L=Raleigh/O=Red Hat/OU=Pulp/CN=Pulp_Content_Cert'
+Running: openssl x509 -req -days 10950 -CA ./certs/Pulp_CA.cert -CAkey ./certs/Pulp_CA.key -extfile ./extensions.txt -extensions pulp-repos -in ./certs/Pulp_client.csr -out ./certs/Pulp_client.cert -CAserial ./certs/Pulp_CA.srl
+Client Cert: ./certs/Pulp_client.cert
+Client Key: ./certs/Pulp_client.key
+Running: cp ./certs/Pulp_server.key /etc/pki/pulp/content/Pulp_server.key
+Running: cp ./certs/Pulp_server.cert /etc/pki/pulp/content/Pulp_server.cert
+Running: sed -i 's/^SSLCertificateFile.*/SSLCertificateFile \/etc\/pki\/pulp\/content\/Pulp_server.cert/' /etc/httpd/conf.d/ssl.conf
+Running: sed -i 's/^SSLCertificateKeyFile.*/SSLCertificateKeyFile \/etc\/pki\/pulp\/content\/Pulp_server.key/' /etc/httpd/conf.d/ssl.conf
+Httpd ssl.conf has been updated
+Running: sed -i 's/enabled: false/enabled: true/' /etc/pulp/repo_auth.conf
+Running: /sbin/service httpd restart
+
+
+
+$ cd certs/
+$ mkdir ok
+$ mv Pulp_client.* ok
+$ mkdir revoked
+
+$ cd ..
+$ ./create_client_cert.py 
+Running: openssl genrsa -out ./certs/Pulp_client.key 2048
+Running: openssl req -new -key ./certs/Pulp_client.key -out ./certs/Pulp_client.csr -subj '/C=US/ST=NC/L=Raleigh/O=Red Hat/OU=Pulp/CN=Pulp_Content_Cert'
+Running: openssl x509 -req -days 10950 -CA ./certs/Pulp_CA.cert -CAkey ./certs/Pulp_CA.key -extfile ./extensions.txt -extensions pulp-repos -in ./certs/Pulp_client.csr -out ./certs/Pulp_client.cert -CAserial ./certs/Pulp_CA.srl
+Client Cert: ./certs/Pulp_client.cert
+Client Key: ./certs/Pulp_client.key
+
+$ cd certs
+$ mv Pulp_client.cert revoked
+
+$ cd ..
+
+
+$ ./revoke_cert.py ./certs/revoked/Pulp_client.cert 
+Running: openssl ca -revoke ./certs/revoked/Pulp_client.cert -keyfile ./certs/Pulp_CA.key -cert ./certs/Pulp_CA.cert -config ./openssl_crl.cnf -md sha1
+Running: openssl ca -gencrl -keyfile ./certs/Pulp_CA.key -cert ./certs/Pulp_CA.cert -out ./certs/Pulp_CRL.pem -config ./openssl_crl.cnf -crlexts crl_ext -md sha1
+Revoked cert: ./certs/revoked/Pulp_client.cert
+CRL generated at: ./certs/Pulp_CRL.pem
+
+$ ./verify_revoked_cert.sh ./certs/Pulp_CA.cert ./certs/Pulp_CRL.pem ./certs/revoked/Pulp_client.cert 
+./certs/revoked/Pulp_client.cert: C = US, ST = NC, L = Raleigh, O = Red Hat, OU = Pulp, CN = Pulp_Content_Cert
+error 23 at 0 depth lookup:certificate revoked
+
+
+$ ./verify_revoked_cert.sh ./certs/Pulp_CA.cert ./certs/Pulp_CRL.pem ./certs/ok/Pulp_client.cert 
+./certs/ok/Pulp_client.cert: OK
+
+$ cp -R certs/ /git/pulp/rpm-support/test/unit/data/test_repo_cert_utils/crl/
+
+Now replace the "ok" and "revoked" directories for test testdata
