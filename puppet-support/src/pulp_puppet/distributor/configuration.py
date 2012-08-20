@@ -21,6 +21,9 @@ from pulp_puppet.common import constants
 DEFAULT_CONFIG = {
     constants.CONFIG_SERVE_HTTP : constants.DEFAULT_SERVE_HTTP,
     constants.CONFIG_SERVE_HTTPS : constants.DEFAULT_SERVE_HTTPS,
+
+    constants.CONFIG_HTTP_DIR : constants.DEFAULT_HTTP_DIR,
+    constants.CONFIG_HTTPS_DIR : constants.DEFAULT_HTTPS_DIR,
 }
 
 

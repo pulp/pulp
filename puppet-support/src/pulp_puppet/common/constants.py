@@ -80,3 +80,11 @@ DEFAULT_SERVE_HTTP = True
 # Controls if modules will be served over HTTP
 CONFIG_SERVE_HTTPS = 'serve_https'
 DEFAULT_SERVE_HTTPS = False
+
+# Local directory the web server will serve for HTTP repositories
+CONFIG_HTTP_DIR = 'http_dir'
+DEFAULT_HTTP_DIR = '/var/www/pulp_puppet/http/repos'
+
+# Local directory the web server will serve for HTTPS repositories
+CONFIG_HTTPS_DIR = 'https_dir'
+DEFAULT_HTTPS_DIR = '/var/www/pulp_puppet/https/repos'

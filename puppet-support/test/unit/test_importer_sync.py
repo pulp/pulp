@@ -21,7 +21,6 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, SyncReport, Unit
 
 from pulp_puppet.common import constants
-from pulp_puppet.importer import sync
 from pulp_puppet.importer.sync import PuppetModuleSyncRun
 
 # -- constants ----------------------------------------------------------------
@@ -95,17 +94,29 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(report.summary['total_execution_time'] is not None)
         self.assertTrue(report.summary['total_execution_time'] > -1)
 
+        self.assertEqual(report.details['total_count'], 2)
+        self.assertEqual(report.details['finished_count'], 2)
+        self.assertEqual(report.details['error_count'], 0)
+
         # Progress Reporting
         pr = self.run.progress_report
         self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
         self.assertEqual(pr.metadata_query_total_count, 1)
         self.assertEqual(pr.metadata_query_finished_count, 1)
         self.assertTrue(pr.metadata_execution_time is not None)
+        self.assertEqual(pr.metadata_error_message, None)
+        self.assertEqual(pr.metadata_exception, None)
+        self.assertEqual(pr.metadata_traceback, None)
 
         self.assertEqual(pr.modules_state, constants.STATE_SUCCESS)
         self.assertEqual(pr.modules_total_count, 2)
+        self.assertEqual(pr.modules_error_count, 0)
         self.assertEqual(pr.modules_finished_count, 2)
         self.assertTrue(pr.modules_execution_time is not None)
+        self.assertEqual(pr.modules_error_message, None)
+        self.assertEqual(pr.modules_exception, None)
+        self.assertEqual(pr.modules_traceback, None)
+        self.assertEqual(pr.modules_individual_errors, None)
 
         # Number of times update was called on the progress report
         self.assertEqual(self.conduit.set_progress.call_count, 9)

@@ -100,8 +100,22 @@ class ProgressReport(object):
             'modules' : self._modules_section(),
             'metadata' : self._metadata_section(),
         }
+        return report
 
-    # -- report creation methods ----------------------------------------------
+    def add_failed_module(self, unit, traceback):
+        """
+        Updates the progress report that a module failed to be built to the
+        repository.
+
+        :param unit: Pulp representation of the module
+        :type  unit: pulp.plugins.model.AssociatedUnit
+        """
+        self.modules_error_count += 1
+        self.modules_individual_errors = self.modules_individual_errors or {}
+        error_key = '%s-%s-%s' % (unit.unit_key['name'], unit.unit_key['version'], unit.unit_key['author'])
+        self.modules_individual_errors[error_key] = reporting.format_traceback(traceback)
+
+# -- report creation methods ----------------------------------------------
 
     def _modules_section(self):
         modules_report = {
