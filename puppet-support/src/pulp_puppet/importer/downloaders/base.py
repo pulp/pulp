@@ -32,7 +32,7 @@ class BaseDownloader(object):
         downloads take place.
 
         :param progress_report: used to communicate the progress of this operation
-        :type  progress_report: pulp_puppet.importer.sync.ProgressReport
+        :type  progress_report: pulp_puppet.importer.progress.ProgressReport
 
         :return: list of JSON documents describing all modules to import
         :rtype:  list
@@ -49,7 +49,7 @@ class BaseDownloader(object):
 
         :param progress_report: used if any updates need to be made as the
                download runs
-        :type  progress_report: pulp_puppet.importer.sync.ProgressReport
+        :type  progress_report: pulp_puppet.importer.progress.ProgressReport
 
         :param module: module to download
         :type  module: pulp_puppet.common.model.Module

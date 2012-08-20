@@ -49,6 +49,15 @@ MODULE_FILENAME = '%s-%s-%s.tar.gz'
 # Substitutions: filename
 STORAGE_MODULE_RELATIVE_PATH = '%s'
 
+# -- progress states ----------------------------------------------------------
+
+STATE_NOT_STARTED = 'not-started'
+STATE_RUNNING = 'running'
+STATE_SUCCESS = 'success'
+STATE_FAILED = 'failed'
+
+INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
+
 # -- importer configuration keys ----------------------------------------------
 
 # Location from which to sync modules

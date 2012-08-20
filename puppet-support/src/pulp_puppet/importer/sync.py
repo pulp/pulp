@@ -17,30 +17,25 @@ import logging
 import os
 import shutil
 import sys
-import traceback
 
 from pulp.common.util import encode_unicode
 from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
 from pulp_puppet.common import constants
+from pulp_puppet.common.constants import (STATE_FAILED, STATE_RUNNING, STATE_SUCCESS)
 from pulp_puppet.common.model import RepositoryMetadata, Module
 from pulp_puppet.importer.downloaders import factory as downloader_factory
-
-
-# -- constants ----------------------------------------------------------------
-
-STATE_NOT_STARTED = 'not-started'
-STATE_RUNNING = 'running'
-STATE_SUCCESS = 'success'
-STATE_FAILED = 'failed'
-
-INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
+from pulp_puppet.importer.progress import ProgressReport
 
 _LOG = logging.getLogger(__name__)
 
 # -- public classes -----------------------------------------------------------
 
 class PuppetModuleSyncRun(object):
+    """
+    Used to perform a single sync of a puppet repository. This class will
+    maintain state relevant to the run and should not be reused across runs.
+    """
 
     def __init__(self, repo, sync_conduit, config, is_cancelled_call):
         self.repo = repo
@@ -237,7 +232,7 @@ class PuppetModuleSyncRun(object):
             try:
                 self._add_new_module(downloader, module)
                 self.progress_report.modules_finished_count += 1
-            except Exception, e:
+            except Exception:
                 self.progress_report.add_failed_module(module, sys.exc_info()[2])
 
             self.progress_report.update_progress()
@@ -341,170 +336,3 @@ class PuppetModuleSyncRun(object):
             return constants.DEFAULT_REMOVE_MISSING
         else:
             return self.config.get_boolean(constants.CONFIG_REMOVE_MISSING)
-
-# -- private classes ----------------------------------------------------------
-
-class ProgressReport(object):
-    """
-    Used to carry the state of the sync run as it proceeds. This object is used
-    to update the on going progress in Pulp at appropriate intervals through
-    the update_progress call. Once the sync is finished, this object should
-    be used to produce the final report to return to Pulp to describe the
-    sync.
-    """
-
-    def __init__(self, conduit):
-
-        self.conduit = conduit
-
-        # Metadata download & parsing
-        self.metadata_state = STATE_NOT_STARTED
-        self.metadata_query_finished_count = None
-        self.metadata_query_total_count = None
-        self.metadata_current_query = None
-        self.metadata_execution_time = None
-        self.metadata_error_message = None
-        self.metadata_exception = None
-        self.metadata_traceback = None
-
-        # Module download
-        self.modules_state = STATE_NOT_STARTED
-        self.modules_execution_time = None
-        self.modules_total_count = None
-        self.modules_finished_count = None
-        self.modules_error_count = None
-        self.modules_individual_errors = None # mapping of module to its error
-        self.modules_error_message = None # overall execution error
-        self.modules_exception = None
-        self.modules_traceback = None
-
-    def update_progress(self):
-        """
-        Sends the current state of the progress report to Pulp.
-        """
-        report = self.build_progress_report()
-        self.conduit.set_progress(report)
-
-    def build_final_report(self):
-        """
-        Assembles the final report to return to Pulp at the end of the sync.
-        The conduit will include information that it has tracked over the
-        course of its usage, therefore this call should only be invoked
-        when it is time to return the report.
-        """
-
-        # Report fields
-        total_execution_time = -1
-        if self.metadata_execution_time is not None and self.modules_execution_time is not None:
-            total_execution_time = self.metadata_execution_time + self.modules_execution_time
-
-        summary = {
-            'total_execution_time' : total_execution_time
-        }
-
-        details = {
-            'total_count' : self.modules_total_count,
-            'finished_count' : self.modules_finished_count,
-            'error_count' : self.modules_error_count,
-        }
-
-        # Determine if the report was successful or failed
-        all_step_states = (self.metadata_state, self.modules_state)
-        incomplete_steps = [s for s in all_step_states if s in INCOMPLETE_STATES]
-
-        if len(incomplete_steps) == 0:
-            report = self.conduit.build_success_report(summary, details)
-        else:
-            report = self.conduit.build_failure_report(summary, details)
-
-        return report
-
-    def build_progress_report(self):
-        """
-        Returns the actual report that should be sent to Pulp as the current
-        progress of the sync.
-
-        :return: description of the current state of the sync
-        :rtype:  dict
-        """
-
-        report = {
-            'metadata' : self._metadata_section(),
-            'modules'  : self._modules_section(),
-        }
-        return report
-
-    def add_failed_module(self, module, traceback):
-        """
-        Updates the progress report that a module failed to be imported.
-        """
-        self.modules_error_count += 1
-        self.modules_individual_errors = self.modules_individual_errors or {}
-        error_key = '%s-%s-%s' % (module.name, module.version, module.author)
-        self.modules_individual_errors[error_key] = self.format_traceback(traceback)
-
-    # -- report creation methods ----------------------------------------------
-
-    def _metadata_section(self):
-        metadata_report = {
-            'state' : self.metadata_state,
-            'current_query' : self.metadata_current_query,
-            'query_finished_count' : self.metadata_query_finished_count,
-            'query_total_count' : self.metadata_query_total_count,
-            'error_message' : self.metadata_error_message,
-            'error' : self.format_exception(self.metadata_exception),
-            'traceback' : self.format_traceback(self.metadata_traceback),
-        }
-        metadata_report = self.strip_none(metadata_report)
-        return metadata_report
-
-    def _modules_section(self):
-        modules_report = {
-            'state' : self.modules_state,
-            'total_count' : self.modules_total_count,
-            'finished_count' : self.modules_finished_count,
-            'error_count' : self.modules_error_count,
-            'individual_errors' : self.modules_individual_errors,
-            'error_message' : self.modules_error_message,
-            'error' : self.format_exception(self.modules_exception),
-            'traceback' : self.format_traceback(self.modules_traceback),
-        }
-        modules_report = self.strip_none(modules_report)
-        return modules_report
-
-    # -- report utility methods -----------------------------------------------
-
-    @staticmethod
-    def strip_none(report):
-        """
-        Removes all keys whose values are None. Returns a new report; does not
-        edit the existing report.
-
-        :return: new dictionary without any keys whose value was None
-        :rtype:  dict
-        """
-        clean = dict([(k, v) for k, v in report.items() if v is not None])
-        return clean
-
-    @staticmethod
-    def format_exception(e):
-        """
-        Formats the given exception to be included in the report.
-
-        :return: string representtion of the exception
-        :rtype:  str
-        """
-        return str(e)
-
-    @staticmethod
-    def format_traceback(tb):
-        """
-        Formats the given traceback to be included in the report.
-
-        :return: string representation of the traceback
-        :rtype:  str
-        """
-        if tb:
-            return traceback.extract_tb(tb)
-        else:
-            return None
