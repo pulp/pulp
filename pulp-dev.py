@@ -68,6 +68,8 @@ DIRS = (
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
+    '/var/www/pulp_puppet/http/repos',
+    '/var/www/pulp_puppet/https/repos',
 )
 
 #
@@ -143,6 +145,12 @@ LINKS = (
 
     ('rpm-support/usr/lib/yum-plugins/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('rpm-support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
+
+    ('puppet-support/etc/httpd/conf.d/pulp_puppet.conf', '/etc/httpd/conf.d/pulp_puppet.conf'),
+    ('puppet-support/plugins/types/puppet.json', DIR_PLUGINS + '/types/puppet.json'),
+    ('puppet-support/plugins/importers/puppet_importer', DIR_PLUGINS + '/importers/puppet_importer'),
+    ('puppet-support/plugins/distributors/puppet_distributor', DIR_PLUGINS + '/distributors/puppet_distributor'),
+
     )
 
 def parse_cmdline():
