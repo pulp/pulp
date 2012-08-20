@@ -47,8 +47,8 @@ def display_status(context, task_id):
     response = context.server.tasks.get_task(task_id)
     renderer = StatusRenderer(context)
 
-    m = 'This command may be exited by pressing ctrl+c without affecting the actual operation on the server.'
-    context.prompt.render_paragraph(_(m))
+    m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the server.')
+    context.prompt.render_paragraph(m)
 
     # Handle the cases where we don't want to honor the foreground request
     if response.response_body.is_rejected():
@@ -60,10 +60,10 @@ def display_status(context, task_id):
         return
 
     if response.response_body.is_postponed():
-        a  = 'The request to synchronize the repository was accepted but postponed '\
-             'due to one or more previous requests against the repository. The sync will '\
-             'take place at the earliest possible time.'
-        context.prompt.render_paragraph(_(a))
+        a  = _('The request to synchronize the repository was accepted but postponed '\
+               'due to one or more previous requests against the repository. The sync will '\
+               'take place at the earliest possible time.')
+        context.prompt.render_paragraph(a)
         return
 
     # If we're here, the sync should be running or hopefully about to run
@@ -419,7 +419,7 @@ class StatusRenderer(object):
         #    "num_new_groups": 0,
         #    "num_new_categories": 0,
         # }
-        
+
         current_state = progress_report['yum_importer']['comps']['state']
         def update_func(new_state):
             self.comps_last_state = new_state
