@@ -16,7 +16,7 @@ from gettext import gettext as _
 from pulp.plugins.distributor import Distributor
 
 from pulp_puppet.common import constants
-from pulp_puppet.distributor import configuration
+from pulp_puppet.distributor import configuration, publish
 
 # -- plugins ------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ class PuppetModuleDistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.IMPORTER_ID_PUPPET,
+            'id' : constants.DISTRIBUTOR_ID_PUPPET,
             'display_name' : _('Puppet Distributor'),
             'types' : [constants.TYPE_PUPPET_MODULE]
         }
@@ -36,3 +36,19 @@ class PuppetModuleDistributor(Distributor):
     def validate_config(self, repo, config, related_repos):
         config.default_config = configuration.DEFAULT_CONFIG
         return configuration.validate(config)
+
+    def publish_repo(self, repo, publish_conduit, config):
+        self.publish_cancelled = False
+        publish_runner = publish.PuppetModulePublishRun(repo, publish_conduit, config, self.is_publish_cancelled)
+        report = publish_runner.perform_publish()
+        return report
+
+    def is_publish_cancelled(self):
+        """
+        Hook back into this plugin to check if a cancel request has been issued
+        for a publish operation.
+
+        :return: true if the sync should stop running; false otherwise
+        :rtype: bool
+        """
+        return self.publish_cancelled
