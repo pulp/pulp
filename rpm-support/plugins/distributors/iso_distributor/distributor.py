@@ -162,22 +162,6 @@ class ISODistributor(Distributor):
         """
         return ISO_NAME_REGEX.match(iso_prefix) is not None
 
-    def create_date_range_filter(self, config):
-        start_date = None
-        if config.get("start_date"):
-            start_date = config.get("start_date") or None
-        end_date = None
-        if config.get("end_date"):
-            end_date = config.get("end_date") or None
-        date_filter = None
-        if start_date and end_date:
-            date_filter = {"issued" : {"$gte": start_date, "$lte": end_date}}
-        elif start_date:
-            date_filter = {"issued" : {"$gte": start_date}}
-        elif end_date:
-            date_filter = {"issued" : {"$lte": end_date}}
-        return date_filter
-
     def publish_repo(self, repo, publish_conduit, config):
         publish_start_time = time.time()
         _LOG.info("Start publish time %s" % publish_start_time)
@@ -203,7 +187,7 @@ class ISODistributor(Distributor):
 
         repo_exporter = RepoExporter()
         skip_types = config.get("skip") or []
-        date_filter = self.create_date_range_filter(config)
+        date_filter = repo_exporter.create_date_range_filter(config)
         if date_filter:
             # export errata by date and associated rpm units
             if "errata" not in skip_types:
@@ -219,7 +203,7 @@ class ISODistributor(Distributor):
                     return publish_conduit.build_failure_report(summary, details)
                 # generate metadata
                 metadata_status, metadata_errors = metadata.generate_metadata(
-                        repo, publish_conduit, config, progress_callback)
+                        repo_working_dir, publish_conduit, config, progress_callback)
                 _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
                 errata_status, errata_errors = repo_exporter.export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
                 progress_status["errata"]["state"] = "FINISHED"
@@ -255,7 +239,7 @@ class ISODistributor(Distributor):
                 existing_units = publish_conduit.get_units(criteria)
                 existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
                 existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
-                groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
+                groups_xml_path = comps_util.write_comps_xml(repo_working_dir, existing_groups, existing_cats)
                 summary["num_package_groups_exported"] = len(existing_groups)
                 summary["num_package_categories_exported"] = len(existing_cats)
                 progress_status["packagegroups"]["state"] = "FINISHED"
@@ -267,7 +251,7 @@ class ISODistributor(Distributor):
                 return publish_conduit.build_failure_report(summary, details)
             # generate metadata
             metadata_status, metadata_errors = metadata.generate_metadata(
-                    repo, publish_conduit, config, progress_callback, groups_xml_path)
+                    repo_working_dir, publish_conduit, config, progress_callback, groups_xml_path)
             _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
             errata_errors = []
             if "errata" not in skip_types:

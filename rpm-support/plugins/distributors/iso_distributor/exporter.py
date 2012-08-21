@@ -23,6 +23,22 @@ class RepoExporter(object):
         if progress_callback:
             progress_callback(type_id, status)
 
+    def create_date_range_filter(self, config):
+        start_date = None
+        if config.get("start_date"):
+            start_date = config.get("start_date") or None
+        end_date = None
+        if config.get("end_date"):
+            end_date = config.get("end_date") or None
+        date_filter = None
+        if start_date and end_date:
+            date_filter = {"issued" : {"$gte": start_date, "$lte": end_date}}
+        elif start_date:
+            date_filter = {"issued" : {"$gte": start_date}}
+        elif end_date:
+            date_filter = {"issued" : {"$lte": end_date}}
+        return date_filter
+
     def export_rpms(self, rpm_units, symlink_dir, progress_callback=None):
         """
          This call looksup each rpm units and exports to the working directory.
