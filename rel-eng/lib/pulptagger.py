@@ -16,6 +16,7 @@ from tito.tagger import VersionTagger
 MASTER_PACKAGE = 'pulp'
 BUGZILLA_REGEX = re.compile('([0-9]+\s+\-\s+)(.+)')
 FEATURE_REGEX = re.compile('([\-]\s+)(.+)')
+EMBEDDED_REGEX = re.compile('(\[\[)(.+)(\]\])')
 
 
 class PulpTagger(VersionTagger):
@@ -29,6 +30,7 @@ class PulpTagger(VersionTagger):
         Strip git log entries not matching:
           "bugzilla - <comment>"
           "- <comment>"
+          "[[ comment ]]"
         @param last_tag: Last git tag.
         @type last_tag: str
         @return: The generated changelog.
@@ -44,6 +46,10 @@ class PulpTagger(VersionTagger):
             match = re.match(FEATURE_REGEX, line)
             if match:
                 entry.append(match.group(2))
+                continue
+            match = re.search(EMBEDDED_REGEX, line)
+            if match:
+                entry.append(match.group(2).strip())
                 continue
         return '\n'.join(entry)
             
