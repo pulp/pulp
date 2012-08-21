@@ -16,7 +16,7 @@ from pulp.client import arg_utils
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.search import SearchCommand
+from pulp.client.commands.criteria import CriteriaCommand
 
 # -- framework hook -----------------------------------------------------------
 
@@ -81,7 +81,7 @@ class RepoSection(PulpCliSection):
         self.add_command(list_command)
 
         # Search Command
-        self.add_command(SearchCommand(self.search))
+        self.add_command(CriteriaCommand(self.search))
 
         # Subsections
         self.add_subsection(ImporterSection(context))
@@ -128,23 +128,6 @@ class RepoSection(PulpCliSection):
             self.prompt.write('Repository [%s] does not exist on the server' % id, tag='not-found')
 
     def list(self, **kwargs):
-        """
-        :param summary: If True, equivalent to setting fields='id,display-name'.
-                        If False, no effect.
-        :type  summary: bool
-
-        :param fields:  comma-separated field names as a string, specifying
-                        which fields will be returned. This is a required
-                        parameter unless you pass summary=True.
-        :type fields:   str
-
-        :param importers:   If any value that evaluates to True, include the
-                            repo's importers in the output.
-
-        :param distributors:    If any value that evaluates to True, include
-                                the repo's distributors in the output.
-        """
-
         # This needs to be revisited. For the sake of time, the repo list in
         # rpm_repo will be hacked up for yum repositories specifically. Later
         # we can revisit this output for the generic case.
@@ -260,11 +243,11 @@ class RepoGroupMemberSection(PulpCliSection):
         list_command.add_option(id_option)
         self.add_command(list_command)
 
-        add_command = SearchCommand(self.add, criteria=False, name='add', description=_('add repositories based on search parameters'))
+        add_command = CriteriaCommand(self.add, include_search=False, name='add', description=_('add repositories based on search parameters'))
         add_command.add_option(id_option)
         self.add_command(add_command)
 
-        remove_command = SearchCommand(self.remove, criteria=False, name='remove', description=_('remove repositories based on search parameters'))
+        remove_command = CriteriaCommand(self.remove, include_search=False, name='remove', description=_('remove repositories based on search parameters'))
         remove_command.add_option(id_option)
         self.add_command(remove_command)
 
@@ -338,7 +321,7 @@ class RepoGroupSection(PulpCliSection):
         self.add_command(list_command)
 
         # Search Command
-        self.add_command(SearchCommand(self.search))
+        self.add_command(CriteriaCommand(self.search))
 
     def create(self, **kwargs):
         # Collect input

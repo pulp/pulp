@@ -47,33 +47,34 @@ Example: $ pulp-admin repo search --gt='content_unit_count=0'
 ALL_CRITERIA_ARGS = ('filters', 'after', 'before', 'str-eq', 'int-eq', 'match',
                      'in', 'not', 'gt', 'gte', 'lt', 'lte')
 
-class SearchCommand(PulpCliCommand):
+class CriteriaCommand(PulpCliCommand):
     """
-    This command contains only the search features provided by the server. See
-    SearchCommand for additional features such as sort, limit, skip, and fields.
+    Provides arguments for accepting a Pulp criteria. This can be used for both
+    selective criteria and search criteria, the latter adding options for
+    display arguments such as pagination and sorting.
     """
-    def __init__(self, method, filtering=True, criteria=True, *args, **kwargs):
+    def __init__(self, method, filtering=True, include_search=True, *args, **kwargs):
         """
         :param method:  A method to call when this command is executed. See
                         okaara docs for more info
         :type  method:  callable
-        :param filtering:   If True, the command will add all filtering options
+        :param filtering:   if True, the command will add all filtering options
         :type  filtering:   bool
-        :param criteria:    If True, the command will add all non-filter
-                            criteria options such as limit, seek, sort, etc.
-        :type  criteria:    bool
+        :param include_search: if True, the command will add all non-filter
+                               criteria options such as limit, seek, sort, etc.
+        :type  include_search: bool
 
         """
         name = kwargs.pop('name', None) or 'search'
         description = kwargs.pop('description', None) or _SEARCH_DESCRIPTION
 
-        super(SearchCommand, self).__init__(name, description,
+        super(CriteriaCommand, self).__init__(name, description,
             method, *args, **kwargs)
 
         if filtering:
             self.add_filtering()
-        if criteria:
-            self.add_full_criteria_options()
+        if include_search:
+            self.add_display_criteria_options()
 
     def add_filtering(self):
         self.add_option(PulpCliOption('--filters', _FILTERS_DESCRIPTION,
@@ -119,7 +120,7 @@ class SearchCommand(PulpCliCommand):
 
         self.add_option_group(filter_group)
 
-    def add_full_criteria_options(self):
+    def add_display_criteria_options(self):
         """
         Add the full set of criteria-based search features to this command,
         including limit, skip, sort, and fields.
@@ -223,7 +224,7 @@ class SearchCommand(PulpCliCommand):
         to 'ascending'.
 
         @param sort_arg:    argument passed from user as --sort=
-        @type  sort_arg:    basestring
+        @type  sort_arg:    str
 
         @return:    tuple of field name and direction
         @rtype:     tuple of 2 basestrings
@@ -236,9 +237,9 @@ class SearchCommand(PulpCliCommand):
         return field_name, direction
 
 
-class UnitSearchCommand(SearchCommand):
+class UnitAssociationCriteriaCommand(CriteriaCommand):
     def __init__(self, method, *args, **kwargs):
-        super(UnitSearchCommand, self).__init__(method, *args, **kwargs)
+        super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
 
         self.add_option(PulpCliOption('--repo-id',
             _('identifies the repository to search within'), required=True))
@@ -254,28 +255,9 @@ class UnitSearchCommand(SearchCommand):
             allow_multiple=False, parse_func=parsers.iso8601)
 
 
-class UnitCopyCommand(UnitSearchCommand):
-    def __init__(self, *args, **kwargs):
-        kwargs['criteria'] = False
-        super(UnitCopyCommand, self).__init__(*args, **kwargs)
-        self.options = [opt for opt in self.options if opt.name != '--repo-id']
-
-        m = 'source repository from which units will be copied'
-        self.create_option('--from-repo-id', _(m), ['-f'], required=True)
-
-        m = 'destination repository to copy units into'
-        self.create_option('--to-repo-id', _(m), ['-t'], required=True)
-
-
-class UnitRemoveCommand(UnitSearchCommand):
-    def __init__(self, *args, **kwargs):
-        kwargs['criteria'] = False
-        super(UnitRemoveCommand, self).__init__(*args, **kwargs)
-
-
-class UnitSearchAllCommand(UnitSearchCommand):
+class UntypedUnitAssociationCriteriaCommand(UnitAssociationCriteriaCommand):
     def __init__(self, *args, **kwargs):
         kwargs['filtering'] = False
-        super(UnitSearchAllCommand, self).__init__(*args, **kwargs)
+        super(UntypedUnitAssociationCriteriaCommand, self).__init__(*args, **kwargs)
         OPTIONS_TO_REMOVE = set(['--sort', '--fields'])
         self.options = [opt for opt in self.options if opt.name not in OPTIONS_TO_REMOVE]

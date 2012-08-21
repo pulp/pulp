@@ -17,7 +17,7 @@ from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
     PulpCliOption, PulpCliFlag
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.search import SearchCommand
+from pulp.client.commands.criteria import CriteriaCommand
 
 # -- framework hook -----------------------------------------------------------
 
@@ -76,7 +76,7 @@ class AdminConsumerSection(PulpCliSection):
         self.add_command(list_command)
 
         # Search Command
-        self.add_command(SearchCommand(self.search))
+        self.add_command(CriteriaCommand(self.search))
 
         # Bind Command
         bind_command = PulpCliCommand('bind', 'binds a consumer to a repository distributor for consuming published content', self.bind)
