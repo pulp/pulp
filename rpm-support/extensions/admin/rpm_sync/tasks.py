@@ -98,7 +98,7 @@ def publish_task_in_sync_task_group(task_list):
     @return: task for the publish
     @rtype: Task
     """
-    publish_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
+    publish_tag = tags.action_tag(tags.ACTION_AUTO_PUBLISH_TYPE)
     for t in task_list:
         if publish_tag in t.tags:
             return t
