@@ -64,7 +64,7 @@ class Update(PollingCommand):
         all = kwargs['all']
         repo_ids = kwargs['repo-id']
         units = []
-        options = {}
+        options = dict(all=all)
         if all: # ALL
             unit = dict(type_id=TYPE_ID, unit_key=None)
             self.update(pulp_id, [unit], options)

@@ -31,3 +31,7 @@ class PulpDistributor(Distributor):
     
     def cancel_publish_repo(self, call_report, call_request):
         pass
+    
+    def create_consumer_payload(self, repo, config):
+        payload = {'mypayload':'MYPAYLOAD'}
+        return payload
