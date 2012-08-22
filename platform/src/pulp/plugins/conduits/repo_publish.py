@@ -44,7 +44,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, distributor_id, base_progress_report=None):
+    def __init__(self, repo_id, distributor_id):
         """
         @param repo_id: identifies the repo being published
         @type  repo_id: str
@@ -54,7 +54,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         """
         RepoScratchPadMixin.__init__(self, repo_id, DistributorConduitException)
         DistributorScratchPadMixin.__init__(self, repo_id, distributor_id)
-        StatusMixin.__init__(self, distributor_id, DistributorConduitException, progress_report=base_progress_report)
+        StatusMixin.__init__(self, distributor_id, DistributorConduitException)
         SingleRepoUnitsMixin.__init__(self, repo_id, DistributorConduitException)
         PublishReportMixin.__init__(self)
 

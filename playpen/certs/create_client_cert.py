@@ -17,7 +17,7 @@ def create_client_csr(client_key, csr):
     return run_command(cmd)
 
 def create_client_cert(client_cert, client_csr, ca_cert, ca_key, extensions, ent_name, ca_serial):
-    cmd = "openssl x509 -req -days 365 -CA %s -CAkey %s -extfile %s -extensions %s -in %s -out %s -CAserial %s" \
+    cmd = "openssl x509 -req -days 10950 -CA %s -CAkey %s -extfile %s -extensions %s -in %s -out %s -CAserial %s" \
             % (ca_cert, ca_key, extensions, ent_name, client_csr, client_cert, ca_serial)
     if not os.path.exists(ca_serial):
         cmd = cmd + " -CAcreateserial"

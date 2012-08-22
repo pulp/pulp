@@ -1,0 +1,23 @@
+{
+  "name": "adob-good",
+  "version": "2.0.0",
+  "source": "http://example.org/adob-good/source",
+  "author": "adob",
+  "license": "Apache License, Version 2.0",
+  "summary": "Good Module Summary",
+  "description": "Good Module Description",
+  "project_page": "http://example.org/adob-good",
+  "dependencies": [
+
+  ],
+  "types": [
+
+  ],
+  "checksums": {
+    "Modulefile": "d56966dcc36a5d8e78b98c931ed7630b",
+    "README": "14e64fa5a1a5875922bc74d4648a9fa2",
+    "manifests/init.pp": "220771559bf54e98dc539e08e7d0743e",
+    "spec/spec_helper.rb": "a55d1e6483344f8ec6963fcb2c220372",
+    "tests/init.pp": "04dbd675aa361314418234b988e70806"
+  }
+}

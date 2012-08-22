@@ -1,0 +1,4 @@
+Contains a valid repository with the format that modules are located in the same directory as the modules.json file. If this structure changes in the local downloader, this will need to be updated to reflect those changes.
+
+The module source for the modules contained within can be found at ../../good-modules.
+

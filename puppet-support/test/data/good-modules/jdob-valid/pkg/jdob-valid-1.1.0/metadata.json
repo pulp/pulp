@@ -1,0 +1,30 @@
+{
+  "name": "jdob-valid",
+  "version": "1.1.0",
+  "source": "http://example.org/jdob-valid/source",
+  "author": "jdob",
+  "license": "Apache License, Version 2.0",
+  "summary": "Valid Module Summary",
+  "description": "Valid Module Description",
+  "project_page": "http://example.org/jdob-valid",
+  "dependencies": [
+    {
+      "name": "jdob/dep-alpha",
+      "version_requirement": ">= 1.1.0"
+    },
+    {
+      "name": "ldob/dep-beta",
+      "version_requirement": ">= 2.1.0"
+    }
+  ],
+  "types": [
+
+  ],
+  "checksums": {
+    "Modulefile": "69c3788b55dda8641fe1ab93709f8ba9",
+    "README": "11edd8578497566d8054684a8c89c6cb",
+    "manifests/init.pp": "1d1fb26825825b4d64d37d377016869e",
+    "spec/spec_helper.rb": "a55d1e6483344f8ec6963fcb2c220372",
+    "tests/init.pp": "7043c7ef0c4b0ac52b4ec6bb76008ebd"
+  }
+}

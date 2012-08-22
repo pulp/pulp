@@ -1,0 +1,13 @@
+name    'jdob-valid'
+version '1.0.0'
+source 'http://example.org/jdob-valid/source'
+author 'jdob'
+license 'Apache License, Version 2.0'
+summary 'Valid Module Summary'
+description 'Valid Module Description'
+project_page 'http://example.org/jdob-valid'
+
+## Add dependencies, if any:
+dependency 'jdob/dep-alpha', '>= 1.0.0'
+dependency 'ldob/dep-beta', '>= 2.0.0'
+
