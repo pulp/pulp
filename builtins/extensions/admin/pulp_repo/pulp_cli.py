@@ -13,6 +13,7 @@
 
 from gettext import gettext as _
 from pulp.client import arg_utils
+from pulp.client.commands.repo.cudl import CreateRepositoryCommand, DeleteRepositoryCommand, UpdateRepositoryCommand, ListRepositoriesCommand
 
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption, PulpCliFlag, UnknownArgsParser
 from pulp.bindings.exceptions import NotFoundException
@@ -46,39 +47,10 @@ class RepoSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt # for easier access
 
-        # Common Options
-        id_option = PulpCliOption('--repo-id', _('uniquely identifies the repository; only alphanumeric, -, and _ allowed'), required=True)
-        name_option = PulpCliOption('--display-name', _('user-readable display name for the repository'), required=False)
-        description_option = PulpCliOption('--description', _('user-readable description for the repository'), required=False)
-
-        # Create Command
-        create_command = PulpCliCommand('create', _('creates a new repository'), self.create)
-        create_command.add_option(id_option)
-        create_command.add_option(name_option)
-        create_command.add_option(description_option)
-        create_command.add_option(note_option)
-        self.add_command(create_command)
-
-        # Update Command
-        update_command = PulpCliCommand('update', _('changes metadata on an existing repository'), self.update)
-        update_command.add_option(id_option)
-        update_command.add_option(name_option)
-        update_command.add_option(description_option)
-        update_command.add_option(note_option)
-        self.add_command(update_command)
-
-        # Delete Command
-        delete_command = PulpCliCommand('delete', _('deletes a repository'), self.delete)
-        delete_command.add_option(id_option)
-        self.add_command(delete_command)
-
-        # List Command
-        list_command = PulpCliCommand('list', _('lists repositories on the Pulp server'), self.list)
-        list_command.add_option(PulpCliFlag('--summary', _('if specified, only a minimal amount of repository information is displayed')))
-        list_command.add_option(PulpCliOption('--fields', _('comma-separated list of repository fields; if specified, only the given fields will displayed'), required=False))
-        list_command.add_option(PulpCliFlag('--importers', _('if specified, importer configuration is displayed')))
-        list_command.add_option(PulpCliFlag('--distributors', _('if specified, the list of distributors and their configuration is displayed')))
-        self.add_command(list_command)
+        self.add_command(CreateRepositoryCommand(context))
+        self.add_command(DeleteRepositoryCommand(context))
+        self.add_command(UpdateRepositoryCommand(context))
+        self.add_command(ListRepositoriesCommand(context))
 
         # Search Command
         self.add_command(CriteriaCommand(self.search))
@@ -88,77 +60,6 @@ class RepoSection(PulpCliSection):
         self.add_subsection(SyncSection(context))
         self.add_subsection(RepoGroupSection(context))
         self.create_subsection('units', _('list/search for RPM-related content in a repository'))
-
-    def create(self, **kwargs):
-
-        # Collect input
-        id = kwargs['repo-id']
-        name = id
-        if 'display-name' in kwargs:
-            name = kwargs['display-name']
-        description = kwargs['description']
-        notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
-
-        # Call the server
-        self.context.server.repo.create(id, name, description, notes)
-        self.prompt.render_success_message('Repository [%s] successfully created' % id)
-
-    def update(self, **kwargs):
-
-        # Assemble the delta for all options that were passed in
-        delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('repo-id') # not needed in the delta
-
-        if delta.pop('note', None) is not None:
-            delta['notes'] = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
-
-        try:
-            self.context.server.repo.update(kwargs['repo-id'], {'delta' : delta})
-            self.prompt.render_success_message('Repository [%s] successfully updated' % kwargs['repo-id'])
-        except NotFoundException:
-            self.prompt.write('Repository [%s] does not exist on the server' % kwargs['repo-id'], tag='not-found')
-
-    def delete(self, **kwargs):
-        id = kwargs['repo-id']
-
-        try:
-            self.context.server.repo.delete(id)
-            self.prompt.render_success_message('Repository [%s] successfully deleted' % id)
-        except NotFoundException:
-            self.prompt.write('Repository [%s] does not exist on the server' % id, tag='not-found')
-
-    def list(self, **kwargs):
-        # This needs to be revisited. For the sake of time, the repo list in
-        # rpm_repo will be hacked up for yum repositories specifically. Later
-        # we can revisit this output for the generic case.
-        # jdob, March 12, 2012
-
-        self.prompt.render_title('Repositories')
-
-        # Default flags to render_document_list
-        filters = None
-        order = ['id', 'display_name', 'description', 'content_unit_count']
-
-        if kwargs['summary'] is True:
-            filters = ['id', 'display-name']
-            order = filters
-        elif kwargs['fields'] is not None:
-            filters = kwargs['fields'].split(',')
-            if 'id' not in filters:
-                filters.append('id')
-            order = ['id']
-
-        query_params = {}
-
-        for param in ('importers', 'distributors'):
-            if kwargs.get(param):
-                query_params[param] = True
-                filters.append(param)
-
-        repo_list = self.context.server.repo.repositories(query_params).response_body
-
-        for repo in repo_list:
-            self.prompt.render_document(repo, filters=filters, order=order)
 
     def search(self, **kwargs):
         repo_list = self.context.server.repo_search.search(**kwargs)
