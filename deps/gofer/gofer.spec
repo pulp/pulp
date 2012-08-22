@@ -248,6 +248,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Wed Aug 22 2012 Jeff Ortel <jortel@redhat.com> 0.72-1
+- bump to gofer 0.72 which supports progress reporting. (jortel@redhat.com)
+
 * Mon Aug 20 2012 Jeff Ortel <jortel@redhat.com> 0.72-1
 - Add unit tests: watchdog test. (jortel@redhat.com)
 - Add man page for goferd. (jortel@redhat.com)
