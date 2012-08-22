@@ -67,11 +67,12 @@ def display_status(context, task_id=None, task_group_id=None):
         context.prompt.render_paragraph(a)
         return
 
+    renderer = StatusRenderer(context)
     completed_tasks = []
 
     try:
         for task in task_list:
-            task = _display_task_status(context, task.task_id)
+            task = _display_task_status(context, renderer, task.task_id)
             completed_tasks.append(task)
 
     except KeyboardInterrupt:
@@ -109,14 +110,13 @@ def _get_task_list(context, task_id, task_group_id):
     raise ValueError(_('Either task_id or task_group_id must be defined'))
 
 
-def _display_task_status(context, task_id):
+def _display_task_status(context, renderer, task_id):
     """
     Poll an individual task and display the progress for it.
     @return: the completed task
     @rtype: Task
     """
 
-    renderer = StatusRenderer(context)
     begin_spinner = context.prompt.create_spinner()
     poll_frequency_in_seconds = float(context.config['output']['poll_frequency_in_seconds'])
 

@@ -45,20 +45,18 @@ def relevant_existing_task_id(existing_sync_tasks):
     running_tasks = [t for t in existing_sync_tasks if t.is_running()]
     waiting_tasks = [t for t in existing_sync_tasks if t.is_waiting()]
 
-    if len(running_tasks) > 0:
-        task_id = running_tasks[0].task_id
-    else:
-        task_id = waiting_tasks[0].task_id
+    if running_tasks:
+        return running_tasks[0].task_id
+    elif waiting_tasks:
+        return waiting_tasks[0].task_id
 
-    return task_id
+    return None
 
 
 def relevant_existing_task_group_id(existing_sync_tasks):
     """
     Grok through a list of existing sync tasks and look for the task_group_id
     for the highest priority sync.
-
-    NOTE: It is assumed that the existing_sync_tasks is non-empty.
 
     @param existing_sync_tasks:
     @return:
@@ -68,7 +66,10 @@ def relevant_existing_task_group_id(existing_sync_tasks):
 
     if running_tasks:
         return running_tasks[0].task_group_id
-    return waiting_tasks[0].task_group_id
+    elif waiting_tasks:
+        return waiting_tasks[0].task_group_id
+
+    return None
 
 
 def sync_task_in_sync_task_group(task_list):
