@@ -16,8 +16,9 @@ Contains functionality related to rendering the progress report for a the RPM
 plugins (both the sync and publish operations).
 """
 
-from gettext import gettext as _
 import time
+from gettext import gettext as _
+from operator import and_
 
 # -- constants ----------------------------------------------------------------
 
@@ -30,10 +31,10 @@ END_STATES = (STATE_COMPLETE, STATE_FAILED, STATE_SKIPPED)
 
 # -- public -------------------------------------------------------------------
 
-def display_status(context, task_id):
+def display_status(context, task_id=None, task_group_id=None):
     """
     Displays and continues to track the sync (with or without auto publish) or
-    publish task running on the server with the given ID.
+    publish task running on the server with the given task or task group ID.
 
     @param context: CLI context
     @type  context: ClientContext
@@ -41,17 +42,17 @@ def display_status(context, task_id):
     @param task_id: must reference a valid task on the server
     @type  task_id: str
 
-    @return:
+    @param task_group_id: must reference a valid task group on the server
+    @type  task_group_id: str
     """
 
-    response = context.server.tasks.get_task(task_id)
-    renderer = StatusRenderer(context)
+    task_list = _get_task_list(context, task_id, task_group_id)
 
-    m = 'This command may be exited by pressing ctrl+c without affecting the actual operation on the server.'
-    context.prompt.render_paragraph(_(m))
+    m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the server.')
+    context.prompt.render_paragraph(m)
 
     # Handle the cases where we don't want to honor the foreground request
-    if response.response_body.is_rejected():
+    if task_list[0].is_rejected():
         announce = _('The request to synchronize repository was rejected')
         description = _('This is likely due to an impending delete request for the repository.')
 
@@ -59,32 +60,78 @@ def display_status(context, task_id):
         context.prompt.render_paragraph(description)
         return
 
-    if response.response_body.is_postponed():
-        a  = 'The request to synchronize the repository was accepted but postponed '\
-             'due to one or more previous requests against the repository. The sync will '\
-             'take place at the earliest possible time.'
-        context.prompt.render_paragraph(_(a))
+    if task_list[0].is_postponed():
+        a  = _('The request to synchronize the repository was accepted but postponed '\
+               'due to one or more previous requests against the repository. The sync will '\
+               'take place at the earliest possible time.')
+        context.prompt.render_paragraph(a)
         return
 
-    # If we're here, the sync should be running or hopefully about to run
-    begin_spinner = context.prompt.create_spinner()
-    poll_frequency_in_seconds = float(context.config['output']['poll_frequency_in_seconds'])
+    completed_tasks = []
 
     try:
-        while not response.response_body.is_completed():
-            if response.response_body.is_waiting():
-                begin_spinner.next(_('Waiting to begin'))
-            else:
-                renderer.display_report(response.response_body.progress)
-
-            time.sleep(poll_frequency_in_seconds)
-
-            response = context.server.tasks.get_task(response.response_body.task_id)
+        for task in task_list:
+            task = _display_task_status(context, task.task_id)
+            completed_tasks.append(task)
 
     except KeyboardInterrupt:
         # If the user presses ctrl+c, don't let the error bubble up, just
         # exit gracefully
         return
+
+    if reduce(and_, [t.was_successful() for t in completed_tasks]):
+        context.prompt.render_success_message('Successfully synchronized repository')
+    else:
+        context.prompt.render_failure_message('Error during repository synchronization')
+        for t in completed_tasks:
+            if t.was_successful():
+                continue
+            context.prompt.render_failure_message(t.exception)
+
+# -- helper functions ---------------------------------------------------------
+
+def _get_task_list(context, task_id, task_group_id):
+    """
+    Generate a list of tasks for the given task or task group id
+    @return: list of tasks
+    @rtype: list
+    """
+
+    if task_group_id is not None:
+        response = context.server.task_groups.get_task_group(task_group_id)
+        # this relies on the sync task being ordered before the publish task
+        return response.response_body
+
+    elif task_id is not None:
+        response = context.server.tasks.get_task(task_id)
+        return [response.response_body]
+
+    raise ValueError(_('Either task_id or task_group_id must be defined'))
+
+
+def _display_task_status(context, task_id):
+    """
+    Poll an individual task and display the progress for it.
+    @return: the completed task
+    @rtype: Task
+    """
+
+    renderer = StatusRenderer(context)
+    begin_spinner = context.prompt.create_spinner()
+    poll_frequency_in_seconds = float(context.config['output']['poll_frequency_in_seconds'])
+
+    response = context.server.tasks.get_task(task_id)
+
+    while not response.response_body.is_completed():
+
+        if response.response_body.is_waiting():
+            begin_spinner.next(_('Waiting to begin'))
+        else:
+            renderer.display_report(response.response_body.progress)
+
+        time.sleep(poll_frequency_in_seconds)
+
+        response = context.server.tasks.get_task(response.response_body.task_id)
 
     # Even after completion, we still want to display the report one last
     # time in case there was no poll between, say, the middle of the
@@ -93,11 +140,7 @@ def display_status(context, task_id):
     # call is to clean up and render the completed report.
     renderer.display_report(response.response_body.progress)
 
-    if response.response_body.was_successful():
-        context.prompt.render_success_message('Successfully synchronized repository')
-    else:
-        context.prompt.render_failure_message('Error during repository synchronization')
-        context.prompt.render_failure_message(response.response_body.exception)
+    return response.response_body
 
 # -- internal -----------------------------------------------------------------
 
@@ -419,7 +462,7 @@ class StatusRenderer(object):
         #    "num_new_groups": 0,
         #    "num_new_categories": 0,
         # }
-        
+
         current_state = progress_report['yum_importer']['comps']['state']
         def update_func(new_state):
             self.comps_last_state = new_state
