@@ -48,7 +48,7 @@ class RunSyncCommand(PulpCliCommand):
         # progress tracking.
         existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
         if len(existing_sync_tasks) > 0:
-            task_id = tasks.relevant_existing_task_id(existing_sync_tasks)
+            task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
 
             msg = _('A sync task is already in progress for this repository. ')
             if foreground:
@@ -59,10 +59,10 @@ class RunSyncCommand(PulpCliCommand):
             # Trigger the actual sync
             response = self.context.server.repo_actions.sync(repo_id, None)
             sync_task = tasks.sync_task_in_sync_task_group(response.response_body)
-            task_id = sync_task.task_id
+            task_group_id = sync_task.task_group_id
 
         if foreground:
-            status.display_status(self.context, task_id)
+            status.display_status(self.context, task_group_id=task_group_id)
         else:
             msg = _('The status of this sync can be displayed using the status command.')
             self.context.prompt.render_paragraph(msg)
@@ -86,11 +86,11 @@ class StatusCommand(PulpCliCommand):
         # Load the existing sync tasks
         existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
         if len(existing_sync_tasks) > 0:
-            task_id = tasks.relevant_existing_task_id(existing_sync_tasks)
+            task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
 
             msg = _('A sync task is queued on the server. Its progress will be tracked below.')
             self.context.prompt.render_paragraph(msg)
-            status.display_status(self.context, task_id)
+            status.display_status(self.context, task_group_id=task_group_id)
 
         else:
             self.context.prompt.render_paragraph(_('There are no sync tasks currently queued in the server.'))
