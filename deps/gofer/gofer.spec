@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.71
+Version: 0.72
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -11,6 +11,7 @@ URL: https://fedorahosted.org/gofer/
 Source0: https://fedorahosted.org/releases/g/o/gofer/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
+BuildRequires: gzip
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
 BuildRequires: rpm-python
@@ -31,6 +32,9 @@ executed at the specified interval.
 %build
 pushd src
 %{__python} setup.py build
+popd
+pushd docs/man/man1
+gzip *
 popd
 
 %install
@@ -62,12 +66,14 @@ mkdir -p %{buildroot}/%{_var}/log/%{name}
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/journal/watchdog
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/share/%{name}/plugins
+mkdir -p %{buildroot}/%{_mandir}/man1
 
 cp bin/%{name}d %{buildroot}/usr/bin
 cp etc/init.d/%{name}d %{buildroot}/%{_sysconfdir}/init.d
 cp etc/%{name}/*.conf %{buildroot}/%{_sysconfdir}/%{name}
 cp etc/%{name}/plugins/*.conf %{buildroot}/%{_sysconfdir}/%{name}/plugins
 cp src/plugins/*.py %{buildroot}/%{_usr}/share/%{name}/plugins
+cp docs/man/man1/* %{buildroot}/%{_mandir}/man1
 
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 
@@ -88,6 +94,7 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/builtin.conf
 %{_usr}/share/%{name}/plugins/builtin.*
 %doc LICENSE
+%doc %{_mandir}/man1/gofer*
 
 %post
 chkconfig --add %{name}d
@@ -241,8 +248,15 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Tue Aug 07 2012 Jeff Ortel <jortel@redhat.com> 0.71-1
-- Update to latest: 0.71, no Requires: changes needed in Pulp. (jortel@redhat.com)
+* Wed Aug 22 2012 Jeff Ortel <jortel@redhat.com> 0.72-1
+- bump to gofer 0.72 which supports progress reporting. (jortel@redhat.com)
+
+* Mon Aug 20 2012 Jeff Ortel <jortel@redhat.com> 0.72-1
+- Add unit tests: watchdog test. (jortel@redhat.com)
+- Add man page for goferd. (jortel@redhat.com)
+- Replace BlackList with python set. (jortel@redhat.com)
+- Add progress reporting; watchdog enhancements. (jortel@redhat.com)
+- remove f15 and add f18 to tito releaser. (jortel@redhat.com)
 
 * Tue Jul 31 2012 Jeff Ortel <jortel@redhat.com> 0.71-1
 - Port ruby-gofer to rubygem-qpid. (jortel@redhat.com)
