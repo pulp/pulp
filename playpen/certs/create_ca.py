@@ -18,7 +18,7 @@ def create_ca_key(ca_key_name):
 
 def create_ca_cert(ca_key_name, ca_cert_name):
     check_dirs(ca_key_name)
-    cmd = ("openssl req -new -x509 -days 365 -key %s -out %s -subj '/C=US/ST=NC/L=Raleigh/O=Red Hat/OU=Pulp/CN=Pulp-Root-CA'") % (ca_key_name, ca_cert_name)
+    cmd = ("openssl req -new -x509 -days 10950 -key %s -out %s -subj '/C=US/ST=NC/L=Raleigh/O=Red Hat/OU=Pulp/CN=Pulp-Root-CA'") % (ca_key_name, ca_cert_name)
     return run_command(cmd)
 
 def create_serial(ca_serial):

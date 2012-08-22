@@ -22,7 +22,10 @@ PACKAGES="$PACKAGES,rpm_upload"
 PACKAGES="$PACKAGES,yum_distributor"
 PACKAGES="$PACKAGES,yum_importer"
 
+# Puppet Support
+PACKAGES="$PACKAGES,pulp_puppet"
+
 # Test Directories
-TESTS="platform/test/unit builtins/test/unit rpm-support/test/unit"
+TESTS="platform/test/unit builtins/test/unit rpm-support/test/unit puppet-support/test/unit"
 
 nosetests --with-coverage --cover-html --cover-erase --cover-package $PACKAGES $TESTS

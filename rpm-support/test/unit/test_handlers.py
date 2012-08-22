@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platf
 import mock_yum
 from mock_yum import YumBase
 from rpm_support_base import PulpRPMTests
-from pulp.agent.lib.container import Container
+from pulp.agent.lib.container import Container, SYSTEM, CONTENT, BIND
 from pulp.agent.lib.dispatcher import Dispatcher
 
 
@@ -57,8 +57,8 @@ class HandlerTest(PulpRPMTests):
         mock_yum.install()
         self.deployer = Deployer()
         dpath, hpath = self.deployer.install()
-        container = Container(root=dpath, path=[hpath])
-        self.dispatcher = Dispatcher(container)
+        self.container = Container(root=dpath, path=[hpath])
+        self.dispatcher = Dispatcher(self.container)
         self.__system = os.system
         os.system = Mock()
 
@@ -68,9 +68,15 @@ class HandlerTest(PulpRPMTests):
         os.system = self.__system
         YumBase.reset()
 
+
 class TestPackages(HandlerTest):
 
     TYPE_ID = 'rpm'
+
+    def setUp(self):
+        HandlerTest.setUp(self)
+        handler = self.container.find(self.TYPE_ID, role=CONTENT)
+        self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
     def verify_succeeded(self, report, installed=[], updated=[], removed=[]):
         resolved = []
@@ -303,6 +309,11 @@ class TestGroups(HandlerTest):
 
     TYPE_ID = 'package_group'
 
+    def setUp(self):
+        HandlerTest.setUp(self)
+        handler = self.container.find(self.TYPE_ID, role=CONTENT)
+        self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
+
     def verify_succeeded(self, report, installed=[], removed=[]):
         resolved = []
         deps = []
@@ -435,6 +446,27 @@ class TestGroups(HandlerTest):
         YumBase.processTransaction.assert_called_once_with()
 
 
-class TestBind(TestCase):
-    # TBD
-    pass
+class TestBind(HandlerTest):
+
+    TYPE_ID = 'yum_distributor'
+
+    def setUp(self):
+        HandlerTest.setUp(self)
+        handler = self.container.find(self.TYPE_ID, role=BIND)
+        self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
+
+    def test_bind(self):
+        pass
+
+
+class TestLinux(HandlerTest):
+
+    TYPE_ID = 'Linux'
+
+    def setUp(self):
+        HandlerTest.setUp(self)
+        handler = self.container.find(self.TYPE_ID, role=SYSTEM)
+        self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
+
+    def test_linux(self):
+        pass

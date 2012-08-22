@@ -14,6 +14,8 @@
 import mock
 import unittest
 
+from pulp.plugins.config import PluginCallConfiguration
+
 from pulp_puppet.common import constants
 from pulp_puppet.importer import configuration
 
@@ -22,7 +24,8 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed(self):
         # Test
-        result, msg = configuration._validate_feed({constants.CONFIG_FEED : 'http://localhost'})
+        config = PluginCallConfiguration({constants.CONFIG_FEED : 'http://localhost'}, {})
+        result, msg = configuration._validate_feed(config)
 
         # Verify
         self.assertTrue(result)
@@ -30,7 +33,8 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed_missing(self):
         # Test
-        result, msg = configuration._validate_feed({})
+        config = PluginCallConfiguration({}, {})
+        result, msg = configuration._validate_feed(config)
 
         # Verify
         self.assertTrue(result)
@@ -38,7 +42,8 @@ class FeedTests(unittest.TestCase):
 
     def test_validate_feed_invalid(self):
         # Test
-        result, msg = configuration._validate_feed({constants.CONFIG_FEED : 'bad-feed'})
+        config = PluginCallConfiguration({constants.CONFIG_FEED : 'bad-feed'}, {})
+        result, msg = configuration._validate_feed(config)
 
         # Verify
         self.assertTrue(not result)
@@ -50,7 +55,8 @@ class QueriesTests(unittest.TestCase):
 
     def test_validate_queries(self):
         # Test
-        result, msg = configuration._validate_queries({constants.CONFIG_QUERIES : ['httpd', 'mysql']})
+        config = PluginCallConfiguration({constants.CONFIG_QUERIES : ['httpd', 'mysql']}, {})
+        result, msg = configuration._validate_queries(config)
 
         # Verify
         self.assertTrue(result)
@@ -58,7 +64,8 @@ class QueriesTests(unittest.TestCase):
 
     def test_validate_queries_missing(self):
         # Test
-        result, msg = configuration._validate_queries({})
+        config = PluginCallConfiguration({}, {})
+        result, msg = configuration._validate_queries(config)
 
         # Verify
         self.assertTrue(result)
@@ -66,7 +73,8 @@ class QueriesTests(unittest.TestCase):
 
     def test_validate_queries_invalid(self):
         # Test
-        result, msg = configuration._validate_queries({constants.CONFIG_QUERIES : 'non-list'})
+        config = PluginCallConfiguration({constants.CONFIG_QUERIES : 'non-list'}, {})
+        result, msg = configuration._validate_queries(config)
 
         # Verify
         self.assertTrue(not result)
@@ -78,7 +86,8 @@ class RemoveMissingTests(unittest.TestCase):
 
     def test_validate_remove_missing(self):
         # Test
-        result, msg = configuration._validate_remove_missing({constants.CONFIG_REMOVE_MISSING : 'true'})
+        config = PluginCallConfiguration({constants.CONFIG_REMOVE_MISSING : 'true'}, {})
+        result, msg = configuration._validate_remove_missing(config)
 
         # Verify
         self.assertTrue(result)
@@ -86,7 +95,8 @@ class RemoveMissingTests(unittest.TestCase):
 
     def test_validate_remove_missing_missing(self):
         # Test
-        result, msg = configuration._validate_remove_missing({})
+        config = PluginCallConfiguration({}, {})
+        result, msg = configuration._validate_remove_missing(config)
 
         # Verify
         self.assertTrue(result)
@@ -94,7 +104,8 @@ class RemoveMissingTests(unittest.TestCase):
 
     def test_validate_remove_missing_invalid(self):
         # Test
-        result, msg = configuration._validate_remove_missing({constants.CONFIG_REMOVE_MISSING : 'foo'})
+        config = PluginCallConfiguration({constants.CONFIG_REMOVE_MISSING : 'foo'}, {})
+        result, msg = configuration._validate_remove_missing(config)
 
         # Verify
         self.assertTrue(not result)
@@ -119,7 +130,7 @@ class FullValidationTests(unittest.TestCase):
             x.return_value = True, None
 
         # Test
-        c = {}
+        c = PluginCallConfiguration({}, {})
         result, msg = configuration.validate(c)
 
         # Verify
@@ -155,16 +166,3 @@ class FullValidationTests(unittest.TestCase):
         all_mock_calls[0].assert_called_once_with(c)
         all_mock_calls[1].assert_called_once_with(c)
         self.assertEqual(0, all_mock_calls[2].call_count)
-
-
-class UtilitiesTests(unittest.TestCase):
-
-    def test_get_boolean_false(self):
-        # Setup
-        data = {'not-bool' : 'false'}
-
-        # Test
-        result = configuration.get_boolean(data, data.keys()[0])
-
-        # Verify
-        self.assertTrue(not result)
