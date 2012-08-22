@@ -852,7 +852,7 @@ class RepoSync(JSONController):
 
         repo_publish_manager = manager_factory.repo_publish_manager()
         auto_publish_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                             action_tag('auto_publish')]
+                             action_tag('auto_publish'), action_tag('publish')]
         auto_distributors = repo_publish_manager.auto_distributors(repo_id)
 
         for distributor in auto_distributors:
