@@ -16,6 +16,7 @@ import logging
 
 import ldap.modlist
 
+from pulp.server.db.model.auth import User
 from pulp.server.config import config
 from pulp.server.managers import factory
 
@@ -134,7 +135,7 @@ class LDAPConnection:
         Adds a user to the pulp user database with no password and
         returns a pulp.server.db.model.User object
         """
-        user = self.user_manager.find_by_login(username)
+        user = User.get_collection().find_one({'login' : username})
         if user is None:
             attrs = userdata[1]
             try:
@@ -143,11 +144,8 @@ class LDAPConnection:
                 name = username
             user =  self.user_manager.create_user(login=username, name=name)
             if config.has_option('ldap', 'default_role'):
-                role = config.get('ldap', 'default_role')
-                rv = self.role_manager.add_user_to_role(role, username)
-                if not rv:
-                    log.error("Could not add user [%s] to role [%s]" %
-                              (username, role))
+                role_id = config.get('ldap', 'default_role')
+                self.role_manager.add_user_to_role(role_id, username)
                               
         return user
 
