@@ -445,10 +445,10 @@ class AddUnitMixin(object):
 
 class StatusMixin(object):
 
-    def __init__(self, report_id, exception_class, progress_report=None):
+    def __init__(self, report_id, exception_class):
         self.report_id = report_id
         self.exception_class = exception_class
-        self.progress_report = progress_report or {}
+        self.progress_report = {}
 
     def set_progress(self, status):
         """
