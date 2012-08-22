@@ -53,19 +53,55 @@ def relevant_existing_task_id(existing_sync_tasks):
     return task_id
 
 
-def sync_task_in_sync_task_group(tasks):
+def relevant_existing_task_group_id(existing_sync_tasks):
+    """
+    Grok through a list of existing sync tasks and look for the task_group_id
+    for the highest priority sync.
+
+    NOTE: It is assumed that the existing_sync_tasks is non-empty.
+
+    @param existing_sync_tasks:
+    @return:
+    """
+    running_tasks = [t for t in existing_sync_tasks if t.is_running()]
+    waiting_tasks = [t for t in existing_sync_tasks if t.is_waiting()]
+
+    if running_tasks:
+        return running_tasks[0].task_group_id
+    return waiting_tasks[0].task_group_id
+
+
+def sync_task_in_sync_task_group(task_list):
     """
     Grok through the tasks returned from the server's repo sync call and find
     the task that pertains to the sync itself.
 
-    @param tasks: list of tasks
-    @type tasks: list
+    @param task_list: list of tasks
+    @type task_list: list
     @return: task for the sync
     @rtype: Task
     """
     sync_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
-    for t in tasks:
+    for t in task_list:
         if sync_tag in t.tags:
             return t
-    # XXX raise an exception? jconnor (2012-08-03)
     return None
+
+
+def publish_task_in_sync_task_group(task_list):
+    """
+    Grok through the tasks returned from the server's repo sync call and find
+    the task that pertains to the auto publish.
+
+    @param task_list: list of tasks
+    @type task_list: list
+    @return: task for the publish
+    @rtype: Task
+    """
+    publish_tag = tags.action_tag(tags.ACTION_AUTO_PUBLISH_TYPE)
+    for t in task_list:
+        if publish_tag in t.tags:
+            return t
+    return None
+
+
