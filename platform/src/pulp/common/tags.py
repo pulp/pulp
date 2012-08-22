@@ -33,6 +33,7 @@ RESOURCE_SCHEDULE_TYPE = 'schedule'
 RESOURCE_USER_TYPE = 'user'
 
 ACTION_SYNC_TYPE = 'sync'
+ACTION_AUTO_PUBLISH_TYPE = 'auto_publish'
 ACTION_PUBLISH_TYPE = 'publish'
 
 # -- public -------------------------------------------------------------------
