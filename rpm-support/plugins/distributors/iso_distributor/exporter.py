@@ -1,9 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2011 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 import os
 import gettext
 import traceback
 from pulp_rpm.yum_plugin import util
 from pulp_rpm.yum_plugin import util, updateinfo, metadata
-
+from iso_distributor import iso_util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
@@ -155,8 +168,7 @@ class RepoExporter(object):
         return True, []
 
     def get_errata_rpms(self, errata_units, rpm_units):
-        existing_rpm_units = form_unit_key_map(rpm_units)
-        print "existing",existing_rpm_units
+        existing_rpm_units = iso_util.form_unit_key_map(rpm_units)
         # get pkglist associaed to the errata
         rpm_units = []
         for u in errata_units:
@@ -167,7 +179,7 @@ class RepoExporter(object):
                         _LOG.debug("Missing checksum info on package <%s> for linking a rpm to an erratum." % (pinfo))
                         continue
                     pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
-                    rpm_key = form_lookup_key(pinfo)
+                    rpm_key = iso_util.form_lookup_key(pinfo)
                     if rpm_key in existing_rpm_units.keys():
                         rpm_unit = existing_rpm_units[rpm_key]
                         _LOG.info("Found matching rpm unit %s" % rpm_unit)
@@ -243,13 +255,3 @@ class RepoExporter(object):
         self.set_progress("distribution", distro_progress_status, progress_callback)
         return True, []
 
-def form_lookup_key(rpm):
-    rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm['release'], rpm["arch"], rpm["checksumtype"], rpm["checksum"])
-    return rpm_key
-
-def form_unit_key_map(units):
-    existing_units = {}
-    for u in units:
-        key = form_lookup_key(u.unit_key)
-        existing_units[key] = u
-    return existing_units

@@ -54,12 +54,19 @@ class GenerateIsos(object):
         else:
             return VALID_IMAGE_TYPES['dvd']
 
+    def set_progress(self, type_id, status, progress_callback=None):
+        if progress_callback:
+            progress_callback(type_id, status)
+
     def run(self, progress_callback=None):
         """
-         get the filelists with sizes and perform iso creation
+         generate iso images for the exported directory
         """
+        iso_progress_status = self.progress
+        iso_progress_status['state'] = "IN_PROGRESS"
+        self.set_progress("isos", iso_progress_status, progress_callback)
         # get size and filelists of the target directory
-        filelist, total_dir_size = list_dir_with_size(self.target_dir)
+        filelist, total_dir_size = self.list_dir_with_size(self.target_dir)
         log.debug("Total target directory size to create isos %s" % total_dir_size)
         # media size
         img_size = self.get_image_type_size(total_dir_size)
@@ -67,23 +74,33 @@ class GenerateIsos(object):
         imgcount = int(math.ceil(total_dir_size/float(img_size)))
         # get the filelists per image by size
         imgs = self.compute_image_files(filelist, imgcount, img_size)
+        iso_progress_status['items_total'] = imgcount
+        iso_progress_status['items_left'] = imgcount
+        iso_progress_status["size_total"] = total_dir_size
+        iso_progress_status["size_left"] = total_dir_size
         for i in range(imgcount):
+            self.set_progress("isos", iso_progress_status, progress_callback)
             msg = "Generating iso images for exported content (%s/%s)" % (i+1, imgcount)
             log.info(msg)
-            if progress_callback is not None:
-                self.progress["isos"]["step"] = msg
-                progress_callback(self.progress)
             grafts = self.get_grafts(imgs[i])
             pathfiles_fd, pathfiles = self.get_pathspecs(grafts)
-            filename = get_iso_filename(self.output_dir, self.prefix, i+1)
+            filename = self.get_iso_filename(self.output_dir, self.prefix, i+1)
             cmd = self.get_mkisofs_template() % (string.join([pathfiles]), filename)
-            status, out = run_command(cmd)
+            status, out = self.run_command(cmd)
             if status != 0:
                 log.error("Error creating iso %s" % filename)
-            log.info("successfully created iso %s" % filename) 
+            log.info("successfully created iso %s" % filename)
             log.debug("status code: %s; output: %s" % (status, out))
             os.unlink(pathfiles)
-        return self.progress
+            iso_progress_status['items_left'] -= 1
+            iso_progress_status['num_success'] += 1
+            if iso_progress_status["size_left"] > img_size:
+                iso_progress_status["size_left"] -= img_size
+            else:
+                iso_progress_status["size_left"] = 0
+        iso_progress_status["state"] = "FINISHED"
+        self.set_progress("isos", iso_progress_status, progress_callback)
+        return True, []
 
     def compute_image_files(self, filelist, imgcount, imgsize):
         """
