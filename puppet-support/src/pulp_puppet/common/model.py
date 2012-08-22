@@ -16,13 +16,9 @@ Contains data structures representing puppet repository and module concepts
 and methods to serialize and deserialize them.
 """
 
-try:
-    import json as _json
-except ImportError:
-    import simplejson as _json
-json = _json
-
 import copy
+
+from pulp.common.json_compat import json
 
 from pulp_puppet.common import constants
 

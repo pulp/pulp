@@ -11,13 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-try:
-    import json as _json
-except ImportError:
-    import simplejson as _json
-json = _json
-
 import unittest
+
+from pulp.common.json_compat import json
 
 from pulp_puppet.common.model import RepositoryMetadata, Module
 
