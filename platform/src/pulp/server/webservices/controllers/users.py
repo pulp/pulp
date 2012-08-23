@@ -26,6 +26,7 @@ from pulp.server.webservices import execution
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
 import pulp.server.exceptions as exceptions
@@ -42,14 +43,33 @@ class UsersCollection(JSONController):
     # Scope: Collection
     # GET:   Retrieves all users
     # POST:  Adds a user
+    
+    @staticmethod
+    def _process_users(users):
+        """
+        Apply standard processing to a collection of users being returned
+        to a client.  Adds the object link and removes user password. 
+
+        @param users: collection of users
+        @type  users: list, tuple
+
+        @return the same list that was passed in, just for convenience. The list
+                itself is not modified- only its members are modified in-place.
+        @rtype  list of User instances
+        """
+        for user in users:
+            user.pop('password', None)
+            user.update(serialization.link.search_safe_link_obj(user['login']))
+
+        return users
+
 
     @auth_required(READ)
     def GET(self):
 
         query_manager = managers.user_query_manager()
         users = query_manager.find_all()
-        for user in users:
-            user.update(serialization.link.child_link_obj(user['login']))
+        self._process_users(users)
 
         return self.ok(users)
 
@@ -137,6 +157,40 @@ class UserResource(JSONController):
                                    resources=resources,
                                    tags=tags)
         return execution.execute_ok(self, call_request)
+    
+
+class UserSearch(SearchController):
+    def __init__(self):
+        super(UserSearch, self).__init__(
+            managers.user_query_manager().find_by_criteria)
+
+    def GET(self):
+        users = self._get_query_results_from_get(is_user_search=True)
+        UsersCollection._process_users(users)
+
+        return self.ok(users)
+
+
+    @auth_required(READ)
+    def POST(self):
+        """
+        Searches based on a Criteria object. Requires a posted parameter
+        'criteria' which has a data structure that can be turned into a
+        Criteria instance.
+
+        @param criteria:    Required. data structure that can be turned into
+                            an instance of the Criteria model.
+        @type  criteria:    dict
+
+        @return:    list of matching users
+        @rtype:     list
+        """
+        users = self._get_query_results_from_post(is_user_search=True)
+        UsersCollection._process_users(users)
+
+        return self.ok(users)
+
+
 
 
 # -- web.py application -------------------------------------------------------
@@ -144,6 +198,7 @@ class UserResource(JSONController):
 
 urls = (
     '/$', 'UsersCollection',
+    '/search/$', 'UserSearch',
     '/([^/]+)/$', 'UserResource',
 )
 
