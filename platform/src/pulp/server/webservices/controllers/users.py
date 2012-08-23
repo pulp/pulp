@@ -58,10 +58,7 @@ class UsersCollection(JSONController):
         @rtype  list of User instances
         """
         for user in users:
-            try:
-                user.pop('password')
-            except KeyError:
-                pass
+            user.pop('password', None)
             user.update(serialization.link.search_safe_link_obj(user['login']))
 
         return users
