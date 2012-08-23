@@ -36,17 +36,12 @@ class PulpDistributor(Distributor):
     def create_consumer_payload(self, repo, config):
         payload = {}
         self._add_repository(repo.id, payload)
-        self._add_importers(repo.id, payload)
         self._add_distributors(repo.id, payload)
         return payload
     
     def _add_repository(self, repoid, payload):
         manager = factory.repo_query_manager()
         payload['repository'] = manager.get_repository(repoid)
-        
-    def _add_importers(self, repoid, payload):
-        manager = factory.repo_importer_manager()
-        payload['importers'] = manager.get_importers(repoid)
         
     def _add_distributors(self, repoid, payload):
         manager = factory.repo_distributor_manager()
