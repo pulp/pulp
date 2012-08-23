@@ -58,7 +58,7 @@ class SearchController(JSONController):
 
         return self.ok(self._get_query_results_from_post())
 
-    def _get_query_results_from_get(self, ignore_fields=None):
+    def _get_query_results_from_get(self, ignore_fields=None, is_user_search=False):
         """
         Looks for query parameters that define a Criteria, and returns the
         results of a search based on that Criteria.
@@ -68,7 +68,12 @@ class SearchController(JSONController):
                                 instance, which will fail if unexpected field
                                 names are present.
         @type  ignore_fields:   list
-
+        
+        @type is_user_search:   True if executing a user search. This is basically to add
+                                login by default to the fields instead of id
+                                
+        @type is_user_search
+ 
         @return:    list of documents from the DB that match the given criteria
                     for the collection associated with this controller
         @rtype:     list
@@ -82,14 +87,16 @@ class SearchController(JSONController):
         # default to getting all fields
         fields = input.pop('field')
         if fields:
-            if 'id' not in fields and u'id' not in fields:
+            if not is_user_search and 'id' not in fields and u'id' not in fields:
                 fields.append('id')
+            if is_user_search and 'login' not in fields and u'login' not in fields:
+                fields.append('login')
             input['fields'] = fields
 
         criteria = Criteria.from_client_input(input)
         return list(self.query_method(criteria))
 
-    def _get_query_results_from_post(self):
+    def _get_query_results_from_post(self, is_user_search=False):
         """
         Looks for a Criteria passed as a POST parameter on ket 'criteria', and
         returns the results of a search based on that Criteria.
@@ -103,6 +110,9 @@ class SearchController(JSONController):
         except KeyError:
             raise exceptions.MissingValue(['criteria'])
         criteria = Criteria.from_client_input(criteria_param)
-        if criteria.fields and 'id' not in criteria.fields and u'id' not in criteria.fields:
-            criteria.fields.append('id')
+        if criteria.fields:
+            if not is_user_search and 'id' not in criteria.fields and u'id' not in criteria.fields:
+                criteria.fields.append('id')
+            if is_user_search and 'login' not in criteria.fields and u'login' not in criteria.fields:
+                criteria.fields.append('login')
         return list(self.query_method(criteria))
