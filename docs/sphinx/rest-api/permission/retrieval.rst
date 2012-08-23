@@ -13,7 +13,7 @@ permissions for the particular resource are returned. In this case list will con
 | :permission:`read`
 | :param_list:`get`
 
-* :param:`?resource,string,URI path of resource`
+* :param:`?resource,string,resource path URI`
 
 | :response_list:`_`
 
