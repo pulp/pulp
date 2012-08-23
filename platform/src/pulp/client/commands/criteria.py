@@ -53,8 +53,13 @@ class CriteriaCommand(PulpCliCommand):
     selective criteria and search criteria, the latter adding options for
     display arguments such as pagination and sorting.
     """
-    def __init__(self, method, filtering=True, include_search=True, *args, **kwargs):
+    def __init__(self, method, name=None, description=None, filtering=True,
+                 include_search=True, *args, **kwargs):
         """
+        :param name: name used to invoke the command
+        :type  name: str
+        :param description: user-readable text describing the command
+        :type  description: str
         :param method:  A method to call when this command is executed. See
                         okaara docs for more info
         :type  method:  callable
@@ -65,11 +70,15 @@ class CriteriaCommand(PulpCliCommand):
         :type  include_search: bool
 
         """
-        name = kwargs.pop('name', None) or 'search'
-        description = kwargs.pop('description', None) or _SEARCH_DESCRIPTION
+        name = name or kwargs.pop('name', None) or 'search'
+        description = description or kwargs.pop('description', None) or _SEARCH_DESCRIPTION
 
         super(CriteriaCommand, self).__init__(name, description,
             method, *args, **kwargs)
+
+        # Hang on to these so unit tests can verify the command is configuration
+        self.filtering = filtering
+        self.include_search = include_search
 
         if filtering:
             self.add_filtering()

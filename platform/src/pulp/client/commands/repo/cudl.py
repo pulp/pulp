@@ -62,12 +62,12 @@ class CreateRepositoryCommand(PulpCliCommand):
 
     def run(self, **kwargs):
         # Collect input
-        id = kwargs['repo-id']
+        id = kwargs[OPTION_REPO_ID.keyword]
         name = id
-        if 'display-name' in kwargs:
-            name = kwargs['display-name']
-        description = kwargs['description']
-        notes = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
+        if OPTION_NAME.keyword in kwargs:
+            name = kwargs[OPTION_NAME.keyword]
+        description = kwargs[OPTION_DESCRIPTION.keyword]
+        notes = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
 
         # Call the server
         self.context.server.repo.create(id, name, description, notes)
@@ -92,11 +92,12 @@ class DeleteRepositoryCommand(PulpCliCommand):
         self.add_option(OPTION_REPO_ID)
 
     def run(self, **kwargs):
-        id = kwargs['repo-id']
+        id = kwargs[OPTION_REPO_ID.keyword]
 
         try:
             self.context.server.repo.delete(id)
-            self.prompt.render_success_message('Repository [%s] successfully deleted' % id)
+            msg = _('Repository [%(r)s] successfully deleted')
+            self.prompt.render_success_message(msg % {'r' : id})
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
             self.prompt.write(msg % {'r' : id}, tag='not-found')
@@ -124,22 +125,22 @@ class UpdateRepositoryCommand(PulpCliCommand):
     def run(self, **kwargs):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('repo-id') # not needed in the delta
+        delta.pop(OPTION_REPO_ID.keyword) # not needed in the delta
 
         # Translate the argument to key name
-        if delta.pop('display-name', None) is not None:
-            delta['display_name'] = kwargs['display-name']
+        if delta.pop(OPTION_NAME.keyword, None) is not None:
+            delta['display_name'] = kwargs[OPTION_NAME.keyword]
 
-        if delta.pop('note', None) is not None:
-            delta['notes'] = arg_utils.args_to_notes_dict(kwargs['note'], include_none=True)
+        if delta.pop(OPTION_NOTES.keyword, None) is not None:
+            delta['notes'] = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
 
         try:
-            self.context.server.repo.update(kwargs['repo-id'], delta)
+            self.context.server.repo.update(kwargs[OPTION_REPO_ID.keyword], delta)
             msg = _('Repository [%(r)s] successfully updated')
-            self.prompt.render_success_message(msg % {'r' : kwargs['repo-id']})
+            self.prompt.render_success_message(msg % {'r' : kwargs[OPTION_REPO_ID.keyword]})
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
-            self.prompt.write(msg % {'r' : kwargs['repo-id']}, tag='not-found')
+            self.prompt.write(msg % {'r' : kwargs[OPTION_REPO_ID.keyword]}, tag='not-found')
 
 
 class ListRepositoriesCommand(PulpCliCommand):
@@ -162,7 +163,7 @@ class ListRepositoriesCommand(PulpCliCommand):
         self.add_option(PulpCliFlag('--distributors', _('if specified, the list of distributors and their configuration is displayed')))
 
     def run(self, **kwargs):
-        self.prompt.render_title('Repositories')
+        self.prompt.render_title(_('Repositories'))
 
         # Default flags to render_document_list
         filters = None

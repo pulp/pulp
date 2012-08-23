@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 import mock
 
 from pulp.common.json_compat import json
@@ -30,7 +31,6 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
         # Ensure all of the expected options are there
         found_options = set(self.command.options)
         expected_options = set([OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID])
-
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -43,10 +43,10 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_REPO_ID.name[2:] : 'test-repo',
-            OPTION_NAME.name[2:] : 'Test Repository',
-            OPTION_DESCRIPTION.name[2:] : 'Repository Description',
-            OPTION_NOTES.name[2:] : ['a=a', 'b=b'],
+            OPTION_REPO_ID.keyword : 'test-repo',
+            OPTION_NAME.keyword : 'Test Repository',
+            OPTION_DESCRIPTION.keyword : 'Repository Description',
+            OPTION_NOTES.keyword : ['a=a', 'b=b'],
         }
 
         self.server_mock.request.return_value = 201, {}
@@ -57,9 +57,9 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
         # Verify
         self.assertEqual(1, self.server_mock.request.call_count)
         self.assertEqual('POST', self.server_mock.request.call_args[0][0])
+
         body = self.server_mock.request.call_args[0][2]
         body = json.loads(body)
-
         self.assertEqual(body['id'], 'test-repo')
         self.assertEqual(body['display_name'], 'Test Repository')
         self.assertEqual(body['description'], 'Repository Description')
@@ -79,7 +79,6 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
         # Ensure all of the expected options are there
         found_options = set(self.command.options)
         expected_options = set([OPTION_REPO_ID])
-
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -92,7 +91,7 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_REPO_ID.name[2:] : 'test-repo',
+            OPTION_REPO_ID.keyword : 'test-repo',
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -112,8 +111,8 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
     def test_run_not_found(self):
         # Setup
         data = {
-            OPTION_REPO_ID.name[2:] : 'test-repo',
-            }
+            OPTION_REPO_ID.keyword : 'test-repo',
+        }
 
         self.server_mock.request.return_value = 404, {}
 
@@ -135,7 +134,6 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
         # Ensure all of the expected options are there
         found_options = set(self.command.options)
         expected_options = set([OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID])
-
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -149,10 +147,10 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
         # Setup
         repo_id = 'test-repo'
         data = {
-            OPTION_REPO_ID.name[2:] : repo_id,
-            OPTION_NAME.name[2:] : 'Test Repository',
-            OPTION_DESCRIPTION.name[2:] : 'Repository Description',
-            OPTION_NOTES.name[2:] : ['a=a', 'b=b'],
+            OPTION_REPO_ID.keyword : repo_id,
+            OPTION_NAME.keyword : 'Test Repository',
+            OPTION_DESCRIPTION.keyword : 'Repository Description',
+            OPTION_NOTES.keyword : ['a=a', 'b=b'],
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -163,12 +161,12 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
         # Verify
         self.assertEqual(1, self.server_mock.request.call_count)
         self.assertEqual('PUT', self.server_mock.request.call_args[0][0])
+
         url = self.server_mock.request.call_args[0][1]
         self.assertTrue(url.endswith('/repositories/%s/' % repo_id))
 
         body = self.server_mock.request.call_args[0][2]
         body = json.loads(body)
-
         self.assertEqual(body['delta']['display_name'], 'Test Repository')
         self.assertEqual(body['delta']['description'], 'Repository Description')
         self.assertEqual(body['delta']['notes'], {'a' : 'a', 'b' : 'b'})
@@ -179,8 +177,8 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
     def test_run_not_found(self):
         # Setup
         data = {
-            OPTION_REPO_ID.name[2:] : 'test-repo',
-            }
+            OPTION_REPO_ID.keyword : 'test-repo',
+        }
 
         self.server_mock.request.return_value = 404, {}
 
@@ -202,7 +200,6 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         # Ensure the correct arguments are present
         expected_option_names = set(['--summary', '--fields', '--importers', '--distributors'])
         found_option_names = set([o.name for o in self.command.options])
-
         self.assertEqual(expected_option_names, found_option_names)
 
         # Ensure the correct method is wired up
