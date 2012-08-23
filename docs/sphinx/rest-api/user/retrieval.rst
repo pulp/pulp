@@ -82,4 +82,9 @@ where there are no users.
     "_href": "/pulp/api/v2/users/test-login/"
   }
  ]
+ 
 
+Advanced Search for Users
+--------------------------------
+
+Please see :ref:`search_api` for more details on how to perform these searches.

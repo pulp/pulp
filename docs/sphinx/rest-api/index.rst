@@ -15,6 +15,7 @@ APIs
    event/index
    user/index
    role/index
+   permission/index
 
 Documentation
 -------------

@@ -73,7 +73,7 @@ class RepoPublishManager(object):
             config = None
         return distributor, config
 
-    def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None, base_progress_report=None):
+    def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None):
         """
         Requests the given distributor publish the repository it is configured
         on.
@@ -97,10 +97,6 @@ class RepoPublishManager(object):
         @param publish_config_override: optional config values to use for this
                                         publish call only
         @type  publish_config_override: dict, None
-
-        @param base_progress_report: basis for the progress report to be built on;
-               this method will cause this instance to be modified
-        @type  base_progress_report: dict
         """
 
         repo_coll = Repo.get_collection()
@@ -119,7 +115,7 @@ class RepoPublishManager(object):
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the publish
-        conduit = RepoPublishConduit(repo_id, distributor_id, base_progress_report=base_progress_report)
+        conduit = RepoPublishConduit(repo_id, distributor_id)
 
         call_config = PluginCallConfiguration(distributor_config, repo_distributor['config'], publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
@@ -183,7 +179,7 @@ class RepoPublishManager(object):
         publish_result_coll.save(result, safe=True)
         return result
 
-    def auto_publish_for_repo(self, repo_id, base_progress_report):
+    def auto_publish_for_repo(self, repo_id):
         """
         Calls publish on all distributors that are configured to be automatically
         called for the given repo. Each distributor is called serially. The order
@@ -199,10 +195,6 @@ class RepoPublishManager(object):
 
         @param repo_id: identifies the repo
         @type  repo_id: str
-
-        @param base_progress_report: the report from the sync call that should
-               be built on by the auto publish
-        @type  base_progress_report: dict
 
         @raise OperationFailed: if one or more of the distributors errors
                 during publishing; the exception will contain information on all
@@ -221,7 +213,7 @@ class RepoPublishManager(object):
         for dist in auto_distributors:
             dist_id = dist['id']
             try:
-                self.publish(repo_id, dist_id, None, base_progress_report=base_progress_report)
+                self.publish(repo_id, dist_id, None)
             except Exception:
                 _LOG.exception('Exception on auto distribute call for repo [%s] distributor [%s]' % (repo_id, dist_id))
                 error_string = traceback.format_exc()

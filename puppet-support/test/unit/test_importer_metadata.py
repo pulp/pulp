@@ -98,7 +98,7 @@ class NegativeMetadataTests(unittest.TestCase):
         try:
             metadata.extract_metadata(self.module, self.module_dir, self.tmp_dir)
             self.fail()
-        except metadata.InvalidTarball, e:
+        except metadata.ExtractionException, e:
             filename = os.path.join(self.module_dir, self.module.filename())
             self.assertEqual(e.module_filename, filename)
 

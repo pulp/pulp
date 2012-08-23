@@ -34,27 +34,37 @@ class PostponedOperationMiddleware(object):
                         'Content-Length': '-1'}
 
     def __call__(self, environ, start_response):
+
         try:
             return self.app(environ, start_response)
+
         except OperationPostponed, e:
             serialized_call_report = e.call_report.serialize()
             href_obj = serialization.dispatch.task_href(e.call_report)
             serialized_call_report.update(href_obj)
+
             body = json.dumps(serialized_call_report)
+
             self.headers['Content-Length'] = str(len(body))
             start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
+
             start_response(start_str, [(k, v) for k, v in self.headers.items()])
             return [body]
+
         except MultipleOperationsPostponed, e:
             serialized_call_report_list = []
+
             for call_report in e.call_report_list:
                 href_obj = serialization.dispatch.task_group_href(call_report)
                 serialized_call_report = call_report.serialize()
                 serialized_call_report.update(href_obj)
                 serialized_call_report_list.append(serialized_call_report)
+
             body = json.dumps(serialized_call_report_list)
+
             self.headers['Content-Length'] = str(len(body))
             start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
+
             start_response(start_str, [(k, v) for k, v in self.headers.items()])
             return [body]
 
