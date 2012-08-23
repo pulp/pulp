@@ -16,7 +16,7 @@ from tito.tagger import VersionTagger
 MASTER_PACKAGE = 'pulp'
 BUGZILLA_REGEX = re.compile('([0-9]+\s+\-\s+)(.+)')
 FEATURE_REGEX = re.compile('([\-]\s+)(.+)')
-EMBEDDED_REGEX = re.compile('(\[\[)(.+)(\]\])')
+EMBEDDED_REGEX = re.compile('(\[\[)([^$]+)(\]\])')
 
 
 class PulpTagger(VersionTagger):

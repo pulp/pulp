@@ -47,6 +47,9 @@ class PublishRunTests(unittest.TestCase):
         self.test_http_dir = os.path.join(self.test_httpd_base, 'http')
         self.test_https_dir = os.path.join(self.test_httpd_base, 'https')
 
+        os.mkdir(self.test_http_dir)
+        os.mkdir(self.test_https_dir)
+
         # Fake repository working directory
         self.working_dir = tempfile.mkdtemp(prefix='pulp-puppet-repo-dir')
 
