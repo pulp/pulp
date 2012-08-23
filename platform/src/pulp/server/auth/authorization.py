@@ -19,7 +19,7 @@ from gettext import gettext as _
 
 from pulp.server.auth.principal import (
     get_principal, SystemPrincipal)
-from pulp.server.exceptions import PulpException
+from pulp.server.exceptions import PulpException, InvalidValue
 
 from pulp.server.managers import factory
 
@@ -46,7 +46,7 @@ def name_to_operation(name):
     """
     name = name.upper()
     if name not in factory.permission_manager().operation_names:
-        return None
+        raise InvalidValue('operations')
     return factory.permission_manager().operation_names.index(name)
 
 
