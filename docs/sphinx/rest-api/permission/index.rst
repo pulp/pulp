@@ -1,4 +1,4 @@
-Role APIs
+Permission APIs
 =============
 
 .. toctree::
