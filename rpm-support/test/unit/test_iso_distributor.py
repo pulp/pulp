@@ -114,8 +114,8 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
         print symlink_dir
         #        status, errors = iso_distributor._export_rpms(existing_units, symlink_dir)
-        repo_exporter = RepoExporter()
-        status, errors = repo_exporter.export_rpms(existing_units, symlink_dir)
+        repo_exporter = RepoExporter(symlink_dir)
+        status, errors = repo_exporter.export_rpms(existing_units)
         print status, errors
         self.assertTrue(status)
         self.assertEquals(len(os.listdir(symlink_dir)), 3)
@@ -186,13 +186,13 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
         print symlink_dir
-        repo_exporter = RepoExporter()
+        repo_exporter = RepoExporter(symlink_dir)
 #        rpm_units = iso_distributor._get_errata_rpms(errata_unit, existing_units)
         rpm_units = repo_exporter.get_errata_rpms(errata_unit, existing_units)
         print "RPMS in ERRATA",rpm_units
         #        iso_distributor._export_rpms(rpm_units, self.repo_working_dir)
-        repo_exporter.export_rpms(rpm_units, self.repo_working_dir)
-        status, errors = repo_exporter.export_errata(errata_unit, symlink_dir)
+        repo_exporter.export_rpms(rpm_units)
+        status, errors = repo_exporter.export_errata(errata_unit)
 #        status, errors = iso_distributor._export_errata(errata_unit, symlink_dir)
         self.assertTrue(os.path.exists("%s/%s" % (symlink_dir, "updateinfo.xml")))
         self.assertTrue(status)
@@ -244,9 +244,9 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         iso_distributor = ISODistributor()
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=[distro_unit], pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
-        repo_exporter = RepoExporter()
+        repo_exporter = RepoExporter(symlink_dir)
 #        status, errors = iso_distributor._export_distributions([distro_unit], symlink_dir)
-        status, errors = repo_exporter.export_distributions([distro_unit], symlink_dir)
+        status, errors = repo_exporter.export_distributions([distro_unit])
         print status, errors
         self.assertTrue(status)
         for file in metadata['files']:

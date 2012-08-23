@@ -78,6 +78,7 @@ class GenerateIsos(object):
         iso_progress_status['items_left'] = imgcount
         iso_progress_status["size_total"] = total_dir_size
         iso_progress_status["size_left"] = total_dir_size
+        iso_progress_status['written_files'] = []
         for i in range(imgcount):
             self.set_progress("isos", iso_progress_status, progress_callback)
             msg = "Generating iso images for exported content (%s/%s)" % (i+1, imgcount)
@@ -85,7 +86,9 @@ class GenerateIsos(object):
             grafts = self.get_grafts(imgs[i])
             pathfiles_fd, pathfiles = self.get_pathspecs(grafts)
             filename = self.get_iso_filename(self.output_dir, self.prefix, i+1)
+            iso_progress_status['current_file'] = filename
             cmd = self.get_mkisofs_template() % (string.join([pathfiles]), filename)
+            self.set_progress("isos", iso_progress_status, progress_callback)
             status, out = self.run_command(cmd)
             if status != 0:
                 log.error("Error creating iso %s" % filename)
@@ -98,6 +101,7 @@ class GenerateIsos(object):
                 iso_progress_status["size_left"] -= img_size
             else:
                 iso_progress_status["size_left"] = 0
+            iso_progress_status['written_files'].append(filename)
         iso_progress_status["state"] = "FINISHED"
         self.set_progress("isos", iso_progress_status, progress_callback)
         return True, []

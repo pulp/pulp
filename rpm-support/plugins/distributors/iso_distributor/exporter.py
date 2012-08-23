@@ -22,6 +22,10 @@ _ = gettext.gettext
 
 class RepoExporter(object):
 
+    def __init__(self, repo_working_dir, skip=None):
+        self.repo_working_dir = repo_working_dir
+        self.skip = skip or []
+
     def init_progress(self):
         return  {
             "state": "IN_PROGRESS",
@@ -52,7 +56,7 @@ class RepoExporter(object):
             date_filter = {"issued" : {"$lte": end_date}}
         return date_filter
 
-    def export_rpms(self, rpm_units, symlink_dir, progress_callback=None):
+    def export_rpms(self, rpm_units, progress_callback=None):
         """
          This call looksup each rpm units and exports to the working directory.
 
@@ -69,7 +73,14 @@ class RepoExporter(object):
         @rtype (bool, [str])
         """
         # get rpm units
+        summary = {}
+        symlink_dir = self.repo_working_dir
         packages_progress_status = self.init_progress()
+        if 'rpm' in self.skip:
+            packages_progress_status["state"] = "SKIPPED"
+            self.set_progress("rpms", packages_progress_status, progress_callback)
+            _LOG.info("rpm unit type in skip list [%s]; skipping export" % self.skip)
+            return summary, []
         packages_progress_status["num_success"] = 0
         packages_progress_status["items_left"] = len(rpm_units)
         packages_progress_status["items_total"] = len(rpm_units)
@@ -104,14 +115,17 @@ class RepoExporter(object):
                 packages_progress_status["items_left"] -= 1
                 continue
             packages_progress_status["items_left"] -= 1
+        summary["num_package_units_attempted"] = len(rpm_units)
+        summary["num_package_units_exported"] = len(rpm_units) - len(errors)
+        summary["num_package_units_errors"] = len(errors)
         if errors:
             packages_progress_status["error_details"] = errors
-            return False, errors
+            return summary, errors
         packages_progress_status["state"] = "FINISHED"
         self.set_progress("rpms", packages_progress_status, progress_callback)
-        return True, []
+        return summary, errors
 
-    def export_errata(self, errata_units, repo_working_dir, progress_callback=None):
+    def export_errata(self, errata_units, progress_callback=None):
         """
          This call looksup each errata unit and its associated rpms and exports
          the rpms units to the working directory and generates updateinfo xml for
@@ -129,13 +143,23 @@ class RepoExporter(object):
         @return tuple of status and list of error messages if any occurred
         @rtype (bool, [str])
         """
+        summary = {}
+        repo_working_dir = self.repo_working_dir
         errors = []
         errata_progress_status = self.init_progress()
         if not errata_units:
-            return True, []
+            errata_progress_status["state"] = "FINISHED"
+            self.set_progress("errata", errata_progress_status, progress_callback)
+            return summary, errors
+        if 'errata' in self.skip:
+            errata_progress_status["state"] = "SKIPPED"
+            self.set_progress("errata", errata_progress_status, progress_callback)
+            _LOG.info("errata unit type in skip list [%s]; skipping export" % self.skip)
+            return summary, errors
         errata_progress_status["num_success"] = 0
         errata_progress_status["items_left"] = len(errata_units)
         errata_progress_status["items_total"] = len(errata_units)
+        summary["num_errata_units_exported"] = 0
         try:
             errata_progress_status['state'] = "IN_PROGRESS"
             self.set_progress("errata", errata_progress_status, progress_callback)
@@ -145,27 +169,31 @@ class RepoExporter(object):
                 repodata_dir = os.path.join(repo_working_dir, "repodata")
                 if not os.path.exists(repodata_dir):
                     _LOG.error("Missing repodata; cannot run modifyrepo")
-                    return False, []
+                    return summary, errors
                 _LOG.debug("Modifying repo for updateinfo")
                 metadata.modify_repo(repodata_dir,  updateinfo_path)
             errata_progress_status["num_success"] = len(errata_units)
             errata_progress_status["items_left"] = 0
         except metadata.ModifyRepoError, mre:
+            details["errors"] = errors
             msg = "Unable to run modifyrepo to include updateinfo at target location %s; Error: %s" % (repo_working_dir, str(mre))
             errors.append(msg)
             _LOG.error(msg)
             errata_progress_status['state'] = "FAILED"
             errata_progress_status["num_success"] = 0
             errata_progress_status["items_left"] = len(errata_units)
-            return False, errors
+            return summary, errors
         except Exception, e:
+            details["errors"] = errors
             errors.append(str(e))
             errata_progress_status['state'] = "FAILED"
             errata_progress_status["num_success"] = 0
             errata_progress_status["items_left"] = len(errata_units)
-            return False, errors
+            return summary, errors
         errata_progress_status['state'] = "FINISHED"
-        return True, []
+        self.set_progress("errata", errata_progress_status, progress_callback)
+        summary["num_errata_units_exported"] = len(errata_units)
+        return summary, errors
 
     def get_errata_rpms(self, errata_units, rpm_units):
         existing_rpm_units = iso_util.form_unit_key_map(rpm_units)
@@ -186,7 +214,7 @@ class RepoExporter(object):
                         rpm_units.append(rpm_unit)
         return rpm_units
 
-    def export_distributions(self, units, symlink_dir, progress_callback=None):
+    def export_distributions(self, units, progress_callback=None):
         """
         Export distriubution unit involves including files within the unit.
         Distribution is an aggregate unit with distribution files. This call
@@ -205,8 +233,15 @@ class RepoExporter(object):
         @return tuple of status and list of error messages if any occurred
         @rtype (bool, [str])
         """
+        summary = {}
+        symlink_dir = self.repo_working_dir
         distro_progress_status = self.init_progress()
         self.set_progress("distribution", distro_progress_status, progress_callback)
+        if 'distribution' in self.skip:
+            distro_progress_status["state"] = "SKIPPED"
+            self.set_progress("distribution", distro_progress_status, progress_callback)
+            _LOG.info("distribution unit type in skip list [%s]; skipping export" % self.skip)
+            return summary, []
         _LOG.info("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
         errors = []
         for u in units:
@@ -250,8 +285,11 @@ class RepoExporter(object):
             distro_progress_status["error_details"] = errors
             distro_progress_status["state"] = "FAILED"
             self.set_progress("distribution", distro_progress_status, progress_callback)
-            return False, errors
+            return summary, errors
         distro_progress_status["state"] = "FINISHED"
+        summary["num_distribution_units_attempted"] = len(units)
+        summary["num_distribution_units_exported"] = len(units) - len(errors)
+        summary["num_distribution_units_errors"] = len(errors)
         self.set_progress("distribution", distro_progress_status, progress_callback)
-        return True, []
+        return summary, errors
 

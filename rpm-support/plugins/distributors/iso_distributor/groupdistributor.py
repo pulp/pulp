@@ -20,16 +20,17 @@ import string
 import time
 import traceback
 import math
-from pulp_rpm.yum_plugin import util, updateinfo, metadata
-from pulp.plugins.distributor import Distributor, GroupDistributor
+from pulp_rpm.yum_plugin import util, metadata
+from pulp.plugins.distributor import GroupDistributor
 from iso_distributor.generate_iso import GenerateIsos
 from iso_distributor.exporter import RepoExporter
 from iso_distributor import iso_util
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 
-from pulp_rpm.common.ids import TYPE_ID_DISTRIBUTOR_ISO, TYPE_ID_DISTRO, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP,\
-        TYPE_ID_PKG_CATEGORY, TYPE_ID_RPM, TYPE_ID_SRPM
+from pulp_rpm.common.ids import TYPE_ID_DISTRIBUTOR_ISO, TYPE_ID_DISTRO, TYPE_ID_DRPM, \
+    TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import comps_util
+
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
@@ -46,10 +47,12 @@ OPTIONAL_CONFIG_KEYS = ["generate_metadata", "https_publish_dir","http_publish_d
 # generate_metadata     - True will run createrepo
 # start_date            - errata start date format eg: "2009-03-30 00:00:00"
 # end_date              - errata end date format eg: "2009-03-30 00:00:00"
-# http_publish_dir      - Optional parameter to override the HTTP_PUBLISH_DIR, mainly used for unit tests
+# http_publish_dir      - Optional parameter to override the HTTP_PUBLISH_DIR
+# https_publish_dir     - Optional parameter to override the HTTPS_PUBLISH_DIR
 # skip                  - List of what content types to skip during export, options:
 #                         ["rpm", "errata", "distribution", "packagegroup"]
 # iso_prefix            - prefix to use in the generated iso naming, default: <repoid>-<current_date>.iso
+
 # -- plugins ------------------------------------------------------------------
 
 class GroupISODistributor(GroupDistributor):
@@ -57,13 +60,17 @@ class GroupISODistributor(GroupDistributor):
     def __init__(self):
         super(GroupISODistributor, self).__init__()
         self.canceled = False
+        self.group_summary = {}
+        self.group_details = {}
+        self.group_progress_status = {}
 
     @classmethod
     def metadata(cls):
         return {
             'id'           : TYPE_ID_DISTRIBUTOR_ISO,
-            'display_name' : 'Iso Distributor',
-            'types'        : [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_DISTRO, TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP]
+            'display_name' : _('Iso Distributor'),
+            'types'        : [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA,
+                              TYPE_ID_DISTRO, TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP]
         }
 
     def init_progress(self):
@@ -149,15 +156,12 @@ class GroupISODistributor(GroupDistributor):
 
     def publish_group(self, repo_group, publish_conduit, config):
         self.group_working_dir = group_working_dir = repo_group.working_dir
-        repo_exporter = RepoExporter()
         skip_types = config.get("skip") or []
-        date_filter = repo_exporter.create_date_range_filter(config)
-        group_progress_status = {}
+
         def group_progress_callback(type_id, status):
-            group_progress_status[type_id] = status
-            publish_conduit.set_progress(group_progress_status)
-        group_summary = {}
-        group_details = {}
+            self.group_progress_status[type_id] = status
+            publish_conduit.set_progress(self.group_progress_status)
+
         for repoid in repo_group.repo_ids:
             _LOG.info("Exporting repo %s " % repoid)
             summary = {}
@@ -173,50 +177,37 @@ class GroupISODistributor(GroupDistributor):
                 publish_conduit.set_progress(progress_status)
 
             repo_working_dir = "%s/%s" % (group_working_dir, repoid)
+            repo_exporter = RepoExporter(repo_working_dir, skip=skip_types)
+            date_filter = repo_exporter.create_date_range_filter(config)
             _LOG.info("repo working dir %s" % repo_working_dir)
             if date_filter:
                 # export errata by date and associated rpm units
-                if "errata" not in skip_types:
-                    progress_status["errata"]["state"] = "STARTED"
-                    criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA], unit_filters=date_filter)
-                    errata_units = publish_conduit.get_units(repoid, criteria=criteria)
-                    criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM])
-                    rpm_units = publish_conduit.get_units(repoid, criteria=criteria)
-                    rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
-                    rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
-                    progress_status["rpms"]["state"] = "FINISHED"
-                    if self.canceled:
-                        return publish_conduit.build_failure_report(summary, details)
-                    # generate metadata
-                    metadata_status, metadata_errors = metadata.generate_metadata(
-                            repo_working_dir, publish_conduit, config, progress_callback)
-                    _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
-                    errata_status, errata_errors = repo_exporter.export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
-                    progress_status["errata"]["state"] = "FINISHED"
+                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA], unit_filters=date_filter)
+                errata_units = publish_conduit.get_units(repoid, criteria=criteria)
+                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM])
+                rpm_units = publish_conduit.get_units(repoid, criteria=criteria)
+                rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
+                rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
+                if self.canceled:
+                    return publish_conduit.build_failure_report(summary, details)
+                # generate metadata
+                metadata_status, metadata_errors = metadata.generate_metadata(
+                       repo_working_dir, publish_conduit, config, progress_callback)
+                _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+                errata_status, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
 
-                    summary["num_package_units_attempted"] = len(rpm_units)
-                    summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
-                    summary["num_package_units_errors"] = len(rpm_errors)
-                    details["errors"] = rpm_errors +  errata_errors + metadata_errors
-                else:
-                    progress_status["errata"]["state"] = "SKIPPED"
-                    _LOG.info("erratum unit type in skip list [%s]; skipping export" % skip_types)
+                summary["num_package_units_attempted"] = len(rpm_units)
+                summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
+                summary["num_package_units_errors"] = len(rpm_errors)
+                details["errors"] = rpm_errors +  errata_errors + metadata_errors
             else:
                 # export everything
-                rpm_units = []
-                rpm_errors = []
-                if "rpm" not in skip_types:
-                    progress_status["rpms"]["state"] = "STARTED"
-                    criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM])
-                    rpm_units = publish_conduit.get_units(repoid, criteria)
-                    rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
-                    progress_status["rpms"]["state"] = "FINISHED"
-                    summary["num_package_units_attempted"] = len(rpm_units)
-                    summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
-                    summary["num_package_units_errors"] = len(rpm_errors)
-                else:
-                    progress_status["rpms"]["state"] = "SKIPPED"
-                    _LOG.info("rpm unit type in skip list [%s]; skipping export" % skip_types)
+                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM])
+                rpm_units = publish_conduit.get_units(repoid, criteria)
+                rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
+                summary["num_package_units_attempted"] = len(rpm_units)
+                summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
+                summary["num_package_units_errors"] = len(rpm_errors)
                 # package groups
                 groups_xml_path = None
                 if "packagegroup" not in skip_types:
@@ -239,57 +230,56 @@ class GroupISODistributor(GroupDistributor):
                 metadata_status, metadata_errors = metadata.generate_metadata(
                         repo_working_dir, publish_conduit, config, progress_callback, groups_xml_path)
                 _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
-                errata_errors = []
-                if "errata" not in skip_types:
-                    progress_status["errata"]["state"] = "STARTED"
-                    criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
-                    errata_units = publish_conduit.get_units(repoid, criteria)
-                    rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
-                    repo_exporter.export_rpms(rpm_units, repo_working_dir, progress_callback=progress_callback)
-                    errata_status, errata_errors = repo_exporter.export_errata(errata_units, repo_working_dir, progress_callback=progress_callback)
-                    summary["num_errata_units_exported"] = len(errata_units)
-                    progress_status["errata"]["state"] = "FINISHED"
-                else:
-                    progress_status["errata"]["state"] = "SKIPPED"
-                    _LOG.info("erratum unit type in skip list [%s]; skipping export" % skip_types)
+                # export errata units and associated rpms
+                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
+                errata_units = publish_conduit.get_units(repoid, criteria)
+                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM])
+                rpm_units = publish_conduit.get_units(repoid, criteria)
+                rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
+                repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
+                errata_status, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
+                summary["num_errata_units_exported"] = len(errata_units)
+                # export distributions
+                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DISTRO])
+                distro_units = publish_conduit.get_units(repoid, criteria)
+                distro_status, distro_errors = repo_exporter.export_distributions(distro_units, progress_callback=progress_callback)
+                summary["num_distribution_units_attempted"] = len(distro_units)
+                summary["num_distribution_units_exported"] = len(distro_units) - len(distro_errors)
+                summary["num_distribution_units_errors"] = len(distro_errors)
 
-                distro_errors = []
-                if "distribution" not in skip_types:
-                    # distro units
-                    progress_status["distribution"]["state"] = "STARTED"
-                    criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DISTRO])
-                    distro_units = publish_conduit.get_units(repoid, criteria)
-                    distro_status, distro_errors = repo_exporter.export_distributions(distro_units, repo_working_dir, progress_callback=progress_callback)
-                    progress_status["distribution"]["state"] = "FINISHED"
-
-                    summary["num_distribution_units_attempted"] = len(distro_units)
-                    summary["num_distribution_units_exported"] = len(distro_units) - len(distro_errors)
-                    summary["num_distribution_units_errors"] = len(distro_errors)
-                else:
-                    progress_status["distribution"]["state"] = "SKIPPED"
-                    _LOG.info("distribution unit type in skip list [%s]; skipping export" % skip_types)
-                group_progress_status[repoid] = progress_status
+                self.group_progress_status[repoid] = progress_status
                 details["errors"] = rpm_errors + distro_errors + errata_errors + metadata_errors
-                group_summary[repoid] = summary
-                group_details[repoid] = details
-            # build iso and publish via HTTPS
+                self.group_summary[repoid] = summary
+                self.group_details[repoid] = details
+        # generate and publish isos
+        self._publish_isos(repo_group, config, progress_callback=group_progress_callback)
+        _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (self.group_summary, self.group_details))
+        # remove exported content from working dirctory
+        iso_util.cleanup_working_dir(self.group_working_dir)
+        # check for any errors
+        if not len([self.group_details[repoid]["errors"] for repoid in self.group_details.keys()]):
+            return publish_conduit.build_failure_report(self.group_summary, self.group_details)
+        return publish_conduit.build_success_report(self.group_summary, self.group_details)
+
+    def _publish_isos(self, repo_group, config, progress_callback=None):
+        # build iso and publish via HTTPS
         https_publish_dir = iso_util.get_https_publish_iso_dir(config)
         https_repo_publish_dir = os.path.join(https_publish_dir, repo_group.id).rstrip('/')
         prefix = config.get('iso_prefix') or repo_group.id
         if config.get("https"):
             # Publish for HTTPS
-            self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, group_progress_callback)
+            self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo_group.id, https_repo_publish_dir))
-                isogen = GenerateIsos(group_working_dir, https_repo_publish_dir, prefix=prefix, progress=self.init_progress())
+                isogen = GenerateIsos(self.group_working_dir, https_repo_publish_dir, prefix=prefix, progress=self.init_progress())
                 isogen.run(progress_callback=group_progress_callback)
-                group_summary["https_publish_dir"] = https_repo_publish_dir
-                self.set_progress("publish_https", {"state" : "FINISHED"}, group_progress_callback)
-                group_summary["isos"]["state"] = "FINISHED"
+                self.group_summary["https_publish_dir"] = https_repo_publish_dir
+                self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
+                self.group_summary["isos"]["state"] = "FINISHED"
             except:
-                self.set_progress("publish_https", {"state" : "FAILED"}, group_progress_callback)
+                self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
         else:
-            self.set_progress("publish_https", {"state" : "SKIPPED"}, group_progress_callback)
+            self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
             if os.path.lexists(https_repo_publish_dir):
                 _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
                 shutil.rmtree(https_repo_publish_dir)
@@ -300,25 +290,18 @@ class GroupISODistributor(GroupDistributor):
         http_repo_publish_dir = os.path.join(http_publish_dir, repo_group.id).rstrip('/')
         if config.get("http"):
             # Publish for HTTP
-            self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, group_progress_callback)
+            self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo_group.id, http_repo_publish_dir))
-                isogen = GenerateIsos(group_working_dir, http_repo_publish_dir, prefix=prefix, progress=self.init_progress())
-                isogen.run(progress_callback=group_progress_callback)
-                group_summary["http_publish_dir"] = http_repo_publish_dir
-                self.set_progress("publish_http", {"state" : "FINISHED"}, group_progress_callback)
-                group_summary["isos"]["state"] = "FINISHED"
+                isogen = GenerateIsos(self.group_working_dir, http_repo_publish_dir, prefix=prefix, progress=self.init_progress())
+                isogen.run(progress_callback=progress_callback)
+                self.group_summary["http_publish_dir"] = http_repo_publish_dir
+                self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
+                self.group_summary["isos"]["state"] = "FINISHED"
             except:
-                self.set_progress("publish_http", {"state" : "FAILED"}, group_progress_callback)
+                self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:
-            self.set_progress("publish_http", {"state" : "SKIPPED"}, group_progress_callback)
+            self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)
             if os.path.lexists(http_repo_publish_dir):
                 _LOG.debug("Removing link for %s since http is not set" % http_repo_publish_dir)
                 shutil.rmtree(http_repo_publish_dir)
-        _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (group_summary, group_details))
-        # remove exported content from working dirctory
-        iso_util.cleanup_working_dir(self.group_working_dir)
-        # check for any errors
-        if not len([group_details[repoid]["errors"] for repoid in group_details.keys()]):
-            return publish_conduit.build_failure_report(group_summary, group_details)
-        return publish_conduit.build_success_report(group_summary, group_details)
