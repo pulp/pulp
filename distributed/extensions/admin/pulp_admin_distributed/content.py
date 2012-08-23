@@ -113,4 +113,6 @@ class Update(PollingCommand):
         prompt.render_success_message(_(msg))
         # reported as succeeded
         details = task.result['details'][TYPE_ID]['details']
-        prompt.render_success_message(str(details))
+        prompt.render_success_message(_('succeeded'))
+        from pprint import pprint
+        pprint(details)

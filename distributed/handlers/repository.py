@@ -12,8 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import os
-from iniparse import INIConfig
 from pulp.common.bundle import Bundle as BundleImpl
+from pulp.common.config import Config
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import HandlerReport
 from pulp.bindings.bindings import Bindings
@@ -22,21 +22,10 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
-DISTRIBUTOR_ID = 'pulp_distributor'
-
-class ConsumerConfig(INIConfig):
-    def __init__(self):
-        path = '/etc/pulp/consumer/consumer.conf'
-        fp = open(path)
-        try:
-            INIConfig.__init__(self, fp)
-        finally:
-            fp.close()
-
 
 class LocalBindings(Bindings):
     """
-    Pulp (REST) API.
+    Local Pulp (REST) API.
     """
     
     def __init__(self):
@@ -49,16 +38,15 @@ class LocalBindings(Bindings):
 
 class RemoteBindings(Bindings):
     """
-    Pulp (REST) API.
+    Remote Pulp (REST) API.
     """
     
-    def __init__(self):
-        cfg = ConsumerConfig()
-        host = cfg.server.host
-        port = int(cfg.server.port)
-        cert = os.path.join(
-            cfg.filesystem.id_cert_dir,
-            cfg.filesystem.id_cert_filename)
+    def __init__(self, cfg):
+        server = cfg['server']
+        host = server['host']
+        port = int(server['port'])
+        files = cfg['filesystem']
+        cert = os.path.join(files['id_cert_dir'], files['id_cert_filename'])
         connection = PulpConnection(host, port, cert_filename=cert)
         Bindings.__init__(self, connection)
 
@@ -68,11 +56,9 @@ class Bundle(BundleImpl):
     Consumer certificate (bundle)
     """
 
-    def __init__(self):
-        cfg = ConsumerConfig()
-        path = os.path.join(
-            cfg.filesystem.id_cert_dir,
-            cfg.filesystem.id_cert_filename)
+    def __init__(self, cfg):
+        files = cfg['filesystem']
+        path = os.path.join(files['id_cert_dir'], files['id_cert_filename'])
         BundleImpl.__init__(self, path)
 
 
@@ -102,8 +88,9 @@ class RepositoryHandler(ContentHandler):
         return report
     
     def all_bindings(self):
-        remote = RemoteBindings()
-        bundle = Bundle()
+        cfg = Config(self.cfg['config'])
+        remote = RemoteBindings(cfg)
+        bundle = Bundle(cfg)
         myid = bundle.cn()
         http = remote.bind.find_by_id(myid)
         if http.response_code == 200:
@@ -113,8 +100,9 @@ class RepositoryHandler(ContentHandler):
         
     def bindings(self, repoids):
         bindings = []
-        remote = RemoteBindings()
-        bundle = Bundle()
+        cfg = Config(self.cfg['config'])
+        remote = RemoteBindings(cfg)
+        bundle = Bundle(cfg)
         myid = bundle.cn()
         for repoid in repoids:
             http = remote.bind.find_by_id(myid, repoid)
@@ -125,7 +113,8 @@ class RepositoryHandler(ContentHandler):
         return bindings
     
     def filtered(self, bindings):
-        return [b for b in bindings if b['type_id'] == DISTRIBUTOR_ID]
+        type_id = self.cfg['distributor']
+        return [b for b in bindings if b['type_id'] == type_id]
 
     def synchronize(self, bindings):
         details = {}

@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.plugins.distributor import Distributor
+from pulp.server.managers import factory
 
 class PulpDistributor(Distributor):
 
@@ -33,5 +34,20 @@ class PulpDistributor(Distributor):
         pass
     
     def create_consumer_payload(self, repo, config):
-        payload = {'mypayload':'MYPAYLOAD'}
+        payload = {}
+        self._add_repository(repo.id, payload)
+        self._add_importers(repo.id, payload)
+        self._add_distributors(repo.id, payload)
         return payload
+    
+    def _add_repository(self, repoid, payload):
+        manager = factory.repo_query_manager()
+        payload['repository'] = manager.get_repository(repoid)
+        
+    def _add_importers(self, repoid, payload):
+        manager = factory.repo_importer_manager()
+        payload['importers'] = manager.get_importers(repoid)
+        
+    def _add_distributors(self, repoid, payload):
+        manager = factory.repo_distributor_manager()
+        payload['distributors'] = manager.get_distributors(repoid)
