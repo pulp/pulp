@@ -73,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.26-1
+- Upgraded okaara to 1.0.26 (jason.dobies@redhat.com)
+
+* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.26-1
 - Added syntactic sugar methods to the CLI (jason.dobies@redhat.com)
 - Added keyword property to the Option class (jason.dobies@redhat.com)
 
