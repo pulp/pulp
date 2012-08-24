@@ -63,14 +63,26 @@ def auth_required(operation=None, super_user_only=False):
             user = None
             is_consumer = False
             permissions = {'/v2/consumers/' : [0, 1]}
-            # first, try username:password authentication
-            username, password = http.username_password()
+
+            # Support web server level authentication of users
+            username = http.request_info("REMOTE_USER")
+
             if username is not None:
-                user = check_username_password(username, password)
+                # Omitting the password = assume preauthenticated
+                user = check_username_password(username)
                 if user is None:
+                    # User is not in the local database, nor in LDAP
                     return self.unauthorized(user_pass_fail_msg)
 
-            # second, try certificate authentication
+            # Fall back to internal username:password authentication
+            if user is None: 
+                username, password = http.username_password()
+                if username is not None:
+                    user = check_username_password(username, password)
+                    if user is None:
+                        return self.unauthorized(user_pass_fail_msg)
+            
+            # Next try certificate authentication
             if user is None:
                 cert_pem = http.ssl_client_cert()
                 if cert_pem is not None:
@@ -91,7 +103,8 @@ def auth_required(operation=None, super_user_only=False):
                             consumer_base_url = '/v2/consumers/%s' % user + '/'
                             permissions[consumer_base_url] = [0, 1, 2, 3, 4]
 
-                # third, check oauth credentials
+                # Finally, check oauth credentials
+                # Nested to reflect the fact this also needs cert_pem
                 if user is None:
                     auth = http.http_authorization()
                     username = http.request_info('HTTP_PULP_USER')

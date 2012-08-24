@@ -67,15 +67,8 @@ def _check_username_password_ldap(username, password=None):
         ldap_tls = config.getboolean('ldap', 'tls')
     ldap_server = ldap_connection.LDAPConnection(server=ldap_uri, tls=ldap_tls)
     ldap_server.connect()
-    user = None
-    if password is not None:
-        user = ldap_server.authenticate_user(ldap_base, username, password,
-                                             filter=ldap_filter)
-    else:
-        user_query_manager = factory.user_query_manager()
-        user = user_query_manager.find_by_login(username)
-    if user is None:
-        return None
+    user = ldap_server.authenticate_user(ldap_base, username, password,
+                                         filter=ldap_filter)
     return user
 
 
