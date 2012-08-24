@@ -52,7 +52,7 @@ class RepoSection(PulpCliSection):
         self.add_command(repo_commands.ListRepositoriesCommand(context))
 
         # Search Command
-        self.add_command(CriteriaCommand(self.search))
+        self.add_command(CriteriaCommand(self.search, include_search=True))
 
         # Subsections
         self.add_subsection(ImporterSection(context))
