@@ -73,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.25-1
+- Upgraded okaara to 1.0.25 (jason.dobies@redhat.com)
+
+* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.25-1
 - fixing a bug where an Exception instance was assumed to have an attribute not
   present in python <2.5, and that attribute was assumed to have a non-
   guaranteed value. (mhrivnak@redhat.com)
