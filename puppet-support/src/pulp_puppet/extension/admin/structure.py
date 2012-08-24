@@ -26,10 +26,12 @@ from gettext import gettext as _
 SECTION_ROOT = 'puppet'
 
 SECTION_REPO = 'repo'
+
 SECTION_COPY = 'copy'
+SECTION_GROUP = 'group'
 SECTION_REMOVE = 'remove'
 SECTION_UPLOADS = 'uploads'
-SECTION_GROUP = 'group'
+SECTION_GROUP_MEMBERS = 'members'
 
 SECTION_SYNC = 'sync'
 SECTION_SYNC_SCHEDULES = 'schedules'
@@ -42,6 +44,7 @@ DESCRIPTIONS = {
 
     SECTION_COPY : _('copy modules from one repository into another'),
     SECTION_GROUP : _('repository group lifecycle commands'),
+    SECTION_GROUP_MEMBERS : _('manage membership in a repository group'),
     SECTION_REMOVE : _('remove copied or uploaded modules from a repository'),
     SECTION_UPLOADS : _('upload modules into a repository'),
 
@@ -55,7 +58,9 @@ DESCRIPTIONS = {
 STRUCTURE = {
     SECTION_REPO : {
         SECTION_COPY : {},
-        SECTION_GROUP : {},
+        SECTION_GROUP : {
+            SECTION_GROUP_MEMBERS: {},
+        },
         SECTION_REMOVE : {},
         SECTION_UPLOADS : {},
         SECTION_SYNC : {
@@ -109,6 +114,9 @@ def repo_uploads_section(cli):
 
 def repo_group_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP)
+
+def repo_group_members_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP, SECTION_GROUP_MEMBERS)
 
 def repo_sync_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_SYNC)

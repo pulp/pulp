@@ -84,6 +84,8 @@ DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 DIR_PLUGINS = '/usr/lib/pulp/plugins'
 
 LINKS = (
+
+    # Builtin Admin Extensions
     ('builtins/extensions/admin/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
     ('builtins/extensions/admin/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
     ('builtins/extensions/admin/pulp_permission', DIR_ADMIN_EXTENSIONS + 'pulp_permission'),
@@ -94,12 +96,15 @@ LINKS = (
     ('builtins/extensions/admin/pulp_upload', DIR_ADMIN_EXTENSIONS + 'pulp_upload'),
     ('builtins/extensions/admin/pulp_user', DIR_ADMIN_EXTENSIONS + 'pulp_user'),
 
+    # Builtin Consumer Extensions
     ('builtins/extensions/consumer/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
 
+    # Executables
     ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
     ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
     ('platform/bin/pulp-migrate', '/usr/bin/pulp-migrate'),
 
+    # Server Configuration
     ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
     ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf'),
     ('platform/etc/gofer/plugins/pulp.conf', '/etc/gofer/plugins/pulp.conf'),
@@ -111,9 +116,11 @@ LINKS = (
     ('platform/etc/pulp/logging', '/etc/pulp/logging'),
     ('platform/etc/rc.d/init.d/pulp-server', '/etc/rc.d/init.d/pulp-server'),
 
+    # Server Web Configuration
     ('platform/src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
+    # RPM Support Configuration
     ('rpm-support/etc/httpd/conf.d/pulp_rpm.conf', '/etc/httpd/conf.d/pulp_rpm.conf'),
     ('rpm-support/etc/pulp/repo_auth.conf', '/etc/pulp/repo_auth.conf'),
     ('rpm-support/etc/pulp/agent/conf.d/rpm.conf', '/etc/pulp/agent/conf.d/rpm.conf'),
@@ -121,6 +128,7 @@ LINKS = (
     ('rpm-support/etc/pulp/agent/conf.d/linux.conf', '/etc/pulp/agent/conf.d/linux.conf'),
     ('rpm-support/etc/yum/pluginconf.d/pulp-profile-update.conf', '/etc/yum/pluginconf.d/pulp-profile-update.conf'),
 
+    # RPM Support Admin Extensions
     ('rpm-support/extensions/admin/rpm_admin_consumer', DIR_ADMIN_EXTENSIONS + 'rpm_admin_consumer'),
     ('rpm-support/extensions/admin/rpm_repo', DIR_ADMIN_EXTENSIONS + 'rpm_repo'),
     ('rpm-support/extensions/admin/rpm_sync', DIR_ADMIN_EXTENSIONS + 'rpm_sync'),
@@ -131,27 +139,35 @@ LINKS = (
     ('rpm-support/extensions/admin/rpm_package_group_upload', DIR_ADMIN_EXTENSIONS + 'rpm_package_group_upload'),
     ('rpm-support/extensions/admin/rpm_errata_upload', DIR_ADMIN_EXTENSIONS + 'rpm_errata_upload'),
 
+    # RPM Support Consumer Extensions
     ('rpm-support/extensions/consumer/rpm_consumer', DIR_CONSUMER_EXTENSIONS + 'rpm_consumer'),
 
+    # RPM Support Agent Handlers
     ('rpm-support/handlers/rpm.py', '/usr/lib/pulp/agent/handlers/rpm.py'),
     ('rpm-support/handlers/bind.py', '/usr/lib/pulp/agent/handlers/bind.py'),
     ('rpm-support/handlers/linux.py', '/usr/lib/pulp/agent/handlers/linux.py'),
 
+    # RPM Support Plugins
     ('rpm-support/plugins/types/rpm_support.json', DIR_PLUGINS + '/types/rpm_support.json'),
     ('rpm-support/plugins/importers/yum_importer', DIR_PLUGINS + '/importers/yum_importer'),
     ('rpm-support/plugins/distributors/yum_distributor', DIR_PLUGINS + '/distributors/yum_distributor'),
     ('rpm-support/plugins/distributors/iso_distributor', DIR_PLUGINS + '/distributors/iso_distributor'),
     ('rpm-support/plugins/profilers/rpm_errata_profiler', DIR_PLUGINS + '/profilers/rpm_errata_profiler'),
 
+    # RPM Support Web Configuration
     ('rpm-support/usr/lib/yum-plugins/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('rpm-support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
 
+    # Puppet Support Plugins
     ('puppet-support/etc/httpd/conf.d/pulp_puppet.conf', '/etc/httpd/conf.d/pulp_puppet.conf'),
     ('puppet-support/plugins/types/puppet.json', DIR_PLUGINS + '/types/puppet.json'),
     ('puppet-support/plugins/importers/puppet_importer', DIR_PLUGINS + '/importers/puppet_importer'),
     ('puppet-support/plugins/distributors/puppet_distributor', DIR_PLUGINS + '/distributors/puppet_distributor'),
 
-    )
+    # Puppet Support Admin Extensions
+    ('puppet-support/extensions/admin/puppet_repo', DIR_ADMIN_EXTENSIONS + 'puppet_repo'),
+
+)
 
 def parse_cmdline():
     """
