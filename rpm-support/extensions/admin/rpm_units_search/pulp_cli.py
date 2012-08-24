@@ -15,7 +15,7 @@ from gettext import gettext as _
 import logging
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
-from pulp.client.search import UnitSearchCommand, UnitSearchAllCommand
+from pulp.client.commands.criteria import UnitAssociationCriteriaCommand, UntypedUnitAssociationCriteriaCommand
 
 # -- constants ----------------------------------------------------------------
 
@@ -121,28 +121,23 @@ def initialize(context):
     add_commands(units_section)
 
 def add_commands(units_section):
-    """
-    @param context:
-    @type  context: pulp.client.extensions.core.ClientContext
-    """
-
     m = _('search for units in a repository')
-    units_section.add_command(UnitSearchAllCommand(all, name='all', description=m))
+    units_section.add_command(UntypedUnitAssociationCriteriaCommand(all, name='all', description=m))
 
     m = _('search for RPMs in a repository')
-    units_section.add_command(UnitSearchCommand(rpm, name='rpm', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(rpm, name='rpm', description=m))
 
     m = _('search for SRPMs in a repository')
-    units_section.add_command(UnitSearchCommand(srpm, name='srpm', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(srpm, name='srpm', description=m))
 
     m = _('search for DRPMs in a repository')
-    units_section.add_command(UnitSearchCommand(drpm, name='drpm', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(drpm, name='drpm', description=m))
 
     m = _('search for package groups in a repository')
-    units_section.add_command(UnitSearchCommand(package_group, name='package-group', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(package_group, name='package-group', description=m))
 
     m = _('search for package categories (groups of package groups) in a repository')
-    units_section.add_command(UnitSearchCommand(package_category, name='package-category', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(package_category, name='package-category', description=m))
 
     units_section.add_command(ErrataCommand(CONTEXT, 'errata', _('search errata in a repository')))
     units_section.add_command(DistributionCommand(CONTEXT, 'distribution', _('list distributions in a repository')))
@@ -171,7 +166,7 @@ def _content_command(type_ids, **kwargs):
     types of content.
 
     :param type_ids:    list of type IDs that the command should operate on
-    :type  type_ids:    list
+    :type  type_ids:    list, tuple
 
     :param kwargs:  CLI options as input by the user and passed in by okaara
     :type  kwargs:  dict
