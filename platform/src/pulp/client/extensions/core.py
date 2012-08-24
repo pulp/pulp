@@ -143,7 +143,7 @@ class PulpPrompt(Prompt):
         self.write('-' * len(section))
         self.render_spacer()
 
-    def render_paragraph(self, paragraph):
+    def render_paragraph(self, paragraph, tag=TAG_PARAGRAPH):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting for a description.
@@ -153,13 +153,13 @@ class PulpPrompt(Prompt):
         this method instead of concatenating them manually with newline characters.
 
         For testing verification, this call will result in one instance of
-        TAG_PARAGRAPH being recorded.
+        TAG_PARAGRAPH being recorded unless a different tag is provided.
 
         :param paragraph: text to format as a paragraph
         :type  paragraph: str
         """
 
-        self.write(paragraph, tag=TAG_PARAGRAPH)
+        self.write(paragraph, tag=tag)
         self.render_spacer()
 
     def render_success_message(self, message):
