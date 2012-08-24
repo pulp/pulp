@@ -34,17 +34,18 @@ from iso_distributor import iso_util
 from yum_importer import importer_rpm
 from yum_importer import errata, distribution
 from pulp.plugins.model import Repository, Unit, RepositoryGroup
+from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 import distributor_mocks
 import rpm_support_base
 
-class TestISODistributor(rpm_support_base.PulpRPMTests):
+class TestGroupISODistributor(rpm_support_base.PulpRPMTests):
 
     def setUp(self):
-        super(TestISODistributor, self).setUp()
+        super(TestGroupISODistributor, self).setUp()
         self.init()
 
     def tearDown(self):
-        super(TestISODistributor, self).tearDown()
+        super(TestGroupISODistributor, self).tearDown()
         self.clean()
 
     def init(self):
@@ -73,6 +74,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
 
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./data"))
 
+
     def clean(self):
         shutil.rmtree(self.temp_dir)
 
@@ -82,6 +84,95 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         for type in [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_DISTRO,
                      TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP]:
             self.assertTrue(type in metadata["types"])
+
+    def test_validate_config(self):
+        distributor = GroupISODistributor()
+        repo = mock.Mock(spec=Repository)
+        repo.id = "testrepo"
+        http = "true"
+        https = False
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        http = True
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = "False"
+        relative_url = "test_path"
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        https = True
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = False
+        relative_url = "test_path"
+        generate_metadata = "false"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            generate_metadata=generate_metadata)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        generate_metadata = True
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            generate_metadata=generate_metadata)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = False
+        relative_url = "test_path"
+        skip_content_types = "fake"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            skip=skip_content_types)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        skip_content_types = []
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            skip=skip_content_types)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        # test invalid iso prefix
+        config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="my_iso*_name_/")
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+        # test valid iso prefix
+        config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="My_iso_name-01")
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        invalid_config="dummy"
+        config = distributor_mocks.get_basic_config(invalid_config)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        http = True
+        https = False
+        relative_url = "test_path"
+        auth_cert = "fake"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_ca=auth_cert)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        auth_cert = open(os.path.join(self.data_dir, "cert.crt")).read()
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_ca=auth_cert)
+        print auth_cert
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
 
     def test_group_publish_isos(self):
         feed_url = "file://%s/pulp_unittest/" % self.data_dir
@@ -149,3 +240,56 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(isos_list), 1)
         # make sure the iso name defaults to repoid
         self.assertTrue( isos_list[0].startswith("test-isos"))
+
+    def test_publish_progress(self):
+        global progress_status
+        progress_status = None
+        group_progress_status = None
+        def set_progress(progress):
+            global progress_status
+            progress_status = progress
+        PROGRESS_FIELDS = ["num_success", "num_error", "items_left", "items_total", "error_details"]
+        publish_conduit = distributor_mocks.get_publish_conduit(pkg_dir=self.pkg_dir)
+        config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http_publish_dir=self.http_publish_dir,
+            generate_metadata=True, http=True, https=False)
+        distributor = GroupISODistributor()
+        repo = mock.Mock(spec=Repository)
+        repo.working_dir = self.repo_working_dir
+        repo.id = "test_progress_sync"
+        repo_group = mock.Mock(spec=RepositoryGroup)
+        repo_group.id = "test_group"
+        repo_group.repo_ids = [repo.id,]
+        repo_group.working_dir = self.group_working_dir
+        publish_conduit.set_progress = mock.Mock()
+        publish_conduit.set_progress.side_effect = set_progress
+        distributor.publish_group(repo_group, publish_conduit, config)
+        print distributor.group_progress_status
+        self.assertTrue(progress_status is not None)
+        self.assertEqual(progress_status['group-id'], repo_group.id)
+        self.assertTrue("rpms" in progress_status['repositories'][repo.id])
+        self.assertTrue(progress_status['repositories'][repo.id]["rpms"].has_key("state"))
+        self.assertEqual(progress_status['repositories'][repo.id]["rpms"]["state"], "FINISHED")
+        for field in PROGRESS_FIELDS:
+            self.assertTrue(field in progress_status['repositories'][repo.id]["rpms"])
+
+        self.assertTrue("distribution" in progress_status['repositories'][repo.id])
+        self.assertTrue(progress_status['repositories'][repo.id]["distribution"].has_key("state"))
+        self.assertEqual(progress_status['repositories'][repo.id]["distribution"]["state"], "FINISHED")
+        for field in PROGRESS_FIELDS:
+            self.assertTrue(field in progress_status['repositories'][repo.id]["distribution"])
+
+        self.assertTrue("errata" in progress_status['repositories'][repo.id])
+        self.assertTrue(progress_status['repositories'][repo.id]["errata"].has_key("state"))
+        self.assertEqual(progress_status['repositories'][repo.id]["errata"]["state"], "FINISHED")
+
+        self.assertTrue("isos" in progress_status)
+        self.assertTrue(progress_status["isos"].has_key("state"))
+        self.assertEqual(progress_status["isos"]["state"], "FINISHED")
+        ISO_PROGRESS_FIELDS = ["num_success", "num_error", "items_left", "items_total", "error_details", "written_files", "current_file", "size_total", "size_left"]
+        for field in ISO_PROGRESS_FIELDS:
+            self.assertTrue( field in progress_status["isos"])
+
+        self.assertTrue("publish_http" in progress_status)
+        self.assertEqual(progress_status["publish_http"]["state"], "FINISHED")
+        self.assertTrue("publish_https" in progress_status)
+        self.assertEqual(progress_status["publish_https"]["state"], "SKIPPED")

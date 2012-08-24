@@ -35,7 +35,7 @@ _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 REQUIRED_CONFIG_KEYS = ["http", "https"]
-OPTIONAL_CONFIG_KEYS = ["generate_metadata", "https_publish_dir","http_publish_dir", "start_date", "end_date", "iso_prefix", "skip"]
+OPTIONAL_CONFIG_KEYS = ["https_ca", "generate_metadata", "https_publish_dir","http_publish_dir", "start_date", "end_date", "iso_prefix", "skip"]
 
 
 ###
@@ -157,7 +157,11 @@ class GroupISODistributor(GroupDistributor):
     def publish_group(self, repo_group, publish_conduit, config):
         self.group_working_dir = group_working_dir = repo_group.working_dir
         skip_types = config.get("skip") or []
-
+        self.group_progress_status = {"isos":               {"state": "NOT_STARTED"},
+                                      "publish_http":       {"state": "NOT_STARTED"},
+                                      "publish_https":      {"state": "NOT_STARTED"},
+                                      "repositories":       {"state": "NOT_STARTED"},
+                                      "group-id":           repo_group.id }
         def group_progress_callback(type_id, status):
             self.group_progress_status[type_id] = status
             publish_conduit.set_progress(self.group_progress_status)
@@ -167,15 +171,13 @@ class GroupISODistributor(GroupDistributor):
             summary = {}
             details = {}
             progress_status = {
-            "rpms":               {"state": "NOT_STARTED"},
-            "errata":             {"state": "NOT_STARTED"},
-            "distribution":       {"state": "NOT_STARTED"},
-            "packagegroups":      {"state": "NOT_STARTED"},
-            }
+                                    "rpms":               {"state": "NOT_STARTED"},
+                                    "errata":             {"state": "NOT_STARTED"},
+                                    "distribution":       {"state": "NOT_STARTED"},
+                                    "packagegroups":      {"state": "NOT_STARTED"},}
             def progress_callback(type_id, status):
                 progress_status[type_id] = status
                 publish_conduit.set_progress(progress_status)
-
             repo_working_dir = "%s/%s" % (group_working_dir, repoid)
             repo_exporter = RepoExporter(repo_working_dir, skip=skip_types)
             date_filter = repo_exporter.create_date_range_filter(config)
@@ -247,7 +249,9 @@ class GroupISODistributor(GroupDistributor):
                 summary["num_distribution_units_exported"] = len(distro_units) - len(distro_errors)
                 summary["num_distribution_units_errors"] = len(distro_errors)
 
-                self.group_progress_status[repoid] = progress_status
+                self.group_progress_status["repositories"][repoid] = progress_status
+                self.set_progress("repositories", self.group_progress_status["repositories"], group_progress_callback)
+
                 details["errors"] = rpm_errors + distro_errors + errata_errors + metadata_errors
                 self.group_summary[repoid] = summary
                 self.group_details[repoid] = details
@@ -275,7 +279,6 @@ class GroupISODistributor(GroupDistributor):
                 isogen.run(progress_callback=group_progress_callback)
                 self.group_summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
-                self.group_summary["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
         else:
@@ -297,7 +300,6 @@ class GroupISODistributor(GroupDistributor):
                 isogen.run(progress_callback=progress_callback)
                 self.group_summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
-                self.group_summary["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:

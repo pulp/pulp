@@ -79,6 +79,7 @@ class GenerateIsos(object):
         iso_progress_status["size_total"] = total_dir_size
         iso_progress_status["size_left"] = total_dir_size
         iso_progress_status['written_files'] = []
+        iso_progress_status['current_file'] = None
         for i in range(imgcount):
             self.set_progress("isos", iso_progress_status, progress_callback)
             msg = "Generating iso images for exported content (%s/%s)" % (i+1, imgcount)
@@ -102,6 +103,7 @@ class GenerateIsos(object):
             else:
                 iso_progress_status["size_left"] = 0
             iso_progress_status['written_files'].append(filename)
+            iso_progress_status['current_file'] = None
         iso_progress_status["state"] = "FINISHED"
         self.set_progress("isos", iso_progress_status, progress_callback)
         return True, []

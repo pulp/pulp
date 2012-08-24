@@ -37,6 +37,7 @@ from pulp.plugins.model import Repository, Unit
 from pulp_rpm.yum_plugin import util, updateinfo
 import distributor_mocks
 import rpm_support_base
+from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 class TestISODistributor(rpm_support_base.PulpRPMTests):
 
@@ -445,16 +446,91 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
         self.assertEqual(len(isos_list), 1)
 
-    def test_validate_config_iso_prefix(self):
+    def test_validate_config(self):
+        distributor = ISODistributor()
         repo = mock.Mock(spec=Repository)
         repo.id = "testrepo"
-        distributor = ISODistributor()
+        http = "true"
+        https = False
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        http = True
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = "False"
+        relative_url = "test_path"
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        https = True
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = False
+        relative_url = "test_path"
+        generate_metadata = "false"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            generate_metadata=generate_metadata)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        generate_metadata = True
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            generate_metadata=generate_metadata)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = False
+        relative_url = "test_path"
+        skip_content_types = "fake"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            skip=skip_content_types)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        skip_content_types = []
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            skip=skip_content_types)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
         # test invalid iso prefix
         config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="my_iso*_name_/")
         state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
         # test valid iso prefix
         config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="My_iso_name-01")
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        invalid_config="dummy"
+        config = distributor_mocks.get_basic_config(invalid_config)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        http = True
+        https = False
+        relative_url = "test_path"
+        auth_cert = "fake"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_ca=auth_cert)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        auth_cert = open(os.path.join(self.data_dir, "cert.crt")).read()
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_ca=auth_cert)
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
 
