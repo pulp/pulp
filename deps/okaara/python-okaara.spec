@@ -3,7 +3,7 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.24
+Version:        1.0.25
 Release:        1%{?dist}
 Summary:        Python command line utilities
 
@@ -16,6 +16,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python-nose
 BuildRequires:  python-setuptools
+BuildRequires:  python-babel
 BuildRequires:  python2-devel
 
 %description
@@ -27,9 +28,16 @@ Python library to facilitate the creation of command-line interfaces.
 # -- build --------------------------------------------------------------------
 
 %build
-pushd src
 %{__python} setup.py build
-popd
+
+mkdir -p po/build
+for lang in `ls po/*.po` ; do
+    echo $lang;
+    lang=`basename $lang .po`;
+    mkdir -p po/build/$lang/LC_MESSAGES/;
+    %{__python} setup.py compile_catalog -i po/$lang.po \
+        -o po/build/$lang/LC_MESSAGES/okaara.mo;
+done
 
 # -- install ------------------------------------------------------------------
 
@@ -37,18 +45,17 @@ popd
 rm -rf $RPM_BUILD_ROOT
 
 # Python setup
-pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
-popd
 rm -f $RPM_BUILD_ROOT%{python_sitelib}/rhui*egg-info/requires.txt
+
+mkdir -p $RPM_BUILD_ROOT/%{_datadir}/locale/
+cp -R po/build/* $RPM_BUILD_ROOT/%{_datadir}/locale/
+%find_lang okaara
 
 # -- check --------------------------------------------------------------------
 
 %check
-export PYTHONPATH=$RPM_BUILD_ROOT/%{python_sitelib}
-pushd test
 nosetests
-popd
 
 # -- clean --------------------------------------------------------------------
 
@@ -57,7 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 
 # -- files --------------------------------------------------------------------
 
-%files
+%files -f okaara.lang
 %{python_sitelib}/okaara/
 %{python_sitelib}/okaara*.egg-info
 %doc LICENSE
@@ -65,9 +72,17 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Thu Jul 26 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.24-1
-- Upgraded version of okaara (jason.dobies@redhat.com)
-- Upgraded okaara to 1.0.23 (jason.dobies@redhat.com)
+* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.25-1
+- fixing a bug where an Exception instance was assumed to have an attribute not
+  present in python <2.5, and that attribute was assumed to have a non-
+  guaranteed value. (mhrivnak@redhat.com)
+- Add i18n support. (jbowes@repl.ca)
+- Fixed incorrect package_dir after moving setup.py to root
+  (jason.dobies@redhat.com)
+- add some more info to setup.py (jbowes@repl.ca)
+- spec: nosetests can run from the toplevel src dir (jbowes@repl.ca)
+- Move setup.py to the toplevel (jbowes@repl.ca)
+- Added column alignment capabilities (jason.dobies@redhat.com)
 
 * Thu Jul 26 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.24-1
 - Added interruptable handling to prompt_password (jason.dobies@redhat.com)
