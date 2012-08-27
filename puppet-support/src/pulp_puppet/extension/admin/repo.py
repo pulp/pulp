@@ -93,6 +93,19 @@ class CreatePuppetRepositoryCommand(CreateRepositoryCommand):
         self.context.prompt.render_success_message(msg % {'r' : repo_id})
 
 
+class ListPuppetRepositoriesCommand(ListRepositoriesCommand):
+    def get_repositories(self, query_params, **kwargs):
+        all_repos = super(ListPuppetRepositoriesCommand, self).get_repositories(
+                          query_params, **kwargs)
+
+        puppet_repos = []
+        for repo in all_repos:
+            notes = repo['notes']
+            if constants.REPO_NOTE_KEY in notes and notes[constants.REPO_NOTE_KEY] == constants.REPO_NOTE_PUPPET:
+                puppet_repos.append(repo)
+
+        return puppet_repos
+
 class SearchPuppetRepositoriesCommand(CriteriaCommand):
 
     def __init__(self, context):

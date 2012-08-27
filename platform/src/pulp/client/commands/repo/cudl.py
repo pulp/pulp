@@ -185,5 +185,9 @@ class ListRepositoriesCommand(PulpCliCommand):
                 query_params[param] = True
                 filters.append(param)
 
-        repo_list = self.context.server.repo.repositories(query_params).response_body
+        repo_list = self.get_repositories(query_params, **kwargs)
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
+
+    def get_repositories(self, query_params, **kwargs):
+        repo_list = self.context.server.repo.repositories(query_params).response_body
+        return repo_list
