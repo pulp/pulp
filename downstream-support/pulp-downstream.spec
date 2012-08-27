@@ -16,10 +16,10 @@
 
 # ---- Pulp --------------------------------------------------------------------
 
-Name: pulp-rpm
+Name: pulp-downstream
 Version: 0.0.324
 Release: 1%{?dist}
-Summary: Support for RPM content in the Pulp platform
+Summary: Support for downstream Pulp servers
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
@@ -31,17 +31,9 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose
 BuildRequires:  rpm-python
 
-%if 0%{?rhel} == 5
-# RHEL-5
-Requires: mkisofs
-%else
-# RHEL-6 & Fedora
-Requires: genisoimage
-%endif
-
 %description
 Provides a collection of platform plugins, client extensions and agent
-handlers that provide RPM support.
+handlers that provide downstream support.
 
 %prep
 %setup -q
@@ -65,20 +57,9 @@ mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
-mkdir -p %{buildroot}/%{_var}/lib/pulp/published
-mkdir -p %{buildroot}/%{_usr}/lib/yum-plugins/
-mkdir -p %{buildroot}/%{_var}/www
 
 # Configuration
-cp -R etc/httpd %{buildroot}/%{_sysconfdir}
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
-cp -R etc/yum %{buildroot}/%{_sysconfdir}
-
-# WSGI
-cp -R srv %{buildroot}
-
-# WWW
-ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
 
 # Extensions
 cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/pulp/admin/extensions
@@ -90,9 +71,6 @@ cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 # Plugins
 cp -R plugins/* %{buildroot}/%{_usr}/lib/pulp/plugins
 
-# Yum (plugins)
-cp -R usr/lib/yum-plugins %{buildroot}/%{_usr}/lib
-
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
@@ -103,136 +81,50 @@ rm -rf %{buildroot}
 # ---- Plugins -----------------------------------------------------------------
 
 %package plugins
-Summary: Pulp RPM plugins
+Summary: Pulp downstream support plugins
 Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-server = %{version}
 
 %description plugins
-Provides a collection of platform plugins that extend the Pulp platform
-to provide RPM specific support.
+Plugins to support downstream pulp servers.
 
 %files plugins
 %defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_rpm.conf
-%{_usr}/lib/pulp/plugins/types/rpm_support.json
-%{_usr}/lib/pulp/plugins/importers/yum_importer/
-%{_usr}/lib/pulp/plugins/distributors/yum_distributor/
-%{_usr}/lib/pulp/plugins/distributors/iso_distributor/
-%{_usr}/lib/pulp/plugins/profilers/rpm_errata_profiler/
-%defattr(-,apache,apache,-)
-%{_var}/www/pub
-/srv/pulp/repo_auth.wsgi
+%{_usr}/lib/pulp/plugins/distributors/pulp_distributor/
 %doc
-
-
-# ---- RPM Common --------------------------------------------------------------
-
-%package -n python-pulp-rpm-common
-Summary: Pulp RPM support common library
-Group: Development/Languages
-Requires: python-pulp-common = %{version}
-
-%description -n python-pulp-rpm-common
-A collection of components share between RPM plugins, extensions and handlers.
-
-%files -n python-pulp-rpm-common
-%defattr(-,root,root,-)
-%{python_sitelib}/pulp_rpm/
-%doc
-
 
 # ---- Admin (builtin) Extensions ----------------------------------------------
 
 %package admin-extensions
-Summary: The RPM admin client extensions
+Summary: The downstream admin client extensions
 Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
 A collection of extensions that supplement and override generic admin
-client capabilites with RPM specific features.
+client capabilites with downstream specific features.
 
 
 %files admin-extensions
 %defattr(-,root,root,-)
-%{_usr}/lib/pulp/admin/extensions/rpm_admin_consumer/
-%{_usr}/lib/pulp/admin/extensions/rpm_repo/
-%{_usr}/lib/pulp/admin/extensions/rpm_sync/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_search/
-%{_usr}/lib/pulp/admin/extensions/rpm_upload/
-%{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
-%{_usr}/lib/pulp/admin/extensions/rpm_errata_upload/
+%{_usr}/lib/pulp/admin/extensions/pulp_admin_downstream/
 %doc
-
-
-# ---- Consumer (builtin) Extensions -------------------------------------------
-
-%package consumer-extensions
-Summary: The RPM consumer client extensions
-Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
-Requires: pulp-consumer-client = %{version}
-
-%description consumer-extensions
-A collection of extensions that supplement and override generic consumer
-client capabilites with RPM specific features.
-
-%files consumer-extensions
-%defattr(-,root,root,-)
-%{_usr}/lib/pulp/consumer/extensions/rpm_consumer/
-%doc
-
 
 # ---- Agent Handlers ----------------------------------------------------------
 
 %package handlers
 Summary: Pulp agent rpm handlers
 Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
 Requires: python-pulp-agent-lib = %{version}
 
 %description handlers
-A collection of handlers that provide both Linux and RPM specific
-functionality within the Pulp agent.  This includes RPM install, update,
-uninstall; RPM profile reporting; binding through yum repository
-management and Linux specific commands such as system reboot.
-
+Pulp downstream handlers.
 
 %files handlers
 %defattr(-,root,root,-)
-%{_sysconfdir}/pulp/agent/conf.d/bind.conf
-%{_sysconfdir}/pulp/agent/conf.d/linux.conf
-%{_sysconfdir}/pulp/agent/conf.d/rpm.conf
-%{_usr}/lib/pulp/agent/handlers/bind.py*
-%{_usr}/lib/pulp/agent/handlers/linux.py*
-%{_usr}/lib/pulp/agent/handlers/rpm.py*
+%{_sysconfdir}/pulp/agent/conf.d/repository.conf
+%{_usr}/lib/pulp/agent/handlers/repository.py*
 %doc
-
-
-# ---- YUM Plugins -------------------------------------------------------------
-
-%package yumplugins
-Summary: Yum plugins supplementing in Pulp consumer operations
-Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
-Requires: pulp-server = %{version}
-
-%description yumplugins
-A collection of yum plugins supplementing Pulp consumer operations.
-
-%files yumplugins
-%defattr(-,root,root,-)
-%{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
-%{_usr}/lib/yum-plugins/pulp-profile-update.py*
-%doc
-
-
-
 
 
 %changelog
