@@ -134,7 +134,9 @@ margin-right:10px;
 }
 
 
-
+#comments {
+  margin-top: 20px;
+}
 #comments p {
 margin:10px 0 0 10px;
 width:auto;
@@ -147,6 +149,12 @@ font-size:120px;
 font-weight:normal;
 float:right;
 padding-top:25px;
+}
+#comments .author {
+  color: #3566a5;
+}
+#comments li {
+  border-bottom: 1px solid #333;
 }
 #comments ul.formlist {
 margin:20px auto;
