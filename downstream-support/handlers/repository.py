@@ -19,6 +19,7 @@ from pulp.common.config import Config
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import HandlerReport
 from pulp.bindings.bindings import Bindings
+from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
 from logging import getLogger
 
@@ -30,11 +31,16 @@ CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
 def subdict(adict, *keylist):
-    d = {}
-    for k,v in adict.items():
-        if k in keylist:
-            d[k] = v
-    return d
+    """
+    Get a subset dictionary.
+    @param adict: A dictionary to subset.
+    @type adict: dict
+    @param keylist: A list of keys to include in the subset.
+    @type keylist: list
+    @return: The subset dictionary.
+    @rtype: dict.
+    """
+    return dict([t for t in adict.items() if t[0] in keylist])
 
 
 class LocalBindings(Bindings):
@@ -104,6 +110,11 @@ class RepositoryHandler(ContentHandler):
         return report
     
     def all_binds(self):
+        """
+        Get a list of ALL bind payloads for this consumer.
+        @return: List of bind payloads.
+        @rtype: list
+        """
         bundle = Bundle()
         myid = bundle.cn()
         http = Remote.binding.bind.find_by_id(myid)
@@ -113,6 +124,13 @@ class RepositoryHandler(ContentHandler):
             raise Exception('sync failed, http:%d', http.response_code)
         
     def binds(self, repoids):
+        """
+        Get a list of bind payloads for the specified list of repository ID.
+        @param repoids: A list of repository IDs.
+        @type repoids:  list
+        @return: List of bind payloads.
+        @rtype: list
+        """
         binds = []
         bundle = Bundle()
         myid = bundle.cn()
@@ -125,15 +143,38 @@ class RepositoryHandler(ContentHandler):
         return binds
     
     def filtered(self, binds):
+        """
+        Get a filtered list of binds.
+          - Includes only the (pulp) distributor.
+        @param binds: A list of bind payloads.
+        @type binds: list
+        @return: The filtered list of bind payloads.
+        @rtype: list
+        """
         type_id = PULP_DISTRIBUTOR
         return [b for b in binds if b['type_id'] == type_id]
 
     def synchronize(self, binds):
+        """
+        Synchronize repositories.
+        @param binds: A list of bind payloads.
+        @type binds: list
+        @return: A sync report.
+        @rtype: TBD
+        """
         report = {}
         self.merge(binds)
         return report
 
     def merge(self, binds):
+        """
+        Merge repositories.
+          - Delete repositories found locally but not upstream.
+          - Merge repositories found BOTH upstream and locally.
+          - Add repositories found upstream but NOT locally.
+        @param binds: List of bind payloads.
+        @type binds: list
+        """
         self.purge(binds)
         for b in binds:
             try:
@@ -144,12 +185,17 @@ class RepositoryHandler(ContentHandler):
                 if myrepo:
                     myrepo.merge(upstream)
                 else:
-                    myrepo = LocalRepository(upstream.repo_id, upstream.details)
+                    myrepo = LocalRepository(repo_id, upstream.details)
                     myrepo.add()
-            except Exception, e:
-                return e
+            except Exception:
+                log.exception(str(b))
 
     def purge(self, binds):
+        """
+        Purge repositories found locally but NOT upstream.
+        @param binds: List of bind payloads.
+        @type binds: list
+        """
         try:
             upstream = [b['repo_id'] for b in binds]
             downstream = [r.repo_id for r in Repository.fetch_all()]
@@ -162,16 +208,33 @@ class RepositoryHandler(ContentHandler):
 
 
 class Local:
+    """
+    Local (downstream) entity.
+    @cvar binding: A REST API binding.
+    @type binding: L{Binding}
+    """
     
     binding = LocalBindings()
     
 
 class Remote:
+    """
+    Remove (upstream) entity.
+    @cvar binding: A REST API binding.
+    @type binding: L{Binding}
+    """
     
     binding = RemoteBindings()  
 
 
 class Repository:
+    """
+    A repository object.
+    @ivar repo_id: Repository ID.
+    @type repo_id: str
+    @ivar details: Repository details as modeled by bind payload.
+    @type details: dict
+    """
     
     def __init__(self, repo_id, details=None):
         self.repo_id = repo_id
@@ -187,16 +250,11 @@ class Repository:
     def distributors(self):
         return self.details['distributors']
         
-
-class Distributor:
-
-    def __init__(self, repo_id, dist_id, details={}):
-        self.repo_id = repo_id
-        self.dist_id = dist_id
-        self.details = subdict(details, 'config', 'auto_publish')
-
     
-class LocalRepository(Local):
+class LocalRepository(Local, Repository):
+    """
+    Represents a local repository.
+    """
     
     @classmethod
     def fetch_all(cls):
@@ -213,31 +271,58 @@ class LocalRepository(Local):
 
     @classmethod
     def fetch(cls, repo_id):
+        """
+        Fetch the local repository.
+        @param repo_id: Repository ID.
+        @type repo_id: str
+        @return: The fetched repository.
+        @rtype: L{Repository}
+        """
         details = {}
-        http = cls.binding.repo.repository(repo_id)
-        if http.response_code == httplib.NOT_FOUND:
-            return None
-        if http.response_code == httplib.OK:
+        try:
+            http = cls.binding.repo.repository(repo_id)
             details['repository'] = http.response_body
-        else:
-            raise Exception('query failed, http:%d', http.response_code)
-        http = cls.binding.repo_distributor.distributors(repo_id)
-        if http.response_code == httplib.OK:
+            http = cls.binding.repo_distributor.distributors(repo_id)
             details['distributors'] = http.response_body
-        else:
-            raise Exception('query failed, http:%d', http.response_code)
-        return cls(repo_id, details)
+            return cls(repo_id, details)
+        except NotFoundException:
+            return None
     
     def add(self):
+        """
+        Add the local repository and associated distributors.
+        """
+        self.binding.repo.create(
+            self.repo_id,
+            self.basic['display_name'],
+            self.basic['description'],
+            self.basic['notes'])
+        for details in self.distributors:
+            dist_id = details['distributor_id']
+            dist = LocalDistributor(self.repo_id, dist_id, details)
+            dist.add()
         log.info('Repository: %s, added', self.repo_id)
         
     def update(self, delta):
+        """
+        Update the local repository.
+        """
+        self.binding.repo.update(self.repo_id, delta)
         log.info('Repository: %s, updated', self.repo_id)
     
     def delete(self):
+        """
+        Delete the local repository.
+        """
+        self.binding.repo.delete(self.repo_id)
         log.info('Repository: %s, deleted', self.repo_id)
     
     def merge(self, upstream):
+        """
+        Merge upstream repository properties.
+        @param upstream: The upstream repository.
+        @type upstream: L{Repository}
+        """
         delta = {}
         for k,v in upstream.basic.items():
             if self.basic[k] != v:
@@ -248,17 +333,31 @@ class LocalRepository(Local):
         self.merge_distributors(upstream)
     
     def merge_distributors(self, upstream):
+        """
+        Merge distributors.
+          - Delete distributors associated locally but not associated w/ upstream.
+          - Merge distributors associated locally AND associated w/ upstream.
+          - Add distributors associated w/ upstream but NOT associated locally. 
+        @param upstream: The upstream repository.
+        @type upstream: L{Repository}
+        """
         self.purge_distributors(upstream)
         for details in upstream.distributors:
             dist_id = details['id']
             dist = Distributor(self.repo_id, dist_id, details)
-            mydist = LocalDistributor.fetch(binding, self.repo_id, dist_id)
+            mydist = LocalDistributor.fetch(self.repo_id, dist_id)
             if mydist:
                 mydist.merge(dist)
             else:
-                dist.add()
+                mydist = LocalDistributor(self.repo_id, dist_id, details)
+                mydist.add()
                 
     def purge_distributors(self, upstream):
+        """
+        Purge distributors not associated with the upstream repository.
+        @param upstream: The upstream repository.
+        @type upstream: L{Repository}
+        """
         upstream_distids = [d['id'] for d in upstream.distributors]
         for details in self.distributors:
             dist_id = details['id']
@@ -267,34 +366,78 @@ class LocalRepository(Local):
                 dist.delete()
 
 
-class LocalDistributor(Local):
+class Distributor:
+    """
+    Distributor.
+    @ivar repo_id: Repository ID.
+    @type repo_id: str
+    @param dist_id: Distributor ID.
+    @type dist_id: str
+    @ivar details: Distributor details as modeled by bind payload.
+    @type details: dict
+    """
+
+    def __init__(self, repo_id, dist_id, details={}):
+        self.repo_id = repo_id
+        self.dist_id = dist_id
+        self.details = \
+            subdict(details, 'config', 'auto_publish', 'distributor_type_id')
+
+
+class LocalDistributor(Local, Distributor):
     
     @classmethod
     def fetch(cls, repo_id, dist_id):
-        dist = None
-        http = cls.binding.repo_distributor.distributor(repo_id, dist_id)
-        if http.response_code == httplib.NOT_FOUND:
+        """
+        Fetch the local repository-distributor.
+        @return: The fetched distributor.
+        @rtype: L{LocalDistributor}
+        """
+        try:
+            http = cls.binding.repo_distributor.distributor(repo_id, dist_id)
+            details = http.response_body
+            return cls(repo_id, dist_id, details)
+        except NotFoundException:
             return None
-        if http.response_code == httplib.OK:
-            return cls(repo_id, dist_id, http.response_body)
-        else:
-            raise Exception('query failed, http:%d', http.response_code)
         
     def add(self):
+        """
+        Add the local repository-distributor.
+        """
+        self.binding.repo_distributor.create(
+            self.repo_id,
+            self.details['distributor_type_id'],
+            self.details['config'],
+            self.details['auto_publish'],
+            self.dist_id)
         log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
         
     def update(self, delta):
+        """
+        Update the local repository-distributor.
+        @param delta: The configuration delta.
+        @type delta: dict
+        """
+        self.binding.repo_distributor.update(self.repo_id, self.dist_id, delta)
         log.info('Distributor: %s/%s, updated', self.repo_id, self.dist_id)
     
     def delete(self):
+        """
+        Delete the local repository-distributor.
+        """
+        self.binding.repo_distributor.update(self.repo_id, self.dist_id)
         log.info('Distributor: %s/%s, deleted', self.repo_id, self.dist_id)
         
     def merge(self, upstream):
+        """
+        Merge the distributor configuration
+        @param upstream: The upstream distributor
+        @type upstream: L{Distributor}
+        """
         delta = {}
-        for k,v in upstream.details.items():
-            if self.details[k] != v:
-                self.details[k] = v
+        for k,v in upstream.details['config'].items():
+            if self.details['config'][k] != v:
+                self.details['config'][k] = v
                 delta[k] = v
         if delta:
             self.update(delta)
-        return mrgcnt
