@@ -3,7 +3,7 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.25
+Version:        1.0.26
 Release:        1%{?dist}
 Summary:        Python command line utilities
 
@@ -72,8 +72,12 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.25-1
-- Upgraded okaara to 1.0.25 (jason.dobies@redhat.com)
+* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.26-1
+- Upgraded okaara to 1.0.26 (jason.dobies@redhat.com)
+
+* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.26-1
+- Added syntactic sugar methods to the CLI (jason.dobies@redhat.com)
+- Added keyword property to the Option class (jason.dobies@redhat.com)
 
 * Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.25-1
 - fixing a bug where an Exception instance was assumed to have an attribute not
