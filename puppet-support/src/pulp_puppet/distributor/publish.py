@@ -24,7 +24,7 @@ from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 from pulp_puppet.common import constants
 from pulp_puppet.common.constants import (STATE_FAILED, STATE_RUNNING, STATE_SUCCESS)
 from pulp_puppet.common.model import RepositoryMetadata, Module
-from pulp_puppet.distributor.progress import ProgressReport
+from pulp_puppet.common.publish_progress import PublishProgressReport
 
 _LOG = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class PuppetModulePublishRun(object):
         self.config = config
         self.is_cancelled_call = is_cancelled_call
 
-        self.progress_report = ProgressReport(self.publish_conduit)
+        self.progress_report = PublishProgressReport(self.publish_conduit)
 
     def perform_publish(self):
         """

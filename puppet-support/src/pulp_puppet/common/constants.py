@@ -22,6 +22,9 @@ support plugins (importers, distributors, extensions).
 # ID used to refer to the puppet importer
 IMPORTER_TYPE_ID = 'puppet_importer'
 
+# ID used to refer to the puppet importer instance on a repository
+IMPORTER_ID = IMPORTER_TYPE_ID
+
 # ID used to refer to the puppet distributor
 DISTRIBUTOR_TYPE_ID = 'puppet_distributor'
 
@@ -63,7 +66,7 @@ STATE_RUNNING = 'running'
 STATE_SUCCESS = 'success'
 STATE_FAILED = 'failed'
 
-INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
+COMPLETE_STATES = (STATE_SUCCESS, STATE_FAILED)
 
 # -- importer configuration keys ----------------------------------------------
 

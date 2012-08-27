@@ -11,10 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.client.commands.repo import cudl, group
+from pulp.client.commands.repo import cudl, group, sync_publish
 
-from pulp_puppet.extension.admin import structure
-from pulp_puppet.extension.admin import repo
+from pulp_puppet.extension.admin import repo, structure, status
 
 def initialize(context):
     structure.ensure_structure(context.cli)
@@ -36,3 +35,8 @@ def initialize(context):
     members_section.add_command(group.AddRepositoryGroupMembersCommand(context))
     members_section.add_command(group.RemoveRepositoryGroupMembersCommand(context))
     members_section.add_command(group.ListRepositoryGroupMembersCommand(context))
+
+    sync_section = structure.repo_sync_section(context.cli)
+    renderer = status.PuppetStatusRenderer(context)
+    sync_section.add_command(sync_publish.RunSyncRepositoryCommand(context, renderer))
+    sync_section.add_command(sync_publish.SyncStatusCommand(context, renderer))

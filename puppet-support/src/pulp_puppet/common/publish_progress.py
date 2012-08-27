@@ -17,10 +17,10 @@ distributor.
 """
 
 from pulp_puppet.common import reporting
-from pulp_puppet.common.constants import STATE_NOT_STARTED, INCOMPLETE_STATES
+from pulp_puppet.common.constants import STATE_NOT_STARTED, STATE_SUCCESS
 
 
-class ProgressReport(object):
+class PublishProgressReport(object):
     """
     Used to carry the state of the publish run as it proceeds. This object is used
     to update the on going progress in Pulp at appropriate intervals through
@@ -28,6 +28,46 @@ class ProgressReport(object):
     be used to produce the final report to return to Pulp to describe the
     result of the operation.
     """
+
+    @classmethod
+    def from_progress_dict(cls, report):
+        """
+        Parses the output from the build_progress_report method into an instance
+        of this class. The intention is to use this client-side to reconstruct
+        the instance as it is retrieved from the server.
+
+        The build_final_report call on instances returned from this call will
+        not function as it requires the server-side conduit to be provided.
+        Additionally, any exceptions and tracebacks will be a text representation
+        instead of formal objects.
+
+        :param report: progress report retrieved from the server's task
+        :type  report: dict
+        :return: instance populated with the state in the report
+        :rtype:  PublishProgressReport
+        """
+
+        r = cls(None)
+
+        m = report['modules']
+        r.modules_state = m['state']
+        r.modules_execution_time = m['execution_time']
+        r.modules_total_count = m['total_count']
+        r.modules_finished_count = m['finished_count']
+        r.modules_error_count = m['error_count']
+        r.modules_individual_errors = m['individual_errors']
+        r.modules_error_message = m['error_message']
+        r.modules_exception = m['error']
+        r.modules_traceback = m['traceback']
+
+        m = report['metadata']
+        r.metadata_state = m['state']
+        r.metadata_execution_time = m['execution_time']
+        r.metadata_error_message = m['error_message']
+        r.metadata_exception = m['error']
+        r.metadata_traceback = m['traceback']
+
+        return r
 
     def __init__(self, conduit):
         self.conduit = conduit
@@ -78,9 +118,9 @@ class ProgressReport(object):
 
         # Determine if the report was successful or failed
         all_step_states = (self.metadata_state, self.modules_state)
-        incomplete_steps = [s for s in all_step_states if s in INCOMPLETE_STATES]
+        unsuccessful_steps = [s for s in all_step_states if s != STATE_SUCCESS]
 
-        if len(incomplete_steps) == 0:
+        if len(unsuccessful_steps) == 0:
             report = self.conduit.build_success_report(summary, details)
         else:
             report = self.conduit.build_failure_report(summary, details)
@@ -129,7 +169,6 @@ class ProgressReport(object):
             'error' : reporting.format_exception(self.modules_exception),
             'traceback' : reporting.format_traceback(self.modules_traceback),
         }
-        modules_report = reporting.strip_none(modules_report)
         return modules_report
 
     def _metadata_section(self):
@@ -140,5 +179,4 @@ class ProgressReport(object):
             'error' : reporting.format_exception(self.metadata_exception),
             'traceback' : reporting.format_traceback(self.metadata_traceback),
             }
-        metadata_report = reporting.strip_none(metadata_report)
         return metadata_report

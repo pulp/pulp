@@ -39,6 +39,7 @@ class PuppetModuleDistributor(Distributor):
 
     def publish_repo(self, repo, publish_conduit, config):
         self.publish_cancelled = False
+        config.default_config = configuration.DEFAULT_CONFIG
         publish_runner = publish.PuppetModulePublishRun(repo, publish_conduit, config, self.is_publish_cancelled)
         report = publish_runner.perform_publish()
         return report
