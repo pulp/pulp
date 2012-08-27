@@ -108,7 +108,7 @@ class PuppetModuleSyncRun(object):
 
             end_time = datetime.now()
             duration = end_time - start_time
-            self.progress_report.metadata_execution_time = duration
+            self.progress_report.metadata_execution_time = duration.seconds
 
             self.progress_report.update_progress()
 
