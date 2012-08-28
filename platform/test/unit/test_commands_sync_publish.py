@@ -43,8 +43,6 @@ CALL_REPORT_TEMPLATE = {
     "response": None,
 }
 
-# -- server simulations -------------------------------------------------------
-
 # -- test cases ---------------------------------------------------------------
 
 class RunSyncRepositoryCommandTests(base.PulpClientTests):
