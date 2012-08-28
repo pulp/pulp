@@ -146,6 +146,7 @@ LINKS = (
     ('rpm-support/usr/lib/yum-plugins/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('rpm-support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
 
+    ('downstream-support/etc/httpd/conf.d/pulp_downstream.conf', '/etc/httpd/conf.d/pulp_downstream.conf'),
     ('downstream-support/etc/pulp/agent/conf.d/repository.conf', '/etc/pulp/agent/conf.d/repository.conf'),
     ('downstream-support/extensions/admin/pulp_admin_downstream', DIR_ADMIN_EXTENSIONS + 'pulp_admin_downstream'),
     ('downstream-support/plugins/distributors/pulp_distributor', DIR_PLUGINS + '/distributors/pulp_distributor'),
