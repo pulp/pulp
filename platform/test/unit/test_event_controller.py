@@ -70,6 +70,7 @@ class EventCollectionControllerTests(base.PulpWebserviceTests):
         for l in body:
             self.assertEqual(l['notifier_type_id'], rest_api.TYPE_ID)
 
+
 class EventResourceControllerTests(base.PulpWebserviceTests):
 
     def clean(self):

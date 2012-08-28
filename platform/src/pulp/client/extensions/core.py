@@ -501,9 +501,19 @@ class PulpCli(Cli):
         self.add_section(subsection)
         return subsection
 
+
 class ClientContext:
 
     def __init__(self, server, config, logger, prompt, exception_handler, cli=None, shell=None):
+        """
+        This stuff is created in pulp.client.launcher
+
+        :type server: pulp.bindings.bindings.Bindings
+        :type config: pulp.common.config.Config
+        :type logger: logging.Logger
+        :type prompt: pulp.client.extensions.core.PulpPrompt
+        :type exception_handler: pulp.client.extensions.exceptions.ExceptionHandler
+        """
         self.server = server
         self.logger = logger
         self.prompt = prompt
