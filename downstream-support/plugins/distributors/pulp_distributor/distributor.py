@@ -12,9 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import hashlib
 from pulp.server.compat import json
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
+from logging import getLogger
+
+
+_LOG = getLogger(__name__)
 
 
 class PulpDistributor(Distributor):
@@ -32,8 +37,8 @@ class PulpDistributor(Distributor):
 
     def publish_repo(self, repo, publish_conduit, config):
         units = publish_conduit.get_units()
-        pub = PublishedContent()
-        pub.write(repo.id, [u.__dict__ for u in units])
+        pub = Publisher(repo.id)
+        pub.publish([u.__dict__ for u in units])
     
     def cancel_publish_repo(self, call_report, call_request):
         pass
@@ -53,34 +58,41 @@ class PulpDistributor(Distributor):
         payload['distributors'] = manager.get_distributors(repoid)
 
 
-class PublishedContent:
+class Publisher:
     
     PUBLISH_DIR='/var/lib/pulp/published/http/downstream/repos'
 
-    def __init__(self, root=PUBLISH_DIR):
-        self.root = root
+    def __init__(self, repo_id, root=PUBLISH_DIR):
+        self.root = os.path.join(root, repo_id)
         
-    def write(self, repo_id, content):
+    def publish(self, units):
+        self.write(units)
+        for u in units:
+            self.link(u)
+        
+    def write(self, units):
         self.__mkdir()
-        path = self.__path(repo_id)
+        path = os.path.join(self.root, 'units.json')
         fp = open(path, 'w+')
         try:
-            json.dump(content, fp)
+            json.dump(units, fp)
         finally:
             fp.close()
-    
-    def read(self, repo_id):
-        path = self.__path(repo_id)
-        fp = open(path)
-        try:
-            return json.load(fp)
-        finally:
-            fp.close()
+            
+    def link(self, unit):
+        target_dir = self.__mkdir('units')
+        source = unit.get('storage_path')
+        m = hashlib.sha256()
+        m.update(source)
+        target = os.path.join(target_dir, m.hexdigest())
+        if not os.path.islink(target):
+            os.symlink(source, target)
 
-    def __path(self, repo_id):
-        fn = '.'.join((repo_id, 'json'))
-        return os.path.join(self.root, fn)
-
-    def __mkdir(self):
-        if not os.path.exists(self.root):
-            os.makedirs(self.root)
+    def __mkdir(self, subdir=None):
+        if subdir:
+            path = os.path.join(self.root, subdir)
+        else:
+            path = self.root
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path

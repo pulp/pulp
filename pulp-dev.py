@@ -150,6 +150,7 @@ LINKS = (
     ('downstream-support/etc/pulp/agent/conf.d/repository.conf', '/etc/pulp/agent/conf.d/repository.conf'),
     ('downstream-support/extensions/admin/pulp_admin_downstream', DIR_ADMIN_EXTENSIONS + 'pulp_admin_downstream'),
     ('downstream-support/plugins/distributors/pulp_distributor', DIR_PLUGINS + '/distributors/pulp_distributor'),
+    ('downstream-support/plugins/importers/pulp_importer', DIR_PLUGINS + '/importers/pulp_importer'),
     ('downstream-support/handlers/repository.py', '/usr/lib/pulp/agent/handlers/repository.py'),
 
     ('puppet-support/etc/httpd/conf.d/pulp_puppet.conf', '/etc/httpd/conf.d/pulp_puppet.conf'),
