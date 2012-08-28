@@ -94,7 +94,7 @@ class GenerateIsos(object):
             grafts = self.get_grafts(imgs[i])
             pathfiles_fd, pathfiles = self.get_pathspecs(grafts)
             filename = self.get_iso_filename(self.output_dir, self.prefix, i+1)
-            iso_progress_status['current_file'] = filename
+            iso_progress_status['current_file'] = os.path.basename(filename)
             cmd = self.get_mkisofs_template() % (string.join([pathfiles]), filename)
             self.set_progress("isos", iso_progress_status, progress_callback)
             if self.is_cancelled:
@@ -116,7 +116,7 @@ class GenerateIsos(object):
                 iso_progress_status["size_left"] -= img_size
             else:
                 iso_progress_status["size_left"] = 0
-            iso_progress_status['written_files'].append(filename)
+            iso_progress_status['written_files'].append(os.path.basename(filename))
             iso_progress_status['current_file'] = None
         iso_progress_status["state"] = "FINISHED"
         self.set_progress("isos", iso_progress_status, progress_callback)
