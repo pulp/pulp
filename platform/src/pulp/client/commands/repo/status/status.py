@@ -67,15 +67,15 @@ def display_group_status(context, renderer, task_group_id):
 def _display_status(context, renderer, task_list):
 
     m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the server.')
-    context.prompt.render_paragraph(m)
+    context.prompt.render_paragraph(m, tag='ctrl-c')
 
     # Handle the cases where we don't want to honor the foreground request
     if task_list[0].is_rejected():
         announce = _('The request to synchronize repository was rejected')
         description = _('This is likely due to an impending delete request for the repository.')
 
-        context.prompt.render_failure_message(announce)
-        context.prompt.render_paragraph(description)
+        context.prompt.render_failure_message(announce, tag='rejected-msg')
+        context.prompt.render_paragraph(description, tag='rejected-desc')
         return
 
     if task_list[0].is_postponed():
@@ -85,13 +85,11 @@ def _display_status(context, renderer, task_list):
         context.prompt.render_paragraph(a, tag='postponed')
         return
 
-    completed_tasks = []
     try:
         for task_num, task in enumerate(task_list):
             quiet_waiting = task_num > 0
 
-            task = _display_task_status(context, renderer, task.task_id, quiet_waiting=quiet_waiting)
-            completed_tasks.append(task)
+            _display_task_status(context, renderer, task.task_id, quiet_waiting=quiet_waiting)
 
     except KeyboardInterrupt:
         # If the user presses ctrl+c, don't let the error bubble up, just

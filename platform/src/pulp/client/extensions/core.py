@@ -91,7 +91,7 @@ class PulpPrompt(Prompt):
         for i in range(0, lines):
             self.write('')
 
-    def render_title(self, title):
+    def render_title(self, title, tag=TAG_TITLE):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting for a title.
@@ -119,11 +119,11 @@ class PulpPrompt(Prompt):
 
         self.write(divider)
         # self.write(title, color=COLOR_HEADER, tag=TAG_TITLE) # removing color for now
-        self.write(title, tag=TAG_TITLE)
+        self.write(title, tag=tag)
         self.write(divider)
         self.render_spacer()
 
-    def render_section(self, section):
+    def render_section(self, section, tag=TAG_SECTION):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting for a section header.
@@ -139,7 +139,7 @@ class PulpPrompt(Prompt):
         :type  section: str
         """
 
-        self.write(section, tag=TAG_SECTION)
+        self.write(section, tag=tag)
         self.write('-' * len(section))
         self.render_spacer()
 
@@ -162,7 +162,7 @@ class PulpPrompt(Prompt):
         self.write(paragraph, tag=tag)
         self.render_spacer()
 
-    def render_success_message(self, message):
+    def render_success_message(self, message, tag=TAG_SUCCESS):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to indicate an action has successfully taken place.
@@ -171,10 +171,10 @@ class PulpPrompt(Prompt):
         :type  message: str
         """
 
-        self.write(message, color=COLOR_SUCCESS, tag=TAG_SUCCESS)
+        self.write(message, color=COLOR_SUCCESS, tag=tag)
         self.render_spacer()
 
-    def render_failure_message(self, message, reason=None):
+    def render_failure_message(self, message, reason=None, tag=TAG_FAILURE):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to indicate an action has failed to complete.
@@ -189,12 +189,12 @@ class PulpPrompt(Prompt):
         :type  reason: str
         """
 
-        self.write(message, color=COLOR_FAILURE, tag=TAG_FAILURE)
+        self.write(message, color=COLOR_FAILURE, tag=tag)
         if reason is not None:
             self.write(' - %s' % reason)
         self.render_spacer()
 
-    def render_warning_message(self, message):
+    def render_warning_message(self, message, tag=TAG_WARNING):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to highlight the message.
@@ -203,7 +203,7 @@ class PulpPrompt(Prompt):
         @type  message: str
         """
 
-        self.write(message, color=COLOR_WARNING, tag=TAG_WARNING)
+        self.write(message, color=COLOR_WARNING, tag=tag)
         self.render_spacer()
 
     def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0, step=2, omit_hidden=True):
