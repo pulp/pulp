@@ -95,7 +95,7 @@ def _display_status(context, renderer, task_list):
         a  = _('The request to synchronize the repository was accepted but postponed '
                'due to one or more previous requests against the repository. The sync will '
                'take place at the earliest possible time.')
-        context.prompt.render_paragraph(a)
+        context.prompt.render_paragraph(a, tag='postponed')
         return
 
     completed_tasks = []

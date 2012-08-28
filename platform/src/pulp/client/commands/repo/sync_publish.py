@@ -79,7 +79,7 @@ class RunSyncRepositoryCommand(PulpCliCommand):
             msg = _('A sync task is already in progress for this repository. ')
             if not background:
                 msg += _('Its progress will be tracked below.')
-            self.context.prompt.render_paragraph(msg)
+            self.context.prompt.render_paragraph(msg, tag='in-progress')
 
         else:
             # Trigger the actual sync
@@ -91,7 +91,7 @@ class RunSyncRepositoryCommand(PulpCliCommand):
             status.display_group_status(self.context, self.renderer, task_group_id)
         else:
             msg = _('The status of this sync can be displayed using the status command.')
-            self.context.prompt.render_paragraph(msg)
+            self.context.prompt.render_paragraph(msg, 'background')
 
 
 class SyncStatusCommand(PulpCliCommand):
@@ -101,6 +101,8 @@ class SyncStatusCommand(PulpCliCommand):
         self.context = context
         self.prompt = context.prompt
         self.renderer = renderer
+
+        self.add_option(options.OPTION_REPO_ID)
 
     def run(self, **kwargs):
         pass
