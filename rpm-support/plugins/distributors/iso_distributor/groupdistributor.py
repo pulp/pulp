@@ -154,18 +154,32 @@ class GroupISODistributor(GroupDistributor):
         if progress_callback:
             progress_callback(type_id, status)
 
+
+    def cancel_publish_group(self, call_report, call_request):
+        #TODO: revisit this method for any changes once the base class defines it
+        self.canceled = True
+
+    def init_group_progress(self):
+        """
+        Initialize the group progress status
+        """
+        self.group_progress_status = {"isos":               {"state": "NOT_STARTED"},
+                                     "publish_http":       {"state": "NOT_STARTED"},
+                                     "publish_https":      {"state": "NOT_STARTED"},
+                                     "repositories":       {"state": "NOT_STARTED"},}
+
     def publish_group(self, repo_group, publish_conduit, config):
         self.group_working_dir = group_working_dir = repo_group.working_dir
         skip_types = config.get("skip") or []
-        self.group_progress_status = {"isos":               {"state": "NOT_STARTED"},
-                                      "publish_http":       {"state": "NOT_STARTED"},
-                                      "publish_https":      {"state": "NOT_STARTED"},
-                                      "repositories":       {"state": "NOT_STARTED"},
-                                      "group-id":           repo_group.id }
+        self.init_group_progress()
+        self.group_progress_status["group-id"] = repo_group.id
+
+        # progress callback for group status
         def group_progress_callback(type_id, status):
             self.group_progress_status[type_id] = status
             publish_conduit.set_progress(self.group_progress_status)
 
+        # loop through each repo in the group and perform exports
         for repoid in repo_group.repo_ids:
             _LOG.info("Exporting repo %s " % repoid)
             summary = {}
@@ -180,22 +194,28 @@ class GroupISODistributor(GroupDistributor):
                 publish_conduit.set_progress(progress_status)
             repo_working_dir = "%s/%s" % (group_working_dir, repoid)
             repo_exporter = RepoExporter(repo_working_dir, skip=skip_types)
+            # check if any datefilter is set on the distributor
             date_filter = repo_exporter.create_date_range_filter(config)
             _LOG.info("repo working dir %s" % repo_working_dir)
             if date_filter:
-                # export errata by date and associated rpm units
+                # If a date range is specified, we only export the errata within that range
+                # and associated rpm units. This might change once we have dates associated
+                # to other units.
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA], unit_filters=date_filter)
                 errata_units = publish_conduit.get_units(repoid, criteria=criteria)
+                # we only include binary and source; drpms are not associated to errata
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM])
                 rpm_units = publish_conduit.get_units(repoid, criteria=criteria)
                 rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
                 rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
                 if self.canceled:
                     return publish_conduit.build_failure_report(summary, details)
+
                 # generate metadata
                 metadata_status, metadata_errors = metadata.generate_metadata(
                        repo_working_dir, publish_conduit, config, progress_callback)
                 _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+                # export errata and generate updateinfo xml
                 errata_status, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
 
                 summary["num_package_units_attempted"] = len(rpm_units)
@@ -203,14 +223,16 @@ class GroupISODistributor(GroupDistributor):
                 summary["num_package_units_errors"] = len(rpm_errors)
                 details["errors"] = rpm_errors +  errata_errors + metadata_errors
             else:
-                # export everything
+
+                # export rpm units(this includes binary, source and delta)
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM])
                 rpm_units = publish_conduit.get_units(repoid, criteria)
                 rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
                 summary["num_package_units_attempted"] = len(rpm_units)
                 summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
                 summary["num_package_units_errors"] = len(rpm_errors)
-                # package groups
+
+                # export package groups information and generate comps.xml
                 groups_xml_path = None
                 if "packagegroup" not in skip_types:
                     progress_status["packagegroups"]["state"] = "STARTED"
@@ -228,10 +250,12 @@ class GroupISODistributor(GroupDistributor):
 
                 if self.canceled:
                     return publish_conduit.build_failure_report(summary, details)
+
                 # generate metadata
                 metadata_status, metadata_errors = metadata.generate_metadata(
                         repo_working_dir, publish_conduit, config, progress_callback, groups_xml_path)
                 _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+
                 # export errata units and associated rpms
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
                 errata_units = publish_conduit.get_units(repoid, criteria)
@@ -241,6 +265,7 @@ class GroupISODistributor(GroupDistributor):
                 repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
                 errata_status, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
                 summary["num_errata_units_exported"] = len(errata_units)
+
                 # export distributions
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DISTRO])
                 distro_units = publish_conduit.get_units(repoid, criteria)
@@ -255,17 +280,36 @@ class GroupISODistributor(GroupDistributor):
                 details["errors"] = rpm_errors + distro_errors + errata_errors + metadata_errors
                 self.group_summary[repoid] = summary
                 self.group_details[repoid] = details
+
         # generate and publish isos
         self._publish_isos(repo_group, config, progress_callback=group_progress_callback)
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (self.group_summary, self.group_details))
+
         # remove exported content from working dirctory
         iso_util.cleanup_working_dir(self.group_working_dir)
+
         # check for any errors
         if not len([self.group_details[repoid]["errors"] for repoid in self.group_details.keys()]):
             return publish_conduit.build_failure_report(self.group_summary, self.group_details)
+
         return publish_conduit.build_success_report(self.group_summary, self.group_details)
 
     def _publish_isos(self, repo_group, config, progress_callback=None):
+        """
+        Generate the iso images on the exported directory of repos and publish
+        them to the publish directory. Supports http/https publish. This does not
+        support repo_auth.
+        @param repo_group: metadata describing the repository group to which the
+                     configuration applies
+        @type  repo_group: pulp.plugins.model.RepositoryGroup
+
+        @param config: plugin configuration instance; the proposed repo
+                       configuration is found within
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+        """
         # build iso and publish via HTTPS
         https_publish_dir = iso_util.get_https_publish_iso_dir(config)
         https_repo_publish_dir = os.path.join(https_publish_dir, repo_group.id).rstrip('/')
@@ -275,11 +319,13 @@ class GroupISODistributor(GroupDistributor):
             self.set_progress("publish_https", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTPS Publishing repo <%s> to <%s>" % (repo_group.id, https_repo_publish_dir))
-                isogen = GenerateIsos(self.group_working_dir, https_repo_publish_dir, prefix=prefix, progress=self.init_progress())
-                isogen.run(progress_callback=group_progress_callback)
+                # generate iso images and write them to the publish directory
+                isogen = GenerateIsos(self.group_working_dir, https_repo_publish_dir, prefix=prefix, progress=self.init_progress(), is_cancelled=self.canceled)
+                isogen.run(progress_callback=progress_callback)
                 self.group_summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
-            except:
+            except Exception,e:
+                _LOG.debug(" publish operaation failed due to exception: %s" % e)
                 self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
         else:
             self.set_progress("publish_https", {"state" : "SKIPPED"}, progress_callback)
@@ -287,7 +333,6 @@ class GroupISODistributor(GroupDistributor):
                 _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
                 shutil.rmtree(https_repo_publish_dir)
 
-        # Handle publish link for HTTP
         # build iso and publish via HTTP
         http_publish_dir = iso_util.get_http_publish_iso_dir(config)
         http_repo_publish_dir = os.path.join(http_publish_dir, repo_group.id).rstrip('/')
@@ -296,11 +341,13 @@ class GroupISODistributor(GroupDistributor):
             self.set_progress("publish_http", {"state" : "IN_PROGRESS"}, progress_callback)
             try:
                 _LOG.info("HTTP Publishing repo <%s> to <%s>" % (repo_group.id, http_repo_publish_dir))
-                isogen = GenerateIsos(self.group_working_dir, http_repo_publish_dir, prefix=prefix, progress=self.init_progress())
+                # generate iso images and write them to the publish directory
+                isogen = GenerateIsos(self.group_working_dir, http_repo_publish_dir, prefix=prefix, progress=self.init_progress(), is_cancelled=self.canceled)
                 isogen.run(progress_callback=progress_callback)
                 self.group_summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
-            except:
+            except Exception,e:
+                _LOG.debug(" publish operaation failed due to exception: %s" % e)
                 self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:
             self.set_progress("publish_http", {"state" : "SKIPPED"}, progress_callback)

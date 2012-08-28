@@ -21,7 +21,16 @@ _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 class RepoExporter(object):
+    """
+    Exporter class resonsible for hnadling unit exports
+    to a repo working directory.
 
+    @ivar repo_working_dir: Repo working directory where the content is exported
+    @type repo_working_dir: str
+
+    @ivar skip: skip list with content types to be excluded from export
+    @type skip: list
+    """
     def __init__(self, repo_working_dir, skip=None):
         self.repo_working_dir = repo_working_dir
         self.skip = skip or []
@@ -61,16 +70,13 @@ class RepoExporter(object):
          This call looksup each rpm units and exports to the working directory.
 
         @param rpm_units
-        @type errata_units list of AssociatedUnit to be exported
-
-        @param symlink_dir: path of where we want the symlink and repodata to reside
-        @type symlink_dir str
+        @type rpm_units list of AssociatedUnit to be exported
 
         @param progress_callback: callback to report progress info to publish_conduit
         @type  progress_callback: function
 
         @return tuple of status and list of error messages if any occurred
-        @rtype (bool, [str])
+        @rtype ({}, [str])
         """
         # get rpm units
         summary = {}
@@ -134,14 +140,11 @@ class RepoExporter(object):
         @param errata_units
         @type errata_units list of AssociatedUnit
 
-        @param repo_working_dir: path of where we want the symlink and repodata to reside
-        @type repo_working_dir str
-
         @param progress_callback: callback to report progress info to publish_conduit
         @type  progress_callback: function
 
         @return tuple of status and list of error messages if any occurred
-        @rtype (bool, [str])
+        @rtype ({}, [str])
         """
         summary = {}
         repo_working_dir = self.repo_working_dir
@@ -221,17 +224,14 @@ class RepoExporter(object):
         looksup each distribution unit and symlinks the files from the storage location
         to working directory.
 
-        @param units
-        @type AssociatedUnit
-
-        @param symlink_dir: path of where we want the symlink to reside
-        @type symlink_dir str
+        @param units: list of assocuated units to be exported
+        @type list of AssociatedUnit
 
         @param progress_callback: callback to report progress info to publish_conduit
         @type  progress_callback: function
 
         @return tuple of status and list of error messages if any occurred
-        @rtype (bool, [str])
+        @rtype ({}, [str])
         """
         summary = {}
         symlink_dir = self.repo_working_dir

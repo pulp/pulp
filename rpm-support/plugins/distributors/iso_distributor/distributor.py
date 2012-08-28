@@ -244,6 +244,21 @@ class ISODistributor(Distributor):
         return publish_conduit.build_success_report(self.summary, self.details)
 
     def _publish_isos(self, repo, config, progress_callback=None):
+        """
+        Generate the iso images on the exported repo and publish
+        them to the publish directory. Supports http/https publish. This does not
+        support repo_auth.
+        @param repo: metadata describing the repository to which the
+                     configuration applies
+        @type  repo: pulp.plugins.model.Repository
+
+        @param config: plugin configuration instance; the proposed repo
+                       configuration is found within
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+        """
         # build iso and publish via HTTPS
         https_publish_dir = iso_util.get_https_publish_iso_dir(config)
         https_repo_publish_dir = os.path.join(https_publish_dir, repo.id).rstrip('/')
@@ -266,7 +281,6 @@ class ISODistributor(Distributor):
                 _LOG.debug("Removing link for %s since https is not set" % https_repo_publish_dir)
                 shutil.rmtree(https_repo_publish_dir)
 
-        # Handle publish link for HTTP
         # build iso and publish via HTTP
         http_publish_dir = iso_util.get_http_publish_iso_dir(config)
         http_repo_publish_dir = os.path.join(http_publish_dir, repo.id).rstrip('/')
@@ -279,7 +293,6 @@ class ISODistributor(Distributor):
                 isogen.run(progress_callback=progress_callback)
                 self.summary["http_publish_dir"] = http_repo_publish_dir
                 self.set_progress("publish_http", {"state" : "FINISHED"}, progress_callback)
-#                progress_status["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_http", {"state" : "FAILED"}, progress_callback)
         else:

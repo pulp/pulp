@@ -31,7 +31,7 @@ class GenerateIsos(object):
     """
      Generate iso image files for the exported content.
     """
-    def __init__(self, target_directory, output_directory, prefix="pulp-repos", progress=None):
+    def __init__(self, target_directory, output_directory, prefix="pulp-repos", progress=None, is_cancelled=None):
         """
         generate isos
         @param target_directory: target content directory to be wrapped into isos
@@ -47,6 +47,7 @@ class GenerateIsos(object):
         self.output_dir = output_directory
         self.progress = progress
         self.prefix = prefix
+        self.is_cancelled = is_cancelled or False
 
     def get_image_type_size(self, total_size):
         if total_size < VALID_IMAGE_TYPES['cd']:
@@ -61,6 +62,12 @@ class GenerateIsos(object):
     def run(self, progress_callback=None):
         """
          generate iso images for the exported directory
+
+        @param progress_callback: callback to report progress info to publish_conduit
+        @type  progress_callback: function
+
+        @return tuple of status and list of error messages if any occurred
+        @rtype (bool, [str])
         """
         iso_progress_status = self.progress
         iso_progress_status['state'] = "IN_PROGRESS"
@@ -90,6 +97,13 @@ class GenerateIsos(object):
             iso_progress_status['current_file'] = filename
             cmd = self.get_mkisofs_template() % (string.join([pathfiles]), filename)
             self.set_progress("isos", iso_progress_status, progress_callback)
+            if self.is_cancelled:
+                iso_progress_status["size_left"] = 0
+                iso_progress_status['items_left'] = 0
+                iso_progress_status['current_file'] = None
+                iso_progress_status["state"] = "FAILED"
+                log.debug("iso generation cancelled on request")
+                return False, []
             status, out = self.run_command(cmd)
             if status != 0:
                 log.error("Error creating iso %s" % filename)
