@@ -66,7 +66,7 @@ class PuppetStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.sync_metadata_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Downloading metadata...'))
+            self.prompt.write(_('Downloading metadata...'), tag='download-metadata')
 
         # Same behavior for running or success
         if sync_report.metadata_state in (constants.STATE_RUNNING, constants.STATE_SUCCESS):
@@ -74,8 +74,8 @@ class PuppetStatusRenderer(StatusRenderer):
             items_total = sync_report.metadata_query_total_count
             item_type = _('Metadata Query')
 
-            self._render_itemized_in_progress_state(items_done, items_total, item_type,
-                self.sync_metadata_bar, sync_report.metadata_state)
+            self._render_itemized_in_progress_state(items_done, items_total,
+                item_type, self.sync_metadata_bar, sync_report.metadata_state)
 
         # The only state left to handle is if it failed
         else:
@@ -97,7 +97,7 @@ class PuppetStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.sync_modules_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Downloading new modules...'))
+            self.prompt.write(_('Downloading new modules...'), tag='downloading')
 
         # Same behavior for running or success
         if sync_report.modules_state in (constants.STATE_RUNNING, constants.STATE_SUCCESS):
@@ -131,7 +131,7 @@ class PuppetStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.publish_modules_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Publishing modules...'))
+            self.prompt.write(_('Publishing modules...'), tag='publishing')
 
         # Same behavior for running or success
         if publish_report.modules_state in (constants.STATE_RUNNING, constants.STATE_SUCCESS):
@@ -165,14 +165,14 @@ class PuppetStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.publish_metadata_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Generating repository metadata...'))
+            self.prompt.write(_('Generating repository metadata...'), tag='generating')
 
         if publish_report.metadata_state == constants.STATE_RUNNING:
             self.publish_metadata_spinner.next()
 
         elif publish_report.metadata_state == constants.STATE_SUCCESS:
             self.publish_metadata_spinner.next(finished=True)
-            self.prompt.write(_('... completed'))
+            self.prompt.write(_('... completed'), tag='completed')
             self.prompt.render_spacer()
 
         elif publish_report.metadata_state == constants.STATE_FAILED:
@@ -183,37 +183,41 @@ class PuppetStatusRenderer(StatusRenderer):
                                publish_report.modules_exception,
                                publish_report.modules_traceback)
 
+        self.publish_metadata_last_state = publish_report.metadata_state
+
     def _display_publish_http_https_step(self, publish_report):
 
         # -- HTTP --------
-        if publish_report.publish_http == constants.STATE_NOT_STARTED or \
-           self.publish_http_last_state in constants.COMPLETE_STATES:
-            return
+        if publish_report.publish_http != constants.STATE_NOT_STARTED and \
+           self.publish_http_last_state not in constants.COMPLETE_STATES:
 
-        self.prompt.write(_('Publishing repository over HTTP...'))
+            self.prompt.write(_('Publishing repository over HTTP...'))
 
-        if publish_report.publish_http == constants.STATE_SUCCESS:
-            self.prompt.write(_('... completed'))
-        elif publish_report.publish_http == constants.STATE_SKIPPED:
-            self.prompt.write(_('... skipped'))
-        else:
-            self.prompt.write(_('... unknown'))
+            if publish_report.publish_http == constants.STATE_SUCCESS:
+                self.prompt.write(_('... completed'), tag='http-completed')
+            elif publish_report.publish_http == constants.STATE_SKIPPED:
+                self.prompt.write(_('... skipped'), tag='http-skipped')
+            else:
+                self.prompt.write(_('... unknown'), tag='http-unknown')
 
-        self.prompt.render_spacer()
+            self.publish_http_last_state = publish_report.publish_http
+
+            self.prompt.render_spacer()
 
         # -- HTTPS --------
-        if publish_report.publish_https == constants.STATE_NOT_STARTED or\
-           self.publish_https_last_state in constants.COMPLETE_STATES:
-            return
+        if publish_report.publish_https != constants.STATE_NOT_STARTED and \
+           self.publish_https_last_state not in constants.COMPLETE_STATES:
 
-        self.prompt.write(_('Publishing repository over HTTPS...'))
+            self.prompt.write(_('Publishing repository over HTTPS...'))
 
-        if publish_report.publish_https == constants.STATE_SUCCESS:
-            self.prompt.write(_('... completed'))
-        elif publish_report.publish_https == constants.STATE_SKIPPED:
-            self.prompt.write(_('... skipped'))
-        else:
-            self.prompt.write(_('... unknown'))
+            if publish_report.publish_https == constants.STATE_SUCCESS:
+                self.prompt.write(_('... completed'), tag='https-completed')
+            elif publish_report.publish_https == constants.STATE_SKIPPED:
+                self.prompt.write(_('... skipped'), tag='https-skipped')
+            else:
+                self.prompt.write(_('... unknown'), tag='https-unknown')
+
+            self.publish_https_last_state = publish_report.publish_https
 
     def _render_itemized_in_progress_state(self, items_done, items_total, type_name,
                                            progress_bar, current_state):
