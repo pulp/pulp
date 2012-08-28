@@ -31,6 +31,8 @@ class PuppetStatusRenderer(StatusRenderer):
         # Publish Steps
         self.publish_modules_last_state = constants.STATE_NOT_STARTED
         self.publish_metadata_last_state = constants.STATE_NOT_STARTED
+        self.publish_http_last_state = constants.STATE_NOT_STARTED
+        self.publish_https_last_state = constants.STATE_NOT_STARTED
 
         # UI Widgets
         self.sync_metadata_bar = self.prompt.create_progress_bar()
@@ -51,6 +53,7 @@ class PuppetStatusRenderer(StatusRenderer):
             publish_report = PublishProgressReport.from_progress_dict(progress_report[constants.DISTRIBUTOR_ID])
             self._display_publish_modules_step(publish_report)
             self._display_publish_metadata_step(publish_report)
+            self._display_publish_http_https_step(publish_report)
 
     # -- private --------------------------------------------------------------
 
@@ -179,6 +182,38 @@ class PuppetStatusRenderer(StatusRenderer):
             self._render_error(publish_report.modules_error_message,
                                publish_report.modules_exception,
                                publish_report.modules_traceback)
+
+    def _display_publish_http_https_step(self, publish_report):
+
+        # -- HTTP --------
+        if publish_report.publish_http == constants.STATE_NOT_STARTED or \
+           self.publish_http_last_state in constants.COMPLETE_STATES:
+            return
+
+        self.prompt.write(_('Publishing repository over HTTP...'))
+
+        if publish_report.publish_http == constants.STATE_SUCCESS:
+            self.prompt.write(_('... completed'))
+        elif publish_report.publish_http == constants.STATE_SKIPPED:
+            self.prompt.write(_('... skipped'))
+        else:
+            self.prompt.write(_('... unknown'))
+
+        self.prompt.render_spacer()
+
+        # -- HTTPS --------
+        if publish_report.publish_https == constants.STATE_NOT_STARTED or\
+           self.publish_https_last_state in constants.COMPLETE_STATES:
+            return
+
+        self.prompt.write(_('Publishing repository over HTTPS...'))
+
+        if publish_report.publish_https == constants.STATE_SUCCESS:
+            self.prompt.write(_('... completed'))
+        elif publish_report.publish_https == constants.STATE_SKIPPED:
+            self.prompt.write(_('... skipped'))
+        else:
+            self.prompt.write(_('... unknown'))
 
     def _render_itemized_in_progress_state(self, items_done, items_total, type_name,
                                            progress_bar, current_state):

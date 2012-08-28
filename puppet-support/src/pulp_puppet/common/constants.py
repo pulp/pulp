@@ -65,8 +65,9 @@ STATE_NOT_STARTED = 'not-started'
 STATE_RUNNING = 'running'
 STATE_SUCCESS = 'success'
 STATE_FAILED = 'failed'
+STATE_SKIPPED = 'skipped'
 
-COMPLETE_STATES = (STATE_SUCCESS, STATE_FAILED)
+COMPLETE_STATES = (STATE_SUCCESS, STATE_FAILED, STATE_SKIPPED)
 
 # -- importer configuration keys ----------------------------------------------
 

@@ -67,6 +67,10 @@ class PublishProgressReport(object):
         r.metadata_exception = m['error']
         r.metadata_traceback = m['traceback']
 
+        m = report['publishing']
+        r.publish_http = m['http']
+        r.publish_https = m['https']
+
         return r
 
     def __init__(self, conduit):
@@ -89,6 +93,10 @@ class PublishProgressReport(object):
         self.metadata_error_message = None
         self.metadata_exception = None
         self.metadata_traceback = None
+
+        # Publishing
+        self.publish_http = STATE_NOT_STARTED
+        self.publish_https = STATE_NOT_STARTED
 
     def update_progress(self):
         """
@@ -139,6 +147,7 @@ class PublishProgressReport(object):
         report = {
             'modules' : self._modules_section(),
             'metadata' : self._metadata_section(),
+            'publishing' : self._publishing_section(),
         }
         return report
 
@@ -180,3 +189,10 @@ class PublishProgressReport(object):
             'traceback' : reporting.format_traceback(self.metadata_traceback),
             }
         return metadata_report
+
+    def _publishing_section(self):
+        publishing_report = {
+            'http' : self.publish_http,
+            'https' : self.publish_https,
+        }
+        return publishing_report
