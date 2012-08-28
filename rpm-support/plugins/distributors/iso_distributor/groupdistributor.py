@@ -155,8 +155,7 @@ class GroupISODistributor(GroupDistributor):
             progress_callback(type_id, status)
 
 
-    def cancel_publish_group(self, call_report, call_request):
-        #TODO: revisit this method for any changes once the base class defines it
+    def cancel_publish_group(self, call_request, call_report):
         self.canceled = True
 
     def init_group_progress(self):
