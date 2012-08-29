@@ -13,7 +13,7 @@
 
 from pulp.client.commands.repo import cudl, group, sync_publish
 
-from pulp_puppet.extension.admin import repo, structure, status
+from pulp_puppet.extension.admin import modules, repo, structure, status
 
 def initialize(context):
     structure.ensure_structure(context.cli)
@@ -24,6 +24,7 @@ def initialize(context):
     repo_section.add_command(cudl.DeleteRepositoryCommand(context))
     repo_section.add_command(repo.ListPuppetRepositoriesCommand(context))
     repo_section.add_command(repo.SearchPuppetRepositoriesCommand(context))
+    repo_section.add_command(modules.ModulesCommand(context))
 
     group_section = structure.repo_group_section(context.cli)
     group_section.add_command(group.CreateRepositoryGroupCommand(context))

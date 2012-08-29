@@ -61,7 +61,8 @@ class PublishRunTests(unittest.TestCase):
             key = {'name' : name, 'version' : version, 'author' : author}
             storage_dir = os.path.join(FAKE_PULP_STORAGE_DIR, module)
 
-            u = Unit(constants.TYPE_PUPPET_MODULE, key, {}, storage_dir)
+            metadata = {'checksums' : [['a', 'a'], ['b', 'b']]}
+            u = Unit(constants.TYPE_PUPPET_MODULE, key, metadata, storage_dir)
             self.units.append(u)
         self.conduit = MockConduit()
         self.conduit.get_units.return_value = self.units

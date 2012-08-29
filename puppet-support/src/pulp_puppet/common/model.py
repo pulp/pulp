@@ -44,6 +44,7 @@ class RepositoryMetadata(object):
         # each represnting a single module.
         for module_dict in parsed:
             module = Module.from_dict(module_dict)
+            module.tags = module_dict.get('tag_list', None) # only exists in the repo metadata
             self.modules.append(module)
 
     def to_json(self):
@@ -167,9 +168,6 @@ class Module(object):
         Updates the instance variables with the values in the given dict.
         """
 
-        # Found in the repository metadata for the module
-        self.tags = module_dict.get('tag_list', None)
-
         # Found in the module metadata itself
         self.source = module_dict.get('source', None)
         self.license = module_dict.get('license', None)
@@ -179,6 +177,10 @@ class Module(object):
         self.types = module_dict.get('types', [])
         self.dependencies = module_dict.get('dependencies', [])
         self.checksums = module_dict.get('checksums', {})
+
+        # Special handling of the DB-safe checksum to rebuild it
+        if isinstance(self.checksums, list):
+            self.checksums = dict([ (c[0], c[1]) for c in self.checksums])
 
     def unit_key(self):
         """
@@ -192,7 +194,7 @@ class Module(object):
         Returns all non-unit key metadata that should be stored in Pulp
         for this module. This is how the module will be inventoried in Pulp.
         """
-        return {
+        metadata = {
             'description'  : self.description,
             'tag_list'     : self.tags,
             'source'       : self.source,
@@ -201,8 +203,16 @@ class Module(object):
             'project_page' : self.project_page,
             'types'        : self.types,
             'dependencies' : self.dependencies,
-            'checksums'    : self.checksums,
         }
+
+        # Checksums is expressed as a dict of file to checksum. This causes
+        # a problem in mongo since keys can't have periods in them, but file
+        # names clearly will. Translate to a list of tuples to get around this
+
+        clean_checksums =  [ (k, v) for k, v in self.checksums.items()]
+        metadata['checksums'] = clean_checksums
+
+        return metadata
 
     def filename(self):
         """

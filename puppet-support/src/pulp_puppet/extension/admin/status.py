@@ -12,8 +12,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+import traceback
 
 from pulp.client.commands.repo.sync_publish import StatusRenderer
+from pulp.client.extensions.core import COLOR_FAILURE
 
 from pulp_puppet.common import constants
 from pulp_puppet.common.publish_progress import  PublishProgressReport
@@ -117,7 +119,9 @@ class PuppetStatusRenderer(StatusRenderer):
                                sync_report.modules_traceback)
 
         # Regardless of success or failure, display any individual module errors
-        self._render_module_errors(sync_report.modules_individual_errors)
+        # if the new state is complete
+        if sync_report.modules_state in constants.COMPLETE_STATES:
+            self._render_module_errors(sync_report.modules_individual_errors)
 
         # Before finishing update the state
         self.sync_modules_last_state = sync_report.modules_state
@@ -151,7 +155,9 @@ class PuppetStatusRenderer(StatusRenderer):
                                publish_report.modules_traceback)
 
         # Regardless of success or failure, display any individual module errors
-        self._render_module_errors(publish_report.modules_individual_errors)
+        # if the new state is complete
+        if publish_report.modules_state in constants.COMPLETE_STATES:
+            self._render_module_errors(publish_report.modules_individual_errors)
 
         # Before finishing update the state
         self.publish_modules_last_state = publish_report.modules_state
@@ -267,12 +273,22 @@ class PuppetStatusRenderer(StatusRenderer):
                     if i >= num_errors:
                         break
 
-                    traceback = individual_errors[module_name]
+                    exception = individual_errors[module_name]['exception']
+                    tb = individual_errors[module_name]['traceback']
+                    tb = traceback.format_list(tb)
 
-                    message =  _('Module: %(m)s\n') % {'m' : module_name}
-                    message += _('Error:  %(e)s') % {'e' : traceback}
+                    # render_failure_message puts too many blank lines, so
+                    # simulate that rendering here
 
-                    self.prompt.render_failure_message(message)
+                    message =  _('Module: %(m)s') % {'m' : module_name}
+                    self.prompt.write(message, color=COLOR_FAILURE)
+
+                    message = _('Exception: %(e)s' % {'e' : exception})
+                    self.prompt.write(message, color=COLOR_FAILURE)
+
+                    message = _('Traceback:\n%(t)s') % {'t' : ''.join(tb)}
+                    self.prompt.write(message, color=COLOR_FAILURE, skip_wrap=True)
+
                     self.prompt.render_spacer()
 
     def _render_error(self, error_message, exception, traceback):

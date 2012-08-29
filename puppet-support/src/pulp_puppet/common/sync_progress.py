@@ -153,14 +153,17 @@ class SyncProgressReport(object):
         }
         return report
 
-    def add_failed_module(self, module, traceback):
+    def add_failed_module(self, module, exception, traceback):
         """
         Updates the progress report that a module failed to be imported.
         """
         self.modules_error_count += 1
         self.modules_individual_errors = self.modules_individual_errors or {}
         error_key = '%s-%s-%s' % (module.name, module.version, module.author)
-        self.modules_individual_errors[error_key] = reporting.format_traceback(traceback)
+        self.modules_individual_errors[error_key] = {
+            'exception' : reporting.format_exception(exception),
+            'traceback' : reporting.format_traceback(traceback),
+        }
 
     # -- report creation methods ----------------------------------------------
 

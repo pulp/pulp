@@ -12,6 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
+import sys
+import traceback
 
 import base_cli
 
@@ -301,15 +303,28 @@ class PuppetStatusRendererTests(base_cli.ExtensionTests):
 
     def test_render_module_errors(self):
         # Setup
+
+        # Need a valid traceback instance to be formatted and this is the best
+        # I could come up with to make one :)
+        tb = None
+        try:
+            raise Exception()
+        except Exception:
+            tb = sys.exc_info()[2]
+        tb = traceback.extract_tb(tb)
+
         individual_errors = {}
         for i in range(0, 10):
-            individual_errors['mod_%s' % i] = 'tb_%s' % i
+            individual_errors['mod_%s' % i] = {
+                'exception' : 'e_%s' % i,
+                'traceback' : tb,
+            }
 
         # Test
         self.renderer._render_module_errors(individual_errors)
 
         # Verify
-        expected_tags = (('%s ' % TAG_FAILURE) * 6).split() # 5 displayed + leading message
+        expected_tags = [TAG_FAILURE]
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
     def test_display_report(self):
