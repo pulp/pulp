@@ -852,7 +852,7 @@ class RepoSync(JSONController):
 
         repo_publish_manager = manager_factory.repo_publish_manager()
         auto_publish_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                             action_tag('auto_publish')]
+                             action_tag('auto_publish'), action_tag('publish')]
         auto_distributors = repo_publish_manager.auto_distributors(repo_id)
 
         for distributor in auto_distributors:
@@ -914,6 +914,7 @@ class RepoAssociate(JSONController):
         # Params
         params = self.params()
         source_repo_id = params.get('source_repo_id', None)
+        overrides = params.get('override_config', None)
 
         if source_repo_id is None:
             raise exceptions.MissingValue(['source_repo_id'])
@@ -934,7 +935,7 @@ class RepoAssociate(JSONController):
                 action_tag('associate')]
         call_request = CallRequest(association_manager.associate_from_repo,
                                    [source_repo_id, dest_repo_id],
-                                   {'criteria': criteria},
+                                   {'criteria': criteria, 'import_config_override': overrides},
                                    resources=resources,
                                    tags=tags,
                                    archive=True)

@@ -16,9 +16,9 @@
 import logging
 import unittest
 
-from pulp.server.auth.certificate import Certificate
-from pulp.server.auth.cert_generator import SerialNumber
-import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber, _make_priv_key
+
 
 SerialNumber.PATH = '/tmp/sn.dat'
 sn = SerialNumber()
@@ -90,10 +90,13 @@ XGuaPqfHaos=
 
 
 class TestCertGeneration(unittest.TestCase):
+    def setUp(self):
+        super(TestCertGeneration, self).setUp()
+        self.cert_gen_manager = manager_factory.cert_generation_manager()
 
     def test_priv_key(self):
         # Test
-        pem = cert_generator._make_priv_key()
+        pem = _make_priv_key()
 
         # Verify
         self.assertTrue(pem.startswith('-----BEGIN RSA PRIVATE KEY-----'))
@@ -103,23 +106,23 @@ class TestCertGeneration(unittest.TestCase):
         cid = "foobarbaz"
 
         # Test
-        pk, x509_pem = cert_generator.make_cert(cid, 7)
+        pk, x509_pem = self.cert_gen_manager.make_cert(cid, 7)
 
         # Verify
         self.assertTrue(pk is not None)
         self.assertTrue(x509_pem is not None)
 
-        cert = Certificate(content=x509_pem)
+        cert = manager_factory.certificate_manager(content=x509_pem)
         subject = cert.subject()
         consumer_cert_uid = subject.get('CN', None)
         self.assertEqual(cid, consumer_cert_uid)
 
     def test_verify(self):
         # Test
-        valid_result = cert_generator.verify_cert(VALID_CERT)
+        valid_result = self.cert_gen_manager.verify_cert(VALID_CERT)
         self.assertTrue(valid_result)
 
-        invalid_result = cert_generator.verify_cert(INVALID_CERT)
+        invalid_result = self.cert_gen_manager.verify_cert(INVALID_CERT)
         self.assertTrue(not invalid_result)
 
 if __name__ == '__main__':

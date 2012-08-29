@@ -183,7 +183,7 @@ class EventListenerManager(object):
         return listeners
 
 def _validate_event_types(event_types):
-    if not isinstance(event_types, (tuple, list)) or len(event_types) is 0:
+    if not isinstance(event_types, (tuple, list)) or len(event_types) == 0:
         raise InvalidValue(['event_types'])
 
     invalid_event_types = [e for e in event_types if e not in ALL_EVENT_TYPES]

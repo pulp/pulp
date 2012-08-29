@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.323
+Version: 0.0.325
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,17 @@ exit 0
 %endif
 
 %changelog
+* Sun Aug 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
+- Refactored repo and repo group commands to the client package
+  (jason.dobies@redhat.com)
+- 847814 - added completed task cache to all_tasks method
+  (jason.connor@gmail.com)
+
+* Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
+- Add support to depsolve and include missing dependencies during import from
+  another repository. (jortel@redhat.com)
+- Added remove units extension (jason.dobies@redhat.com)
+
 * Sat Aug 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-1
 - 
 

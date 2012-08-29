@@ -21,3 +21,4 @@ Notifiers
    :maxdepth: 1
 
    rest-api
+   email

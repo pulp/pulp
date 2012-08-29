@@ -22,16 +22,16 @@
 
 <?php if ($comments) : ?>
 
-	<h3><?php comments_number('No Comments', 'One Comment', '% Comments' );?> on &#8220;<?php the_title(); ?>&#8221;</h3>
+<!--	<h3><?php comments_number('No Comments', 'One Comment', '% Comments' );?> on &#8220;<?php the_title(); ?>&#8221;</h3> -->
 
 	<ol class="commentlist">
 
 	<?php $count_pings = 1; foreach ($comments as $comment) : ?>
 
 		<li <?php echo $oddcomment; ?>id="comment-<?php comment_ID() ?>">
-			<div style="float:left;padding-right:5px;"><?php echo get_avatar( $comment, 26 ); ?></div>
-			<span><?php echo $count_pings; $count_pings++; ?></span>
-			<cite><?php comment_author_link() ?>&nbsp;said at <?php comment_time() ?> on <?php comment_date('F jS, Y') ?>:</cite>
+<!--			<div style="float:left;padding-right:5px;"><?php echo get_avatar( $comment, 26 ); ?></div>-->
+<!--			<span><?php echo $count_pings; $count_pings++; ?></span> -->
+			<div class="author"><?php comment_author_link() ?>&nbsp;said at <?php comment_time() ?> on <?php comment_date('F jS, Y') ?>:</div>
 			<?php comment_text() ?>
 			<?php if ($comment->comment_approved == '0') : ?>
 			<p><b>Your comment is awaiting moderation.</b></p>
@@ -62,7 +62,6 @@
 
 <?php if ('open' == $post->comment_status) : ?>
 
-<hr/>
 <br/>
 <h3 class="center blue">Leave a Reply</h3>
 

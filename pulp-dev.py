@@ -68,6 +68,8 @@ DIRS = (
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
+    '/var/www/pulp_puppet/http/repos',
+    '/var/www/pulp_puppet/https/repos',
 )
 
 #
@@ -84,7 +86,10 @@ DIR_PLUGINS = '/usr/lib/pulp/plugins'
 LINKS = (
     ('builtins/extensions/admin/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
     ('builtins/extensions/admin/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
+    ('builtins/extensions/admin/pulp_event', DIR_ADMIN_EXTENSIONS + 'pulp_event'),
+    ('builtins/extensions/admin/pulp_permission', DIR_ADMIN_EXTENSIONS + 'pulp_permission'),
     ('builtins/extensions/admin/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
+    ('builtins/extensions/admin/pulp_role', DIR_ADMIN_EXTENSIONS + 'pulp_role'),
     ('builtins/extensions/admin/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
     ('builtins/extensions/admin/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
     ('builtins/extensions/admin/pulp_upload', DIR_ADMIN_EXTENSIONS + 'pulp_upload'),
@@ -121,6 +126,7 @@ LINKS = (
     ('rpm-support/extensions/admin/rpm_repo', DIR_ADMIN_EXTENSIONS + 'rpm_repo'),
     ('rpm-support/extensions/admin/rpm_sync', DIR_ADMIN_EXTENSIONS + 'rpm_sync'),
     ('rpm-support/extensions/admin/rpm_units_copy', DIR_ADMIN_EXTENSIONS + 'rpm_units_copy'),
+    ('rpm-support/extensions/admin/rpm_units_remove', DIR_ADMIN_EXTENSIONS + 'rpm_units_remove'),
     ('rpm-support/extensions/admin/rpm_units_search', DIR_ADMIN_EXTENSIONS + 'rpm_units_search'),
     ('rpm-support/extensions/admin/rpm_upload', DIR_ADMIN_EXTENSIONS + 'rpm_upload'),
     ('rpm-support/extensions/admin/rpm_package_group_upload', DIR_ADMIN_EXTENSIONS + 'rpm_package_group_upload'),
@@ -140,6 +146,12 @@ LINKS = (
 
     ('rpm-support/usr/lib/yum-plugins/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
     ('rpm-support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
+
+    ('puppet-support/etc/httpd/conf.d/pulp_puppet.conf', '/etc/httpd/conf.d/pulp_puppet.conf'),
+    ('puppet-support/plugins/types/puppet.json', DIR_PLUGINS + '/types/puppet.json'),
+    ('puppet-support/plugins/importers/puppet_importer', DIR_PLUGINS + '/importers/puppet_importer'),
+    ('puppet-support/plugins/distributors/puppet_distributor', DIR_PLUGINS + '/distributors/puppet_distributor'),
+
     )
 
 def parse_cmdline():
@@ -220,11 +232,13 @@ def install(opts):
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
     os.system('chown -R apache:apache /var/lib/pulp/published')
+    os.system('chown -R apache:apache /var/www/pulp_puppet')
 
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
+
     # Update for certs
     os.system('chown -R apache:apache /etc/pki/pulp')
 

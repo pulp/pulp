@@ -35,6 +35,11 @@ _default_values = {
         'seeds': 'localhost:27017',
         'operation_retries': '2',
     },
+    'email': {
+        'host': 'localhost',
+        'port': '25',
+        'enabled' : 'false'
+    },
     'events': {
         'send_enabled': 'false',
         'recv_enabled': 'false',
@@ -67,6 +72,7 @@ _default_values = {
         #'oauth_secret': '',
         'user_cert_expiration': '7',
         'consumer_cert_expiration': '3650',
+        'serial_number_path': '/var/lib/pulp/sn.dat',
     },
     'server': {
         'server_name': 'localhost',

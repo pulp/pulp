@@ -45,9 +45,9 @@ class RunPublishCommand(PulpCliCommand):
         # benefit from the fact that there is only one distributor per repo and
         # if that changes in the future we'll need to rethink this.
         existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        if len(existing_publish_tasks) > 0:
-            task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
+        task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
 
+        if task_id is not None:
             msg = _('A publish task is already in progress for this repository. ')
             if foreground:
                 msg += _('Its progress will be tracked below.')
@@ -60,7 +60,7 @@ class RunPublishCommand(PulpCliCommand):
             task_id = response.response_body.task_id
 
         if foreground:
-            status.display_status(self.context, task_id)
+            status.display_status(self.context, task_id=task_id)
         else:
             msg = 'The status of this publish request can be displayed using the status command.'
             self.context.prompt.render_paragraph(_(msg))
@@ -83,12 +83,12 @@ class StatusCommand(PulpCliCommand):
 
         # Load the existing sync tasks
         existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        if len(existing_publish_tasks) > 0:
-            task_id = task_utils.relevant_existing_task_id(existing_publish_tasks)
+        task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
 
+        if task_id is not None:
             msg = 'A publish task is queued on the server. Its progress will be tracked below.'
             self.context.prompt.render_paragraph(_(msg))
-            status.display_status(self.context, task_id)
+            status.display_status(self.context, task_id=task_id)
 
         else:
             self.context.prompt.render_paragraph(_('There are no publish tasks currently queued in the server.'))

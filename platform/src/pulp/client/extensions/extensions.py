@@ -179,7 +179,20 @@ class PulpCliCommand(Command):
         return flag
 
 class PulpCliOption(Option):
-    pass
+
+    @property
+    def keyword(self):
+        """
+        Returns the keyword the option will be stored under when parsed.
+        :return: keyword to look up in the method handling the command
+        :rtype:  str
+        """
+        # Handle single character v. multiple character names, e.g.
+        # -v versus --verbose
+        prefix_len = 1 # always at least 1 -
+        if self.name[1] == '-': # always at least 2 chars; this is safe
+            prefix_len = 2
+        return self.name[prefix_len:]
 
 class PulpCliFlag(Flag):
     pass

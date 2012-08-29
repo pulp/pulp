@@ -5,5 +5,5 @@ Admin Client User Guide
    :maxdepth: 2
 
    introduction
-   repo/index
    consumers/index
+   repo/index

@@ -15,7 +15,7 @@ from gettext import gettext as _
 import logging
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
-from pulp.client.search import UnitSearchCommand, UnitSearchAllCommand
+from pulp.client.commands.criteria import UnitAssociationCriteriaCommand, UntypedUnitAssociationCriteriaCommand
 
 # -- constants ----------------------------------------------------------------
 
@@ -120,67 +120,95 @@ def initialize(context):
     units_section = repo_section.find_subsection('units')
     add_commands(units_section)
 
-def add_commands(units_section):
-    """
-    @param context:
-    @type  context: pulp.client.extensions.core.ClientContext
-    """
 
+def add_commands(units_section):
     m = _('search for units in a repository')
-    units_section.add_command(UnitSearchAllCommand(all, name='all', description=m))
+    units_section.add_command(UntypedUnitAssociationCriteriaCommand(all, name='all', description=m))
 
     m = _('search for RPMs in a repository')
-    units_section.add_command(UnitSearchCommand(rpm, name='rpm', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(rpm, name='rpm', description=m))
 
     m = _('search for SRPMs in a repository')
-    units_section.add_command(UnitSearchCommand(srpm, name='srpm', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(srpm, name='srpm', description=m))
 
     m = _('search for DRPMs in a repository')
-    units_section.add_command(UnitSearchCommand(drpm, name='drpm', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(drpm, name='drpm', description=m))
 
     m = _('search for package groups in a repository')
-    units_section.add_command(UnitSearchCommand(package_group, name='package_group', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(package_group, name='package-group', description=m))
 
     m = _('search for package categories (groups of package groups) in a repository')
-    units_section.add_command(UnitSearchCommand(package_category, name='package_category', description=m))
+    units_section.add_command(UnitAssociationCriteriaCommand(package_category, name='package-category', description=m))
 
-    units_section.add_command(ErrataCommand(CONTEXT, 'errata', _('search errata in a repository')))
-    units_section.add_command(DistributionCommand(CONTEXT, 'distribution', _('list distributions in a repository')))
+    m = _('list distributions in a repository')
+    units_section.add_command(UnitAssociationCriteriaCommand(distribution, name='distribution', description=m))
+
+    m = _('search errata in a repository')
+    errata_command = UnitAssociationCriteriaCommand(errata, name='errata', description=m)
+    add_erratum_group(errata_command)
+    units_section.add_command(errata_command)
+
 
 def all(**kwargs):
     _content_command(ALL_TYPES, **kwargs)
 
+
 def rpm(**kwargs):
     _content_command([TYPE_RPM], **kwargs)
+
 
 def srpm(**kwargs):
     _content_command([TYPE_SRPM], **kwargs)
 
+
 def drpm(**kwargs):
     _content_command([TYPE_DRPM], **kwargs)
+
 
 def package_group(**kwargs):
     _content_command([TYPE_PACKAGE_GROUP], **kwargs)
 
+
 def package_category(**kwargs):
     _content_command([TYPE_PACKAGE_CATEGORY], **kwargs)
 
-def _content_command(type_ids, **kwargs):
+
+def distribution(**kwargs):
+    _content_command([TYPE_DISTRIBUTION], write_distro, **kwargs)
+
+
+def errata(**kwargs):
+    if kwargs['erratum-id'] is None:
+        _content_command([TYPE_ERRATUM], write_erratum, **kwargs)
+    else:
+        # Collect data
+        repo_id = kwargs.pop('repo-id')
+        erratum_id = kwargs.pop('erratum-id')
+        new_kwargs = {
+            'repo-id' : repo_id,
+            'filters' : {'id' : erratum_id}
+        }
+        _content_command([TYPE_ERRATUM], write_erratum_detail, **new_kwargs)
+
+
+def _content_command(type_ids, out_func=None, **kwargs):
     """
     This is a generic command that will perform a search for any type or
     types of content.
 
     :param type_ids:    list of type IDs that the command should operate on
-    :type  type_ids:    list
+    :type  type_ids:    list, tuple
 
     :param kwargs:  CLI options as input by the user and passed in by okaara
     :type  kwargs:  dict
     """
+    out_func = out_func or CONTEXT.prompt.render_document
+
     repo_id = kwargs.pop('repo-id')
     kwargs['type_ids'] = type_ids
     units = CONTEXT.server.repo_unit.search(repo_id, **kwargs).response_body
     for unit in units:
-        CONTEXT.prompt.render_document(unit)
+        out_func(unit)
 
 
 class InvalidCriteria(Exception):
@@ -192,306 +220,143 @@ class InvalidCriteria(Exception):
     pass
 
 
-class ErrataCommand(PulpCliCommand):
+def write_erratum(erratum):
     """
-    Handles the display of both the list of errata in the repository as well
-    as the details of an individual erratum.
+    Write an erratum's metadata out.
+
+    :param erratum: one erratum document
+    :type  erratum: dict
     """
+    CONTEXT.prompt.render_document(erratum['metadata'])
 
-    def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.run)
-        self.context = context
 
-        # Add options and groups
-        add_required_group(self)
-        add_erratum_group(self)
-        add_display_group(self, FIELDS_ERRATA)
-        add_pagination_group(self)
+def write_erratum_detail(erratum):
+    """
+    Write an erratum out in a specially formatted way. It is not known why this
+    was originally needed.
 
-    def run(self, **kwargs):
-        """
-        Invoked method for the command. This call determines which functionality
-        method to run based on if an individual erratum is being requested or
-        the full list.
-        """
+    :param erratum: one erratum document
+    :type  erratum: dict
+    """
+    erratum_meta = erratum['metadata']
 
-        if kwargs['erratum-id'] is None:
-            self.list(**kwargs)
-        else:
-            self.details(**kwargs)
+    CONTEXT.prompt.render_title(_('Erratum: %(e)s') % {'e' : erratum_meta['id']})
 
-    def list(self, **kwargs):
-        """
-        Lists all errata in the repository, applying the necessary criteria.
-        """
-        self.context.prompt.render_title(_('Repository Errata'))
+    # Reformat the description
+    description = erratum_meta['description']
+    if description is not None:
+        description = ''
+        description_pieces = erratum_meta['description'].split('\n\n')
+        for index, paragraph in enumerate(description_pieces):
+            single_line_paragraph = ''
+            for line in paragraph.split('\n'):
+                single_line_paragraph += (line + ' ')
 
-        # Collect data
-        repo_id = kwargs.pop('repo-id')
-        try:
-            criteria = args_to_criteria_doc(kwargs, [TYPE_ERRATUM])
-            LOG.debug('Criteria for errata search')
-            LOG.debug(criteria)
-        except InvalidCriteria, e:
-            self.context.prompt.render_failure_message(e[0])
-            return
+            indent = 2
+            wrapped = CONTEXT.prompt.wrap((' ' * indent) + single_line_paragraph, remaining_line_indent=indent)
 
-        # Query the server
-        all_units = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
+            description += wrapped
+            if index < len(description_pieces) - 1:
+                description +=  '\n\n'
 
-        # We only care about the unit metadata, not the association stuff, so
-        # strip out all the fluff and reduce the list to just the metadata entries
-        units = [u['metadata'] for u in all_units]
+    # Reformat packages affected
+    package_list = ['  %s-%s:%s-%s.%s' % (p['name'], p['epoch'], p['version'], p['release'], p['arch']) for p in erratum_meta['pkglist'][0]['packages']]
 
-        if len(units) > 0:
-            self.context.prompt.render_document_list(units, order=ORDER_ERRATA)
-        else:
-            self.context.prompt.render_paragraph(_('No units found'))
+    # Reformat reboot flag
+    if erratum_meta['reboot_suggested']:
+        reboot = _('Yes')
+    else:
+        reboot = _('No')
 
-    def details(self, **kwargs):
-        """
-        Displays the details of an individual erratum.
-        """
-        # Collect data
-        repo_id = kwargs.pop('repo-id')
-        erratum_id = kwargs.pop('erratum-id')
+    # Reformat the references
+    references = ''
+    for r in erratum_meta['references']:
+        data = {'i' : r['id'],
+                't' : r['type'],
+                'h' : r['href']}
+        line = REFERENCES_TEMPLATE % data
+        references += line
 
-        criteria = {
-            'type_ids' : [TYPE_ERRATUM],
-            'filters' : {
-                'unit' : {'id' : erratum_id}
-            }
+    template_data = {
+        'id' : erratum_meta['id'],
+        'title' : erratum_meta['title'],
+        'summary' : erratum_meta['summary'],
+        'desc' : description,
+        'severity' : erratum_meta['severity'],
+        'type' : erratum_meta['type'],
+        'issued' : erratum_meta['issued'],
+        'updated' : erratum_meta['updated'],
+        'version' : erratum_meta['version'],
+        'release' : erratum_meta['release'],
+        'status' : erratum_meta['status'],
+        'reboot' : reboot,
+        'pkgs' : '\n'.join(package_list),
+        'refs' : references,
+    }
+
+    display = SINGLE_ERRATUM_TEMPLATE % template_data
+    CONTEXT.prompt.write(display, skip_wrap=True)
+
+
+def write_distro(distro):
+    """
+    Write a distro out in a specially formatted way. It is not known why this
+    was originally needed.
+
+    :param distro: one distribution document
+    :type  distro: dict
+    """
+    distro_meta = distro['metadata']
+
+    # Distro Metadata
+    # id, family, arch, variant, _storage_path
+
+    data = {
+        'id'      : distro_meta['id'],
+        'family'  : distro_meta['family'],
+        'arch'    : distro_meta['arch'],
+        'variant' : distro_meta['variant'],
+        'path'    : distro_meta['_storage_path'],
+    }
+
+    CONTEXT.prompt.write(_('Id:            %(id)s') % data)
+    CONTEXT.prompt.write(_('Family:        %(family)s') % data)
+    CONTEXT.prompt.write(_('Architecture:  %(arch)s') % data)
+    CONTEXT.prompt.write(_('Variant:       %(variant)s') % data)
+    CONTEXT.prompt.write(_('Storage Path:  %(path)s') % data)
+    CONTEXT.prompt.render_spacer()
+
+    # Files
+    # filename, relativepath, checksum, checksumtype, size
+    CONTEXT.prompt.write(_('Files:'))
+    for f in distro_meta['files']:
+        data = {
+            'filename' : f['filename'],
+            'path'     : f['relativepath'],
+            'size'     : f['size'],
+            'type'     : f['checksumtype'],
+            'checksum' : f['checksum'],
         }
 
-        # Query the server
-        errata = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
+        CONTEXT.prompt.write(_('  Filename:       %(filename)s') % data)
+        CONTEXT.prompt.write(_('  Relative Path:  %(path)s') % data)
+        CONTEXT.prompt.write(_('  Size:           %(size)s') % data)
+        CONTEXT.prompt.write(_('  Checksum Type:  %(type)s') % data)
 
-        # Render the results
-        if len(errata) is 0:
-            self.context.prompt.render_paragraph(_('No erratum with ID [%(e)s] found') % {'e' : erratum_id})
-        else:
-            self.context.prompt.render_title(_('Erratum: %(e)s') % {'e' : erratum_id})
-
-            erratum = errata[0]['metadata']
-
-            # Reformat the description
-            description = erratum['description']
-            if description is not None:
-                description = ''
-                description_pieces = erratum['description'].split('\n\n')
-                for index, paragraph in enumerate(description_pieces):
-                    single_line_paragraph = ''
-                    for line in paragraph.split('\n'):
-                        single_line_paragraph += (line + ' ')
-
-                    indent = 2
-                    wrapped = self.context.prompt.wrap((' ' * indent) + single_line_paragraph, remaining_line_indent=indent)
-
-                    description += wrapped
-                    if index < len(description_pieces) - 1:
-                        description +=  '\n\n'
-
-            # Reformat packages affected
-            package_list = ['  %s-%s:%s-%s.%s' % (p['name'], p['epoch'], p['version'], p['release'], p['arch']) for p in erratum['pkglist'][0]['packages']]
-
-            # Reformat reboot flag
-            if erratum['reboot_suggested']:
-                reboot = _('Yes')
-            else:
-                reboot = _('No')
-
-            # Reformat the references
-            references = ''
-            for r in erratum['references']:
-                data = {'i' : r['id'],
-                        't' : r['type'],
-                        'h' : r['href']}
-                line = REFERENCES_TEMPLATE % data
-                references += line
-
-            template_data = {
-                'id' : erratum['id'],
-                'title' : erratum['title'],
-                'summary' : erratum['summary'],
-                'desc' : description,
-                'severity' : erratum['severity'],
-                'type' : erratum['type'],
-                'issued' : erratum['issued'],
-                'updated' : erratum['updated'],
-                'version' : erratum['version'],
-                'release' : erratum['release'],
-                'status' : erratum['status'],
-                'reboot' : reboot,
-                'pkgs' : '\n'.join(package_list),
-                'refs' : references,
-            }
-
-            display = SINGLE_ERRATUM_TEMPLATE % template_data
-            self.context.prompt.write(display, skip_wrap=True)
-
-class DistributionCommand(PulpCliCommand):
-
-    def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.run)
-
-        self.context = context
-
-        add_required_group(self)
-
-    def run(self, **kwargs):
-        self.context.prompt.render_title(_('Repository Distributions'))
-
-        # Collect data
-        repo_id = kwargs.pop('repo-id')
-        try:
-            criteria = args_to_criteria_doc(kwargs, [TYPE_DISTRIBUTION])
-            LOG.debug('Criteria for distribution search')
-            LOG.debug(criteria)
-        except InvalidCriteria, e:
-            self.context.prompt.render_failure_message(e[0])
-            return
-
-        # Query the server
-        all_distros = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
-
-        # For the immediate future, there will be either 0 or 1 distributions,
-        # but it's just as easy to loop here
-        for d in all_distros:
-            distro = d['metadata']
-
-            # Distro Metadata
-            # id, family, arch, variant, _storage_path
-
-            data = {
-                'id'      : distro['id'],
-                'family'  : distro['family'],
-                'arch'    : distro['arch'],
-                'variant' : distro['variant'],
-                'path'    : distro['_storage_path'],
-            }
-
-            self.context.prompt.write(_('Id:            %(id)s') % data)
-            self.context.prompt.write(_('Family:        %(family)s') % data)
-            self.context.prompt.write(_('Architecture:  %(arch)s') % data)
-            self.context.prompt.write(_('Variant:       %(variant)s') % data)
-            self.context.prompt.write(_('Storage Path:  %(path)s') % data)
-            self.context.prompt.render_spacer()
-
-            # Files
-            # filename, relativepath, checksum, checksumtype, size
-            self.context.prompt.write(_('Files:'))
-            for f in distro['files']:
-                data = {
-                    'filename' : f['filename'],
-                    'path'     : f['relativepath'],
-                    'size'     : f['size'],
-                    'type'     : f['checksumtype'],
-                    'checksum' : f['checksum'],
-                }
-
-                self.context.prompt.write(_('  Filename:       %(filename)s') % data)
-                self.context.prompt.write(_('  Relative Path:  %(path)s') % data)
-                self.context.prompt.write(_('  Size:           %(size)s') % data)
-                self.context.prompt.write(_('  Checksum Type:  %(type)s') % data)
-
-                checksum = self.context.prompt.wrap(_('  Checksum:       %(checksum)s') % data, remaining_line_indent=18)
-                self.context.prompt.write(checksum, skip_wrap=True)
-                self.context.prompt.render_spacer()
+        checksum = CONTEXT.prompt.wrap(_('  Checksum:       %(checksum)s') % data, remaining_line_indent=18)
+        CONTEXT.prompt.write(checksum, skip_wrap=True)
+        CONTEXT.prompt.render_spacer()
 
 # -- utility ------------------------------------------------------------------
-
-def args_to_criteria_doc(kwargs, type_ids):
-    """
-    Converts the arguments retrieved from the user into a criteria document
-    for the associated units call.
-
-    @rtype: dict
-    """
-
-    criteria = {}
-
-    # Type IDs
-    criteria['type_ids'] = type_ids
-
-    # Field Limits
-    if 'fields' in kwargs and kwargs['fields'] is not None:
-        field_names = [f.strip() for f in kwargs['fields'].split(',')] # .strip handles "id, name" case
-
-        valid_fields = FIELDS_BY_TYPE[type_ids[0]]
-        invalid_fields = [f for f in field_names if f not in valid_fields]
-        if len(invalid_fields) > 0:
-            raise InvalidCriteria(_('Fields must be chosen from the following list: %(l)s') % {'l' : ', '.join(valid_fields)})
-
-        criteria['fields'] = {}
-        criteria['fields']['unit'] = field_names
-
-    # Sorting
-    if 'ascending' in kwargs and kwargs['ascending'] is not None:
-        field_names = kwargs['ascending'].split(',')
-        criteria['sort'] = {}
-        criteria['sort']['unit'] = [[f, 'ascending'] for f in field_names]
-    elif 'descending' in kwargs and kwargs['descending'] is not None:
-        field_names = kwargs['descending'].split(',')
-        criteria['sort'] = {}
-        criteria['sort']['unit'] = [[f, 'descending'] for f in field_names]
-
-    # Limit & Skip
-    def num_parse(key, gt_limit):
-        try:
-            num = int(kwargs[key])
-        except:
-            raise InvalidCriteria(_('Value for %(k)s must be an integer') % {'k' : key})
-
-        if num < gt_limit:
-            raise InvalidCriteria(_('Value for %(k)s must be greater than or equal to %(g)s') % {'k' : key, 'g' : gt_limit})
-
-        return num
-
-    if 'limit' in kwargs and kwargs['limit'] is not None:
-        limit = num_parse('limit', 1)
-        criteria['limit'] = limit
-
-    if 'skip' in kwargs and kwargs['skip'] is not None:
-        skip = num_parse('skip', 0)
-        criteria['skip'] = skip
-
-    return criteria
-
-def add_required_group(command):
-    """
-    Adds the required group and all of its options to the given command.
-    """
-    required_group = PulpCliOptionGroup(_('Required'))
-    required_group.add_option(PulpCliOption('--repo-id', _('identifies the repository to search within'), required=True))
-    command.add_option_group(required_group)
 
 def add_erratum_group(command):
     """
     Adds the erratum group and all of its options to the given command.
     """
     erratum_group = PulpCliOptionGroup(_('Erratum'))
-    erratum_group.add_option(PulpCliOption('--erratum-id', _('if specified, the full details of an individual erratum are displayed'), required=False))
+
+    m = _('if specified, the full details of an individual erratum are '
+          'displayed, and all other options are ignored except for '
+          '--repo-id.')
+    erratum_group.add_option(PulpCliOption('--erratum-id',m, required=False))
     command.add_option_group(erratum_group)
-
-def add_display_group(command, default_fields):
-    """
-    Adds the display group and all of its options to the given command.
-    """
-    d  = 'comma-separated list of fields to include for each unit; if unspecified all of the following will be displayed; '
-    d += 'valid fields: %(f)s'
-    description = _(d) % {'f' : ', '.join(default_fields)}
-
-    display_group = PulpCliOptionGroup(_('Display'))
-    display_group.add_option(PulpCliOption('--fields', description, aliases=['-f'], required=False, default=','.join(default_fields)))
-    display_group.add_option(PulpCliOption('--ascending', _('comma-separated list of fields to sort ascending; the order of the fields determines the order priority'), aliases=['-a'], required=False))
-    display_group.add_option(PulpCliOption('--descending', _('comma-separated list of fields to sort descending; ignored if --ascending is specified'), aliases=['-d'], required=False))
-    command.add_option_group(display_group)
-
-def add_pagination_group(command):
-    """
-    Adds the pagination group and all of its options to the given command.
-    """
-    pagination_group = PulpCliOptionGroup(_('Pagination'))
-    pagination_group.add_option(PulpCliOption('--limit', _('maximum number of results to display'), aliases=['-l'], required=False))
-    pagination_group.add_option(PulpCliOption('--skip', _('number of results to skip'), aliases=['-s'], required=False))
-    command.add_option_group(pagination_group)

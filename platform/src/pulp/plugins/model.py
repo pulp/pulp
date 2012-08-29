@@ -152,6 +152,9 @@ class Unit(object):
 
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
+    
+    def __repr__(self):
+        return str(self)
 
 class AssociatedUnit(Unit):
     """

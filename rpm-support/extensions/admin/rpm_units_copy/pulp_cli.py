@@ -14,27 +14,12 @@
 from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliSection
-from pulp.client.search import UnitCopyCommand
+from pulp.client.commands.unit import UnitCopyCommand
 from pulp_rpm.common.ids import TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM
-
-# -- constants ----------------------------------------------------------------
-
-LOG = None # set by context
-
-RPM_USAGE_DESC = _('Packages to copy from the source repository are determined by '
-                   'applying regular expressions for inclusion (match) and exclusion (not). '
-                   'Criteria are specified in the format "field=regex", for example "name=python.*". '
-                   'Except for the date checks, all arguments may be specified multiple times to further '
-                   'refine the matching criteria. '
-                   'Valid fields are: name, epoch, version, release, arch, buildhost, checksum, '
-                   'description, filename, license, and vendor.')
 
 # -- plugin hook --------------------------------------------------------------
 
 def initialize(context):
-
-    global LOG
-    LOG = context.logger
 
     repo_section = context.cli.find_section('repo')
     repo_section.add_subsection(CopySection(context))

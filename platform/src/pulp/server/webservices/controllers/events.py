@@ -62,6 +62,7 @@ class EventCollection(JSONController):
 
         return self.created(href['_href'], created)
 
+
 class EventResource(JSONController):
 
     # Scope:  Resource

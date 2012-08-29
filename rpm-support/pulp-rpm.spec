@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.323
+Version: 0.0.325
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -70,7 +70,9 @@ mkdir -p %{buildroot}/%{_usr}/lib/yum-plugins/
 mkdir -p %{buildroot}/%{_var}/www
 
 # Configuration
-cp -R etc/* %{buildroot}/%{_sysconfdir}
+cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+cp -R etc/yum %{buildroot}/%{_sysconfdir}
 
 # WSGI
 cp -R srv %{buildroot}
@@ -160,6 +162,7 @@ client capabilites with RPM specific features.
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
 %{_usr}/lib/pulp/admin/extensions/rpm_sync/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
+%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_search/
 %{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
@@ -190,6 +193,7 @@ client capabilites with RPM specific features.
 %package handlers
 Summary: Pulp agent rpm handlers
 Group: Development/Languages
+Requires: python-rhsm
 Requires: python-pulp-rpm-common = %{version}
 Requires: python-pulp-agent-lib = %{version}
 
@@ -233,6 +237,24 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Sun Aug 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
+- 848510 - changed sync and status commands to utilize the new task group
+  support in display_status (jason.connor@gmail.com)
+- 848510 - refactored display_status to work with an individual task as well as
+  a task group (jason.connor@gmail.com)
+
+* Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
+- Add support to depsolve and include missing dependencies during import from
+  another repository. (jortel@redhat.com)
+- Added remove units extension (jason.dobies@redhat.com)
+
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-4
+- bump release
+
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-3
+- Exclude /etc/bash_completion.d/*
+* Mon Aug 13 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-2
+- bump release for QE build.
 * Sat Aug 11 2012 Jeff Ortel <jortel@redhat.com> 0.0.323-1
 - iso prefix override option to override iso naming (pkilambi@redhat.com)
 
