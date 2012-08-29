@@ -1,0 +1,18 @@
+
+
+Issues:
+=========================
+1. Using ~/root/.pulp/user-cert.pem for REST call to upstream.
+   Need something better.
+
+2. How to deal with repo scratchpad.
+   - not supported by REST API.
+
+3. How to deal with coupling between importer/distributer
+   via scratchpad.
+     - yum importer uses scratchpad to communicate working_directory
+       containing YUM metadata.
+
+4. Need to deal with different root directories
+   used for storage_path(s) on Units.  Differences in upstream & downstream
+   server configuration as it pertains to this.
