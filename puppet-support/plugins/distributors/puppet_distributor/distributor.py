@@ -28,7 +28,7 @@ class PuppetModuleDistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.DISTRIBUTOR_ID_PUPPET,
+            'id' : constants.DISTRIBUTOR_TYPE_ID,
             'display_name' : _('Puppet Distributor'),
             'types' : [constants.TYPE_PUPPET_MODULE]
         }
@@ -39,6 +39,7 @@ class PuppetModuleDistributor(Distributor):
 
     def publish_repo(self, repo, publish_conduit, config):
         self.publish_cancelled = False
+        config.default_config = configuration.DEFAULT_CONFIG
         publish_runner = publish.PuppetModulePublishRun(repo, publish_conduit, config, self.is_publish_cancelled)
         report = publish_runner.perform_publish()
         return report

@@ -24,8 +24,8 @@ from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 from pulp_puppet.common import constants
 from pulp_puppet.common.constants import (STATE_FAILED, STATE_RUNNING, STATE_SUCCESS)
 from pulp_puppet.common.model import RepositoryMetadata, Module
+from pulp_puppet.common.sync_progress import SyncProgressReport
 from pulp_puppet.importer.downloaders import factory as downloader_factory
-from pulp_puppet.importer.progress import ProgressReport
 
 _LOG = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class PuppetModuleSyncRun(object):
         self.config = config
         self.is_cancelled_call = is_cancelled_call
 
-        self.progress_report = ProgressReport(sync_conduit)
+        self.progress_report = SyncProgressReport(sync_conduit)
 
     def perform_sync(self):
         """
@@ -108,7 +108,7 @@ class PuppetModuleSyncRun(object):
 
             end_time = datetime.now()
             duration = end_time - start_time
-            self.progress_report.metadata_execution_time = duration
+            self.progress_report.metadata_execution_time = duration.seconds
 
             self.progress_report.update_progress()
 
@@ -160,10 +160,11 @@ class PuppetModuleSyncRun(object):
         _LOG.info('Retrieving modules for repository <%s>' % self.repo.id)
 
         self.progress_report.modules_state = STATE_RUNNING
-        self.progress_report.modules_total_count = len(metadata.modules)
-        self.progress_report.modules_finished_count = 0
-        self.progress_report.modules_error_count = 0
-        self.progress_report.update_progress()
+
+        # Do not send the update about the state yet. The counts need to be
+        # set later once we know how many are new, so to prevent a situation
+        # where the report reflectes running but does not have counts, wait
+        # until they are populated before sending the update to Pulp.
 
         start_time = datetime.now()
 
@@ -225,6 +226,13 @@ class PuppetModuleSyncRun(object):
 
         new_unit_keys = self._resolve_new_units(existing_module_keys, modules_by_key.keys())
         remove_unit_keys = self._resolve_remove_units(existing_module_keys, modules_by_key.keys())
+
+        # Once we know how many things need to be processed, we can update the
+        # progress report
+        self.progress_report.modules_total_count = len(new_unit_keys)
+        self.progress_report.modules_finished_count = 0
+        self.progress_report.modules_error_count = 0
+        self.progress_report.update_progress()
 
         # Add new units
         for key in new_unit_keys:
