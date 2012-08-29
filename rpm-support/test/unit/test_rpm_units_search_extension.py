@@ -19,13 +19,11 @@ import mock
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 
-import rpm_support_base
 import rpm_units_search.pulp_cli
 
 class TestUnitSection(unittest.TestCase):
     def setUp(self):
         rpm_units_search.pulp_cli.CONTEXT = mock.MagicMock()
-        rpm_units_search.pulp_cli.CONTEXT.server = mock.MagicMock()
 
     def test_content_command(self):
         # setup
@@ -35,6 +33,20 @@ class TestUnitSection(unittest.TestCase):
 
         rpm_units_search.pulp_cli._content_command(['rpm'], **{'repo-id': 'repo1'})
         rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.assert_called_once_with('repo1', type_ids=['rpm'])
+        rpm_units_search.pulp_cli.CONTEXT.prompt.render_document.assert_called_once_with('unit1')
+
+    def test_content_command_out_func(self):
+        out = mock.MagicMock()
+        return_value = mock.MagicMock()
+        return_value.response_body = ['unit1']
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.return_value = return_value
+
+        rpm_units_search.pulp_cli._content_command(['rpm'], out, **{'repo-id': 'repo1'})
+
+        # make sure the custom out function was called with the fake document
+        self.assertEqual(
+            rpm_units_search.pulp_cli.CONTEXT.prompt.render_document.call_count, 0)
+        out.assert_called_once_with('unit1')
 
     @mock.patch('rpm_units_search.pulp_cli._content_command')
     def test_rpm(self, mock_command):
@@ -66,83 +78,63 @@ class TestUnitSection(unittest.TestCase):
         mock_command.assert_called_once_with(
             [rpm_units_search.pulp_cli.TYPE_PACKAGE_CATEGORY], a=1, b=2)
 
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_distro(self, mock_command):
+        rpm_units_search.pulp_cli.distribution(a=1, b=2)
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_DISTRIBUTION],
+            rpm_units_search.pulp_cli.write_distro, a=1, b=2)
 
-class RpmUnitsSearchUtilityTests(rpm_support_base.PulpClientTests):
-
-    def test_args_to_criteria_doc_empty_args(self):
-        # Setup
-        args = {}
-        type_ids = ['rpm']
-
-        # Test
-        criteria = rpm_units_search.pulp_cli.args_to_criteria_doc(args, type_ids)
-
-        # Verify
-        self.assertTrue(isinstance(criteria, dict))
-        self.assertEqual(1, len(criteria))
-        self.assertEqual(criteria['type_ids'], type_ids)
-
-    def test_args_to_criteria_doc(self):
-        # Setup
-        args = {
-            'fields' : 'name,version',
-            'ascending' : 'name,arch',
-            'descending' : 'arch,name',
-            'limit' : '10',
-            'skip' : '5',
-        }
-        type_ids = ['rpm']
-
-        # Test
-        criteria = rpm_units_search.pulp_cli.args_to_criteria_doc(args, type_ids)
-
-        # Verify
-        self.assertEqual(criteria['type_ids'], type_ids)
-        self.assertEqual(criteria['fields']['unit'], ['name', 'version'])
-        self.assertEqual(criteria['sort']['unit'], [ ['name', 'ascending'], ['arch', 'ascending']])
-        self.assertEqual(criteria['limit'], 10)
-        self.assertEqual(criteria['skip'], 5)
-
-        # Descending has no effect since ascending is specified
-
-    def test_args_to_criteria_doc_descending(self):
-        # Setup
-        args = {
-            'descending' : 'arch,name',
-        }
-        type_ids = ['rpm']
-
-        # Test
-        criteria = rpm_units_search.pulp_cli.args_to_criteria_doc(args, type_ids)
-
-        # Verify
-        self.assertEqual(criteria['type_ids'], type_ids)
-        self.assertEqual(criteria['sort']['unit'], [ ['arch', 'descending'], ['name', 'descending']])
-
-    def test_args_to_criteria_doc_invalid_fields(self):
-        # Setup
-        args = {
-            'fields' : 'invalid_field'
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_erratum_detail(self, mock_command):
+        kwargs = {
+            'erratum-id' : 'abc',
+            'repo-id' : 'repo1',
+            'a' : 1,
+            'b' : 2
         }
 
-        # Test
-        self.assertRaises(rpm_units_search.pulp_cli.InvalidCriteria, rpm_units_search.pulp_cli.args_to_criteria_doc, args, ['rpm'])
-
-    def test_args_to_criteria_doc_invalid_limit(self):
-        # Setup
-        args = {
-            'limit' : 'unparsable'
+        # we expect it to throw away other parameters and just search for this
+        # specific erratum
+        EXPECTED = {
+            'filters' : {'id' : 'abc'},
+            'repo-id' : 'repo1',
         }
+        rpm_units_search.pulp_cli.errata(**kwargs)
 
-        # Test
-        self.assertRaises(rpm_units_search.pulp_cli.InvalidCriteria, rpm_units_search.pulp_cli.args_to_criteria_doc, args, ['rpm'])
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_ERRATUM],
+            rpm_units_search.pulp_cli.write_erratum_detail, **EXPECTED)
 
-    def test_args_to_criteria_doc_invalid_skip(self):
-        # Setup
-        args = {
-            'skip' : 'unparsable'
+    @mock.patch('rpm_units_search.pulp_cli._content_command')
+    def test_errata(self, mock_command):
+        kwargs = {
+            'erratum-id' : None,
+            'repo-id' : 'repo1',
+            'a' : 1,
+            'b' : 2
         }
+        rpm_units_search.pulp_cli.errata(**kwargs)
 
-        # Test
-        self.assertRaises(rpm_units_search.pulp_cli.InvalidCriteria, rpm_units_search.pulp_cli.args_to_criteria_doc, args, ['rpm'])
+        # we expect this to pass through any CLI options
+        mock_command.assert_called_once_with(
+            [rpm_units_search.pulp_cli.TYPE_ERRATUM],
+            rpm_units_search.pulp_cli.write_erratum, **kwargs)
 
+    def test_write_distro(self):
+        rpm_units_search.pulp_cli.write_distro(mock.MagicMock())
+        # again, there is so much going on, let's just verify the basics
+        self.assertTrue(rpm_units_search.pulp_cli.CONTEXT.prompt.write.has_calls)
+
+    def test_write_erratum(self):
+        rpm_units_search.pulp_cli.write_erratum({'metadata': 'foo'})
+        rpm_units_search.pulp_cli.CONTEXT.prompt.render_document.assert_called_once_with('foo')
+
+    def test_write_erratum_detail(self):
+        rpm_units_search.pulp_cli.write_erratum_detail(mock.MagicMock())
+
+        # Where to begin!?!? Let's just cover the basics.
+        self.assertEqual(
+            rpm_units_search.pulp_cli.CONTEXT.prompt.render_title.call_count, 1)
+        self.assertEqual(
+            rpm_units_search.pulp_cli.CONTEXT.prompt.write.call_count, 1)

@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.324
+Version: 0.0.325
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -63,6 +63,7 @@ client capabilites.
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
+%{_usr}/lib/pulp/admin/extensions/pulp_event/
 %{_usr}/lib/pulp/admin/extensions/pulp_permission/
 %{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
@@ -93,6 +94,10 @@ client capabilities.
 
 
 %changelog
+* Sun Aug 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
+- Refactored repo and repo group commands to the client package
+  (jason.dobies@redhat.com)
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
 - 
 
