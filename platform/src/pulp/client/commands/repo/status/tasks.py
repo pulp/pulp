@@ -23,11 +23,11 @@ def relevant_existing_task_id(existing_sync_tasks):
     Analyzes the list of existing sync tasks to determine which should be
     tracked by the CLI.
 
-    @param existing_sync_tasks: list of task instances retrieved from the server
-    @type  existing_sync_tasks: list
+    :param existing_sync_tasks: list of task instances retrieved from the server
+    :type  existing_sync_tasks: list
 
-    @return: ID of the task that should be displayed
-    @rtype:  str
+    :return: ID of the task that should be displayed
+    :rtype:  str
     """
 
     # At this point, we have at least one sync task but that doesn't
@@ -57,9 +57,6 @@ def relevant_existing_task_group_id(existing_sync_tasks):
     """
     Grok through a list of existing sync tasks and look for the task_group_id
     for the highest priority sync.
-
-    @param existing_sync_tasks:
-    @return:
     """
     running_tasks = [t for t in existing_sync_tasks if t.is_running()]
     waiting_tasks = [t for t in existing_sync_tasks if t.is_waiting()]
@@ -77,10 +74,10 @@ def sync_task_in_sync_task_group(task_list):
     Grok through the tasks returned from the server's repo sync call and find
     the task that pertains to the sync itself.
 
-    @param task_list: list of tasks
-    @type task_list: list
-    @return: task for the sync
-    @rtype: Task
+    :param task_list: list of tasks
+    :type task_list: list
+    :return: task for the sync
+    :rtype: Task
     """
     sync_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
     for t in task_list:
@@ -94,10 +91,10 @@ def publish_task_in_sync_task_group(task_list):
     Grok through the tasks returned from the server's repo sync call and find
     the task that pertains to the auto publish.
 
-    @param task_list: list of tasks
-    @type task_list: list
-    @return: task for the publish
-    @rtype: Task
+    :param task_list: list of tasks
+    :type task_list: list
+    :return: task for the publish
+    :rtype: Task
     """
     publish_tag = tags.action_tag(tags.ACTION_AUTO_PUBLISH_TYPE)
     for t in task_list:

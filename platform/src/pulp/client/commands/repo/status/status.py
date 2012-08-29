@@ -36,7 +36,7 @@ def display_task_status(context, renderer, task_id):
 
     # Retrieve the task and wrap into a list for consistent rendering
     response = context.server.tasks.get_task(task_id)
-    task_list = response.response_body
+    task_list = [response.response_body]
 
     _display_status(context, renderer, task_list)
 
@@ -99,8 +99,9 @@ def _display_status(context, renderer, task_list):
 def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     """
     Poll an individual task and display the progress for it.
-    @return: the completed task
-    @rtype: Task
+
+    :return: the completed task
+    :rtype: Task
     """
 
     begin_spinner = context.prompt.create_spinner()

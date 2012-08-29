@@ -12,9 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+
 from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client import arg_utils
-
 from pulp.client.commands.repo.cudl import CreateRepositoryCommand, ListRepositoriesCommand
 from pulp.client.commands import options
 from pulp.client.extensions.extensions import PulpCliOption
@@ -105,6 +105,7 @@ class ListPuppetRepositoriesCommand(ListRepositoriesCommand):
                 puppet_repos.append(repo)
 
         return puppet_repos
+
 
 class SearchPuppetRepositoriesCommand(CriteriaCommand):
 
