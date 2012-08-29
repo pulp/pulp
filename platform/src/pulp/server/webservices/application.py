@@ -50,8 +50,8 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
-    agent, consumers, contents, dispatch, events, permissions, plugins, repo_groups,
-    repositories, roles, root_actions, users)
+    agent, consumer_groups, consumers, contents, dispatch, events, permissions,
+    plugins, repo_groups, repositories, roles, root_actions, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
@@ -61,6 +61,7 @@ URLS = (
     # Please keep the following in alphabetical order.
     '/v2/actions', root_actions.application,
     '/v2/agent', agent.application,
+    '/v2/consumer_groups', consumer_groups.application,
     '/v2/consumers', consumers.application,
     '/v2/content', contents.application,
     '/v2/events', events.application,
