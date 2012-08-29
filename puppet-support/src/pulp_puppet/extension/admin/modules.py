@@ -30,12 +30,12 @@ DESC_SEARCH = _('search for modules in a repository')
 
 class ModulesCommand(UnitAssociationCriteriaCommand):
     def __init__(self, context):
-        super(ModulesCommand, self).__init__(self.modules, name='modules',
+        super(ModulesCommand, self).__init__(self.run, name='modules',
                                              description=DESC_SEARCH)
         self.context = context
         self.prompt = context.prompt
 
-    def modules(self, **kwargs):
+    def run(self, **kwargs):
         # Retrieve the modules
         repo_id = kwargs.pop(options.OPTION_REPO_ID.keyword)
         kwargs['type_ids'] = [constants.TYPE_PUPPET_MODULE]
