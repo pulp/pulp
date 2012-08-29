@@ -23,6 +23,7 @@ from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -35,7 +36,31 @@ _LOG = logging.getLogger(__name__)
 
 class RepoGroupPublishManager(object):
 
-    def publish(self, group_id, distributor_id, publish_config_override=None):
+    def prep_publish(self, call_request, call_report):
+        """
+        Enqueue lifecycle callback that instantiates the group distributor, sets
+        it as a keyword argument, and sets the cancel callback.
+
+        @param call_request:
+        @param call_report:
+        """
+        # grabs keyword argument, but falls back to positional
+        group_id = call_request.kwargs.get('group_id', call_request.args[0])
+        distributor_id = call_request.kwargs.get('distributor_id', call_request.args[1])
+
+        distributor_manager = manager_factory.repo_group_distributor_manager()
+
+        try:
+            distributor = distributor_manager.get_distributor(group_id, distributor_id)
+        except MissingResource:
+            return
+
+        call_request.kwargs['distributor_instance'] = distributor
+        call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK,
+                                      distributor.cancel_publish_group)
+
+
+    def publish(self, group_id, distributor_id, distributor_instance=None, publish_config_override=None):
         """
         Requests the given distributor publish the repository group.
 
@@ -45,18 +70,22 @@ class RepoGroupPublishManager(object):
         @param distributor_id: identifies the group's distributor
         @type  distributor_id: str
 
+        @param distributor_instance: instance of group's distributor to be used
+                                     for publishing
+        @type distributor_instance: GroupDistributor
+
         @param publish_config_override: values to pass the plugin for this
                publish call alone
         @type  publish_config_override: dict
         """
+        if distributor_instance is None:
+            raise MissingResource(repo_group=group_id, group_distributor=distributor_id)
 
         group_query_manager = manager_factory.repo_group_query_manager()
-        distributor_manager = manager_factory.repo_group_distributor_manager()
 
         # Validation
         group = group_query_manager.get_group(group_id)
-        distributor = distributor_manager.get_distributor(group_id, distributor_id)
-        distributor_type_id = distributor['distributor_type_id']
+        distributor_type_id = distributor_instance['distributor_type_id']
 
         try:
             distributor_instance, plugin_config =\
@@ -67,7 +96,7 @@ class RepoGroupPublishManager(object):
         # Assemble the data needed for publish
         conduit = RepoGroupPublishConduit(group_id, distributor_id)
 
-        call_config = PluginCallConfiguration(plugin_config, distributor['config'], publish_config_override)
+        call_config = PluginCallConfiguration(plugin_config, distributor_instance['config'], publish_config_override)
         transfer_group = common_utils.to_transfer_repo_group(group)
         transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id, group_id)
 
