@@ -48,19 +48,28 @@ class RepoGroupPublishManager(object):
         group_id = call_request.kwargs.get('group_id', call_request.args[0])
         distributor_id = call_request.kwargs.get('distributor_id', call_request.args[1])
 
-        distributor_manager = manager_factory.repo_group_distributor_manager()
-
         try:
-            distributor = distributor_manager.get_distributor(group_id, distributor_id)
-        except MissingResource:
+            distributor, distributor_instance, plugin_config = \
+                self._get_distributor_instance_and_config(group_id, distributor_id)
+        except MissingResource, plugin_exceptions.PluginNotFound:
             return
 
-        call_request.kwargs['distributor_instance'] = distributor
+        call_request.kwargs['distributor'] = distributor
+        call_request.kwargs['distributor_instance'] = distributor_instance
+        call_request.kwargs['plugin_config'] = plugin_config
+
         call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK,
-                                      distributor.cancel_publish_group)
+                                      distributor_instance.cancel_publish_group)
 
+    def _get_distributor_instance_and_config(self, group_id, distributor_id):
+        # separated out convenience method for use in testing
+        distributor_manager = manager_factory.repo_group_distributor_manager()
+        distributor = distributor_manager.get_distributor(group_id, distributor_id)
+        distributor_type_id = distributor['distributor_type_id']
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
+        return distributor, distributor_instance, plugin_config
 
-    def publish(self, group_id, distributor_id, distributor_instance=None, publish_config_override=None):
+    def publish(self, group_id, distributor_id, distributor=None, distributor_instance=None, plugin_config=None, publish_config_override=None):
         """
         Requests the given distributor publish the repository group.
 
@@ -78,25 +87,19 @@ class RepoGroupPublishManager(object):
                publish call alone
         @type  publish_config_override: dict
         """
-        if distributor_instance is None:
+        if None in (distributor, distributor_instance):
             raise MissingResource(repo_group=group_id, group_distributor=distributor_id)
 
         group_query_manager = manager_factory.repo_group_query_manager()
 
         # Validation
         group = group_query_manager.get_group(group_id)
-        distributor_type_id = distributor_instance['distributor_type_id']
-
-        try:
-            distributor_instance, plugin_config =\
-                plugin_api.get_group_distributor_by_id(distributor_type_id)
-        except plugin_exceptions.PluginNotFound:
-            raise MissingResource(distributor_type=distributor_type_id), None, sys.exc_info()[2]
+        distributor_type_id = distributor['distributor_type_id']
 
         # Assemble the data needed for publish
         conduit = RepoGroupPublishConduit(group_id, distributor_id)
 
-        call_config = PluginCallConfiguration(plugin_config, distributor_instance['config'], publish_config_override)
+        call_config = PluginCallConfiguration(plugin_config, distributor['config'], publish_config_override)
         transfer_group = common_utils.to_transfer_repo_group(group)
         transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id, group_id)
 
