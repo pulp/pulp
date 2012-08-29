@@ -153,3 +153,22 @@ class ConsumerHistoryEvent(Model):
         self.details = details
         now = datetime.datetime.now(dateutils.utc_tz())
         self.timestamp = dateutils.format_iso8601_datetime(now)
+
+class ConsumerGroup(Model):
+    """
+    Represents a group of consumers.
+    """
+    collection_name = 'consumer_groups'
+    search_indices = ('display_name', 'consumer_ids')
+
+    def __init__(self, consumer_group_id, display_name=None, description=None, 
+            consumer_ids=None, notes=None):
+        super(ConsumerGroup, self).__init__()
+
+        self.id = consumer_group_id
+        self.display_name = display_name
+        self.description = description
+        self.consumer_ids = consumer_ids or []
+        self.notes = notes or {}
+
+        self.scratchpad = None
