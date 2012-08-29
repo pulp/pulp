@@ -69,7 +69,13 @@ class RepoGroupPublishManager(object):
         distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
         return distributor, distributor_instance, plugin_config
 
-    def publish(self, group_id, distributor_id, distributor=None, distributor_instance=None, plugin_config=None, publish_config_override=None):
+    def publish(self,
+                group_id,
+                distributor_id,
+                distributor=None,
+                distributor_instance=None,
+                plugin_config=None,
+                publish_config_override=None):
         """
         Requests the given distributor publish the repository group.
 
@@ -79,9 +85,15 @@ class RepoGroupPublishManager(object):
         @param distributor_id: identifies the group's distributor
         @type  distributor_id: str
 
+        @param distributor: distributor metadata as associate with the repo group
+        @type distributor: dict
+
         @param distributor_instance: instance of group's distributor to be used
                                      for publishing
         @type distributor_instance: GroupDistributor
+
+        @param plugin_config: general configuration for the distributor instance
+        @type plugin_config: dict or None
 
         @param publish_config_override: values to pass the plugin for this
                publish call alone
