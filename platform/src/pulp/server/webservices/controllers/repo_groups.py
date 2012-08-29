@@ -304,12 +304,6 @@ class PublishAction(JSONController):
 
         publish_manager = managers_factory.repo_group_publish_manager()
 
-        resources = {
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE :
-                    {repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE :
-                    {distributor_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
-            }
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
                 action_tag('publish')
@@ -319,10 +313,12 @@ class PublishAction(JSONController):
         call_request = CallRequest(publish_manager.publish,
                                    args=[repo_group_id, distributor_id],
                                    kwargs={'publish_config_override' : overrides},
-                                   resources=resources,
                                    tags=tags,
                                    weight=weight,
                                    archive=True)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id)
+        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, publish_manager.prep_publish)
 
         return execution.execute_async(self, call_request)
 
