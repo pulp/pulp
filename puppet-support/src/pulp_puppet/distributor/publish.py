@@ -22,9 +22,9 @@ import sys
 from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
 from pulp_puppet.common import constants
-from pulp_puppet.common.constants import (STATE_FAILED, STATE_RUNNING, STATE_SUCCESS)
+from pulp_puppet.common.constants import (STATE_FAILED, STATE_RUNNING, STATE_SUCCESS, STATE_SKIPPED)
 from pulp_puppet.common.model import RepositoryMetadata, Module
-from pulp_puppet.distributor.progress import ProgressReport
+from pulp_puppet.common.publish_progress import PublishProgressReport
 
 _LOG = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class PuppetModulePublishRun(object):
         self.config = config
         self.is_cancelled_call = is_cancelled_call
 
-        self.progress_report = ProgressReport(self.publish_conduit)
+        self.progress_report = PublishProgressReport(self.publish_conduit)
 
     def perform_publish(self):
         """
@@ -275,24 +275,41 @@ class PuppetModulePublishRun(object):
 
         build_dir = self._build_dir()
 
-        protocol_keys = (
-            (constants.CONFIG_SERVE_HTTP, constants.CONFIG_HTTP_DIR),
-            (constants.CONFIG_SERVE_HTTPS, constants.CONFIG_HTTPS_DIR),
-        )
+        # Remove the existing repository if it's found. It will either
+        # remain deleted if the configuration changed and it shouldn't be
+        # served, or it will be replaced with the newly built one.
 
-        for serve_key, dir_key in protocol_keys:
-            proto_dir = self.config.get(dir_key)
-            repo_dest_dir = os.path.join(proto_dir, self.repo.id)
+        # -- HTTP --------
+        proto_dir = self.config.get(constants.CONFIG_HTTP_DIR)
+        repo_dest_dir = os.path.join(proto_dir, self.repo.id)
 
-            # Remove the existing repository if it's found. It will either
-            # remain deleted if the configuration changed and it shouldn't be
-            # served, or it will be replaced with the newly built one.
-            if os.path.exists(repo_dest_dir):
-                shutil.rmtree(repo_dest_dir)
+        if os.path.exists(repo_dest_dir):
+            shutil.rmtree(repo_dest_dir)
 
-            should_serve = self.config.get_boolean(serve_key)
-            if should_serve:
-                shutil.copytree(build_dir, repo_dest_dir, symlinks=True)
+        should_serve = self.config.get_boolean(constants.CONFIG_SERVE_HTTP)
+        if should_serve:
+            shutil.copytree(build_dir, repo_dest_dir, symlinks=True)
+            self.progress_report.publish_http = STATE_SUCCESS
+        else:
+            self.progress_report.publish_http = STATE_SKIPPED
+
+        self.progress_report.update_progress()
+
+        # -- HTTPS --------
+        proto_dir = self.config.get(constants.CONFIG_HTTPS_DIR)
+        repo_dest_dir = os.path.join(proto_dir, self.repo.id)
+
+        if os.path.exists(repo_dest_dir):
+            shutil.rmtree(repo_dest_dir)
+
+        should_serve = self.config.get_boolean(constants.CONFIG_SERVE_HTTPS)
+        if should_serve:
+            shutil.copytree(build_dir, repo_dest_dir, symlinks=True)
+            self.progress_report.publish_https = STATE_SUCCESS
+        else:
+            self.progress_report.publish_https = STATE_SKIPPED
+
+        self.progress_report.update_progress()
 
     # -- helpers --------------------------------------------------------------
 

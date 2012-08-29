@@ -32,7 +32,7 @@ class PuppetModuleImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.IMPORTER_ID_PUPPET,
+            'id' : constants.IMPORTER_TYPE_ID,
             'display_name' : _('Puppet Importer'),
             'types' : [constants.TYPE_PUPPET_MODULE]
         }
