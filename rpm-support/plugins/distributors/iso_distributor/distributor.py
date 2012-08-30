@@ -224,9 +224,8 @@ class ISODistributor(Distributor):
             # export errata
             criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
             errata_units = publish_conduit.get_units(criteria=criteria)
-            rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
-            repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
             errata_summary, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
+            
             # distro units
             criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_DISTRO])
             distro_units = publish_conduit.get_units(criteria=criteria)

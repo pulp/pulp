@@ -258,10 +258,6 @@ class GroupISODistributor(GroupDistributor):
                 # export errata units and associated rpms
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
                 errata_units = publish_conduit.get_units(repoid, criteria)
-                criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM])
-                rpm_units = publish_conduit.get_units(repoid, criteria)
-                rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
-                repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
                 errata_status, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
                 summary["num_errata_units_exported"] = len(errata_units)
 
