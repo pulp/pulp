@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 2.0.1
+Version: 2.0.2
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -93,6 +93,9 @@ client capabilities.
 
 
 %changelog
+* Thu Aug 30 2012 Jeff Ortel <jortel@redhat.com> 2.0.2-1
+- version alignment.
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 2.0.1-1
 - tagged for CR.
 
