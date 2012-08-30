@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.bindings.base import PulpAPI
+from pulp.bindings.search import SearchAPI
 
 
 class UserAPI(PulpAPI):
@@ -46,6 +47,9 @@ class UserAPI(PulpAPI):
         path = self.base_path + "%s/" % login
         body = {'delta' : delta}
         return self.server.PUT(path, body)
+
+class UserSearchAPI(SearchAPI):
+    PATH = '/v2/users/search/'
 
 class RoleAPI(PulpAPI):
     """

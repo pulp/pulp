@@ -20,13 +20,23 @@ support plugins (importers, distributors, extensions).
 # -- ids ----------------------------------------------------------------------
 
 # ID used to refer to the puppet importer
-IMPORTER_ID_PUPPET = 'puppet_importer'
+IMPORTER_TYPE_ID = 'puppet_importer'
+
+# ID used to refer to the puppet importer instance on a repository
+IMPORTER_ID = IMPORTER_TYPE_ID
 
 # ID used to refer to the puppet distributor
-DISTRIBUTOR_ID_PUPPET = 'puppet_distributor'
+DISTRIBUTOR_TYPE_ID = 'puppet_distributor'
+
+# ID used to refer to the puppet distributor instance on a repository
+DISTRIBUTOR_ID = 'puppet_distributor'
 
 # ID of the puppet module type definition (must match what's in puppet.json)
 TYPE_PUPPET_MODULE = 'puppet_module'
+
+# Used as a note on a repository to indicate it is a Puppet repository
+REPO_NOTE_KEY = '_repo-type' # needs to be standard across extensions
+REPO_NOTE_PUPPET = 'puppet-repo'
 
 # -- storage and hosting ------------------------------------------------------
 
@@ -55,8 +65,9 @@ STATE_NOT_STARTED = 'not-started'
 STATE_RUNNING = 'running'
 STATE_SUCCESS = 'success'
 STATE_FAILED = 'failed'
+STATE_SKIPPED = 'skipped'
 
-INCOMPLETE_STATES = (STATE_NOT_STARTED, STATE_RUNNING, STATE_FAILED)
+COMPLETE_STATES = (STATE_SUCCESS, STATE_FAILED, STATE_SKIPPED)
 
 # -- importer configuration keys ----------------------------------------------
 

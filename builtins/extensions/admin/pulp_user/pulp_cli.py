@@ -15,8 +15,10 @@ import os
 
 from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
-    PulpCliOption, PulpCliFlag, UnknownArgsParser
+    PulpCliOption, PulpCliFlag
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client.commands.criteria import CriteriaCommand
+
 
 # -- framework hook -----------------------------------------------------------
 
@@ -71,6 +73,9 @@ class UserSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the user information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
+        
+        # Search Command
+        self.add_command(CriteriaCommand(self.search, include_search=True))
 
     def create(self, **kwargs):
         login = kwargs['login']
@@ -133,4 +138,9 @@ class UserSection(PulpCliSection):
 
         for u in user_list:
             self.prompt.render_document(u, filters=filters, order=order)
+
+    def search(self, **kwargs):
+        user_list = self.context.server.user_search.search(**kwargs)
+        for user in user_list:
+            self.prompt.render_document(user)
 

@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
+import mock
 import base
 
 from pulp.server.auth import principal
@@ -19,6 +19,7 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
 from pulp.server.db.model.auth import User
+from pulp.server.db.model.criteria import Criteria
 import pulp.server.exceptions as exceptions
 
 
@@ -142,3 +143,8 @@ class UserManagerTests(base.PulpServerTests):
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(changed_password, user['password'])
 
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_find_by_criteria(self, mock_query):
+        criteria = Criteria()
+        self.user_query_manager.find_by_criteria(criteria)
+        mock_query.assert_called_once_with(criteria)

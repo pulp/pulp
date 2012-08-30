@@ -23,9 +23,7 @@
 
                 <div class="light-bg region">
 		<div class="navigation">
-			<div class="alignleft"><a href="<?php next_posts_link() ?>">&laquo; Older Entries</a></div>
-			<div class="alignright"><a href="<?php previous_posts_link() ?>">Newer Entries &raquo;</a></div>
-<br/>
+<?php posts_nav_link(); ?>
 		</div>
                 </div>
 

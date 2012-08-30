@@ -182,4 +182,16 @@ class UserQueryManager(object):
         return users[0]['_id'] == user['_id'] # this should be True
 
 
+    @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Return a list of users that match the provided criteria.
 
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of User instances
+        @rtype:     list
+        """
+        return User.get_collection().query(criteria)
