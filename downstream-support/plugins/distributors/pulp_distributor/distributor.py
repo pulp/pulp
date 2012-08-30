@@ -21,6 +21,8 @@ from logging import getLogger
 
 _LOG = getLogger(__name__)
 
+PUBLISH_DIR='/var/lib/pulp/published/http/downstream/repos'
+
 
 class PulpDistributor(Distributor):
 
@@ -35,9 +37,10 @@ class PulpDistributor(Distributor):
     def validate_config(self, repo, config, related_repos):
         return (True, None)
 
-    def publish_repo(self, repo, publish_conduit, config):
-        units = publish_conduit.get_units()
-        pub = Publisher(repo.id)
+    def publish_repo(self, repo, conduit, config):
+        pubdir = config.get('publishdir', PUBLISH_DIR)
+        units = conduit.get_units()
+        pub = Publisher(repo.id, pubdir)
         pub.publish([u.__dict__ for u in units])
     
     def cancel_publish_repo(self, call_report, call_request):
@@ -59,10 +62,8 @@ class PulpDistributor(Distributor):
 
 
 class Publisher:
-    
-    PUBLISH_DIR='/var/lib/pulp/published/http/downstream/repos'
 
-    def __init__(self, repo_id, root=PUBLISH_DIR):
+    def __init__(self, repo_id, root):
         self.root = os.path.join(root, repo_id)
         
     def publish(self, units):

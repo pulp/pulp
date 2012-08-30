@@ -1,0 +1,92 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2012 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+from ConfigParser import SafeConfigParser
+import logging
+import os
+import mock
+import okaara
+import shutil
+import unittest
+
+from pulp.bindings.bindings import Bindings
+from pulp.bindings.server import PulpConnection
+from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
+from pulp.client.extensions.exceptions import ExceptionHandler
+from pulp.common.config import Config
+from pulp.server import config
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
+from pulp.server.db import connection
+from pulp.server.logs import start_logging, stop_logging
+from pulp.server.managers import factory as manager_factory
+
+
+SerialNumber.PATH = '/tmp/sn.dat'
+
+
+class PluginTests(unittest.TestCase):
+    """
+    Base unit test class for plugin unit tests.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists('/tmp/pulp'):
+            os.makedirs('/tmp/pulp')
+        stop_logging()
+        path = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            'data',
+            'pulp.conf')
+        config.config.read(path)
+        start_logging()
+        name = config.config.get('database', 'name')
+        connection.initialize(name)
+        manager_factory.initialize()
+
+    @classmethod
+    def tearDownClass(cls):
+        name = config.config.get('database', 'name')
+        connection._connection.drop_database(name)
+
+
+class ClientTests(unittest.TestCase):
+    """
+    Base unit test class for all extension unit tests.
+    """
+
+    def setUp(self):
+        super(PulpClientTests, self).setUp()
+
+        self.config = SafeConfigParser()
+        path = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            'data',
+            'client.conf')
+        self.config = Config(path)
+        self.server_mock = mock.Mock()
+        self.pulp_connection = \
+            PulpConnection('', server_wrapper=self.server_mock)
+        self.bindings = Bindings(self.pulp_connection)
+        self.recorder = okaara.prompt.Recorder()
+        self.prompt = PulpPrompt(enable_color=False, output=self.recorder, record_tags=True)
+        self.logger = logging.getLogger('pulp')
+        self.exception_handler = ExceptionHandler(self.prompt, self.config)
+        self.context = ClientContext(
+            self.bindings,
+            self.config, 
+            self.logger, 
+            self.prompt, 
+            self.exception_handler)
+        self.cli = PulpCli(self.context)
+        self.context.cli = self.cli

@@ -27,6 +27,7 @@ _LOG = getLogger(__name__)
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
+ 
 class UnitKey:
 
     def __init__(self, unit):
@@ -58,10 +59,15 @@ class PulpImporter(Importer):
         return (True, None)
 
     def sync_repo(self, repo, conduit, config):
-        reader = UnitsReader()
-        upstream =  dict([(UnitKey(u), u) for u in reader.read(repo.id)])
+        baseurl = config.get('baseurl')
+        if not baseurl:
+            cfg = Config(CONFIG_PATH)
+            host = cfg['server']['host']
+            baseurl = 'http://%s/pulp/downstream/repos' % host
+        reader = UnitsReader(baseurl, repo.id)
+        upstream =  dict([(UnitKey(u), u) for u in reader.read()])
         units = dict([(UnitKey(u), u) for u in conduit.get_units()])
-        downloader = UnitDownloader(repo.id)
+        downloader = UnitDownloader(baseurl, repo.id)
         for k,unit in upstream.items():
             if k in units:
                 continue
@@ -83,17 +89,13 @@ class PulpImporter(Importer):
 
 
 class UnitsReader:
-
-    URL = 'http://%s/pulp/downstream/repos/%s/units.json'
     
-    def __init__(self, configpath=CONFIG_PATH):
-        cfg = Config(configpath)
-        server = cfg['server']
-        self.host = server['host']
-        self.port = int(server['port'])
+    def __init__(self, baseurl, repo_id):
+        self.baseurl = baseurl
+        self.repo_id = repo_id
 
-    def read(self, repo_id):
-        url = self.URL % (self.host, repo_id)
+    def read(self):
+        url = '/'.join((self.baseurl, self.repo_id, 'units.json'))
         fp = urllib.urlopen(url)
         try:
             return json.load(fp)
@@ -102,21 +104,16 @@ class UnitsReader:
             
             
 class UnitDownloader:
-
-    URL = 'http://%s/pulp/downstream/repos/%s/units/%s'
     
-    def __init__(self, repo_id, configpath=CONFIG_PATH):
-        cfg = Config(configpath)
-        server = cfg['server']
-        self.host = server['host']
-        self.port = int(server['port'])
+    def __init__(self, baseurl, repo_id):
+        self.baseurl = baseurl
         self.repo_id = repo_id
     
     def install(self, unit):
         m = hashlib.sha256()
         target = unit['storage_path']
         m.update(target)
-        url = self.URL % (self.host, self.port, m.hexdigest())
+        url = '/'.join((self.baseurl, self.repo_id, 'units', m.hexdigest()))
         fp_in = urllib.urlopen(url)
         try:
             self.__write(fp_in, target)
