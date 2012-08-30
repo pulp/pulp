@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.1
+Version: 2.0.2
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,10 @@ exit 0
 %endif
 
 %changelog
+* Thu Aug 30 2012 Jeff Ortel <jortel@redhat.com> 2.0.2-1
+- 847814 - added completed task cache to all_tasks method
+  (jason.connor@gmail.com)
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 2.0.1-1
 - tagged for CR.
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
