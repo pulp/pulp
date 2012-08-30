@@ -165,7 +165,7 @@ class GroupISODistributor(GroupDistributor):
         self.group_progress_status = {"isos":               {"state": "NOT_STARTED"},
                                      "publish_http":       {"state": "NOT_STARTED"},
                                      "publish_https":      {"state": "NOT_STARTED"},
-                                     "repositories":       {"state": "NOT_STARTED"},}
+                                     "repositories":       {},}
 
     def publish_group(self, repo_group, publish_conduit, config):
         self.group_working_dir = group_working_dir = repo_group.working_dir
