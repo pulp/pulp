@@ -167,6 +167,7 @@ LINKS = (
 
     # Puppet Support Admin Extensions
     ('puppet-support/extensions/admin/puppet_repo', DIR_ADMIN_EXTENSIONS + 'puppet_repo'),
+    ('puppet-support/etc/pulp/admin/conf.d/puppet.conf', '/etc/pulp/admin/conf.d/puppet.conf')
 
 )
 

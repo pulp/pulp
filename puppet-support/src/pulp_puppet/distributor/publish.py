@@ -95,7 +95,8 @@ class PuppetModulePublishRun(object):
         :rtype:  list of pulp.plugins.model.AssociatedUnit
         """
         self.progress_report.modules_state = STATE_RUNNING
-        self.progress_report.update_progress()
+        # Do not update here; the counts need to be set first by the
+        # symlink_modules call.
 
         start_time = datetime.now()
 

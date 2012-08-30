@@ -42,8 +42,11 @@ class SuccessfulMetadataTests(unittest.TestCase):
             shutil.rmtree(self.tmp_dir)
 
     def test_extract_metadata(self):
+        # Setup
+        filename = os.path.join(self.module_dir, self.module.filename())
+
         # Test
-        metadata.extract_metadata(self.module, self.module_dir, self.tmp_dir)
+        metadata.extract_metadata(self.module, filename, self.tmp_dir)
 
         # Verify
         self.assertEqual(self.module.name, 'valid')
@@ -56,9 +59,10 @@ class SuccessfulMetadataTests(unittest.TestCase):
         # Setup
         self.module = Module('misnamed', '1.0.0', 'ldob')
         self.module_dir = os.path.join(DATA_DIR, 'bad-modules')
+        filename = os.path.join(self.module_dir, self.module.filename())
 
         # Test
-        metadata.extract_metadata(self.module, self.module_dir, self.tmp_dir)
+        metadata.extract_metadata(self.module, filename, self.tmp_dir)
 
         # Verify - contains the same module as jdob-valid-1.0.0, so this is safe
         self.assertEqual(self.module.name, 'misnamed')
@@ -99,8 +103,6 @@ class SuccessfulMetadataTests(unittest.TestCase):
         self.assertEqual(self.module.checksums, expected_checksums)
 
 
-
-
 class NegativeMetadataTests(unittest.TestCase):
 
     def setUp(self):
@@ -120,35 +122,35 @@ class NegativeMetadataTests(unittest.TestCase):
     def test_extract_metadata_bad_tarball(self):
         # Setup
         self.module.name = 'empty'
+        filename = os.path.join(self.module_dir, self.module.filename())
 
         # Test
         try:
-            metadata.extract_metadata(self.module, self.module_dir, self.tmp_dir)
+            metadata.extract_metadata(self.module, filename, self.tmp_dir)
             self.fail()
         except metadata.ExtractionException, e:
-            filename = os.path.join(self.module_dir, self.module.filename())
             self.assertEqual(e.module_filename, filename)
 
     def test_extract_non_standard_bad_tarball(self):
         # Setup
         self.module.name = 'empty'
+        filename = os.path.join(self.module_dir, self.module.filename())
 
         # Test
         try:
-            metadata._extract_non_standard_json(self.module, self.module_dir, self.tmp_dir)
+            metadata._extract_non_standard_json(self.module, filename, self.tmp_dir)
             self.fail()
         except metadata.ExtractionException, e:
-            filename = os.path.join(self.module_dir, self.module.filename())
             self.assertEqual(e.module_filename, filename)
 
     def test_extract_metadata_no_metadata(self):
         # Setup
         self.module.name = 'no-metadata'
+        filename = os.path.join(self.module_dir, self.module.filename())
 
         # Test
         try:
-            metadata.extract_metadata(self.module, self.module_dir, self.tmp_dir)
+            metadata.extract_metadata(self.module, filename, self.tmp_dir)
             self.fail()
         except metadata.MissingModuleFile, e:
-            filename = os.path.join(self.module_dir, self.module.filename())
             self.assertEqual(e.module_filename, filename)

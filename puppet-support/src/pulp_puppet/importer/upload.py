@@ -12,12 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
+import os
 import shutil
 
 from pulp_puppet.common import constants
 from pulp_puppet.common.model import Module
+from pulp_puppet.importer import metadata as metadata_parser
 
-def handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit):
+def handle_uploaded_unit(repo, type_id, unit_key, metadata, file_path, conduit):
     """
     Handles an upload unit request to the importer. This call is responsible
     for moving the unit from its temporary location where Pulp stored the
@@ -25,6 +27,8 @@ def handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit):
     This call will also update the database in Pulp to reflect the unit
     and its association to the repository.
 
+    :param repo: repository into which the unit is being uploaded
+    :type  repo: pulp.plugins.model.Repository
     :param type_id: type of unit being uploaded
     :type  type_id: str
     :param unit_key: unique identifier for the unit
@@ -44,6 +48,9 @@ def handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit):
     combined = copy.copy(unit_key)
     combined.update(metadata)
     module = Module.from_dict(combined)
+
+    # Extract the metadata from the module
+    metadata_parser.extract_metadata(module, file_path, repo.working_dir)
 
     # Create the Pulp unit
     type_id = constants.TYPE_PUPPET_MODULE

@@ -284,8 +284,7 @@ class PuppetModuleSyncRun(object):
                 shutil.copy(downloaded_filename, unit.storage_path)
 
             # Extract the extra metadata into the module
-            module_dir = os.path.dirname(unit.storage_path)
-            metadata.extract_metadata(module, module_dir, self.repo.working_dir)
+            metadata.extract_metadata(module, unit.storage_path, self.repo.working_dir)
 
             # Update the unit with the extracted metadata
             unit.metadata = module.unit_metadata()

@@ -49,7 +49,7 @@ class InvalidTarball(ExtractionException):
 
 # -- public -------------------------------------------------------------------
 
-def extract_metadata(module, module_dir, temp_dir):
+def extract_metadata(module, filename, temp_dir):
     """
     Pulls the module's metadata file out of the module's tarball and updates the
     module instance with its contents. The module instance itself is updated
@@ -59,8 +59,8 @@ def extract_metadata(module, module_dir, temp_dir):
     :param module: module instance to extract metadata for
     :type  module: Module
 
-    :param module_dir: directory in which the module is located
-    :type  module_dir: str
+    :param filename: full path to the module file
+    :type  filename: str
 
     :param temp_dir: location the module's files should be extracted to;
            must exist prior to this call
@@ -74,15 +74,15 @@ def extract_metadata(module, module_dir, temp_dir):
     # found, try the brute force approach. If it's still not found, that call
     # will raise the appropriate MissingModuleFile exception.
     try:
-        metadata_json = _extract_json(module, module_dir, temp_dir)
+        metadata_json = _extract_json(module, filename, temp_dir)
     except MissingModuleFile:
-        metadata_json = _extract_non_standard_json(module, module_dir, temp_dir)
+        metadata_json = _extract_non_standard_json(module, filename, temp_dir)
 
     module.update_from_json(metadata_json)
 
 # -- private ------------------------------------------------------------------
 
-def _extract_json(module, module_dir, temp_dir):
+def _extract_json(module, filename, temp_dir):
     """
     Extracts the module's metadata file from the tarball. This call will attempt
     to only extract and read the metadata file itself, cleaning up the
@@ -93,7 +93,6 @@ def _extract_json(module, module_dir, temp_dir):
     """
 
     # Extract the module's metadata file itself
-    filename = os.path.join(module_dir, module.filename())
     metadata_file_path = '%s-%s-%s/%s' % (module.author, module.name,
                                           module.version,
                                           constants.MODULE_METADATA_FILENAME)
@@ -115,7 +114,7 @@ def _extract_json(module, module_dir, temp_dir):
     contents = _read_contents(temp_filename)
     return contents
 
-def _extract_non_standard_json(module, module_dir, temp_dir):
+def _extract_non_standard_json(module, filename, temp_dir):
     """
     Called if the module's metadata file isn't found in the standard location.
     The entire module will be extracted to a temporary location and an attempt
@@ -127,7 +126,6 @@ def _extract_non_standard_json(module, module_dir, temp_dir):
     :raise MissingModuleFile: if the module's metadata file cannot be found
     """
 
-    filename = os.path.join(module_dir, module.filename())
     extraction_dir = os.path.join(temp_dir, module.author, module.name, module.version)
     os.makedirs(extraction_dir)
 

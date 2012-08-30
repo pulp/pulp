@@ -198,7 +198,7 @@ class Module(object):
             'description'  : self.description,
             'tag_list'     : self.tags,
             'source'       : self.source,
-            'license '     : self.license,
+            'license'     : self.license,
             'summary'      : self.summary,
             'project_page' : self.project_page,
             'types'        : self.types,
