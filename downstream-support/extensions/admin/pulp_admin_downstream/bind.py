@@ -51,7 +51,7 @@ class BindCommand(PulpCliCommand):
                 repo_id,
                 DISTRIBUTOR_ID,
                 config, 
-                False,
+                True,
                 DISTRIBUTOR_ID)
         except Exception:
             # should log this

@@ -18,6 +18,10 @@ from pulp.server.compat import json
 from pulp.common.config import Config
 from pulp.plugins.model import Unit
 from pulp.plugins.importer import Importer
+from logging import getLogger
+
+
+_LOG = getLogger(__name__)
 
 
 class UnitKey:
@@ -52,7 +56,7 @@ class PulpImporter(Importer):
 
     def sync_repo(self, repo, sync_conduit, config):
         reader = UnitsReader()
-        upstream =  dict([UnitKey(u) for u in reader.read()])
+        upstream =  dict([UnitKey(u) for u in reader.read(repo.id)])
         units = dict([UnitKey(u) for u in publish_conduit.get_units()])
         downloader = UnitDownloader(repo.id)
         for k,unit in upstream.items():
@@ -78,7 +82,7 @@ class PulpImporter(Importer):
 class UnitsReader:
     
     CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
-    URL = 'http://%s:%d/pulp/downstream/repos/%s/units.json'
+    URL = 'http://%s/pulp/downstream/repos/%s/units.json'
     
     def __init__(self, configpath=CONFIG_PATH):
         cfg = Config(configpath)
@@ -87,8 +91,8 @@ class UnitsReader:
         self.port = int(server['port'])
 
     def read(self, repo_id):
-        url = self.URL % (self.server, self.port, repo_id)
-        fp = url.urlopen(url)
+        url = self.URL % (self.host, repo_id)
+        fp = urllib.urlopen(url)
         try:
             return json.load(fp)
         finally:
@@ -98,7 +102,7 @@ class UnitsReader:
 class UnitDownloader:
 
     CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
-    URL = 'http://%s:%d/pulp/downstream/repos/%s/units/%s'
+    URL = 'http://%s/pulp/downstream/repos/%s/units/%s'
     
     def __init__(self, repo_id, configpath=CONFIG_PATH):
         cfg = Config(configpath)
@@ -108,7 +112,7 @@ class UnitDownloader:
         self.repo_id = repo_id
     
     def install(self, unit):
-        url = self.URL % (self.server, self.port, self.repo_id)
+        url = self.URL % (self.server, self.repo_id)
         m = hashlib.sha256()
         target = unit['storage_path']
         m.update(target)

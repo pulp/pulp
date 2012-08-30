@@ -16,3 +16,14 @@ Issues:
 4. Need to deal with different root directories
    used for storage_path(s) on Units.  Differences in upstream & downstream
    server configuration as it pertains to this.
+
+
+
+PUBLISHING:
+===================
+>>> import pic
+>>> pic.connect()
+>>> pic.POST('v2/repositories/<repo_id>/actions/publish/', dict(id='pulp_distributor'))
+
+note: REST doc needs to specify (id) parameter.
+

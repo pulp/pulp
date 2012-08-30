@@ -26,6 +26,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
+PULP_IMPORTER = 'pulp_importer'
 PULP_DISTRIBUTOR = 'pulp_distributor'
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
@@ -164,6 +165,8 @@ class RepositoryHandler(ContentHandler):
         """
         report = {}
         self.merge(binds)
+        for repo_id in [b['repo_id'] for b in binds]:
+            http = Local.binding.repo_actions.sync(repo_id, {})
         return report
 
     def merge(self, binds):
@@ -292,15 +295,20 @@ class LocalRepository(Local, Repository):
         """
         Add the local repository and associated distributors.
         """
+        # repository
         self.binding.repo.create(
             self.repo_id,
             self.basic['display_name'],
             self.basic['description'],
             self.basic['notes'])
+        # distributors
         for details in self.distributors:
-            dist_id = details['distributor_id']
+            dist_id = details['id']
             dist = LocalDistributor(self.repo_id, dist_id, details)
             dist.add()
+        # importer
+        importer = LocalImporter(self.repo_id, PULP_IMPORTER)
+        importer.add()
         log.info('Repository: %s, added', self.repo_id)
         
     def update(self, delta):
@@ -364,11 +372,11 @@ class LocalRepository(Local, Repository):
             if dist_id not in upstream_distids:
                 dist = LocalDistributor(self.repo_id, dist_id)
                 dist.delete()
-
+                
 
 class Distributor:
     """
-    Distributor.
+    A repository-distributor association.
     @ivar repo_id: Repository ID.
     @type repo_id: str
     @param dist_id: Distributor ID.
@@ -418,14 +426,16 @@ class LocalDistributor(Local, Distributor):
         @param delta: The configuration delta.
         @type delta: dict
         """
-        self.binding.repo_distributor.update(self.repo_id, self.dist_id, delta)
+        binding = self.binding.repo_distributor
+        binding.update(self.repo_id, self.dist_id, delta)
         log.info('Distributor: %s/%s, updated', self.repo_id, self.dist_id)
     
     def delete(self):
         """
         Delete the local repository-distributor.
         """
-        self.binding.repo_distributor.update(self.repo_id, self.dist_id)
+        binding = self.binding.repo_distributor
+        binding.delete(self.repo_id, self.dist_id)
         log.info('Distributor: %s/%s, deleted', self.repo_id, self.dist_id)
         
     def merge(self, upstream):
@@ -441,3 +451,31 @@ class LocalDistributor(Local, Distributor):
                 delta[k] = v
         if delta:
             self.update(delta)
+
+
+class Importer:
+    """
+    A repository-importer association.
+    @ivar repo_id: Repository ID.
+    @type repo_id: str
+    @param imp_id: Importer ID.
+    @type imp_id: str
+    @ivar cfg: Importer configuration.
+    @type cfg: dict
+    """
+    
+    def __init__(self, repo_id, imp_id, cfg={}):
+        self.repo_id = repo_id
+        self.imp_id = imp_id
+        self.cfg = cfg
+        
+        
+class LocalImporter(Local, Importer):
+    
+    def add(self):
+        """
+        Add the importer.
+        """
+        binding = self.binding.repo_importer
+        binding.create(self.repo_id, self.imp_id, self.cfg)
+        log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
