@@ -24,12 +24,15 @@ from logging import getLogger
 _LOG = getLogger(__name__)
 
 
+CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
+
+
 class UnitKey:
 
     def __init__(self, unit):
         type_id = unit['type_id']
-        unit_key = sorted(unit['unit_key'].items())
-        self.uid (type_id, unit_key)
+        unit_key = tuple(sorted(unit['unit_key'].items()))
+        self.uid = (type_id, unit_key)
     
     def __hash__(self):
         return hash(self.uid)
@@ -54,10 +57,10 @@ class PulpImporter(Importer):
     def validate_config(self, repo, config, related_repos):
         return (True, None)
 
-    def sync_repo(self, repo, sync_conduit, config):
+    def sync_repo(self, repo, conduit, config):
         reader = UnitsReader()
-        upstream =  dict([UnitKey(u) for u in reader.read(repo.id)])
-        units = dict([UnitKey(u) for u in publish_conduit.get_units()])
+        upstream =  dict([(UnitKey(u), u) for u in reader.read(repo.id)])
+        units = dict([(UnitKey(u), u) for u in conduit.get_units()])
         downloader = UnitDownloader(repo.id)
         for k,unit in upstream.items():
             if k in units:
@@ -66,7 +69,7 @@ class PulpImporter(Importer):
                      unit['unit_key'],
                      unit['metadata'],
                      unit['storage_path'])
-            sync_conduit.save_unit(u)
+            conduit.save_unit(u)
             downloader.install(unit)
 
     def cancel_sync_repo(self, call_request, call_report):
@@ -80,8 +83,7 @@ class PulpImporter(Importer):
 
 
 class UnitsReader:
-    
-    CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
+
     URL = 'http://%s/pulp/downstream/repos/%s/units.json'
     
     def __init__(self, configpath=CONFIG_PATH):
@@ -101,7 +103,6 @@ class UnitsReader:
             
 class UnitDownloader:
 
-    CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
     URL = 'http://%s/pulp/downstream/repos/%s/units/%s'
     
     def __init__(self, repo_id, configpath=CONFIG_PATH):
@@ -112,19 +113,19 @@ class UnitDownloader:
         self.repo_id = repo_id
     
     def install(self, unit):
-        url = self.URL % (self.server, self.repo_id)
         m = hashlib.sha256()
         target = unit['storage_path']
         m.update(target)
-        url = URL % (self.server, self.port, m.hexdigest())
-        fp_in = httplib.urlopen(url)
+        url = self.URL % (self.host, self.port, m.hexdigest())
+        fp_in = urllib.urlopen(url)
         try:
-            self.write(fp_in, target)
+            self.__write(fp_in, target)
         finally:
             fp_in.close()
     
     def __write(self, fp_in, path):
-        fp_out = open(target, 'w+')
+        self.__mkdir(path)
+        fp_out = open(path, 'w+')
         try:
             while True:
                 bfr = fp_in.read(0x100000)
