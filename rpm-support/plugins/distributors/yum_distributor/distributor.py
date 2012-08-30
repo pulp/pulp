@@ -683,7 +683,9 @@ class YumDistributor(Distributor):
             payload['ca_cert'] = open(pulp_conf.get('security', 'ssl_ca_certificate')).read()
         else:
             payload['ca_cert'] = config.get('https_ca')
-        payload['relative_path'] = pulp_conf.get('server', 'relative_url') + self.get_repo_relative_path(repo, config)
+        payload['relative_path'] = \
+            '/'.join((pulp_conf.get('server', 'relative_url'),
+                      self.get_repo_relative_path(repo, config)))
         payload['protocols'] = []
         if config.get('http'):
             payload['protocols'].append('http')
