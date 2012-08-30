@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 2.0.1
+Version: 2.0.2
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -236,6 +236,13 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Thu Aug 30 2012 Jeff Ortel <jortel@redhat.com> 2.0.2-1
+- 849249 - Fix url in bind payload in yum distributor. (jortel@redhat.com)
+- 848510 - changed sync and status commands to utilize the new task group
+  support in display_status (jason.connor@gmail.com)
+- 848510 - refactored display_status to work with an individual task as well as
+  a task group (jason.connor@gmail.com)
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 2.0.1-1
 - tagged for CR.
 
