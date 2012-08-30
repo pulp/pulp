@@ -20,7 +20,7 @@ def initialize(context):
 
     repo_section = structure.repo_section(context.cli)
     repo_section.add_command(repo.CreatePuppetRepositoryCommand(context))
-    repo_section.add_command(cudl.UpdateRepositoryCommand(context))
+    repo_section.add_command(repo.UpdatePuppetRepositoryCommand(context))
     repo_section.add_command(cudl.DeleteRepositoryCommand(context))
     repo_section.add_command(repo.ListPuppetRepositoriesCommand(context))
     repo_section.add_command(repo.SearchPuppetRepositoriesCommand(context))

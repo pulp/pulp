@@ -157,10 +157,8 @@ class ListRepositoriesCommand(PulpCliCommand):
 
         super(ListRepositoriesCommand, self).__init__(name, description, method)
 
-        self.add_option(PulpCliFlag('--summary', _('if specified, only a minimal amount of repository information is displayed')))
+        self.add_option(PulpCliFlag('--details', _('if specified, detailed configuration information is displayed for each repository')))
         self.add_option(PulpCliOption('--fields', _('comma-separated list of repository fields; if specified, only the given fields will displayed'), required=False))
-        self.add_option(PulpCliFlag('--importers', _('if specified, importer configuration is displayed')))
-        self.add_option(PulpCliFlag('--distributors', _('if specified, the list of distributors and their configuration is displayed')))
 
     def run(self, **kwargs):
         self.prompt.render_title(_('Repositories'))
@@ -169,21 +167,17 @@ class ListRepositoriesCommand(PulpCliCommand):
         filters = ['id', 'display_name', 'description', 'content_unit_count']
         order = filters
 
-        if kwargs['summary'] is True:
-            filters = ['id', 'display_name']
-            order = filters
+        query_params = {}
+        if kwargs['details'] is True:
+            filters.append('notes')
+            for p in ('importers', 'distributors'):
+                query_params[p] = True
+                filters.append(p)
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
             if 'id' not in filters:
                 filters.append('id')
             order = ['id']
-
-        query_params = {}
-
-        for param in ('importers', 'distributors'):
-            if kwargs.get(param):
-                query_params[param] = True
-                filters.append(param)
 
         repo_list = self.get_repositories(query_params, **kwargs)
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
