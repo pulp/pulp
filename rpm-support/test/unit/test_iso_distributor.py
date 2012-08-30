@@ -517,6 +517,30 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
 
+        http_publish_dir = self.http_publish_dir
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            http_publish_dir=http_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http_publish_dir = "test"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            http_publish_dir=http_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        https_publish_dir = self.https_publish_dir
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_publish_dir=https_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        https_publish_dir = "test"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_publish_dir=https_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
         if not M2CRYPTO_HAS_CRL_SUPPORT:
             return
         http = True
