@@ -25,8 +25,9 @@ import os
 import sys
 import types
 import urllib
+import socket
 
-HOST = 'localhost'
+HOST = socket.gethostname()
 PORT = 443
 PATH_PREFIX = '/pulp/api'
 AUTH_SCHEME = 'basic' # can also be 'oauth' (XXX not really)
