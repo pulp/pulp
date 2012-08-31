@@ -325,6 +325,16 @@ class PuppetModulePublishRun(object):
         return build_dir
 
 def unpublish_repo(repo, config):
+    """
+    Performs all clean up required to stop hosting the provided repository.
+    If the repository was never published, this call has no effect.
+
+    :param repo: repository instance given to the plugin by Pulp
+    :type  repo: pulp.plugins.model.Repository
+    :param config: config instance passed into the plugin by Pulp
+    :type  config: pulp.plugins.config.PluginCallConfiguration
+    :return:
+    """
 
     for proto_key in (constants.CONFIG_HTTP_DIR, constants.CONFIG_HTTPS_DIR):
         proto_dir = config.get(proto_key)
@@ -332,9 +342,13 @@ def unpublish_repo(repo, config):
 
 def unpublish(protocol_directory, repo):
     """
-    Unpublishes the given repository from
-    :param repo:
-    :return:
+    Unpublishes the repository from the given protocol hosting directory.
+    If the repository was never published, this call has no effect.
+
+    :param protocol_directory: directory the repository was published to
+    :type  protocol_directory: str
+    :param repo: repository instance given to the plugin by Pulp
+    :type  repo: pulp.plugins.model.Repository
     """
     repo_dest_dir = os.path.join(protocol_directory, repo.id)
 
