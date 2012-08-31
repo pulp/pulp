@@ -161,11 +161,11 @@ LINKS = (
 
     # Citrus Support (all)
     ('citrus-support/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
-    ('citrus-support/etc/pulp/agent/conf.d/repository.conf', '/etc/pulp/agent/conf.d/repository.conf'),
+    ('citrus-support/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
     ('citrus-support/extensions/admin/pulp_admin_citrus', DIR_ADMIN_EXTENSIONS + 'pulp_admin_citrus'),
     ('citrus-support/plugins/distributors/pulp_distributor', DIR_PLUGINS + '/distributors/pulp_distributor'),
     ('citrus-support/plugins/importers/pulp_importer', DIR_PLUGINS + '/importers/pulp_importer'),
-    ('citrus-support/handlers/repository.py', '/usr/lib/pulp/agent/handlers/repository.py'),
+    ('citrus-support/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
 
     # Puppet Support Plugins
     ('puppet-support/etc/httpd/conf.d/pulp_puppet.conf', '/etc/httpd/conf.d/pulp_puppet.conf'),
