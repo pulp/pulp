@@ -11,12 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
 import time
 from gettext import gettext as _
 
-from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
-    PulpCliOption, PulpCliFlag
+from pulp.client import arg_utils
+from pulp.client.extensions.extensions import (PulpCliSection, PulpCliCommand,
+    PulpCliOption, PulpCliFlag)
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.commands.criteria import CriteriaCommand
 
@@ -559,32 +559,15 @@ class ConsumerGroupMemberSection(PulpCliSection):
         list_command.add_option(id_option)
         self.add_command(list_command)
 
-        add_command = SearchCommand(self.add, name='add', 
+        add_command = CriteriaCommand(self.add, name='add', include_search=False,
             description=_('add consumers based on search parameters'))
         add_command.add_option(id_option)
-        self._strip_criteria_options(add_command)
         self.add_command(add_command)
 
-        remove_command = SearchCommand(self.remove, name='remove', 
+        remove_command = CriteriaCommand(self.remove, name='remove', include_search=False,
             description=_('remove consumers based on search parameters'))
         remove_command.add_option(id_option)
-        self._strip_criteria_options(remove_command)
         self.add_command(remove_command)
-
-    @staticmethod
-    def _strip_criteria_options(command):
-        """
-        We don't want to expose all of the criteria features here, so we remove
-        all of them except for search-related ones.
-
-        :param command: command instance from which we should remove criteria
-                        options.
-        :type  command: SearchCommand
-        """
-        OPTION_NAMES = set(('--fields', '--limit', '--skip', '--sort'))
-        for option in copy.copy(command.options):
-            if option.name in OPTION_NAMES:
-                command.options.remove(option)
 
     def list(self, **kwargs):
         consumer_group_id = kwargs['consumer-group-id']
@@ -665,7 +648,7 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_command(list_command)
 
         # Search Command
-        self.add_command(SearchCommand(self.search))
+        self.add_command(CriteriaCommand(self.search, include_search=True))
 
         # Bind Command
         bind_command = PulpCliCommand('bind', 
