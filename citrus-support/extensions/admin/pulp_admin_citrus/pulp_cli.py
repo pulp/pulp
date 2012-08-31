@@ -20,7 +20,7 @@ from content import ContentSection
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    parent_section = PulpCliSection('downstream', 'distributed commands')
+    parent_section = PulpCliSection('pulp', 'citrus commands')
     parent_section.add_subsection(ContentSection(context))
     m = 'binds a downsteam pulp server to a repository'
     parent_section.add_command(BindCommand(context, 'bind', _(m)))

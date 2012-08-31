@@ -160,9 +160,9 @@ LINKS = (
     ('rpm-support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
 
     # Citrus Support (all)
-    ('citrus-support/etc/httpd/conf.d/pulp_downstream.conf', '/etc/httpd/conf.d/pulp_downstream.conf'),
+    ('citrus-support/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
     ('citrus-support/etc/pulp/agent/conf.d/repository.conf', '/etc/pulp/agent/conf.d/repository.conf'),
-    ('citrus-support/extensions/admin/pulp_admin_downstream', DIR_ADMIN_EXTENSIONS + 'pulp_admin_downstream'),
+    ('citrus-support/extensions/admin/pulp_admin_citrus', DIR_ADMIN_EXTENSIONS + 'pulp_admin_citrus'),
     ('citrus-support/plugins/distributors/pulp_distributor', DIR_PLUGINS + '/distributors/pulp_distributor'),
     ('citrus-support/plugins/importers/pulp_importer', DIR_PLUGINS + '/importers/pulp_importer'),
     ('citrus-support/handlers/repository.py', '/usr/lib/pulp/agent/handlers/repository.py'),
