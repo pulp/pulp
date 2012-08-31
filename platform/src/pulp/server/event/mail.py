@@ -11,10 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import email.mime.text
 import logging
 import smtplib
 import threading
+
+try:
+    from email.mime.text import MIMEText
+except ImportError:
+    # python 2.4 version
+    from email.MIMEText import MIMEText
 
 from pulp.server.compat import json
 from pulp.server.config import config
@@ -64,7 +69,7 @@ def _send_email(subject, body, to_address):
     port = config.getint('email', 'port')
     from_address = config.get('email', 'from')
 
-    message = email.mime.text.MIMEText(body)
+    message = MIMEText(body)
     message['Subject'] = subject
     message['From'] = from_address
     message['To'] = to_address
