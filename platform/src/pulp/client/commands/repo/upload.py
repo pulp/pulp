@@ -169,8 +169,8 @@ class UploadCommand(PulpCliCommand):
         """
         all_files = []
         for f in os.listdir(dir):
-            if os.path.isfile(f):
-                filename = os.path.join(dir, f)
+            filename = os.path.join(dir, f)
+            if os.path.isfile(filename):
                 all_files.append(filename)
 
         return all_files
@@ -182,8 +182,7 @@ class UploadCommand(PulpCliCommand):
         override this method to return an appropriate value.
 
         :param filename: full path to the file being uploaded
-        :type  filename: str
-        :param kwargs: arguments passed into the upload call by the user
+        :type  filename: str:param kwargs: arguments passed into the upload call by the user
         :type  kwargs: dict
 
         :return: ID of the type of file being uploaded

@@ -44,7 +44,6 @@ class RepositoryMetadata(object):
         # each represnting a single module.
         for module_dict in parsed:
             module = Module.from_dict(module_dict)
-            module.tags = module_dict.get('tag_list', None) # only exists in the repo metadata
             self.modules.append(module)
 
     def to_json(self):
@@ -128,7 +127,7 @@ class Module(object):
         self.author = author
 
         # From Repository Metadata
-        self.tags = None
+        self.tag_list = None
 
         # From Module Metadata
         self.source = None
@@ -168,6 +167,10 @@ class Module(object):
         Updates the instance variables with the values in the given dict.
         """
 
+        # Not all calls into this will contain the tag list
+        if 'tag_list' in module_dict:
+            self.tag_list = module_dict['tag_list']
+
         # Found in the module metadata itself
         self.source = module_dict.get('source', None)
         self.license = module_dict.get('license', None)
@@ -196,7 +199,7 @@ class Module(object):
         """
         metadata = {
             'description'  : self.description,
-            'tag_list'     : self.tags,
+            'tag_list'     : self.tag_list,
             'source'       : self.source,
             'license'     : self.license,
             'summary'      : self.summary,

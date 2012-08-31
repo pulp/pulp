@@ -15,7 +15,7 @@ import os
 from pulp.client.commands.repo import cudl, group, sync_publish, upload
 from pulp.client.upload.manager import UploadManager
 
-from pulp_puppet.extension.admin import modules, repo, structure, status
+from pulp_puppet.extension.admin import copy, modules, repo, structure, status
 from pulp_puppet.extension.admin import upload as puppet_upload
 
 def initialize(context):
@@ -29,6 +29,7 @@ def initialize(context):
     repo_section.add_command(repo.SearchPuppetRepositoriesCommand(context))
 
     repo_section.add_command(modules.ModulesCommand(context))
+    repo_section.add_command(copy.PuppetModuleCopyCommand(context))
 
     group_section = structure.repo_group_section(context.cli)
     group_section.add_command(group.CreateRepositoryGroupCommand(context))
