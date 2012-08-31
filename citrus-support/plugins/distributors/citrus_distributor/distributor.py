@@ -21,7 +21,7 @@ from logging import getLogger
 
 _LOG = getLogger(__name__)
 
-PUBLISH_DIR='/var/lib/pulp/published/http/downstream/repos'
+PUBLISH_DIR='/var/lib/pulp/published/http/citrus/repos'
 
 
 class PulpDistributor(Distributor):
@@ -29,8 +29,8 @@ class PulpDistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id':'pulp_distributor',
-            'display_name':'Pulp Distributor',
+            'id':'citrus_distributor',
+            'display_name':'Pulp Citrus Distributor',
             'types':['repository',]
         }
 
@@ -81,7 +81,7 @@ class Publisher:
             fp.close()
             
     def link(self, unit):
-        target_dir = self.__mkdir('units')
+        target_dir = self.__mkdir('content')
         source = unit.get('storage_path')
         m = hashlib.sha256()
         m.update(source)

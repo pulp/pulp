@@ -16,7 +16,7 @@ from gettext import gettext as _
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.extensions.extensions import PulpCliCommand
 
-DISTRIBUTOR_ID = 'pulp_distributor'
+DISTRIBUTOR_ID = 'citrus_distributor'
 
 
 class BindCommand(PulpCliCommand):

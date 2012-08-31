@@ -20,8 +20,8 @@ from base import PluginTests
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platform/src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/pulp_importer")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/pulp_distributor/")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/citrus_importer")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/citrus_distributor/")
 print sys.path
 from distributor import PulpDistributor
 from importer import PulpImporter
@@ -35,6 +35,9 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
+
+CITRUS_IMPORTER = 'citrus_importer'
+CITRUS_DISTRUBUTOR = 'citrus_distributor'
 
 
 class Repository(object):
@@ -131,7 +134,7 @@ class TestDistributor(TestPlugins):
         dist = PulpDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(publishdir=self.tmpdir)
-        conduit = RepoPublishConduit(self.REPO_ID, 'pulp_distributor')
+        conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         # Verify
         # TODO: verify published
@@ -145,7 +148,7 @@ class ImporterTest(TestPlugins):
         dist = PulpDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(publishdir=self.tmpdir)
-        conduit = RepoPublishConduit(self.REPO_ID, 'pulp_distributor')
+        conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -156,7 +159,7 @@ class ImporterTest(TestPlugins):
         cfg = dict(baseurl=self.tmpdir)
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            'pulp_importer',
+            CITRUS_IMPORTER,
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             self.DISTRIBUTOR_ID)
         importer.sync_repo(repo, conduit, cfg)

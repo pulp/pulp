@@ -61,8 +61,8 @@ class PulpImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id':'pulp_importer',
-            'display_name':'Pulp Importer',
+            'id':'citrus_importer',
+            'display_name':'Pulp Citrus Importer',
             'types':['rpm',]
         }
 
@@ -75,7 +75,7 @@ class PulpImporter(Importer):
         if not baseurl:
             cfg = Config(CONFIG_PATH)
             host = cfg['server']['host']
-            baseurl = 'http://%s/pulp/downstream/repos' % host
+            baseurl = 'http://%s/pulp/citrus/repos' % host
         # read upstream units (json) document
         reader = UnitsReader(baseurl, repo.id)
         upstream =  dict([(UnitKey(u), u) for u in reader.read()])
@@ -162,7 +162,7 @@ class UnitDownloader:
         m = hashlib.sha256()
         target = unit['storage_path']
         m.update(target)
-        url = '/'.join((self.baseurl, self.repo_id, 'units', m.hexdigest()))
+        url = '/'.join((self.baseurl, self.repo_id, 'content', m.hexdigest()))
         fp_in = urllib.urlopen(url)
         try:
             self.__write(fp_in, target)
