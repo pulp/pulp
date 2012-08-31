@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.325
+Version: 0.0.326
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,11 @@ exit 0
 %endif
 
 %changelog
+* Fri Aug 31 2012 Jeff Ortel <jortel@redhat.com> 0.0.326-1
+- CLI for managing event listeners. (mhrivnak@redhat.com)
+- Added an event notifier type that sends emails. (mhrivnak@redhat.com)
+- Consumer Group support (james.slagle@gmail.com)
+
 * Sun Aug 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
 - Refactored repo and repo group commands to the client package
   (jason.dobies@redhat.com)
