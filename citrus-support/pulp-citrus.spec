@@ -16,10 +16,10 @@
 
 # ---- Pulp --------------------------------------------------------------------
 
-Name: pulp-downstream
+Name: pulp-citrus
 Version: 0.0.324
 Release: 1%{?dist}
-Summary: Support for downstream Pulp servers
+Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
@@ -33,7 +33,7 @@ BuildRequires:  rpm-python
 
 %description
 Provides a collection of platform plugins, client extensions and agent
-handlers that provide downstream support.
+handlers that provide citrus support.
 
 %prep
 %setup -q
@@ -81,7 +81,7 @@ rm -rf %{buildroot}
 # ---- Plugins -----------------------------------------------------------------
 
 %package plugins
-Summary: Pulp downstream support plugins
+Summary: Pulp citrus support plugins
 Group: Development/Languages
 Requires: pulp-server = %{version}
 
@@ -96,18 +96,18 @@ Plugins to support downstream pulp servers.
 # ---- Admin (builtin) Extensions ----------------------------------------------
 
 %package admin-extensions
-Summary: The downstream admin client extensions
+Summary: The citrus admin client extensions
 Group: Development/Languages
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
 A collection of extensions that supplement and override generic admin
-client capabilites with downstream specific features.
+client capabilites with citrus specific features.
 
 
 %files admin-extensions
 %defattr(-,root,root,-)
-%{_usr}/lib/pulp/admin/extensions/pulp_admin_downstream/
+%{_usr}/lib/pulp/admin/extensions/pulp_admin_citrus/
 %doc
 
 # ---- Agent Handlers ----------------------------------------------------------
@@ -118,7 +118,7 @@ Group: Development/Languages
 Requires: python-pulp-agent-lib = %{version}
 
 %description handlers
-Pulp downstream handlers.
+Pulp citrus handlers.
 
 %files handlers
 %defattr(-,root,root,-)
