@@ -284,8 +284,7 @@ class PuppetModulePublishRun(object):
         proto_dir = self.config.get(constants.CONFIG_HTTP_DIR)
         repo_dest_dir = os.path.join(proto_dir, self.repo.id)
 
-        if os.path.exists(repo_dest_dir):
-            shutil.rmtree(repo_dest_dir)
+        unpublish(proto_dir, self.repo)
 
         should_serve = self.config.get_boolean(constants.CONFIG_SERVE_HTTP)
         if should_serve:
@@ -300,8 +299,7 @@ class PuppetModulePublishRun(object):
         proto_dir = self.config.get(constants.CONFIG_HTTPS_DIR)
         repo_dest_dir = os.path.join(proto_dir, self.repo.id)
 
-        if os.path.exists(repo_dest_dir):
-            shutil.rmtree(repo_dest_dir)
+        unpublish(proto_dir, self.repo)
 
         should_serve = self.config.get_boolean(constants.CONFIG_SERVE_HTTPS)
         if should_serve:
@@ -325,3 +323,20 @@ class PuppetModulePublishRun(object):
         """
         build_dir = os.path.join(self.repo.working_dir, 'build', self.repo.id)
         return build_dir
+
+def unpublish_repo(repo, config):
+
+    for proto_key in (constants.CONFIG_HTTP_DIR, constants.CONFIG_HTTPS_DIR):
+        proto_dir = config.get(proto_key)
+        unpublish(proto_dir, repo)
+
+def unpublish(protocol_directory, repo):
+    """
+    Unpublishes the given repository from
+    :param repo:
+    :return:
+    """
+    repo_dest_dir = os.path.join(protocol_directory, repo.id)
+
+    if os.path.exists(repo_dest_dir):
+        shutil.rmtree(repo_dest_dir)

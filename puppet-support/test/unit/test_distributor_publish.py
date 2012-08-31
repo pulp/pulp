@@ -255,3 +255,14 @@ class PublishRunTests(unittest.TestCase):
 
         self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
 
+    def test_unpublish_repo(self):
+        # Setup
+        os.makedirs(os.path.join(self.test_http_dir, self.repo.id))
+        os.makedirs(os.path.join(self.test_https_dir, self.repo.id))
+
+        # Test
+        publish.unpublish_repo(self.repo, self.config)
+
+        # Verify
+        self.assertTrue(not os.path.exists(os.path.join(self.test_http_dir, self.repo.id)))
+        self.assertTrue(not os.path.exists(os.path.join(self.test_https_dir, self.repo.id)))
