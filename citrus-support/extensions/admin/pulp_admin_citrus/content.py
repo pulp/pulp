@@ -29,12 +29,12 @@ class ContentSection(PulpCliSection):
         PulpCliSection.__init__(
             self,
             'content',
-            _('content synchronization management'))
+            _('content management on downstream pulp servers'))
         for Command in (Update,):
             command = Command(context)
             command.create_option(
                 '--pulp-id',
-                _('identifies the downstream pulp server'),
+                _('identifies the pulp server'),
                 required=True)
             self.add_command(command)
 
@@ -44,19 +44,19 @@ class Update(PollingCommand):
     def __init__(self, context):
         PollingCommand.__init__(
             self,
-            'sync',
-            _('synchronize content on a downstream pulp server'),
+            'update',
+            _('update content on a downstream pulp server'),
             self.run,
             context)
         self.create_option(
             '--repo-id',
-            _('unique identifier of a repository to synchronize'),
+            _('unique identifier of a repository'),
             required=False,
             allow_multiple=True,
             aliases=['-r'])
         self.create_flag(
             '--all',
-            _('synchronize all bound repositories'),
+            _('update all bound repositories'),
             aliases=['-a'])
 
     def run(self, **kwargs):
