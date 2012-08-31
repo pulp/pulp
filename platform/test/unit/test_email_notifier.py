@@ -14,6 +14,7 @@
 from email.parser import Parser
 import smtplib
 import unittest
+import dummy_threading
 
 import mock
 
@@ -21,7 +22,6 @@ from pulp.server.compat import json
 from pulp.server.config import config
 from pulp.server.event import data, mail
 from pulp.server.managers import factory
-import tools
 
 
 class TestSendEmail(unittest.TestCase):
@@ -70,12 +70,16 @@ class TestHandleEvent(unittest.TestCase):
         self.event = mock.MagicMock()
         self.event.payload = 'stuff'
 
+    # don't actually spawn a thread
+    @mock.patch('threading.Thread', new=dummy_threading.Thread)
     @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=False)
     @mock.patch('smtplib.SMTP')
     def test_email_disabled(self, mock_smtp, mock_getbool):
         mail.handle_event(self.notifier_config, self.event)
         self.assertFalse(mock_smtp.called)
 
+    # don't actually spawn a thread
+    @mock.patch('threading.Thread', new=dummy_threading.Thread)
     @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=True)
     @mock.patch('smtplib.SMTP')
     def test_email_enabled(self, mock_smtp, mock_getbool):
@@ -111,7 +115,7 @@ class TestSystem(unittest.TestCase):
         }
 
     # don't actually spawn a thread
-    @mock.patch('threading.Thread', new=tools.FakeThread)
+    @mock.patch('threading.Thread', new=dummy_threading.Thread)
     # don't actually send any email
     @mock.patch('smtplib.SMTP')
     # act as if the config has email enabled
