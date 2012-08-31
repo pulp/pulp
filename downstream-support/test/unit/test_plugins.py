@@ -18,10 +18,11 @@ import shutil
 from mock import Mock
 from base import PluginTests
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "mocks")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platform/src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/plugins/importers/pulp_importer")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../src/plugins/distributors/pulp_distributor")
-
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/pulp_importer")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/pulp_distributor/")
+print sys.path
 from distributor import PulpDistributor
 from importer import PulpImporter
 
@@ -159,3 +160,5 @@ class ImporterTest(TestPlugins):
             self.DISTRIBUTOR_ID)
         importer.sync_repo(repo, conduit, cfg)
         # Verify
+        units = conduit.get_units()
+        print units
