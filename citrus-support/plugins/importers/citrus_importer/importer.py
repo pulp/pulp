@@ -42,8 +42,12 @@ class UnitKey:
         @param unit: A content unit.
         @type unit: dict
         """
-        type_id = unit['type_id']
-        unit_key = tuple(sorted(unit['unit_key'].items()))
+        if isinstance(unit, dict):
+            type_id = unit['type_id']
+            unit_key = tuple(sorted(unit['unit_key'].items()))
+        else:
+            type_id = unit.type_id
+            unit_key = tuple(sorted(unit.unit_key.items()))
         self.uid = (type_id, unit_key)
     
     def __hash__(self):
