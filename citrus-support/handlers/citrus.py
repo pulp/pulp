@@ -26,8 +26,8 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-PULP_IMPORTER = 'pulp_importer'
-PULP_DISTRIBUTOR = 'pulp_distributor'
+PULP_IMPORTER = 'citrus_importer'
+PULP_DISTRIBUTOR = 'citrus_distributor'
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
