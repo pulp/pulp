@@ -13,7 +13,7 @@
 
 import copy
 
-from pulp.common.tags import resource_tag
+from pulp.common.tags import action_tag, resource_tag
 
 from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
@@ -25,6 +25,7 @@ from pulp.server.managers import factory as managers_factory
 
 _SYNC_OPTION_KEYS = ('override_config',)
 _PUBLISH_OPTION_KEYS = ('override_config',)
+_UNIT_INSTALL_OPTION_KEYS = ('options',)
 
 
 class ScheduleManager(object):
@@ -207,6 +208,64 @@ class ScheduleManager(object):
     def _validate_distributor(self, repo_id, distributor_id):
         distributor_manager = managers_factory.repo_distributor_manager()
         distributor_manager.get_distributor(repo_id, distributor_id)
+
+    # unit install methods -----------------------------------------------------
+
+    def create_unit_install_schedule(self, consumer_id, units, install_options, schedule_data ):
+        self._validate_consumer(consumer_id)
+        self._validate_keys(install_options, _UNIT_INSTALL_OPTION_KEYS)
+        if 'schedule' not in schedule_data:
+            raise pulp_exceptions.MissingValue(['schedule'])
+
+        consumer_content_manager = managers_factory.consumer_content_manager()
+        args = [consumer_id, units]
+        kwargs = {'options': install_options['options']}
+        weight = 0
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                action_tag('unit_install'), action_tag('scheduled_unit_install')]
+        call_request = CallRequest(consumer_content_manager.install, args, kwargs, weight=weight, tags=tags, archive=True)
+        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+
+        scheduler = dispatch_factory.scheduler()
+        schedule_id = scheduler.add(call_request, **schedule_data)
+        # XXX (jconnor) do I need to associate the schedule with the consumer?
+        return schedule_id
+
+    def update_unit_install_schedule(self, consumer_id, schedule_id, install_options, schedule_data):
+        self._validate_consumer(consumer_id)
+        schedule_updates = copy.copy(schedule_data)
+
+        scheduler = dispatch_factory.scheduler()
+
+        if install_options:
+            report = scheduler.get(schedule_id)
+            call_request = report['call_request']
+            if 'options' in install_options:
+                call_request.kwargs = {'options': install_options['options']}
+            schedule_updates['call_request'] = call_request
+
+        scheduler.update(schedule_id, **schedule_updates)
+
+    def delete_unit_install_schedule(self, consumer_id, schedule_id):
+        self._validate_consumer(consumer_id)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduler.remove(schedule_id)
+
+    def delete_all_unit_install_schedules(self, consumer_id):
+        self._validate_consumer(consumer_id)
+
+        scheduler = dispatch_factory.scheduler()
+        consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+        install_tag = action_tag('unit_install')
+        reports = scheduler.find(consumer_tag, install_tag)
+
+        for r in reports:
+            scheduler.remove(r['call_report']['schedule_id'])
+
+    def _validate_consumer(self, consumer_id):
+        consumer_manager = managers_factory.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
 
     # utility methods ----------------------------------------------------------
 
