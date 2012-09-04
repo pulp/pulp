@@ -217,14 +217,14 @@ class ScheduleManager(object):
         if 'schedule' not in schedule_data:
             raise pulp_exceptions.MissingValue(['schedule'])
 
-        consumer_content_manager = managers_factory.consumer_content_manager()
+        manager = managers_factory.consumer_agent_manager()
         args = [consumer_id, units]
         kwargs = {'options': install_options['options']}
         weight = 0
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('unit_install'), action_tag('scheduled_unit_install')]
-        call_request = CallRequest(consumer_content_manager.install, args, kwargs, weight=weight, tags=tags, archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+        call_request = CallRequest(manager.install_content, args, kwargs, weight=weight, tags=tags, archive=True)
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
 
         scheduler = dispatch_factory.scheduler()
         schedule_id = scheduler.add(call_request, **schedule_data)
