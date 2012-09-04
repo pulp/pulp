@@ -228,7 +228,6 @@ class ScheduleManager(object):
 
         scheduler = dispatch_factory.scheduler()
         schedule_id = scheduler.add(call_request, **schedule_data)
-        # XXX (jconnor) do I need to associate the schedule with the consumer?
         return schedule_id
 
     def update_unit_install_schedule(self, consumer_id, schedule_id, install_options, schedule_data):
