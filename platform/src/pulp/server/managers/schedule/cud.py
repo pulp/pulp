@@ -218,8 +218,9 @@ class ScheduleManager(object):
             raise pulp_exceptions.MissingValue(['schedule'])
 
         manager = managers_factory.consumer_agent_manager()
-        args = [consumer_id, units]
-        kwargs = {'options': install_options['options']}
+        args = [consumer_id]
+        kwargs = {'units': units,
+                  'options': install_options['options']}
         weight = 0
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('unit_install'), action_tag('scheduled_unit_install')]
@@ -239,8 +240,10 @@ class ScheduleManager(object):
         if install_options:
             report = scheduler.get(schedule_id)
             call_request = report['call_request']
+            if 'units' in install_options:
+                call_request.kwargs['units'] = install_options['units']
             if 'options' in install_options:
-                call_request.kwargs = {'options': install_options['options']}
+                call_request.kwargs['options'] = install_options['options']
             schedule_updates['call_request'] = call_request
 
         scheduler.update(schedule_id, **schedule_updates)
