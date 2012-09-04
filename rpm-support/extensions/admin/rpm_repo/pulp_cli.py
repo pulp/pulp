@@ -421,7 +421,7 @@ def args_to_importer_config(kwargs):
     convert_file_contents(file_arguments, importer_config)
 
     # Handle skip types
-    if 'skip' in importer_config:
+    if importer_config.get('skip', None) is not None:
         skip_as_list = _convert_skip_types(importer_config['skip'])
         importer_config['skip'] = skip_as_list
 
@@ -453,7 +453,7 @@ def args_to_distributor_config(kwargs):
     convert_file_contents(file_arguments, distributor_config)
 
     # Handle skip types
-    if 'skip' in distributor_config:
+    if distributor_config.get('skip', None) is not None:
         skip_as_list = _convert_skip_types(distributor_config['skip'])
         distributor_config['skip'] = skip_as_list
 
