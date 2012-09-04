@@ -16,8 +16,9 @@ Classes used in the writing of Pulp client extensions.
 """
 
 from gettext import gettext as _
+import os
 
-from okaara.cli import Section, Command, Option, Flag, OptionGroup
+from okaara.cli import Section, Command, Option, Flag, OptionGroup, OptionValidationFailed, CommandUsage
 from okaara.cli import UnknownArgsParser # shadow here so extensions can import it from this module
 
 # -- cli components -----------------------------------------------------------
@@ -177,6 +178,47 @@ class PulpCliCommand(Command):
         flag = PulpCliFlag(name, description, aliases=aliases)
         self.add_option(flag)
         return flag
+
+    def execute(self, prompt, args):
+
+        # Override from Okaara to prevent any non-kwargs from being passed
+        # through to the underlying extensions, which have thus far always
+        # been told to expect only kwargs. There should be a cleaner way of
+        # overriding this in Okaara, but that would require a new build of
+        # Okaara and I'm (currently) addressing a CR-2 blocker. Going forward,
+        # I'll refactor Okaara and come back here to override the appropriate
+        # smaller call. jdob, Sep 4, 2012
+
+        # Parse the command arguments into a dictionary
+        try:
+            arg_list, kwarg_dict = self.parse_arguments(prompt, args)
+        except OptionValidationFailed:
+            return os.EX_DATAERR
+
+        # Pulp-specific logic of indicating a problem if there are non-kwargs
+        if len(arg_list) > 0:
+            raise CommandUsage()
+
+        # Make sure all of the required arguments have been specified
+
+        missing_required = [o for o in self.all_options()\
+                            if o.required and (not kwarg_dict.has_key(o.name) or
+                                               kwarg_dict[o.name] is None)]
+        if len(missing_required) > 0:
+            raise CommandUsage(missing_required)
+
+        # Flag entries that are not specified are parsed as None, but I'd rather
+        # them explicitly be set to false. Iterate through each flag explicitly
+        # setting the value to false if it was not specified
+        for o in self.options:
+            if isinstance(o, Flag) and kwarg_dict[o.name] is None:
+                kwarg_dict[o.name] = False
+
+        # Clean up option names
+        clean_kwargs = dict([(k.lstrip('-'), v) for k, v in kwarg_dict.items()])
+
+        return self.method(*arg_list, **clean_kwargs)
+
 
 class PulpCliOption(Option):
     pass
