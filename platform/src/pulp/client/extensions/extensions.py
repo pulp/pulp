@@ -215,15 +215,7 @@ class PulpCliCommand(Command):
                 kwarg_dict[o.name] = False
 
         # Clean up option names
-        clean_kwargs = {}
-        for key in kwarg_dict:
-            if key.startswith('--'):
-                clean_key = key[2:]
-            elif key.startswith('-'):
-                clean_key = key[1:]
-            else:
-                clean_key = key
-            clean_kwargs[clean_key] = kwarg_dict[key]
+        clean_kwargs = dict([(k.lstrip('-'), v) for k, v in kwarg_dict.items()])
 
         return self.method(*arg_list, **clean_kwargs)
 
