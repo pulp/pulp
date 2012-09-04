@@ -174,7 +174,7 @@ class SearchPuppetRepositoriesCommand(CriteriaCommand):
     def run(self, **kwargs):
 
         # Limit to only Puppet repositories
-        if 'str-eq' not in kwargs or kwargs['str-eq'] is None:
+        if kwargs.get('str-eq', None) is None:
             kwargs['str-eq'] = []
         kwargs['str-eq'].append(['notes.%s' % constants.REPO_NOTE_KEY, constants.REPO_NOTE_PUPPET])
 

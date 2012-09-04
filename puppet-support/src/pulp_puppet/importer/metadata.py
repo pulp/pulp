@@ -114,6 +114,7 @@ def _extract_json(module, filename, temp_dir):
     contents = _read_contents(temp_filename)
     return contents
 
+
 def _extract_non_standard_json(module, filename, temp_dir):
     """
     Called if the module's metadata file isn't found in the standard location.
@@ -153,6 +154,7 @@ def _extract_non_standard_json(module, filename, temp_dir):
         extraction_root = os.path.join(temp_dir, module.author)
         shutil.rmtree(extraction_root)
 
+
 def _read_contents(filename):
     """
     Simple utility to read in the contents of the given file, making sure to
@@ -170,6 +172,7 @@ def _read_contents(filename):
         # Clean up the temporary file
         os.remove(filename)
 
+        
 def _find_file_in_dir(dir, filename):
     """
     Recursively checks the directory for the presence of a file with the given

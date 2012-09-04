@@ -28,7 +28,7 @@ COLOR_PAUSED = COLOR_YELLOW
 # Command Default Descriptions
 DESC_UPLOAD = _('uploads one or more puppet modules into a repository')
 DESC_RESUME = _('resume a paused upload request')
-DESC_LIST = _('lists in progress and paused uploads')
+DESC_LIST = _('lists in-progress and paused uploads')
 DESC_CANCEL = _('cancels an outstanding upload request')
 
 # Options
@@ -84,7 +84,7 @@ class UploadCommand(PulpCliCommand):
 
         for d in specified_dirs:
             # Sanity check
-            if not os.path.exists(d):
+            if not os.path.isdir(d):
                 self.context.prompt.render_failure_message(_('Directory %(d)s does not exist') % {'d' : d})
                 return os.EX_IOERR
 
@@ -93,17 +93,14 @@ class UploadCommand(PulpCliCommand):
             all_filenames += files_in_dir
 
         # Make sure at least one file was found
-        if len(all_filenames) is 0:
+        if len(all_filenames) == 0:
             self.context.prompt.render_failure_message(_('No files selected for upload'))
             return os.EX_DATAERR
 
         # Integrity check on the total list of files
         for f in all_filenames:
-            if not os.path.exists(f) or not os.access(f, os.R_OK):
+            if not os.path.isfile(f) or not os.access(f, os.R_OK):
                 self.context.prompt.render_failure_message(_('File %(f)s does not exist or could not be read') % {'f' : f})
-                return os.EX_IOERR
-            if not os.path.isfile(f):
-                self.context.prompt.render_failure_message(_('%(f)s is not a file') % {'f' : f})
                 return os.EX_IOERR
 
         # Display the list of found files
@@ -114,19 +111,19 @@ class UploadCommand(PulpCliCommand):
             self.prompt.render_spacer()
 
         # Package into tuples of (filename, type_id, unit key, metadata)
-        file_tuples = [ [f, None, {}, {}] for f in all_filenames]
+        file_bundles = [ [f, None, {}, {}] for f in all_filenames]
 
         # Determine the metadata for each file
         self.prompt.write(_('Extracting necessary metdata for each file...'))
         bar = self.prompt.create_progress_bar()
 
-        for i, file_tuple in enumerate(file_tuples):
-            filename = file_tuple[0]
-            bar.render(i+1, len(file_tuples), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
+        for i, file_bundle in enumerate(file_bundles):
+            filename = file_bundle[0]
+            bar.render(i+1, len(file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
 
-            file_tuple[1] = self.determine_type_id(filename, **kwargs)
-            file_tuple[2].update(self.generate_unit_key(filename, **kwargs))
-            file_tuple[3].update(self.generate_metadata(filename, **kwargs))
+            file_bundle[1] = self.determine_type_id(filename, **kwargs)
+            file_bundle[2].update(self.generate_unit_key(filename, **kwargs))
+            file_bundle[3].update(self.generate_metadata(filename, **kwargs))
 
         self.prompt.write(_('... completed'))
         self.prompt.render_spacer()
@@ -136,13 +133,13 @@ class UploadCommand(PulpCliCommand):
         bar = self.prompt.create_progress_bar()
 
         upload_ids = []
-        for i, job in enumerate(file_tuples):
+        for i, job in enumerate(file_bundles):
             filename = job[0]
             type_id  = job[1]
             unit_key = job[2]
             metadata = job[3]
 
-            bar.render(i+1, len(file_tuples), message=_('Initializing: %(n)s') % {'n' : os.path.basename(filename)})
+            bar.render(i+1, len(file_bundles), message=_('Initializing: %(n)s') % {'n' : os.path.basename(filename)})
             upload_id = self.upload_manager.initialize_upload(filename, repo_id, type_id, unit_key, metadata)
             upload_ids.append(upload_id)
 
@@ -246,13 +243,13 @@ class ResumeCommand(PulpCliCommand):
         # Determine which (if any) uploads are eligible to resume
         uploads = self.upload_manager.list_uploads()
 
-        if len(uploads) is 0:
+        if len(uploads) == 0:
             d = _('No outstanding uploads found')
             self.context.prompt.render_paragraph(d)
             return
 
         non_running_uploads = [u for u in uploads if not u.is_running]
-        if len(non_running_uploads) is 0:
+        if len(non_running_uploads) == 0:
             d = _('All requests are currently in the process of being uploaded')
             self.context.prompt.render_paragraph(d)
             return
@@ -263,7 +260,7 @@ class ResumeCommand(PulpCliCommand):
         selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
 
         # User either selected no items or elected to abort (or ctrl+c)
-        if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) is 0:
+        if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) == 0:
             return
 
         # Resolve the user selections for display and uploading
@@ -299,7 +296,7 @@ class ListCommand(PulpCliCommand):
         uploads = self.upload_manager.list_uploads()
 
         # Punch out early if there are none
-        if len(uploads) is 0:
+        if len(uploads) == 0:
             d = _('No outstanding uploads found')
             self.context.prompt.render_paragraph(d)
             return
@@ -321,7 +318,7 @@ class ListCommand(PulpCliCommand):
 class CancelCommand(PulpCliCommand):
     """
     Displays a list of paused uploads and allows the user to select one or more
-    to resume uploading.
+    to cancel.
     """
 
     def __init__(self, context, upload_manager, name='cancel', description=DESC_CANCEL, method=None):
@@ -344,7 +341,7 @@ class CancelCommand(PulpCliCommand):
         uploads = self.upload_manager.list_uploads()
 
         # Punch out early if there are no requests we can act on
-        if len(uploads) is 0:
+        if len(uploads) == 0:
             d = _('No outstanding uploads found')
             self.context.prompt.render_paragraph(d)
             return
@@ -352,7 +349,7 @@ class CancelCommand(PulpCliCommand):
         # We can only cancel paused uploads, so check to make sure there is
         # at least one
         non_running_uploads = [u for u in uploads if not u.is_running]
-        if len(non_running_uploads) is 0:
+        if len(non_running_uploads) == 0:
             d = _('All requests are currently in the process of being uploaded. '
                   'Only paused uploads may be cancelled.')
             self.context.prompt.render_paragraph(d)
@@ -364,7 +361,7 @@ class CancelCommand(PulpCliCommand):
         selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
 
         # If the user selected none or aborted (or ctrl+c), punch out
-        if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) is 0:
+        if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) == 0:
             return
 
         # Resolve selected uploads against their associated metadata
@@ -397,14 +394,14 @@ def perform_upload(context, upload_manager, upload_ids):
     context is used to retrieve the bindings and this call will use the prompt
     to display output to the screen.
 
-    @param context: framework provided context
-    @type  context: PulpCliContext
+    :param context: framework provided context
+    :type  context: PulpCliContext
 
-    @param upload_manager: initialized upload manager instance
-    @type  upload_manager: UploadManager
+    :param upload_manager: initialized upload manager instance
+    :type  upload_manager: UploadManager
 
-    @param upload_ids: list of upload IDs to handle
-    @type  upload_ids: list
+    :param upload_ids: list of upload IDs to handle
+    :type  upload_ids: list
     """
 
     d = _('Starting upload of selected packages. If this process is stopped through '

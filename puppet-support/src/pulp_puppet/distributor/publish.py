@@ -324,6 +324,7 @@ class PuppetModulePublishRun(object):
         build_dir = os.path.join(self.repo.working_dir, 'build', self.repo.id)
         return build_dir
 
+
 def unpublish_repo(repo, config):
     """
     Performs all clean up required to stop hosting the provided repository.
@@ -339,6 +340,7 @@ def unpublish_repo(repo, config):
     for proto_key in (constants.CONFIG_HTTP_DIR, constants.CONFIG_HTTPS_DIR):
         proto_dir = config.get(proto_key)
         unpublish(proto_dir, repo)
+
 
 def unpublish(protocol_directory, repo):
     """

@@ -59,8 +59,8 @@ def _upload_manager(context):
     Instantiates and configures the upload manager. The context is used to
     access any necessary configuration.
 
-    @return: initialized and ready to run upload manager instance
-    @rtype:  pulp.client.upload.managerUploadManager
+    :return: initialized and ready to run upload manager instance
+    :rtype:  pulp.client.upload.manager.UploadManager
     """
     upload_working_dir = context.config['puppet']['upload_working_dir']
     upload_working_dir = os.path.expanduser(upload_working_dir)

@@ -168,7 +168,7 @@ class ListRepositoriesCommand(PulpCliCommand):
         order = filters
 
         query_params = {}
-        if kwargs['details'] is True:
+        if kwargs['details'] == True:
             filters.append('notes')
             for p in ('importers', 'distributors'):
                 query_params[p] = True
