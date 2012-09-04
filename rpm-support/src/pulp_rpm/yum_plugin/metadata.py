@@ -21,6 +21,8 @@ import signal
 import time
 from pulp_rpm.yum_plugin import util
 from pulp.common.util import encode_unicode, decode_unicode
+import rpmUtils
+from createrepo import yumbased
 
 _LOG = util.getLogger(__name__)
 __yum_lock = threading.Lock()
@@ -329,3 +331,14 @@ def convert_content_to_metadata_type(content_types_list):
         else:
             metadata_type_list.append(type)
     return metadata_type_list
+
+def get_package_xml(pkg):
+
+    ts = rpmUtils.transaction.initReadOnlyTransaction()
+    po = yumbased.CreateRepoPackage(ts, pkg)
+
+    metadata = {'primary' : po.xml_dump_primary_metadata(),
+                'filelists': po.xml_dump_filelists_metadata(),
+                'other'   : po.xml_dump_other_metadata(),
+               }
+    return metadata
