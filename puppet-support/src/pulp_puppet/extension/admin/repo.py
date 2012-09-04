@@ -15,7 +15,7 @@ from gettext import gettext as _
 
 from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client import arg_utils
-from pulp.client.commands.repo.cudl import CreateRepositoryCommand, ListRepositoriesCommand
+from pulp.client.commands.repo.cudl import CreateRepositoryCommand, ListRepositoriesCommand, UpdateRepositoryCommand
 from pulp.client.commands import options
 from pulp.client.extensions.extensions import PulpCliOption
 
@@ -93,7 +93,62 @@ class CreatePuppetRepositoryCommand(CreateRepositoryCommand):
         self.context.prompt.render_success_message(msg % {'r' : repo_id})
 
 
+class UpdatePuppetRepositoryCommand(UpdateRepositoryCommand):
+
+    def __init__(self, context):
+        super(UpdatePuppetRepositoryCommand, self).__init__(context)
+
+        self.add_option(OPTION_FEED)
+        self.add_option(OPTION_QUERY)
+        self.add_option(OPTION_HTTP)
+        self.add_option(OPTION_HTTPS)
+
+    def run(self, **kwargs):
+        # -- repository metadata --
+        repo_id = kwargs.pop(options.OPTION_REPO_ID.keyword)
+        description = kwargs.pop(options.OPTION_DESCRIPTION.keyword, None)
+        name = kwargs.pop(options.OPTION_NAME.keyword, None)
+
+        notes = None
+        if options.OPTION_NOTES.keyword in kwargs and kwargs[options.OPTION_NOTES.keyword] is not None:
+            notes = arg_utils.args_to_notes_dict(kwargs[options.OPTION_NOTES.keyword], include_none=True)
+
+            # Make sure the note indicating it's a puppet repository is still present
+            notes[constants.REPO_NOTE_KEY] = constants.REPO_NOTE_PUPPET
+
+        # -- importer metadata --
+        importer_config = {
+            constants.CONFIG_FEED : kwargs.pop(OPTION_FEED.keyword, None),
+            constants.CONFIG_QUERIES : kwargs.pop(OPTION_QUERY.keyword, None),
+        }
+        arg_utils.convert_removed_options(importer_config)
+
+        # -- distributor metadata --
+        distributor_config = {
+            constants.CONFIG_SERVE_HTTP : kwargs.pop(OPTION_HTTP.keyword, None),
+            constants.CONFIG_SERVE_HTTPS : kwargs.pop(OPTION_HTTPS.keyword, None),
+        }
+        arg_utils.convert_removed_options(distributor_config)
+        arg_utils.convert_boolean_arguments((constants.CONFIG_SERVE_HTTP, constants.CONFIG_SERVE_HTTPS), distributor_config)
+
+        distributor_configs = {constants.DISTRIBUTOR_ID : distributor_config}
+
+        # -- server update --
+        response = self.context.server.repo.update_repo_and_plugins(repo_id, name,
+                        description, notes, importer_config, distributor_configs)
+
+        if not response.is_async():
+            msg = _('Repository [%(r)s] successfully updated')
+            self.context.prompt.render_success_message(msg % {'r' : repo_id})
+        else:
+            d = _('Repository update postponed due to another operation. Progress '
+                'on this task can be viewed using the commands under "repo tasks".')
+            self.context.prompt.render_paragraph(d, tag='postponed')
+            self.context.prompt.render_reasons(response.response_body.reasons)
+
+
 class ListPuppetRepositoriesCommand(ListRepositoriesCommand):
+
     def get_repositories(self, query_params, **kwargs):
         all_repos = super(ListPuppetRepositoriesCommand, self).get_repositories(
                           query_params, **kwargs)
@@ -119,7 +174,7 @@ class SearchPuppetRepositoriesCommand(CriteriaCommand):
     def run(self, **kwargs):
 
         # Limit to only Puppet repositories
-        if kwargs['str-eq'] is None:
+        if kwargs.get('str-eq', None) is None:
             kwargs['str-eq'] = []
         kwargs['str-eq'].append(['notes.%s' % constants.REPO_NOTE_KEY, constants.REPO_NOTE_PUPPET])
 

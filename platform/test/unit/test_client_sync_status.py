@@ -170,9 +170,9 @@ class StatusTests(base.PulpClientTests):
         """
 
         # Setup
-        task_list = mock.MagicMock()
+        task = mock.MagicMock()
         mock_get.return_value = mock.MagicMock()
-        mock_get.return_value.response_body = task_list
+        mock_get.return_value.response_body = task
 
         task_id = 'fus'
 
@@ -186,7 +186,7 @@ class StatusTests(base.PulpClientTests):
         self.assertEqual(1, mock_display.call_count)
         self.assertEqual(self.context, mock_display.call_args[0][0])
         self.assertEqual(self.renderer, mock_display.call_args[0][1])
-        self.assertEqual([task_list], mock_display.call_args[0][2])
+        self.assertEqual([task], mock_display.call_args[0][2])
 
     @mock.patch('pulp.bindings.tasks.TaskGroupsAPI.get_task_group')
     @mock.patch('pulp.client.commands.repo.status.status._display_status')

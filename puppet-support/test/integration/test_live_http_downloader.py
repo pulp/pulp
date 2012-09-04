@@ -79,7 +79,7 @@ class LiveHttpDownloaderTests(unittest.TestCase):
         self.assertTrue(os.path.exists(expected_file))
 
         # Extract the metadata to make sure the tar is valid and we can open it
-        metadata.extract_metadata(module, module_dir, self.working_dir)
+        metadata.extract_metadata(module, expected_file, self.working_dir)
 
         # Spot check that something from the metadata was stuffed into the module
         self.assertTrue(module.checksums is not None)

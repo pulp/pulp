@@ -88,14 +88,14 @@ class RepositoryMetadataTests(unittest.TestCase):
         self.assertEqual(sorted_modules[0].name, 'common')
         self.assertEqual(sorted_modules[0].author, 'lab42')
         self.assertEqual(sorted_modules[0].version, '0.0.1')
-        self.assertEqual(sorted_modules[0].tags, [])
+        self.assertEqual(sorted_modules[0].tag_list, [])
         self.assertEqual(sorted_modules[0].description, None)
         self.assertEqual(sorted_modules[0].project_page, None)
 
         self.assertEqual(sorted_modules[1].name, 'postfix')
         self.assertEqual(sorted_modules[1].author, 'lab42')
         self.assertEqual(sorted_modules[1].version, '0.0.2')
-        self.assertEqual(sorted_modules[1].tags, ['postfix', 'applications'])
+        self.assertEqual(sorted_modules[1].tag_list, ['postfix', 'applications'])
         self.assertEqual(sorted_modules[1].description, None)
         self.assertEqual(sorted_modules[1].project_page, None)
 

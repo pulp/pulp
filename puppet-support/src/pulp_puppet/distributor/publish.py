@@ -95,7 +95,8 @@ class PuppetModulePublishRun(object):
         :rtype:  list of pulp.plugins.model.AssociatedUnit
         """
         self.progress_report.modules_state = STATE_RUNNING
-        self.progress_report.update_progress()
+        # Do not update here; the counts need to be set first by the
+        # symlink_modules call.
 
         start_time = datetime.now()
 
@@ -283,8 +284,7 @@ class PuppetModulePublishRun(object):
         proto_dir = self.config.get(constants.CONFIG_HTTP_DIR)
         repo_dest_dir = os.path.join(proto_dir, self.repo.id)
 
-        if os.path.exists(repo_dest_dir):
-            shutil.rmtree(repo_dest_dir)
+        unpublish(proto_dir, self.repo)
 
         should_serve = self.config.get_boolean(constants.CONFIG_SERVE_HTTP)
         if should_serve:
@@ -299,8 +299,7 @@ class PuppetModulePublishRun(object):
         proto_dir = self.config.get(constants.CONFIG_HTTPS_DIR)
         repo_dest_dir = os.path.join(proto_dir, self.repo.id)
 
-        if os.path.exists(repo_dest_dir):
-            shutil.rmtree(repo_dest_dir)
+        unpublish(proto_dir, self.repo)
 
         should_serve = self.config.get_boolean(constants.CONFIG_SERVE_HTTPS)
         if should_serve:
@@ -324,3 +323,36 @@ class PuppetModulePublishRun(object):
         """
         build_dir = os.path.join(self.repo.working_dir, 'build', self.repo.id)
         return build_dir
+
+
+def unpublish_repo(repo, config):
+    """
+    Performs all clean up required to stop hosting the provided repository.
+    If the repository was never published, this call has no effect.
+
+    :param repo: repository instance given to the plugin by Pulp
+    :type  repo: pulp.plugins.model.Repository
+    :param config: config instance passed into the plugin by Pulp
+    :type  config: pulp.plugins.config.PluginCallConfiguration
+    :return:
+    """
+
+    for proto_key in (constants.CONFIG_HTTP_DIR, constants.CONFIG_HTTPS_DIR):
+        proto_dir = config.get(proto_key)
+        unpublish(proto_dir, repo)
+
+
+def unpublish(protocol_directory, repo):
+    """
+    Unpublishes the repository from the given protocol hosting directory.
+    If the repository was never published, this call has no effect.
+
+    :param protocol_directory: directory the repository was published to
+    :type  protocol_directory: str
+    :param repo: repository instance given to the plugin by Pulp
+    :type  repo: pulp.plugins.model.Repository
+    """
+    repo_dest_dir = os.path.join(protocol_directory, repo.id)
+
+    if os.path.exists(repo_dest_dir):
+        shutil.rmtree(repo_dest_dir)
