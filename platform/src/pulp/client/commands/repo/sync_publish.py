@@ -54,8 +54,12 @@ class RunSyncRepositoryCommand(PulpCliCommand):
     entirely through a flag on the run command.
     """
 
-    def __init__(self, context, renderer):
-        super(RunSyncRepositoryCommand, self).__init__('run', DESC_SYNC_RUN, self.run)
+    def __init__(self, context, renderer, name='run', description=DESC_SYNC_RUN, method=None):
+
+        if method is None:
+            method = self.run
+
+        super(RunSyncRepositoryCommand, self).__init__(name, description, method)
 
         self.context = context
         self.prompt = context.prompt
@@ -95,8 +99,12 @@ class RunSyncRepositoryCommand(PulpCliCommand):
 
 
 class SyncStatusCommand(PulpCliCommand):
-    def __init__(self, context, renderer):
-        super(SyncStatusCommand, self).__init__('status', DESC_STATUS, self.run)
+    def __init__(self, context, renderer, name='status', description=DESC_STATUS, method=None):
+
+        if method is None:
+            method = self.run
+
+        super(SyncStatusCommand, self).__init__(name, description, method)
 
         self.context = context
         self.prompt = context.prompt

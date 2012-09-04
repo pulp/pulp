@@ -198,7 +198,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
     def test_structure(self):
         # Ensure the correct arguments are present
-        expected_option_names = set(['--summary', '--fields', '--importers', '--distributors'])
+        expected_option_names = set(['--details', '--fields'])
         found_option_names = set([o.name for o in self.command.options])
         self.assertEqual(expected_option_names, found_option_names)
 
@@ -210,12 +210,10 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.description, cudl.DESC_LIST)
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document_list')
-    def test_run_with_summary(self, mock_call):
+    def test_run_with_details(self, mock_call):
         # Setup
         data = {
-            'summary' : True,
-            'importers' : True,
-            'distributors' : True,
+            'details' : True,
         }
 
         self.server_mock.request.return_value = 200, []
@@ -233,7 +231,8 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertTrue('distributors=True' in url)
 
         render_kwargs = mock_call.call_args[1]
-        expected = ['id', 'display_name', 'importers', 'distributors']
+        expected = ['id', 'display_name', 'description', 'content_unit_count',
+                    'notes', 'importers', 'distributors']
         self.assertEqual(render_kwargs['filters'], expected)
         self.assertEqual(render_kwargs['order'], expected)
 
@@ -241,9 +240,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
     def test_run_with_fields(self, mock_call):
         # Setup
         data = {
-            'summary' : None,
-            'importers' : None,
-            'distributors' : None,
+            'details' : False,
             'fields' : 'display_name'
         }
 
@@ -254,5 +251,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
         # Verify
         render_kwargs = mock_call.call_args[1]
-        self.assertEqual(render_kwargs['filters'], ['display_name', 'id'])
+        expected_filters = ['display_name', 'id']
+
+        self.assertEqual(render_kwargs['filters'], expected_filters)
         self.assertEqual(render_kwargs['order'], ['id'])

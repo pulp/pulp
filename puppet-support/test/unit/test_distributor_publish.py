@@ -61,7 +61,8 @@ class PublishRunTests(unittest.TestCase):
             key = {'name' : name, 'version' : version, 'author' : author}
             storage_dir = os.path.join(FAKE_PULP_STORAGE_DIR, module)
 
-            u = Unit(constants.TYPE_PUPPET_MODULE, key, {}, storage_dir)
+            metadata = {'checksums' : [['a', 'a'], ['b', 'b']]}
+            u = Unit(constants.TYPE_PUPPET_MODULE, key, metadata, storage_dir)
             self.units.append(u)
         self.conduit = MockConduit()
         self.conduit.get_units.return_value = self.units
@@ -254,3 +255,14 @@ class PublishRunTests(unittest.TestCase):
 
         self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
 
+    def test_unpublish_repo(self):
+        # Setup
+        os.makedirs(os.path.join(self.test_http_dir, self.repo.id))
+        os.makedirs(os.path.join(self.test_https_dir, self.repo.id))
+
+        # Test
+        publish.unpublish_repo(self.repo, self.config)
+
+        # Verify
+        self.assertTrue(not os.path.exists(os.path.join(self.test_http_dir, self.repo.id)))
+        self.assertTrue(not os.path.exists(os.path.join(self.test_https_dir, self.repo.id)))

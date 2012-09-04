@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
 import logging
 import unittest
 
@@ -22,6 +23,24 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpPrompt, ClientContext, PulpCli
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
+
+# Can be used by tests to simulate a task response. Be sure to copy this before
+# making any changes, or better yet, use the method in ExtensionsTests.
+TASK_TEMPLATE = {
+    "exception": None,
+    "task_group_id": 'default-group',
+    "task_id": 'default-id',
+    "tags": [],
+    "reasons": [],
+    "start_time": None,
+    "traceback": None,
+    "state": None,
+    "finish_time": None,
+    "schedule_id": None,
+    "result": None,
+    "progress": {},
+    "response": None,
+}
 
 
 class ExtensionTests(unittest.TestCase):
@@ -49,3 +68,11 @@ class ExtensionTests(unittest.TestCase):
 
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli
+
+    def task(self):
+        """
+        :return: dict that contains all of the values needed to simulate a task
+                 coming back from the server
+        :rtype:  dict
+        """
+        return copy.copy(TASK_TEMPLATE)
