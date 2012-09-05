@@ -78,19 +78,19 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
         optional_kwargs = {"checksum_type" :  "sha512"}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        _checksum_type_value = metadata.get_repo_checksum_type(mock_repo, mock_publish_conduit, config)
+        _checksum_type_value = metadata.get_repo_checksum_type(mock_publish_conduit, config)
         print _checksum_type_value
         self.assertEquals(_checksum_type_value, optional_kwargs['checksum_type'])
         optional_kwargs = {}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
-        _checksum_type_value = metadata.get_repo_checksum_type(mock_repo, mock_publish_conduit, config)
+        _checksum_type_value = metadata.get_repo_checksum_type(mock_publish_conduit, config)
         print _checksum_type_value
         self.assertEquals(_checksum_type_value, "sha")
         mock_repo.scratchpad = None
         optional_kwargs = {}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit(checksum_type=None)
-        _checksum_type_value = metadata.get_repo_checksum_type(mock_repo, mock_publish_conduit, config)
+        _checksum_type_value = metadata.get_repo_checksum_type(mock_publish_conduit, config)
         print _checksum_type_value
         self.assertEquals(_checksum_type_value, "sha256")
 

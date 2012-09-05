@@ -692,7 +692,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
 
             config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir,
                 http_publish_dir=self.http_publish_dir, relative_url="rel_temp/",
-                generate_metadata=True, http=True, https=False)
+                generate_metadata=True, http=True, https=False, use_createrepo=True)
             test_thread = TestPublishThread(working_dir, self.pkg_dir, config)
             test_thread.start()
             running = False

@@ -34,7 +34,7 @@ _ = gettext.gettext
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
 OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
                         "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "skip", "https_publish_dir", "http_publish_dir"]
+                        "checksum_type", "skip", "https_publish_dir", "http_publish_dir", "use_createrepo"]
 
 SUPPORTED_UNIT_TYPES = [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_DISTRO]
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
@@ -127,6 +127,12 @@ class YumDistributor(Distributor):
                 generate_metadata = config.get('generate_metadata')
                 if generate_metadata is not None and not isinstance(generate_metadata, bool):
                     msg = _("generate_metadata should be a boolean; got %s instead" % generate_metadata)
+                    _LOG.error(msg)
+                    return False, msg
+            if key == 'use_createrepo':
+                use_createrepo = config.get('use_createrepo')
+                if use_createrepo is not None and not isinstance(use_createrepo, bool):
+                    msg = _("use_createrepo should be a boolean; got %s instead" % use_createrepo)
                     _LOG.error(msg)
                     return False, msg
             if key == 'checksum_type':
@@ -417,11 +423,7 @@ class YumDistributor(Distributor):
             distro_status, distro_errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
             if not distro_status:
                 _LOG.error("Unable to publish distribution tree %s items" % (len(distro_errors)))
-        # update/generate metadata for the published repo
-        repo_scratchpad = publish_conduit.get_repo_scratchpad()
-        src_working_dir = ''
-        if repo_scratchpad.has_key("importer_working_dir"):
-            src_working_dir = repo_scratchpad['importer_working_dir']
+
 
         if self.canceled:
             return publish_conduit.build_failure_report(summary, details)
@@ -435,9 +437,19 @@ class YumDistributor(Distributor):
             existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
             groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
         metadata_start_time = time.time()
+        # update/generate metadata for the published repo
+        repo_scratchpad = publish_conduit.get_repo_scratchpad()
+        src_working_dir = ''
+        if repo_scratchpad.has_key("importer_working_dir"):
+            src_working_dir = repo_scratchpad['importer_working_dir']
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
-        metadata_status, metadata_errors = metadata.generate_metadata(
+        if config.get('use_createrepo'):
+            metadata_status, metadata_errors = metadata.generate_metadata(
                 repo, publish_conduit, config, progress_callback, groups_xml_path)
+        else:
+            # default to per package metadata
+            metadata_status, metadata_errors =  metadata.generate_yum_metadata(repo.working_dir, rpm_units,
+                publish_conduit, config, progress_callback)
         metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):

@@ -64,6 +64,7 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
     ('skip', 'skip_types'),
+    ('use_createrepo', 'use_createrepo')
 ]
 
 VALID_SKIP_TYPES = ['rpm', 'drpm', 'distribution', 'erratum']
@@ -395,6 +396,8 @@ def add_repo_options(command, is_update):
     publish_group.add_option(PulpCliOption('--checksum-type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg-key', 'GPG key used to sign and verify packages in the repository', required=False))
     publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed; defaults to false', required=False))
+    publish_group.add_option(PulpCliOption('--use-createrepo', 'if "true", when the repository is published the repo metadata will be regenerated using createrepo tool instead of using the mertadata from the database; defaults to false', required=False))
+
 
     # Publish Security Options
     repo_auth_group.add_option(PulpCliOption('--host-ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
@@ -445,7 +448,7 @@ def args_to_distributor_config(kwargs):
     distributor_config = _prep_config(kwargs, DISTRIBUTOR_CONFIG_KEYS)
 
     # Parsing of true/false
-    boolean_arguments = ('http', 'https', 'generate_metadata')
+    boolean_arguments = ('http', 'https', 'generate_metadata', 'use_createrepo')
     convert_boolean_arguments(boolean_arguments, distributor_config)
 
     # Read in the contents of any files that were specified
