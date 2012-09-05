@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.325
+Version: 0.0.326
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -237,6 +237,11 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Aug 31 2012 Jeff Ortel <jortel@redhat.com> 0.0.326-1
+- 850875 - Fixed an incorrect reference, and in the process replaced two legacy
+  CLI commands with modern equivalents. (mhrivnak@redhat.com)
+- Consumer Group support (james.slagle@gmail.com)
+
 * Sun Aug 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
 - 848510 - changed sync and status commands to utilize the new task group
   support in display_status (jason.connor@gmail.com)

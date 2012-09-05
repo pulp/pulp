@@ -25,7 +25,7 @@ executing. Polling returns a :ref:`call_report`
 
 | :return:`call report representing the current state of the asynchronous call`
 
-:sample_response:`202` ::
+:sample_response:`200` ::
 
  {
   "_href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
@@ -33,7 +33,7 @@ executing. Polling returns a :ref:`call_report`
   "reasons": [{"resource_type": "repository", "resource_id": "test-repo", "operation": "update"}],
   "state": "running",
   "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-  "job_id": null,
+  "task_group_id": null,
   "schedule_id": null,
   "progress": {},
   "result": null,
