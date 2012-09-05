@@ -33,10 +33,6 @@ class ContentSection(PulpCliSection):
             _('content management on downstream pulp servers'))
         for Command in (Update,):
             command = Command(context)
-            command.create_option(
-                '--pulp-id',
-                _('identifies the pulp server'),
-                required=True)
             self.add_command(command)
 
 
