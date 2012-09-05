@@ -33,7 +33,9 @@ BuildRequires:  rpm-python
 
 %description
 Provides a collection of platform plugins, client extensions and agent
-handlers that provide citrus support.
+handlers that provide citrus support.  Citrus provides the ability for
+downstream Pulp server to synchronize repositories and content with the
+upstream server to which it has registered as a consumer.
 
 %prep
 %setup -q
@@ -86,11 +88,12 @@ Group: Development/Languages
 Requires: pulp-server = %{version}
 
 %description plugins
-Plugins to support downstream pulp servers.
+Plugins to provide citrus support.
 
 %files plugins
 %defattr(-,root,root,-)
-%{_usr}/lib/pulp/plugins/distributors/pulp_distributor/
+%{_usr}/lib/pulp/plugins/importer/citrus_importer/
+%{_usr}/lib/pulp/plugins/distributors/citrus_distributor/
 %doc
 
 # ---- Admin (builtin) Extensions ----------------------------------------------
@@ -122,8 +125,8 @@ Pulp citrus handlers.
 
 %files handlers
 %defattr(-,root,root,-)
-%{_sysconfdir}/pulp/agent/conf.d/repository.conf
-%{_usr}/lib/pulp/agent/handlers/repository.py*
+%{_sysconfdir}/pulp/agent/conf.d/citrus.conf
+%{_usr}/lib/pulp/agent/handlers/citrus.py*
 %doc
 
 
