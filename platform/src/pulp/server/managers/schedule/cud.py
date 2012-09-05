@@ -233,7 +233,7 @@ class ScheduleManager(object):
 
     def update_unit_install_schedule(self, consumer_id, schedule_id, units=None, install_options=None, schedule_data=None):
         self._validate_consumer(consumer_id)
-        schedule_updates = copy.copy(schedule_data)
+        schedule_updates = copy.copy(schedule_data) or {}
 
         scheduler = dispatch_factory.scheduler()
         report = scheduler.get(schedule_id)
