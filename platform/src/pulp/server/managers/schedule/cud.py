@@ -220,7 +220,7 @@ class ScheduleManager(object):
         manager = managers_factory.consumer_agent_manager()
         args = [consumer_id]
         kwargs = {'units': units,
-                  'options': install_options['options']}
+                  'options': install_options.get('options', {})}
         weight = 0
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('unit_install'), action_tag('scheduled_unit_install')]
@@ -231,19 +231,20 @@ class ScheduleManager(object):
         schedule_id = scheduler.add(call_request, **schedule_data)
         return schedule_id
 
-    def update_unit_install_schedule(self, consumer_id, schedule_id, install_options, schedule_data):
+    def update_unit_install_schedule(self, consumer_id, schedule_id, units=None, install_options=None, schedule_data=None):
         self._validate_consumer(consumer_id)
         schedule_updates = copy.copy(schedule_data)
 
         scheduler = dispatch_factory.scheduler()
+        report = scheduler.get(schedule_id)
+        call_request = report['call_request']
 
-        if install_options:
-            report = scheduler.get(schedule_id)
-            call_request = report['call_request']
-            if 'units' in install_options:
-                call_request.kwargs['units'] = install_options['units']
-            if 'options' in install_options:
-                call_request.kwargs['options'] = install_options['options']
+        if units is not None:
+            call_request.kwargs['units'] = install_options['units']
+            schedule_updates['call_request'] = call_request
+
+        if install_options is not None and 'options' in install_options:
+            call_request.kwargs['options'] = install_options['options']
             schedule_updates['call_request'] = call_request
 
         scheduler.update(schedule_id, **schedule_updates)

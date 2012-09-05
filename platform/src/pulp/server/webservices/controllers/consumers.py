@@ -730,12 +730,11 @@ class UnitInstallScheduleResource(JSONController):
     @auth_required(UPDATE)
     def PUT(self, consumer_id, schedule_id):
         schedule_data = self.params()
-        install_options = {}
+        install_options = None
+        units = schedule_data.pop('units', None)
 
-        if 'units' in schedule_data:
-            install_options['units'] = schedule_data.pop('units')
         if 'options' in schedule_data:
-            install_options['options'] = schedule_data.pop('options')
+            install_options = {'options': schedule_data.pop('options')}
 
         schedule_manager = managers.schedule_manager()
 
@@ -744,7 +743,7 @@ class UnitInstallScheduleResource(JSONController):
                 action_tag('update_unit_install_schedule')]
 
         call_request = CallRequest(schedule_manager.update_unit_install_schedule,
-                                   [consumer_id, schedule_id, install_options, schedule_data],
+                                   [consumer_id, schedule_id, units, install_options, schedule_data],
                                    tags=tags,
                                    archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
