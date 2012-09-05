@@ -132,5 +132,8 @@ Pulp citrus handlers.
 
 
 %changelog
+* Wed Sep 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-2
+- spec changes.
+
 * Wed Sep 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
 - new package built with tito
