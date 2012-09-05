@@ -13,6 +13,7 @@
 import gettext
 import re
 import shutil
+
 from pulp_rpm.yum_plugin import util
 _LOG = util.getLogger(__name__)
 _ = gettext.gettext
@@ -21,11 +22,13 @@ HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/isos"
 HTTPS_PUBLISH_DIR="/var/lib/pulp/published/https/isos"
 ISO_NAME_REGEX = re.compile(r'^[_A-Za-z0-9-]+$')
 
+
 def is_valid_prefix(iso_prefix):
     """
     @return: True if the given iso_prefix is a valid match; False otherwise
     """
     return ISO_NAME_REGEX.match(iso_prefix) is not None
+
 
 def get_http_publish_iso_dir(config=None):
     """
@@ -39,6 +42,7 @@ def get_http_publish_iso_dir(config=None):
             return publish_dir
     return HTTP_PUBLISH_DIR
 
+
 def get_https_publish_iso_dir(config=None):
     """
     @param config
@@ -51,6 +55,7 @@ def get_https_publish_iso_dir(config=None):
             return publish_dir
     return HTTPS_PUBLISH_DIR
 
+
 def cleanup_working_dir(working_dir):
     """
     remove exported content from working dirctory
@@ -61,9 +66,11 @@ def cleanup_working_dir(working_dir):
     except (IOError, OSError), e:
         _LOG.error("unable to clean up working directory; Error: %s" % e)
 
+
 def form_lookup_key(rpm):
     rpm_key = (rpm["name"], rpm["epoch"], rpm["version"], rpm['release'], rpm["arch"], rpm["checksumtype"], rpm["checksum"])
     return rpm_key
+
 
 def form_unit_key_map(units):
     existing_units = {}

@@ -13,20 +13,15 @@
 
 import os
 import gettext
-import logging
-import re
 import shutil
-import string
 import time
-import traceback
-import math
+
 from pulp_rpm.yum_plugin import util, metadata
 from pulp.plugins.distributor import GroupDistributor
 from iso_distributor.generate_iso import GenerateIsos
 from iso_distributor.exporter import RepoExporter
 from iso_distributor import iso_util
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-
 from pulp_rpm.common.ids import TYPE_ID_DISTRIBUTOR_ISO, TYPE_ID_DISTRO, TYPE_ID_DRPM, \
     TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import comps_util
@@ -84,6 +79,9 @@ class GroupISODistributor(GroupDistributor):
             }
 
     def validate_config(self, repo, config, related_repos):
+        """
+        see parent class for the doc string
+        """
         _LOG.info("validate_config invoked, config values are: %s" % (config.repo_plugin_config))
         for key in REQUIRED_CONFIG_KEYS:
             value = config.get(key)
@@ -156,6 +154,9 @@ class GroupISODistributor(GroupDistributor):
 
 
     def cancel_publish_group(self, call_request, call_report):
+        """
+        see parent class for the doc string
+        """
         self.canceled = True
 
     def init_group_progress(self):
@@ -168,6 +169,9 @@ class GroupISODistributor(GroupDistributor):
                                      "repositories":       {},}
 
     def publish_group(self, repo_group, publish_conduit, config):
+        """
+        see parent class for doc string
+        """
         self.group_working_dir = group_working_dir = repo_group.working_dir
         skip_types = config.get("skip") or []
         self.init_group_progress()

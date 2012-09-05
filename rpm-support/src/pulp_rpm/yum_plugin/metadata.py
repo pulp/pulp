@@ -51,7 +51,7 @@ def generate_metadata(repo_working_dir, publish_conduit, config, progress_callba
       build all the necessary info and invoke createrepo to generate metadata
 
       @param repo_working_dir: rpository working directory where metadata is written
-      @type  repo: str
+      @type  repo_working_dir: str
 
       @param config: plugin configuration
       @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}

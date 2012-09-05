@@ -14,6 +14,7 @@
 import os
 import gettext
 import traceback
+
 from pulp_rpm.yum_plugin import util
 from pulp_rpm.yum_plugin import util, updateinfo, metadata
 from iso_distributor import iso_util
@@ -50,12 +51,18 @@ class RepoExporter(object):
             progress_callback(type_id, status)
 
     def create_date_range_filter(self, config):
-        start_date = None
-        if config.get("start_date"):
-            start_date = config.get("start_date") or None
-        end_date = None
-        if config.get("end_date"):
-            end_date = config.get("end_date") or None
+        """
+        create a date filter based on start and end issue dates specified in the
+        repo config.
+        @param config: plugin configuration instance; the proposed repo
+                       configuration is found within
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+
+        @return date filter dict with issued date ranges
+        @rtype {}
+        """
+        start_date = config.get("start_date")
+        end_date = config.get("end_date")
         date_filter = None
         if start_date and end_date:
             date_filter = {"issued" : {"$gte": start_date, "$lte": end_date}}
@@ -219,12 +226,12 @@ class RepoExporter(object):
 
     def export_distributions(self, units, progress_callback=None):
         """
-        Export distriubution unit involves including files within the unit.
+        Export distribution unit involves including files within the unit.
         Distribution is an aggregate unit with distribution files. This call
         looksup each distribution unit and symlinks the files from the storage location
         to working directory.
 
-        @param units: list of assocuated units to be exported
+        @param units: list of associated units to be exported
         @type list of AssociatedUnit
 
         @param progress_callback: callback to report progress info to publish_conduit
@@ -264,7 +271,7 @@ class RepoExporter(object):
                     distro_progress_status["items_left"] -= 1
                     continue
                 try:
-                    if not util.create_copy(source_path, symlink_path): #util.create_symlink(source_path, symlink_path):
+                    if not util.create_copy(source_path, symlink_path):
                         msg = "Unable to create copy for: %s pointing to %s" % (symlink_path, source_path)
                         _LOG.error(msg)
                         errors.append((source_path, symlink_path, msg))

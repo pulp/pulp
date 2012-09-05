@@ -74,7 +74,6 @@ class TestGroupISODistributor(rpm_support_base.PulpRPMTests):
 
         self.data_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./data"))
 
-
     def clean(self):
         shutil.rmtree(self.temp_dir)
 
@@ -197,8 +196,6 @@ class TestGroupISODistributor(rpm_support_base.PulpRPMTests):
         print auth_cert
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
-
-
 
     def test_group_publish_isos(self):
         feed_url = "file://%s/pulp_unittest/" % self.data_dir

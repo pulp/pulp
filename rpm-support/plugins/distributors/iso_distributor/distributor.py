@@ -271,7 +271,6 @@ class ISODistributor(Distributor):
                 isogen.run(progress_callback=progress_callback)
                 self.summary["https_publish_dir"] = https_repo_publish_dir
                 self.set_progress("publish_https", {"state" : "FINISHED"}, progress_callback)
-#                progress_status["isos"]["state"] = "FINISHED"
             except:
                 self.set_progress("publish_https", {"state" : "FAILED"}, progress_callback)
         else:
