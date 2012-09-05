@@ -240,7 +240,7 @@ class ScheduleManager(object):
         call_request = report['call_request']
 
         if units is not None:
-            call_request.kwargs['units'] = install_options['units']
+            call_request.kwargs['units'] = units
             schedule_updates['call_request'] = call_request
 
         if install_options is not None and 'options' in install_options:
