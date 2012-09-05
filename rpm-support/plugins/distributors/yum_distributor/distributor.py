@@ -435,7 +435,7 @@ class YumDistributor(Distributor):
             existing_units = publish_conduit.get_units(criteria)
             existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
             existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
-            groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
+            groups_xml_path = comps_util.write_comps_xml(repo.working_dir, existing_groups, existing_cats)
         metadata_start_time = time.time()
         # update/generate metadata for the published repo
         repo_scratchpad = publish_conduit.get_repo_scratchpad()

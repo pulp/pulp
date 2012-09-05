@@ -63,12 +63,12 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
         optional_kwargs = {"generate_metadata" :  1}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status, errors = metadata.generate_metadata(mock_repo, mock_publish_conduit, config)
+        status, errors = metadata.generate_metadata(mock_repo.working_dir, mock_publish_conduit, config)
         self.assertEquals(status, True)
         optional_kwargs = {"generate_metadata" :  0}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status, errors = metadata.generate_metadata(mock_repo, mock_publish_conduit, config)
+        status, errors = metadata.generate_metadata(mock_repo.working_dir, mock_publish_conduit, config)
         self.assertEquals(status, False)
 
     def test_get_checksum_type(self):
@@ -120,7 +120,7 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
                 self.finished = False
 
             def run(self):
-                self.status, self.errors = metadata.generate_metadata(self.mock_repo, self.mock_publish_conduit, self.config, set_progress)
+                self.status, self.errors = metadata.generate_metadata(self.mock_repo.working_dir, self.mock_publish_conduit, self.config, set_progress)
                 self.finished = True
             
             def __check_pid(self, pid):

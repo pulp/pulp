@@ -51,12 +51,12 @@ def set_progress(type_id, status, progress_callback):
     if progress_callback:
         progress_callback(type_id, status)
 
-def generate_metadata(repo, publish_conduit, config, progress_callback=None, groups_xml_path=None):
+def generate_metadata(repo_working_dir, publish_conduit, config, progress_callback=None, groups_xml_path=None):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
-      @param repo: metadata describing the repository
-      @type  repo: L{pulp.server.content.plugins.data.Repository}
+      @param repo_working_dir: rpository working directory where metadata is written
+      @type  repo_working_dir: str
 
       @param config: plugin configuration
       @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
@@ -74,7 +74,7 @@ def generate_metadata(repo, publish_conduit, config, progress_callback=None, gro
     if not config.get('generate_metadata'):
         metadata_progress_status = {"state" : "SKIPPED"}
         set_progress("metadata", metadata_progress_status, progress_callback)
-        _LOG.info('skip metadata generation for repo %s' % repo.id)
+        _LOG.info('skip metadata generation process')
         return False, []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     repo_dir = repo.working_dir
@@ -125,10 +125,14 @@ def get_repo_checksum_type(publish_conduit, config):
     checksum_type = config.get('checksum_type')
     if checksum_type:
         return checksum_type
-    scratchpad_data = publish_conduit.get_repo_scratchpad()
-    if not scratchpad_data:
-        return DEFAULT_CHECKSUM
-    checksum_type = scratchpad_data['checksum_type']
+    try:
+        scratchpad_data = publish_conduit.get_repo_scratchpad()
+        if not scratchpad_data:
+            return DEFAULT_CHECKSUM
+        checksum_type = scratchpad_data['checksum_type']
+    except AttributeError:
+        _LOG.debug("get_repo_scratchpad not found on publish conduit")
+        checksum_type = DEFAULT_CHECKSUM
     return checksum_type
 
 
