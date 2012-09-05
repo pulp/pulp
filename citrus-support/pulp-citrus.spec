@@ -62,10 +62,10 @@ mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 
 # Configuration
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+cp -R etc/httpd %{buildroot}/%{_sysconfdir}
 
 # Extensions
 cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/pulp/admin/extensions
-cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 
 # Agent Handlers
 cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
@@ -92,7 +92,8 @@ Plugins to provide citrus support.
 
 %files plugins
 %defattr(-,root,root,-)
-%{_usr}/lib/pulp/plugins/importer/citrus_importer/
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_citrus.conf
+%{_usr}/lib/pulp/plugins/importers/citrus_importer/
 %{_usr}/lib/pulp/plugins/distributors/citrus_distributor/
 %doc
 
@@ -150,7 +151,7 @@ Pulp citrus handlers.
 - iso prefix override option to override iso naming (pkilambi@redhat.com)
 
 * Wed Aug 08 2012 Jeff Ortel <jortel@redhat.com> 0.0.322-1
-- 845109 - changing consumer id admin client extensions option to --consumer-id
+- 845109 - changing onsumer id admin client extensions option to --consumer-id
   instead of --id (skarmark@redhat.com)
 - unit search within a repository through the CLI now used the standard
   criteria features. (mhrivnak@redhat.com)
