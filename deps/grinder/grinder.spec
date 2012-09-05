@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Sep 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.6-1
+- updating grinder to 0.1.6 (pkilambi@redhat.com)
+
+* Wed Sep 05 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.6-1
 - Include metadata info per package when rpm info is setup during sync
   (pkilambi@redhat.com)
 
