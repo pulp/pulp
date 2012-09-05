@@ -279,6 +279,19 @@ class ScheduledUnitInstallTests(ScheduleTests):
         self.assertTrue(_TEST_UNITS == scheduled_call['call_request'].kwargs['units'])
         self.assertTrue(install_options['options'] == scheduled_call['call_request'].kwargs['options'])
 
+    def test_create_schedule_invalid_consumer(self):
+        install_options = {'options': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+
+        self.assertRaises(pulp_exceptions.MissingResource,
+                          self.schedule_manager.create_unit_install_schedule,
+                          'invalid-consumer', _TEST_UNITS, install_options, schedule_data)
+
+    def test_create_schedule_missing_schedule(self):
+        self.assertRaises(pulp_exceptions.MissingValue,
+                          self.schedule_manager.create_unit_install_schedule,
+                          self.consumer_id, _TEST_UNITS, {}, {})
+
     def test_delete_schedule(self):
         schedule_data = {'schedule': 'R1/P1DT'}
         schedule_id = self.schedule_manager.create_unit_install_schedule(self.consumer_id, _TEST_UNITS, {}, schedule_data)
