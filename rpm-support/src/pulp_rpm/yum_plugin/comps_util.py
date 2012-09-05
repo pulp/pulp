@@ -375,14 +375,14 @@ def update_repomd_xml_file(repomd_path, comps_path):
                 log.exception("Unable to delete old group_gz metadata: %s" % (group_gz_path))
     return True
 
-def write_comps_xml(repo, existing_groups, existing_cats):
+def write_comps_xml(repo_working_dir, existing_groups, existing_cats):
     """
     Generates a xml file commonly called a 'comps.xml'
     Contains information from the package groups and package categories
     associated with this repo
 
-    @param repo: metadata describing the repository
-    @type repo: L{pulp.plugins.data.Repository}
+    @param repo_working_dir: repo working dir where comps.xml is written
+    @type repo_working_dir: str
 
     @param existing_groups: package group units in this repo
     @type existing_groups: [Unit]
@@ -399,7 +399,7 @@ def write_comps_xml(repo, existing_groups, existing_cats):
     comps_xml = form_comps_xml_from_units(existing_groups, existing_cats)
     if not comps_xml:
         return None
-    out_path = os.path.join(repo.working_dir, "comps.xml")
+    out_path = os.path.join(repo_working_dir, "comps.xml")
     f = open(out_path, "w")
     try:
         try:
@@ -408,7 +408,7 @@ def write_comps_xml(repo, existing_groups, existing_cats):
                 data = data.encode('utf-8')
             f.write(data)
         except Exception, e:
-            _LOG.exception("Unable to write comps.xml for repo: %s with %s groups and %s categories" % (repo.id, len(existing_groups), len(existing_cats)))
+            log.exception("Unable to write comps.xml for repo: %s with %s groups and %s categories" % (repo_working_dir, len(existing_groups), len(existing_cats)))
             raise
     finally:
         f.close()

@@ -433,11 +433,11 @@ class YumDistributor(Distributor):
             existing_units = publish_conduit.get_units(criteria)
             existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
             existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
-            groups_xml_path = comps_util.write_comps_xml(repo, existing_groups, existing_cats)
+            groups_xml_path = comps_util.write_comps_xml(repo.working_dir, existing_groups, existing_cats)
         metadata_start_time = time.time()
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
         metadata_status, metadata_errors = metadata.generate_metadata(
-                repo, publish_conduit, config, progress_callback, groups_xml_path)
+                repo.working_dir, publish_conduit, config, progress_callback, groups_xml_path)
         metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
