@@ -235,8 +235,8 @@ class PuppetModuleSyncRunTests(unittest.TestCase):
         self.assertTrue(pr.metadata_traceback is None)
 
         self.assertEqual(pr.modules_state, constants.STATE_FAILED)
-        self.assertEqual(pr.modules_total_count, 2)
-        self.assertEqual(pr.modules_finished_count, 0)
+        self.assertEqual(pr.modules_total_count, None)
+        self.assertEqual(pr.modules_finished_count, None)
         self.assertTrue(pr.modules_execution_time is not None)
         self.assertTrue(pr.modules_error_message is not None)
         self.assertTrue(pr.modules_exception is not None)

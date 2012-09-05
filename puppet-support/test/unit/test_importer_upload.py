@@ -11,11 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import mock
 import os
 import shutil
 import tempfile
 import unittest
+
+import mock
+from pulp.plugins.model import Repository
 
 from pulp_puppet.common import constants
 from pulp_puppet.importer import upload
@@ -40,7 +42,11 @@ class UploadTests(unittest.TestCase):
 
         self.conduit = mock.MagicMock()
 
+        self.working_dir = tempfile.mkdtemp(prefix='puppet-sync-tests')
+        self.repo = Repository('test-repo', working_dir=self.working_dir)
+
     def tearDown(self):
+        shutil.rmtree(self.working_dir)
         if os.path.exists(self.dest_dir):
             shutil.rmtree(self.dest_dir)
 
@@ -51,7 +57,7 @@ class UploadTests(unittest.TestCase):
         self.conduit.init_unit.return_value = initialized_unit
 
         # Test
-        upload.handle_uploaded_unit(constants.TYPE_PUPPET_MODULE, self.unit_key,
+        upload.handle_uploaded_unit(self.repo, constants.TYPE_PUPPET_MODULE, self.unit_key,
                                     self.unit_metadata, self.source_file, self.conduit)
 
         # Verify
@@ -61,4 +67,4 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(1, self.conduit.save_unit.call_count)
 
     def test_handle_uploaded_unit_bad_type(self):
-        self.assertRaises(NotImplementedError, upload.handle_uploaded_unit, 'foo', None, None, None, None)
+        self.assertRaises(NotImplementedError, upload.handle_uploaded_unit, self.repo, 'foo', None, None, None, None)

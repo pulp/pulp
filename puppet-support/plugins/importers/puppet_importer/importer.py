@@ -32,7 +32,7 @@ class PuppetModuleImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.IMPORTER_ID_PUPPET,
+            'id' : constants.IMPORTER_TYPE_ID,
             'display_name' : _('Puppet Importer'),
             'types' : [constants.TYPE_PUPPET_MODULE]
         }
@@ -52,7 +52,7 @@ class PuppetModuleImporter(Importer):
 
     def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit,
                     config):
-        upload.handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit)
+        upload.handle_uploaded_unit(repo, type_id, unit_key, metadata, file_path, conduit)
 
     def cancel_sync_repo(self, call_request, call_report):
         self.sync_cancelled = True
