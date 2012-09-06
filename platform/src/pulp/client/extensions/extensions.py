@@ -199,11 +199,15 @@ class PulpCliCommand(Command):
         if len(arg_list) > 0:
             raise CommandUsage()
 
-        # Make sure all of the required arguments have been specified
-
+        # Make sure all of the required arguments have been specified. This is
+        # different from the Okaara standard version which does not include ''
+        # as not fulfilling the required contract. Like the comment above, I'll
+        # refactor Okaara to make this easier to override in a subclass so we
+        # can remove the bulk of this method from being copied. jdob, Sep 4, 2012
         missing_required = [o for o in self.all_options()\
                             if o.required and (not kwarg_dict.has_key(o.name) or
-                                               kwarg_dict[o.name] is None)]
+                                               kwarg_dict[o.name] is None or
+                                               kwarg_dict[o.name] == '')]
         if len(missing_required) > 0:
             raise CommandUsage(missing_required)
 

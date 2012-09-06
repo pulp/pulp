@@ -395,9 +395,8 @@ def add_repo_options(command, is_update):
     publish_group.add_option(PulpCliOption('--serve-https', 'if "true", the repository will be served over HTTPS; defaults to true', required=False))
     publish_group.add_option(PulpCliOption('--checksum-type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg-key', 'GPG key used to sign and verify packages in the repository', required=False))
-    publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed; defaults to false', required=False))
+    publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed; defaults to true', required=False))
     publish_group.add_option(PulpCliOption('--use-createrepo', 'if "true", when the repository is published the repo metadata will be regenerated using createrepo tool instead of using the mertadata from the database; defaults to false', required=False))
-
 
     # Publish Security Options
     repo_auth_group.add_option(PulpCliOption('--host-ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
@@ -424,7 +423,7 @@ def args_to_importer_config(kwargs):
     convert_file_contents(file_arguments, importer_config)
 
     # Handle skip types
-    if 'skip' in importer_config:
+    if importer_config.get('skip', None) is not None:
         skip_as_list = _convert_skip_types(importer_config['skip'])
         importer_config['skip'] = skip_as_list
 
@@ -456,7 +455,7 @@ def args_to_distributor_config(kwargs):
     convert_file_contents(file_arguments, distributor_config)
 
     # Handle skip types
-    if 'skip' in distributor_config:
+    if distributor_config.get('skip', None) is not None:
         skip_as_list = _convert_skip_types(distributor_config['skip'])
         distributor_config['skip'] = skip_as_list
 
