@@ -337,10 +337,13 @@ def convert_content_to_metadata_type(content_types_list):
     return metadata_type_list
 
 def get_package_xml(pkg):
-
+    if not os.path.exists(pkg):
+        _LOG.info("Package path %s does not exist" % pkg)
+        return {}
     ts = rpmUtils.transaction.initReadOnlyTransaction()
     po = yumbased.CreateRepoPackage(ts, pkg)
-
+    # RHEL6 createrepo throws a ValueError if _cachedir is not set
+    po._cachedir = None
     metadata = {'primary' : po.xml_dump_primary_metadata(),
                 'filelists': po.xml_dump_filelists_metadata(),
                 'other'   : po.xml_dump_other_metadata(),

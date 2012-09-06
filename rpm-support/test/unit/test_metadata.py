@@ -205,4 +205,14 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
                     print "Caught exception from trying to cleanup: %s" % (working_dir)
                     traceback.print_exc()
 
+    def test_get_package_xml(self):
+        test_pkg_path = "%s/incisura-7.1.4-1.elfake.noarch.rpm" % self.data_dir
+        repodata_xml = metadata.get_package_xml(test_pkg_path)
+        self.assertTrue(repodata_xml.has_key("primary"))
+        self.assertTrue(repodata_xml.has_key("filelists"))
+        self.assertTrue(repodata_xml.has_key("other"))
+
+        bad_package_path = "%s/i_dont_exist-7.1.4-1.elfake.noarch.rpm" % self.data_dir
+        repodata_xml = metadata.get_package_xml(bad_package_path)
+        self.assertEquals(repodata_xml, {})
 
