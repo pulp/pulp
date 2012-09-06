@@ -27,7 +27,6 @@ _LOG = getLogger(__name__)
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
- 
 class UnitKey:
     """
     A unique unit key consisting of the unit's
@@ -74,6 +73,42 @@ class CitrusImporter(Importer):
         return (True, None)
 
     def sync_repo(self, repo, conduit, config):
+        """
+        Synchronizes content into the given repository. This call is responsible
+        for adding new content units to Pulp as well as associating them to the
+        given repository.
+
+        While this call may be implemented using multiple threads, its execution
+        from the Pulp server's standpoint should be synchronous. This call should
+        not return until the sync is complete.
+
+        It is not expected that this call be atomic. Should an error occur, it
+        is not the responsibility of the importer to rollback any unit additions
+        or associations that have been made.
+
+        The returned report object is used to communicate the results of the
+        sync back to the user. Care should be taken to i18n the free text "log"
+        attribute in the report if applicable.
+        
+        Steps:
+          1. Read the (upstream) units.json
+          2. Fetch the local (downstream) units associated with the repostory.
+          3. Add missing units.
+          4. Delete units specified locally but not upstream.
+
+        @param repo: metadata describing the repository
+        @type  repo: L{pulp.server.plugins.model.Repository}
+
+        @param sync_conduit: provides access to relevant Pulp functionality
+        @type  sync_conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+
+        @param config: plugin configuration
+        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
+
+        @return: report of the details of the sync
+        @rtype:  L{pulp.server.plugins.model.SyncReport}
+        """
+
         # url
         baseurl = config.get('baseurl')
         if not baseurl:
