@@ -252,6 +252,15 @@ class Scheduler(object):
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
+        schedule = schedule_updates.get('schedule', None)
+        if schedule is not None:
+            interval, start, runs = dateutils.parse_iso8601_interval(schedule)
+            schedule_updates.setdefault('remaining_runs', runs) # honor explicit update
+            # XXX (jconnor) it'd be nice to update the next_run if the schedule
+            # has changed, but it requires mucking with the internals of the
+            # of the scheduled call instance, which is all encapsulated in the
+            # ScheduledCall constructor
+            # the next_run field will be correctly updated after the next run
         scheduled_call_collection.update({'_id': schedule_id}, {'$set': schedule_updates}, safe=True)
 
     def remove(self, schedule_id):
