@@ -235,7 +235,9 @@ class RepoContentUnit(Model):
         self.owner_type = owner_type
         self.owner_id = owner_id
 
-        self.created = dateutils.format_iso8601_datetime(datetime.datetime.now())
+        # store time in UTC
+        created = dateutils.to_utc_datetime(datetime.datetime.utcnow())
+        self.created = dateutils.format_iso8601_datetime(created)
         self.updated = self.created
 
 
