@@ -51,12 +51,13 @@ class ScheduleManager(object):
         sync_manager = managers_factory.repo_sync_manager()
         args = [repo_id]
         kwargs = {'sync_config_override': sync_options['override_config']}
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE: {importer_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'sync_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
-        call_request = CallRequest(sync_manager.sync, args, kwargs, resources, None, weight, tags, archive=True)
+        call_request = CallRequest(sync_manager.sync, args, kwargs, weight=weight, tags=tags, archive=True)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, sync_manager.prep_sync)
 
         # schedule the sync
         scheduler = dispatch_factory.scheduler()
@@ -141,12 +142,13 @@ class ScheduleManager(object):
         publish_manager = managers_factory.repo_publish_manager()
         args = [repo_id, distributor_id]
         kwargs = {'publish_config_override': publish_options['override_config']}
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         weight = pulp_config.config.getint('tasks', 'publish_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
-        call_request = CallRequest(publish_manager.publish, args, kwargs, resources, None, weight, tags, archive=True)
+        call_request = CallRequest(publish_manager.publish, args, kwargs, weight=weight, tags=tags, archive=True)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, publish_manager.prep_publish)
 
         # schedule the publish
         scheduler = dispatch_factory.scheduler()
