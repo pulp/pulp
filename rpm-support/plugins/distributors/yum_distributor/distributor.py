@@ -445,7 +445,7 @@ class YumDistributor(Distributor):
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
         if config.get('use_createrepo'):
             metadata_status, metadata_errors = metadata.generate_metadata(
-                repo, publish_conduit, config, progress_callback, groups_xml_path)
+                repo.working_dir, publish_conduit, config, progress_callback, groups_xml_path)
         else:
             # default to per package metadata
             metadata_status, metadata_errors =  metadata.generate_yum_metadata(repo.working_dir, rpm_units,
