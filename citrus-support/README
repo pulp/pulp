@@ -6,16 +6,20 @@ Issues:
    Need something better.
 
 2. How to deal with repo scratchpad.
-   - not supported by REST API.
+   - Not supported by REST API.
+   - Does not seem to be an issue though.
 
 3. How to deal with coupling between importer/distributer
    via scratchpad.
      - yum importer uses scratchpad to communicate working_directory
        containing YUM metadata.
+     - Does not seem to be an issue though.
 
 4. Need to deal with different root directories
    used for storage_path(s) on Units.  Differences in upstream & downstream
    server configuration as it pertains to this.
+
+5. Need to clean up orphaned units (packages).
 
 
 
