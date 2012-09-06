@@ -331,7 +331,7 @@ class ScheduledUnitInstallTests(ScheduleTests):
         updated_call = scheduler.get(schedule_id)
 
         self.assertFalse(updated_call is None)
-        self.assertTrue(schedule_data['schedule'] == updated_call['schedule'])
+        self.assertTrue(schedule_data['schedule'] == updated_call['schedule'], '%s != %s' % (schedule_data['schedule'], updated_call['schedule']))
         self.assertTrue(self.consumer_id in updated_call['call_request'].args)
         self.assertTrue(units == updated_call['call_request'].kwargs['units'])
         self.assertTrue(install_options['options'] == updated_call['call_request'].kwargs['options'])
