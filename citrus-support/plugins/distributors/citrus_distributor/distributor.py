@@ -76,7 +76,7 @@ class Publisher:
         path = os.path.join(self.root, 'units.json')
         fp = open(path, 'w+')
         try:
-            json.dump(units, fp)
+            json.dump(units, fp, indent=2)
         finally:
             fp.close()
             
