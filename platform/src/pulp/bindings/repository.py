@@ -349,6 +349,15 @@ class RepositoryUnitAPI(PulpAPI):
         data = {'criteria': criteria}
         return self.server.POST(path, data)
 
+    def search_legacy(self, repo_id, criteria):
+        """
+        This is for compatibility with old code that still remains in CR2. This
+        method will never show up in master or any release after CR2.
+        """
+        path = self.SEARCH_PATH % repo_id
+        data = {'criteria': criteria}
+        return self.server.POST(path, data)
+
     def copy(self, source_repo_id, destination_repo_id, **kwargs):
         """
         Perform a search of RepoContentUnits in the source repo, and copy the
