@@ -237,7 +237,7 @@ class ErrataCommand(PulpCliCommand):
             return
 
         # Query the server
-        all_units = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
+        all_units = self.context.server.repo_unit.search_legacy(repo_id, criteria).response_body
 
         # We only care about the unit metadata, not the association stuff, so
         # strip out all the fluff and reduce the list to just the metadata entries
@@ -264,7 +264,7 @@ class ErrataCommand(PulpCliCommand):
         }
 
         # Query the server
-        errata = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
+        errata = self.context.server.repo_unit.search_legacy(repo_id, criteria).response_body
 
         # Render the results
         if len(errata) is 0:
