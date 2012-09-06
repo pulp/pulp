@@ -98,6 +98,10 @@ class PulpImporter(Importer):
                      unit['storage_path'])
             conduit.save_unit(u)
             downloader.install(unit)
+        # purge units
+        for k,unit in units.items():
+            if k not in upstream:
+                conduit.remove_unit(unit)
 
     def cancel_sync_repo(self, call_request, call_report):
         pass
