@@ -24,7 +24,7 @@ _LOG = getLogger(__name__)
 PUBLISH_DIR='/var/lib/pulp/published/http/citrus/repos'
 
 
-class PulpDistributor(Distributor):
+class CitrusDistributor(Distributor):
 
     @classmethod
     def metadata(cls):

@@ -60,7 +60,7 @@ class UnitKey:
         return self.uid != other.uid
     
 
-class PulpImporter(Importer):
+class CitrusImporter(Importer):
 
     @classmethod
     def metadata(cls):

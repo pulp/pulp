@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platf
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/citrus_importer")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/citrus_distributor/")
 print sys.path
-from distributor import PulpDistributor
-from importer import PulpImporter
+from distributor import CitrusDistributor
+from importer import CitrusImporter
 
 import mock_plugins
 from pulp.plugins.loader import api as plugin_api
@@ -121,7 +121,7 @@ class TestDistributor(TestPlugins):
         # Setup
         self.populate()
         # Test
-        dist = PulpDistributor()
+        dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
         payload = dist.create_consumer_payload(repo, {})
         # Verify
@@ -131,7 +131,7 @@ class TestDistributor(TestPlugins):
         # Setup
         self.populate()
         # Test
-        dist = PulpDistributor()
+        dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(publishdir=self.tmpdir)
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -145,7 +145,7 @@ class ImporterTest(TestPlugins):
     def test_import(self):
         # Setup
         self.populate()
-        dist = PulpDistributor()
+        dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(publishdir=self.tmpdir)
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -155,7 +155,7 @@ class ImporterTest(TestPlugins):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
         # Test
-        importer = PulpImporter()
+        importer = CitrusImporter()
         cfg = dict(baseurl=self.tmpdir)
         conduit = RepoSyncConduit(
             self.REPO_ID,
