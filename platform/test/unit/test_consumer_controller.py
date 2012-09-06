@@ -28,6 +28,7 @@ from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
+from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.webservices.controllers import consumers
 
@@ -625,6 +626,7 @@ class ContentTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
+        ScheduledCall.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
@@ -635,6 +637,7 @@ class ContentTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
+        ScheduledCall.get_collection().remove()
         mock_plugins.reset()
 
     def populate(self):
@@ -701,6 +704,70 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 200)
+
+    def test_create_scheduled_install(self):
+        self.populate()
+        self.set_success()
+
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/unit_install_schedules/' % self.CONSUMER_ID
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, body = self.post(path, body)
+        self.assertEquals(status, 201)
+
+    def test_update_scheduled_install(self):
+        self.populate()
+        self.set_success()
+
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/unit_install_schedules/' % self.CONSUMER_ID
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, response = self.post(path, body)
+        self.assertEquals(status, 201)
+
+        schedule_id = response['_id']
+        update_path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.CONSUMER_ID, schedule_id)
+        update_body = {'schedule': 'R2/PT1H'}
+
+        status, response = self.put(update_path, update_body)
+        self.assertEqual(status, 200)
+
+    def test_delete_scheduled_install(self):
+        self.populate()
+        self.set_success()
+
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/unit_install_schedules/' % self.CONSUMER_ID
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, response = self.post(path, body)
+        self.assertEquals(status, 201)
+
+        schedule_id = response['_id']
+        update_path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.CONSUMER_ID, schedule_id)
+
+        status, response = self.delete(update_path)
+        self.assertEqual(status, 200)
 
 
 class TestProfiles(base.PulpWebserviceTests):
