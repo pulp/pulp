@@ -43,6 +43,7 @@ TAG_FAILURE = 'failure'
 TAG_WARNING = 'warning'
 TAG_EXCEPTION = 'exception'
 TAG_DOCUMENT = 'document'
+TAG_REASONS = 'reasons'
 TAG_PROGRESS_BAR = 'progress_bar'
 TAG_SPINNER = 'spinner'
 TAG_THREADED_SPINNER = 'threaded-spinner'
@@ -395,7 +396,7 @@ class PulpPrompt(Prompt):
                                                       'i' : r.resource_id}
             msg += _('Operation: %(o)s\n') % {'o' : r.operation}
 
-        self.write(msg)
+        self.write(msg, tag=TAG_REASONS)
 
     def create_progress_bar(self, show_trailing_percentage=True):
         """

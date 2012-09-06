@@ -247,6 +247,7 @@ class CriteriaCommand(PulpCliCommand):
 
 
 class UnitAssociationCriteriaCommand(CriteriaCommand):
+
     def __init__(self, method, *args, **kwargs):
         super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
 

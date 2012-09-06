@@ -14,9 +14,9 @@ from gettext import gettext as _, gettext
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand
 
 class UnitCopyCommand(UnitAssociationCriteriaCommand):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, method, *args, **kwargs):
         kwargs['include_search'] = False
-        super(UnitCopyCommand, self).__init__(*args, **kwargs)
+        super(UnitCopyCommand, self).__init__(method, *args, **kwargs)
         self.options = [opt for opt in self.options if opt.name != '--repo-id']
 
         m = 'source repository from which units will be copied'

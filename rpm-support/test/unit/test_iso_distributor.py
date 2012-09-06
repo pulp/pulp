@@ -28,12 +28,16 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 
 from iso_distributor.distributor import ISODistributor, TYPE_ID_DISTRIBUTOR_ISO,\
     TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_DISTRO, TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP
+from iso_distributor.exporter import RepoExporter
+from iso_distributor.generate_iso import GenerateIsos
+from iso_distributor import iso_util
 from yum_importer import importer_rpm
 from yum_importer import errata, distribution
-from pulp.plugins.model import RelatedRepository, Repository, Unit
+from pulp.plugins.model import Repository, Unit
 from pulp_rpm.yum_plugin import util, updateinfo
 import distributor_mocks
 import rpm_support_base
+from pulp_rpm.repo_auth.repo_cert_utils import M2CRYPTO_HAS_CRL_SUPPORT
 
 class TestISODistributor(rpm_support_base.PulpRPMTests):
 
@@ -110,7 +114,9 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
         print symlink_dir
-        status, errors = iso_distributor._export_rpms(existing_units, symlink_dir)
+        #        status, errors = iso_distributor._export_rpms(existing_units, symlink_dir)
+        repo_exporter = RepoExporter(symlink_dir)
+        status, errors = repo_exporter.export_rpms(existing_units)
         print status, errors
         self.assertTrue(status)
         self.assertEquals(len(os.listdir(symlink_dir)), 3)
@@ -181,10 +187,14 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
         print symlink_dir
-        rpm_units = iso_distributor._get_errata_rpms(errata_unit, existing_units)
+        repo_exporter = RepoExporter(symlink_dir)
+#        rpm_units = iso_distributor._get_errata_rpms(errata_unit, existing_units)
+        rpm_units = repo_exporter.get_errata_rpms(errata_unit, existing_units)
         print "RPMS in ERRATA",rpm_units
-        iso_distributor._export_rpms(rpm_units, self.repo_working_dir)
-        status, errors = iso_distributor._export_errata(errata_unit, symlink_dir)
+        #        iso_distributor._export_rpms(rpm_units, self.repo_working_dir)
+        repo_exporter.export_rpms(rpm_units)
+        status, errors = repo_exporter.export_errata(errata_unit)
+#        status, errors = iso_distributor._export_errata(errata_unit, symlink_dir)
         self.assertTrue(os.path.exists("%s/%s" % (symlink_dir, "updateinfo.xml")))
         self.assertTrue(status)
         ftypes = util.get_repomd_filetypes("%s/%s" % (symlink_dir, "repodata/repomd.xml"))
@@ -235,7 +245,9 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         iso_distributor = ISODistributor()
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=[distro_unit], pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http=False, https=True)
-        status, errors = iso_distributor._export_distributions([distro_unit], symlink_dir)
+        repo_exporter = RepoExporter(symlink_dir)
+#        status, errors = iso_distributor._export_distributions([distro_unit], symlink_dir)
+        status, errors = repo_exporter.export_distributions([distro_unit])
         print status, errors
         self.assertTrue(status)
         for file in metadata['files']:
@@ -415,10 +427,10 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         # test http publish
         config = distributor_mocks.get_basic_config(http_publish_dir=self.http_publish_dir, https_publish_dir=self.https_publish_dir, http=True, https=False,
             start_date="2009-03-30 08:07:30", end_date="2012-03-30 08:07:30", generate_metadata=True)
-        def cleanup():
+        def cleanup(rpm_working_dir):
             return
-        iso_distributor.cleanup = mock.Mock()
-        iso_distributor.cleanup.side_effect = cleanup
+        iso_util.cleanup_working_dir = mock.Mock()
+        iso_util.cleanup_working_dir.side_effect = cleanup
         report = iso_distributor.publish_repo(repo, publish_conduit, config)
         ftypes = util.get_repomd_filetypes("%s/%s" % (repo.working_dir, "repodata/repomd.xml"))
         self.assertTrue("updateinfo" in ftypes)
@@ -434,16 +446,115 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         isos_list = os.listdir("%s/%s" % (self.http_publish_dir, repo.id))
         self.assertEqual(len(isos_list), 1)
 
-    def test_validate_config_iso_prefix(self):
+    def test_validate_config(self):
+        distributor = ISODistributor()
         repo = mock.Mock(spec=Repository)
         repo.id = "testrepo"
-        distributor = ISODistributor()
+        http = "true"
+        https = False
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        http = True
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = "False"
+        relative_url = "test_path"
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        https = True
+        config = distributor_mocks.get_basic_config(http=http, https=https)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = False
+        relative_url = "test_path"
+        generate_metadata = "false"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            generate_metadata=generate_metadata)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        generate_metadata = True
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            generate_metadata=generate_metadata)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http = True
+        https = False
+        relative_url = "test_path"
+        skip_content_types = "fake"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            skip=skip_content_types)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        skip_content_types = []
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            skip=skip_content_types)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
         # test invalid iso prefix
         config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="my_iso*_name_/")
         state, msg = distributor.validate_config(repo, config, [])
         self.assertFalse(state)
         # test valid iso prefix
         config = distributor_mocks.get_basic_config(http=True, https=False, iso_prefix="My_iso_name-01")
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        invalid_config="dummy"
+        config = distributor_mocks.get_basic_config(invalid_config)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        http_publish_dir = self.http_publish_dir
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            http_publish_dir=http_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        http_publish_dir = "test"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            http_publish_dir=http_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        https_publish_dir = self.https_publish_dir
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_publish_dir=https_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertTrue(state)
+
+        https_publish_dir = "test"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_publish_dir=https_publish_dir)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        if not M2CRYPTO_HAS_CRL_SUPPORT:
+            return
+        http = True
+        https = False
+        relative_url = "test_path"
+        auth_cert = "fake"
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_ca=auth_cert)
+        state, msg = distributor.validate_config(repo, config, [])
+        self.assertFalse(state)
+
+        auth_cert = open(os.path.join(self.data_dir, "cert.crt")).read()
+        config = distributor_mocks.get_basic_config(http=http, https=https,
+            https_ca=auth_cert)
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
 
@@ -523,19 +634,16 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
             progress_status = progress
         publish_conduit = distributor_mocks.get_publish_conduit(pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, http_publish_dir=self.http_publish_dir,
-            generate_metadata=True, http=True, https=False, prefix="test-isos")
+            generate_metadata=True, http=True, https=False, iso_prefix="test-isos")
         distributor = ISODistributor()
-        def cleanup():
+        def cleanup(repo_working_dir):
             return
-        distributor.cleanup = mock.Mock()
-        distributor.cleanup.side_effect = cleanup
+        iso_util.cleanup_working_dir = mock.Mock()
+        iso_util.cleanup_working_dir.side_effect = cleanup
         publish_conduit.set_progress = mock.Mock()
         publish_conduit.set_progress.side_effect = set_progress
         progress_status = distributor.init_progress()
         distributor.publish_repo(repo, publish_conduit, config)
-        repo.id= "test_mock_iso_prefix"
-        distributor.generate_isos(repo.working_dir,"%s/%s" % (self.http_publish_dir, repo.id), prefix="test-isos")
-
         self.assertTrue("isos" in progress_status)
         self.assertTrue(progress_status["isos"].has_key("state"))
         self.assertEqual(progress_status["isos"]["state"], "FINISHED")

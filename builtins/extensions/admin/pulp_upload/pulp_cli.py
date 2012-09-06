@@ -18,7 +18,6 @@ from okaara.prompt import COLOR_GREEN, COLOR_YELLOW
 
 from   pulp.client.extensions.extensions import PulpCliCommand
 import pulp.client.upload.manager as upload_lib
-from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 
