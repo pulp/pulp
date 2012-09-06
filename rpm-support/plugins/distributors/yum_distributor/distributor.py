@@ -562,7 +562,7 @@ class YumDistributor(Distributor):
                 packages_progress_status["num_error"] += 1
                 packages_progress_status["items_left"] -= 1
                 continue
-            _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
+            _LOG.debug("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
             try:
                 if not util.create_symlink(source_path, symlink_path):
                     msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)

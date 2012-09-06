@@ -442,7 +442,7 @@ class YumMetadataGenerator(object):
         conf = MetaDataConfig()
         conf.directory = self.repodir
 #        conf.update = 1
-        conf.database = 0
+        conf.database = 1
         conf.verbose = 1
         conf.skip_stat = 1
         conf.sumtype = self.checksum_type

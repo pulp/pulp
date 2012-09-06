@@ -194,7 +194,6 @@ def verify_download(missing_rpms, new_rpms, new_units, verify_options={}):
     for key in new_rpms.keys():
         rpm = new_rpms[key]
         rpm_path = os.path.join(rpm["pkgpath"], rpm["filename"])
-        _LOG.info("RPM object %s ; KEY : %s" % (rpm, key))
         if not util.verify_exists(rpm_path, rpm['checksum'], rpm['checksumtype'], rpm['size'], verify_options):
             not_synced[key] = rpm
             del new_rpms[key]
