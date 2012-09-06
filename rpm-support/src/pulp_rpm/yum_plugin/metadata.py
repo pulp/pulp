@@ -21,9 +21,9 @@ import threading
 import signal
 import time
 
+import rpmUtils
 from pulp_rpm.yum_plugin import util
 from pulp.common.util import encode_unicode, decode_unicode
-import rpmUtils
 from createrepo import MetaDataGenerator, MetaDataConfig
 from createrepo import yumbased, utils, GzipFile
 
@@ -38,18 +38,23 @@ CREATE_REPO_PROCESS_LOOKUP_LOCK = threading.Lock()
 class CreateRepoError(Exception):
     pass
 
+
 class CreateRepoAlreadyRunningError(Exception):
     pass
+
 
 class ModifyRepoError(CreateRepoError):
     pass
 
+
 class CancelException(Exception):
     pass
+
 
 def set_progress(type_id, status, progress_callback):
     if progress_callback:
         progress_callback(type_id, status)
+
 
 def generate_metadata(repo_working_dir, publish_conduit, config, progress_callback=None, groups_xml_path=None):
     """
@@ -109,6 +114,7 @@ def generate_metadata(repo_working_dir, publish_conduit, config, progress_callba
     metadata_progress_status = {"state" : "FINISHED"}
     set_progress("metadata", metadata_progress_status, progress_callback)
     return True, []
+
 
 def get_repo_checksum_type(publish_conduit, config):
     """
@@ -177,6 +183,7 @@ def modify_repo(repodata_dir, new_file, remove=False):
     _LOG.info("modifyrepo with %s on %s finished" % (new_file, repodata_dir))
     return status, out
 
+
 def _create_repo(dir, groups=None, checksum_type="sha256"):
     if not groups:
         cmd = "createrepo --database --checksum %s --update %s " % (checksum_type, dir)
@@ -196,6 +203,7 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
     _LOG.info("started repo metadata update: %s" % (cmd))
     handle = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return handle
+
 
 def create_repo(dir, groups=None, checksum_type="sha256", skip_metadata_types=[]):
     handle = None
@@ -286,6 +294,7 @@ def create_repo(dir, groups=None, checksum_type="sha256", skip_metadata_types=[]
         finally:
             CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
 
+
 def cancel_createrepo(repo_dir):
     """
     Method will lookup a createrepo process associated to 'repo_dir'
@@ -308,6 +317,7 @@ def cancel_createrepo(repo_dir):
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
 
+
 def get_createrepo_pid(repo_dir):
     CREATE_REPO_PROCESS_LOOKUP_LOCK.acquire()
     try:
@@ -320,7 +330,11 @@ def get_createrepo_pid(repo_dir):
     finally:
         CREATE_REPO_PROCESS_LOOKUP_LOCK.release()
 
+
 def convert_content_to_metadata_type(content_types_list):
+    """
+    Convert the unit types to rpm metadata file types
+    """
     content_metadata_map = {
         "drpm"         : "prestodelta",
         "errata"       : "updateinfo",
@@ -336,12 +350,23 @@ def convert_content_to_metadata_type(content_types_list):
             metadata_type_list.append(type)
     return metadata_type_list
 
-def get_package_xml(pkg):
-    if not os.path.exists(pkg):
-        _LOG.info("Package path %s does not exist" % pkg)
+
+def get_package_xml(pkg_path):
+    """
+    Method to generate repo xmls - primary, filelists and other
+    for a given rpm.
+
+    @param pkg_path: rpm package path on the filesystem
+    @type pkg_path: str
+
+    @return rpm metadata dictionary or empty if rpm path doesnt exist
+    @rtype {}
+    """
+    if not os.path.exists(pkg_path):
+        _LOG.info("Package path %s does not exist" % pkg_path)
         return {}
     ts = rpmUtils.transaction.initReadOnlyTransaction()
-    po = yumbased.CreateRepoPackage(ts, pkg)
+    po = yumbased.CreateRepoPackage(ts, pkg_path)
     # RHEL6 createrepo throws a ValueError if _cachedir is not set
     po._cachedir = None
     metadata = {'primary' : po.xml_dump_primary_metadata(),
@@ -349,6 +374,7 @@ def get_package_xml(pkg):
                 'other'   : po.xml_dump_other_metadata(),
                }
     return metadata
+
 
 class YumMetadataGenerator(object):
     """
