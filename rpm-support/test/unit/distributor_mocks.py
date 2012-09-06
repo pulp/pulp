@@ -23,7 +23,7 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
     def build_failure_report(summary, details):
         return PublishReport(False, summary, details)
 
-    def get_units(criteria=None):
+    def get_units(repoid=None, criteria=None):
         ret_val = []
         if existing_units:
             for u in existing_units:

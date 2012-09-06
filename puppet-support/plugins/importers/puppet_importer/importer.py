@@ -52,7 +52,7 @@ class PuppetModuleImporter(Importer):
 
     def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit,
                     config):
-        upload.handle_uploaded_unit(type_id, unit_key, metadata, file_path, conduit)
+        upload.handle_uploaded_unit(repo, type_id, unit_key, metadata, file_path, conduit)
 
     def cancel_sync_repo(self, call_request, call_report):
         self.sync_cancelled = True

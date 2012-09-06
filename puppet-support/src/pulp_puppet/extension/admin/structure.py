@@ -27,7 +27,6 @@ SECTION_ROOT = 'puppet'
 
 SECTION_REPO = 'repo'
 
-SECTION_COPY = 'copy'
 SECTION_GROUP = 'group'
 SECTION_REMOVE = 'remove'
 SECTION_UPLOADS = 'uploads'
@@ -42,7 +41,6 @@ DESCRIPTIONS = {
     SECTION_ROOT : _('contains commands for working with Puppet repositories'),
     SECTION_REPO : _('repository lifecycle commands'),
 
-    SECTION_COPY : _('copy modules from one repository into another'),
     SECTION_GROUP : _('repository group lifecycle commands'),
     SECTION_GROUP_MEMBERS : _('manage membership in a repository group'),
     SECTION_REMOVE : _('remove copied or uploaded modules from a repository'),
@@ -57,7 +55,6 @@ DESCRIPTIONS = {
 # Relative to the root of the structure
 STRUCTURE = {
     SECTION_REPO : {
-        SECTION_COPY : {},
         SECTION_GROUP : {
             SECTION_GROUP_MEMBERS: {},
         },
@@ -102,9 +99,6 @@ def ensure_structure(cli, root_section_name=SECTION_ROOT, structure=STRUCTURE,
 
 def repo_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO)
-
-def repo_copy_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_COPY)
 
 def repo_remove_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_REMOVE)

@@ -55,10 +55,6 @@ class SectionRetrievalTests(base_cli.ExtensionTests):
         section = structure.repo_section(self.cli)
         self.assertEqual(section.name, structure.SECTION_REPO)
 
-    def test_repo_copy_section(self):
-        section = structure.repo_copy_section(self.cli)
-        self.assertEqual(section.name, structure.SECTION_COPY)
-
     def test_repo_remove_section(self):
         section = structure.repo_remove_section(self.cli)
         self.assertEqual(section.name, structure.SECTION_REMOVE)
