@@ -225,7 +225,7 @@ class Bindings(JSONController):
         Create a bind association between the specified
         consumer by id included in the URL path and a repo-distributor
         specified in the POST body: {repo_id:<str>, distributor_id:<str>}.
-        Designed to be itempotent so only MissingResource is expected to
+        Designed to be idempotent so only MissingResource is expected to
         be raised by manager.
         @param consumer_id: The consumer to bind.
         @type consumer_id: str

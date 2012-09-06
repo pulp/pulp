@@ -14,12 +14,13 @@
 """
 Contains bind management classes
 """
+from logging import getLogger
 
 from pymongo.errors import DuplicateKeyError
+
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
-from logging import getLogger
 
 
 _LOG = getLogger(__name__)
@@ -50,8 +51,6 @@ class BindManager(object):
         """
         manager = factory.consumer_manager()
         manager.get_consumer(consumer_id)
-        manager = factory.repo_distributor_manager()
-        distributor = manager.get_distributor(repo_id, distributor_id)
         bind = Bind(consumer_id, repo_id, distributor_id)
         collection = Bind.get_collection()
         try:
