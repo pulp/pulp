@@ -322,11 +322,10 @@ class ScheduledUnitInstallTests(ScheduleTests):
         self.assertTrue(install_options['options'] == scheduled_call['call_request'].kwargs['options'])
 
         units.append({'type_id': 'mock-type', 'unit_key': {'id': 'redis'}})
-        install_options['units'] = units
         install_options['options'] = {'option': 'value'}
         schedule_data['schedule'] = 'R3/P1DT'
 
-        self.schedule_manager.update_unit_install_schedule(self.consumer_id, schedule_id, install_options, schedule_data)
+        self.schedule_manager.update_unit_install_schedule(self.consumer_id, schedule_id, units, install_options, schedule_data)
 
         updated_call = scheduler.get(schedule_id)
 
