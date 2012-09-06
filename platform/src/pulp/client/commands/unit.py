@@ -48,6 +48,7 @@ unit_id_option = PulpCliOption('--unit-id',
 class OrphanUnitListCommand(PulpCliCommand):
     def __init__(self, context):
         self.context = context
+        self.prompt = context.prompt
 
         m = _('display a list of orphans')
         super(OrphanUnitListCommand, self).__init__('list', m, self.run)
@@ -62,12 +63,13 @@ class OrphanUnitListCommand(PulpCliCommand):
             orphans = self.context.server.content_orphan.orphans().response_body
         for orphan in orphans:
             orphan['id'] = orphan.get('_id', None)
-            self.context.prompt.render_document(orphan)
+            self.prompt.render_document(orphan)
 
 
 class OrphanUnitRemoveCommand(PulpCliCommand):
     def __init__(self, context):
         self.context = context
+        self.prompt = context.prompt
 
         m = _('remove one or more orphans')
         super(OrphanUnitRemoveCommand, self).__init__('remove', m, self.run)
@@ -100,13 +102,13 @@ class OrphanUnitRemoveCommand(PulpCliCommand):
         Check the status of a task response and make appropriate CLI output
 
         :param task: Task as returned by the API call
-        :type  prompt: pulp.client.extensions.core.PulpPrompt
         """
         response = task.response
         if response == 'rejected':
-            self.context.prompt.render_failure_message(_('Request was rejected.'))
-            self.context.prompt.render_reasons(task.reasons)
+            self.prompt.render_failure_message(_('Request was rejected'))
+            self.prompt.render_reasons(task.reasons)
         else:
-            self.context.prompt.render_success_message(_('Request accepted.'))
-            self.context.prompt.write(_('check status of task %(t)s with "pulp-admin tasks details"')
-            % {'t' : task.task_id})
+            self.prompt.render_success_message(_('Request accepted'))
+            self.prompt.write(
+                _('check status of task %(t)s with "pulp-admin tasks details"')
+                % {'t' : task.task_id})

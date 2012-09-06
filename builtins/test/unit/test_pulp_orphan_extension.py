@@ -13,26 +13,24 @@
 
 import os
 import sys
-import unittest
-
-import mock
 
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)),
-    '../../extensions/admin/'))
+                '../../extensions/admin/'))
 from pulp_orphan import pulp_cli
+import base_builtins
 
 
-class TestOrphanSection(unittest.TestCase):
+class TestOrphanSection(base_builtins.PulpClientTests):
     def setUp(self):
-        self.section = pulp_cli.OrphanSection(mock.MagicMock())
+        super(TestOrphanSection, self).setUp()
+        self.section = pulp_cli.OrphanSection(self.context)
 
     def test_initialize(self):
-        mock_context = mock.MagicMock()
-        pulp_cli.initialize(mock_context)
+        pulp_cli.initialize(self.context)
 
-        self.assertEqual(mock_context.cli.add_section.call_count, 1)
-        self.assertTrue(isinstance(mock_context.cli.add_section.call_args[0][0],
-            pulp_cli.OrphanSection))
+        self.assertEqual(len(self.context.cli.root_section.subsections), 1)
+        self.assertTrue(isinstance(self.context.cli.root_section.subsections['orphan'],
+                        pulp_cli.OrphanSection))
 
     def test_adds_commands(self):
         self.assertEqual(len(self.section.commands), 2)
