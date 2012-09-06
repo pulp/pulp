@@ -89,6 +89,7 @@ LINKS = (
     ('builtins/extensions/admin/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
     ('builtins/extensions/admin/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
     ('builtins/extensions/admin/pulp_event', DIR_ADMIN_EXTENSIONS + 'pulp_event'),
+    ('builtins/extensions/admin/pulp_orphan', DIR_ADMIN_EXTENSIONS + 'pulp_orphan'),
     ('builtins/extensions/admin/pulp_permission', DIR_ADMIN_EXTENSIONS + 'pulp_permission'),
     ('builtins/extensions/admin/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
     ('builtins/extensions/admin/pulp_role', DIR_ADMIN_EXTENSIONS + 'pulp_role'),
