@@ -25,6 +25,7 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 import pulp.plugins.types.database as types_db
+import pulp.server.auth.principal as pulp_principal
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
@@ -260,7 +261,7 @@ class RepoUnitAssociationManager(object):
         importer_instance, plugin_config = plugin_api.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
         call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'], import_config_override)
-        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
+        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, pulp_principal.get_principal()['login'])
 
         try:
             importer_instance.import_units(transfer_source_repo, transfer_dest_repo, conduit, call_config, units=transfer_units)
