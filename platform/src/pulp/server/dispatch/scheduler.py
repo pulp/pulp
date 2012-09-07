@@ -279,6 +279,7 @@ class Scheduler(object):
     def enable(self, schedule_id):
         """
         Enable a previously disabled scheduled call request
+        @deprecated: use update instead
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
@@ -291,6 +292,7 @@ class Scheduler(object):
     def disable(self, schedule_id):
         """
         Disable a scheduled call request without removing it
+        @deprecated: use update instead
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
