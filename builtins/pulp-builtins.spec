@@ -64,6 +64,7 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/pulp_event/
+%{_usr}/lib/pulp/admin/extensions/pulp_orphan/
 %{_usr}/lib/pulp/admin/extensions/pulp_permission/
 %{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
