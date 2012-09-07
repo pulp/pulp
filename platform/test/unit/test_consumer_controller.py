@@ -12,25 +12,21 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import time
-import unittest
-
 import mock
 
 import base
 import logging
 import mock_plugins
 import mock_agent
-import urllib
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.compat import ObjectId
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.webservices.controllers import consumers
 
 
 class ConsumerTest(base.PulpWebserviceTests):
@@ -721,6 +717,81 @@ class ContentTest(base.PulpWebserviceTests):
 
         status, body = self.post(path, body)
         self.assertEquals(status, 201)
+
+    def test_create_scheduled_install_bad_consumer(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/invalid-consumer/unit_install_schedules/'
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 404)
+
+    def test_get_scheduled_install(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/unit_install_schedules/' % self.CONSUMER_ID
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.CONSUMER_ID, response['_id'])
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 200)
+
+    def test_get_all_scheduled_installs(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/unit_install_schedules/' % self.CONSUMER_ID
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/unit_install_schedules/' % self.CONSUMER_ID
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 200)
+        self.assertEqual(len(response), 1)
+
+    def test_get_scheduled_install_bad_consumer(self):
+        schedule_id = str(ObjectId())
+        path = '/v2/consumers/invalid-consumer/unit_install_schedules/%s/' % schedule_id
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_get_scheduled_install_bad_schedule(self):
+        schedule_id = str(ObjectId())
+        path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.CONSUMER_ID, schedule_id)
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_get_all_scheduled_installs_bad_consumer(self):
+        path = '/v2/consumers/invalid-consumer/unit_install_schedules/'
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
 
     def test_update_scheduled_install(self):
         self.populate()
