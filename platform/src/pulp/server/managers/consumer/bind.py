@@ -49,8 +49,13 @@ class BindManager(object):
         @rtype: SON
         @raise MissingResource: when given consumer does not exist.
         """
+        # ensure the consumer is valid
         manager = factory.consumer_manager()
         manager.get_consumer(consumer_id)
+        # ensure the repository & distributor are valid
+        manager = factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        # perform the bind
         bind = Bind(consumer_id, repo_id, distributor_id)
         collection = Bind.get_collection()
         try:
