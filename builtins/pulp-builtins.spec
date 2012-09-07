@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.326
+Version: 0.0.327
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -64,6 +64,7 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/pulp_event/
+%{_usr}/lib/pulp/admin/extensions/pulp_orphan/
 %{_usr}/lib/pulp/admin/extensions/pulp_permission/
 %{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
@@ -94,6 +95,10 @@ client capabilities.
 
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
+- Refactored upload commands to reusable package and implemented Puppet
+  module upload (jason.dobies@redhat.com)
+
 * Fri Aug 31 2012 Jeff Ortel <jortel@redhat.com> 0.0.326-1
 - CLI for managing event listeners. (mhrivnak@redhat.com)
 - Consumer Group support (james.slagle@gmail.com)

@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.326
+Version: 0.0.327
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,16 @@ exit 0
 %endif
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
+- 844751 - now storing repo create time in UTC and with the timezone explicitly
+  serialized into the ISO8601 string. (mhrivnak@redhat.com)
+- 838678 - Add Pulp convention of '' meaning None (jason.dobies@redhat.com)
+- 850863 - Print usage if a non-kwarg is specified (jason.dobies@redhat.com)
+- Client support for copying puppet modules between repositories
+  (jason.dobies@redhat.com)
+- Refactored upload commands to reusable package and implemented Puppet
+  module upload (jason.dobies@redhat.com)
+
 * Fri Aug 31 2012 Jeff Ortel <jortel@redhat.com> 0.0.326-1
 - CLI for managing event listeners. (mhrivnak@redhat.com)
 - Added an event notifier type that sends emails. (mhrivnak@redhat.com)

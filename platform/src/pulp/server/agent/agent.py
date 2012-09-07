@@ -18,9 +18,11 @@ on the agent.
 """
 
 import hashlib
-from gofer import proxy
-from pulp.server.config import config
 from logging import getLogger
+
+from gofer import proxy
+
+from pulp.server.config import config
 
 
 log = getLogger(__name__)
