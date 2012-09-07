@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.326
+Version: 0.0.327
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -237,6 +237,16 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
+- 850929 - Fix url in bind payload in yum distributor. (jortel@redhat.com)
+- 852772 - Corrected help text (jason.dobies@redhat.com)
+- 837352 - Added proper None check for skip types (jason.dobies@redhat.com)
+- Publish group distributor isos * refactor iso generation * move common calls
+  to iso_util * publish logic to generate isos and publish via http/https *
+  tests (pkilambi@redhat.com)
+- Get the basic repo group exports working in groupdistributor
+  (pkilambi@redhat.com)
+
 * Fri Aug 31 2012 Jeff Ortel <jortel@redhat.com> 0.0.326-1
 - 850875 - Fixed an incorrect reference, and in the process replaced two legacy
   CLI commands with modern equivalents. (mhrivnak@redhat.com)
