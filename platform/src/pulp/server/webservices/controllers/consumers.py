@@ -668,6 +668,9 @@ class UnitInstallScheduleCollection(JSONController):
 
     @auth_required(READ)
     def GET(self, consumer_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
         consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         install_tag = action_tag('scheduled_unit_install')
 
@@ -683,6 +686,9 @@ class UnitInstallScheduleCollection(JSONController):
 
     @auth_required(CREATE)
     def POST(self, consumer_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
         schedule_data = self.params()
         units = schedule_data.pop('units', None)
         install_options = {'options': schedule_data.pop('options', {})}
@@ -717,6 +723,9 @@ class UnitInstallScheduleResource(JSONController):
 
     @auth_required(READ)
     def GET(self, consumer_id, schedule_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
 
@@ -729,6 +738,9 @@ class UnitInstallScheduleResource(JSONController):
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, schedule_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
         schedule_data = self.params()
         install_options = None
         units = schedule_data.pop('units', None)
@@ -760,6 +772,9 @@ class UnitInstallScheduleResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, schedule_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
         schedule_manager = managers.schedule_manager()
 
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
