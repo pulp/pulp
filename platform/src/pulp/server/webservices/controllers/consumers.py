@@ -381,7 +381,7 @@ class Content(JSONController):
             manager.install_content,
             args,
             resources=resources,
-            weight=0,
+            weight=pulp_config.config.getint('consumer_content_weight'),
             asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
@@ -415,7 +415,7 @@ class Content(JSONController):
             manager.update_content,
             args,
             resources=resources,
-            weight=0,
+            weight=pulp_config.config.getint('consumer_content_weight'),
             asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
@@ -449,7 +449,7 @@ class Content(JSONController):
             manager.uninstall_content,
             args,
             resources=resources,
-            weight=0,
+            weight=pulp_config.config.getint('consumer_content_weight'),
             asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
