@@ -721,7 +721,7 @@ class UnitInstallScheduleResource(JSONController):
         scheduled_call = scheduler.get(schedule_id)
 
         if consumer_id not in scheduled_call['call_request']['args']:
-            MissingResource(consumer=consumer_id, unit_install_schedule=schedule_id)
+            raise MissingResource(consumer=consumer_id, unit_install_schedule=schedule_id)
 
         scheduled_obj = serialization.dispatch.scheduled_unit_install_obj(scheduled_call)
         scheduled_obj.update(serialization.link.current_link_obj())
