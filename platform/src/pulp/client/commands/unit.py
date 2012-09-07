@@ -50,7 +50,7 @@ class OrphanUnitListCommand(PulpCliCommand):
         self.context = context
         self.prompt = context.prompt
 
-        m = _('display a list of orphans')
+        m = _('display a list of orphaned units')
         super(OrphanUnitListCommand, self).__init__('list', m, self.run)
 
         self.add_option(type_option)
@@ -71,7 +71,7 @@ class OrphanUnitRemoveCommand(PulpCliCommand):
         self.context = context
         self.prompt = context.prompt
 
-        m = _('remove one or more orphans')
+        m = _('remove one or more orphaned units')
         super(OrphanUnitRemoveCommand, self).__init__('remove', m, self.run)
 
         self.add_option(type_option)
