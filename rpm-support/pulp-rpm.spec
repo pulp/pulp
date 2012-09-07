@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 2.0.2
+Version: 2.0.3
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -237,6 +237,11 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.3-1
+- 850875 - Restoring operability of the legacy errata search command.
+  (mhrivnak@redhat.com)
+- 850930 - Add missing Requires: python-rhsm. (jortel@redhat.com)
+
 * Thu Aug 30 2012 Jeff Ortel <jortel@redhat.com> 2.0.2-1
 - 849249 - Fix url in bind payload in yum distributor. (jortel@redhat.com)
 - 848510 - changed sync and status commands to utilize the new task group
