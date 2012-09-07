@@ -212,6 +212,14 @@ class ScheduleManager(object):
     # unit install methods -----------------------------------------------------
 
     def create_unit_install_schedule(self, consumer_id, units, install_options, schedule_data ):
+        """
+        Create a schedule for installing content units on a consumer.
+        @param consumer_id: unique id for the consumer
+        @param units: list of unit type and unit key dicts
+        @param install_options: options to pass to the install manager
+        @param schedule_data: scheduling data
+        @return: schedule id
+        """
         self._validate_consumer(consumer_id)
         self._validate_keys(install_options, _UNIT_INSTALL_OPTION_KEYS)
         if 'schedule' not in schedule_data:
@@ -232,6 +240,14 @@ class ScheduleManager(object):
         return schedule_id
 
     def update_unit_install_schedule(self, consumer_id, schedule_id, units=None, install_options=None, schedule_data=None):
+        """
+        Update an existing schedule for installing content units on a consumer.
+        @param consumer_id: unique id for the consumer
+        @param schedule_id: unique id for the schedule
+        @param units: optional list of units to install
+        @param install_options: optional options to pass to the install manager
+        @param schedule_data: optional schedule updates
+        """
         self._validate_consumer(consumer_id)
         schedule_updates = copy.copy(schedule_data) or {}
 
@@ -250,12 +266,22 @@ class ScheduleManager(object):
         scheduler.update(schedule_id, **schedule_updates)
 
     def delete_unit_install_schedule(self, consumer_id, schedule_id):
+        """
+        Delete an existing schedule for installing content units on a consumer.
+        @param consumer_id: unique id of the consumer
+        @param schedule_id: unique id of the schedule
+        """
         self._validate_consumer(consumer_id)
 
         scheduler = dispatch_factory.scheduler()
         scheduler.remove(schedule_id)
 
     def delete_all_unit_install_schedules(self, consumer_id):
+        """
+        Delete all unit install schedules for a consumer.
+        Useful for unassociating consumers from the server.
+        @param consumer_id: unique id of the consumer
+        """
         self._validate_consumer(consumer_id)
 
         scheduler = dispatch_factory.scheduler()
