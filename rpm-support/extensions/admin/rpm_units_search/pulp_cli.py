@@ -352,7 +352,7 @@ class DistributionCommand(PulpCliCommand):
             return
 
         # Query the server
-        all_distros = self.context.server.repo_unit_search.search(repo_id, criteria).response_body
+        all_distros = self.context.server.repo_unit.search_legacy(repo_id, criteria).response_body
 
         # For the immediate future, there will be either 0 or 1 distributions,
         # but it's just as easy to loop here
