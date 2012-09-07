@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.2
+Version: 2.0.3
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,11 @@ exit 0
 %endif
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.3-1
+- 850875 - Restoring operability of the legacy errata search command.
+  (mhrivnak@redhat.com)
+- 850863 - Print usage if a non-kwarg is specified (jason.dobies@redhat.com)
+
 * Thu Aug 30 2012 Jeff Ortel <jortel@redhat.com> 2.0.2-1
 - 847814 - added completed task cache to all_tasks method
   (jason.connor@gmail.com)
