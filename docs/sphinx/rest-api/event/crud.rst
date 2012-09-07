@@ -22,7 +22,7 @@ when events of the given types are fired.
 | :permission:`create`
 | :param_list:`post`
 
-* :param:`notifier_type,str,one of the supported notifier type IDs`
+* :param:`notifier_type_id,str,one of the supported notifier type IDs`
 * :param:`notifier_config,object,configuration values the notifier will use when it handles an event`
 * :param:`event_types,list,list of event type IDs that this listener will handle`
 
