@@ -5,7 +5,8 @@
 # Also, when adding that flag, don't forget to delete the above comment. :)
 
 GIT_ROOT=`pwd`
-TAG_FLAGS="--accept-auto-changelog"
+TAG_FLAGS=""
+#TAG_FLAGS="--accept-auto-changelog"
 PUSH_FLAGS="--tags"
 
 for SUBPROJECT in platform rpm-support builtins products/pulp-rpm-product
