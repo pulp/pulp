@@ -55,15 +55,30 @@ class OrphanUnitListCommand(PulpCliCommand):
 
         self.add_option(type_option)
 
+        m = _('include a count of how many orphaned units exist of each type')
+        summary_flag = PulpCliFlag('--summary', m, ('-s',))
+        self.add_flag(summary_flag)
+
     def run(self, **kwargs):
         content_type = kwargs.get('type')
         if content_type:
             orphans = self.context.server.content_orphan.orphans_by_type(content_type).response_body
         else:
             orphans = self.context.server.content_orphan.orphans().response_body
+        summary = {}
         for orphan in orphans:
+            orphan_type = orphan['_content_type_id']
+            summary[orphan_type] = summary.get(orphan_type, 0) + 1
             orphan['id'] = orphan.get('_id', None)
             self.prompt.render_document(orphan)
+
+        if kwargs.get('summary'):
+            order = summary.keys()
+            order.sort()
+            order.append('Total')
+            summary['Total'] = sum(summary.values())
+            self.prompt.render_title(_('Summary'))
+            self.prompt.render_document(summary, order=order)
 
 
 class OrphanUnitRemoveCommand(PulpCliCommand):

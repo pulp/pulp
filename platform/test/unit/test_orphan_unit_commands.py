@@ -59,6 +59,20 @@ class TestList(base.PulpClientTests):
         mock_render.assert_called_once_with(
                 {'_id' : 'foo', 'id' : 'foo'})
 
+    @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
+    @mock.patch('pulp.bindings.content.OrphanContentAPI.orphans')
+    def test_summary(self, mock_orphans, mock_render):
+        mock_orphans.return_value.response_body = [
+            {'_id': 'foo1', '_content_type_id': 'rpm'},
+            {'_id': 'foo2', '_content_type_id': 'rpm'},
+            {'_id': 'foo3', '_content_type_id': 'srpm'},
+        ]
+
+        self.command.run(summary=True)
+
+        last_call_arg = mock_render.call_args[0][0]
+        self.assertEqual(last_call_arg, {'rpm':2, 'srpm':1, 'Total':3})
+
 
 class TestRemove(base.PulpClientTests):
     def setUp(self):
