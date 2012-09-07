@@ -271,6 +271,8 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
+        if ScheduledCall.get_collection().find_one(schedule_id) is None:
+            raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
         scheduled_call_collection = ScheduledCall.get_collection()
         scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
