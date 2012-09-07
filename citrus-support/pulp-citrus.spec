@@ -18,7 +18,7 @@
 
 Name: pulp-citrus
 Version: 0.0.325
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
@@ -132,6 +132,9 @@ Pulp citrus handlers.
 
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-3
+- Fixes.
+
 * Wed Sep 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-2
 - spec changes.
 
