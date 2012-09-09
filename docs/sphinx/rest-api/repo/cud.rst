@@ -255,7 +255,7 @@ is not deleted. Deleting content is handled through the
 | :permission:`delete`
 | :response_list:`_`
 
-* :response_code:
+* :response_code:`200,if the update was executed and successful`
 * :response_code:`202,if the request was accepted by the server to delete when the repository is available`
 
 | :return:`call report representing the current state of the delete`
