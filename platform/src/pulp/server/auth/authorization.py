@@ -17,9 +17,7 @@ Utility functions to manage permissions and roles in pulp.
 import logging
 from gettext import gettext as _
 
-from pulp.server.auth.principal import (
-    get_principal, SystemPrincipal)
-from pulp.server.exceptions import PulpException
+from pulp.server.exceptions import PulpException, InvalidValue
 
 from pulp.server.managers import factory
 
@@ -46,7 +44,7 @@ def name_to_operation(name):
     """
     name = name.upper()
     if name not in factory.permission_manager().operation_names:
-        return None
+        raise InvalidValue('operations')
     return factory.permission_manager().operation_names.index(name)
 
 
@@ -129,10 +127,10 @@ class GrantPermissionsForTask(object):
     """
 
     def __init__(self):
-        self.user_name = get_principal()['login']
+        self.user_name = factory.principal_manager().get_principal()['login']
 
     def __call__(self, task):
-        if self.user_name == SystemPrincipal.LOGIN:
+        if self.user_name is factory.principal_manager().system_login:
             return
         resource = '/tasks/%s/' % task.id
         operations = ['READ', 'DELETE']
@@ -145,10 +143,10 @@ class RevokePermissionsForTask(object):
     """
 
     def __init__(self):
-        self.user_name = get_principal()['login']
+        self.user_name = factory.principal_manager().get_principal()['login']
 
     def __call__(self, task):
-        if self.user_name == SystemPrincipal.LOGIN:
+        if self.user_name is factory.principal_manager().system_login:
             return
         resource = '/tasks/%s/' % task.id
         operations = ['READ', 'DELETE']
@@ -158,7 +156,7 @@ class RevokePermissionsForTask(object):
 class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
 
     def __call__(self, call_request, call_report):
-        if self.user_name == SystemPrincipal.LOGIN:
+        if self.user_name is factory.principal_manager().system_login:
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
@@ -168,7 +166,7 @@ class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
 class RevokePermissionsForTaskV2(RevokePermissionsForTask):
 
     def __call__(self, call_request, call_report):
-        if self.user_name == SystemPrincipal.LOGIN:
+        if self.user_name is factory.principal_manager().system_login:
             return
         resource = '/v2/tasks/%s/' % call_report.task_id
         operations = ['READ', 'DELETE']
