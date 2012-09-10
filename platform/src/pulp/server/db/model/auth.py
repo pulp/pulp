@@ -36,9 +36,12 @@ class User(Model):
     unique_indices = ('login',)
     search_indices = ('name', 'roles',)
 
-    def __init__(self, login, password, name=None, roles=None):
-        super(User, self).__init__()
-
+    def __init__(self, login, password, name=None, roles=None, user_id=None):
+        if user_id is None:
+            super(User, self).__init__()
+        else:
+            self.id = self._id = user_id
+            
         self.login = login
         self.password = password
         self.name = name or login
