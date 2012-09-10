@@ -16,9 +16,8 @@ import hashlib
 import os
 import rpm
 
-from   pulp.client.extensions.extensions import PulpCliCommand
+from   pulp.client.commands.repo.upload import UploadCommand
 import pulp.client.upload.manager as upload_lib
-from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 
@@ -40,15 +39,14 @@ def initialize(context):
 
 # -- commands -----------------------------------------------------------------
 
-class CreateRpmCommand(PulpCliCommand):
+class CreateRpmCommand(UploadCommand):
     """
     Handles initializing and uploading one or more RPMs.
     """
 
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.create)
-        self.context = context
-        self.prompt = context.prompt
+        self.upload_manager = _upload_manager(context)
+        super(CreateRpmCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
         d = 'identifies the repository the packages will be uploaded into'
         self.create_option('--repo-id', _(d), required=True)

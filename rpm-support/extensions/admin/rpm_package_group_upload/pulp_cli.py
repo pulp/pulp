@@ -14,9 +14,8 @@
 from gettext import gettext as _
 import os
 
-from   pulp.client.extensions.extensions import PulpCliCommand
+from   pulp.client.commands.repo.upload import UploadCommand
 import pulp.client.upload.manager as upload_lib
-from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 PKG_GROUP_TYPE_ID="package_group"
@@ -38,15 +37,14 @@ def initialize(context):
 
 # -- commands -----------------------------------------------------------------
 
-class CreatePackageGroupCommand(PulpCliCommand):
+class CreatePackageGroupCommand(UploadCommand):
     """
     Handles creation of a package group
     """
 
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.create)
-        self.context = context
-        self.prompt = context.prompt
+        self.upload_manager = _upload_manager(context)
+        super(CreatePackageGroupCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
         d = 'identifies the repository the package group will be created in'
         self.create_option('--repo-id', _(d), required=True)
@@ -149,15 +147,15 @@ class CreatePackageGroupCommand(PulpCliCommand):
         upload_id = upload_manager.initialize_upload(None, repo_id, PKG_GROUP_TYPE_ID, unit_key, metadata)
         perform_upload(self.context, upload_manager, [upload_id])
 
-class CreatePackageCategoryCommand(PulpCliCommand):
+class CreatePackageCategoryCommand(UploadCommand):
     """
     Handles creation of a package category
     """
 
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.create)
-        self.context = context
-        self.prompt = context.prompt
+        self.upload_manager = _upload_manager(context)
+        super(CreatePackageCategoryCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
+
 
         d = 'identifies the repository the package category will be created in'
         self.create_option('--repo-id', _(d), required=True)
