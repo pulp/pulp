@@ -897,6 +897,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
     def setUp(self):
         super(ScheduledUnitInstallTests, self).setUp()
+        plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
         self.consumer_id = 'test-consumer'
