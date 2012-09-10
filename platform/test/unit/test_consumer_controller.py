@@ -905,7 +905,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.consumer_manager.register(self.consumer_id)
 
     def tearDown(self):
-        super(ScheduledUnitInstallTests, self.setUp())
+        super(ScheduledUnitInstallTests, self).tearDown()
         self.consumer_manager = None
         Consumer.get_collection().remove(safe=True)
         ScheduledCall.get_collection().remove(safe=True)
