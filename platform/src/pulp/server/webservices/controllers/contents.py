@@ -181,6 +181,7 @@ class UploadsCollection(JSONController):
         location = serialization.link.child_link_obj(upload_id)
         return self.created(location['_href'], {'_href' : location['_href'], 'upload_id' : upload_id})
 
+
 class UploadResource(JSONController):
 
     # Scope:  Resource
@@ -192,6 +193,7 @@ class UploadResource(JSONController):
         upload_manager.delete_upload(upload_id)
 
         return self.ok(None)
+
 
 class UploadSegmentResource(JSONController):
 
@@ -249,6 +251,7 @@ class OrphanTypeSubCollection(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type], tags=tags, archive=True)
         return execution.execute_async(self, call_request)
+
 
 class OrphanResource(JSONController):
 

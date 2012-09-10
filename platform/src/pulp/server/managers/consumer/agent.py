@@ -17,7 +17,9 @@
 Contains agent management classes
 """
 
+from logging import getLogger
 import sys
+
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -26,7 +28,6 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
 from pulp.server.agent import PulpAgent
-from logging import getLogger
 
 
 _LOG = getLogger(__name__)
