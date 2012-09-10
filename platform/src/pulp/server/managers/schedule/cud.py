@@ -229,7 +229,7 @@ class ScheduleManager(object):
         args = [consumer_id]
         kwargs = {'units': units,
                   'options': install_options.get('options', {})}
-        weight = pulp_config.config.getint('consumer_content_weight')
+        weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('unit_install'), action_tag('scheduled_unit_install')]
         call_request = CallRequest(manager.install_content, args, kwargs, weight=weight, tags=tags, archive=True)
