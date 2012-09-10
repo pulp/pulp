@@ -48,20 +48,6 @@ class CreateRpmCommand(UploadCommand):
         self.upload_manager = _upload_manager(context)
         super(CreateRpmCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
-        d = 'identifies the repository the packages will be uploaded into'
-        self.create_option('--repo-id', _(d), required=True)
-
-        d = 'full path to the package to upload; may be specified multiple times ' \
-            'for multiple files'
-        self.create_option('--file', _(d), aliases=['-f'], allow_multiple=True, required=False)
-
-        d = 'full path to a directory containing RPMs, all of which will be uploaded; ' \
-            'may be specified multiple times for multiple directories'
-        self.create_option('--dir', _(d), aliases=['-d'], allow_multiple=True, required=False)
-
-        d = 'display extra information about the upload process'
-        self.create_flag('-v', _(d))
-
     def create(self, **kwargs):
         self.prompt.render_title(_('RPM Upload'))
 

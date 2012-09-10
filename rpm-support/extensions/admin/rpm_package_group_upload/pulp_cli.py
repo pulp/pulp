@@ -46,9 +46,6 @@ class CreatePackageGroupCommand(UploadCommand):
         self.upload_manager = _upload_manager(context)
         super(CreatePackageGroupCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
-        d = 'identifies the repository the package group will be created in'
-        self.create_option('--repo-id', _(d), required=True)
-
         d = 'id of this package group'
         self.create_option('--group-id', _(d), aliases=['-i'], required=True)
 
@@ -85,9 +82,6 @@ class CreatePackageGroupCommand(UploadCommand):
 
         d = 'set "user_visible" flag on package group to True'
         self.create_flag('--user-visible', _(d))
-        
-        d = 'display extra information about the creation process'
-        self.create_flag('-v', _(d))
 
     def create(self, **kwargs):
         self.prompt.render_title(_('Package Group Creation'))
@@ -156,10 +150,6 @@ class CreatePackageCategoryCommand(UploadCommand):
         self.upload_manager = _upload_manager(context)
         super(CreatePackageCategoryCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
-
-        d = 'identifies the repository the package category will be created in'
-        self.create_option('--repo-id', _(d), required=True)
-
         d = 'id of this package category'
         self.create_option('--category-id', _(d), aliases=['-i'], required=True)
 
@@ -174,9 +164,6 @@ class CreatePackageCategoryCommand(UploadCommand):
 
         d = 'package group ids to include in this package category'
         self.create_option('--group', _(d), aliases=['-g'], allow_multiple=True, required=False)
-
-        d = 'display extra information about the creation process'
-        self.create_flag('-v', _(d))
 
     def create(self, **kwargs):
         self.prompt.render_title(_('Package Category Creation'))
