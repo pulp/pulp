@@ -49,6 +49,7 @@ TYPE_PASSWORD               = 'password-manager'
 TYPE_PERMISSION             = 'permission-manager'
 TYPE_PERMISSION_QUERY       = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
+TYPE_PRINCIPAL              = 'principal'
 TYPE_REPO                   = 'repo-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
@@ -231,6 +232,12 @@ def plugin_manager():
     """
     return get_manager(TYPE_PLUGIN_MANAGER)
 
+def principal_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.principal.PrincipalManager}
+    """
+    return get_manager(TYPE_PRINCIPAL)
+
 def repo_group_manager():
     """
     @rtype: L{pulp.server.managers.repo.group.cud.RepoGroupManager}
@@ -343,6 +350,7 @@ def initialize():
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
+    from pulp.server.managers.auth.principal import PrincipalManager
     from pulp.server.managers.auth.user.cud import UserManager
     from pulp.server.managers.auth.user.query import UserQueryManager
     from pulp.server.managers.auth.password import PasswordManager
@@ -406,6 +414,7 @@ def initialize():
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
+        TYPE_PRINCIPAL: PrincipalManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_ASSOCIATION_QUERY : RepoUnitAssociationQueryManager,
