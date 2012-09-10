@@ -45,6 +45,10 @@ class PrincipalManager(object):
     Manager that tracks the current user of the system.
     """
 
+    # reference system attributes here for convenience
+    system_id = _SYSTEM_ID
+    system_login = _SYSTEM_LOGIN
+
     def get_principal(self):
         """
         Get the current user of the system,
