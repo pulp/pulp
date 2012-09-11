@@ -596,6 +596,7 @@ class YumImporter(Importer):
         @rtype: list
         """
         missing_deps = []
+        units = [u for u in units if u.type_id == TYPE_ID_RPM]
         deps = self.resolve_dependencies(repo, units, conduit, config)
         resolved = itertools.chain(*deps['resolved'].values())
         if resolved:
