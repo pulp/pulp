@@ -15,9 +15,9 @@ import os
 
 from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
-    PulpCliOption, PulpCliFlag, UnknownArgsParser
+    PulpCliOption, PulpCliFlag
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.search import SearchCommand
+from pulp.client.commands.criteria import CriteriaCommand
 
 
 # -- framework hook -----------------------------------------------------------
@@ -75,7 +75,7 @@ class UserSection(PulpCliSection):
         self.add_command(list_command)
         
         # Search Command
-        self.add_command(SearchCommand(self.search))
+        self.add_command(CriteriaCommand(self.search, include_search=True))
 
     def create(self, **kwargs):
         login = kwargs['login']

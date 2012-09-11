@@ -145,8 +145,8 @@ Remove a User from a Role
 
 Removes a user from an existing role. 
 
-| :method:`post`
-| :path:`/v2/roles/<role_id>/users/<user_login>`
+| :method:`delete`
+| :path:`/v2/roles/<role_id>/users/<user_login>/`
 | :permission:`delete`
 | :param_list:`post`
 

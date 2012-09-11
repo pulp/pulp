@@ -43,6 +43,7 @@ TAG_FAILURE = 'failure'
 TAG_WARNING = 'warning'
 TAG_EXCEPTION = 'exception'
 TAG_DOCUMENT = 'document'
+TAG_REASONS = 'reasons'
 TAG_PROGRESS_BAR = 'progress_bar'
 TAG_SPINNER = 'spinner'
 TAG_THREADED_SPINNER = 'threaded-spinner'
@@ -91,7 +92,7 @@ class PulpPrompt(Prompt):
         for i in range(0, lines):
             self.write('')
 
-    def render_title(self, title):
+    def render_title(self, title, tag=TAG_TITLE):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting for a title.
@@ -119,11 +120,11 @@ class PulpPrompt(Prompt):
 
         self.write(divider)
         # self.write(title, color=COLOR_HEADER, tag=TAG_TITLE) # removing color for now
-        self.write(title, tag=TAG_TITLE)
+        self.write(title, tag=tag)
         self.write(divider)
         self.render_spacer()
 
-    def render_section(self, section):
+    def render_section(self, section, tag=TAG_SECTION):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting for a section header.
@@ -139,11 +140,11 @@ class PulpPrompt(Prompt):
         :type  section: str
         """
 
-        self.write(section, tag=TAG_SECTION)
+        self.write(section, tag=tag)
         self.write('-' * len(section))
         self.render_spacer()
 
-    def render_paragraph(self, paragraph):
+    def render_paragraph(self, paragraph, tag=TAG_PARAGRAPH):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting for a description.
@@ -153,16 +154,16 @@ class PulpPrompt(Prompt):
         this method instead of concatenating them manually with newline characters.
 
         For testing verification, this call will result in one instance of
-        TAG_PARAGRAPH being recorded.
+        TAG_PARAGRAPH being recorded unless a different tag is provided.
 
         :param paragraph: text to format as a paragraph
         :type  paragraph: str
         """
 
-        self.write(paragraph, tag=TAG_PARAGRAPH)
+        self.write(paragraph, tag=tag)
         self.render_spacer()
 
-    def render_success_message(self, message):
+    def render_success_message(self, message, tag=TAG_SUCCESS):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to indicate an action has successfully taken place.
@@ -171,10 +172,10 @@ class PulpPrompt(Prompt):
         :type  message: str
         """
 
-        self.write(message, color=COLOR_SUCCESS, tag=TAG_SUCCESS)
+        self.write(message, color=COLOR_SUCCESS, tag=tag)
         self.render_spacer()
 
-    def render_failure_message(self, message, reason=None):
+    def render_failure_message(self, message, reason=None, tag=TAG_FAILURE):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to indicate an action has failed to complete.
@@ -189,12 +190,12 @@ class PulpPrompt(Prompt):
         :type  reason: str
         """
 
-        self.write(message, color=COLOR_FAILURE, tag=TAG_FAILURE)
+        self.write(message, color=COLOR_FAILURE, tag=tag)
         if reason is not None:
             self.write(' - %s' % reason)
         self.render_spacer()
 
-    def render_warning_message(self, message):
+    def render_warning_message(self, message, tag=TAG_WARNING):
         """
         Prints the given text to the screen, wrapping it in standard Pulp
         formatting to highlight the message.
@@ -203,7 +204,7 @@ class PulpPrompt(Prompt):
         @type  message: str
         """
 
-        self.write(message, color=COLOR_WARNING, tag=TAG_WARNING)
+        self.write(message, color=COLOR_WARNING, tag=tag)
         self.render_spacer()
 
     def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0, step=2, omit_hidden=True):
@@ -395,7 +396,7 @@ class PulpPrompt(Prompt):
                                                       'i' : r.resource_id}
             msg += _('Operation: %(o)s\n') % {'o' : r.operation}
 
-        self.write(msg)
+        self.write(msg, tag=TAG_REASONS)
 
     def create_progress_bar(self, show_trailing_percentage=True):
         """
@@ -501,9 +502,19 @@ class PulpCli(Cli):
         self.add_section(subsection)
         return subsection
 
+
 class ClientContext:
 
     def __init__(self, server, config, logger, prompt, exception_handler, cli=None, shell=None):
+        """
+        This stuff is created in pulp.client.launcher
+
+        :type server: pulp.bindings.bindings.Bindings
+        :type config: pulp.common.config.Config
+        :type logger: logging.Logger
+        :type prompt: pulp.client.extensions.core.PulpPrompt
+        :type exception_handler: pulp.client.extensions.exceptions.ExceptionHandler
+        """
         self.server = server
         self.logger = logger
         self.prompt = prompt

@@ -14,7 +14,7 @@
 from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliSection
-from pulp.client.search import UnitCopyCommand
+from pulp.client.commands.unit import UnitCopyCommand
 from pulp_rpm.common.ids import TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM
 
 # -- plugin hook --------------------------------------------------------------

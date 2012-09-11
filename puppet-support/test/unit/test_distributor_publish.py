@@ -61,7 +61,8 @@ class PublishRunTests(unittest.TestCase):
             key = {'name' : name, 'version' : version, 'author' : author}
             storage_dir = os.path.join(FAKE_PULP_STORAGE_DIR, module)
 
-            u = Unit(constants.TYPE_PUPPET_MODULE, key, {}, storage_dir)
+            metadata = {'checksums' : [['a', 'a'], ['b', 'b']]}
+            u = Unit(constants.TYPE_PUPPET_MODULE, key, metadata, storage_dir)
             self.units.append(u)
         self.conduit = MockConduit()
         self.conduit.get_units.return_value = self.units
@@ -137,6 +138,9 @@ class PublishRunTests(unittest.TestCase):
         self.assertEqual(pr.metadata_exception, None)
         self.assertEqual(pr.metadata_traceback, None)
 
+        self.assertEqual(pr.publish_http, constants.STATE_SUCCESS)
+        self.assertEqual(pr.publish_https, constants.STATE_SUCCESS)
+
     def test_unpublish_http(self):
         """
         After a successful publish, run another without HTTP to make sure the
@@ -153,6 +157,21 @@ class PublishRunTests(unittest.TestCase):
         # Verify
         published_repo_dir = os.path.join(self.test_http_dir, self.repo.id)
         self.assertTrue(not os.path.exists(published_repo_dir))
+
+    def test_publish_skip_http_https(self):
+        # Setup
+        self.config.override_config = {
+            constants.CONFIG_SERVE_HTTP : False,
+            constants.CONFIG_SERVE_HTTPS : False,
+        }
+
+        # Test
+        self.run.perform_publish()
+
+        # Verify
+        pr = self.run.progress_report
+        self.assertEqual(pr.publish_http, constants.STATE_SKIPPED)
+        self.assertEqual(pr.publish_https, constants.STATE_SKIPPED)
 
     def test_error_in_modules_step(self):
         # Setup
@@ -236,3 +255,14 @@ class PublishRunTests(unittest.TestCase):
 
         self.assertEqual(pr.metadata_state, constants.STATE_SUCCESS)
 
+    def test_unpublish_repo(self):
+        # Setup
+        os.makedirs(os.path.join(self.test_http_dir, self.repo.id))
+        os.makedirs(os.path.join(self.test_https_dir, self.repo.id))
+
+        # Test
+        publish.unpublish_repo(self.repo, self.config)
+
+        # Verify
+        self.assertTrue(not os.path.exists(os.path.join(self.test_http_dir, self.repo.id)))
+        self.assertTrue(not os.path.exists(os.path.join(self.test_https_dir, self.repo.id)))

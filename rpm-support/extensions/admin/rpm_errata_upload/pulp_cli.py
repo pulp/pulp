@@ -16,9 +16,8 @@ import logging
 import os
 from gettext import gettext as _
 
-from   pulp.client.extensions.extensions import PulpCliCommand
+from   pulp.client.commands.repo.upload import UploadCommand
 import pulp.client.upload.manager as upload_lib
-from   pulp.client.upload.ui import perform_upload
 
 _LOG = logging.getLogger(__name__)
 
@@ -37,18 +36,14 @@ def initialize(context):
 
 # -- commands -----------------------------------------------------------------
 
-class CreateErratumCommand(PulpCliCommand):
+class CreateErratumCommand(UploadCommand):
     """
     Handles creation of an erratum
     """
 
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.create)
-        self.context = context
-        self.prompt = context.prompt
-
-        d = 'identifies the repository the erratum will be created in'
-        self.create_option('--repo-id', _(d), required=True)
+        self.upload_manager = _upload_manager(context)
+        super(CreateErratumCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
         d = 'id of this erratum'
         self.create_option('--erratum-id', _(d), aliases=['-i'], required=True)
@@ -106,9 +101,6 @@ class CreateErratumCommand(PulpCliCommand):
 
         d = 'solution for this erratum'
         self.create_option('--solution', _(d), required=False)
-
-        d = 'display extra information about the creation process'
-        self.create_flag('-v', _(d))
 
     def create(self, **kwargs):
         self.prompt.render_title(_('Erratum Creation'))

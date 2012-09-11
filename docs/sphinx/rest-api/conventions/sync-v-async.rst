@@ -76,3 +76,15 @@ Example Call Report::
   "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/"
  }
 
+
+.. _call_report_list:
+
+Call Report List
+----------------
+
+Sometimes a 202 ACCEPTED will return an array of call reports, where each call
+report is as described above. This happens when Pulp needs to kick off multiple
+tasks to handle the REST API call.
+
+More information on managing task groups can be found in the
+:ref:`task_group_management` section.

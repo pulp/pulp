@@ -17,16 +17,18 @@ Contains recurring actions and remote classes.
 """
 
 from hashlib import sha256
+from logging import getLogger
+
 from gofer.decorators import *
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
+
 from pulp.common.bundle import Bundle as BundleImpl
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
-from logging import getLogger
 
 log = getLogger(__name__)
 plugin = Plugin.find(__name__)

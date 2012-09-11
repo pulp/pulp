@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.324
+Version: 0.0.327
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -237,6 +237,27 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
+- 850929 - Fix url in bind payload in yum distributor. (jortel@redhat.com)
+- 852772 - Corrected help text (jason.dobies@redhat.com)
+- 837352 - Added proper None check for skip types (jason.dobies@redhat.com)
+- Publish group distributor isos * refactor iso generation * move common calls
+  to iso_util * publish logic to generate isos and publish via http/https *
+  tests (pkilambi@redhat.com)
+- Get the basic repo group exports working in groupdistributor
+  (pkilambi@redhat.com)
+
+* Fri Aug 31 2012 Jeff Ortel <jortel@redhat.com> 0.0.326-1
+- 850875 - Fixed an incorrect reference, and in the process replaced two legacy
+  CLI commands with modern equivalents. (mhrivnak@redhat.com)
+- Consumer Group support (james.slagle@gmail.com)
+
+* Sun Aug 26 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
+- 848510 - changed sync and status commands to utilize the new task group
+  support in display_status (jason.connor@gmail.com)
+- 848510 - refactored display_status to work with an individual task as well as
+  a task group (jason.connor@gmail.com)
+
 * Thu Aug 16 2012 Jeff Ortel <jortel@redhat.com> 0.0.324-1
 - Add support to depsolve and include missing dependencies during import from
   another repository. (jortel@redhat.com)

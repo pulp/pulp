@@ -19,19 +19,20 @@ import web
 from web.webapi import BadRequest
 
 # Pulp
+import pulp.server.managers.factory as managers
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
-import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.webservices import execution
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
-from pulp.server.exceptions import MissingValue
 
 # -- constants ----------------------------------------------------------------
 
@@ -225,7 +226,7 @@ class Bindings(JSONController):
         Create a bind association between the specified
         consumer by id included in the URL path and a repo-distributor
         specified in the POST body: {repo_id:<str>, distributor_id:<str>}.
-        Designed to be itempotent so only MissingResource is expected to
+        Designed to be idempotent so only MissingResource is expected to
         be raised by manager.
         @param consumer_id: The consumer to bind.
         @type consumer_id: str
@@ -380,7 +381,7 @@ class Content(JSONController):
             manager.install_content,
             args,
             resources=resources,
-            weight=0,
+            weight=pulp_config.config.getint('tasks', 'consumer_content_weight'),
             asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
@@ -414,7 +415,7 @@ class Content(JSONController):
             manager.update_content,
             args,
             resources=resources,
-            weight=0,
+            weight=pulp_config.config.getint('tasks', 'consumer_content_weight'),
             asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
@@ -448,7 +449,7 @@ class Content(JSONController):
             manager.uninstall_content,
             args,
             resources=resources,
-            weight=0,
+            weight=pulp_config.config.getint('tasks', 'consumer_content_weight'),
             asynchronous=True,
             archive=True,)
         result = execution.execute_async(self, call_request)
@@ -483,7 +484,7 @@ class ConsumerHistory(JSONController):
 
         if end_date:
             end_date = end_date[0]
-            
+
         if event_type:
             event_type = event_type[0]
 
@@ -663,21 +664,148 @@ class ContentApplicability(JSONController):
         return self.ok(report)
 
 
+class UnitInstallScheduleCollection(JSONController):
+
+    @auth_required(READ)
+    def GET(self, consumer_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+        install_tag = action_tag('scheduled_unit_install')
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_calls = scheduler.find(consumer_tag, install_tag)
+
+        schedule_objs = []
+        for call in scheduled_calls:
+            obj = serialization.dispatch.scheduled_unit_install_obj(call)
+            obj.update(serialization.link.child_link_obj(obj['_id']))
+            schedule_objs.append(obj)
+        return self.ok(schedule_objs)
+
+    @auth_required(CREATE)
+    def POST(self, consumer_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        schedule_data = self.params()
+        units = schedule_data.pop('units', None)
+        install_options = {'options': schedule_data.pop('options', {})}
+
+        if not units:
+            raise MissingValue(['units'])
+
+        schedule_manager = managers.schedule_manager()
+
+        weight = pulp_config.config.getint('tasks', 'create_weight')
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                action_tag('create_unit_install_schedule')]
+
+        call_request = CallRequest(schedule_manager.create_unit_install_schedule,
+                                   [consumer_id, units, install_options, schedule_data],
+                                   weight=weight,
+                                   tags=tags,
+                                   archive=True)
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+
+        schedule_id = execution.execute_sync(call_request)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_call = scheduler.get(schedule_id)
+
+        scheduled_obj = serialization.dispatch.scheduled_unit_install_obj(scheduled_call)
+        scheduled_obj.update(serialization.link.child_link_obj(schedule_id))
+        return self.created(scheduled_obj['_href'], scheduled_obj)
+
+
+class UnitInstallScheduleResource(JSONController):
+
+    @auth_required(READ)
+    def GET(self, consumer_id, schedule_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_call = scheduler.get(schedule_id)
+
+        if consumer_id not in scheduled_call['call_request'].args:
+            raise MissingResource(consumer=consumer_id, unit_install_schedule=schedule_id)
+
+        scheduled_obj = serialization.dispatch.scheduled_unit_install_obj(scheduled_call)
+        scheduled_obj.update(serialization.link.current_link_obj())
+        return self.ok(scheduled_obj)
+
+    @auth_required(UPDATE)
+    def PUT(self, consumer_id, schedule_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        schedule_data = self.params()
+        install_options = None
+        units = schedule_data.pop('units', None)
+
+        if 'options' in schedule_data:
+            install_options = {'options': schedule_data.pop('options')}
+
+        schedule_manager = managers.schedule_manager()
+
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
+                action_tag('update_unit_install_schedule')]
+
+        call_request = CallRequest(schedule_manager.update_unit_install_schedule,
+                                   [consumer_id, schedule_id, units, install_options, schedule_data],
+                                   tags=tags,
+                                   archive=True)
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
+
+        execution.execute(call_request)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_call = scheduler.get(schedule_id)
+
+        scheduled_obj = serialization.dispatch.scheduled_unit_install_obj(scheduled_call)
+        scheduled_obj.update(serialization.link.current_link_obj())
+        return self.ok(scheduled_obj)
+
+    @auth_required(DELETE)
+    def DELETE(self, consumer_id, schedule_id):
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        schedule_manager = managers.schedule_manager()
+
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
+                action_tag('delete_unit_install_schedule')]
+
+        call_request = CallRequest(schedule_manager.delete_unit_install_schedule,
+                                   [consumer_id, schedule_id],
+                                   tags=tags,
+                                   archive=True)
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
+
+        return execution.execute_ok(self, call_request)
+
 # -- web.py application -------------------------------------------------------
 
-
 urls = (
-    '/$', 'Consumers',
-    '/search/$', 'ConsumerSearch',
-    '/actions/content/applicability/$', 'ContentApplicability',
-    '/([^/]+)/bindings/$', 'Bindings',
-    '/([^/]+)/bindings/([^/]+)/$', 'Bindings',
-    '/([^/]+)/bindings/([^/]+)/([^/]+)/$', 'Binding',
-    '/([^/]+)/profiles/$', 'Profiles',
-    '/([^/]+)/profiles/([^/]+)/$', 'Profile',
-    '/([^/]+)/actions/content/(install|update|uninstall)/$', 'Content',
-    '/([^/]+)/history/$', 'ConsumerHistory',
-    '/([^/]+)/$', 'Consumer',
+    '/$', Consumers,
+    '/search/$', ConsumerSearch,
+    '/actions/content/applicability/$', ContentApplicability,
+    '/([^/]+)/bindings/$', Bindings,
+    '/([^/]+)/bindings/([^/]+)/$', Bindings,
+    '/([^/]+)/bindings/([^/]+)/([^/]+)/$', Binding,
+    '/([^/]+)/profiles/$', Profiles,
+    '/([^/]+)/profiles/([^/]+)/$', Profile,
+    '/([^/]+)/unit_install_schedules/', UnitInstallScheduleCollection,
+    '/([^/]+)/unit_install_schedules/([^/]+)/', UnitInstallScheduleResource,
+    '/([^/]+)/actions/content/(install|update|uninstall)/$', Content,
+    '/([^/]+)/history/$', ConsumerHistory,
+    '/([^/]+)/$', Consumer,
 )
 
 application = web.application(urls, globals())

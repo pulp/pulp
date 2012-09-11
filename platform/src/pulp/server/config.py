@@ -35,6 +35,11 @@ _default_values = {
         'seeds': 'localhost:27017',
         'operation_retries': '2',
     },
+    'email': {
+        'host': 'localhost',
+        'port': '25',
+        'enabled' : 'false'
+    },
     'events': {
         'send_enabled': 'false',
         'recv_enabled': 'false',
@@ -82,6 +87,7 @@ _default_values = {
     'tasks': {
         'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
+        'consumer_content_weight': '0',
         'create_weight': '0',
         'publish_weight': '1',
         'sync_weight': '2',

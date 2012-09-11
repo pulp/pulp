@@ -65,11 +65,11 @@ class ConsumerManager(object):
         """
         if not is_consumer_id_valid(id):
             raise InvalidValue(['id'])
-        
+
         existing_consumer = Consumer.get_collection().find_one({'id' : id})
         if existing_consumer is not None:
             raise DuplicateResource(id)
-            
+
         if notes is not None and not isinstance(notes, dict):
             raise InvalidValue(['notes'])
 
@@ -93,12 +93,12 @@ class ConsumerManager(object):
         return create_me
 
 
-    def unregister(self, id):
+    def unregister(self, consumer_id):
         """
         Unregisters given consumer.
 
-        @param id: identifies the consumer being unregistered
-        @type  id: str
+        @param consumer_id: identifies the consumer being unregistered
+        @type  consumer_id: str
 
         @raises MissingResource: if the given consumer does not exist
         @raises OperationFailed: if any part of the unregister process fails;
@@ -106,30 +106,41 @@ class ConsumerManager(object):
         @raises PulpExecutionException: if error during updating database collection
         """
 
-        self.get_consumer(id)
-        
+        self.get_consumer(consumer_id)
+
         # Remove associate bind
         manager = factory.consumer_bind_manager()
-        manager.consumer_deleted(id)
-        
+        manager.consumer_deleted(consumer_id)
+
         # Remove associated profiles
         manager = factory.consumer_profile_manager()
-        manager.consumer_deleted(id)
+        manager.consumer_deleted(consumer_id)
 
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()
-        agent_consumer.unregistered(id)
+        agent_consumer.unregistered(consumer_id)
+
+        # remove from consumer groups
+        group_manager = factory.consumer_group_manager()
+        group_manager.remove_consumer_from_groups(consumer_id)
+
+        # delete any scheduled unit installs
+        schedule_manager = factory.schedule_manager()
+        schedule_manager.delete_all_unit_install_schedules(consumer_id)
 
         # Database Updates
         try:
-            Consumer.get_collection().remove({'id' : id}, safe=True)
+            Consumer.get_collection().remove({'id' : consumer_id}, safe=True)
         except Exception:
-            _LOG.exception('Error updating database collection while removing consumer [%s]' % id)
+            _LOG.exception('Error updating database collection while removing '
+                'consumer [%s]' % consumer_id)
             raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
 
-        factory.consumer_history_manager().record_event(id, 'consumer_unregistered')
+        # remove the consumer from any groups it was a member of
+        group_manager = factory.consumer_group_manager()
+        group_manager.remove_consumer_from_groups(consumer_id)
 
-        # To do - Update consumergroups after we add consumergroup support in V2
+        factory.consumer_history_manager().record_event(consumer_id, 'consumer_unregistered')
 
     def update(self, id, delta):
         """
@@ -152,7 +163,7 @@ class ConsumerManager(object):
         @raises MissingValue: if delta provided is empty
         """
         consumer = self.get_consumer(id)
-        
+
         if delta is None:
             _LOG.exception('Missing delta when updating consumer [%s]' % id)
             raise MissingValue('delta')
@@ -172,8 +183,8 @@ class ConsumerManager(object):
         Consumer.get_collection().save(consumer, safe=True)
 
         return consumer
-    
-    
+
+
     def get_consumer(self, id):
         """
         Returns a consumer with given ID.

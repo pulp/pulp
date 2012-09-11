@@ -152,6 +152,14 @@ class Distributor(object):
         raise NotImplementedError()
 
     def cancel_publish_repo(self, call_request, call_report):
+        """
+        Call cancellation control hook.
+
+        @param call_request: call request for the call to cancel
+        @type call_request: CallRequest
+        @param call_report: call report for the call to cancel
+        @type call_report: CallReport
+        """
         raise NotImplementedError()
 
     def create_consumer_payload(self, repo, config):
@@ -312,5 +320,16 @@ class GroupDistributor(object):
 
         @return: report describing the publish run
         @rtype:  pulp.plugins.model.PublishReport
+        """
+        raise NotImplementedError()
+
+    def cancel_publish_group(self, call_request, call_report):
+        """
+        Call cancellation control hook.
+
+        @param call_request: call request for the call to cancel
+        @type call_request: CallRequest
+        @param call_report: call report for the call to cancel
+        @type call_report: CallReport
         """
         raise NotImplementedError()

@@ -14,7 +14,7 @@
 from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliSection
-from pulp.client.search import UnitRemoveCommand
+from pulp.client.commands.unit import UnitRemoveCommand
 from pulp_rpm.common.ids import TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY
 
 # -- plugin hook --------------------------------------------------------------

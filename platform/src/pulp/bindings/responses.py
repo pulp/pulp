@@ -60,6 +60,25 @@ class Task(object):
     This class provides a number of utility methods for interpreting the state
     of the task which should be used whenever possible instead of manually
     interpreting the structure of the data within.
+
+    Below is a sample task dictionary that can be copied for unit tests that
+    need to simulate a task response:
+
+    TASK_TEMPLATE = {
+        "exception": None,
+        "task_group_id": 'default-group',
+        "task_id": 'default-id',
+        "tags": [],
+        "reasons": [],
+        "start_time": None,
+        "traceback": None,
+        "state": None,
+        "finish_time": None,
+        "schedule_id": None,
+        "result": None,
+        "progress": {},
+        "response": None,
+    }
     """
 
     def __init__(self, response_body):

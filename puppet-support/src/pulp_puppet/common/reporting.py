@@ -19,18 +19,6 @@ by all of the puppet plugins.
 import traceback
 
 
-def strip_none(report):
-    """
-    Removes all keys whose values are None. Returns a new report; does not
-    edit the existing report.
-
-    :return: new dictionary without any keys whose value was None
-    :rtype:  dict
-    """
-    clean = dict([(k, v) for k, v in report.items() if v is not None])
-    return clean
-
-
 def format_exception(e):
     """
     Formats the given exception to be included in the report.
