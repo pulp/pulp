@@ -44,6 +44,7 @@ def handle_event(notifier_config, event):
     data = {
         'event_type' : event.event_type,
         'payload' : event.payload,
+        'call_report': event.call_report,
     }
 
     LOG.info(data)
