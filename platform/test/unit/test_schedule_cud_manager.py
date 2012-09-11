@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import copy
+
 try:
     from bson.objectid import ObjectId
 except ImportError:
@@ -20,6 +22,7 @@ import base
 import mock_plugins
 
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.dispatch import factory as dispatch_factory
@@ -227,4 +230,108 @@ class ScheduledPublishTests(ScheduleTests):
         self.assertTrue(new_publish_options['override_config'] == schedule_report['call_request'].kwargs['publish_config_override'])
         self.assertTrue(new_schedule_data['schedule'] == schedule_report['schedule'])
         self.assertTrue(new_schedule_data['failure_threshold'] == schedule_report['failure_threshold'])
+
+# unit install schedule tests --------------------------------------------------
+
+_TEST_UNITS = [
+    {'type_id': 'mock-type',
+     'unit_key': {'id': 'mongodb'}},
+    {'type_id': 'mock-type',
+     'unit_key': {'id': 'cassandra'}},
+    {'type_id': 'mock-type',
+     'unit_key': {'id': 'tokyo-cabinet'}},
+    {'type_id': 'mock-type',
+     'unit_key': {'id': 'couchdb'}}]
+
+
+class ScheduledUnitInstallTests(ScheduleTests):
+
+    def setUp(self):
+        super(ScheduledUnitInstallTests, self).setUp()
+        self.consumer_id = 'test-consumer'
+        self._consumer_manager = managers_factory.consumer_manager()
+        self._consumer_manager.register(self.consumer_id)
+
+    def tearDown(self):
+        super(ScheduledUnitInstallTests, self).tearDown()
+        self.consumer_id = None
+        self._consumer_manager = None
+
+    def clean(self):
+        super(ScheduledUnitInstallTests, self).clean()
+        Consumer.get_collection().remove(safe=True)
+        ConsumerHistoryEvent.get_collection().remove(safe=True)
+
+    # test methods -------------------------------------------------------------
+
+    def test_create_schedule(self):
+        install_options = {'options': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+
+        schedule_id = self.schedule_manager.create_unit_install_schedule(self.consumer_id, _TEST_UNITS, install_options, schedule_data)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_call = scheduler.get(schedule_id)
+
+        self.assertFalse(scheduled_call is None)
+        self.assertTrue(schedule_data['schedule'] == scheduled_call['schedule'])
+        self.assertTrue(self.consumer_id in scheduled_call['call_request'].args)
+        self.assertTrue(_TEST_UNITS == scheduled_call['call_request'].kwargs['units'])
+        self.assertTrue(install_options['options'] == scheduled_call['call_request'].kwargs['options'])
+
+    def test_create_schedule_invalid_consumer(self):
+        install_options = {'options': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+
+        self.assertRaises(pulp_exceptions.MissingResource,
+                          self.schedule_manager.create_unit_install_schedule,
+                          'invalid-consumer', _TEST_UNITS, install_options, schedule_data)
+
+    def test_create_schedule_missing_schedule(self):
+        self.assertRaises(pulp_exceptions.MissingValue,
+                          self.schedule_manager.create_unit_install_schedule,
+                          self.consumer_id, _TEST_UNITS, {}, {})
+
+    def test_delete_schedule(self):
+        schedule_data = {'schedule': 'R1/P1DT'}
+        schedule_id = self.schedule_manager.create_unit_install_schedule(self.consumer_id, _TEST_UNITS, {}, schedule_data)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_call = scheduler.get(schedule_id)
+
+        self.assertFalse(scheduled_call is None)
+
+        self.schedule_manager.delete_unit_install_schedule(self.consumer_id, schedule_id)
+
+        self.assertRaises(pulp_exceptions.MissingResource, scheduler.get, schedule_id)
+
+    def test_update_schedule(self):
+        units = copy.copy(_TEST_UNITS)
+        install_options = {'options': {}}
+        schedule_data = {'schedule': 'R1/P1DT'}
+
+        schedule_id = self.schedule_manager.create_unit_install_schedule(self.consumer_id, units, install_options, schedule_data)
+
+        scheduler = dispatch_factory.scheduler()
+        scheduled_call = scheduler.get(schedule_id)
+
+        self.assertFalse(scheduled_call is None)
+        self.assertTrue(schedule_data['schedule'] == scheduled_call['schedule'])
+        self.assertTrue(self.consumer_id in scheduled_call['call_request'].args)
+        self.assertTrue(units == scheduled_call['call_request'].kwargs['units'])
+        self.assertTrue(install_options['options'] == scheduled_call['call_request'].kwargs['options'])
+
+        units.append({'type_id': 'mock-type', 'unit_key': {'id': 'redis'}})
+        install_options['options'] = {'option': 'value'}
+        schedule_data['schedule'] = 'R3/P1DT'
+
+        self.schedule_manager.update_unit_install_schedule(self.consumer_id, schedule_id, units, install_options, schedule_data)
+
+        updated_call = scheduler.get(schedule_id)
+
+        self.assertFalse(updated_call is None)
+        self.assertTrue(schedule_data['schedule'] == updated_call['schedule'], '%s != %s' % (schedule_data['schedule'], updated_call['schedule']))
+        self.assertTrue(self.consumer_id in updated_call['call_request'].args)
+        self.assertTrue(units == updated_call['call_request'].kwargs['units'])
+        self.assertTrue(install_options['options'] == updated_call['call_request'].kwargs['options'])
 
