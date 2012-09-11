@@ -12,7 +12,6 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import threading
-from types import NoneType
 
 from pulp.server.db.model.auth import User
 from pulp.server.util import Singleton
@@ -71,7 +70,7 @@ class PrincipalManager(object):
         """
         Clear the current user of the system.
         """
-        delattr(_PRINCIPAL_STORAGE, 'principal')
+        _PRINCIPAL_STORAGE.principal = SystemUser()
 
     def is_system_principal(self):
         """
