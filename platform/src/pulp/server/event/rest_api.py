@@ -41,11 +41,7 @@ def handle_event(notifier_config, event):
     # fire the actual http push function off in a separate thread to keep
     # pulp from blocking or deadlocking due to the tasking subsystem
 
-    data = {
-        'event_type' : event.event_type,
-        'payload' : event.payload,
-        'call_report': event.call_report,
-    }
+    data = event.data()
 
     LOG.info(data)
 

@@ -52,3 +52,14 @@ class Event(object):
             return None
         return call_report_list[0].serialize()
 
+    def data(self):
+        """
+        Generate a data report for this event.
+        @return: dictionary of this event's fields
+        @rtype: dict
+        """
+        d = {'event_type': self.event_type,
+             'payload': self.payload,
+             'call_report': self.call_report}
+        return d
+
