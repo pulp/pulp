@@ -70,6 +70,12 @@ class Model(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+    def __getstate__(self):
+        return dict(self.items())
+
+    def __setstate__(self, state):
+        self.update(state)
+
     # database collection methods ---------------------------------------------
 
     @classmethod
