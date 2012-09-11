@@ -11,10 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from email.parser import Parser
 import smtplib
 import unittest
 import dummy_threading
+try:
+    from email.parser import Parser
+except ImportError:
+    # for python 2.4
+    from email.Parser import Parser
 
 import mock
 
