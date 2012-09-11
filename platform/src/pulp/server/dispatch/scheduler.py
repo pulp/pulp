@@ -252,6 +252,15 @@ class Scheduler(object):
         call_request = schedule_updates.pop('call_request', None)
         if call_request is not None:
             schedule_updates['serialized_call_request'] = call_request.serialize()
+        schedule = schedule_updates.get('schedule', None)
+        if schedule is not None:
+            interval, start, runs = dateutils.parse_iso8601_interval(schedule)
+            schedule_updates.setdefault('remaining_runs', runs) # honor explicit update
+            # XXX (jconnor) it'd be nice to update the next_run if the schedule
+            # has changed, but it requires mucking with the internals of the
+            # of the scheduled call instance, which is all encapsulated in the
+            # ScheduledCall constructor
+            # the next_run field will be correctly updated after the next run
         scheduled_call_collection.update({'_id': schedule_id}, {'$set': schedule_updates}, safe=True)
 
     def remove(self, schedule_id):
@@ -262,12 +271,15 @@ class Scheduler(object):
         """
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
+        if ScheduledCall.get_collection().find_one(schedule_id) is None:
+            raise pulp_exceptions.MissingResource(schedule=str(schedule_id))
         scheduled_call_collection = ScheduledCall.get_collection()
         scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
     def enable(self, schedule_id):
         """
         Enable a previously disabled scheduled call request
+        @deprecated: use update instead
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """
@@ -280,6 +292,7 @@ class Scheduler(object):
     def disable(self, schedule_id):
         """
         Disable a scheduled call request without removing it
+        @deprecated: use update instead
         @param schedule_id: id of the schedule for the call request
         @type  schedule_id: str
         """

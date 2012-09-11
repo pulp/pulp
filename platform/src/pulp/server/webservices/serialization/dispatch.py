@@ -59,3 +59,10 @@ def scheduled_publish_obj(scheduled_call):
     obj = scheduled_call_obj(scheduled_call)
     obj['override_config'] = scheduled_call['call_request'].kwargs['publish_config_override']
     return obj
+
+
+def scheduled_unit_install_obj(scheduled_call):
+    obj = scheduled_call_obj(scheduled_call)
+    obj['options'] = scheduled_call['call_request'].kwargs['options']
+    obj['units'] = scheduled_call['call_request'].kwargs['units']
+    return obj
