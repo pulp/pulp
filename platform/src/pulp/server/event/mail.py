@@ -86,5 +86,8 @@ def _send_email(subject, body, to_address):
     try:
         connection.sendmail(from_address, to_address, message.as_string())
     except smtplib.SMTPException, e:
-        logger.error('Error sending mail: %s' % e.message)
+        try:
+            logger.error('Error sending mail: %s' % e.message)
+        except AttributeError:
+            logger.error('SMTP error while sending mail')
     connection.quit()
