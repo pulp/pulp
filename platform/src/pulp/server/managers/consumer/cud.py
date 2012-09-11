@@ -65,11 +65,11 @@ class ConsumerManager(object):
         """
         if not is_consumer_id_valid(id):
             raise InvalidValue(['id'])
-        
+
         existing_consumer = Consumer.get_collection().find_one({'id' : id})
         if existing_consumer is not None:
             raise DuplicateResource(id)
-            
+
         if notes is not None and not isinstance(notes, dict):
             raise InvalidValue(['notes'])
 
@@ -107,11 +107,11 @@ class ConsumerManager(object):
         """
 
         self.get_consumer(consumer_id)
-        
+
         # Remove associate bind
         manager = factory.consumer_bind_manager()
         manager.consumer_deleted(consumer_id)
-        
+
         # Remove associated profiles
         manager = factory.consumer_profile_manager()
         manager.consumer_deleted(consumer_id)
@@ -119,6 +119,14 @@ class ConsumerManager(object):
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()
         agent_consumer.unregistered(consumer_id)
+
+        # remove from consumer groups
+        group_manager = factory.consumer_group_manager()
+        group_manager.remove_consumer_from_groups(consumer_id)
+
+        # delete any scheduled unit installs
+        schedule_manager = factory.schedule_manager()
+        schedule_manager.delete_all_unit_install_schedules(consumer_id)
 
         # Database Updates
         try:
@@ -133,8 +141,6 @@ class ConsumerManager(object):
         group_manager.remove_consumer_from_groups(consumer_id)
 
         factory.consumer_history_manager().record_event(consumer_id, 'consumer_unregistered')
-
-        # To do - Update consumergroups after we add consumergroup support in V2
 
     def update(self, id, delta):
         """
@@ -157,7 +163,7 @@ class ConsumerManager(object):
         @raises MissingValue: if delta provided is empty
         """
         consumer = self.get_consumer(id)
-        
+
         if delta is None:
             _LOG.exception('Missing delta when updating consumer [%s]' % id)
             raise MissingValue('delta')
@@ -177,8 +183,8 @@ class ConsumerManager(object):
         Consumer.get_collection().save(consumer, safe=True)
 
         return consumer
-    
-    
+
+
     def get_consumer(self, id):
         """
         Returns a consumer with given ID.
