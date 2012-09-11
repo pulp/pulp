@@ -87,6 +87,7 @@ _default_values = {
     'tasks': {
         'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
+        'consumer_content_weight': '0',
         'create_weight': '0',
         'publish_weight': '1',
         'sync_weight': '2',

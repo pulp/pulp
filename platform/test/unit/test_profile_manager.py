@@ -21,7 +21,7 @@ from pulp.server.managers import factory
 
 # -- test cases ---------------------------------------------------------------
 
-class ProfileManagerTests(base.PulpServerTests):
+class ProfileManagerTests(base.PulpAsyncServerTests):
 
     CONSUMER_ID = 'test-consumer'
     TYPE_1 = 'type-1'
@@ -31,12 +31,12 @@ class ProfileManagerTests(base.PulpServerTests):
     PROFILE_3 = {'name':'xxx', 'path':'/tmp/xxx'}
 
     def setUp(self):
-        base.PulpServerTests.setUp(self)
+        super(ProfileManagerTests, self).setUp()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
 
     def tearDown(self):
-        base.PulpServerTests.tearDown(self)
+        super(ProfileManagerTests, self).tearDown()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
 
@@ -58,7 +58,7 @@ class ProfileManagerTests(base.PulpServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
-        
+
     def test_missing_consumer(self):
         # Test
         manager = factory.consumer_profile_manager()
@@ -174,7 +174,7 @@ class ProfileManagerTests(base.PulpServerTests):
         cursor = collection.find()
         profiles = list(cursor)
         self.assertEquals(len(profiles), 0)
-        
+
     def test_consumer_unregister_cleanup(self):
         # Setup
         self.test_create()
