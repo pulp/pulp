@@ -31,17 +31,17 @@ def _pickled_system_user():
 
 def _migrate_queued_calls():
     collection = dispatch.QueuedCall.get_collection()
-    collection.update({}, {'serialized_call_request.principal': _pickled_system_user()}, safe=True, multi=True)
+    collection.update({}, {'$set': {'serialized_call_request.principal': _pickled_system_user()}}, safe=True, multi=True)
 
 
 def _migrate_scheduled_calls():
     collection = dispatch.ScheduledCall.get_collection()
-    collection.update({}, {'serialized_call_request.principal': _pickled_system_user()}, safe=True, multi=True)
+    collection.update({}, {'$set': {'serialized_call_request.principal': _pickled_system_user()}}, safe=True, multi=True)
 
 
 def _migrate_archived_calls():
     collection = dispatch.ArchivedCall.get_collection()
-    collection.update({}, {'serialized_call_request.principal': _pickled_system_user(), 'serialized_call_report.principal_login': _SYSTEM_LOGIN}, safe=True, multi=True)
+    collection.update({}, {'$set': {'serialized_call_request.principal': _pickled_system_user(), 'serialized_call_report.principal_login': _SYSTEM_LOGIN}}, safe=True, multi=True)
 
 
 def migrate():
