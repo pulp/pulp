@@ -24,9 +24,16 @@ class LinuxHandler(SystemHandler):
     Linux system handler
     """
 
-    def reboot(self, options={}):
+    def reboot(self, conduit, options):
         """
         Schedule a system reboot.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
+        @param options: reboot options
+            Supported:
+                apply (bool): Actually schedule the reboot.
+                minutes (int): Minutes to delay the reboot.
+        @type options: dict
         """
         report = RebootReport()
         details = {}

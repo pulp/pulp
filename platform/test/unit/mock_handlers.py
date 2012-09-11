@@ -19,6 +19,7 @@
 import os
 import shutil
 from pulp.agent.lib.report import *
+from pulp.agent.lib.conduit import Conduit
 
 #
 # Handlers to be deployed for loader testing
@@ -48,52 +49,72 @@ handler=
 """
 from pulp.agent.lib.handler import *
 from pulp.agent.lib.report import *
+from pulp.agent.lib.conduit import *
 
 class RpmHandler(ContentHandler):
 
-  def install(self, units, options):
+  def install(self, conduit, units, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(units, list))
+    assert(isinstance(options, dict))
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
-  def update(self, units, options):
+  def update(self, conduit, units, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(units, list))
+    assert(isinstance(options, dict))
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
-  def uninstall(self, units, options):
+  def uninstall(self, conduit, units, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(units, list))
+    assert(isinstance(options, dict))
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
-  def profile(self):
+  def profile(self, conduit):
+    assert(isinstance(conduit, Conduit))
     return ProfileReport()
 
 class YumHandler(BindHandler):
 
-  def bind(self, info):
+  def bind(self, conduit, definitions):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(definitions, list))
     report = BindReport()
     report.succeeded({}, 1)
     return report
 
-  def rebind(self, info):
+  def rebind(self, conduit, definitions):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(definitions, list))
     report = BindReport()
     report.succeeded({}, 1)
     return report
 
-  def unbind(self, info):
+  def unbind(self, conduit, repo_id):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(repo_id, (int,str)))
     report = BindReport()
     report.succeeded({}, 1)
     return report
 
-  def clean(self):
+  def clean(self, conduit):
+    assert(isinstance(conduit, Conduit))
     report = CleanReport()
     report.succeeded({}, 1)
     return report
 
 class LinuxHandler(SystemHandler):
 
-  def reboot(self, options):
+  def reboot(self, conduit, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(options, dict))
     report = RebootReport()
     report.succeeded()
     return report
@@ -141,35 +162,35 @@ class RpmHandler:
   def __init__(self, cfg=None):
     pass
 
-  def install(self, units, options):
+  def install(self, conduit, units, options):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
-  def update(self, units, options):
+  def update(self, conduit, units, options):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
-  def uninstall(self, units, options):
+  def uninstall(self, conduit, units, options):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
-  def profile(self):
+  def profile(self, conduit):
     report = ProfileReport()
     return report
 
-  def reboot(self, options={}):
+  def reboot(self, conduit, options):
     report = RebootReport()
     report.succeeded()
     return report
 
-  def bind(self, info):
+  def bind(self, conduit, definitions):
     return BindReport()
 
-  def rebind(self, info):
+  def rebind(self, conduit, definitions):
     return BindReport()
 
-  def unbind(self, info):
+  def unbind(self, conduit, repo_id):
     return BindReport()

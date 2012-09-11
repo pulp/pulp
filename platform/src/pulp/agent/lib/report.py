@@ -185,6 +185,10 @@ class DispatchReport(Report):
 class ExceptionReport(dict):
     """
     Exception Report
+    @ivar message: The exception message.
+    @type message: str
+    @ivar trace: The stack trace.
+    @type trace: list
     """
 
     def __init__(self):
@@ -192,4 +196,46 @@ class ExceptionReport(dict):
         inst = info[1]
         trace = '\n'.join(tb.format_exception(*info))
         self['message'] = str(inst)
-        self['trace']=trace
+        self['trace'] = trace
+
+
+class ProgressReport:
+    """
+    @ivar total: The total work units to be completed.
+    @type total: int
+    @ivar completed: The number of completed work units.
+    @type completed: int
+    @ivar summary: A summary of the activity.
+    @type summary: object
+    @ivar details: Activity details.
+    @type details: object
+    """
+
+    def __init__(self, total=0):
+        """
+        @param total: The total work units to be completed.
+        @type total: int
+        """
+        self.total = total
+        self.completed = 0
+        self.summary = None
+        self.details = None
+
+    def update(self, completed, summary, details=None):
+        """
+        Update the status report.
+        @ivar summary: A summary of the activity.
+        @type summary: object
+        @ivar details: The optional activity details.
+        @type details: object
+        """
+        self.completed = completed
+        self.summary = summary
+        self.details = details
+
+    def __str__(self):
+        return 'completed: %d of: %d, summary=%s, details:%s' % \
+            (self.completed,
+             self.total,
+             self.summary,
+             self.details)
