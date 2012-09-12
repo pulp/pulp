@@ -44,7 +44,8 @@ class Event(object):
     def __str__(self):
         return 'Event: Type [%s] Payload [%s]' % (self.event_type, self.payload)
 
-    def _get_call_report(self):
+    @staticmethod
+    def _get_call_report():
         context = dispatch_factory.context()
         coordinator = dispatch_factory.coordinator()
         call_report_list = coordinator.find_call_reports(task_id=context.task_id)
