@@ -201,6 +201,7 @@ class ExceptionReport(dict):
 
 class ProgressReport:
     """
+    A progress report is used to track and report handler progress.
     @ivar total: The total work units to be completed.
     @type total: int
     @ivar completed: The number of completed work units.
@@ -220,18 +221,6 @@ class ProgressReport:
         self.completed = 0
         self.summary = None
         self.details = None
-
-    def update(self, completed, summary, details=None):
-        """
-        Update the status report.
-        @ivar summary: A summary of the activity.
-        @type summary: object
-        @ivar details: The optional activity details.
-        @type details: object
-        """
-        self.completed = completed
-        self.summary = summary
-        self.details = details
 
     def __str__(self):
         return 'completed: %d of: %d, summary=%s, details:%s' % \
