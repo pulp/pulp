@@ -120,6 +120,32 @@ class LinuxHandler(SystemHandler):
     return report
 """)
 
+SECTION_MISSING = dict(
+name='Test section not found',
+descriptor="""
+[main]
+enabled=1
+[types]
+content=puppet
+""",
+handler="""
+class A: pass
+""")
+
+CLASS_NDEF = dict(
+name='Test class property missing',
+descriptor="""
+[main]
+enabled=1
+[types]
+content=puppet
+[puppet]
+foo=bar
+""",
+handler="""
+class A: pass
+""")
+
 #
 # Mock Deployer
 #
@@ -133,7 +159,7 @@ class MockDeployer:
         for path in (self.ROOT, self.PATH[0]):
             shutil.rmtree(path, ignore_errors=True)
             os.makedirs(path)
-        for handler in (RPM,):
+        for handler in (RPM, SECTION_MISSING, CLASS_NDEF):
             self.__deploy(handler)
     
     def clean(self):

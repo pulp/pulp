@@ -20,6 +20,7 @@ from mock_handlers import MockDeployer
 from pulp.agent.lib.container import *
 from pulp.agent.lib.dispatcher import *
 from pulp.agent.lib.conduit import Conduit
+from pulp.common.config import PropertyNotFound, SectionNotFound
 
 
 class TestHandlerContainer(unittest.TestCase):
@@ -39,10 +40,16 @@ class TestHandlerContainer(unittest.TestCase):
         container = self.container()
         # Test
         container.load()
-        handler = container.find('rpm')
         # Verify
+        handler = container.find('rpm')
         self.assertTrue(handler is not None)
-        
+        handler = container.find('puppet')
+        self.assertTrue(handler is None)
+        errors = container.errors()
+        self.assertEquals(len(errors), 2)
+        self.assertTrue(isinstance(errors[0], PropertyNotFound))
+        self.assertTrue(isinstance(errors[1], SectionNotFound))
+
     def test_find(self):
         # Setup
         container = self.container()
