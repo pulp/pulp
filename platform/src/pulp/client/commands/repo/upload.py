@@ -54,7 +54,20 @@ FLAG_VERBOSE = PulpCliFlag('-v', DESC_VERBOSE)
 class UploadCommand(PulpCliCommand):
 
     def __init__(self, context, upload_manager, name='upload',
-                 description=DESC_UPLOAD, method=None):
+                 description=DESC_UPLOAD, method=None, upload_files=True):
+        """
+        Extendable command for handling the process of uploading a file to
+        Pulp and the UI involved in displaying the status. There are a number
+        of methods a subclass may want to implement from throughout the
+        workflow.
+
+        :param context: Pulp client context
+        :type  context: pulp.client.extensions.core.ClientContext
+        :param upload_manager: created and configured upload manager instance
+        :type  upload_manager: pulp.client.upload.manager.UploadManager
+        :param upload_files: if false, the user will not be prompted for files
+               to upload and the create will be purely metadata based
+        """
 
         if method is None:
             method = self.run
@@ -64,20 +77,23 @@ class UploadCommand(PulpCliCommand):
         self.context = context
         self.prompt = context.prompt
         self.upload_manager = upload_manager
+        self.upload_files = upload_files
 
         self.add_option(options.OPTION_REPO_ID)
-        self.add_option(OPTION_FILE)
-        self.add_option(OPTION_DIR)
-        self.add_flag(FLAG_FORCE)
+
+        if upload_files:
+            self.add_option(OPTION_FILE)
+            self.add_option(OPTION_DIR)
+
         self.add_flag(FLAG_VERBOSE)
 
     def run(self, **kwargs):
         self.prompt.render_title(_('Puppet Module Upload'))
 
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
-        specified_files = kwargs.pop(OPTION_FILE.keyword) or []
-        specified_dirs = kwargs.pop(OPTION_DIR.keyword) or []
-        verbose = kwargs.pop(FLAG_VERBOSE.keyword) or False
+        specified_files = kwargs.get(OPTION_FILE.keyword) or []
+        specified_dirs = kwargs.get(OPTION_DIR.keyword) or []
+        verbose = kwargs.get(FLAG_VERBOSE.keyword) or False
 
         # Resolve the total list of files to upload
         all_filenames = list(specified_files)
@@ -93,7 +109,7 @@ class UploadCommand(PulpCliCommand):
             all_filenames += files_in_dir
 
         # Make sure at least one file was found
-        if len(all_filenames) == 0:
+        if len(all_filenames) == 0 and self.upload_files:
             self.context.prompt.render_failure_message(_('No files selected for upload'))
             return os.EX_DATAERR
 
@@ -104,7 +120,7 @@ class UploadCommand(PulpCliCommand):
                 return os.EX_IOERR
 
         # Display the list of found files
-        if verbose:
+        if verbose and self.upload_files:
             self.prompt.write(_('Files to be uploaded:'))
             for r in all_filenames:
                 self.prompt.write('  %s' % os.path.basename(r))
@@ -114,16 +130,26 @@ class UploadCommand(PulpCliCommand):
         file_bundles = [ [f, None, {}, {}] for f in all_filenames]
 
         # Determine the metadata for each file
-        self.prompt.write(_('Extracting necessary metdata for each file...'))
+        self.prompt.write(_('Extracting necessary metdata for each request...'))
         bar = self.prompt.create_progress_bar()
 
-        for i, file_bundle in enumerate(file_bundles):
-            filename = file_bundle[0]
-            bar.render(i+1, len(file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
+        # If not a file-based upload, make a single request with the values
+        # from the generate_* commands
+        if self.upload_files:
+            for i, file_bundle in enumerate(file_bundles):
+                filename = file_bundle[0]
+                bar.render(i+1, len(file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
 
-            file_bundle[1] = self.determine_type_id(filename, **kwargs)
-            file_bundle[2].update(self.generate_unit_key(filename, **kwargs))
-            file_bundle[3].update(self.generate_metadata(filename, **kwargs))
+                unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename, **kwargs)
+                type_id = self.determine_type_id(filename, **kwargs)
+                file_bundle[1] = type_id
+                file_bundle[2].update(unit_key)
+                file_bundle[3].update(unit_metadata)
+        else:
+            unit_key, unit_metadata = self.generate_unit_key_and_metadata(None, **kwargs)
+            type_id = self.determine_type_id(None, **kwargs)
+            file_bundle = [None, type_id, unit_key, unit_metadata]
+            file_bundles.append(file_bundle)
 
         self.prompt.write(_('... completed'))
         self.prompt.render_spacer()
@@ -139,7 +165,12 @@ class UploadCommand(PulpCliCommand):
             unit_key = job[2]
             metadata = job[3]
 
-            bar.render(i+1, len(file_bundles), message=_('Initializing: %(n)s') % {'n' : os.path.basename(filename)})
+            if self.upload_files:
+                msg = _('Initializing: %(n)s') % {'n' : os.path.basename(filename)}
+            else:
+                msg = _('Initializing upload')
+
+            bar.render(i+1, len(file_bundles), message=msg)
             upload_id = self.upload_manager.initialize_upload(filename, repo_id, type_id, unit_key, metadata)
             upload_ids.append(upload_id)
 
@@ -187,6 +218,27 @@ class UploadCommand(PulpCliCommand):
         """
         raise NotImplementedError()
 
+    def generate_unit_key_and_metadata(self, filename, **kwargs):
+        """
+        For the given file, returns a tuple of the unit key and metadata to
+        upload for the upload request. This call will aggregate calls to
+        generate_unit_key and generate_metadata if not overridden, meaning
+        subclasses may choose to ignore this call and simply override those.
+        In the event that performance gains would be made by loading both
+        at once, this call may be overridden.
+
+        :param filename: full path to the file being uploaded
+        :type  filename: str, None
+        :param kwargs: arguments passed into the upload call by the user
+        :type  kwargs: dict
+
+        :return: tuple of unit key and metadata to upload for the file
+        :rtype:  tuple
+        """
+        unit_key = self.generate_unit_key(filename, **kwargs)
+        metadata = self.generate_metadata(filename, **kwargs)
+        return unit_key, metadata
+
     def generate_unit_key(self, filename, **kwargs):
         """
         For the given file, returns the unit key that should be specified in
@@ -194,7 +246,7 @@ class UploadCommand(PulpCliCommand):
         an appropriate key.
 
         :param filename: full path to the file being uploaded
-        :type  filename: str
+        :type  filename: str, None
         :param kwargs: arguments passed into the upload call by the user
         :type  kwargs: dict
 
@@ -210,7 +262,7 @@ class UploadCommand(PulpCliCommand):
         if no extra metadata is specified in the upload request.
 
         :param filename: full path to the file being uploaded
-        :type  filename: str
+        :type  filename: str, None
         :param kwargs: arguments passed into the upload call by the user
         :type  kwargs: dict
 
