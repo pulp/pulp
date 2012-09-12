@@ -57,7 +57,8 @@ class RestApiNotifierTests(base.PulpAsyncServerTests):
         self.assertEqual('/api/', request_args[1])
 
         expected_body = {'event_type' : event.event_type,
-                         'payload' : event.payload}
+                         'payload' : event.payload,
+                         'call_report': None}
 
         request_kwargs = mock_connection.request.call_args[1]
         parsed_body = json.loads(request_kwargs['body'])
