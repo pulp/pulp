@@ -45,7 +45,7 @@ IMPORTER_CONFIG_KEYS = [
     ('max_speed', 'max_speed'),
     ('num_threads', 'num_threads'),
     ('newest', 'only_newest'),
-    ('skip', 'skip_types'),
+    ('skip', 'skip'),
 
     # Not part of the CLI yet; may be removed entirely
     ('remove_old', 'remove_old'),
@@ -63,8 +63,8 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('auth_cert', 'auth_cert'),
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
-    ('skip', 'skip_types'),
-    ('use_createrepo', 'use_createrepo')
+    ('skip', 'skip'),
+    ('use_createrepo', 'use_createrepo'),
 ]
 
 VALID_SKIP_TYPES = ['rpm', 'drpm', 'distribution', 'erratum']
@@ -367,7 +367,7 @@ def add_repo_options(command, is_update):
 
     # Synchronization Options
     sync_group.add_option(PulpCliOption('--only-newest', 'if "true", only the newest version of a given package is downloaded; defaults to false', required=False))
-    sync_group.add_option(PulpCliOption('--skip-types', 'comma-separated list of types to omit when synchronizing, if not specified all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
+    sync_group.add_option(PulpCliOption('--skip', 'comma-separated list of types to omit when synchronizing, if not specified all types will be synchronized; valid values are: %s' % ', '.join(VALID_SKIP_TYPES), required=False))
     sync_group.add_option(PulpCliOption('--verify-size', 'if "true", the size of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--verify-checksum', 'if "true", the checksum of each synchronized file will be verified against the repo metadata; defaults to false', required=False))
     sync_group.add_option(PulpCliOption('--remove-old', 'if "true", removes old packages from the repo; defaults to false', required=False))
