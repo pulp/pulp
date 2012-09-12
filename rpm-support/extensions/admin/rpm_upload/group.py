@@ -65,7 +65,7 @@ class PackageGroupCreateCommand(UploadCommand) :
     Handles the creation of a package group.
     """
 
-    def __init__(self, context, upload_manager, name=NAME, description=DESC) : 
+    def __init__(self, context, upload_manager, name=NAME, description=DESC):
         super(PackageGroupCreateCommand, self).__init__(context, upload_manager,
                                                         name=name, description=description,
                                                         upload_files=False)
