@@ -20,7 +20,10 @@ from pulp.server.compat import json
 from pulp.server.event import rest_api
 from pulp.server.event.data import Event
 
-class RestApiNotifierTests(unittest.TestCase):
+import base
+
+
+class RestApiNotifierTests(base.PulpAsyncServerTests):
 
     @mock.patch('pulp.server.event.rest_api._create_connection')
     def test_handle_event(self, mock_create):
