@@ -17,8 +17,9 @@ import os
 from pulp.client.commands.repo.upload import ResumeCommand, CancelCommand, ListCommand
 import pulp.client.upload.manager as upload_lib
 
-from   rpm_upload.package import CreateRpmCommand
-from   rpm_upload.errata import CreateErratumCommand
+from  rpm_upload.errata import CreateErratumCommand
+from  rpm_upload.group import PackageGroupCreateCommand
+from  rpm_upload.package import CreateRpmCommand
 
 
 def initialize(context):
@@ -32,6 +33,7 @@ def initialize(context):
 
     uploads_section.add_command(CreateRpmCommand(context, upload_manager))
     uploads_section.add_command(CreateErratumCommand(context, upload_manager))
+    uploads_section.add_command(PackageGroupCreateCommand(context, upload_manager))
     uploads_section.add_command(ResumeCommand(context, upload_manager))
     uploads_section.add_command(CancelCommand(context, upload_manager))
     uploads_section.add_command(ListCommand(context, upload_manager))

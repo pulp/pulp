@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -87,7 +85,9 @@ class CreateErratumCommand(UploadCommand):
     """
 
     def __init__(self, context, upload_manager, name=NAME, description=DESC):
-        super(CreateErratumCommand, self).__init__(context, upload_manager, name=name, description=description, upload_files=False)
+        super(CreateErratumCommand, self).__init__(context, upload_manager,
+                                                   name=name, description=description,
+                                                   upload_files=False)
 
         self.add_option(OPT_ERRATUM_ID)
         self.add_option(OPT_TITLE)
