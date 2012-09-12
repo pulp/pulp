@@ -28,17 +28,26 @@ class TestUnitSection(unittest.TestCase):
     def test_content_command(self):
         # setup
         return_value = mock.MagicMock()
-        return_value.response_body = ['unit1']
+        return_value.response_body = [{'name':'foo', 'metadata':'unit1'}]
         rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.return_value = return_value
 
         rpm_units_search.pulp_cli._content_command(['rpm'], **{'repo-id': 'repo1'})
         rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.assert_called_once_with('repo1', type_ids=['rpm'])
         rpm_units_search.pulp_cli.CONTEXT.prompt.render_document.assert_called_once_with('unit1')
 
+    def test_content_command_metadata(self):
+        return_value = mock.MagicMock()
+        return_value.response_body = [{'name':'foo', 'metadata':'unit1'}]
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.return_value = return_value
+
+        rpm_units_search.pulp_cli._content_command(['rpm'], **{'repo-id': 'repo1', 'metadata': True})
+        rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.assert_called_once_with('repo1', type_ids=['rpm'], metadata=True)
+        rpm_units_search.pulp_cli.CONTEXT.prompt.render_document.assert_called_once_with(return_value.response_body[0])
+
     def test_content_command_out_func(self):
         out = mock.MagicMock()
         return_value = mock.MagicMock()
-        return_value.response_body = ['unit1']
+        return_value.response_body = [{'name':'foo', 'metadata':'unit1'}]
         rpm_units_search.pulp_cli.CONTEXT.server.repo_unit.search.return_value = return_value
 
         rpm_units_search.pulp_cli._content_command(['rpm'], out, **{'repo-id': 'repo1'})

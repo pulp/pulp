@@ -14,7 +14,7 @@
 from gettext import gettext as _
 import logging
 
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliOptionGroup, PulpCliOption
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand, UntypedUnitAssociationCriteriaCommand
 
 # -- constants ----------------------------------------------------------------
@@ -199,6 +199,10 @@ def _content_command(type_ids, out_func=None, **kwargs):
     :param type_ids:    list of type IDs that the command should operate on
     :type  type_ids:    list, tuple
 
+    :param out_func:    optional callable to be used in place of
+                        prompt.render_document. must accept one dict
+    :type  out_func:    callable
+
     :param kwargs:  CLI options as input by the user and passed in by okaara
     :type  kwargs:  dict
     """
@@ -208,7 +212,14 @@ def _content_command(type_ids, out_func=None, **kwargs):
     kwargs['type_ids'] = type_ids
     units = CONTEXT.server.repo_unit.search(repo_id, **kwargs).response_body
     for unit in units:
-        out_func(unit)
+        # This is a bit confusing. From the user perspective, the "metadata" is
+        # the association info. From our perspective, the "metadata" is the unit
+        # itself. The point here is to show only the unit unless the user
+        # requests "metadata", in which case we also show the association.
+        if kwargs.get('metadata'):
+            out_func(unit)
+        else:
+            out_func(unit['metadata'])
 
 
 class InvalidCriteria(Exception):

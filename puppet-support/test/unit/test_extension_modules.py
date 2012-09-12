@@ -112,3 +112,15 @@ class ModulesCommandTests(base_cli.ExtensionTests):
         self.assertTrue(self.recorder.lines[0].startswith('Name'))
         self.assertTrue(self.recorder.lines[1].startswith('Version'))
         self.assertTrue(self.recorder.lines[2].startswith('Author'))
+
+    def test_modules_with_metadata(self):
+        # Setup
+        data = {options.OPTION_REPO_ID.keyword : 'test-repo', 'metadata' : True}
+
+        self.server_mock.request.return_value = 200, SAMPLE_RESPONSE_BODY
+
+        # Test
+        self.command.run(**data)
+
+        # Verify - make sure the first line is from the association data
+        self.assertTrue(self.recorder.lines[0].startswith('Created'))
