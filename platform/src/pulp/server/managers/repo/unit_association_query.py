@@ -384,4 +384,16 @@ class RepoUnitAssociationQueryManager(object):
         clean_units = [u for b, u in zip(keep_units, units) if b]
         return clean_units
 
+    @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Return a list of RepoContentUnits that match the provided criteria.
 
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of RepoContentUnits
+        @rtype:     list
+        """
+        return RepoContentUnit.get_collection().query(criteria)
