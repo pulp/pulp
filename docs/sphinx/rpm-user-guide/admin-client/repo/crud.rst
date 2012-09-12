@@ -99,6 +99,11 @@ Publishing
   Flag indicating the repository metadata should be regenerated rather than
   reused from the external source.
 
+``--use-createrepo``
+  Flag indicating the repository metadata should be regenerated using
+  createrepo tool instead of the default behavior of merging per unit
+  metadata from the database. Valid values to this option are ``true`` and ``false``.
+
 Feed Authentication
 ^^^^^^^^^^^^^^^^^^^
 

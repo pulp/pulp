@@ -396,7 +396,7 @@ def add_repo_options(command, is_update):
     publish_group.add_option(PulpCliOption('--checksum-type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg-key', 'GPG key used to sign and verify packages in the repository', required=False))
     publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed; defaults to true', required=False))
-    publish_group.add_option(PulpCliOption('--use-createrepo', 'if "true", when the repository is published the repo metadata will be regenerated using createrepo tool instead of using the mertadata from the database; defaults to false', required=False))
+    publish_group.add_option(PulpCliOption('--use-createrepo', 'if "true", when the repository is published the repo metadata will be regenerated using createrepo tool instead of using the metadata from the database; defaults to false', required=False))
 
     # Publish Security Options
     repo_auth_group.add_option(PulpCliOption('--host-ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
