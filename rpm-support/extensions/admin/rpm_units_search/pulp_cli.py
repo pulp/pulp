@@ -212,11 +212,8 @@ def _content_command(type_ids, out_func=None, **kwargs):
     kwargs['type_ids'] = type_ids
     units = CONTEXT.server.repo_unit.search(repo_id, **kwargs).response_body
     for unit in units:
-        # This is a bit confusing. From the user perspective, the "metadata" is
-        # the association info. From our perspective, the "metadata" is the unit
-        # itself. The point here is to show only the unit unless the user
-        # requests "metadata", in which case we also show the association.
-        if kwargs.get('metadata'):
+        # show the association only if specifically requested
+        if kwargs.get(UnitAssociationCriteriaCommand.ASSOCIATION_FLAG.keyword):
             out_func(unit)
         else:
             out_func(unit['metadata'])

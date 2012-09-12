@@ -20,7 +20,7 @@ except ImportError:
 from okaara.cli import CommandUsage, OptionGroup
 
 from pulp.client import validators
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client import parsers
 
 _LIMIT_DESCRIPTION = _('max number of items to return')
@@ -247,6 +247,8 @@ class CriteriaCommand(PulpCliCommand):
 
 
 class UnitAssociationCriteriaCommand(CriteriaCommand):
+    ASSOCIATION_FLAG = PulpCliFlag(
+        '--details', _('show association details'), ['-d'])
 
     def __init__(self, method, *args, **kwargs):
         super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
@@ -264,8 +266,7 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
         self.create_option('--before', m, ['-b'], required=False,
             allow_multiple=False, parse_func=parsers.iso8601)
 
-        m = _('show association metadata')
-        self.create_flag('--metadata', m, ['-m'])
+        self.add_flag(self.ASSOCIATION_FLAG)
 
 
 class UntypedUnitAssociationCriteriaCommand(UnitAssociationCriteriaCommand):

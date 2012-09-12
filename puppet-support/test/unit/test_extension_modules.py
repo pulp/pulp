@@ -115,7 +115,8 @@ class ModulesCommandTests(base_cli.ExtensionTests):
 
     def test_modules_with_metadata(self):
         # Setup
-        data = {options.OPTION_REPO_ID.keyword : 'test-repo', 'metadata' : True}
+        data = {options.OPTION_REPO_ID.keyword : 'test-repo',
+                UnitAssociationCriteriaCommand.ASSOCIATION_FLAG.keyword: True}
 
         self.server_mock.request.return_value = 200, SAMPLE_RESPONSE_BODY
 

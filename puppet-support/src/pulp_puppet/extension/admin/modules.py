@@ -47,7 +47,7 @@ class ModulesCommand(UnitAssociationCriteriaCommand):
 
         order = []
 
-        if not kwargs.get('metadata'):
+        if not kwargs.get(self.ASSOCIATION_FLAG.keyword):
             # Only display the module metadata, not the association
             modules = [m['metadata'] for m in modules]
             # Make sure the key info is at the top; the rest can be alpha
