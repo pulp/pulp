@@ -186,44 +186,54 @@ class TestConfigValidator(unittest.TestCase):
         self.assertTrue(isinstance(v, bool))
 
     def test_section_filtering(self):
+        # load using Config.read()
+        self.__test_section_filtering(self.read)
+        # load using Config.update()
+        def fn(s, filter):
+            fp = StringIO(s)
+            d = dict(Config(fp))
+            return Config(d, filter=filter)
+        self.__test_section_filtering(fn)
+
+    def __test_section_filtering(self, read):
         # (abc) only
-        cfg = self.read(RANDOM_1, 'abc$')
+        cfg = read(RANDOM_1, 'abc$')
         self.assertEquals(len(cfg), 1)
         self.assertTrue('abc' in cfg)
         # (abc*) only
-        cfg = self.read(RANDOM_1, 'abc')
+        cfg = read(RANDOM_1, 'abc')
         self.assertEquals(len(cfg), 2)
         self.assertTrue('abc' in cfg)
         self.assertTrue('abcdef' in cfg)
         # (my_a|my_b) only
-        cfg = self.read(RANDOM_1, 'my_a|my_b')
+        cfg = read(RANDOM_1, 'my_a|my_b')
         self.assertEquals(len(cfg), 2)
         self.assertTrue('my_a' in cfg)
         self.assertTrue('my_b' in cfg)
         # list filter
-        cfg = self.read(RANDOM_1, ['abcdef'])
+        cfg = read(RANDOM_1, ['abcdef'])
         self.assertEquals(len(cfg), 1)
         self.assertTrue('abcdef' in cfg)
         # tuple filter
-        cfg = self.read(RANDOM_1, ('abcdef','my_b'))
+        cfg = read(RANDOM_1, ('abcdef','my_b'))
         self.assertEquals(len(cfg), 2)
         self.assertTrue('abcdef' in cfg)
         self.assertTrue('my_b' in cfg)
         # callable filter
         def fn(s):
             return s in ('my_a', 'my_b')
-        cfg = self.read(RANDOM_1, fn)
+        cfg = read(RANDOM_1, fn)
         self.assertEquals(len(cfg), 2)
         self.assertTrue('my_a' in cfg)
         self.assertTrue('my_b' in cfg)
         # (my_a|my_b) only with regex
-        cfg = self.read(RANDOM_1, 'my_')
+        cfg = read(RANDOM_1, 'my_')
         self.assertEquals(len(cfg), 2)
         self.assertTrue('my_a' in cfg)
         self.assertTrue('my_b' in cfg)
         # (my_a|my_b) only with regex pattern passed as callable
         pattern = re.compile('my_')
-        cfg = self.read(RANDOM_1, pattern.match)
+        cfg = read(RANDOM_1, pattern.match)
         self.assertEquals(len(cfg), 2)
         self.assertTrue('my_a' in cfg)
         self.assertTrue('my_b' in cfg)
