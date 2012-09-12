@@ -19,11 +19,12 @@ import mock
 import base
 
 from pulp.common import dateutils
+from pulp.server.db.model.auth import User
 from pulp.server.db.model.dispatch import ArchivedCall
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
+from pulp.server.managers.auth.principal import PrincipalManager
 
 # testing data -----------------------------------------------------------------
 
@@ -228,4 +229,23 @@ class TaskArchivalTests(base.PulpServerTests):
         collection = ArchivedCall.get_collection()
         archived_call = collection.find_one({'serialized_call_report.task_id': task.id})
         self.assertFalse(archived_call is None)
+
+# principal tests --------------------------------------------------------------
+
+class TaskPrincipalTest(base.PulpServerTests):
+
+    def setUp(self):
+        super(TaskPrincipalTest, self).setUp()
+        self.principal_manager = PrincipalManager()
+
+    def tearDown(self):
+        super(TaskPrincipalTest, self).tearDown()
+        self.principal_manager = None
+
+    def test_set_principal(self):
+        user = User('test-user', 'test-password')
+        task = Task(CallRequest(self.principal_manager.get_principal, principal=user))
+        task._run()
+        self.assertEqual(user, task.call_report.result)
+
 

@@ -43,7 +43,7 @@ def handle_event(notifier_config, event):
     """
     if not config.getboolean('email', 'enabled'):
         return
-    body = json.dumps(event.payload, indent=2)
+    body = json.dumps(event.data(), indent=2)
     subject = notifier_config['subject']
     addresses = notifier_config['addresses']
 

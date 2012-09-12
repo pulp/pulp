@@ -20,7 +20,6 @@ from   pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from   pulp.plugins.config import PluginCallConfiguration
-import pulp.server.auth.principal as pulp_principal
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import RepoContentUnit
 from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
@@ -215,7 +214,7 @@ class ContentUploadManager(object):
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the import
-        conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, pulp_principal.get_principal()['login'])
+        conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, manager_factory.principal_manager().get_principal()['login'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)

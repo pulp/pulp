@@ -58,7 +58,7 @@ class MockRepoPublishManager:
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncManagerTests(base.PulpServerTests):
+class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(RepoSyncManagerTests, self).setUp()
