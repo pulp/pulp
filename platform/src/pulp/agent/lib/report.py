@@ -206,7 +206,7 @@ class ProgressReport:
     @type total: int
     @ivar completed: The number of completed work units.
     @type completed: int
-    @ivar summary: A summary of the activity.
+    @ivar summary: A summary of recent activity.
     @type summary: object
     @ivar details: Activity details.
     @type details: object

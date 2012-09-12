@@ -128,7 +128,7 @@ class ContentHandler(Handler):
 
 class BindHandler(Handler):
     """
-    Content (type) handler.
+    Bind (type) handler.
     Defines the interface for handler objects designed
     to implement BIND management requests.
     """
