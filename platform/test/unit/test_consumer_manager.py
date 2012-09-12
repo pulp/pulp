@@ -28,10 +28,10 @@ import pulp.server.exceptions as exceptions
 
 # -- test cases ---------------------------------------------------------------
 
-class ConsumerManagerTests(base.PulpServerTests):
+class ConsumerManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
-        base.PulpServerTests.setUp(self)
+        super(ConsumerManagerTests, self).setUp()
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
@@ -40,7 +40,7 @@ class ConsumerManagerTests(base.PulpServerTests):
         self.manager = consumer_manager.ConsumerManager()
 
     def tearDown(self):
-        base.PulpServerTests.tearDown(self)
+        super(ConsumerManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
@@ -318,10 +318,10 @@ class ConsumerManagerTests(base.PulpServerTests):
 
 
 
-class ConsumerHistoryManagerTests(base.PulpServerTests):
+class ConsumerHistoryManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
-        base.PulpServerTests.setUp(self)
+        super(ConsumerHistoryManagerTests, self).setUp()
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
@@ -331,7 +331,7 @@ class ConsumerHistoryManagerTests(base.PulpServerTests):
         self.history_manager = history_manager.ConsumerHistoryManager()
 
     def tearDown(self):
-        base.PulpServerTests.tearDown(self)
+        super(ConsumerHistoryManagerTests, self).tearDown()
         mock_plugins.reset()
 
     def clean(self):
