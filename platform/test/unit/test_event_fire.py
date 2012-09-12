@@ -20,7 +20,7 @@ from pulp.server.event import data as event_data
 from pulp.server.managers import factory as manager_factory
 
 
-class EventFireManagerTests(base.PulpServerTests):
+class EventFireManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(EventFireManagerTests, self).setUp()
