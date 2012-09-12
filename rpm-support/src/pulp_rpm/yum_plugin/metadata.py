@@ -380,7 +380,7 @@ class YumMetadataGenerator(object):
     """
     Yum metadata generator using per package snippet approach
     """
-    def __init__(self, repodir, units_to_write, checksum_type="sha256", skip_metadata_types=None):
+    def __init__(self, repodir, units_to_write, checksum_type="sha256", skip_metadata_types=None, is_cancelled=False):
         """
         @param repo_dir: repository dir where the repodata directory is created/exists
         @type  repo_dir: str
@@ -403,7 +403,7 @@ class YumMetadataGenerator(object):
         self.filelists_xml = None
         self.other_xml = None
         self.backup_repodata_dir = None
-
+        self.is_cancelled=is_cancelled
         self.setup_temp_working_dir()
         self.metadata_conf = self.setup_metadata_conf()
 
@@ -513,6 +513,9 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
         self.init_other_xml()
         try:
             for unit in self.units:
+                if self.is_cancelled:
+                    _LOG.warn("cancelling merge unit metadata")
+                    raise CancelException()
                 if unit.metadata.has_key('repodata'):
                     try:
                         self.primary_xml.write(unit.metadata['repodata']['primary'].encode('utf-8'))
@@ -549,6 +552,9 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
             ftypes = util.get_repomd_filetypes(repodata_file)
             base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db']
             for ftype in ftypes:
+                if self.is_cancelled:
+                    _LOG.warn("cancel merge other filetype metadata")
+                    raise CancelException()
                 if ftype in base_ftypes:
                     # no need to process these again
                     continue
@@ -591,7 +597,7 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
         self.merge_other_filetypes()
 
 
-def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, progress_callback=None):
+def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, progress_callback=None, is_cancelled=False):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
@@ -628,7 +634,7 @@ def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, pro
     try:
         set_progress("metadata", metadata_progress_status, progress_callback)
         create_yum_metadata = YumMetadataGenerator(repo_dir, units_to_write, checksum_type=checksum_type,
-            skip_metadata_types=skip_metadata_types)
+            skip_metadata_types=skip_metadata_types, is_cancelled=is_cancelled)
         create_yum_metadata.run()
     except CancelException, ce:
         metadata_progress_status = {"state" : "CANCELED"}

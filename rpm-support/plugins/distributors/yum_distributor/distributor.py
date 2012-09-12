@@ -76,6 +76,7 @@ class YumDistributor(Distributor):
     def __init__(self):
         super(YumDistributor, self).__init__()
         self.canceled = False
+        self.use_createrepo = False
 
     @classmethod
     def metadata(cls):
@@ -369,8 +370,9 @@ class YumDistributor(Distributor):
 
     def cancel_publish_repo(self, call_report, call_request):
         self.canceled = True
-        repo_working_dir = getattr(self, 'repo_working_dir')
-        return metadata.cancel_createrepo(repo_working_dir)
+        if self.use_createrepo:
+            repo_working_dir = getattr(self, 'repo_working_dir')
+            return metadata.cancel_createrepo(repo_working_dir)
 
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
@@ -443,13 +445,14 @@ class YumDistributor(Distributor):
         if repo_scratchpad.has_key("importer_working_dir"):
             src_working_dir = repo_scratchpad['importer_working_dir']
         self.copy_importer_repodata(src_working_dir, repo.working_dir)
-        if config.get('use_createrepo'):
+        self.use_createrepo = config.get('use_createrepo')
+        if self.use_createrepo:
             metadata_status, metadata_errors = metadata.generate_metadata(
                 repo.working_dir, publish_conduit, config, progress_callback, groups_xml_path)
         else:
             # default to per package metadata
             metadata_status, metadata_errors =  metadata.generate_yum_metadata(repo.working_dir, rpm_units,
-                publish_conduit, config, progress_callback)
+                publish_conduit, config, progress_callback, is_cancelled=self.canceled)
         metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):

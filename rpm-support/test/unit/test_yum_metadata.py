@@ -91,4 +91,32 @@ class TestYumMetadataGenerate(rpm_support_base.PulpRPMTests):
         self.assertEquals(status, False)
         self.assertEquals(metadata_progress_status['metadata']['state'], "SKIPPED")
 
+    def test_cancel_generate_repodata(self):
+        global metadata_progress_status
+        metadata_progress_status = {}
+
+        def set_progress(progress):
+            global metadata_progress_status
+            metadata_progress_status = progress
+
+        def progress_callback(type_id, status):
+            metadata_progress_status[type_id] = status
+            mock_publish_conduit.set_progress(metadata_progress_status)
+        mock_repo = mock.Mock(spec=Repository)
+        mock_repo.id = "test_repo"
+        mock_repo.scratchpad = {"checksum_type" : "sha"}
+        mock_repo.working_dir = os.path.join(self.temp_dir, "test_yum_repo_metadata")
+        # Confirm required and optional are successful
+        units_to_write= mock.Mock()
+        units_to_write.metadata = {}
+        units_to_write.metadata["repodata"] = {}
+
+        optional_kwargs = {"generate_metadata" :  1, "use_createrepo" : False}
+        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        mock_publish_conduit = distributor_mocks.get_publish_conduit()
+        mock_publish_conduit.set_progress = mock.Mock()
+        mock_publish_conduit.set_progress.side_effect = set_progress
+        status, errors = metadata.generate_yum_metadata(mock_repo.working_dir, [units_to_write], mock_publish_conduit, config, progress_callback=progress_callback, is_cancelled=True)
+        self.assertEquals(status, False)
+        self.assertEquals(metadata_progress_status['metadata']['state'], "CANCELED")
 
