@@ -26,7 +26,6 @@ from pulp.server.auth.authentication import (
     check_username_password, check_user_cert, check_consumer_cert_no_user,
     check_oauth)
 from pulp.server.managers import factory
-from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps
 from pulp.server.webservices import http
 
@@ -62,6 +61,7 @@ def auth_required(operation=None, super_user_only=False):
             # please, please refactor this into ... something ... anything!
             user = None
             is_consumer = False
+            principal_manager = factory.principal_manager()
             permissions = {'/v2/consumers/' : [0, 1]}
             # first, try username:password authentication
             username, password = http.username_password()
@@ -126,7 +126,7 @@ def auth_required(operation=None, super_user_only=False):
             elif operation is not None:
                 if is_consumer and is_consumer_authorized(http.resource_path(), user, operation):
                     value = method(self, *args, **kwargs)
-                    clear_principal()
+                    principal_manager.clear_principal()
                     return value
                 elif user_query_manager.is_authorized(http.resource_path(), user['login'], operation):
                     pass
@@ -134,9 +134,9 @@ def auth_required(operation=None, super_user_only=False):
                     return self.unauthorized(author_fail_msg)
 
             # everything ok, manage the principal and call the method
-            set_principal(user)
+            principal_manager.set_principal(user)
             value = method(self, *args, **kwargs)
-            clear_principal()
+            principal_manager.clear_principal()
             return value
 
         return _auth_decorator

@@ -21,13 +21,11 @@ from gettext import gettext as _
 import web
 
 # Pulp
-from pulp.common import dateutils
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.auth.principal import get_principal
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.dispatch import constants as dispatch_constants
@@ -965,7 +963,7 @@ class RepoUnassociate(JSONController):
                 action_tag('unassociate')]
 
         call_request = CallRequest(association_manager.unassociate_by_criteria,
-                                   [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER, get_principal()['login']],
+                                   [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER, manager_factory.principal_manager().get_principal()['login']],
                                    tags=tags,
                                    archive=True)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
