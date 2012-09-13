@@ -26,7 +26,7 @@ import pulp.server.managers.repo.publish as publish_manager
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoSyncManagerTests(base.PulpServerTests):
+class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(RepoSyncManagerTests, self).setUp()

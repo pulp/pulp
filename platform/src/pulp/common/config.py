@@ -190,14 +190,13 @@ class Config(dict):
         @param options: see above
         """
         super(Config, self).__init__()
-
         filter = options.get('filter')
         for input in inputs:
             if isinstance(input, basestring):
                 self.open(input, filter)
                 continue
             if isinstance(input, dict):
-                self.update(input)
+                self.update(input, filter)
                 continue
             self.read(input, filter)
 
@@ -249,14 +248,17 @@ class Config(dict):
                 v = getattr(cfg[s], p)
                 section[p] = v
 
-    def update(self, other):
+    def update(self, other, filter=None):
         """
         Copies sections and properties from "other" into this instance.
 
         @param other: values to copy into this instance
         @type other: dict
         """
+        filter = Filter(filter)
         for k,v in other.items():
+            if not filter.match(k):
+                continue
             if k in self and isinstance(v, dict):
                 self[k].update(v)
             else:

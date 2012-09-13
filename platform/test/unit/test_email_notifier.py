@@ -11,10 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from email.parser import Parser
 import smtplib
 import unittest
 import dummy_threading
+try:
+    from email.parser import Parser
+except ImportError:
+    # for python 2.4
+    from email.Parser import Parser
 
 import mock
 
@@ -69,6 +73,7 @@ class TestHandleEvent(unittest.TestCase):
         }
         self.event = mock.MagicMock()
         self.event.payload = 'stuff'
+        self.event.data.return_value = self.event.payload
 
     # don't actually spawn a thread
     @mock.patch('threading.Thread', new=dummy_threading.Thread)
@@ -116,13 +121,15 @@ class TestSystem(unittest.TestCase):
 
     # don't actually spawn a thread
     @mock.patch('threading.Thread', new=dummy_threading.Thread)
+    # don't actually get anything from the dispatch system
+    @mock.patch('pulp.server.event.data.Event._get_call_report', return_value=None)
     # don't actually send any email
     @mock.patch('smtplib.SMTP')
     # act as if the config has email enabled
     @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=True)
     # inject fake results from the database query
     @mock.patch('pulp.server.db.model.event.EventListener.get_collection')
-    def test_fire(self, mock_get_collection, mock_getbool, mock_smtp):
+    def test_fire(self, mock_get_collection, mock_getbool, mock_smtp, mock_get_call_report):
         # verify that the event system will trigger listeners of this type
         mock_get_collection.return_value.find.return_value = [self.event_doc]
         event = data.Event(data.TYPE_REPO_SYNC_FINISHED, 'stuff')

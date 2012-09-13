@@ -14,9 +14,8 @@
 from gettext import gettext as _
 import os
 
-from   pulp.client.extensions.extensions import PulpCliCommand
+from   pulp.client.commands.repo.upload import UploadCommand
 import pulp.client.upload.manager as upload_lib
-from   pulp.client.upload.ui import perform_upload
 
 # -- constants ----------------------------------------------------------------
 PKG_GROUP_TYPE_ID="package_group"
@@ -38,18 +37,14 @@ def initialize(context):
 
 # -- commands -----------------------------------------------------------------
 
-class CreatePackageGroupCommand(PulpCliCommand):
+class CreatePackageGroupCommand(UploadCommand):
     """
     Handles creation of a package group
     """
 
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.create)
-        self.context = context
-        self.prompt = context.prompt
-
-        d = 'identifies the repository the package group will be created in'
-        self.create_option('--repo-id', _(d), required=True)
+        self.upload_manager = _upload_manager(context)
+        super(CreatePackageGroupCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
         d = 'id of this package group'
         self.create_option('--group-id', _(d), aliases=['-i'], required=True)
@@ -87,9 +82,6 @@ class CreatePackageGroupCommand(PulpCliCommand):
 
         d = 'set "user_visible" flag on package group to True'
         self.create_flag('--user-visible', _(d))
-        
-        d = 'display extra information about the creation process'
-        self.create_flag('-v', _(d))
 
     def create(self, **kwargs):
         self.prompt.render_title(_('Package Group Creation'))
@@ -149,18 +141,14 @@ class CreatePackageGroupCommand(PulpCliCommand):
         upload_id = upload_manager.initialize_upload(None, repo_id, PKG_GROUP_TYPE_ID, unit_key, metadata)
         perform_upload(self.context, upload_manager, [upload_id])
 
-class CreatePackageCategoryCommand(PulpCliCommand):
+class CreatePackageCategoryCommand(UploadCommand):
     """
     Handles creation of a package category
     """
 
     def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.create)
-        self.context = context
-        self.prompt = context.prompt
-
-        d = 'identifies the repository the package category will be created in'
-        self.create_option('--repo-id', _(d), required=True)
+        self.upload_manager = _upload_manager(context)
+        super(CreatePackageCategoryCommand, self).__init__(context, self.upload_manager, name=name, description=description, method=self.create)
 
         d = 'id of this package category'
         self.create_option('--category-id', _(d), aliases=['-i'], required=True)
@@ -176,9 +164,6 @@ class CreatePackageCategoryCommand(PulpCliCommand):
 
         d = 'package group ids to include in this package category'
         self.create_option('--group', _(d), aliases=['-g'], allow_multiple=True, required=False)
-
-        d = 'display extra information about the creation process'
-        self.create_flag('-v', _(d))
 
     def create(self, **kwargs):
         self.prompt.render_title(_('Package Category Creation'))

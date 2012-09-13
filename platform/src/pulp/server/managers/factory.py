@@ -33,6 +33,7 @@ TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
 TYPE_CONSUMER_APPLICABILITY = 'consumer-applicability-manager'
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
+TYPE_CONSUMER_CONTENT       = 'consumer-content-manager'
 TYPE_CONSUMER_GROUP         = 'consumer-group-manager'
 TYPE_CONSUMER_GROUP_QUERY   = 'consumer-group-query-manager'
 TYPE_CONSUMER_HISTORY       = 'consumer-history-manager'
@@ -49,6 +50,7 @@ TYPE_PASSWORD               = 'password-manager'
 TYPE_PERMISSION             = 'permission-manager'
 TYPE_PERMISSION_QUERY       = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
+TYPE_PRINCIPAL              = 'principal'
 TYPE_REPO                   = 'repo-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
@@ -134,6 +136,12 @@ def consumer_bind_manager():
     @rtype: L{pulp.server.managers.consumer.bind.BindManager}
     """
     return get_manager(TYPE_CONSUMER_BIND)
+
+def consumer_content_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.content.ConsumerContentManager}
+    """
+    return get_manager(TYPE_CONSUMER_CONTENT)
 
 def consumer_group_manager():
     """
@@ -230,6 +238,12 @@ def plugin_manager():
     @rtype: L{pulp.server.managers.plugin.PluginManager}
     """
     return get_manager(TYPE_PLUGIN_MANAGER)
+
+def principal_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.principal.PrincipalManager}
+    """
+    return get_manager(TYPE_PRINCIPAL)
 
 def repo_group_manager():
     """
@@ -343,6 +357,7 @@ def initialize():
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
+    from pulp.server.managers.auth.principal import PrincipalManager
     from pulp.server.managers.auth.user.cud import UserManager
     from pulp.server.managers.auth.user.query import UserQueryManager
     from pulp.server.managers.auth.password import PasswordManager
@@ -354,6 +369,7 @@ def initialize():
     from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.applicability import ApplicabilityManager
     from pulp.server.managers.consumer.bind import BindManager
+    from pulp.server.managers.consumer.content import ConsumerContentManager
     from pulp.server.managers.consumer.group.cud import ConsumerGroupManager
     from pulp.server.managers.consumer.group.query import ConsumerGroupQueryManager
     from pulp.server.managers.consumer.history import ConsumerHistoryManager
@@ -390,6 +406,7 @@ def initialize():
         TYPE_CONSUMER_AGENT: AgentManager,
         TYPE_CONSUMER_APPLICABILITY: ApplicabilityManager,
         TYPE_CONSUMER_BIND: BindManager,
+        TYPE_CONSUMER_CONTENT: ConsumerContentManager,
         TYPE_CONSUMER_GROUP: ConsumerGroupManager,
         TYPE_CONSUMER_GROUP_QUERY: ConsumerGroupQueryManager,
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
@@ -406,6 +423,7 @@ def initialize():
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
+        TYPE_PRINCIPAL: PrincipalManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_ASSOCIATION_QUERY : RepoUnitAssociationQueryManager,

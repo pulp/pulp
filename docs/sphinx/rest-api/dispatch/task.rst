@@ -78,5 +78,9 @@ All currently running and waiting tasks may be listed. This returns a list of
 
 * :param:`?tag,str,only return tasks tagged with all tag parameters`
 
+| :response_list:`_`
+
+* :response_code:`200,containing a list of tasks`
+
 | :return:`list of call reports (see Polling Task Progress above for example)`
 

@@ -27,6 +27,7 @@ from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import context as dispatch_context
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import history as dispatch_history
+from pulp.server.managers import factory as managers_factory
 
 
 _LOG = logging.getLogger(__name__)
@@ -67,6 +68,7 @@ class Task(object):
         self.call_report.call_request_id = self.call_request.id
         self.call_report.state = dispatch_constants.CALL_WAITING_STATE
         self.call_report.task_id = self.id
+        self.call_report.principal_login = self.call_report.principal_login or self.call_request.principal and self.call_request.principal['login']
         self.call_report.tags.extend(self.call_request.tags)
 
         self.complete_callback = None
@@ -119,6 +121,8 @@ class Task(object):
         Generally the target of a new thread.
         """
         # used for calling _run directly during testing
+        principal_manager = managers_factory.principal_manager()
+        principal_manager.set_principal(self.call_request.principal)
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
             self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
@@ -132,8 +136,10 @@ class Task(object):
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
             # to bad 2.4 doesn't support try/except/finally blocks
+            principal_manager.clear_principal()
             dispatch_context.CONTEXT.clear_task_attributes()
             return self._failed(e, tb)
+        principal_manager.clear_principal()
         dispatch_context.CONTEXT.clear_task_attributes()
         return self._succeeded(result)
 
@@ -271,6 +277,8 @@ class AsyncTask(Task):
         Generally the target of a new thread.
         """
         # used for calling _run directly during testing
+        principal_manager = managers_factory.principal_manager()
+        principal_manager.set_principal(self.call_request.principal)
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
             self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
@@ -287,8 +295,10 @@ class AsyncTask(Task):
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
             # too bad 2.4 doesn't support try/except/finally blocks
+            principal_manager.clear_principal()
             dispatch_context.CONTEXT.clear_task_attributes()
             return self._failed(e, tb)
+        principal_manager.clear_principal()
         dispatch_context.CONTEXT.clear_task_attributes()
         return result
 

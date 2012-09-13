@@ -21,7 +21,9 @@ from types import NoneType, TracebackType
 
 from pulp.common import dateutils
 from pulp.common.util import encode_unicode
+from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.managers import factory as managers_factory
 
 
 _LOG = logging.getLogger(__name__)
@@ -46,6 +48,8 @@ class CallRequest(object):
     @type dependencies: dict
     @ivar weight: weight of callable in relation concurrency resources
     @type weight: int
+    @ivar principal: user that submitted this call request
+    @type principal: user
     @ivar execution_hooks: callbacks to be executed during lifecycle of callable
     @type execution_hooks: dict
     @ivar control_hooks: callbacks used to control the lifecycle of the callable
@@ -56,6 +60,8 @@ class CallRequest(object):
     @type asynchronous: bool
     @ivar archive: toggle archival of call request on completion
     @type archive: bool
+    @ivar obfuscate_args: toggle obfuscation of arguments when cast to a string
+    @type obfuscate_args: bool
     """
 
     def __init__(self,
@@ -65,6 +71,7 @@ class CallRequest(object):
                  resources=None,
                  dependencies=None,
                  weight=1,
+                 principal=None,
                  tags=None,
                  asynchronous=False,
                  archive=False,
@@ -77,6 +84,7 @@ class CallRequest(object):
         assert isinstance(dependencies, (NoneType, dict))
         assert isinstance(weight, int)
         assert weight > -1
+        assert isinstance(principal, (NoneType, User, dict))
         assert isinstance(tags, (NoneType, list))
         assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
@@ -88,6 +96,7 @@ class CallRequest(object):
         self.kwargs = kwargs or {}
         self.resources = resources or {}
         self.dependencies = dependencies or {}
+        self.principal = principal or managers_factory.principal_manager().get_principal()
         self.weight = weight
         self.tags = tags or []
         self.asynchronous = asynchronous
@@ -167,7 +176,7 @@ class CallRequest(object):
     # call request serialization/deserialization -------------------------------
 
     copied_fields = ('resources', 'weight', 'tags', 'asynchronous', 'archive')
-    pickled_fields = ('call', 'args', 'kwargs', 'execution_hooks', 'control_hooks')
+    pickled_fields = ('call', 'args', 'kwargs', 'principal', 'execution_hooks', 'control_hooks')
     all_fields = itertools.chain(copied_fields, pickled_fields)
 
     def serialize(self):
@@ -277,6 +286,7 @@ class CallReport(object):
                  result=None,
                  exception=None,
                  traceback=None,
+                 principal=None,
                  tags=None):
 
         assert isinstance(response, (NoneType, basestring))
@@ -288,6 +298,7 @@ class CallReport(object):
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
+        assert isinstance(principal, (NoneType, User, dict))
 
         self.call_request_id = None
         self.response = response
@@ -302,12 +313,13 @@ class CallReport(object):
         self.traceback = traceback
         self.start_time = None
         self.finish_time = None
+        self.principal_login = principal and principal['login']
         self.tags = tags or []
 
     def serialize(self):
         data = {}
         for field in ('response', 'reasons', 'state', 'task_id', 'task_group_id',
-                      'schedule_id', 'progress', 'result', 'tags'):
+                      'schedule_id', 'progress', 'result', 'principal_login', 'tags'):
             data[field] = getattr(self, field)
         ex = getattr(self, 'exception')
         if ex is not None:

@@ -399,6 +399,21 @@ class Coordinator(object):
             cancel_returns[task.id] = task_queue.cancel(task)
         return cancel_returns
 
+    # progress reporting methods -----------------------------------------------
+
+    def report_call_progress(self, task_id, progress):
+        """
+        Add a progress report to the task's call report.
+        @param task_id: task id for call to add progress report to
+        @type task_id: str
+        @param progress: progress report to add
+        @type progress: dict
+        """
+        task_list = self.find_tasks(task_id=task_id)
+        if not task_list:
+            return None
+        task_list[0].call_report.progress = progress
+
 # conflict detection utility functions -----------------------------------------
 
 def filter_dicts(dicts, fields):
