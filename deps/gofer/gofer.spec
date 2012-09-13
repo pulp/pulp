@@ -249,6 +249,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Thu Sep 13 2012 Jeff Ortel <jortel@redhat.com> 0.73-1
+- bump to 0.73, needed by handler progress reporting. (jortel@redhat.com)
+
+* Thu Sep 13 2012 Jeff Ortel <jortel@redhat.com> 0.73-1
 - Progress reporting enhancements. (jortel@redhat.com)
 - Add for debugging w/o running as root. (jortel@redhat.com)
 * Mon Aug 20 2012 Jeff Ortel <jortel@redhat.com> 0.72-1
