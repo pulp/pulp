@@ -70,13 +70,17 @@ class PackageHandler(ContentHandler):
         @return: An install report.  See: L{Package.install}
         @rtype: L{HandlerReport}
         """
-        progress = ProgressReport(len(units))
         report = PackageReport()
+        progress = ProgressReport(len(units))
+        progress.summary = 'started'
+        conduit.update_progress(progress)
         pkg = self.__impl(options)
         names = [key['name'] for key in units]
         details = pkg.install(names)
         report.succeeded(details)
-        progress.completed = len(units)
+        progress.completed = report.chgcnt
+        progress.summary = names
+        progress.details = details
         conduit.update_progress(progress)
         return report
 
@@ -98,12 +102,19 @@ class PackageHandler(ContentHandler):
         @rtype: L{HandlerReport}
         """
         report = PackageReport()
+        progress = ProgressReport(len(units))
+        progress.summary = 'started'
+        conduit.update_progress(progress)
         all = options.get('all', False)
         pkg = self.__impl(options)
         names = [key['name'] for key in units if key]
         if names or all:
             details = pkg.update(names)
             report.succeeded(details)
+            progress.completed = report.chgcnt
+            progress.summary = names
+            progress.details = details
+            conduit.update_progress(progress)
         return report
 
     def uninstall(self, conduit, units, options):
@@ -121,10 +132,17 @@ class PackageHandler(ContentHandler):
         @rtype: L{HandlerReport}
         """
         report = PackageReport()
+        progress = ProgressReport(len(units))
+        progress.summary = 'started'
+        conduit.update_progress(progress)
         pkg = self.__impl(options)
         names = [key['name'] for key in units]
         details = pkg.uninstall(names)
         report.succeeded(details)
+        progress.completed = len(units)
+        progress.summary = names
+        progress.details = details
+        conduit.update_progress(progress)
         return report
     
     def profile(self, conduit):

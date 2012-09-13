@@ -199,13 +199,9 @@ class ReplyHandler(Listener):
         log.info('Task RMI (progress)\n%s', reply)
         taskid = reply.any
         coordinator = factory.coordinator()
-        tasks = coordinator.find_tasks(task_id=taskid)
-        if tasks:
-            report = dict(
-                total=reply.total,
-                completed=reply.completed,
-                summary=reply.details['summary'],
-                details=reply.details['details'])
-            tasks[0].set_progress(report)
-        else:
-            log.degug('Task: %s, not found', taskid)
+        report = dict(
+            total=reply.total,
+            completed=reply.completed,
+            summary=reply.details['summary'],
+            details=reply.details['details'])
+        coordinator.report_call_progress(taskid, report)
