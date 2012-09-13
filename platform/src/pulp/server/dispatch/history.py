@@ -33,14 +33,6 @@ def find_archived_calls(**criteria):
         query['serialized_call_report.task_id'] = criteria['task_id']
     if 'task_group_id' in criteria:
         query['serialized_call_report.task_group_id'] = criteria['task_group_id']
-    if 'state' in criteria:
-        query['serialized_call_report.state'] = criteria['state']
-    if 'call_name' in criteria:
-        call_name = callable_name(criteria.get('class_name'), criteria['call_name'])
-        query['serialized_call_request.callable_name'] = call_name
-    # XXX allow args, kwargs, and resources?
-    if 'tags' in criteria:
-        query['serialized_call_request.tags'] = {'$in': criteria['tags']}
 
     collection = ArchivedCall.get_collection()
     cursor = collection.find(query)
@@ -73,13 +65,5 @@ def purge_archived_tasks():
     expired_timestamp = dateutils.datetime_to_utc_timestamp(now - delta)
     collection = ArchivedCall.get_collection()
     collection.remove({'timestamp': {'$lte': expired_timestamp}}, safe=True)
-
-# utility functions ------------------------------------------------------------
-
-def callable_name(class_name=None, call_name=None):
-    assert call_name is not None
-    if class_name is None:
-        return call_name
-    return '.'.join((class_name, call_name))
 
 
