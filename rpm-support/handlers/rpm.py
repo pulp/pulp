@@ -16,7 +16,7 @@ from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
 from rhsm.profile import get_profile
 from pulp.agent.lib.handler import ContentHandler
-from pulp.agent.lib.report import ProfileReport, HandlerReport
+from pulp.agent.lib.report import ProfileReport, HandlerReport, ProgressReport
 from logging import getLogger, Logger
 
 log = getLogger(__name__)
@@ -70,11 +70,14 @@ class PackageHandler(ContentHandler):
         @return: An install report.  See: L{Package.install}
         @rtype: L{HandlerReport}
         """
+        progress = ProgressReport(len(units))
         report = PackageReport()
         pkg = self.__impl(options)
         names = [key['name'] for key in units]
         details = pkg.install(names)
         report.succeeded(details)
+        progress.completed = len(units)
+        conduit.update_progress(progress)
         return report
 
     def update(self, conduit, units, options):
