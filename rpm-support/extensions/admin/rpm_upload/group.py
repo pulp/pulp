@@ -60,13 +60,13 @@ d = _('set "user_visible" flag on package group to True')
 OPT_USER_VISIBLE = PulpCliFlag('--user-visible', d)
 
 
-class PackageGroupCreateCommand(UploadCommand) : 
+class CreatePackageGroupCommand(UploadCommand) :
     """
     Handles the creation of a package group.
     """
 
     def __init__(self, context, upload_manager, name=NAME, description=DESC):
-        super(PackageGroupCreateCommand, self).__init__(context, upload_manager,
+        super(CreatePackageGroupCommand, self).__init__(context, upload_manager,
                                                         name=name, description=description,
                                                         upload_files=False)
 
@@ -105,10 +105,10 @@ class PackageGroupCreateCommand(UploadCommand) :
         # Adjust cond_names, format is key : value1,value2,...
         cond_names = []
         cond_names_raw = kwargs[OPT_CONDITIONAL_NAME.keyword]
-        if cond_names_raw : 
-            for entry in cond_names_raw : 
-                key, value = entry.split(' : ')
-                cond_names.append((key,value))
+        if cond_names_raw:
+            for entry in cond_names_raw:
+                key, value = entry.split(':')
+                cond_names.append((key.strip(), value.strip()))
 
         metadata = {
             'name' : name,

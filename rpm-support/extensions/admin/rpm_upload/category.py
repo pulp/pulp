@@ -38,13 +38,13 @@ d = _('package group IDs to include in the package category; multiple may '
 OPT_GROUP = PulpCliOption('--group', d, aliases=['-g'], allow_multiple=True, required=False)
 
 
-class PackageCategoryCreateCommand(UploadCommand):
+class CreatePackageCategoryCommand(UploadCommand):
     """
     Handles the creation of a package category.
     """
 
     def __init__(self, context, upload_manager, name=NAME, description=DESC):
-        super(PackageCategoryCreateCommand, self).__init__(context, upload_manager,
+        super(CreatePackageCategoryCommand, self).__init__(context, upload_manager,
                                                            name, description,
                                                            upload_files=False)
 
