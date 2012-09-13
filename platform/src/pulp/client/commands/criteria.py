@@ -20,7 +20,7 @@ except ImportError:
 from okaara.cli import CommandUsage, OptionGroup
 
 from pulp.client import validators
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client import parsers
 
 _LIMIT_DESCRIPTION = _('max number of items to return')
@@ -247,6 +247,8 @@ class CriteriaCommand(PulpCliCommand):
 
 
 class UnitAssociationCriteriaCommand(CriteriaCommand):
+    ASSOCIATION_FLAG = PulpCliFlag(
+        '--details', _('show association details'), aliases=['-d'])
 
     def __init__(self, method, *args, **kwargs):
         super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
@@ -254,15 +256,17 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
         self.add_option(PulpCliOption('--repo-id',
             _('identifies the repository to search within'), required=True))
 
-        m = 'matches units added to the source repository on or after the given time; '\
-            'specified as a timestamp in iso8601 format'
-        self.create_option('--after', _(m), ['-a'], required=False,
+        m = _('matches units added to the source repository on or after the given time; '
+            'specified as a timestamp in iso8601 format')
+        self.create_option('--after', m, ['-a'], required=False,
             allow_multiple=False, parse_func=parsers.iso8601)
 
-        m = 'matches units added to the source repository on or before the given time; '\
-            'specified as a timestamp in iso8601 format'
-        self.create_option('--before', _(m), ['-b'], required=False,
+        m = _('matches units added to the source repository on or before the given time; '
+            'specified as a timestamp in iso8601 format')
+        self.create_option('--before', m, ['-b'], required=False,
             allow_multiple=False, parse_func=parsers.iso8601)
+
+        self.add_flag(self.ASSOCIATION_FLAG)
 
 
 class UntypedUnitAssociationCriteriaCommand(UnitAssociationCriteriaCommand):

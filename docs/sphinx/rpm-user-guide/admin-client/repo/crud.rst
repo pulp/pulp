@@ -46,11 +46,11 @@ Synchronization
   Flag indicating if only the newest version of each package should be downloaded
   during synchronization.
 
-``--skip-types``
+``--skip``
   Comma-separated list of types to omit when synchronizing from the source. If
   unspecified, all types will be synchronized. Valid values are: packages,
   distributions, errata. Example usage to only synchronize packages:
-  ``--skip-types distributions,errata``
+  ``--skip distributions,errata``
 
 ``--verify-size``
   If true, as the repository is synchronized the size of each file will be verified

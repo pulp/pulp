@@ -156,7 +156,7 @@ def dict_to_yum_category(obj, category_id=None):
         cat.translated_name[key] = obj['translated_name'][key]
     for key in obj['translated_description']:
         cat.translated_description[key] = obj['translated_description'][key]
-    for groupid in obj['packagegroupids']:
+    for groupid in obj['packagegroupids'] or []:
         cat._groups[groupid] = groupid
     return cat
 
