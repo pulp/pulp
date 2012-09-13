@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import gzip
 
 import os
 import time
@@ -18,7 +19,7 @@ from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp_rpm.yum_plugin import util
+from pulp_rpm.yum_plugin import util, metadata
 from yum_importer import distribution, drpm
 
 _LOG = util.getLogger(__name__)
@@ -251,7 +252,7 @@ def get_yumRepoGrinder(repo_id, repo_working_dir, config):
     remove_old = config.get("remove_old") or False
     purge_orphaned = config.get("purge_orphaned") or True
     num_old_packages = config.get("num_old_packages") or 0
-    skip = config.get("skip_content_types") or []
+    skip = config.get("skip") or []
     yumRepoGrinder = YumRepoGrinder(repo_label=repo_label, repo_url=repo_url, parallel=num_threads,\
         mirrors=None, newest=newest, cacert=cacert, clicert=clicert, clikey=clikey,\
         proxy_url=proxy_url, proxy_port=proxy_port, proxy_user=proxy_user,\
@@ -333,6 +334,49 @@ def set_repo_checksum_type(repo, sync_conduit, config):
     # set repo checksum type on the scratchpad for distributor to lookup
     sync_conduit.set_repo_scratchpad(dict(checksum_type=checksum_type))
     _LOG.info("checksum type info [%s] set to repo scratchpad" % sync_conduit.get_repo_scratchpad())
+
+def preserve_custom_metadata_on_scratchpad(repo, sync_conduit, config):
+    """
+    Preserve custom metadata from repomd.xml on scratchpad for distributor to lookup and
+    publish. This includes prestodelta, productid or any other filetype that isnt the
+    standard.
+      @param repo: metadata describing the repository
+      @type  repo: L{pulp.server.content.plugins.data.Repository}
+
+      @param sync_conduit
+      @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
+
+      @param config: plugin configuration
+      @type  config: L{pulp.server.content.plugins.config.PluginCallConfiguration}
+    """
+    _LOG.debug('Determining custome filetypes to preserve for repo %s' % repo.id)
+    # store the importer working dir on scratchpad to lookup downloaded data
+    importer_repodata_dir = os.path.join(repo.working_dir, repo.id, "repodata")
+    repomd_xml_path = os.path.join(importer_repodata_dir, "repomd.xml")
+    if not os.path.exists(repomd_xml_path):
+        return
+    ftypes = util.get_repomd_filetypes(repomd_xml_path)
+    base_ftypes = ['primary', 'primary_db', 'filelists_db', 'filelists', 'other', 'other_db',
+                   'group', 'group_gz', 'updateinfo', 'updateinfo_db']
+    existing_scratch_pad = sync_conduit.get_repo_scratchpad() or {}
+    skip_metadata_types = metadata.convert_content_to_metadata_type(config.get("skip") or [])
+    for ftype in ftypes:
+        if ftype in base_ftypes:
+            # no need to process these again
+            continue
+        if ftype in skip_metadata_types and not skip_metadata_types[ftype]:
+            _LOG.info("mdtype %s part of skip metadata; skipping" % ftype)
+            continue
+        filetype_path = os.path.join(importer_repodata_dir, os.path.basename(util.get_repomd_filetype_path(repomd_xml_path, ftype)))
+        renamed_filetype_path = os.path.join(os.path.dirname(filetype_path),\
+            ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
+        if renamed_filetype_path.endswith('.gz'):
+            # if file is gzipped, decompress
+            data = gzip.open(renamed_filetype_path).read().decode("utf-8", "replace")
+        else:
+            data = open(renamed_filetype_path).read().decode("utf-8", "replace")
+        existing_scratch_pad.update({ftype : data})
+    sync_conduit.set_repo_scratchpad(existing_scratch_pad)
 
 class ImporterRPM(object):
     def __init__(self):
@@ -479,12 +523,8 @@ class ImporterRPM(object):
         _LOG.info("Finished download of %s in % seconds.  %s" % (repo.id, end_download-start_download, report))
         # determine the checksum type from downloaded metadata
         set_repo_checksum_type(repo, sync_conduit, config)
-        # store the importer working dir on scratchpad to lookup downloaded data
-        importer_working_repo_dir = os.path.join(repo.working_dir, repo.id)
-        if os.path.exists(importer_working_repo_dir):
-            existing_scratch_pad = sync_conduit.get_repo_scratchpad() or {}
-            existing_scratch_pad.update({'importer_working_dir' : importer_working_repo_dir})
-            sync_conduit.set_repo_scratchpad(existing_scratch_pad)
+        # preserve the custom metadata on scratchpad to lookup downloaded data
+        preserve_custom_metadata_on_scratchpad(repo, sync_conduit, config)
 
         # -------------- process the download results to a report ---------------
         errors = {}

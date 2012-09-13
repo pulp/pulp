@@ -48,7 +48,7 @@ class TestRepoScratchpad(rpm_support_base.PulpRPMTests):
             global repo_scratchpad
             return repo_scratchpad
 
-        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest/"
+        feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_drpm_repo/"
         importer = YumImporter()
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
@@ -62,4 +62,4 @@ class TestRepoScratchpad(rpm_support_base.PulpRPMTests):
         importer._sync_repo(repo, sync_conduit, config)
         print "SCRATCHPAD %s" %  repo_scratchpad
         self.assertEquals(repo_scratchpad['checksum_type'], 'sha256')
-        self.assertEquals(repo_scratchpad['importer_working_dir'], os.path.join(repo.working_dir, repo.id))
+        self.assertTrue(repo_scratchpad.has_key("prestodelta"))
