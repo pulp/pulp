@@ -329,3 +329,26 @@ def parse_datetime(datetime_str):
     @rtype: datetime.datetime instance
     """
     return datetime.datetime.strptime(datetime_str, '%Y-%m-%d-%H-%M-%S')
+
+# timestamp functions ----------------------------------------------------------
+
+def datetime_to_utc_timestamp(dt):
+    """
+    Generate a UNIX timestamp for the given datetime instance.
+    @param dt: datetime instance to generate a timestamp from
+    @type dt: datetime.datetime
+    @return: UNIX time stamp corresponding to the given datetime instance
+    @rtype: float
+    """
+    udt = to_naive_utc_datetime(dt)
+    return time.mktime(udt.timetuple())
+
+def now_utc_timestamp():
+    """
+    Generate a UNIX timestamp for right now in UTC.
+    @return: UNIX timestamp
+    @rtype: float
+    """
+    now = datetime.datetime.now(tz=utc_tz())
+    return datetime_to_utc_timestamp(now)
+
