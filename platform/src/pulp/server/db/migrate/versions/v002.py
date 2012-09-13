@@ -41,7 +41,7 @@ def _migrate_scheduled_calls():
 
 def _migrate_archived_calls():
     collection = dispatch.ArchivedCall.get_collection()
-    collection.update({}, {'$set': {'serialized_call_request.principal': _pickled_system_user(), 'serialized_call_report.principal_login': _SYSTEM_LOGIN}}, safe=True, multi=True)
+    collection.remove(safe=True)
 
 
 def migrate():
