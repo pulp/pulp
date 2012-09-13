@@ -248,7 +248,7 @@ class CriteriaCommand(PulpCliCommand):
 
 class UnitAssociationCriteriaCommand(CriteriaCommand):
     ASSOCIATION_FLAG = PulpCliFlag(
-        '--details', _('show association details'), ['-d'])
+        '--details', _('show association details'), aliases=['-d'])
 
     def __init__(self, method, *args, **kwargs):
         super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
