@@ -16,7 +16,7 @@ import mock
 from pulp.client.commands.repo.upload import UploadCommand, FLAG_VERBOSE
 from pulp.client.commands.options import OPTION_REPO_ID
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__ + '/../../extensions/admin')))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/../../extensions/admin'))
 from pulp_rpm.common.ids import TYPE_ID_PKG_GROUP
 import rpm_support_base
 from rpm_upload import group
