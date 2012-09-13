@@ -41,14 +41,16 @@ class ModulesCommand(UnitAssociationCriteriaCommand):
         kwargs['type_ids'] = [constants.TYPE_PUPPET_MODULE]
         modules = self.context.server.repo_unit.search(repo_id, **kwargs).response_body
 
-        # Only display the module metadata, not the association
-        module_metadata = [m['metadata'] for m in modules]
-
         # Strip out checksum information; not sure how to render it yet
         # or if it's even useful
-        map(lambda x : x.pop('checksums', None), module_metadata)
+        map(lambda x : x['metadata'].pop('checksums', None), modules)
 
-        # Make sure the key info is at the top; the rest can be alpha
-        order = ['name', 'version', 'author']
+        order = []
 
-        self.prompt.render_document_list(module_metadata, order=order)
+        if not kwargs.get(self.ASSOCIATION_FLAG.keyword):
+            # Only display the module metadata, not the association
+            modules = [m['metadata'] for m in modules]
+            # Make sure the key info is at the top; the rest can be alpha
+            order = ['name', 'version', 'author']
+
+        self.prompt.render_document_list(modules, order=order)
