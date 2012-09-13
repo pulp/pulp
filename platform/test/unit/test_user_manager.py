@@ -14,7 +14,6 @@
 import mock
 import base
 
-from pulp.server.auth import principal
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
@@ -38,7 +37,7 @@ class UserManagerTests(base.PulpServerTests):
         self.user_manager = manager_factory.user_manager()
         self.user_query_manager = manager_factory.user_query_manager()
         self.cert_generation_manager = manager_factory.cert_generation_manager()
-        
+
 
     def tearDown(self):
         super(UserManagerTests, self).tearDown()
@@ -54,7 +53,7 @@ class UserManagerTests(base.PulpServerTests):
 
         # Setup
         admin_user = self.user_manager.create_user('test-admin')
-        principal.set_principal(admin_user) # pretend the user is logged in
+        manager_factory.principal_manager().set_principal(admin_user) # pretend the user is logged in
 
         # Test
         cert = self.user_manager.generate_user_certificate()

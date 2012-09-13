@@ -16,7 +16,6 @@ import base
 import random
 import string
 
-from pulp.server.auth import principal
 from pulp.server.auth import authorization
 from pulp.server.managers import factory as manager_factory
 
@@ -28,7 +27,7 @@ from pulp.server.db.model.auth import Role
 class RoleManagerTests(base.PulpServerTests):
     def setUp(self):
         super(RoleManagerTests, self).setUp()
-        
+
         self.alpha_num = string.letters + string.digits
 
         self.user_manager = manager_factory.user_manager()
@@ -37,9 +36,9 @@ class RoleManagerTests(base.PulpServerTests):
         self.role_query_manager = manager_factory.role_query_manager()
         self.permission_manager = manager_factory.permission_manager()
         self.permission_query_manager = manager_factory.permission_query_manager()
-        
+
         self.role_manager.ensure_super_user_role()
-        principal.clear_principal()
+        manager_factory.principal_manager().clear_principal()
 
     def tearDown(self):
         super(RoleManagerTests, self).tearDown()
@@ -63,8 +62,8 @@ class RoleManagerTests(base.PulpServerTests):
         return '/%s/' % '/'.join(''.join(random.sample(self.alpha_num,
                                                        random.randint(6, 10)))
                                  for i in range(random.randint(2, 4)))
-        
-        
+
+
     def test_user_create_failure(self):
         u = self._create_user()
         r = self._create_resource()
@@ -153,6 +152,6 @@ class RoleManagerTests(base.PulpServerTests):
         o = authorization.READ
         self.permission_manager.grant('/', u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
-        
+
 
 
