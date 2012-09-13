@@ -83,21 +83,19 @@ class PulpBindings(Bindings):
 
 class Conduit(HandlerConduit):
     """
-    A handler conduit specialized to work with gofer.
+    Provides integration between the gofer progress reporting
+    and agent handler frameworks.
     """
 
     def update_progress(self, report):
         """
         Send the updated progress report.
         @param report: A handler progress report.
-        @type report: L{pulp.agent.lib.report.ProgressReport}
+        @type report: object
         """
         context = Context.current()
-        progress = context.progress
-        progress.total = report.total
-        progress.completed = report.completed
-        progress.details = dict(summary=report.summary, details=report.details)
-        progress.report()
+        context.progress.details = report
+        context.progress.report()
 
 #
 # Actions

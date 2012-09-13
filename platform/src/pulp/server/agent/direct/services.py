@@ -199,9 +199,4 @@ class ReplyHandler(Listener):
         log.info('Task RMI (progress)\n%s', reply)
         taskid = reply.any
         coordinator = factory.coordinator()
-        report = dict(
-            total=reply.total,
-            completed=reply.completed,
-            summary=reply.details['summary'],
-            details=reply.details['details'])
-        coordinator.report_call_progress(taskid, report)
+        coordinator.report_call_progress(taskid, reply.details)

@@ -197,34 +197,3 @@ class ExceptionReport(dict):
         trace = '\n'.join(tb.format_exception(*info))
         self['message'] = str(inst)
         self['trace'] = trace
-
-
-class ProgressReport:
-    """
-    A progress report is used to track and report handler progress.
-    @ivar total: The total work units to be completed.
-    @type total: int
-    @ivar completed: The number of completed work units.
-    @type completed: int
-    @ivar summary: A summary of recent activity.
-    @type summary: object
-    @ivar details: Activity details.
-    @type details: object
-    """
-
-    def __init__(self, total=0):
-        """
-        @param total: The total work units to be completed.
-        @type total: int
-        """
-        self.total = total
-        self.completed = 0
-        self.summary = None
-        self.details = None
-
-    def __str__(self):
-        return 'completed: %d of: %d, summary=%s, details:%s' % \
-            (self.completed,
-             self.total,
-             self.summary,
-             self.details)

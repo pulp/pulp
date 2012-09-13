@@ -24,7 +24,9 @@ class Conduit:
     def update_progress(self, report):
         """
         Report a progress update.
-        :param report: A progress report.
-        :type report: pulp.agent.lib.report.ProgressReport
+        The content of the progress report is at the discretion of
+        the handler.  However, it must be json serializable.
+        @param report: A progress report.
+        @type report: object
         """
         log.info('Progress reported:%s', report)
