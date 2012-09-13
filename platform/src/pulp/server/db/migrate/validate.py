@@ -113,7 +113,7 @@ def _validate_consumer():
 
 def _validate_consumer_history():
     objectdb = ConsumerHistoryEvent.get_collection()
-    reference = ConsumerHistoryEvent('', '', '', {})
+    reference = ConsumerHistoryEvent('', '', '', None)
     return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
 def _validate_content_type():

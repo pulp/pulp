@@ -23,10 +23,9 @@ import isodate
 
 from pulp.common import dateutils
 from pulp.server import config
-from pulp.server.auth.principal import get_principal
-
 from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 from pulp.server.exceptions import InvalidValue, MissingResource
+from pulp.server.managers import factory as managers_factory
 
 # -- constants ----------------------------------------------------------------
 
@@ -73,7 +72,7 @@ class ConsumerHistoryManager(object):
         @return: login of the originator value to use in the event
         @rtype:  string
         '''
-        return get_principal()['login']
+        return managers_factory.principal_manager().get_principal()['login']
 
 
     def record_event(self, consumer_id, event_type, event_details=None):
@@ -98,13 +97,13 @@ class ConsumerHistoryManager(object):
         invalid_values = []
         if event_type not in TYPES:
             invalid_values.append('event_type')
-            
+
         if event_details is not None and not isinstance(event_details, dict):
             invalid_values.append('event_details')
-            
+
         if invalid_values:
             raise InvalidValue(invalid_values)
-            
+
         event = ConsumerHistoryEvent(consumer_id, self._originator(), event_type, event_details)
         ConsumerHistoryEvent.get_collection().save(event, safe=True)
 
@@ -155,17 +154,17 @@ class ConsumerHistoryManager(object):
             invalid_values.append('sort')
 
         # Verify that start_date and end_date is valid
-        if start_date is not None: 
-            try: 
+        if start_date is not None:
+            try:
                 dateutils.parse_iso8601_date(start_date)
             except (ValueError, isodate.ISO8601Error):
                 invalid_values.append('start_date')
-        if end_date is not None: 
-            try: 
+        if end_date is not None:
+            try:
                 dateutils.parse_iso8601_date(end_date)
             except (ValueError, isodate.ISO8601Error):
                 invalid_values.append('end_date')
-                        
+
         if invalid_values:
             raise InvalidValue(invalid_values)
 

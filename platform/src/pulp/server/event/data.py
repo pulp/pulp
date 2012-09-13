@@ -15,6 +15,8 @@
 Contains DTOs to describe events.
 """
 
+from pulp.server.dispatch import factory as dispatch_factory
+
 # -- constants ----------------------------------------------------------------
 
 # Many more types will be added as this functionality is flushed out
@@ -37,6 +39,28 @@ class Event(object):
     def __init__(self, event_type, payload):
         self.event_type = event_type
         self.payload = payload
+        self.call_report = self._get_call_report()
 
     def __str__(self):
         return 'Event: Type [%s] Payload [%s]' % (self.event_type, self.payload)
+
+    @staticmethod
+    def _get_call_report():
+        context = dispatch_factory.context()
+        coordinator = dispatch_factory.coordinator()
+        call_report_list = coordinator.find_call_reports(task_id=context.task_id)
+        if not call_report_list:
+            return None
+        return call_report_list[0].serialize()
+
+    def data(self):
+        """
+        Generate a data report for this event.
+        @return: dictionary of this event's fields
+        @rtype: dict
+        """
+        d = {'event_type': self.event_type,
+             'payload': self.payload,
+             'call_report': self.call_report}
+        return d
+
