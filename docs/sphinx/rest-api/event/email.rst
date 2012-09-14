@@ -31,6 +31,6 @@ the following keys:
   JSON document describing the event. This will vary based on the type of event.
 
 ``call_report``
-  JSON document giving the :ref:`call_report`, if the even was triggered within
+  JSON document giving the :ref:`call_report`, if the evet was triggered within
   the context of a task. Otherwise this field will be *null*.
 
