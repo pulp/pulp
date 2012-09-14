@@ -141,3 +141,10 @@ class EventFireManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(event.event_type, event_data.TYPE_REPO_SYNC_FINISHED)
         self.assertEqual(event.payload, result)
 
+    @mock.patch('pulp.server.managers.event.remote.TopicPublishManager.publish')
+    def test_call_message_bus(self, mock_publish):
+        result = {'repo_id' : 'test-repo', 'result' : 'success'}
+        event = event_data.Event(event_data.TYPE_REPO_PUBLISH_FINISHED, result)
+        self.manager._do_fire(event)
+
+        mock_publish.assert_called_once_with(event)
