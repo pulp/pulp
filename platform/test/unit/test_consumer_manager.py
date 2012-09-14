@@ -14,7 +14,6 @@
 
 import base
 
-from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.history as history_manager
@@ -27,7 +26,6 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(ConsumerManagerTests, self).setUp()
-        plugin_api._create_manager()
 
         # Create the manager instance to test
         self.manager = consumer_manager.ConsumerManager()
@@ -46,13 +44,13 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'consumer_1'
+        consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
         notes = {'note1' : 'value1'}
 
         # Test
-        created = self.manager.register(id, name, description, notes)
+        created = self.manager.register(consumer_id, name, description, notes)
         print created
 
         # Verify
@@ -60,12 +58,12 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(1, len(consumers))
 
         consumer = consumers[0]
-        self.assertEqual(id, consumer['id'])
+        self.assertEqual(consumer_id, consumer['id'])
         self.assertEqual(name, consumer['display_name'])
         self.assertEqual(description, consumer['description'])
         self.assertEqual(notes, consumer['notes'])
 
-        self.assertEqual(id, created['id'])
+        self.assertEqual(consumer_id, created['id'])
         self.assertEqual(name, created['display_name'])
         self.assertEqual(description, created['description'])
         self.assertEqual(notes, created['notes'])
@@ -106,15 +104,15 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'duplicate'
-        self.manager.register(id)
+        consumer_id = 'duplicate'
+        self.manager.register(consumer_id)
 
         # Test
         try:
-            self.manager.register(id)
+            self.manager.register(consumer_id)
             self.fail('Consumer with an existing ID did not raise an exception')
         except exceptions.DuplicateResource, e:
-            self.assertTrue(id in e)
+            self.assertTrue(consumer_id in e)
             print(e) # for coverage
 
     def test_create_invalid_notes(self):
@@ -124,12 +122,12 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'bad-notes'
+        consumer_id = 'bad-notes'
         notes = 'not a dict'
 
         # Test
         try:
-            self.manager.register(id, notes=notes)
+            self.manager.register(consumer_id, notes=notes)
             self.fail('Invalid notes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
             print e
@@ -142,14 +140,14 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'doomed'
-        self.manager.register(id)
+        consumer_id = 'doomed'
+        self.manager.register(consumer_id)
 
         # Test
-        self.manager.unregister(id)
+        self.manager.unregister(consumer_id)
 
         # Verify
-        consumers = list(Consumer.get_collection().find({'id' : id}))
+        consumers = list(Consumer.get_collection().find({'id' : consumer_id}))
         self.assertEqual(0, len(consumers))
 
     def test_delete_consumer_no_consumer(self):
@@ -208,10 +206,10 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'consumer_1'
+        consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
-        created = self.manager.register(id, name, description)
+        self.manager.register(consumer_id, name, description)
 
         consumers = list(Consumer.get_collection().find())
         self.assertEqual(1, len(consumers))
@@ -221,7 +219,7 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(consumer['notes'], {})
 
         notes = {'note1' : 'value1', 'note2' : 'value2'}
-        self.manager.update(id, delta={'notes':notes})
+        self.manager.update(consumer_id, delta={'notes':notes})
 
         # Verify
         consumers = list(Consumer.get_collection().find())
@@ -235,11 +233,11 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'consumer_1'
+        consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
         notes = {'note1' : 'value1', 'note2' : 'value2'}
-        created = self.manager.register(id, name, description, notes)
+        self.manager.register(consumer_id, name, description, notes)
 
         consumers = list(Consumer.get_collection().find())
         self.assertEqual(1, len(consumers))
@@ -248,7 +246,7 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
 
         # Test
         updated_notes = {'note1' : 'new-value1', 'note2' : 'new-value2'}
-        self.manager.update(id, delta={'notes':updated_notes})
+        self.manager.update(consumer_id, delta={'notes':updated_notes})
 
         # Verify
         consumers = list(Consumer.get_collection().find())
@@ -261,15 +259,15 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        id = 'consumer_1'
+        consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
         notes = {'note1' : 'value1', 'note2' : 'value2'}
-        created = self.manager.register(id, name, description, notes)
+        self.manager.register(consumer_id, name, description, notes)
 
         # Test
         removed_notes = {'note1' : None}
-        self.manager.update(id, delta={'notes':removed_notes})
+        self.manager.update(consumer_id, delta={'notes':removed_notes})
 
         # Verify
         consumers = list(Consumer.get_collection().find())
@@ -278,30 +276,30 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
 
     def test_add_update_remove_notes_with_nonexisting_consumer(self):
         # Setup
-        id = 'non_existing_consumer'
+        consumer_id = 'non_existing_consumer'
 
         # Try adding and deleting notes from a non-existing consumer
         notes = {'note1' : 'value1', 'note2' : None}
         try:
-            self.manager.update(id, delta={'notes':notes})
+            self.manager.update(consumer_id, delta={'notes':notes})
             self.fail('Missing Consumer did not raise an exception')
         except exceptions.MissingResource, e:
             print e
-            self.assertTrue(id == e.resources['consumer'])
+            self.assertTrue(consumer_id == e.resources['consumer'])
 
 
     def test_add_update_remove_notes_with_invalid_notes(self):
         # Setup
-        id = 'consumer_1'
+        consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
-        created = self.manager.register(id, name, description)
+        self.manager.register(consumer_id, name, description)
 
         notes = "invalid_string_format_notes"
 
         # Test add_notes
         try:
-            self.manager.update(id, delta={'notes':notes})
+            self.manager.update(consumer_id, delta={'notes':notes})
             self.fail('Invalid notes did not raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue("delta['notes']" in e)
@@ -314,7 +312,6 @@ class ConsumerHistoryManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(ConsumerHistoryManagerTests, self).setUp()
-        plugin_api._create_manager()
 
         # Create manager instances to test
         self.consumer_manager = consumer_manager.ConsumerManager()
