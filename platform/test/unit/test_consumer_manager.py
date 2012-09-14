@@ -13,16 +13,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base
-import mock_plugins
-import mock_agent
 
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db.model.consumer import Consumer, Bind, ConsumerHistoryEvent
-from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.exceptions import MissingResource
+from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.history as history_manager
-import pulp.server.managers.factory as factory
 import pulp.server.exceptions as exceptions
 
 
@@ -33,15 +28,12 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
     def setUp(self):
         super(ConsumerManagerTests, self).setUp()
         plugin_api._create_manager()
-        mock_plugins.install()
-        mock_agent.install()
 
         # Create the manager instance to test
         self.manager = consumer_manager.ConsumerManager()
 
     def tearDown(self):
         super(ConsumerManagerTests, self).tearDown()
-        mock_plugins.reset()
 
     def clean(self):
         base.PulpServerTests.clean(self)
@@ -323,8 +315,6 @@ class ConsumerHistoryManagerTests(base.PulpAsyncServerTests):
     def setUp(self):
         super(ConsumerHistoryManagerTests, self).setUp()
         plugin_api._create_manager()
-        mock_plugins.install()
-        mock_agent.install()
 
         # Create manager instances to test
         self.consumer_manager = consumer_manager.ConsumerManager()
@@ -332,7 +322,6 @@ class ConsumerHistoryManagerTests(base.PulpAsyncServerTests):
 
     def tearDown(self):
         super(ConsumerHistoryManagerTests, self).tearDown()
-        mock_plugins.reset()
 
     def clean(self):
         base.PulpServerTests.clean(self)
@@ -340,28 +329,22 @@ class ConsumerHistoryManagerTests(base.PulpAsyncServerTests):
         Consumer.get_collection().remove()
         ConsumerHistoryEvent.get_collection().remove()
 
-    def test_record_register_unregister(self):
+    def test_record_register(self):
         """
         Tests adding a history record for consumer register and unregister.
         """
         # Setup
         cid = "abc"
         self.consumer_manager.register(cid)
-        self.consumer_manager.unregister(cid)
 
-        # Test
+        # Test register
         entries = self.history_manager.query()
-        self.assertEqual(2, len(entries))
+        self.assertEqual(1, len(entries))
 
         # Verify
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], cid)
         self.assertEqual(entry['type'], history_manager.TYPE_CONSUMER_REGISTERED)
-        self.assertTrue(entry['timestamp'] is not None)
-
-        entry = entries[1]
-        self.assertEqual(entry['consumer_id'], cid)
-        self.assertEqual(entry['type'], history_manager.TYPE_CONSUMER_UNREGISTERED)
         self.assertTrue(entry['timestamp'] is not None)
 
 
