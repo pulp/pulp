@@ -49,6 +49,7 @@ class ArchivedCallCreateTests(ArchivedCallTests):
         archived_calls = history.find_archived_calls()
         self.assertEqual(archived_calls.count(), 0)
 
+    # XXX jconnor (2012-09-17) tests are failing for unknown reasons
     def _test_find_archived_call_by_task_id(self):
         call_request, call_report = self._generate_request_and_report()
         call_report.task_id = '123'
