@@ -23,7 +23,7 @@ special_roles = ['super-users', 'consumer-users']
 version = 4
 
 
-def _migrate_roles():
+def _migrate_role_id_display_name():
     collection = Role.get_collection()
     for role in collection.find():
         modified = False
@@ -34,13 +34,19 @@ def _migrate_roles():
                 role['id'] = role['display_name'] = role['name'] 
                 del role['name']
                 modified = True
-        if 'description' not in role:
-            role['description'] = None
-            modified = True
         if modified:
             collection.save(role, safe=True)
+            
+
+def _migrate_role_description():
+    collection = Role.get_collection()
+    for role in collection.find():
+        if 'description' not in role:
+            role['description'] = None
+        collection.save(role, safe=True)
 
 def migrate():
     _log.info('migration to data model version %d started' % version)
-    _migrate_roles()
+    _migrate_role_id_display_name()
+    _migrate_role_description()
     _log.info('migration to data model version %d complete' % version)
