@@ -96,7 +96,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
         return_value=[{'_id':'foo'}])
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
     def test_add_repo_memberships_criteria(self, mock_find_assoc, mock_find_unit):
-        status, body = self.get('/v2/content/units/rpm/search/?repos=true')
+        status, body = self.get('/v2/content/units/rpm/search/?include_repos=true')
         self.assertEqual(status, 200)
         criteria = mock_find_assoc.call_args[0][0]
         self.assertEqual(set(criteria.fields), set(('unit_id', 'repo_id')))
@@ -109,7 +109,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
     def test_add_repo_memberships_get(self, mock_find_assoc, mock_find_unit):
         mock_find_assoc.return_value = [{'unit_id':'foo', 'repo_id':'repo1'}]
-        status, body = self.get('/v2/content/units/rpm/search/?repos=true')
+        status, body = self.get('/v2/content/units/rpm/search/?include_repos=true')
         self.assertEqual(status, 200)
         self.assertEqual(len(body), 1)
         self.assertEqual(body[0].get('repository_memberships'), ['repo1'])
@@ -120,7 +120,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
     def test_add_repo_memberships_post(self, mock_find_assoc, mock_find_unit):
         mock_find_assoc.return_value = [{'unit_id':'foo', 'repo_id':'repo1'}]
-        post_body = {'criteria': {}, 'repos':True}
+        post_body = {'criteria': {}, 'include_repos':True}
         status, body = self.post('/v2/content/units/rpm/search/', post_body)
         self.assertEqual(status, 200)
         self.assertEqual(len(body), 1)

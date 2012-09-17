@@ -160,9 +160,9 @@ class ContentUnitsSearch(SearchController):
         @type  type_id: basestring
         """
         self._type_id = type_id
-        raw_units = self._get_query_results_from_get(ignore_fields=('repos',))
+        raw_units = self._get_query_results_from_get(ignore_fields=('include_repos',))
         units = [ContentUnitsCollection.process_unit(unit) for unit in raw_units]
-        if web.input().get('repos'):
+        if web.input().get('include_repos'):
             self._add_repo_memberships(units, type_id)
 
         return self.ok(units)
@@ -182,7 +182,7 @@ class ContentUnitsSearch(SearchController):
         self._type_id = type_id
         raw_units = self._get_query_results_from_post()
         units = [ContentUnitsCollection.process_unit(unit) for unit in raw_units]
-        if self.params().get('repos'):
+        if self.params().get('include_repos'):
             self._add_repo_memberships(units, type_id)
 
         return self.ok(units)

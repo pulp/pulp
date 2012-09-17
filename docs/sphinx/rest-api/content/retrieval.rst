@@ -17,7 +17,7 @@ case when the content type specified in the URL does not exist.
 | :param_list:`post`
 
 * :param:`criteria,dict,mapping structure as defined in` :ref:`search_criteria`
-* :param:`?repos,bool,adds an extra per-unit attribute "repository_memberships" that lists IDs of repositories of which the unit is a member.`
+* :param:`?include_repos,bool,adds an extra per-unit attribute "repository_memberships" that lists IDs of repositories of which the unit is a member.`
 
 | :response_list:`_`
 
@@ -61,7 +61,7 @@ filter expressions may not be serializable as query parameters.
  object as defined in :ref:`search_criteria`.
  For example: /v2/content/units/deb/search/?field=id&field=display_name&limit=20'
 
-* :param:`?repos,bool,adds an extra per-unit attribute "repository_memberships" that lists IDs of repositories of which the unit is a member.`
+* :param:`?include_repos,bool,adds an extra per-unit attribute "repository_memberships" that lists IDs of repositories of which the unit is a member.`
 
 | :response_list:`_`
 
