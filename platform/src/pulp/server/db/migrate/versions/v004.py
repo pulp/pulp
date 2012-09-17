@@ -32,8 +32,9 @@ def _migrate_roles():
             modified = True
         if 'description' not in role:
             role['description'] = None
+            modified = True
         if modified:
-            collection.save(role)
+            collection.save(role, safe=True)
 
 def migrate():
     _log.info('migration to data model version %d started' % version)
