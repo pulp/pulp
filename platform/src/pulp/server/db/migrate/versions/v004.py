@@ -32,6 +32,7 @@ def _migrate_roles():
             modified = True
         if 'description' not in role:
             role['description'] = None
+            modified = True
         if modified:
             collection.save(role)
 
