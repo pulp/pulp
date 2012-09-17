@@ -18,6 +18,7 @@ from pulp.server.db.model.auth import Role
 
 _log = logging.getLogger('pulp')
 
+special_roles = ['super-users', 'consumer-users']
 
 version = 4
 
@@ -27,9 +28,12 @@ def _migrate_roles():
     for role in collection.find():
         modified = False
         if 'display_name' not in role:
-            role['id'] = role['display_name'] = role['name'] 
-            del role['name']
-            modified = True
+            if role['name'] in special_roles:
+                collection.remove({'name':role['name']}, safe=True)
+            else:
+                role['id'] = role['display_name'] = role['name'] 
+                del role['name']
+                modified = True
         if 'description' not in role:
             role['description'] = None
             modified = True
