@@ -13,40 +13,22 @@
 
 
 import logging
-import pickle
 
+from pulp.common import dateutils
 from pulp.server.db.model import  dispatch
-from pulp.server.managers.auth.principal import SystemUser, _SYSTEM_LOGIN
 
 _log = logging.getLogger('pulp')
 
 
-version = 2
-
-
-def _pickled_system_user():
-    system_user = SystemUser()
-    return pickle.dumps(system_user)
-
-
-def _migrate_queued_calls():
-    collection = dispatch.QueuedCall.get_collection()
-    collection.update({}, {'$set': {'serialized_call_request.principal': _pickled_system_user()}}, safe=True, multi=True)
-
-
-def _migrate_scheduled_calls():
-    collection = dispatch.ScheduledCall.get_collection()
-    collection.update({}, {'$set': {'serialized_call_request.principal': _pickled_system_user()}}, safe=True, multi=True)
+version = 3
 
 
 def _migrate_archived_calls():
     collection = dispatch.ArchivedCall.get_collection()
-    collection.remove(safe=True)
+    collection.update({}, {'$set': {'timestamp': dateutils.now_utc_timestamp()}}, safe=True, multi=True)
 
 
 def migrate():
     _log.info('migration to data model version %d started' % version)
-    _migrate_queued_calls()
-    _migrate_scheduled_calls()
     _migrate_archived_calls()
     _log.info('migration to data model version %d complete' % version)

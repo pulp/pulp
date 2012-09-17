@@ -28,10 +28,14 @@ Body
 ----
 
 The body of an inbound event notification will be a JSON document containing
-two keys:
+the following keys:
 
 ``event_type``
   Indicates the type of event that is being sent.
 
 ``payload``
   JSON document describing the event. This will vary based on the type of event.
+
+``call_report``
+  JSON document giving the :ref:`call_report`, if the evet was triggered within
+  the context of a task. Otherwise this field will be *null*.

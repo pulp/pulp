@@ -48,6 +48,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch import history as dispatch_history
 from pulp.server.managers import factory as manager_factory
 from pulp.server.webservices.controllers import (
     agent, consumer_groups, consumers, contents, dispatch, events, permissions,
@@ -102,6 +103,7 @@ def _initialize_pulp():
 
     # new async dispatch initialization
     dispatch_factory.initialize()
+    dispatch_history.start_reaper_thread()
 
     # ensure necessary infrastructure
     role_manager = manager_factory.role_manager()
@@ -116,7 +118,6 @@ def _initialize_pulp():
     if config.config.getboolean('server', 'debugging_mode'):
         STACK_TRACER = StacktraceDumper()
         STACK_TRACER.start()
-
 
 
 def wsgi_application():
