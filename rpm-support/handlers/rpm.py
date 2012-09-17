@@ -55,9 +55,11 @@ class PackageHandler(ContentHandler):
     @type cfg: dict
     """
 
-    def install(self, units, options):
+    def install(self, conduit, units, options):
         """
         Install content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit install options.
@@ -75,11 +77,13 @@ class PackageHandler(ContentHandler):
         report.succeeded(details)
         return report
 
-    def update(self, units, options):
+    def update(self, conduit, units, options):
         """
         Update content unit(s).
         Unit key of {} or None indicates updates update all
         but only if (all) option is True.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit update options.
@@ -99,9 +103,11 @@ class PackageHandler(ContentHandler):
             report.succeeded(details)
         return report
 
-    def uninstall(self, units, options):
+    def uninstall(self, conduit, units, options):
         """
         Uninstall content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit uninstall options.
@@ -118,9 +124,11 @@ class PackageHandler(ContentHandler):
         report.succeeded(details)
         return report
     
-    def profile(self):
+    def profile(self, conduit):
         """
         Get package profile.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @return: An profile report.
         @rtype: L{ProfileReport}
         """
@@ -151,9 +159,11 @@ class GroupHandler(ContentHandler):
     @type cfg: dict
     """
 
-    def install(self, units, options):
+    def install(self, conduit, units, options):
         """
         Install content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit install options.
@@ -168,9 +178,11 @@ class GroupHandler(ContentHandler):
         report.succeeded(details)
         return report
 
-    def uninstall(self, units, options):
+    def uninstall(self, conduit, units, options):
         """
         Uninstall content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit uninstall options.
