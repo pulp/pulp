@@ -10,13 +10,16 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 import os
 
 from pulp.client.commands.repo import cudl, group, sync_publish, upload
 from pulp.client.upload.manager import UploadManager
 
-from pulp_puppet.extension.admin import copy, modules, repo, structure, status
+from pulp_puppet.extension.admin import (copy, modules, repo, structure, status,
+                                         sync_schedules)
 from pulp_puppet.extension.admin import upload as puppet_upload
+
 
 def initialize(context):
     structure.ensure_structure(context.cli)
@@ -47,12 +50,20 @@ def initialize(context):
     sync_section.add_command(sync_publish.RunSyncRepositoryCommand(context, renderer))
     sync_section.add_command(sync_publish.SyncStatusCommand(context, renderer))
 
+    sync_schedules_section = structure.repo_sync_schedules_section(context.cli)
+    sync_schedules_section.add_command(sync_schedules.PuppetCreateScheduleCommand(context))
+    sync_schedules_section.add_command(sync_schedules.PuppetUpdateScheduleCommand(context))
+    sync_schedules_section.add_command(sync_schedules.PuppetDeleteScheduleCommand(context))
+    sync_schedules_section.add_command(sync_schedules.PuppetListScheduleCommand(context))
+    sync_schedules_section.add_command(sync_schedules.PuppetNextRunCommand(context))
+
     upload_manager = _upload_manager(context)
     uploads_section = structure.repo_uploads_section(context.cli)
     uploads_section.add_command(puppet_upload.UploadModuleCommand(context, upload_manager))
     uploads_section.add_command(upload.ListCommand(context, upload_manager))
     uploads_section.add_command(upload.CancelCommand(context, upload_manager))
     uploads_section.add_command(upload.ResumeCommand(context, upload_manager))
+
 
 def _upload_manager(context):
     """

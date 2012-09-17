@@ -34,6 +34,22 @@ from pulp.client.parsers import iso8601 as iso8601_parser
 
 # -- constants ----------------------------------------------------------------
 
+# Command configuration
+NAME_LIST = 'list'
+DESC_LIST = _('lists schedules')
+
+NAME_CREATE = 'create'
+DESC_CREATE = _('creates a new schedule')
+
+NAME_UPDATE = 'update'
+DESC_UPDATE = _('updates an existing schedule')
+
+NAME_DELETE = 'delete'
+DESC_DELETE = _('deletes a schedule')
+
+NAME_NEXT_RUN = 'next'
+DESC_NEXT_RUN = _('displays the next time the operation will run across all schedules')
+
 # Order for render_document_list
 SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'last_run', 'next_run']
 DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
@@ -71,14 +87,14 @@ class ListScheduleCommand(PulpCliCommand):
     Displays the schedules returned from the supplied strategy instance.
     """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.list)
+    def __init__(self, context, strategy, name=NAME_LIST, description=DESC_LIST):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
         self.add_flag(FLAG_DETAILS)
 
-    def list(self, **kwargs):
+    def run(self, **kwargs):
         self.context.prompt.render_title(_('Schedules'))
 
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
@@ -113,15 +129,15 @@ class CreateScheduleCommand(PulpCliCommand):
     actual schedule creation call.
     """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.add)
+    def __init__(self, context, strategy, name=NAME_CREATE, description=DESC_CREATE):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
         self.add_option(OPT_SCHEDULE)
         self.add_option(OPT_FAILURE_THRESHOLD)
 
-    def add(self, **kwargs):
+    def run(self, **kwargs):
         schedule = kwargs[OPT_SCHEDULE.keyword]
         failure_threshold = kwargs[OPT_FAILURE_THRESHOLD.keyword]
         enabled = True # we could ask but it just added clutter to the CLI, so default to true
@@ -141,15 +157,14 @@ class DeleteScheduleCommand(PulpCliCommand):
     method in the strategy instance.
     """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.delete)
+    def __init__(self, context, strategy, name=NAME_DELETE, description=DESC_DELETE):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
-        d = 'identifies the schedule to delete'
         self.add_option(OPT_SCHEDULE_ID)
 
-    def delete(self, **kwargs):
+    def run(self, **kwargs):
         schedule_id = kwargs[OPT_SCHEDULE_ID.keyword]
 
         self.strategy.delete_schedule(schedule_id, kwargs)
@@ -165,8 +180,8 @@ class UpdateScheduleCommand(PulpCliCommand):
 
     """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.update)
+    def __init__(self, context, strategy, name=NAME_UPDATE, description=DESC_UPDATE):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
@@ -175,7 +190,7 @@ class UpdateScheduleCommand(PulpCliCommand):
         self.add_option(OPT_FAILURE_THRESHOLD)
         self.add_option(OPT_ENABLED)
 
-    def update(self, **kwargs):
+    def run(self, **kwargs):
         schedule_id = kwargs.pop(OPT_SCHEDULE_ID.keyword)
         ft = kwargs.pop(OPT_FAILURE_THRESHOLD.keyword, None)
         if ft:
@@ -195,14 +210,14 @@ class NextRunCommand(PulpCliCommand):
     existing schedules to determine which will execute next.
     """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.next_run)
+    def __init__(self, context, strategy, name=NAME_NEXT_RUN, description=DESC_NEXT_RUN):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
         self.add_flag(FLAG_QUIET)
 
-    def next_run(self, **kwargs):
+    def run(self, **kwargs):
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
 
         if len(schedules) is 0:
@@ -212,7 +227,7 @@ class NextRunCommand(PulpCliCommand):
         sorted_schedules = sorted(schedules, key=lambda x : x['next_run'])
         next_schedule = sorted_schedules[0]
 
-        if kwargs['quiet']:
+        if kwargs[FLAG_QUIET.keyword]:
             msg = next_schedule['next_run']
         else:
             msg_data = {
