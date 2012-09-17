@@ -23,6 +23,7 @@ class ArchivedCallTests(base.PulpServerTests):
     def setUp(self):
         super(ArchivedCallTests, self).setUp()
         self.archived_call_collection = ArchivedCall.get_collection()
+        self.archived_call_collection.remove(safe=True) # cleanup others' messes
 
     def tearDown(self):
         super(ArchivedCallTests, self).tearDown()
