@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 2.0.3
+Version: 2.0.4
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -93,6 +93,11 @@ client capabilities.
 
 
 %changelog
+* Mon Sep 17 2012 Jeff Ortel <jortel@redhat.com> 2.0.4-1
+- 854632 - added --password and -p options to user update command to update
+  password in a non-interactive and interactive fashion respectively
+  (skarmark@redhat.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.3-1
 - version alignment.
 
