@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.3
+Version: 2.0.4
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,16 @@ exit 0
 %endif
 
 %changelog
+* Mon Sep 17 2012 Jeff Ortel <jortel@redhat.com> 2.0.4-1
+- 858037 - adding db migration script to make role id a unique key, changing
+  role name to display_name and adding description to keep it consistent with
+  other v2 db entities (skarmark@redhat.com)
+- 857176 - added reaper thread to dispatch history that removes archived calls
+  that have expired (jason.connor@gmail.com)
+- 855384 - providing a mechanism that propagates the principal information to
+  the task, which sets the principal around the execution of its call
+  (jason.connor@gmail.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.3-1
 - 850875 - Restoring operability of the legacy errata search command.
   (mhrivnak@redhat.com)
