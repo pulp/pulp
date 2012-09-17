@@ -61,6 +61,8 @@ class UserSection(PulpCliSection):
         update_command = PulpCliCommand('update', 'changes metadata of an existing user', self.update)
         update_command.add_option(PulpCliOption('--login', 'identifies the user to be updated', required=True))
         update_command.add_option(name_option)
+        update_command.add_option(PulpCliOption('--password', 'new password for the user, use -p if you want to be prompted for the password', required=False))
+        update_command.add_option(PulpCliFlag('-p', 'if specified, you will be prompted to enter new password for the user'))
         self.add_command(update_command)
 
         # Delete Command
@@ -101,7 +103,19 @@ class UserSection(PulpCliSection):
     def update(self, **kwargs):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop('login') # not needed in the delta
+        login = delta.pop('login') # not needed in the delta
+        if not delta.has_key('password'):
+            if kwargs['p'] is True:
+                # Hidden, interactive prompt for the password
+                prompt_msg = "Enter new password for user [%s] : " % login
+                verify_msg = "Re-enter new password for user [%s]: " % login
+                unmatch_msg = "Passwords do not match"
+                password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg), _(unmatch_msg))
+                if password is self.context.prompt.ABORT:
+                    self.context.prompt.render_spacer()
+                    self.context.prompt.write(_('Update user cancelled'))
+                    return os.EX_NOUSER
+                delta['password'] = password
 
         try:
             self.context.server.user.update(kwargs['login'], delta)

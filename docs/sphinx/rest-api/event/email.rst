@@ -13,19 +13,24 @@ The Email notifier is used by specifying the notifier type as ``email``.
 The following configuration values are supported when using the Email notifier:
 
 ``subject``
-Required. The text of the email's subject.
+  Required. The text of the email's subject.
 
 ``addresses``
-Required. This is a tuple or list of email addresses that should receive emails.
+  Required. This is a tuple or list of email addresses that should receive emails.
 
 Body
 ----
 
 The body of an inbound event notification will be a JSON document containing
-two keys:
+the following keys:
 
 ``event_type``
-Indicates the type of event that is being sent.
+  Indicates the type of event that is being sent.
 
 ``payload``
-JSON document describing the event. This will vary based on the type of event.
+  JSON document describing the event. This will vary based on the type of event.
+
+``call_report``
+  JSON document giving the :ref:`call_report`, if the evet was triggered within
+  the context of a task. Otherwise this field will be *null*.
+
