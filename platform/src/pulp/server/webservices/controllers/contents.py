@@ -113,19 +113,59 @@ class ContentUnitsSearch(SearchController):
         return factory.content_query_manager().find_by_criteria(
             self._type_id, criteria)
 
+    @staticmethod
+    def _add_repo_memberships(units, type_id):
+        """
+        For a list of units, find what repos each is a member of, and add a list
+        of repo_ids to each unit.
+
+        :param units:   list of unit documents
+        :type  units:   list of dicts
+        :param type_id: content type id
+        :type  type_id: str
+        :return:    same list of units that was passed in, only for convenience.
+                    units are modified in-place
+        """
+        # quick return if there is nothing to do
+        if not units:
+            return units
+
+        unit_ids = [unit['_id'] for unit in units]
+        criteria = Criteria(
+            filters={'unit_id': {'$in': unit_ids}, 'unit_type_id': type_id},
+            fields=('repo_id', 'unit_id')
+        )
+        associations = factory.repo_unit_association_query_manager().find_by_criteria(criteria)
+        unit_ids = None
+        criteria = None
+        association_map = {}
+        for association in associations:
+            association_map.setdefault(association['unit_id'], set()).add(
+                association['repo_id'])
+
+        for unit in units:
+            unit['repository_memberships'] = list(association_map.get(unit['_id'], []))
+        return units
+
     @auth_required(READ)
     def GET(self, type_id):
         """
         Does a normal GET after setting the query method from the appropriate
         PulpCollection.
 
+        Include query parameter "repos" with any value that evaluates to True to
+        get the attribute "repository_memberships" added to each unit.
+
         @param type_id: id of a ContentType that we are searching.
         @type  type_id: basestring
         """
         self._type_id = type_id
-        units = self._get_query_results_from_get()
-        return self.ok(
-            [ContentUnitsCollection.process_unit(unit) for unit in units])
+        raw_units = self._get_query_results_from_get(ignore_fields=('include_repos',))
+        units = [ContentUnitsCollection.process_unit(unit) for unit in raw_units]
+        if web.input().get('include_repos'):
+            self._add_repo_memberships(units, type_id)
+
+        return self.ok(units)
 
     @auth_required(READ)
     def POST(self, type_id):
@@ -133,13 +173,19 @@ class ContentUnitsSearch(SearchController):
         Does a normal POST after setting the query method from the appropriate
         PulpCollection.
 
+        In the body, include key "repos" with any value that evaluates to True
+        to get the attribute "repository_memberships" added to each unit.
+
         @param type_id: id of a ContentType that we are searching.
         @type  type_id: basestring
         """
         self._type_id = type_id
-        units = self._get_query_results_from_post()
-        return self.ok(
-            [ContentUnitsCollection.process_unit(unit) for unit in units])
+        raw_units = self._get_query_results_from_post()
+        units = [ContentUnitsCollection.process_unit(unit) for unit in raw_units]
+        if self.params().get('include_repos'):
+            self._add_repo_memberships(units, type_id)
+
+        return self.ok(units)
 
 
 class ContentUnitResource(JSONController):

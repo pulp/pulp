@@ -19,7 +19,7 @@ import mock
 
 from pulp.common import dateutils
 from pulp.plugins.types import database, model
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.repo.unit_association as association_manager
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER, OWNER_TYPE_IMPORTER
@@ -197,6 +197,12 @@ class UnitAssociationQueryTests(base.PulpServerTests):
             self.assertTrue(id in type_1_units['type-1'], '%s not in %s' % (id, ','.join(type_1_units['type-1'])))
         for id in type_1_units['type-1']:
             self.assertTrue(id in units['type-1'])
+
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_find_by_criteria(self, mock_query):
+        criteria = Criteria()
+        self.manager.find_by_criteria(criteria)
+        mock_query.assert_called_once_with(criteria)
 
     # -- get_units tests ------------------------------------------------------
 
