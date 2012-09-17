@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import os
+
 from iniparse import INIConfig
 from pulp.agent.lib.handler import BindHandler
 from pulp.agent.lib.report import BindReport, CleanReport
@@ -38,9 +39,11 @@ class RepoHandler(BindHandler):
     Manages the /etc/yum.repos.d/pulp.repo based on bind requests.
     """
 
-    def bind(self, definitions):
+    def bind(self, conduit, definitions):
         """
         Bind a repository.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
         Definition:
             {consumer_id:<str>,
@@ -76,9 +79,11 @@ class RepoHandler(BindHandler):
         report.succeeded()
         return report
 
-    def rebind(self, definitions):
+    def rebind(self, conduit, definitions):
         """
         (Re)bind a repository.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
         Definition:
             {consumer_id:<str>,
@@ -95,9 +100,11 @@ class RepoHandler(BindHandler):
         self.clean()
         return self.bind(definitions)
 
-    def unbind(self, repoid):
+    def unbind(self, conduit, repoid):
         """
         Bind a repository.
+            @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param repoid: A repository ID.
         @type repoid: str
         @return: An unbind report.
@@ -115,9 +122,11 @@ class RepoHandler(BindHandler):
         report.succeeded()
         return report
 
-    def clean(self):
+    def clean(self, conduit):
         """
         Clean up artifacts associated with the handler.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @return: A clean report.
         @rtype: L{CleanReport}
         """

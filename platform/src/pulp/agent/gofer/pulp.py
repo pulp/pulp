@@ -24,11 +24,14 @@ from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
+from gofer.agent.rmi import Context
 
 from pulp.common.bundle import Bundle as BundleImpl
 from pulp.agent.lib.dispatcher import Dispatcher
+from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
+
 
 log = getLogger(__name__)
 plugin = Plugin.find(__name__)
@@ -76,6 +79,23 @@ class PulpBindings(Bindings):
         cert = cfg.rest.clientcert
         connection = PulpConnection(host, port, cert_filename=cert)
         Bindings.__init__(self, connection)
+
+
+class Conduit(HandlerConduit):
+    """
+    Provides integration between the gofer progress reporting
+    and agent handler frameworks.
+    """
+
+    def update_progress(self, report):
+        """
+        Send the updated progress report.
+        @param report: A handler progress report.
+        @type report: object
+        """
+        context = Context.current()
+        context.progress.details = report
+        context.progress.report()
 
 #
 # Actions
@@ -214,7 +234,8 @@ class Consumer:
         """
         bundle = Bundle()
         bundle.delete()
-        report = dispatcher.clean()
+        conduit = Conduit()
+        report = dispatcher.clean(conduit)
         return report.dict()
 
     @remote(secret=secret)
@@ -227,12 +248,14 @@ class Consumer:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
-        bindings = PulpBindings()
         bundle = Bundle()
         myid = bundle.cn()
+        bindings = PulpBindings()
         http = bindings.bind.find_by_id(myid, repoid)
         if http.response_code == 200:
-            report = dispatcher.bind(http.response_body)
+            conduit = Conduit()
+            definitions = http.response_body
+            report = dispatcher.bind(conduit, definitions)
             return report.dict()
         else:
             raise Exception('bind failed, http:%d', http.response_code)
@@ -245,13 +268,14 @@ class Consumer:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
-        bindings = PulpBindings()
         bundle = Bundle()
         myid = bundle.cn()
         bindings = PulpBindings()
         http = bindings.bind.find_by_id(myid)
         if http.response_code == 200:
-            report = dispatcher.rebind(http.response_body)
+            conduit = Conduit()
+            definitions = http.response_body
+            report = dispatcher.rebind(conduit, definitions)
             return report.dict()
         else:
             raise Exception('rebind failed, http:%d', http.response_code)
@@ -266,7 +290,8 @@ class Consumer:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
-        report = dispatcher.unbind(repoid)
+        conduit = Conduit()
+        report = dispatcher.unbind(conduit, repoid)
         return report.dict()
 
 
@@ -288,7 +313,8 @@ class Content:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
-        report = dispatcher.install(units, options)
+        conduit = Conduit()
+        report = dispatcher.install(conduit, units, options)
         return report.dict()
 
     @remote(secret=secret)
@@ -304,7 +330,8 @@ class Content:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
-        report = dispatcher.update(units, options)
+        conduit = Conduit()
+        report = dispatcher.update(conduit, units, options)
         return report.dict()
 
     @remote(secret=secret)
@@ -320,7 +347,8 @@ class Content:
         @return: A dispatch report.
         @rtype: DispatchReport
         """
-        report = dispatcher.uninstall(units, options)
+        conduit = Conduit()
+        report = dispatcher.uninstall(conduit, units, options)
         return report.dict()
 
 
@@ -339,8 +367,9 @@ class Profile:
         """
         bundle = Bundle()
         myid = bundle.cn()
+        conduit = Conduit()
         bindings = PulpBindings()
-        report = dispatcher.profile()
+        report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
         for typeid, report in report.details.items():
             if not report['status']:

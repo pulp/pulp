@@ -52,13 +52,15 @@ class SystemHandler(Handler):
     to implement SYSTEM management requests.
     """
 
-    def reboot(self, options={}):
+    def reboot(self, conduit, options):
         """
         Schedule system reboot.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param options: Reboot options.
         @type options: dict
         @return: An reboot report.
-        @rtype: L{RebootReport}
+        @rtype: L{pulp.agent.lib.report.RebootReport}
         """
         raise NotImplementedError()
         
@@ -70,93 +72,109 @@ class ContentHandler(Handler):
     to implement CONTENT management requests.
     """
 
-    def install(self, units, options):
+    def install(self, conduit, units, options):
         """
         Install content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit (keys).
         @type units: list
         @param options: Unit install options.
         @type options: dict
         @return: An install report.
-        @rtype: L{HandlerReport}
+        @rtype: L{pulp.agent.lib.report.HandlerReport}
         """
         raise NotImplementedError()
 
-    def update(self, units, options):
+    def update(self, conduit, units, options):
         """
         Update content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit (keys).
         @type units: list
         @param options: Unit update options.
         @type options: dict
         @return: An update report.
-        @rtype: L{HandlerReport}
+        @rtype: L{pulp.agent.lib.report.HandlerReport}
         """
         raise NotImplementedError()
 
-    def uninstall(self, units, options):
+    def uninstall(self, conduit, units, options):
         """
         Uninstall content unit(s).
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit (keys).
         @type units: list
         @param options: Unit uninstall options.
         @type options: dict
         @return: An uninstall report.
-        @rtype: L{HandlerReport}
+        @rtype: L{pulp.agent.lib.report.HandlerReport}
         """
         raise NotImplementedError()
 
-    def profile(self):
+    def profile(self, conduit):
         """
         Request the installed content profile be sent
         to the pulp server.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @return: A profile report.
-        @rtype: L{ProfileReport}
+        @rtype: L{pulp.agent.lib.report.ProfileReport}
         """
         raise NotImplementedError()
 
 
 class BindHandler(Handler):
     """
-    Content (type) handler.
+    Bind (type) handler.
     Defines the interface for handler objects designed
     to implement BIND management requests.
     """
 
-    def bind(self, details):
+    def bind(self, conduit, definitions):
         """
         Bind a repository.
-        @param binds: A list of bind details.
-        @type binds: list
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
+        @param definitions: A list of bind definitions.
+        @type definitions: list
         @return: An bind report.
-        @rtype: L{BindReport}
+        @rtype: L{pulp.agent.lib.report.BindReport}
         """
         raise NotImplementedError()
 
-    def rebind(self, details):
+    def rebind(self, conduit, definitions):
         """
         Bind a repository.
-        @param binds: A list of bind details.
-        @type binds: list
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
+        @param definitions: A list of bind definitions.
+        @type definitions: list
         @return: An rebind report.
-        @rtype: L{BindReport}
+        @rtype: L{pulp.agent.lib.report.BindReport}
         """
         raise NotImplementedError()
 
-    def unbind(self, repoid):
+    def unbind(self, conduit, repoid):
         """
         Unbind a repository.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param repoid: The repo ID.
         @type repoid: str
         @return: An inbind report.
-        @rtype: L{BindReport}
+        @rtype: L{pulp.agent.lib.report.BindReport}
         """
         raise NotImplementedError()
 
-    def clean(self):
+    def clean(self, conduit):
         """
-        Clean up all artifacts.
+        Clean up all bind related artifacts.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @return: An bind report.
-        @rtype: L{CleanReport}
+        @rtype: L{pulp.agent.lib.report.CleanReport}
         """
         raise NotImplementedError()
