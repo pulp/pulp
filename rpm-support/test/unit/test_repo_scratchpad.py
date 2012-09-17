@@ -62,4 +62,5 @@ class TestRepoScratchpad(rpm_support_base.PulpRPMTests):
         importer._sync_repo(repo, sync_conduit, config)
         print "SCRATCHPAD %s" %  repo_scratchpad
         self.assertEquals(repo_scratchpad['checksum_type'], 'sha256')
-        self.assertTrue(repo_scratchpad.has_key("prestodelta"))
+        self.assertTrue(repo_scratchpad.has_key("repodata"))
+        self.assertTrue(repo_scratchpad["repodata"].has_key("prestodelta"))

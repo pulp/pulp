@@ -440,11 +440,6 @@ class YumDistributor(Distributor):
             groups_xml_path = comps_util.write_comps_xml(repo.working_dir, existing_groups, existing_cats)
         metadata_start_time = time.time()
         # update/generate metadata for the published repo
-        repo_scratchpad = publish_conduit.get_repo_scratchpad()
-        src_working_dir = ''
-        if repo_scratchpad.has_key("importer_working_dir"):
-            src_working_dir = repo_scratchpad['importer_working_dir']
-        self.copy_importer_repodata(src_working_dir, repo.working_dir)
         self.use_createrepo = config.get('use_createrepo')
         if self.use_createrepo:
             metadata_status, metadata_errors = metadata.generate_metadata(

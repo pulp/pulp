@@ -360,6 +360,7 @@ def preserve_custom_metadata_on_scratchpad(repo, sync_conduit, config):
                    'group', 'group_gz', 'updateinfo', 'updateinfo_db']
     existing_scratch_pad = sync_conduit.get_repo_scratchpad() or {}
     skip_metadata_types = metadata.convert_content_to_metadata_type(config.get("skip") or [])
+    existing_scratch_pad.update({"repodata" : {}})
     for ftype in ftypes:
         if ftype in base_ftypes:
             # no need to process these again
@@ -375,7 +376,7 @@ def preserve_custom_metadata_on_scratchpad(repo, sync_conduit, config):
             data = gzip.open(renamed_filetype_path).read().decode("utf-8", "replace")
         else:
             data = open(renamed_filetype_path).read().decode("utf-8", "replace")
-        existing_scratch_pad.update({ftype : data})
+        existing_scratch_pad["repodata"].update({ftype : data})
     sync_conduit.set_repo_scratchpad(existing_scratch_pad)
 
 class ImporterRPM(object):
