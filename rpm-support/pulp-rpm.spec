@@ -17,7 +17,7 @@
 # ---- Pulp --------------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 2.0.3
+Version: 2.0.4
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -237,6 +237,10 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Mon Sep 17 2012 Jeff Ortel <jortel@redhat.com> 2.0.4-1
+- 855439 - Changed legacy command to use a temporary, backward-compatible
+  search method in the bindings. (mhrivnak@redhat.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.3-1
 - 850875 - Restoring operability of the legacy errata search command.
   (mhrivnak@redhat.com)
