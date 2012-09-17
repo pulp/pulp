@@ -174,7 +174,7 @@ def _validate_role():
     @return: number of errors found during validation
     """
     objectdb = Role.get_collection()
-    reference = Role(u'')
+    reference = Role(u'', u'', u'', None)
     return _validate_model(Role.__name__, objectdb, reference)
 
 
