@@ -81,7 +81,7 @@ class UsersCollection(JSONController):
         
         # Grant permissions
         permission_manager = managers.permission_manager()
-        permission_manager.grant_automatic_permissions_for_resource(user_link)
+        permission_manager.grant_automatic_permissions_for_resource(user_link['_href'])
         
         return self.created(login, user)
 
