@@ -75,7 +75,7 @@ class TestYumMetadataGenerate(rpm_support_base.PulpRPMTests):
         units_to_write.metadata["repodata"]["filelists"] = """<package pkgid="c1181097439ae4c69793c91febd8513475fb7ed6" name="feedless" arch="noarch"><version epoch="0" ver="1.0" rel="1"/><file>/tmp/rpm_test/feedless/key</file><file type="dir">/tmp/rpm_test/feedless</file></package>"""
         units_to_write.metadata["repodata"]["other"] = """<package pkgid="c1181097439ae4c69793c91febd8513475fb7ed6" name="feedless" arch="noarch"><version epoch="0" ver="1.0" rel="1"/></package>"""
 
-        optional_kwargs = {"generate_metadata" :  1, "use_createrepo" : False}
+        optional_kwargs = {"use_createrepo" : False}
         config = distributor_mocks.get_basic_config(**optional_kwargs)
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
         mock_publish_conduit.set_progress = mock.Mock()
@@ -83,13 +83,6 @@ class TestYumMetadataGenerate(rpm_support_base.PulpRPMTests):
         status, errors = metadata.generate_yum_metadata(mock_repo.working_dir, [units_to_write], mock_publish_conduit, config, progress_callback=progress_callback)
         self.assertEquals(status, True)
         self.assertEquals(metadata_progress_status['metadata']['state'], "FINISHED")
-
-        optional_kwargs = {"generate_metadata" :  0, "use_createrepo" : False}
-        config = distributor_mocks.get_basic_config(**optional_kwargs)
-        mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status, errors = metadata.generate_yum_metadata(mock_repo.working_dir, [units_to_write], mock_publish_conduit, config, progress_callback=progress_callback)
-        self.assertEquals(status, False)
-        self.assertEquals(metadata_progress_status['metadata']['state'], "SKIPPED")
 
     def test_cancel_generate_repodata(self):
         global metadata_progress_status

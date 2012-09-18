@@ -32,9 +32,8 @@ _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
-OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
-                        "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "skip", "https_publish_dir", "http_publish_dir", "use_createrepo"]
+OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", "https_ca", "gpgkey",  "checksum_type",
+                        "skip", "https_publish_dir", "http_publish_dir", "use_createrepo"]
 
 SUPPORTED_UNIT_TYPES = [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_DISTRO]
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
@@ -53,7 +52,7 @@ CONFIG_REPO_AUTH="/etc/pulp/repo_auth.conf"
 # auth_ca               - CA to use if repo authentication is required
 # https_ca              - CA to verify https communication
 # gpgkey                - GPG Key associated with the packages in this repo
-# generate_metadata     - True will run createrepo
+# use_createrepo        - This is  mostly a debug flag to override default snippet based metadata generation with createrepo
 #                         False will not run and uses existing metadata from sync
 # checksum_type         - Checksum type to use for metadata generation
 # skip                  - List of what content types to skip during sync, options:
@@ -122,12 +121,6 @@ class YumDistributor(Distributor):
                 protected = config.get('protected')
                 if protected is not None and not isinstance(protected, bool):
                     msg = _("protected should be a boolean; got %s instead" % protected)
-                    _LOG.error(msg)
-                    return False, msg
-            if key == 'generate_metadata':
-                generate_metadata = config.get('generate_metadata')
-                if generate_metadata is not None and not isinstance(generate_metadata, bool):
-                    msg = _("generate_metadata should be a boolean; got %s instead" % generate_metadata)
                     _LOG.error(msg)
                     return False, msg
             if key == 'use_createrepo':

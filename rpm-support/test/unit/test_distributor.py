@@ -107,7 +107,6 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         optional_kwargs['auth_ca'] = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
         optional_kwargs['https_ca'] = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
         optional_kwargs['protected'] = True
-        optional_kwargs['generate_metadata'] = True
         optional_kwargs['checksum_type'] = "sha"
         optional_kwargs['skip'] = []
         optional_kwargs['auth_cert'] = open(os.path.join(self.data_dir, "cert.crt")).read()

@@ -60,16 +60,10 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
         mock_repo.scratchpad = {"checksum_type" : "sha"}
         mock_repo.working_dir = os.path.join(self.data_dir, "test_repo_metadata")
         # Confirm required and optional are successful
-        optional_kwargs = {"generate_metadata" :  1}
-        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        config = distributor_mocks.get_basic_config()
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
         status, errors = metadata.generate_metadata(mock_repo.working_dir, mock_publish_conduit, config)
         self.assertEquals(status, True)
-        optional_kwargs = {"generate_metadata" :  0}
-        config = distributor_mocks.get_basic_config(**optional_kwargs)
-        mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status, errors = metadata.generate_metadata(mock_repo.working_dir, mock_publish_conduit, config)
-        self.assertEquals(status, False)
 
     def test_get_checksum_type(self):
         mock_repo = mock.Mock(spec=Repository)

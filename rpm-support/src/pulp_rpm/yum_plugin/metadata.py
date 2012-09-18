@@ -78,11 +78,6 @@ def generate_metadata(repo_working_dir, publish_conduit, config, progress_callba
       @rtype bool
     """
     errors = []
-    if not config.get('generate_metadata'):
-        metadata_progress_status = {"state" : "SKIPPED"}
-        set_progress("metadata", metadata_progress_status, progress_callback)
-        _LOG.info('skip metadata generation process')
-        return False, []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     repo_dir = repo_working_dir
     checksum_type = get_repo_checksum_type(publish_conduit, config)
@@ -681,11 +676,6 @@ def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, pro
       @rtype bool, []
     """
     errors = []
-    if not config.get('generate_metadata'):
-        metadata_progress_status = {"state" : "SKIPPED"}
-        set_progress("metadata", metadata_progress_status, progress_callback)
-        _LOG.info('skip metadata generation for repo_dir %s' % repo_dir)
-        return False, []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     checksum_type = get_repo_checksum_type(publish_conduit, config)
     skip_metadata_types = config.get('skip') or []
