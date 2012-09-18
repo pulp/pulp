@@ -11,6 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+
+from pulp.common import dateutils
+
 def positive_int_validator(x):
     """
     Validates that the input is a positive integer
@@ -19,7 +23,8 @@ def positive_int_validator(x):
     @type  x:   int
     """
     if int(x) <= 0:
-        raise ValueError('value must be greater than 0')
+        raise ValueError(_('value must be greater than 0'))
+
 
 def non_negative_int_validator(x):
     """
@@ -29,5 +34,15 @@ def non_negative_int_validator(x):
     @type  x:   int
     """
     if int(x) < 0:
-        raise ValueError('value must not be negative')
+        raise ValueError(_('value must not be negative'))
 
+
+def interval_iso6801_validator(x):
+
+    # These are meant to be used with okaara which expects either ValueError or
+    # TypeError for a graceful failure, so catch any parsing errors and raise
+    # the appropriate new error.
+    try:
+        dateutils.parse_iso8601_interval(x)
+    except Exception:
+        raise ValueError(_('value must be a valid iso8601 string with an interval'))

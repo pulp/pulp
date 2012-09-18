@@ -30,7 +30,7 @@ import logging
 
 from pulp.client.arg_utils import convert_boolean_arguments, convert_removed_options
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
-from pulp.client.parsers import iso8601 as iso8601_parser
+from pulp.client.validators import interval_iso6801_validator
 
 # -- constants ----------------------------------------------------------------
 
@@ -60,7 +60,7 @@ OPT_SCHEDULE_ID = PulpCliOption('--schedule-id', DESC_SCHEDULE_ID, required=True
 
 DESC_SCHEDULE = _('time to execute (with optional recurrence) in iso8601 format '
                   '(yyyy-mm-ddThh:mm:ssZ/PiuT)')
-OPT_SCHEDULE = PulpCliOption('--schedule', DESC_SCHEDULE, aliases=['-s'], required=True, parse_func=iso8601_parser)
+OPT_SCHEDULE = PulpCliOption('--schedule', DESC_SCHEDULE, aliases=['-s'], required=True, validate_func=interval_iso6801_validator)
 
 DESC_FAILURE_THRESHOLD = _('number of failures before the schedule is automatically '
                            'disabled; unspecified means the schedule will never '

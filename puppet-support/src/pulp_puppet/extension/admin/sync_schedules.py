@@ -11,7 +11,7 @@
 
 from gettext import gettext as _
 
-from pulp.client.commands.schedule import (\
+from pulp.client.commands.schedule import (
     DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
     UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
 from pulp.client.commands.options import OPTION_REPO_ID
@@ -30,7 +30,7 @@ DESC_NEXT_RUN = _('displays the next scheduled sync run for a repository')
 
 class PuppetListScheduleCommand(ListScheduleCommand):
     def __init__(self, context):
-        strategy = RepoSyncSchedulingStrategy(context)
+        strategy = RepoSyncScheduleStrategy(context)
         super(PuppetListScheduleCommand, self).__init__(context, strategy,
                                                         description=DESC_LIST)
         self.add_option(OPTION_REPO_ID)
@@ -38,7 +38,7 @@ class PuppetListScheduleCommand(ListScheduleCommand):
 
 class PuppetCreateScheduleCommand(CreateScheduleCommand):
     def __init__(self, context):
-        strategy = RepoSyncSchedulingStrategy(context)
+        strategy = RepoSyncScheduleStrategy(context)
         super(PuppetCreateScheduleCommand, self).__init__(context, strategy,
                                                           description=DESC_CREATE)
         self.add_option(OPTION_REPO_ID)
@@ -46,7 +46,7 @@ class PuppetCreateScheduleCommand(CreateScheduleCommand):
 
 class PuppetDeleteScheduleCommand(DeleteScheduleCommand):
     def __init__(self, context):
-        strategy = RepoSyncSchedulingStrategy(context)
+        strategy = RepoSyncScheduleStrategy(context)
         super(PuppetDeleteScheduleCommand, self).__init__(context, strategy,
                                                           description=DESC_DELETE)
         self.add_option(OPTION_REPO_ID)
@@ -54,7 +54,7 @@ class PuppetDeleteScheduleCommand(DeleteScheduleCommand):
 
 class PuppetUpdateScheduleCommand(UpdateScheduleCommand):
     def __init__(self, context):
-        strategy = RepoSyncSchedulingStrategy(context)
+        strategy = RepoSyncScheduleStrategy(context)
         super(PuppetUpdateScheduleCommand, self).__init__(context, strategy,
                                                           description=DESC_UPDATE)
         self.add_option(OPTION_REPO_ID)
@@ -62,19 +62,19 @@ class PuppetUpdateScheduleCommand(UpdateScheduleCommand):
 
 class PuppetNextRunCommand(NextRunCommand):
     def __init__(self, context):
-        strategy = RepoSyncSchedulingStrategy(context)
+        strategy = RepoSyncScheduleStrategy(context)
         super(PuppetNextRunCommand, self).__init__(context, strategy,
                                                    description=DESC_NEXT_RUN)
         self.add_option(OPTION_REPO_ID)
 
 # -- internal -----------------------------------------------------------------
 
-class RepoSyncSchedulingStrategy(ScheduleStrategy):
+class RepoSyncScheduleStrategy(ScheduleStrategy):
 
     # See super class for method documentation
 
     def __init__(self, context):
-        super(RepoSyncSchedulingStrategy, self).__init__()
+        super(RepoSyncScheduleStrategy, self).__init__()
         self.context = context
         self.api = context.server.repo_sync_schedules
 
