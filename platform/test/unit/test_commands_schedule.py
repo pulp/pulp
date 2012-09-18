@@ -125,11 +125,11 @@ class TestCreateCommand(base.PulpClientTests):
         self.cli.add_command(create_command)
 
         # Test
-        self.cli.run('add --schedule 2012-05-22 --failure-threshold 10 --extra foo'.split())
+        self.cli.run('add --schedule 2012-05-22T00:00:00/P1D --failure-threshold 10 --extra foo'.split())
 
         # Verify
         args = strategy.create_schedule.call_args[0]
-        self.assertEqual('2012-05-22T00:00:00', args[0])
+        self.assertEqual('2012-05-22T00:00:00/P1D', args[0])
         self.assertEqual('10', args[1])
         self.assertEqual(True, args[2])
         self.assertEqual('foo', args[3]['extra'])
@@ -146,11 +146,11 @@ class TestCreateCommand(base.PulpClientTests):
         self.cli.add_command(create_command)
 
         # Test
-        self.cli.run('add --schedule 2012-05-22 --failure-threshold 10'.split())
+        self.cli.run('add --schedule 2012-05-22T00:00:00/P1D --failure-threshold 10'.split())
 
         # Verify
         args = strategy.create_schedule.call_args[0]
-        self.assertEqual('2012-05-22T00:00:00', args[0])
+        self.assertEqual('2012-05-22T00:00:00/P1D', args[0])
         self.assertEqual('10', args[1])
         self.assertEqual(True, args[2])
 
@@ -193,7 +193,7 @@ class TestUpdateCommand(base.PulpClientTests):
         self.cli.add_command(update_command)
 
         # Test
-        self.cli.run('update --schedule-id foo --schedule 2012-05-22 --failure-threshold 1 --enabled true --extra bar'.split())
+        self.cli.run('update --schedule-id foo --schedule 2012-05-22T00:00:00/P1D --failure-threshold 1 --enabled true --extra bar'.split())
 
         # Verify
         args = strategy.update_schedule.call_args[0]
@@ -202,7 +202,7 @@ class TestUpdateCommand(base.PulpClientTests):
 
         kwargs = strategy.update_schedule.call_args[1]
         self.assertTrue('schedule' in kwargs)
-        self.assertEqual('2012-05-22T00:00:00', kwargs['schedule'])
+        self.assertEqual('2012-05-22T00:00:00/P1D', kwargs['schedule'])
         self.assertTrue('failure_threshold' in kwargs)
         self.assertEqual('1', kwargs['failure_threshold'])
         self.assertTrue('enabled' in kwargs)
