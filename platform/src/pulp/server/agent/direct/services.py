@@ -154,10 +154,21 @@ class ReplyHandler(Listener):
         self.consumer = ReplyConsumer(queue, url=url)
 
     def start(self, watchdog):
+        """
+        Start the reply handler (thread)
+        @param watchdog: A watchdog object used to synthesize timeouts.
+        @type watchdog: L{gofer.rmi.async.WatchDog}
+        """
         self.consumer.start(self, watchdog=watchdog)
         log.info('Task reply handler, started.')
 
     def succeeded(self, reply):
+        """
+        Notification (reply) indicating an RMI succeeded.
+        This information is relayed to the task coordinator.
+        @param reply: A successful reply object.
+        @type reply: L{gofer.rmi.async.Succeeded}
+        """
         log.info('Task RMI (succeeded)\n%s', reply)
         taskid = reply.any
         result = reply.retval
@@ -165,6 +176,12 @@ class ReplyHandler(Listener):
         coordinator.complete_call_success(taskid, result)
 
     def failed(self, reply):
+        """
+        Notification (reply) indicating an RMI failed.
+        This information is relayed to the task coordinator.
+        @param reply: A failure reply object.
+        @type reply: L{gofer.rmi.async.Failed}
+        """
         log.info('Task RMI (failed)\n%s', reply)
         taskid = reply.any
         exception = reply.exval
@@ -172,5 +189,14 @@ class ReplyHandler(Listener):
         coordinator = factory.coordinator()
         coordinator.complete_call_failure(taskid, exception, traceback)
 
-    def status(self, reply):
-        pass
+    def progress(self, reply):
+        """
+        Notification (reply) indicating an RMI has reported status.
+        This information is relayed to the task coordinator.
+        @param reply: A progress reply object.
+        @type reply: L{gofer.rmi.async.Progress}
+        """
+        log.info('Task RMI (progress)\n%s', reply)
+        taskid = reply.any
+        coordinator = factory.coordinator()
+        coordinator.report_call_progress(taskid, reply.details)

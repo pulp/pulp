@@ -185,6 +185,10 @@ class DispatchReport(Report):
 class ExceptionReport(dict):
     """
     Exception Report
+    @ivar message: The exception message.
+    @type message: str
+    @ivar trace: The stack trace.
+    @type trace: list
     """
 
     def __init__(self):
@@ -192,4 +196,4 @@ class ExceptionReport(dict):
         inst = info[1]
         trace = '\n'.join(tb.format_exception(*info))
         self['message'] = str(inst)
-        self['trace']=trace
+        self['trace'] = trace

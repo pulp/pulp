@@ -260,7 +260,8 @@ class RepoUnitAssociationManager(object):
         importer_instance, plugin_config = plugin_api.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
         call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'], import_config_override)
-        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
+        login = manager_factory.principal_manager().get_principal()['login']
+        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, login)
 
         try:
             importer_instance.import_units(transfer_source_repo, transfer_dest_repo, conduit, call_config, units=transfer_units)
