@@ -85,7 +85,8 @@ class TestTopicPublishManager(unittest.TestCase):
             config.get('messaging', 'topic_exchange'), expected_topic)
 
         sender = mock_connection.return_value.session.return_value.sender
-        sender.assert_called_once_with(expected_destination)
+        self.assertEqual(sender.call_count, 1)
+        self.assertTrue(sender.call_args[0][0].startswith(expected_destination))
         sender.return_value.send.assert_called_once_with(
             json.dumps(mock_event.data.return_value))
 
@@ -99,3 +100,17 @@ class TestTopicPublishManager(unittest.TestCase):
         self.manager.publish(mock_event)
 
         self.assertEqual(mock_error.call_count, 1)
+
+    @mock.patch.object(TopicPublishManager, 'connection')
+    def test_publish_specify_exchange(self, mock_connection):
+        mock_event = mock.MagicMock()
+        mock_event.data.return_value = {}
+        mock_event.event_type = data.TYPE_REPO_PUBLISH_FINISHED
+        self.manager.publish(mock_event, 'pulp')
+
+        expected_topic = 'pulp.server.' + data.TYPE_REPO_PUBLISH_FINISHED
+        expected_destination = '%s/%s' % ('pulp', expected_topic)
+        sender = mock_connection.return_value.session.return_value.sender
+        self.assertEqual(sender.call_count, 1)
+        self.assertTrue(sender.call_args[0][0].startswith(expected_destination))
+

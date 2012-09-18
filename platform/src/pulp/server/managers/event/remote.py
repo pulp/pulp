@@ -21,7 +21,7 @@ from pulp.server.config import config
 
 
 class TopicPublishManager(object):
-    BASE_TOPIC = 'pulp.server'
+    BASE_SUBJECT = 'pulp.server'
     EXCHANGE = config.get('messaging', 'topic_exchange')
 
     _connection = None
@@ -62,7 +62,7 @@ class TopicPublishManager(object):
         return cls._connection
 
     @classmethod
-    def publish(cls, event):
+    def publish(cls, event, exchange=None):
         """
         Publish an event to a remote exchange. This sends the JSON-serialized
         version of the output from the event's "data" method as the content
@@ -72,11 +72,17 @@ class TopicPublishManager(object):
 
         :param event: the event that should be published to a remote exchange
         :type  event: pulp.server.event.data.Event
+
+        :param exchange: optional name of an exchange to use. This will override
+                         whatever is setup in the server config.
+        :type  exchange: str
         """
         connection = cls.connection()
         if connection:
-            topic = '%s.%s' % (cls.BASE_TOPIC, event.event_type)
-            destination = '%s/%s' % (cls.EXCHANGE, topic)
+            subject = '%s.%s' % (cls.BASE_SUBJECT, event.event_type)
+            destination = '%s/%s; {create:always, node:{type:topic}, link:{x-declare:{auto-delete:True}}}' % (
+                exchange or cls.EXCHANGE, subject)
+
             data = json.dumps(event.data())
             try:
                 cls.connection().session().sender(destination).send(data)

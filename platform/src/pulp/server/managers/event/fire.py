@@ -78,10 +78,9 @@ class EventFireManager(object):
         @param event: event object to fire
         @type  event: pulp.server.event.data.Event
         """
-        factory.topic_publish_manager().publish(event)
-
         # Determine which listeners should be notified
-        listeners = list(EventListener.get_collection().find({'event_types' : event.event_type}))
+        listeners = list(EventListener.get_collection().find(
+            {'$or': ({'event_types' : event.event_type}, {'event_types' : '*'})}))
 
         # For each listener, retrieve the notifier and invoke it. Be sure that
         # an exception from a notifier is logged but does not interrupt the

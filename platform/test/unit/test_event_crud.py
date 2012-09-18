@@ -19,6 +19,7 @@ from pulp.server.event import data as event_data
 from pulp.server.event import rest_api
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.event import crud
 
 import base
 
@@ -162,6 +163,15 @@ class EventListenerManagerTests(base.PulpServerTests):
 
         # Verify
         self.assertEqual(0, len(listeners))
+
+    def test_validate_events(self):
+        crud._validate_event_types(event_data.ALL_EVENT_TYPES)
+
+    def test_validate_star(self):
+        crud._validate_event_types(['*'])
+
+    def test_validate_empty(self):
+        self.assertRaises(InvalidValue, crud._validate_event_types, [])
 
 # event tests ------------------------------------------------------------------
 

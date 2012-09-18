@@ -26,23 +26,29 @@ def get_args():
         '-e', '--exchange', help='name of a qpid exchange (default: amq.topic)',
         default='amq.topic')
     parser.add_argument(
+        '-s', '--subject', help='message subject to bind to', required=False)
+    parser.add_argument(
         '-a', '--address', help='hostname to connect to (default:localhost)',
         default='localhost')
     parser.add_argument(
         '-p', '--port', help='port to connect to (default: 5672)', default='5672')
     parser.add_argument(
-        '-s', '--subject', help='show message subject only',
+        '-q', '--quiet', help='show message subject only',
         default=False, action='store_true')
     return parser.parse_args()
 
 args = get_args()
 
-receiver = Connection.establish('%s:%s' % (args.address, args.port)).session().receiver(args.exchange)
+source = args.exchange
+if args.subject:
+    source = '%s/%s' % (source, args.subject)
+
+receiver = Connection.establish('%s:%s' % (args.address, args.port)).session().receiver(source)
 
 try:
     while True:
         message = receiver.fetch()
-        if args.subject:
+        if args.quiet:
             print message.subject
         else:
             print '------------------'
