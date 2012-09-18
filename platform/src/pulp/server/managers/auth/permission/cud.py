@@ -139,6 +139,10 @@ class PermissionManager(object):
         if user is None:
             raise MissingResource(user=login)
 
+        # Make sure resource is a valid string or unicode
+        if not isinstance(resource, basestring):
+            raise InvalidValue(resource)
+
         # Get or create permission if it doesn't already exist
         permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:
