@@ -25,6 +25,7 @@ will be passed through to the strategy in keyword arguments for use in the
 underlying API calls.
 """
 
+import copy
 from gettext import gettext as _
 import logging
 
@@ -186,9 +187,12 @@ class UpdateScheduleCommand(PulpCliCommand):
         self.strategy = strategy
 
         self.add_option(OPT_SCHEDULE_ID)
-        self.add_option(OPT_SCHEDULE)
         self.add_option(OPT_FAILURE_THRESHOLD)
         self.add_option(OPT_ENABLED)
+
+        schedule_copy = copy.copy(OPT_SCHEDULE)
+        schedule_copy.required = False
+        self.add_option(schedule_copy)
 
     def run(self, **kwargs):
         schedule_id = kwargs.pop(OPT_SCHEDULE_ID.keyword)
