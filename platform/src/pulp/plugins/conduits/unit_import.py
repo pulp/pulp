@@ -56,6 +56,22 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepo
 
     def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id,
                  association_owner_type, association_owner_id):
+        """
+        :param source_repo_id: ID of the repository from which units are being copied
+        :type  source_repo_id: str
+        :param dest_repo_id: ID of the repository into which units are being copied
+        :type  dest_repo_id: str
+        :param source_importer_id: ID of the importer on the source repository
+        :type  source_importer_id: str
+        :param dest_importer_id:  ID of the importer on the destination repository
+        :type  dest_importer_id: str
+        :param association_owner_type: distinguishes the owner when creating an
+               association through this conduit
+        :type  association_owner_type: str
+        :param association_owner_id: specific ID of the owner when creating an
+               association through this conduit
+        :type  association_owner_id: str
+        """
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
         RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
         SingleRepoUnitsMixin.__init__(self, source_repo_id, ImporterConduitException)
