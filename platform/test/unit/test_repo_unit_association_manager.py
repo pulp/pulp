@@ -17,7 +17,7 @@ import mock
 
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Repository, Unit
+from pulp.plugins.model import Repository
 from pulp.plugins.types import database, model
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.criteria import UnitAssociationCriteria
@@ -230,6 +230,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertTrue(isinstance(conduit, ImportUnitConduit))
         self.assertEqual(conduit.association_owner_type, OWNER_TYPE_USER)
         self.assertEqual(conduit.association_owner_id, fake_user.login)
+
+        # Clean Up
+        manager_factory.principal_manager().set_principal(principal=None)
 
     def test_associate_from_repo_with_criteria(self):
         # Setup
