@@ -18,10 +18,13 @@ import shutil
 import base
 import mock_plugins
 
+from   pulp.plugins.conduits.upload import UploadConduit
 from   pulp.plugins.model import Repository
+from   pulp.server.db.model.auth import User
 from   pulp.server.db.model.repository import Repo, RepoImporter
 from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
 import pulp.server.managers.factory as manager_factory
+from   pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
 
 class ContentUploadManagerTests(base.PulpServerTests):
 
@@ -181,6 +184,9 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
         file_path = self.upload_manager._upload_file_path(upload_id)
 
+        fake_user = User('import-user', '')
+        manager_factory.principal_manager().set_principal(principal=fake_user)
+
         # Test
         self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata, upload_id)
 
@@ -191,10 +197,16 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertEqual(call_args[2], key)
         self.assertEqual(call_args[3], metadata)
         self.assertEqual(call_args[4], file_path)
+
+        conduit = call_args[5]
+        self.assertTrue(isinstance(conduit, UploadConduit))
         self.assertEqual(call_args[5].repo_id, 'repo-u')
+        self.assertEqual(conduit.association_owner_type, OWNER_TYPE_USER)
+        self.assertEqual(conduit.association_owner_id, fake_user.login)
 
         # Clean up
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = None
+        manager_factory.principal_manager().set_principal(principal=None)
 
     def test_import_uploaded_unit_missing_repo(self):
         # Test

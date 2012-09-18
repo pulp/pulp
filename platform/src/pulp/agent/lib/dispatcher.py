@@ -12,6 +12,7 @@
 #
 
 import os
+
 from pulp.agent.lib.container import Container
 from pulp.agent.lib.container import SYSTEM, CONTENT, BIND
 from pulp.agent.lib.report import *
@@ -48,10 +49,12 @@ class Dispatcher:
         self.container = container or Container()
         self.container.load()
 
-    def install(self, units, options):
+    def install(self, conduit, units, options):
         """
         Install content unit(s).
         Unit is: {typeid:<str>, unit_key:<dict>}
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content units.
         @type units: list
         @param options: Unit install options.
@@ -64,7 +67,7 @@ class Dispatcher:
         for typeid, units in collated.items():
             try:
                 handler = self.__handler(typeid, CONTENT)
-                r = handler.install(units, dict(options))
+                r = handler.install(conduit, units, dict(options))
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -72,15 +75,17 @@ class Dispatcher:
                 r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
-        mgr = RebootManager(self, options)
+        mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
         report.update(rr)
         return report
 
-    def update(self, units, options):
+    def update(self, conduit, units, options):
         """
         Update content unit(s).
         Unit is: {typeid:<str>, unit_key:<dict>}
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content units.
         @type units: list
         @param options: Unit update options.
@@ -93,7 +98,7 @@ class Dispatcher:
         for typeid, units in collated.items():
             try:
                 handler = self.__handler(typeid, CONTENT)
-                r = handler.update(units, dict(options))
+                r = handler.update(conduit, units, dict(options))
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -101,15 +106,17 @@ class Dispatcher:
                 r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
-        mgr = RebootManager(self, options)
+        mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
         report.update(rr)
         return report
 
-    def uninstall(self, units, options):
+    def uninstall(self, conduit, units, options):
         """
         Uninstall content unit(s).
         Unit is: {typeid:<str>, unit_key:<dict>}
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content units.
         @type units: list
         @param options: Unit uninstall options.
@@ -122,7 +129,7 @@ class Dispatcher:
         for typeid, units in collated.items():
             try:
                 handler = self.__handler(typeid, CONTENT)
-                r = handler.uninstall(units, dict(options))
+                r = handler.uninstall(conduit, units, dict(options))
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -130,15 +137,17 @@ class Dispatcher:
                 r.typeid = typeid
                 r.failed(ExceptionReport())
                 report.update(r)
-        mgr = RebootManager(self, options)
+        mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
         report.update(rr)
         return report
 
-    def profile(self):
+    def profile(self, conduit):
         """
         Request the installed content profile be sent
         to the pulp server.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
@@ -149,7 +158,7 @@ class Dispatcher:
             if not callable(method):
                 continue
             try:
-                r = method()
+                r = method(conduit)
                 r.typeid = typeid
                 report.update(r)
             except NotImplementedError:
@@ -161,10 +170,12 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def reboot(self, options={}):
+    def reboot(self, conduit, options):
         """
         Schedule a reboot.
         Uses os.uname()[0] as typeid.  For linux this would be: 'Linux'
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param options: reboot options.
         @type options: dict
         @return: A dispatch report.
@@ -174,7 +185,7 @@ class Dispatcher:
         try:
             typeid = os.uname()[0]
             handler = self.__handler(typeid, SYSTEM)
-            r = handler.reboot(options)
+            r = handler.reboot(conduit, options)
             r.typeid = typeid
             report.update(r)
         except Exception:
@@ -183,9 +194,11 @@ class Dispatcher:
             report.update(r)
         return report
 
-    def bind(self, definitions):
+    def bind(self, conduit, definitions):
         """
         Bind a repository.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: The list of bind definitions.
         Definition:
             {consumer_id:<str>,
@@ -203,7 +216,7 @@ class Dispatcher:
         for typeid, definition in collated.items():
             try:
                 handler = self.__handler(typeid, BIND)
-                r = handler.bind(definition)
+                r = handler.bind(conduit, definition)
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -213,9 +226,11 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def rebind(self, definitions):
+    def rebind(self, conduit, definitions):
         """
         (Re)bind a repository.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: The list of bind definitions.
         Definition:
             {consumer_id:<str>,
@@ -233,7 +248,7 @@ class Dispatcher:
         for typeid, definition in collated.items():
             try:
                 handler = self.__handler(typeid, BIND)
-                r = handler.rebind(definition)
+                r = handler.rebind(conduit, definition)
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -243,9 +258,11 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def unbind(self, repoid):
+    def unbind(self, conduit, repoid):
         """
         Unbind a repository.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         Dispatch unbind() to all BIND handlers.
         @param repoid: A repository ID.
         @type repoid: str
@@ -255,7 +272,7 @@ class Dispatcher:
         report = DispatchReport()
         for typeid, handler in self.container.all(BIND):
             try:
-                r = handler.unbind(repoid)
+                r = handler.unbind(conduit, repoid)
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -265,10 +282,12 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def clean(self):
+    def clean(self, conduit):
         """
         Notify all handlers to clean up artifacts.
         Dispatch clean() to ALL handlers.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
@@ -279,7 +298,7 @@ class Dispatcher:
             if not callable(method):
                 continue
             try:
-                r = method()
+                r = method(conduit)
                 r.typeid = typeid
                 report.update(r)
             except NotImplementedError:
@@ -312,15 +331,20 @@ class Dispatcher:
 class RebootManager:
     """
     Reboot Manager
+    @ivar conduit: A handler conduit.
+    @type conduit: L{pulp.agent.lib.conduit.Conduit}
     @ivar dispatcher: A dispatcher.
     @type dispatcher: L{Dispatcher}
     """
 
-    def __init__(self, dispatcher, options):
+    def __init__(self, conduit, dispatcher, options):
         """
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param dispatcher: A dispatcher.
         @type dispatcher: L{Dispatcher}
         """
+        self.conduit = conduit
         self.dispatcher = dispatcher
         self.options = options
 
@@ -335,7 +359,7 @@ class RebootManager:
         report = RebootReport()
         requested = self.options.get('reboot', 0)
         if requested and chgcnt > 0:
-            dr = self.dispatcher.reboot(self.options)
+            dr = self.dispatcher.reboot(self.conduit, self.options)
             scheduled = dr.reboot['scheduled']
             details = dr.reboot['details']
             if dr.status:

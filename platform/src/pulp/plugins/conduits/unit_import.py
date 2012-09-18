@@ -23,7 +23,6 @@ import sys
 from pulp.plugins.conduits.mixins import ImporterConduitException, ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepoUnitsMixin
 import pulp.plugins.conduits._common as common_utils
 import pulp.plugins.types.database as types_db
-from pulp.server.db.model.repository import RepoContentUnit
 import pulp.server.managers.factory as manager_factory
 
 from pulp.server.db.model.criteria import UnitAssociationCriteria # shadow for importing by plugins
@@ -55,7 +54,24 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepo
     the instance will take care of it itself.
     """
 
-    def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id):
+    def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id,
+                 association_owner_type, association_owner_id):
+        """
+        :param source_repo_id: ID of the repository from which units are being copied
+        :type  source_repo_id: str
+        :param dest_repo_id: ID of the repository into which units are being copied
+        :type  dest_repo_id: str
+        :param source_importer_id: ID of the importer on the source repository
+        :type  source_importer_id: str
+        :param dest_importer_id:  ID of the importer on the destination repository
+        :type  dest_importer_id: str
+        :param association_owner_type: distinguishes the owner when creating an
+               association through this conduit
+        :type  association_owner_type: str
+        :param association_owner_id: specific ID of the owner when creating an
+               association through this conduit
+        :type  association_owner_id: str
+        """
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
         RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
         SingleRepoUnitsMixin.__init__(self, source_repo_id, ImporterConduitException)
@@ -65,6 +81,9 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepo
 
         self.source_importer_id = source_importer_id
         self.dest_importer_id = dest_importer_id
+
+        self.association_owner_type = association_owner_type
+        self.association_owner_id = association_owner_id
 
         self.__association_manager = manager_factory.repo_unit_association_manager()
         self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
@@ -90,7 +109,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepo
         """
 
         try:
-            self.__association_manager.associate_unit_by_id(self.dest_repo_id, unit.type_id, unit.id, RepoContentUnit.OWNER_TYPE_IMPORTER, self.dest_importer_id)
+            self.__association_manager.associate_unit_by_id(self.dest_repo_id, unit.type_id, unit.id, self.association_owner_type, self.association_owner_id)
             return unit
         except Exception, e:
             _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
