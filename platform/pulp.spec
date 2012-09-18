@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.4
+Version: 2.0.5
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,11 @@ exit 0
 %endif
 
 %changelog
+* Tue Sep 18 2012 Jeff Ortel <jortel@redhat.com> 2.0.5-1
+- 858037 - Fixed and added safety check to avoid adding permissions with
+  resource type dict, added migrate script to delete all the old such entries
+  (skarmark@redhat.com)
+
 * Mon Sep 17 2012 Jeff Ortel <jortel@redhat.com> 2.0.4-1
 - 858037 - adding db migration script to make role id a unique key, changing
   role name to display_name and adding description to keep it consistent with
