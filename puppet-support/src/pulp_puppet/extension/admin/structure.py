@@ -37,63 +37,77 @@ SECTION_SYNC_SCHEDULES = 'schedules'
 SECTION_PUBLISH = 'publish'
 SECTION_PUBLISH_SCHEDULES = 'schedules'
 
-DESCRIPTIONS = {
-    SECTION_ROOT : _('contains commands for working with Puppet repositories'),
-    SECTION_REPO : _('repository lifecycle commands'),
+DESC_ROOT = _('contains commands for working with Puppet repositories')
+DESC_REPO = _('repository lifecycle commands')
 
-    SECTION_GROUP : _('repository group lifecycle commands'),
-    SECTION_GROUP_MEMBERS : _('manage membership in a repository group'),
-    SECTION_REMOVE : _('remove copied or uploaded modules from a repository'),
-    SECTION_UPLOADS : _('upload modules into a repository'),
+DESC_GROUP = _('repository group lifecycle commands')
+DESC_GROUP_MEMBERS = _('manage membership in a repository group')
+DESC_REMOVE = _('remove copied or uploaded modules from a repository')
+DESC_UPLOADS = _('upload modules into a repository')
 
-    SECTION_SYNC : _('run, schedule, or view the status of sync tasks'),
-    SECTION_SYNC_SCHEDULES : _('manage repository sync schedules'),
-    SECTION_PUBLISH : _('run, schedule, or view the status of publish tasks'),
-    SECTION_PUBLISH_SCHEDULES : _('manage repository publish schedules'),
-    }
-
-# Relative to the root of the structure
-STRUCTURE = {
-    SECTION_REPO : {
-        SECTION_GROUP : {
-            SECTION_GROUP_MEMBERS: {},
-        },
-        SECTION_REMOVE : {},
-        SECTION_UPLOADS : {},
-        SECTION_SYNC : {
-            SECTION_SYNC_SCHEDULES : {},
-        },
-        SECTION_PUBLISH : {
-            SECTION_PUBLISH_SCHEDULES : {},
-        }
-    }
-}
+DESC_SYNC = _('run, schedule, or view the status of sync tasks')
+DESC_SYNC_SCHEDULES = _('manage repository sync schedules')
+DESC_PUBLISH = _('run, schedule, or view the status of publish tasks')
+DESC_PUBLISH_SCHEDULES = _('manage repository publish schedules')
 
 # -- creation -----------------------------------------------------------------
 
-def ensure_structure(cli, root_section_name=SECTION_ROOT, structure=STRUCTURE,
-                     descriptions=DESCRIPTIONS):
+def ensure_puppet_root(cli):
     """
-    Ensures the proper section/subsection structure is in place in the CLI.
-    This call is idempotent and is safe to call from all puppet-related extensions.
+    Verifies that the root of puppet-related commands exists in the CLI,
+    creating it using constants from this module if it does not.
 
-    :type cli: pulp.client.extensions.core.PulpCli
+    :param cli: CLI instance being configured
+    :type  cli: pulp.client.extensions.core.PulpCli
+    """
+    root_section = cli.find_section(SECTION_ROOT)
+    if root_section is None:
+        root_section = cli.create_section(SECTION_ROOT, DESC_ROOT)
+    return root_section
+
+def ensure_repo_structure(cli):
+    """
+    Verifies that the repository section and all of its subsections are present
+    in the CLI, creating them using constants from this module if they are not.
+
+    :param cli: CLI instance being configured
+    :type  cli: pulp.client.extensions.core.PulpCli
     """
 
-    # If the section is already there, assume we've called this before and
-    # punch out early.
-    existing_root = cli.find_section(root_section_name)
-    if existing_root:
-        return
+    # Make sure the puppet root is in place
+    root_section = ensure_puppet_root(cli)
 
-    # Create the necessary sections according to the structure definition
-    def _create_subsection(parent, children_dict):
-        for child_name, grandchildren in children_dict.items():
-            child = parent.create_subsection(child_name, descriptions[child_name])
-            _create_subsection(child, grandchildren)
+    # There's nothing dynamic about setting up the structure, so if the repo
+    # section exists, it's a safe bet it's configured with its necessary
+    # subsections, so just punch out.
+    repo_section = root_section.find_subsection(SECTION_REPO)
+    if repo_section is not None:
+        return repo_section
 
-    root = cli.create_section(root_section_name, descriptions[SECTION_ROOT])
-    _create_subsection(root, structure)
+    repo_section = root_section.create_subsection(SECTION_REPO, DESC_REPO)
+
+    # Add the direct subsections of repo
+    direct_subsections = (
+        (SECTION_GROUP, DESC_GROUP),
+        (SECTION_REMOVE, DESC_REMOVE),
+        (SECTION_UPLOADS, DESC_UPLOADS),
+        (SECTION_SYNC, DESC_SYNC),
+        (SECTION_PUBLISH, DESC_PUBLISH),
+    )
+    for name, description in direct_subsections:
+        repo_section.create_subsection(name, description)
+
+    # Add specific third-tier sections
+    group_section = repo_group_section(cli)
+    group_section.create_subsection(SECTION_GROUP_MEMBERS, DESC_GROUP_MEMBERS)
+
+    sync_section = repo_sync_section(cli)
+    sync_section.create_subsection(SECTION_SYNC_SCHEDULES, DESC_SYNC_SCHEDULES)
+
+    publish_section = repo_publish_section(cli)
+    publish_section.create_subsection(SECTION_PUBLISH_SCHEDULES, DESC_PUBLISH_SCHEDULES)
+
+    return repo_section
 
 # -- section retrieval --------------------------------------------------------
 

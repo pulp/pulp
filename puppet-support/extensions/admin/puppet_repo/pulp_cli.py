@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 import os
 
 from pulp.client.commands.repo import cudl, group, sync_publish, upload
@@ -18,8 +19,9 @@ from pulp.client.upload.manager import UploadManager
 from pulp_puppet.extension.admin import copy, modules, repo, structure, status
 from pulp_puppet.extension.admin import upload as puppet_upload
 
+
 def initialize(context):
-    structure.ensure_structure(context.cli)
+    structure.ensure_repo_structure(context.cli)
 
     repo_section = structure.repo_section(context.cli)
     repo_section.add_command(repo.CreatePuppetRepositoryCommand(context))
@@ -53,6 +55,7 @@ def initialize(context):
     uploads_section.add_command(upload.ListCommand(context, upload_manager))
     uploads_section.add_command(upload.CancelCommand(context, upload_manager))
     uploads_section.add_command(upload.ResumeCommand(context, upload_manager))
+
 
 def _upload_manager(context):
     """
