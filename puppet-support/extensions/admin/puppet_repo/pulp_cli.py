@@ -22,7 +22,7 @@ from pulp_puppet.extension.admin import upload as puppet_upload
 
 
 def initialize(context):
-    structure.ensure_structure(context.cli)
+    structure.ensure_repo_structure(context.cli)
 
     repo_section = structure.repo_section(context.cli)
     repo_section.add_command(repo.CreatePuppetRepositoryCommand(context))
