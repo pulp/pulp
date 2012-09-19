@@ -16,7 +16,7 @@ import os
 from iniparse import INIConfig
 from pulp.agent.lib.handler import BindHandler
 from pulp.agent.lib.report import BindReport, CleanReport
-from pulp_rpm.common import repolib
+from pulp_rpm.handler import repolib
 from logging import getLogger
 
 log = getLogger(__name__)
