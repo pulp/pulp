@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -13,16 +11,11 @@
 
 import copy
 import mock
-import os
-import sys
 
-import rpm_support_base
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
-import rpm_sync.schedule as commands # these will likely move out of this package
-
+import base
 from pulp.bindings.responses import Response
 from pulp.client.extensions.core import TAG_FAILURE, TAG_SUCCESS, TAG_PARAGRAPH
+from pulp.client.commands import schedule as commands
 
 # -- constants ----------------------------------------------------------------
 
@@ -70,7 +63,7 @@ EXAMPLE_SCHEDULE_LIST =  [
 
 # -- test cases ---------------------------------------------------------------
 
-class TestListScheduleCommand(rpm_support_base.PulpClientTests):
+class TestListScheduleCommand(base.PulpClientTests):
 
     def test_list(self):
         # Setup
@@ -120,7 +113,7 @@ class TestListScheduleCommand(rpm_support_base.PulpClientTests):
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[1]['first_run'] in first_runs)
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[2]['first_run'] in first_runs)
 
-class TestCreateCommand(rpm_support_base.PulpClientTests):
+class TestCreateCommand(base.PulpClientTests):
 
     def test_add(self):
         # Setup
@@ -132,11 +125,11 @@ class TestCreateCommand(rpm_support_base.PulpClientTests):
         self.cli.add_command(create_command)
 
         # Test
-        self.cli.run('add --schedule 2012-05-22 --failure-threshold 10 --extra foo'.split())
+        self.cli.run('add --schedule 2012-05-22T00:00:00/P1D --failure-threshold 10 --extra foo'.split())
 
         # Verify
         args = strategy.create_schedule.call_args[0]
-        self.assertEqual('2012-05-22', args[0])
+        self.assertEqual('2012-05-22T00:00:00/P1D', args[0])
         self.assertEqual('10', args[1])
         self.assertEqual(True, args[2])
         self.assertEqual('foo', args[3]['extra'])
@@ -153,11 +146,11 @@ class TestCreateCommand(rpm_support_base.PulpClientTests):
         self.cli.add_command(create_command)
 
         # Test
-        self.cli.run('add --schedule 2012-05-22 --failure-threshold 10'.split())
+        self.cli.run('add --schedule 2012-05-22T00:00:00/P1D --failure-threshold 10'.split())
 
         # Verify
         args = strategy.create_schedule.call_args[0]
-        self.assertEqual('2012-05-22', args[0])
+        self.assertEqual('2012-05-22T00:00:00/P1D', args[0])
         self.assertEqual('10', args[1])
         self.assertEqual(True, args[2])
 
@@ -165,7 +158,7 @@ class TestCreateCommand(rpm_support_base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[1])
 
-class TestDeleteCommand(rpm_support_base.PulpClientTests):
+class TestDeleteCommand(base.PulpClientTests):
 
     def test_delete(self):
         # Setup
@@ -188,7 +181,7 @@ class TestDeleteCommand(rpm_support_base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
-class TestUpdateCommand(rpm_support_base.PulpClientTests):
+class TestUpdateCommand(base.PulpClientTests):
 
     def test_update(self):
         # Setup
@@ -200,7 +193,7 @@ class TestUpdateCommand(rpm_support_base.PulpClientTests):
         self.cli.add_command(update_command)
 
         # Test
-        self.cli.run('update --schedule-id foo --schedule 2012-05-22 --failure-threshold 1 --enabled true --extra bar'.split())
+        self.cli.run('update --schedule-id foo --schedule 2012-05-22T00:00:00/P1D --failure-threshold 1 --enabled true --extra bar'.split())
 
         # Verify
         args = strategy.update_schedule.call_args[0]
@@ -209,7 +202,7 @@ class TestUpdateCommand(rpm_support_base.PulpClientTests):
 
         kwargs = strategy.update_schedule.call_args[1]
         self.assertTrue('schedule' in kwargs)
-        self.assertEqual('2012-05-22', kwargs['schedule'])
+        self.assertEqual('2012-05-22T00:00:00/P1D', kwargs['schedule'])
         self.assertTrue('failure_threshold' in kwargs)
         self.assertEqual('1', kwargs['failure_threshold'])
         self.assertTrue('enabled' in kwargs)
@@ -218,7 +211,7 @@ class TestUpdateCommand(rpm_support_base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
-class TestNextRunCommand(rpm_support_base.PulpClientTests):
+class TestNextRunCommand(base.PulpClientTests):
 
     def test_next_run(self):
         # Setup
