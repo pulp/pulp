@@ -647,10 +647,10 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
         mdgen.doRepoMetadata()
         # do the final move to the repodata location from .repodata
         mdgen.doFinalMove()
-        # look at the backup dir and merge presto, updateinfo, comps and other metadata
-#        self.merge_other_filetypes()
+        # lookup and merge updateinfo, comps and other metadata
         self.reconstruct_merge_comps_xml()
         self.reconstruct_merge_updateinfo_xml()
+        # merge any custom metadata stored on the scratchpad
         self.merge_repodata_on_scratchpad()
 
 def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, progress_callback=None, is_cancelled=False):
