@@ -13,21 +13,18 @@
 
 import copy
 
-try:
-    from bson.objectid import ObjectId
-except ImportError:
-    from pymongo.objectid import ObjectId
-
 import base
 import mock_plugins
 
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.compat import ObjectId
 from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as managers_factory
-from pulp.server.managers.schedule.cud import ScheduleManager
+from pulp.server.managers.schedule import utils as schedule_utils
+from pulp.server.managers.schedule.aggregate import AggregateScheduleManager
 
 # schedule tests base class ----------------------------------------------------
 
@@ -50,7 +47,7 @@ class ScheduleTests(base.PulpAsyncServerTests):
         self._distributor_manager.add_distributor(self.repo_id, self.distributor_type_id, {}, False, distributor_id=self.distributor_id)
         self._importer_manager.set_importer(self.repo_id, self.importer_type_id, {})
 
-        self.schedule_manager = ScheduleManager()
+        self.schedule_manager = AggregateScheduleManager()
 
     def tearDown(self):
         super(ScheduleTests, self).tearDown()
@@ -72,31 +69,31 @@ class ScheduleTests(base.PulpAsyncServerTests):
 class ScheduleManagerTests(base.PulpAsyncServerTests):
 
     def test_instantiation(self):
-        schedule_manager = ScheduleManager()
+        schedule_manager = AggregateScheduleManager()
 
     def test_validate_valid_keys(self):
         valid_keys = ('one', 'two', 'three')
         options = {'one': 1, 'two': 2, 'three': 3}
-        schedule_manager = ScheduleManager()
+        schedule_manager = AggregateScheduleManager()
         try:
-            schedule_manager._validate_keys(options, valid_keys)
+            schedule_utils.validate_keys(options, valid_keys)
         except Exception, e:
             self.fail(str(e))
 
     def test_validate_invalid_superfluous_keys(self):
         valid_keys = ('yes', 'ok')
         options = {'ok': 1, 'not': 0}
-        schedule_manager = ScheduleManager()
+        schedule_manager = AggregateScheduleManager()
         self.assertRaises(pulp_exceptions.InvalidValue,
-                          schedule_manager._validate_keys,
+                          schedule_utils.validate_keys,
                           options, valid_keys)
 
     def test_validate_invalid_missing_keys(self):
         valid_keys = ('me', 'me_too')
         options = {'me': 'only'}
-        schedule_manager = ScheduleManager()
+        schedule_manager = AggregateScheduleManager()
         self.assertRaises(pulp_exceptions.MissingValue,
-                          schedule_manager._validate_keys,
+                          schedule_utils.validate_keys,
                           options, valid_keys, True)
 
 # sync schedule tests ----------------------------------------------------------
