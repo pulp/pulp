@@ -4,34 +4,34 @@ CLI Related APIs
 PulpCli
 ^^^^^^^
 
-.. autoclass:: pulp.gc_client.framework.core.PulpCli
+.. autoclass:: pulp.client.extensions.core.PulpCli
    :members:
    :inherited-members:
 
 PulpCliSection
 ^^^^^^^^^^^^^^
 
-.. autoclass:: pulp.gc_client.framework.extensions.PulpCliSection
+.. autoclass:: pulp.client.extensions.extensions.PulpCliSection
    :members:
    :inherited-members:
 
 PulpCliCommand
 ^^^^^^^^^^^^^^
 
-.. autoclass:: pulp.gc_client.framework.extensions.PulpCliCommand
+.. autoclass:: pulp.client.extensions.extensions.PulpCliCommand
    :members:
    :inherited-members:
 
 PulpCliOption
 ^^^^^^^^^^^^^
 
-.. autoclass:: pulp.gc_client.framework.extensions.PulpCliOption
+.. autoclass:: pulp.client.extensions.extensions.PulpCliOption
    :members:
    :inherited-members:
 
 PulpCliFlag
 ^^^^^^^^^^^
 
-.. autoclass:: pulp.gc_client.framework.extensions.PulpCliFlag
+.. autoclass:: pulp.client.extensions.extensions.PulpCliFlag
    :members:
    :inherited-members:

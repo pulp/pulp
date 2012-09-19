@@ -4,7 +4,7 @@ Input/Output APIs
 PulpPrompt
 ^^^^^^^^^^
 
-.. autoclass:: pulp.gc_client.framework.core.PulpPrompt
+.. autoclass:: pulp.client.extensions.core.PulpPrompt
    :members:
    :inherited-members:
 
