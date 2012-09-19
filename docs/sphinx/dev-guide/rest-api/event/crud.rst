@@ -19,7 +19,7 @@ when events of the given types are fired.
 
 * :param:`notifier_type_id,str,one of the supported notifier type IDs`
 * :param:`notifier_config,object,configuration values the notifier will use when it handles an event`
-* :param:`event_types,list,list of event type IDs that this listener will handle`
+* :param:`event_types,list,list of event type IDs that this listener will handle. "*" matches all types`
 
 | :response_list:`_`
 
@@ -135,7 +135,7 @@ overwritten.
 | :param_list:`put`
 
 * :param:`?notifier_config,object,dictates changes to the configuration as described above`
-* :param:`?event_types,list,list of new event types for the listener to listen for`
+* :param:`?event_types,list,list of new event types for the listener to listen for. "*" matches all types.`
 
 | :response_list:`_`
 
