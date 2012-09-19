@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -21,52 +19,90 @@ to properly scope the calls.
 In other words, this module should never contain any references to a specific
 resource (e.g. repositories) or operation (e.g. sync).
 
-When using the generic commands below, extra options may be added to them that
+When using the commands below, extra options may be added to them that
 are related to the specific functionality being worked with. Those values
 will be passed through to the strategy in keyword arguments for use in the
 underlying API calls.
-
-Eventually this will move to a more general location outside of repositories
-directly, we just need to figure out what that looks like first.
 """
 
+import copy
 from gettext import gettext as _
 import logging
 
-from pulp.client.extensions.extensions import PulpCliCommand
 from pulp.client.arg_utils import convert_boolean_arguments, convert_removed_options
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.client.validators import interval_iso6801_validator
 
 # -- constants ----------------------------------------------------------------
+
+# Command configuration
+NAME_LIST = 'list'
+DESC_LIST = _('lists schedules')
+
+NAME_CREATE = 'create'
+DESC_CREATE = _('creates a new schedule')
+
+NAME_UPDATE = 'update'
+DESC_UPDATE = _('updates an existing schedule')
+
+NAME_DELETE = 'delete'
+DESC_DELETE = _('deletes a schedule')
+
+NAME_NEXT_RUN = 'next'
+DESC_NEXT_RUN = _('displays the next time the operation will run across all schedules')
 
 # Order for render_document_list
 SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'last_run', 'next_run']
 DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
 
-SCHEDULE_DESCRIPTION = _('time to execute (with optional recurrence) in iso8601 format (yyyy-mm-ddThh:mm:ssZ/PiuT)')
-FAILURE_THRESHOLD_DESCRIPTION = _('number of failures before the schedule is automatically disabled; unspecified ' +
-                                  'means the schedule will never be automatically disabled')
-ENABLED_DESCRIPTION = _('if "false", the schedule will exist but will not trigger any executions; defaults to true')
+# Options
+DESC_SCHEDULE_ID = _('identifies an existing schedule')
+OPT_SCHEDULE_ID = PulpCliOption('--schedule-id', DESC_SCHEDULE_ID, required=True)
+
+DESC_SCHEDULE = _('time to execute (with optional recurrence) in iso8601 format '
+                  '(yyyy-mm-ddThh:mm:ssZ/PiuT)')
+OPT_SCHEDULE = PulpCliOption('--schedule', DESC_SCHEDULE, aliases=['-s'], required=True, validate_func=interval_iso6801_validator)
+
+DESC_FAILURE_THRESHOLD = _('number of failures before the schedule is automatically '
+                           'disabled; unspecified means the schedule will never '
+                           'be automatically disabled')
+OPT_FAILURE_THRESHOLD = PulpCliOption('--failure-threshold', DESC_FAILURE_THRESHOLD, aliases=['-f'], required=False)
+
+DESC_ENABLED = _('if "false", the schedule will exist but will not trigger any '
+                 'executions; defaults to true')
+OPT_ENABLED = PulpCliOption('--enabled', DESC_ENABLED, required=False)
+
+DESC_DETAILS = _('if specified, extra information (including its ID) '
+                 'about the schedule is displayed')
+FLAG_DETAILS = PulpCliFlag('--details', DESC_DETAILS)
+
+DESC_QUIET = _('only output the next time without verbiage around it')
+FLAG_QUIET = PulpCliFlag('--quiet', DESC_QUIET, aliases=['-q'])
 
 LOG = logging.getLogger(__name__)
 
 # -- reusable scheduling classes ----------------------------------------------
 
 class ListScheduleCommand(PulpCliCommand):
+    """
+    Displays the schedules returned from the supplied strategy instance.
+    """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.list)
+    def __init__(self, context, strategy, name=NAME_LIST, description=DESC_LIST):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
-        self.create_flag('--details', _('if specified, extra information (including its server ID) about the schedule is displayed'))
+        self.add_flag(FLAG_DETAILS)
 
-    def list(self, **kwargs):
+    def run(self, **kwargs):
         self.context.prompt.render_title(_('Schedules'))
 
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
 
         if len(schedules) is 0:
-            self.context.prompt.render_paragraph(_('There are no schedules defined for this operation.'))
+            m = _('There are no schedules defined for this operation.')
+            self.context.prompt.render_paragraph(m)
             return
 
         for s in schedules:
@@ -85,23 +121,31 @@ class ListScheduleCommand(PulpCliCommand):
 
 
 class CreateScheduleCommand(PulpCliCommand):
+    """
+    Creates a new schedule. This command will provide the basic pieces necessary
+    to accept and parse a schedule and its associated configuration. Subclasses
+    or instances of this class should add any extra options that need to be
+    specified for the resource/operation at hand. The strategy instance will be
+    passed all of the keyword arguments provided by the user to perform the
+    actual schedule creation call.
+    """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.add)
+    def __init__(self, context, strategy, name=NAME_CREATE, description=DESC_CREATE):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
-        self.create_option('--schedule', SCHEDULE_DESCRIPTION, aliases=['-s'], required=True)
-        self.create_option('--failure-threshold', FAILURE_THRESHOLD_DESCRIPTION, aliases=['-f'], required=False)
+        self.add_option(OPT_SCHEDULE)
+        self.add_option(OPT_FAILURE_THRESHOLD)
 
-    def add(self, **kwargs):
-        schedule = kwargs['schedule']
-        failure_threshold = kwargs['failure-threshold']
+    def run(self, **kwargs):
+        schedule = kwargs[OPT_SCHEDULE.keyword]
+        failure_threshold = kwargs[OPT_FAILURE_THRESHOLD.keyword]
         enabled = True # we could ask but it just added clutter to the CLI, so default to true
 
         try:
-            response = self.strategy.create_schedule(schedule, failure_threshold, enabled, kwargs)
-            self.context.prompt.render_success_message('Schedule successfully created')
+            self.strategy.create_schedule(schedule, failure_threshold, enabled, kwargs)
+            self.context.prompt.render_success_message(_('Schedule successfully created'))
         except ValueError, e:
             LOG.exception(e)
             self.context.prompt.render_failure_message(_('One or more values were invalid:'))
@@ -109,56 +153,75 @@ class CreateScheduleCommand(PulpCliCommand):
 
 
 class DeleteScheduleCommand(PulpCliCommand):
+    """
+    Prompts the user for the schedule to delete and calls the appropriate
+    method in the strategy instance.
+    """
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.delete)
+    def __init__(self, context, strategy, name=NAME_DELETE, description=DESC_DELETE):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
-        d = 'identifies the schedule to delete'
-        self.create_option('--schedule-id', _(d), required=True)
+        self.add_option(OPT_SCHEDULE_ID)
 
-    def delete(self, **kwargs):
-        schedule_id = kwargs['schedule-id']
+    def run(self, **kwargs):
+        schedule_id = kwargs[OPT_SCHEDULE_ID.keyword]
 
-        response = self.strategy.delete_schedule(schedule_id, kwargs)
+        self.strategy.delete_schedule(schedule_id, kwargs)
         self.context.prompt.render_success_message(_('Schedule successfully deleted'))
 
-class UpdateScheduleCommand(PulpCliCommand):
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.update)
+class UpdateScheduleCommand(PulpCliCommand):
+    """
+    Provides options for manipulating the standard schedule configuration such
+    as the schedule itself or whether or not it is enabled. Subclasses or'
+    instances should add any extra options that are required. The corresponding
+    strategy method will be invoked with all of the user specified arguments.
+
+    """
+
+    def __init__(self, context, strategy, name=NAME_UPDATE, description=DESC_UPDATE):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
-        d = 'identifies the schedule to update'
-        self.create_option('--schedule-id', _(d), required=True)
-        self.create_option('--schedule', SCHEDULE_DESCRIPTION, aliases=['-s'], required=False)
-        self.create_option('--failure-threshold', FAILURE_THRESHOLD_DESCRIPTION, aliases=['-f'], required=False)
-        self.create_option('--enabled', ENABLED_DESCRIPTION, aliases=['-e'], required=False)
+        self.add_option(OPT_SCHEDULE_ID)
+        self.add_option(OPT_FAILURE_THRESHOLD)
+        self.add_option(OPT_ENABLED)
 
-    def update(self, **kwargs):
-        schedule_id = kwargs.pop('schedule-id')
-        ft = kwargs.pop('failure-threshold', None)
+        schedule_copy = copy.copy(OPT_SCHEDULE)
+        schedule_copy.required = False
+        self.add_option(schedule_copy)
+
+    def run(self, **kwargs):
+        schedule_id = kwargs.pop(OPT_SCHEDULE_ID.keyword)
+        ft = kwargs.pop(OPT_FAILURE_THRESHOLD.keyword, None)
         if ft:
             kwargs['failure_threshold'] = ft
 
         convert_removed_options(kwargs)
-        convert_boolean_arguments(['enabled'], kwargs)
+        convert_boolean_arguments([OPT_ENABLED.keyword], kwargs)
 
-        response = self.strategy.update_schedule(schedule_id, **kwargs)
+        self.strategy.update_schedule(schedule_id, **kwargs)
         self.context.prompt.render_success_message(_('Successfully updated schedule'))
 
-class NextRunCommand(PulpCliCommand):
 
-    def __init__(self, context, strategy, name, description):
-        PulpCliCommand.__init__(self, name, description, self.next_run)
+class NextRunCommand(PulpCliCommand):
+    """
+    Calculates and displays the next time an operation will execute. This call
+    will use the strategy's retrieve_schedules command to check across all
+    existing schedules to determine which will execute next.
+    """
+
+    def __init__(self, context, strategy, name=NAME_NEXT_RUN, description=DESC_NEXT_RUN):
+        PulpCliCommand.__init__(self, name, description, self.run)
         self.context = context
         self.strategy = strategy
 
-        self.create_flag('--quiet', _('only output the next time without verbiage around it'), aliases=['-q'])
+        self.add_flag(FLAG_QUIET)
 
-    def next_run(self, **kwargs):
+    def run(self, **kwargs):
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
 
         if len(schedules) is 0:
@@ -168,16 +231,16 @@ class NextRunCommand(PulpCliCommand):
         sorted_schedules = sorted(schedules, key=lambda x : x['next_run'])
         next_schedule = sorted_schedules[0]
 
-        if kwargs['quiet']:
+        if kwargs[FLAG_QUIET.keyword]:
             msg = next_schedule['next_run']
         else:
             msg_data = {
                 'next_run' : next_schedule['next_run'],
                 'schedule' : next_schedule['schedule'],
             }
-            template = 'The next scheduled run is at %(next_run)s driven by the ' \
-            'schedule %(schedule)s'
-            msg = _(template) % msg_data
+            template = _('The next scheduled run is at %(next_run)s driven by the '
+                         'schedule %(schedule)s')
+            msg = template % msg_data
 
         self.context.prompt.render_paragraph(msg)
 
