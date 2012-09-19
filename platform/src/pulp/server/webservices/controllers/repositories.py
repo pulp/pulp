@@ -1076,13 +1076,13 @@ urls = (
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
     '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
-    '/([^/]+)/importers/([^/]+)/sync_schedules/$', 'SyncScheduleCollection',
-    '/([^/]+)/importers/([^/]+)/sync_schedules/([^/]+)/$', 'SyncScheduleResource',
+    '/([^/]+)/importers/([^/]+)/schedules/sync/$', 'SyncScheduleCollection',
+    '/([^/]+)/importers/([^/]+)/schedules/sync/([^/]+)/$', 'SyncScheduleResource',
 
     '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
     '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
-    '/([^/]+)/distributors/([^/]+)/publish_schedules/$', 'PublishScheduleCollection',
-    '/([^/]+)/distributors/([^/]+)/publish_schedules/([^/]+)/$', 'PublishScheduleResource',
+    '/([^/]+)/distributors/([^/]+)/schedules/publish/$', 'PublishScheduleCollection',
+    '/([^/]+)/distributors/([^/]+)/schedules/publish/([^/]+)/$', 'PublishScheduleResource',
 
     '/([^/]+)/history/sync/$', 'RepoSyncHistory', # sub-collection
     '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory', # sub-collection

@@ -331,7 +331,7 @@ def role_query_manager():
 
 def schedule_manager():
     """
-    @rtype: L{pulp.server.manager.schedule.cud.ScheduleManager}
+    @rtype: L{pulp.server.manager.schedule.aggregate.AggregateScheduleManager}
     """
     return get_manager(TYPE_SCHEDULE)
 
@@ -395,7 +395,7 @@ def initialize():
     from pulp.server.managers.repo.sync import RepoSyncManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
-    from pulp.server.managers.schedule.cud import ScheduleManager
+    from pulp.server.managers.schedule.aggregate import AggregateScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
@@ -438,7 +438,7 @@ def initialize():
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
-        TYPE_SCHEDULE: ScheduleManager,
+        TYPE_SCHEDULE: AggregateScheduleManager,
         TYPE_USER: UserManager,
         TYPE_USER_QUERY: UserQueryManager,
     }
