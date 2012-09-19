@@ -171,7 +171,7 @@ to provide RPM specific support.
 %package admin-extensions
 Summary: The RPM admin client extensions
 Group: Development/Languages
-Requires: python-pulp-rpm-extensions = %{version}
+Requires: python-pulp-rpm-extension = %{version}
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
@@ -195,7 +195,7 @@ client capabilites with RPM specific features.
 %package consumer-extensions
 Summary: The RPM consumer client extensions
 Group: Development/Languages
-Requires: python-pulp-rpm-extensions = %{version}
+Requires: python-pulp-rpm-extension = %{version}
 Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
