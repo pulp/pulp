@@ -17,10 +17,12 @@ from pulp.common import dateutils
 
 def positive_int_validator(x):
     """
-    Validates that the input is a positive integer
+    Validates that the input is a positive integer. This call will raise
+    an exception to be passed to the CLI framework if it is invalid; there is
+    no return otherwise.
 
-    @param x:   input value to be validated
-    @type  x:   int
+    :param x: input value to be validated
+    :type  x: int
     """
     if int(x) <= 0:
         raise ValueError(_('value must be greater than 0'))
@@ -28,16 +30,26 @@ def positive_int_validator(x):
 
 def non_negative_int_validator(x):
     """
-    Validates that the input is a non-negative integer
+    Validates that the input is a non-negative integer. This call will raise
+    an exception to be passed to the CLI framework if it is invalid; there is
+    no return otherwise.
 
-    @param x:   input value to be validated
-    @type  x:   int
+    :param x: input value to be validated
+    :type  x: int
     """
     if int(x) < 0:
         raise ValueError(_('value must not be negative'))
 
 
 def interval_iso6801_validator(x):
+    """
+    Validates that a user-entered value is a correct iso8601 date with
+    an interval. This call will raise an exception to be passed to the CLI
+    framework if it is invalid; there is no return otherwise.
+
+    :param x: input value to be validated
+    :type  x: str
+    """
 
     # These are meant to be used with okaara which expects either ValueError or
     # TypeError for a graceful failure, so catch any parsing errors and raise
