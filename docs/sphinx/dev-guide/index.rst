@@ -6,4 +6,5 @@ Pulp v2 Developer Guide
 
    rest-api/index
    events/index
+   client/index
    glossary
