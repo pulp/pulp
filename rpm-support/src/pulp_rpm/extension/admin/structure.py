@@ -152,8 +152,10 @@ def _find_section(cli, *path):
     """
     Follows the given path to return the indicated section from the CLI.
 
-    :type cli: pulp.client.extensions.core.PulpCli
+    :param cli: CLI instance to search within
+    :type  cli: pulp.client.extensions.core.PulpCli
     :param path: path through the nest of sections to the desired section
+    :type  path: list of str
 
     :return: section instance that matches the path
     :rtype:  pulp.client.extensions.core.PulpCliSection
