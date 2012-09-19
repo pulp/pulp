@@ -15,7 +15,6 @@
 # Python
 import datetime
 import httplib
-import itertools
 import re
 import traceback
 import unittest
@@ -1337,7 +1336,7 @@ class ScheduledSyncTests(RepoPluginsTests):
 
     @property
     def collection_uri_path(self):
-        return '/v2/repositories/%s/importers/dummy-importer/sync_schedules/' % self.repo_id
+        return '/v2/repositories/%s/importers/dummy-importer/schedules/sync/' % self.repo_id
 
     def resource_uri_path(self, schedule_id):
         return self.collection_uri_path + schedule_id + '/'
@@ -1420,7 +1419,7 @@ class ScheduledPublishTests(RepoPluginsTests):
 
     @property
     def collection_uri_path(self):
-        return '/v2/repositories/%s/distributors/dist/publish_schedules/' % self.repo_id
+        return '/v2/repositories/%s/distributors/dist/schedules/publish/' % self.repo_id
 
     def resource_uri_path(self, schedule_id):
         return self.collection_uri_path + schedule_id + '/'

@@ -917,7 +917,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',
                 'units': units,
                 'options': options}
@@ -931,7 +931,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
                     'unit_key': {'name': 'zsh'}}
         options = {'importkeys': True}
 
-        path = '/v2/consumers/invalid-consumer/unit_install_schedules/'
+        path = '/v2/consumers/invalid-consumer/schedules/content/install/'
         body = {'schedule': schedule,
                 'units': [zsh_unit],
                 'options': options}
@@ -946,7 +946,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
                     'unit_key': {'name': 'zsh'}}
         options = {'importkeys': True}
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': schedule,
                 'units': [zsh_unit],
                 'options': options}
@@ -955,7 +955,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, response['_id'])
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, response['_id'])
 
         status, response = self.get(path)
 
@@ -967,7 +967,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
                     'unit_key': {'name': 'zsh'}}
         options = {'importkeys': True}
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': schedule,
                 'units': [zsh_unit],
                 'options': options}
@@ -976,7 +976,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
 
         status, response = self.get(path)
 
@@ -985,18 +985,18 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
     def test_get_scheduled_install_bad_consumer(self):
         schedule_id = str(ObjectId())
-        path = '/v2/consumers/invalid-consumer/unit_install_schedules/%s/' % schedule_id
+        path = '/v2/consumers/invalid-consumer/schedules/content/install/%s/' % schedule_id
         status, response = self.get(path)
         self.assertEqual(status, 404)
 
     def test_get_scheduled_install_bad_schedule(self):
         schedule_id = str(ObjectId())
-        path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, schedule_id)
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
         status, response = self.get(path)
         self.assertEqual(status, 404)
 
     def test_get_all_scheduled_installs_bad_consumer(self):
-        path = '/v2/consumers/invalid-consumer/unit_install_schedules/'
+        path = '/v2/consumers/invalid-consumer/schedules/content/install/'
         status, response = self.get(path)
         self.assertEqual(status, 404)
 
@@ -1006,7 +1006,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',
                 'units': units,
                 'options': options}
@@ -1015,7 +1015,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
         update_body = {'schedule': 'R2/PT1H'}
 
         status, response = self.put(update_path, update_body)
@@ -1027,7 +1027,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',
                 'units': units,
                 'options': options}
@@ -1036,7 +1036,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
 
         status, response = self.delete(update_path)
         self.assertEqual(status, 200)

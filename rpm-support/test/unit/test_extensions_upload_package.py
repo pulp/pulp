@@ -60,4 +60,4 @@ class CreateRpmCommandTests(rpm_support_base.PulpClientTests):
         self.assertEqual(metadata['filename'], RPM_FILENAME)
         self.assertEqual(metadata['license'], 'MIT')
         self.assertEqual(metadata['relativepath'], RPM_FILENAME)
-        self.assertEqual(metadata['vendor'], None)
+

@@ -27,11 +27,11 @@ class RepositoryAPI(PulpAPI):
         """
         super(RepositoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/"
-        
+
     def repositories(self, query_parameters=()):
         path = self.base_path
         return self.server.GET(path, query_parameters)
-    
+
     def create(self, id, display_name, description, notes):
         path = self.base_path
         repodata = {"id": id,
@@ -162,11 +162,11 @@ class RepositoryImporterAPI(PulpAPI):
         """
         super(RepositoryImporterAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/importers/"
-    
+
     def importers(self, repo_id):
         path = self.base_path % repo_id
         return self.server.GET(path)
-    
+
     def create(self, repo_id, importer_type_id, importer_config):
         path = self.base_path % repo_id
         data = {"importer_type_id": importer_type_id,
@@ -185,7 +185,7 @@ class RepositoryImporterAPI(PulpAPI):
         path = self.base_path % repo_id + "/%s/" % importer_id
         data = {"importer_config": importer_config}
         return self.server.PUT(path, data)
-    
+
 
 class RepositoryDistributorAPI(PulpAPI):
     """
@@ -197,11 +197,11 @@ class RepositoryDistributorAPI(PulpAPI):
         """
         super(RepositoryDistributorAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/distributors/"
-    
+
     def distributors(self, repo_id):
         path = self.base_path % repo_id
         return self.server.GET(path)
-    
+
     def create(self, repo_id, distributor_type_id, distributor_config, auto_publish, distributor_id):
         path = self.base_path % repo_id
         data = {"distributor_type_id": distributor_type_id,
@@ -257,7 +257,7 @@ class RepositoryActionsAPI(PulpAPI):
         path = self.base_path % repo_id + "/sync/"
         data = {'override_config' : override_config,}
         return self.server.POST(path, data)
-    
+
     def publish(self, repo_id, distributor_id, override_config):
         path = self.base_path % repo_id + "/publish/"
         data = {'id' : distributor_id,
@@ -400,15 +400,15 @@ class RepositorySyncSchedulesAPI(PulpAPI):
         super(RepositorySyncSchedulesAPI, self).__init__(pulp_connection)
 
     def list_schedules(self, repo_id, importer_id):
-        url = '/v2/repositories/%s/importers/%s/sync_schedules/' % (repo_id, importer_id)
+        url = '/v2/repositories/%s/importers/%s/schedules/sync/' % (repo_id, importer_id)
         return self.server.GET(url)
 
     def get_schedule(self, repo_id, importer_id, schedule_id):
-        url = '/v2/repositories/%s/importers/%s/sync_schedules/%s/' % (repo_id, importer_id, schedule_id)
+        url = '/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
         return self.server.GET(url)
 
     def add_schedule(self, repo_id, importer_id, schedule, override_config, failure_threshold, enabled):
-        url = '/pulp/api/v2/repositories/%s/importers/%s/sync_schedules/' % (repo_id, importer_id)
+        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/' % (repo_id, importer_id)
         body = {
             'schedule' : schedule,
             'override_config' : override_config,
@@ -418,12 +418,12 @@ class RepositorySyncSchedulesAPI(PulpAPI):
         return self.server.POST(url, body)
 
     def delete_schedule(self, repo_id, importer_id, schedule_id):
-        url = '/pulp/api/v2/repositories/%s/importers/%s/sync_schedules/%s/' % (repo_id, importer_id, schedule_id)
+        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
         return self.server.DELETE(url)
 
     def update_schedule(self, repo_id, importer_id, schedule_id, schedule=UNSPECIFIED,
                         override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
-        url = '/pulp/api/v2/repositories/%s/importers/%s/sync_schedules/%s/' % (repo_id, importer_id, schedule_id)
+        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
         body = {
             'schedule' : schedule,
             'override_config' : override_config,
@@ -444,15 +444,15 @@ class RepositoryPublishSchedulesAPI(PulpAPI):
         super(RepositoryPublishSchedulesAPI, self).__init__(pulp_connection)
 
     def list_schedules(self, repo_id, distributor_id):
-        url = '/v2/repositories/%s/distributors/%s/publish_schedules/' % (repo_id, distributor_id)
+        url = '/v2/repositories/%s/distributors/%s/schedules/publish/' % (repo_id, distributor_id)
         return self.server.GET(url)
 
     def get_schedule(self, repo_id, distributor_id, schedule_id):
-        url = '/v2/repositories/%s/distributors/%s/publish_schedules/%s/' % (repo_id, distributor_id, schedule_id)
+        url = '/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
         return self.server.GET(url)
 
     def add_schedule(self, repo_id, distributor_id, schedule, override_config, failure_threshold, enabled):
-        url = '/pulp/api/v2/repositories/%s/distributors/%s/publish_schedules/' % (repo_id, distributor_id)
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/' % (repo_id, distributor_id)
         body = {
             'schedule' : schedule,
             'override_config' : override_config,
@@ -462,12 +462,12 @@ class RepositoryPublishSchedulesAPI(PulpAPI):
         return self.server.POST(url, body)
 
     def delete_schedule(self, repo_id, distributor_id, schedule_id):
-        url = '/pulp/api/v2/repositories/%s/distributors/%s/publish_schedules/%s/' % (repo_id, distributor_id, schedule_id)
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
         return self.server.DELETE(url)
 
     def update_schedule(self, repo_id, distributor_id, schedule_id, schedule=UNSPECIFIED,
                         override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
-        url = '/pulp/api/v2/repositories/%s/distributors/%s/publish_schedules/%s/' % (repo_id, distributor_id, schedule_id)
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
         body = {
             'schedule' : schedule,
             'override_config' : override_config,
