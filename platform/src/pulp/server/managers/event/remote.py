@@ -68,7 +68,8 @@ class TopicPublishManager(object):
         version of the output from the event's "data" method as the content
         of the message.
 
-        Failures to publish a message will be logged but will not
+        Failures to publish a message will be logged but will not prevent
+        execution from continuing.
 
         :param event: the event that should be published to a remote exchange
         :type  event: pulp.server.event.data.Event
