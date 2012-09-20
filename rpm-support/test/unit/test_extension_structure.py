@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,27 +9,27 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base_cli
+import rpm_support_base
 
-from pulp_puppet.extension.admin import structure
+from pulp_rpm.extension.admin import structure
 
-class StructureTests(base_cli.ExtensionTests):
+class StructureTests(rpm_support_base.PulpClientTests):
 
     def test_ensure_puppet_root(self):
         # Test
-        returned_root_section = structure.ensure_puppet_root(self.cli)
+        returned_root_section = structure.ensure_root(self.cli)
 
         # Verify
         self.assertTrue(returned_root_section is not None)
         self.assertEqual(returned_root_section.name, structure.SECTION_ROOT)
-        puppet_root_section = self.cli.find_section(structure.SECTION_ROOT)
-        self.assertTrue(puppet_root_section is not None)
-        self.assertEqual(puppet_root_section.name, structure.SECTION_ROOT)
+        root_section = self.cli.find_section(structure.SECTION_ROOT)
+        self.assertTrue(root_section is not None)
+        self.assertEqual(root_section.name, structure.SECTION_ROOT)
 
     def test_ensure_puppet_root_idempotency(self):
         # Test
-        structure.ensure_puppet_root(self.cli)
-        returned_root_section = structure.ensure_puppet_root(self.cli)
+        structure.ensure_root(self.cli)
+        returned_root_section = structure.ensure_root(self.cli)
 
         # Verify
         self.assertTrue(returned_root_section is not None)
@@ -60,7 +58,7 @@ class StructureTests(base_cli.ExtensionTests):
         self.assertEqual(repo_section.name, structure.SECTION_REPO)
 
 
-class SectionRetrievalTests(base_cli.ExtensionTests):
+class SectionRetrievalTests(rpm_support_base.PulpClientTests):
 
     def setUp(self):
         super(SectionRetrievalTests, self).setUp()

@@ -20,10 +20,11 @@ from gettext import gettext as _
 
 # -- constants ----------------------------------------------------------------
 
-# Root section all puppet functionality will be located under
-SECTION_ROOT = 'puppet'
+# Root section all RPM specific functionality will be located under
+SECTION_ROOT = 'rpm'
 
 SECTION_REPO = 'repo'
+# Eventually there will be a consumer section
 
 SECTION_GROUP = 'group'
 SECTION_REMOVE = 'remove'
@@ -35,7 +36,7 @@ SECTION_SYNC_SCHEDULES = 'schedules'
 SECTION_PUBLISH = 'publish'
 SECTION_PUBLISH_SCHEDULES = 'schedules'
 
-DESC_ROOT = _('contains commands for working with Puppet repositories')
+DESC_ROOT = _('contains commands for working with repositories containing RPM-related content')
 DESC_REPO = _('repository lifecycle commands')
 
 DESC_GROUP = _('repository group lifecycle commands')
@@ -50,9 +51,9 @@ DESC_PUBLISH_SCHEDULES = _('manage repository publish schedules')
 
 # -- creation -----------------------------------------------------------------
 
-def ensure_puppet_root(cli):
+def ensure_root(cli):
     """
-    Verifies that the root of puppet-related commands exists in the CLI,
+    Verifies that the root of RPM-related commands exists in the CLI,
     creating it using constants from this module if it does not.
 
     :param cli: CLI instance being configured
@@ -73,8 +74,8 @@ def ensure_repo_structure(cli):
     :type  cli: pulp.client.extensions.core.PulpCli
     """
 
-    # Make sure the puppet root is in place
-    root_section = ensure_puppet_root(cli)
+    # Make sure the root is in place
+    root_section = ensure_root(cli)
 
     # There's nothing dynamic about setting up the structure, so if the repo
     # section exists, it's a safe bet it's configured with its necessary
@@ -155,7 +156,7 @@ def _find_section(cli, *path):
     :type  cli: pulp.client.extensions.core.PulpCli
     :param path: path through the nest of sections to the desired section
     :type  path: list of str
-    
+
     :return: section instance that matches the path
     :rtype:  pulp.client.extensions.core.PulpCliSection
     """

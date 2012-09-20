@@ -10,9 +10,9 @@ database = ./index
 crlnumber = ./crlnumber
 
 
-default_days	= 365			# how long to certify for
+default_days	= 10950			# how long to certify for
 # Typically default_crl_days is 30 days, we are making it ~10 years
-default_crl_days= 3650			# how long before next CRL
+default_crl_days= 10950			# how long before next CRL
 
 default_md	= default		# use public key default MD
 preserve	= no			# keep passed DN ordering
