@@ -55,7 +55,7 @@ class TopicPublishManager(object):
                 cls._connection.open()
             except ConnectionError, e:
                 # log the error, but allow life to go on.
-                cls.logger.error(
+                cls.logger.exception(
                     'could not connect to messaging server %s' % address)
                 return
 
@@ -89,4 +89,4 @@ class TopicPublishManager(object):
                 cls.connection().session().sender(destination).send(data)
             except MessagingError, e:
                 # log the error, but allow life to go on.
-                cls.logger.error('could not publish message: %s' % str(e))
+                cls.logger.exception('could not publish message: %s' % str(e))

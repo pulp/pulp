@@ -46,7 +46,7 @@ class TestTopicPublishManager(unittest.TestCase):
         self.assertEqual(connection1, connection2)
 
     @mock.patch.object(Connection, 'open', side_effect=ConnectionError)
-    @mock.patch.object(TopicPublishManager.logger, 'error')
+    @mock.patch.object(TopicPublishManager.logger, 'exception')
     def test_connect_fails(self, mock_error, mock_open):
         connection = self.manager.connection()
         self.assertTrue(connection is None)
@@ -91,7 +91,7 @@ class TestTopicPublishManager(unittest.TestCase):
             json.dumps(mock_event.data.return_value))
 
     @mock.patch('qpid.messaging.Connection.session', side_effect=MessagingError)
-    @mock.patch.object(TopicPublishManager.logger, 'error')
+    @mock.patch.object(TopicPublishManager.logger, 'exception')
     def test_publish_failed(self, mock_error, mock_session):
         # make sure this just logs the error
         mock_event = mock.MagicMock()
