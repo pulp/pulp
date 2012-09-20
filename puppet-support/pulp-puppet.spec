@@ -177,5 +177,8 @@ management and Linux specific commands such as system reboot.
 
 
 %changelog
+* Thu Sep 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-2
+- Fix build errors.
+
 * Thu Sep 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
 - new package built with tito
