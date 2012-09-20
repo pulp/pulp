@@ -55,6 +55,7 @@ mkdir -p %{buildroot}/%{_usr}/lib
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
+mkdir -p %{buildroot}/%{_var}/www/pulp_puppet
 
 # Configuration
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
@@ -89,6 +90,7 @@ A collection of modules shared among all Puppet components.
 
 %files -n python-pulp-puppet-common
 %defattr(-,root,root,-)
+%{python_sitelib}/pulp_puppet
 %{python_sitelib}/pulp_puppet/__init__.py*
 %{python_sitelib}/pulp_puppet/common/
 %doc
@@ -106,7 +108,6 @@ A collection of components shared among Puppet extensions.
 
 %files -n python-pulp-puppet-extension
 %defattr(-,root,root,-)
-%{python_sitelib}/pulp_puppet/__init__.py
 %{python_sitelib}/pulp_puppet/extension/
 %doc
 
@@ -131,6 +132,7 @@ to provide Puppet specific support.
 %{_usr}/lib/pulp/plugins/types/puppet.json
 %{_usr}/lib/pulp/plugins/importers/puppet_importer/
 %{_usr}/lib/pulp/plugins/distributors/puppet_distributor/
+%{_var}/www/pulp_puppet/
 %doc
 
 
