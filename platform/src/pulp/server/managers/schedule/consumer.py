@@ -236,7 +236,7 @@ class ConsumerContentUninstallScheduleManager(ConsumerScheduleManager):
         schedule_id = scheduler.add(call_request, **schedule_data)
         return schedule_id
 
-    def uninstall_unit_uninstall_schedule(self, consumer_id, schedule_id, units=None, uninstall_options=None, schedule_data=None):
+    def update_unit_uninstall_schedule(self, consumer_id, schedule_id, units=None, uninstall_options=None, schedule_data=None):
         """
         Update an existing schedule for uninstalling content units on a consumer.
         @param consumer_id: unique id for the consumer
