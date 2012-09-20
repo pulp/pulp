@@ -14,6 +14,7 @@
 from gettext import gettext as _
 import logging
 
+from pulp.client.extensions.core import PulpPrompt
 from pulp.client.extensions.extensions import PulpCliOptionGroup, PulpCliOption
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand, UntypedUnitAssociationCriteriaCommand
 
@@ -154,7 +155,10 @@ def all(**kwargs):
 
 
 def rpm(**kwargs):
-    _content_command([TYPE_RPM], **kwargs)
+    def out_func(document, filter=FIELDS_RPM):
+        # Inner function to filter rpm fields to display to the end user
+        CONTEXT.prompt.render_document(document, filters=filter)
+    _content_command([TYPE_RPM], out_func=out_func, **kwargs)
 
 
 def srpm(**kwargs):
