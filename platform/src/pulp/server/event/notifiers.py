@@ -22,6 +22,7 @@ plugin point for Pulp) but for current (Jun 21, 2012) needs this is fine.
 
 from pulp.server.event import mail
 import pulp.server.event.rest_api as rest_api
+from pulp.server.event import amqp
 
 # -- constants ----------------------------------------------------------------
 
@@ -67,6 +68,7 @@ def reset():
     NOTIFIER_FUNCTIONS = {
         rest_api.TYPE_ID : rest_api.handle_event,
         mail.TYPE_ID : mail.handle_event,
+        amqp.TYPE_ID : amqp.handle_event,
     }
 
 # Perform the initial populating of the notifier functions on module load

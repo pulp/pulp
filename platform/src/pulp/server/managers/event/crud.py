@@ -186,6 +186,6 @@ def _validate_event_types(event_types):
     if not isinstance(event_types, (tuple, list)) or len(event_types) == 0:
         raise InvalidValue(['event_types'])
 
-    invalid_event_types = [e for e in event_types if e not in ALL_EVENT_TYPES]
+    invalid_event_types = [e for e in event_types if e not in ALL_EVENT_TYPES and e != '*']
     if len(invalid_event_types) > 0:
         raise InvalidValue(['event_types'])
