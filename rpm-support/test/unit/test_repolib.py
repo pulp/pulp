@@ -15,8 +15,8 @@ import shutil
 import unittest
 
 from pulp.client.lock import Lock
-from pulp_rpm.common import repolib
-from pulp_rpm.common.repo_file import MirrorListFile, RepoFile, Repo
+from pulp_rpm.handler import repolib
+from pulp_rpm.handler.repo_file import MirrorListFile, RepoFile, Repo
 
 # -- constants ------------------------------------------------------------------------
 
