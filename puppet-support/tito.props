@@ -1,0 +1,3 @@
+
+[buildconfig]
+tagger = pulptagger.SlavedTagger
