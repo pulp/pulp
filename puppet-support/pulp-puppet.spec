@@ -18,7 +18,7 @@
 
 Name: pulp-puppet
 Version: 0.0.327
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Support for Puppet content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -54,7 +54,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/pulp
 mkdir -p %{buildroot}/%{_usr}/lib
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 
 # Configuration
@@ -126,19 +125,12 @@ to provide Puppet specific support.
 
 %files plugins
 %defattr(-,root,root,-)
-%{python_sitelib}/pulp_puppet/repo_auth/
-%{python_sitelib}/pulp_puppet/yum_plugin/
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+%{python_sitelib}/pulp_puppet/importer/
+%{python_sitelib}/pulp_puppet/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_puppet.conf
-%dir %{_sysconfdir}/pki/pulp/content
-%{_usr}/lib/pulp/plugins/types/rpm_support.json
-%{_usr}/lib/pulp/plugins/importers/yum_importer/
-%{_usr}/lib/pulp/plugins/distributors/yum_distributor/
-%{_usr}/lib/pulp/plugins/distributors/iso_distributor/
-%{_usr}/lib/pulp/plugins/profilers/rpm_errata_profiler/
-%defattr(-,apache,apache,-)
-%{_var}/www/pub
-/srv/pulp/repo_auth.wsgi
+%{_usr}/lib/pulp/plugins/types/puppet.json
+%{_usr}/lib/pulp/plugins/importers/puppet_importer/
+%{_usr}/lib/pulp/plugins/distributors/puppet_distributor/
 %doc
 
 
@@ -156,6 +148,7 @@ client capabilites with Puppet specific features.
 
 %files admin-extensions
 %defattr(-,root,root,-)
+%{_sysconfdir}/pulp/admin/conf.d/puppet.conf
 %{_usr}/lib/pulp/admin/extensions/puppet_repo/
 %doc
 
@@ -186,6 +179,3 @@ management and Linux specific commands such as system reboot.
 %changelog
 * Thu Sep 20 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
 - new package built with tito
-
-* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
-- Puppet Support
