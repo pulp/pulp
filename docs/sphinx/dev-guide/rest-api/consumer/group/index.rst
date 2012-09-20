@@ -6,4 +6,3 @@ Consumer Group APIs
 
    cud
    membership
-   installation
