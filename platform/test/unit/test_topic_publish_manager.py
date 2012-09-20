@@ -32,12 +32,14 @@ class TestTopicPublishManager(unittest.TestCase):
             TopicPublishManager._connection.close()
             TopicPublishManager._connection = None
 
-    def test_connect(self):
+    @mock.patch('qpid.messaging.Connection.open')
+    def test_connect(self, mock_open):
         connection = self.manager.connection()
         self.assertTrue(isinstance(connection, Connection))
-        self.assertTrue(connection.opened)
+        mock_open.assert_called_once_with()
 
-    def test_connection_multiple_calls(self):
+    @mock.patch('qpid.messaging.Connection.open')
+    def test_connection_multiple_calls(self, mock_open):
         # multiple requests should return the same connection object, even
         # across instances
         connection1 = self.manager.connection()
