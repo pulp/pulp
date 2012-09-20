@@ -1,12 +1,7 @@
 Event Listener Creation and Configuration
 =========================================
 
-The Pulp server has the ability to fire events as a response to various actions
-taking place in the server. Event listeners are configured to respond to these
-events. The event listener's "notifier" is the action that will handle the
-event, such as sending a message describing the event over a message bus
-or invoking a callback REST API. Each event listener is the pairing of a notifier
-type, its configuration, and one or more event types to listen for.
+Learn about :ref:`event`
 
 Create an Event Listener
 ------------------------
@@ -24,7 +19,7 @@ when events of the given types are fired.
 
 * :param:`notifier_type_id,str,one of the supported notifier type IDs`
 * :param:`notifier_config,object,configuration values the notifier will use when it handles an event`
-* :param:`event_types,list,list of event type IDs that this listener will handle`
+* :param:`event_types,list,list of event type IDs that this listener will handle. "*" matches all types`
 
 | :response_list:`_`
 
@@ -140,7 +135,7 @@ overwritten.
 | :param_list:`put`
 
 * :param:`?notifier_config,object,dictates changes to the configuration as described above`
-* :param:`?event_types,list,list of new event types for the listener to listen for`
+* :param:`?event_types,list,list of new event types for the listener to listen for. "*" matches all types.`
 
 | :response_list:`_`
 

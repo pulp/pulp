@@ -37,9 +37,9 @@ class GenericSection(PulpCliSection):
         m = _('id of the event listener')
         self.id_option = PulpCliOption('--listener-id', m, required=True)
 
-        m = _('one of "repo-sync-started", "repo-sync-finished", '
-              '"repo-publish-started", "repo-publish-finished". May be '
-              'specified multiple times.')
+        m = _('one of "repo.sync.start", "repo.sync.finish", '
+              '"repo.publish.start", "repo.publish.finish". May be '
+              'specified multiple times. To match all types, use value "*"')
         self.event_types_option = PulpCliOption('--event-type', m,
             required=True, allow_multiple=True)
 
@@ -57,7 +57,7 @@ class GenericSection(PulpCliSection):
         ret.required = not option.required
         return ret
 
-    def _create(self, notifier_type, config, event_type):
+    def _create(self, notifier_type, config, event_types):
         """
         Generic method for creating an event listener
 
@@ -66,12 +66,12 @@ class GenericSection(PulpCliSection):
         :type notifier_type:  basestring
         :param config: dict with config values required by the notifier type
         :type  config: dict
-        :param event_type: type of event as defined in pulp.server.event.data
-        :type  event_type: basestring
+        :param event_types: list of event types as defined in pulp.server.event.data
+        :type  event_types: list
         """
         try:
             self.context.server.event_listener.create(notifier_type, config,
-                event_type)
+                event_types)
         except TypeError:
             raise CommandUsage
         self.context.prompt.render_success_message('Event listener successfully created')
@@ -116,6 +116,7 @@ class ListenerSection(GenericSection):
             _('manage server-side event listeners'))
         self.add_subsection(EmailSection(context))
         self.add_subsection(RestApiSection(context))
+        self.add_subsection(AMQPSection(context))
 
         m = _('list all of the event listeners in the system')
         self.add_command(PulpCliCommand('list', m, self.list))
@@ -209,6 +210,60 @@ class RestApiSection(GenericSection):
         for attr in ('url', 'username', 'password'):
             if kwargs.get(attr) is not None:
                 config[attr] = kwargs[attr]
+
+        delta = {}
+        if config:
+            delta['notifier_config'] = config
+        if kwargs['event-type'] is not None:
+            delta['event_types'] = kwargs['event-type']
+
+        self._update(kwargs['listener-id'], delta)
+
+
+class AMQPSection(GenericSection):
+    def __init__(self, context):
+        super(AMQPSection, self).__init__(context, 'amqp',
+            _('manage amqp listeners'))
+
+        m = _('optional name of an exchange that overrides the setting from'
+              'server.conf')
+        self.exchange_option = PulpCliOption('--exchange', m, required=False)
+
+        create_command = PulpCliCommand('create', _('create a listener'),
+            self.create)
+        create_command.add_option(self.event_types_option)
+        create_command.add_option(self.exchange_option)
+        self.add_command(create_command)
+
+        m = _('update an event listener')
+        update_command = PulpCliCommand('update', m, self.update)
+        update_command.add_option(self.id_option)
+        update_command.add_option(self._copy_flip_required(self.event_types_option))
+        update_command.add_option(self.exchange_option)
+        self.add_command(update_command)
+
+    def create(self, **kwargs):
+        """
+        Create an event listener.
+
+        :param kwargs: dict containing keys "event-type" and optionally 'exchange'
+
+        """
+        config = {}
+        if kwargs[self.exchange_option.keyword]:
+            config[self.exchange_option.keyword] = kwargs[self.exchange_option.keyword]
+        self._create('amqp', config, kwargs['event-type'])
+
+    def update(self, **kwargs):
+        """
+        Update an event listener.
+
+        :param kwargs: dict containing key "listener-id", and optionally
+                       "subject", "addresses", and "event-type"
+        """
+        config = {}
+        if kwargs.get(self.exchange_option.keyword) is not None:
+            config[self.exchange_option.keyword] = kwargs[self.exchange_option.keyword]
 
         delta = {}
         if config:

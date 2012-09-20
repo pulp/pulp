@@ -8,7 +8,7 @@ GIT_ROOT=`pwd`
 TAG_FLAGS=""
 PUSH_FLAGS="--tags"
 
-for SUBPROJECT in platform rpm-support builtins products/pulp-rpm-product
+for SUBPROJECT in platform builtins rpm_support puppet_support products/pulp-rpm-product
 do
   pushd $SUBPROJECT
   echo "tagging $SUBPROJECT"

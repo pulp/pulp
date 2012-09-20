@@ -59,6 +59,7 @@ _default_values = {
         'url': 'tcp://localhost:5672',
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
+        'topic_exchange': 'amq.topic',
     },
     'scheduler': {
         'dispatch_interval': '30',
