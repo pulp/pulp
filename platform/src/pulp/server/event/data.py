@@ -19,13 +19,15 @@ from pulp.server.dispatch import factory as dispatch_factory
 
 # -- constants ----------------------------------------------------------------
 
-# Many more types will be added as this functionality is flushed out
+# Many more types will be added as this functionality is flushed out.
+# These types are used to form AMQP message topic names, so they must be
+# dot-delimited.
 
-TYPE_REPO_PUBLISH_STARTED = 'repo-publish-started'
-TYPE_REPO_PUBLISH_FINISHED = 'repo-publish-finished'
+TYPE_REPO_PUBLISH_STARTED = 'repo.publish.start'
+TYPE_REPO_PUBLISH_FINISHED = 'repo.publish.finish'
 
-TYPE_REPO_SYNC_STARTED = 'repo-sync-started'
-TYPE_REPO_SYNC_FINISHED = 'repo-sync-finished'
+TYPE_REPO_SYNC_STARTED = 'repo.sync.start'
+TYPE_REPO_SYNC_FINISHED = 'repo.sync.finish'
 
 # Please keep the following in alphabetical order
 # (feel free to change this if there's a simpler way)

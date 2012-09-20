@@ -66,6 +66,7 @@ TYPE_REPO_SYNC              = 'repo-sync-manager'
 TYPE_ROLE                   = 'role-manager'
 TYPE_ROLE_QUERY             = 'role-query-manager'
 TYPE_SCHEDULE               = 'schedule-manager'
+TYPE_TOPIC_PUBLISH          = 'topic-publish-manager'
 TYPE_USER                   = 'user-manager'
 TYPE_USER_QUERY             = 'user-query-manager'
 
@@ -331,9 +332,15 @@ def role_query_manager():
 
 def schedule_manager():
     """
-    @rtype: L{pulp.server.manager.schedule.aggregate.AggregateScheduleManager}
+    @rtype: L{pulp.server.managers.schedule.aggregate.AggregateScheduleManager}
     """
     return get_manager(TYPE_SCHEDULE)
+
+def topic_publish_manager():
+    """
+    @rtype: L{pulp.server.managers.event.remote.TopicPublishManager}
+    """
+    return get_manager(TYPE_TOPIC_PUBLISH)
 
 def user_manager():
     """
@@ -381,6 +388,7 @@ def initialize():
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.event.crud import EventListenerManager
     from pulp.server.managers.event.fire import EventFireManager
+    from pulp.server.managers.event.remote import TopicPublishManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.dependency import DependencyManager
@@ -439,6 +447,7 @@ def initialize():
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
         TYPE_SCHEDULE: AggregateScheduleManager,
+        TYPE_TOPIC_PUBLISH: TopicPublishManager,
         TYPE_USER: UserManager,
         TYPE_USER_QUERY: UserQueryManager,
     }
