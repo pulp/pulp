@@ -64,6 +64,41 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         # Test
         self.assertRaises(mixins.ImporterConduitException, self.mixin.set_repo_scratchpad, 'foo')
 
+
+class RepoScratchpadReadMixinTests(unittest.TestCase):
+
+    def setUp(self):
+        manager_factory.initialize()
+
+        self.mixin = mixins.RepoScratchpadReadMixin(mixins.DistributorConduitException)
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.get_repo_scratchpad')
+    def test_get_repo_scratchpad(self, mock_call):
+        # Setup
+        mock_call.return_value = 'foo'
+        repo_id = 'fake-repo'
+
+        # Test
+        sp = self.mixin.get_repo_scratchpad(repo_id)
+
+        # Verify
+        self.assertEqual(sp, 'foo')
+        self.assertEqual(mock_call.call_args[0][0], repo_id)
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.get_repo_scratchpad')
+    def test_get_repo_scratchpad(self, mock_call):
+        # Setup
+        mock_call.return_value = 'foo'
+        repo_id = 'bad-repo'
+
+        # Test
+        sp = self.mixin.get_repo_scratchpad(repo_id)
+
+        # Verify
+        self.assertEqual(sp, 'foo')
+        self.assertEqual(mock_call.call_args[0][0], repo_id)
+
+
 class SingleRepoUnitsMixinTests(unittest.TestCase):
 
     def setUp(self):
@@ -105,6 +140,7 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         # Test
         self.assertRaises(mixins.DistributorConduitException, self.mixin.get_units)
 
+
 class MultipleRepoUnitsMixinTests(unittest.TestCase):
 
     def setUp(self):
@@ -145,6 +181,7 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
 
         # Test
         self.assertRaises(mixins.ImporterConduitException, self.mixin.get_units, 'foo')
+
 
 class ImporterScratchPadMixinTests(unittest.TestCase):
 
@@ -193,6 +230,7 @@ class ImporterScratchPadMixinTests(unittest.TestCase):
         # Test
         self.assertRaises(mixins.ImporterConduitException, self.mixin.set_scratchpad, 'foo')
 
+
 class DistributorScratchPadMixinTests(unittest.TestCase):
 
     def setUp(self):
@@ -240,6 +278,7 @@ class DistributorScratchPadMixinTests(unittest.TestCase):
 
         # Test
         self.assertRaises(mixins.DistributorConduitException, self.mixin.set_scratchpad, 'foo')
+
 
 class RepoGroupDistributorScratchPadMixinTests(unittest.TestCase):
 
@@ -290,6 +329,7 @@ class RepoGroupDistributorScratchPadMixinTests(unittest.TestCase):
 
         # Test
         self.assertRaises(mixins.DistributorConduitException, self.mixin.set_scratchpad, 'foo')
+
 
 class AddUnitMixinTests(unittest.TestCase):
 
@@ -475,6 +515,7 @@ class StatusMixinTests(unittest.TestCase):
 
         # Test
         self.assertRaises(mixins.ImporterConduitException, self.mixin.set_progress, 'foo')
+
 
 class PublishReportMixinTests(unittest.TestCase):
 

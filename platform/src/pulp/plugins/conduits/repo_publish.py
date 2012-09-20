@@ -20,7 +20,8 @@ import logging
 import sys
 
 from pulp.plugins.conduits.mixins import (DistributorConduitException, RepoScratchPadMixin,
-    DistributorScratchPadMixin, RepoGroupDistributorScratchPadMixin, StatusMixin,
+    RepoScratchpadReadMixin, DistributorScratchPadMixin,
+    RepoGroupDistributorScratchPadMixin, StatusMixin,
     SingleRepoUnitsMixin, MultipleRepoUnitsMixin, PublishReportMixin)
 import pulp.server.managers.factory as manager_factory
 
@@ -83,14 +84,17 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
             _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
+
 class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin,
-                              MultipleRepoUnitsMixin, PublishReportMixin):
+                              MultipleRepoUnitsMixin, PublishReportMixin,
+                              RepoScratchpadReadMixin):
 
     def __init__(self, group_id, distributor_id):
         RepoGroupDistributorScratchPadMixin.__init__(self, group_id, distributor_id)
         StatusMixin.__init__(self, distributor_id, DistributorConduitException)
         MultipleRepoUnitsMixin.__init__(self, DistributorConduitException)
         PublishReportMixin.__init__(self)
+        RepoScratchpadReadMixin.__init__(self, DistributorConduitException)
 
         self.group_id = group_id
         self.distributor_id = distributor_id
