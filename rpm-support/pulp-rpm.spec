@@ -114,6 +114,7 @@ A collection of modules shared among all RPM components.
 
 %files -n python-pulp-rpm-common
 %defattr(-,root,root,-)
+%{python_sitelib}/pulp_rpm
 %{python_sitelib}/pulp_rpm/__init__.py*
 %{python_sitelib}/pulp_rpm/common/
 %doc
@@ -131,7 +132,6 @@ A collection of components shared among RPM extensions.
 
 %files -n python-pulp-rpm-extension
 %defattr(-,root,root,-)
-%{python_sitelib}/pulp_rpm/__init__.py
 %{python_sitelib}/pulp_rpm/extension/
 %doc
 
