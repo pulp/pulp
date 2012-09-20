@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -16,152 +14,30 @@ Contains functionality related to rendering the progress report for a the RPM
 plugins (both the sync and publish operations).
 """
 
-import time
 from gettext import gettext as _
-from operator import and_
 
-# -- constants ----------------------------------------------------------------
+from pulp.client.commands.repo.sync_publish import StatusRenderer
 
-STATE_NOT_STARTED = 'NOT_STARTED'
-STATE_RUNNING = 'IN_PROGRESS'
-STATE_COMPLETE = 'FINISHED'
-STATE_FAILED = 'FAILED'
-STATE_SKIPPED = 'SKIPPED'
-END_STATES = (STATE_COMPLETE, STATE_FAILED, STATE_SKIPPED)
-
-# -- public -------------------------------------------------------------------
-
-def display_status(context, task_id=None, task_group_id=None):
-    """
-    Displays and continues to track the sync (with or without auto publish) or
-    publish task running on the server with the given task or task group ID.
-
-    @param context: CLI context
-    @type  context: ClientContext
-
-    @param task_id: must reference a valid task on the server
-    @type  task_id: str
-
-    @param task_group_id: must reference a valid task group on the server
-    @type  task_group_id: str
-    """
-
-    task_list = _get_task_list(context, task_id, task_group_id)
-
-    m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the server.')
-    context.prompt.render_paragraph(m)
-
-    # Handle the cases where we don't want to honor the foreground request
-    if task_list[0].is_rejected():
-        announce = _('The request to synchronize repository was rejected')
-        description = _('This is likely due to an impending delete request for the repository.')
-
-        context.prompt.render_failure_message(announce)
-        context.prompt.render_paragraph(description)
-        return
-
-    if task_list[0].is_postponed():
-        a  = _('The request to synchronize the repository was accepted but postponed '\
-               'due to one or more previous requests against the repository. The sync will '\
-               'take place at the earliest possible time.')
-        context.prompt.render_paragraph(a)
-        return
-
-    renderer = StatusRenderer(context)
-    completed_tasks = []
-
-    try:
-        for task in task_list:
-            task = _display_task_status(context, renderer, task.task_id)
-            completed_tasks.append(task)
-
-    except KeyboardInterrupt:
-        # If the user presses ctrl+c, don't let the error bubble up, just
-        # exit gracefully
-        return
-
-    if reduce(and_, [t.was_successful() for t in completed_tasks]):
-        context.prompt.render_success_message('Successfully synchronized repository')
-    else:
-        context.prompt.render_failure_message('Error during repository synchronization')
-        for t in completed_tasks:
-            if t.was_successful():
-                continue
-            context.prompt.render_failure_message(t.exception)
-
-# -- helper functions ---------------------------------------------------------
-
-def _get_task_list(context, task_id, task_group_id):
-    """
-    Generate a list of tasks for the given task or task group id
-    @return: list of tasks
-    @rtype: list
-    """
-
-    if task_group_id is not None:
-        response = context.server.task_groups.get_task_group(task_group_id)
-        # this relies on the sync task being ordered before the publish task
-        return response.response_body
-
-    elif task_id is not None:
-        response = context.server.tasks.get_task(task_id)
-        return [response.response_body]
-
-    raise ValueError(_('Either task_id or task_group_id must be defined'))
+from pulp_rpm.common import constants
 
 
-def _display_task_status(context, renderer, task_id):
-    """
-    Poll an individual task and display the progress for it.
-    @return: the completed task
-    @rtype: Task
-    """
-
-    begin_spinner = context.prompt.create_spinner()
-    poll_frequency_in_seconds = float(context.config['output']['poll_frequency_in_seconds'])
-
-    response = context.server.tasks.get_task(task_id)
-
-    while not response.response_body.is_completed():
-
-        if response.response_body.is_waiting():
-            begin_spinner.next(_('Waiting to begin'))
-        else:
-            renderer.display_report(response.response_body.progress)
-
-        time.sleep(poll_frequency_in_seconds)
-
-        response = context.server.tasks.get_task(response.response_body.task_id)
-
-    # Even after completion, we still want to display the report one last
-    # time in case there was no poll between, say, the middle of the
-    # package download and when the task itself reports as finished. We
-    # don't want to leave the UI in that half-finished state so this final
-    # call is to clean up and render the completed report.
-    renderer.display_report(response.response_body.progress)
-
-    return response.response_body
-
-# -- internal -----------------------------------------------------------------
-
-class StatusRenderer(object):
+class RpmStatusRenderer(StatusRenderer):
 
     def __init__(self, context):
-        self.context = context
-        self.prompt = context.prompt
+        super(RpmStatusRenderer, self).__init__(context)
 
         # Sync Steps
-        self.metadata_last_state = STATE_NOT_STARTED
-        self.download_last_state = STATE_NOT_STARTED
-        self.errata_last_state = STATE_NOT_STARTED
-        self.comps_last_state = STATE_NOT_STARTED
+        self.metadata_last_state = constants.STATE_NOT_STARTED
+        self.download_last_state = constants.STATE_NOT_STARTED
+        self.errata_last_state = constants.STATE_NOT_STARTED
+        self.comps_last_state = constants.STATE_NOT_STARTED
 
         # Publish Steps
-        self.packages_last_state = STATE_NOT_STARTED
-        self.distributions_last_state = STATE_NOT_STARTED
-        self.generate_metadata_last_state = STATE_NOT_STARTED
-        self.publish_http_last_state = STATE_NOT_STARTED
-        self.publish_https_last_state = STATE_NOT_STARTED
+        self.packages_last_state = constants.STATE_NOT_STARTED
+        self.distributions_last_state = constants.STATE_NOT_STARTED
+        self.generate_metadata_last_state = constants.STATE_NOT_STARTED
+        self.publish_http_last_state = constants.STATE_NOT_STARTED
+        self.publish_https_last_state = constants.STATE_NOT_STARTED
 
         # UI Widgets
         self.metadata_spinner = self.prompt.create_spinner()
@@ -263,20 +139,20 @@ class StatusRenderer(object):
         state = data['state']
 
         # Render nothing if we haven't begun yet
-        if state == STATE_NOT_STARTED:
+        if state == constants.STATE_NOT_STARTED:
             return
 
         details = data['details']
 
         # Only render this on the first non-not-started state
-        if self.download_last_state == STATE_NOT_STARTED:
+        if self.download_last_state == constants.STATE_NOT_STARTED:
             self.prompt.write(_('Downloading repository content...'))
 
         # If it's running or finished, the output is still the same. This way,
         # if the status is viewed after this step, the content download
         # summary is still available.
 
-        if state in (STATE_RUNNING, STATE_COMPLETE) and self.download_last_state not in END_STATES:
+        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.download_last_state not in constants.COMPLETE_STATES:
 
             self.download_last_state = state
 
@@ -313,7 +189,7 @@ class StatusRenderer(object):
 
             self.download_bar.render(overall_done, overall_total, message=bar_message)
 
-            if state == STATE_COMPLETE:
+            if state == constants.STATE_COMPLETE:
                 self.prompt.write(_('... completed'))
                 self.prompt.render_spacer()
 
@@ -349,14 +225,14 @@ class StatusRenderer(object):
                         self.prompt.render_failure_message(message)
                     self.prompt.render_spacer()
 
-        elif state == STATE_FAILED and self.download_last_state not in END_STATES:
+        elif state == constants.STATE_FAILED and self.download_last_state not in constants.COMPLETE_STATES:
 
             # This state means something went horribly wrong. There won't be
             # individual package error details which is why they are only
             # displayed above and not in this case.
 
             self.prompt.write(_('... failed'))
-            self.download_last_state = STATE_FAILED
+            self.download_last_state = constants.STATE_FAILED
 
     def render_errata_step(self, progress_report):
 
@@ -386,30 +262,30 @@ class StatusRenderer(object):
         data = progress_report['yum_distributor']['packages']
         state = data['state']
 
-        if state == STATE_NOT_STARTED:
+        if state == constants.STATE_NOT_STARTED:
             return
 
         # Only render this on the first non-not-started state
-        if self.packages_last_state == STATE_NOT_STARTED:
+        if self.packages_last_state == constants.STATE_NOT_STARTED:
             self.prompt.write(_('Publishing packages...'))
 
         # If it's running or finished, the output is still the same. This way,
         # if the status is viewed after this step, the content download
         # summary is still available.
 
-        if state in (STATE_RUNNING, STATE_COMPLETE) and self.packages_last_state not in END_STATES:
+        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.packages_last_state not in constants.COMPLETE_STATES:
 
             self.packages_last_state = state
             self._render_itemized_in_progress_state(data, _('packages'), self.packages_bar, state)
 
-        elif state == STATE_FAILED and self.packages_last_state not in END_STATES:
+        elif state == constants.STATE_FAILED and self.packages_last_state not in constants.COMPLETE_STATES:
 
             # This state means something went horribly wrong. There won't be
             # individual package error details which is why they are only
             # displayed above and not in this case.
 
             self.prompt.write(_('... failed'))
-            self.packages_last_state = STATE_FAILED
+            self.packages_last_state = constants.STATE_FAILED
 
     def render_distributions_step(self, progress_report):
 
@@ -426,30 +302,30 @@ class StatusRenderer(object):
         data = progress_report['yum_distributor']['distribution']
         state = data['state']
 
-        if state == STATE_NOT_STARTED:
+        if state == constants.STATE_NOT_STARTED:
             return
 
         # Only render this on the first non-not-started state
-        if self.distributions_last_state  == STATE_NOT_STARTED:
+        if self.distributions_last_state  == constants.STATE_NOT_STARTED:
             self.prompt.write(_('Publishing distributions...'))
 
         # If it's running or finished, the output is still the same. This way,
         # if the status is viewed after this step, the content download
         # summary is still available.
 
-        if state in (STATE_RUNNING, STATE_COMPLETE) and self.distributions_last_state not in END_STATES:
+        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.distributions_last_state not in constants.COMPLETE_STATES:
 
             self.distributions_last_state = state
             self._render_itemized_in_progress_state(data, _('distributions'), self.distributions_bar, state)
 
-        elif state == STATE_FAILED and self.distributions_last_state not in END_STATES:
+        elif state == constants.STATE_FAILED and self.distributions_last_state not in constants.COMPLETE_STATES:
 
             # This state means something went horribly wrong. There won't be
             # individual package error details which is why they are only
             # displayed above and not in this case.
 
             self.prompt.write(_('... failed'))
-            self.distributions_last_state = STATE_FAILED
+            self.distributions_last_state = constants.STATE_FAILED
 
     def render_comps_step(self, progress_report):
         # Example Data:
@@ -504,7 +380,7 @@ class StatusRenderer(object):
             self.publish_https_last_state = new_state
         self._render_general_spinner_step(self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
 
-# -- general rendering functions ----------------------------------------------
+    # -- general rendering functions ----------------------------------------------
 
     def _render_general_spinner_step(self, spinner, current_state, last_state, start_text, state_update_func):
         """
@@ -531,34 +407,34 @@ class StatusRenderer(object):
         """
 
         # Render nothing if we haven't begun yet
-        if current_state == STATE_NOT_STARTED:
+        if current_state == constants.STATE_NOT_STARTED:
             return
 
         # Only render this on the first non-not-started state
-        if last_state == STATE_NOT_STARTED:
+        if last_state == constants.STATE_NOT_STARTED:
             self.prompt.write(start_text)
 
-        if current_state == STATE_RUNNING:
+        if current_state == constants.STATE_RUNNING:
             spinner.next()
-            state_update_func(STATE_RUNNING)
+            state_update_func(constants.STATE_RUNNING)
 
-        elif current_state == STATE_COMPLETE and last_state not in END_STATES:
+        elif current_state == constants.STATE_COMPLETE and last_state not in constants.COMPLETE_STATES:
             spinner.next(finished=True)
             self.prompt.write(_('... completed'))
             self.prompt.render_spacer()
-            state_update_func(STATE_COMPLETE)
+            state_update_func(constants.STATE_COMPLETE)
 
-        elif current_state == STATE_SKIPPED and last_state not in END_STATES:
+        elif current_state == constants.STATE_SKIPPED and last_state not in constants.COMPLETE_STATES:
             spinner.next(finished=True)
             self.prompt.write(_('... skipped'))
             self.prompt.render_spacer()
-            state_update_func(STATE_SKIPPED)
+            state_update_func(constants.STATE_SKIPPED)
 
-        elif current_state == STATE_FAILED and last_state not in END_STATES:
+        elif current_state == constants.STATE_FAILED and last_state not in constants.COMPLETE_STATES:
             spinner.next(finished=True)
             self.prompt.write(_('... failed'))
             self.prompt.render_spacer()
-            state_update_func(STATE_FAILED)
+            state_update_func(constants.STATE_FAILED)
 
     def _render_itemized_in_progress_state(self, data, type_name, progress_bar, state):
         """
@@ -590,7 +466,7 @@ class StatusRenderer(object):
 
         progress_bar.render(items_done, items_total, message=bar_message)
 
-        if state == STATE_COMPLETE:
+        if state == constants.STATE_COMPLETE:
             self.prompt.write(_('... completed'))
             self.prompt.render_spacer()
 

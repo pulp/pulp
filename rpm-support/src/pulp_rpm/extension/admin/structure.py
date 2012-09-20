@@ -27,9 +27,11 @@ SECTION_REPO = 'repo'
 # Eventually there will be a consumer section
 
 SECTION_GROUP = 'group'
-SECTION_REMOVE = 'remove'
-SECTION_UPLOADS = 'uploads'
 SECTION_GROUP_MEMBERS = 'members'
+
+SECTION_COPY = 'copy'
+SECTION_UPLOADS = 'uploads'
+SECTION_REMOVE = 'remove'
 
 SECTION_SYNC = 'sync'
 SECTION_SYNC_SCHEDULES = 'schedules'
@@ -41,8 +43,10 @@ DESC_REPO = _('repository lifecycle commands')
 
 DESC_GROUP = _('repository group lifecycle commands')
 DESC_GROUP_MEMBERS = _('manage membership in a repository group')
-DESC_REMOVE = _('remove copied or uploaded modules from a repository')
+
+DESC_COPY = _('copies one or more content units between repositories')
 DESC_UPLOADS = _('upload modules into a repository')
+DESC_REMOVE = _('remove copied or uploaded modules from a repository')
 
 DESC_SYNC = _('run, schedule, or view the status of sync tasks')
 DESC_SYNC_SCHEDULES = _('manage repository sync schedules')
@@ -89,6 +93,7 @@ def ensure_repo_structure(cli):
     # Add the direct subsections of repo
     direct_subsections = (
         (SECTION_GROUP, DESC_GROUP),
+        (SECTION_COPY, DESC_COPY),
         (SECTION_REMOVE, DESC_REMOVE),
         (SECTION_UPLOADS, DESC_UPLOADS),
         (SECTION_SYNC, DESC_SYNC),
@@ -113,6 +118,10 @@ def ensure_repo_structure(cli):
 
 def repo_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO)
+
+
+def repo_copy_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_COPY)
 
 
 def repo_remove_section(cli):
