@@ -67,9 +67,6 @@ class RepoScratchPadMixin(object):
         and distributors on the repository. Care should be taken to not destroy
         any data set by another plugin. This may be used to communicate between
         importers and distributors relevant data for the repository.
-
-        @raise ImporterConduitException: wraps any exception that may occur
-               in the Pulp server
         """
         try:
             repo_manager = manager_factory.repo_manager()
@@ -97,6 +94,32 @@ class RepoScratchPadMixin(object):
             repo_manager.set_repo_scratchpad(self.repo_id, value)
         except Exception, e:
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            raise self.exception_class(e), None, sys.exc_info()[2]
+
+
+class RepoScratchpadReadMixin(object):
+    """
+    Used for read only access to a repository's scratchpad. The intention is for
+    this to be used by repository group plugins to access but not change
+    the scratchpads for the repositories in the group.
+    """
+
+    def __init__(self, exception_class):
+        self.exception_class = exception_class
+
+    def get_repo_scratchpad(self, repo_id):
+        """
+        Returns the repository-level scratchpad for the indicated repository.
+
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
+        """
+        try:
+            repo_manager = manager_factory.repo_manager()
+            value = repo_manager.get_repo_scratchpad(repo_id)
+            return value
+        except Exception, e:
+            _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
 
