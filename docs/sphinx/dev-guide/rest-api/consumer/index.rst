@@ -8,6 +8,7 @@ Consumer APIs
    bind
    retrieval
    content
+   scheduled_content
    history
    profile
    applicability
