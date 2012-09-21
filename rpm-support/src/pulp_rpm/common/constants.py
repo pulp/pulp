@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -10,3 +8,13 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+# -- progress states ----------------------------------------------------------
+
+STATE_NOT_STARTED = 'NOT_STARTED'
+STATE_RUNNING = 'IN_PROGRESS'
+STATE_COMPLETE = 'FINISHED'
+STATE_FAILED = 'FAILED'
+STATE_SKIPPED = 'SKIPPED'
+
+COMPLETE_STATES = (STATE_COMPLETE, STATE_FAILED, STATE_SKIPPED)
