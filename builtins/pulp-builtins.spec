@@ -94,6 +94,9 @@ client capabilities.
 
 
 %changelog
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-2
+- Remove pulp_upload extension. (jortel@redhat.com)
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - 854632 - added --password and -p options to user update command to update
   password in a non-interactive and interactive fashion respectively
