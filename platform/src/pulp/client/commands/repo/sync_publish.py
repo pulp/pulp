@@ -27,11 +27,16 @@ from pulp.client.extensions.extensions import PulpCliCommand
 # Command Descriptions
 
 DESC_SYNC_RUN = _('triggers an immediate sync of a repository')
-DESC_STATUS = _('displays the status of a repository\'s sync tasks')
+DESC_SYNC_STATUS = _('displays the status of a repository\'s sync tasks')
+
+DESC_PUBLISH_RUN = _('triggers an immediate publish of a repository')
+DESC_PUBLISH_STATUS = _('displays the status of a repository\'s publish tasks')
 
 NAME_BACKGROUND = 'bg'
-DESC_BACKGROUND = _('if specified, the CLI process will end but the sync will continue on '
+DESC_BACKGROUND = _('if specified, the CLI process will end but the process will continue on '
                     'the server; the progress can be later displayed using the status command')
+
+DEFAULT_DISTRIBUTOR_ID = 'yum_distributor'
 
 # -- hooks --------------------------------------------------------------------
 
@@ -99,7 +104,7 @@ class RunSyncRepositoryCommand(PulpCliCommand):
 
 
 class SyncStatusCommand(PulpCliCommand):
-    def __init__(self, context, renderer, name='status', description=DESC_STATUS, method=None):
+    def __init__(self, context, renderer, name='status', description=DESC_SYNC_STATUS, method=None):
 
         if method is None:
             method = self.run
@@ -113,4 +118,77 @@ class SyncStatusCommand(PulpCliCommand):
         self.add_option(options.OPTION_REPO_ID)
 
     def run(self, **kwargs):
+        pass
+
+
+class RunPublishRepositoryCommand(PulpCliCommand):
+    """
+    Requests an immediate publish for a repository. If the publish begins (it is not
+    postponed or rejected), the provided renderer will be used to track its
+    progress. The user has the option to exit the progress polling or skip it
+    entirely through a flag on the run command.
+    """
+
+    def __init__(self, context, renderer, name='run', description=DESC_PUBLISH_RUN, method=None, distributor_id=DEFAULT_DISTRIBUTOR_ID):
+
+        if method is None:
+            method = self.run
+
+        super(RunPublishRepositoryCommand, self).__init__(name, description, method)
+
+        self.context = context
+        self.prompt = context.prompt
+        self.renderer = renderer
+        self.distributor_id = distributor_id
+
+        self.add_option(options.OPTION_REPO_ID)
+        self.create_flag('--' + NAME_BACKGROUND, DESC_BACKGROUND)
+        
+
+    def run(self, **kwargs):
+        repo_id = kwargs[options.OPTION_REPO_ID.keyword]
+        background = kwargs[NAME_BACKGROUND]
+
+        self.prompt.render_title(_('Publishing Repository [%(r)s]') % {'r' : repo_id})
+
+        # See if an existing publish is running for the repo. If it is, resume
+        # progress tracking.
+        existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
+        task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
+
+        if task_id is not None:
+            msg = _('A publish task is already in progress for this repository. ')
+            if not background:
+                msg += _('Its progress will be tracked below.')
+            self.context.prompt.render_paragraph(msg, tag='in-progress')
+
+        else:
+            # Trigger the publish call. Eventually the None in the call should
+            # be replaced with override options read in from the CLI.
+            response = self.context.server.repo_actions.publish(repo_id, self.distributor_id, None)
+            task_id = response.response_body.task_id
+
+        if not background:
+            status.display_task_status(self.context, self.renderer, task_id)
+        else:
+            msg = _('The status of this publish can be displayed using the status command.')
+            self.context.prompt.render_paragraph(msg, 'background')
+            
+
+class PublishStatusCommand(PulpCliCommand):
+    def __init__(self, context, renderer, name='status', description=DESC_PUBLISH_STATUS, method=None):
+
+        if method is None:
+            method = self.run
+
+        super(PublishStatusCommand, self).__init__(name, description, method)
+
+        self.context = context
+        self.prompt = context.prompt
+        self.renderer = renderer
+
+        self.add_option(options.OPTION_REPO_ID)
+
+
+    def status(self, **kwargs):
         pass

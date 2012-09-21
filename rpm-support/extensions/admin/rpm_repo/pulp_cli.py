@@ -22,10 +22,13 @@ from pulp.client.arg_utils import (InvalidConfig, convert_boolean_arguments,
 # -- constants ----------------------------------------------------------------
 
 IMPORTER_TYPE_ID = 'yum_importer'
-DISTRIBUTOR_TYPE_ID = 'yum_distributor'
+YUM_DISTRIBUTOR_TYPE_ID = 'yum_distributor'
+ISO_DISTRIBUTOR_TYPE_ID = 'iso_distributor'
+
 
 # ID the repo will use to refer to the automatically added yum distributor
-DISTRIBUTOR_ID = DISTRIBUTOR_TYPE_ID
+YUM_DISTRIBUTOR_ID = YUM_DISTRIBUTOR_TYPE_ID
+ISO_DISTRIBUTOR_ID = ISO_DISTRIBUTOR_TYPE_ID
 
 # Tuples of importer key name to more user-friendly CLI name. This must be a
 # list of _all_ importer config values as the process of building up the
@@ -53,7 +56,7 @@ IMPORTER_CONFIG_KEYS = [
     ('purge_orphaned', 'remove_orphaned'),
 ]
 
-DISTRIBUTOR_CONFIG_KEYS = [
+YUM_DISTRIBUTOR_CONFIG_KEYS = [
     ('relative_url', 'relative_url'),
     ('http', 'serve_http'),
     ('https', 'serve_https'),
@@ -63,6 +66,20 @@ DISTRIBUTOR_CONFIG_KEYS = [
     ('auth_cert', 'auth_cert'),
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
+    ('skip', 'skip'),
+]
+
+
+ISO_DISTRIBUTOR_CONFIG_KEYS = [
+    ('http', 'serve_http'),
+    ('https', 'serve_https'),
+    ('https_ca', 'host_ca'),
+    ('generate_metadata', 'regenerate_metadata'),
+    ('https_publish_dir', 'https_publish_dir'),
+    ('http_publish_dir', 'http_publish_dir'),
+    ('start_date', 'start_date'),
+    ('end_date', 'end_date'),
+    ('iso_prefix', 'iso_prefix'),
     ('skip', 'skip'),
 ]
 
@@ -125,14 +142,15 @@ class YumRepoCreateCommand(PulpCliCommand):
             if 'note' in kwargs and kwargs['note'] is not None:
                 notes = args_to_notes_dict(kwargs['note'], include_none=False)
             importer_config = args_to_importer_config(kwargs)
-            distributor_config = args_to_distributor_config(kwargs)
+            yum_distributor_config = args_to_distributor_config(kwargs)
+            iso_distributor_config = args_to_iso_distributor_config(kwargs)
         except InvalidConfig, e:
             self.context.prompt.render_failure_message(e[0])
             return
 
         # During create (but not update), if the relative path isn't specified
         # it is derived from the feed_url
-        if 'relative_url' not in distributor_config:
+        if 'relative_url' not in yum_distributor_config:
             if 'feed_url' in importer_config:
                 url_parse = urlparse(encode_unicode(importer_config['feed_url']))
 
@@ -140,27 +158,45 @@ class YumRepoCreateCommand(PulpCliCommand):
                     relative_path = '/' + repo_id
                 else:
                     relative_path = url_parse[2]
-                distributor_config['relative_url'] = relative_path
+                yum_distributor_config['relative_url'] = relative_path
             else:
-                distributor_config['relative_url'] = repo_id
+                yum_distributor_config['relative_url'] = repo_id
 
         # Both http and https must be specified in the distributor config, so
         # make sure they are initiall set here (default to only https)
-        if 'http' not in distributor_config and 'https' not in distributor_config:
-            distributor_config['https'] = True
-            distributor_config['http'] = False
+        if 'http' not in yum_distributor_config and 'https' not in yum_distributor_config:
+            yum_distributor_config['https'] = True
+            yum_distributor_config['http'] = False
 
         # Make sure both are referenced
         for k in ('http', 'https'):
-            if k not in distributor_config:
-                distributor_config[k] = False
+            if k not in yum_distributor_config:
+                yum_distributor_config[k] = False
 
         # Likely a temporary hack as we continue to refine how metadata generation
         # is done on the distributor
-        distributor_config['generate_metadata'] = True
+        yum_distributor_config['generate_metadata'] = True
+        
+        
+        
+        # Both http and https must be specified in the distributor config, so
+        # make sure they are initiall set here (default to only https)
+        if 'http' not in iso_distributor_config and 'https' not in iso_distributor_config:
+            iso_distributor_config['https'] = True
+            iso_distributor_config['http'] = False
+
+        # Make sure both are referenced
+        for k in ('http', 'https'):
+            if k not in iso_distributor_config:
+                iso_distributor_config[k] = False
+
+        # Likely a temporary hack as we continue to refine how metadata generation
+        # is done on the distributor
+        iso_distributor_config['generate_metadata'] = True
 
         # Package distributors for the call
-        distributors = [(DISTRIBUTOR_TYPE_ID, distributor_config, True, DISTRIBUTOR_ID)]
+        distributors = [(YUM_DISTRIBUTOR_TYPE_ID, yum_distributor_config, True, YUM_DISTRIBUTOR_ID), 
+                        (ISO_DISTRIBUTOR_TYPE_ID, iso_distributor_config, True, ISO_DISTRIBUTOR_ID)]
 
         # Create the repository; let exceptions bubble up to the framework exception handler
         self.context.server.repo.create_and_configure(repo_id, display_name, description, notes, IMPORTER_TYPE_ID, importer_config, distributors)
@@ -442,7 +478,7 @@ def args_to_distributor_config(kwargs):
     @return: config to pass into the add/update distributor calls
     @raise InvalidConfig: if one or more arguments is not valid for the distributor
     """
-    distributor_config = _prep_config(kwargs, DISTRIBUTOR_CONFIG_KEYS)
+    distributor_config = _prep_config(kwargs, YUM_DISTRIBUTOR_CONFIG_KEYS)
 
     # Parsing of true/false
     boolean_arguments = ('http', 'https', 'generate_metadata')
@@ -472,6 +508,34 @@ def args_to_distributor_config(kwargs):
             distributor_config['protected'] = True
 
     LOG.debug('Distributor configuration options')
+    LOG.debug(distributor_config)
+
+    return distributor_config
+
+def args_to_iso_distributor_config(kwargs):
+    """
+    Takes the arguments read from the CLI and converts the client-side input
+    to the server-side expectations. The supplied dict will not be modified.
+
+    @return: config to pass into the add/update distributor calls
+    @raise InvalidConfig: if one or more arguments is not valid for the distributor
+    """
+    distributor_config = _prep_config(kwargs, ISO_DISTRIBUTOR_CONFIG_KEYS)
+
+    # Parsing of true/false
+    boolean_arguments = ('http', 'https', 'generate_metadata')
+    convert_boolean_arguments(boolean_arguments, distributor_config)
+
+    # Read in the contents of any files that were specified
+    file_arguments = ('https_ca',)
+    convert_file_contents(file_arguments, distributor_config)
+
+    # Handle skip types
+    if distributor_config.get('skip', None) is not None:
+        skip_as_list = _convert_skip_types(distributor_config['skip'])
+        distributor_config['skip'] = skip_as_list
+
+    LOG.debug('ISO Distributor configuration options')
     LOG.debug(distributor_config)
 
     return distributor_config
