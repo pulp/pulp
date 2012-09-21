@@ -235,6 +235,9 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-2
+- Fix for removed _upload extensions.
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - Added single definition of RPM extension structure (jason.dobies@redhat.com)
 - 854347 - standardize skip terminology (pkilambi@redhat.com)
