@@ -13,7 +13,8 @@
 
 from pulp.client.commands.repo import cudl, group, sync_publish, upload
 
-from pulp_rpm.extension.admin import (copy, remove, repo, status, structure, sync_schedules)
+from pulp_rpm.extension.admin import (contents, copy, remove, repo, status,
+                                      structure, sync_schedules)
 
 def initialize(context):
     structure.ensure_repo_structure(context.cli)
@@ -42,6 +43,15 @@ def initialize(context):
     remove_section.add_command(remove.ErrataRemoveCommand(context))
     remove_section.add_command(remove.PackageGroupRemoveCommand(context))
     remove_section.add_command(remove.PackageCategoryRemoveCommand(context))
+
+    contents_section = structure.repo_contents_section(context.cli)
+    contents_section.add_command(contents.SearchRpmsCommand(context))
+    contents_section.add_command(contents.SearchDrpmsCommand(context))
+    contents_section.add_command(contents.SearchSrpmsCommand(context))
+    contents_section.add_command(contents.SearchPackageGroupsCommand(context))
+    contents_section.add_command(contents.SearchPackageCategoriesCommand(context))
+    contents_section.add_command(contents.SearchDistributionsCommand(context))
+    contents_section.add_command(contents.SearchErrataCommand(context))
 
     sync_section = structure.repo_sync_section(context.cli)
     renderer = status.RpmStatusRenderer(context)

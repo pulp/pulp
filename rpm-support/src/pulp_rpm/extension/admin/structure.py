@@ -32,6 +32,7 @@ SECTION_GROUP_MEMBERS = 'members'
 SECTION_COPY = 'copy'
 SECTION_UPLOADS = 'uploads'
 SECTION_REMOVE = 'remove'
+SECTION_CONTENTS = 'contents'
 
 SECTION_SYNC = 'sync'
 SECTION_SYNC_SCHEDULES = 'schedules'
@@ -47,6 +48,7 @@ DESC_GROUP_MEMBERS = _('manage membership in a repository group')
 DESC_COPY = _('copies one or more content units between repositories')
 DESC_UPLOADS = _('upload modules into a repository')
 DESC_REMOVE = _('remove copied or uploaded modules from a repository')
+DESC_CONTENTS = _('search the contents of a repository')
 
 DESC_SYNC = _('run, schedule, or view the status of sync tasks')
 DESC_SYNC_SCHEDULES = _('manage repository sync schedules')
@@ -95,6 +97,7 @@ def ensure_repo_structure(cli):
         (SECTION_GROUP, DESC_GROUP),
         (SECTION_COPY, DESC_COPY),
         (SECTION_REMOVE, DESC_REMOVE),
+        (SECTION_CONTENTS, DESC_CONTENTS),
         (SECTION_UPLOADS, DESC_UPLOADS),
         (SECTION_SYNC, DESC_SYNC),
         (SECTION_PUBLISH, DESC_PUBLISH),
@@ -134,6 +137,10 @@ def repo_uploads_section(cli):
 
 def repo_group_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP)
+
+
+def repo_contents_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_CONTENTS)
 
 
 def repo_group_members_section(cli):
