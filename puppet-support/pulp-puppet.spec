@@ -18,7 +18,7 @@
 
 Name: pulp-puppet
 Version: 0.0.327
-Release: 2%{?dist}
+Release: 1%{?dist}
 Summary: Support for Puppet content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
