@@ -33,7 +33,7 @@ _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 REQUIRED_CONFIG_KEYS = ["http", "https"]
-OPTIONAL_CONFIG_KEYS = ["https_ca", "generate_metadata", "https_publish_dir","http_publish_dir", "start_date", "end_date", "iso_prefix", "skip"]
+OPTIONAL_CONFIG_KEYS = ["https_ca", "https_publish_dir","http_publish_dir", "start_date", "end_date", "iso_prefix", "skip"]
 
 ###
 # Config Options Explained
@@ -41,7 +41,6 @@ OPTIONAL_CONFIG_KEYS = ["https_ca", "generate_metadata", "https_publish_dir","ht
 # http                  - True/False:  Publish through http
 # https                 - True/False:  Publish through https
 # https_ca              - CA to verify https communication
-# generate_metadata     - True will run createrepo
 # start_date            - errata start date format eg: "2009-03-30 00:00:00"
 # end_date              - errata end date format eg: "2009-03-30 00:00:00"
 # http_publish_dir      - Optional parameter to override the HTTP_PUBLISH_DIR, mainly used for unit tests
@@ -101,12 +100,6 @@ class ISODistributor(Distributor):
                 msg = _("Configuration key '%(key)s' is not supported" % {"key":key})
                 _LOG.error(msg)
                 return False, msg
-            if key == 'generate_metadata':
-                generate_metadata = config.get('generate_metadata')
-                if generate_metadata is not None and not isinstance(generate_metadata, bool):
-                    msg = _("generate_metadata should be a boolean; got %s instead" % generate_metadata)
-                    _LOG.error(msg)
-                    return False, msg
             if key == 'skip':
                 metadata_types = config.get('skip')
                 if metadata_types is not None and not isinstance(metadata_types, list):
@@ -176,6 +169,7 @@ class ISODistributor(Distributor):
         skip_types = config.get("skip") or []
         repo_exporter = RepoExporter(repo_working_dir, skip=skip_types)
         date_filter = repo_exporter.create_date_range_filter(config)
+        groups_xml_path = None
         if date_filter:
             # export errata by date and associated rpm units
             criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA], unit_filters=date_filter)
@@ -186,13 +180,9 @@ class ISODistributor(Distributor):
             rpm_summary, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
             if self.canceled:
                 return publish_conduit.build_failure_report(self.summary, self.details)
-            # generate metadata
-            metadata_status, metadata_errors = metadata.generate_metadata(
-                    repo_working_dir, publish_conduit, config, progress_callback)
-            _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
             errata_summary, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
             self.summary = dict(self.summary.items() + rpm_summary.items() + errata_summary.items())
-            self.details["errors"] = rpm_errors +  errata_errors + metadata_errors
+            self.details["errors"] = rpm_errors +  errata_errors
         else:
             # export everything
             # export rpms
@@ -217,10 +207,7 @@ class ISODistributor(Distributor):
 
             if self.canceled:
                 return publish_conduit.build_failure_report(self.summary, self.details)
-            # generate metadata
-            metadata_status, metadata_errors = metadata.generate_metadata(
-                    repo_working_dir, publish_conduit, config, progress_callback, groups_xml_path)
-            _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+
             # export errata
             criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
             errata_units = publish_conduit.get_units(criteria=criteria)
@@ -231,8 +218,14 @@ class ISODistributor(Distributor):
             distro_units = publish_conduit.get_units(criteria=criteria)
             distro_summary, distro_errors = repo_exporter.export_distributions(distro_units, progress_callback=progress_callback)
             # sum up summary and details
-            self.details["errors"] = rpm_errors + distro_errors + errata_errors + metadata_errors
+            self.details["errors"] = rpm_errors + distro_errors + errata_errors
             self.summary = dict(self.summary.items() + rpm_summary.items() + errata_summary.items() + distro_summary.items())
+        # generate metadata
+        metadata_status, metadata_errors = metadata.generate_yum_metadata(
+            repo_working_dir, rpm_units, publish_conduit, config, progress_callback, is_cancelled=self.canceled,
+            group_xml_path=groups_xml_path, updateinfo_xml_path=errata_summary["updateinfo_xml_path"])
+        _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
+        self.details["errors"] += metadata_errors
         # build iso and publish via HTTPS
         self._publish_isos(repo, config, progress_callback=progress_callback)
         _LOG.info("Publish complete:  summary = <%s>, details = <%s>" % (self.summary, self.details))

@@ -36,6 +36,7 @@ __yum_lock = threading.Lock()
 # Responsible for 2 tasks.  1) Restrict only one createrepo per repo_dir, 2) Allow an async cancel of running createrepo
 CREATE_REPO_PROCESS_LOOKUP = {}
 CREATE_REPO_PROCESS_LOOKUP_LOCK = threading.Lock()
+DEFAULT_CHECKSUM = "sha256"
 
 class CreateRepoError(Exception):
     pass
@@ -124,7 +125,6 @@ def get_repo_checksum_type(publish_conduit, config):
       @return checksum_type value
       @rtype str
     """
-    DEFAULT_CHECKSUM = "sha256"
     checksum_type = config.get('checksum_type')
     if checksum_type:
         return checksum_type
@@ -377,22 +377,32 @@ class YumMetadataGenerator(object):
     """
     Yum metadata generator using per package snippet approach
     """
-    def __init__(self, repodir, units_to_write, publish_conduit, checksum_type="sha256", skip_metadata_types=None, is_cancelled=False):
+    def __init__(self, repodir, rpm_units_to_write, publish_conduit, checksum_type="sha256",
+                 skip_metadata_types=None, is_cancelled=False, group_xml_path=None, updateinfo_xml_path=None, repo_scratchpad=None):
         """
         @param repo_dir: repository dir where the repodata directory is created/exists
         @type  repo_dir: str
 
-        @param units_to_write: List of rpm units from which repodata is taken and merged
-        @type units_to_write: [AssociatedUnit]
+        @param rpm_units_to_write: List of rpm units from which repodata is taken and merged
+        @type rpm_units_to_write: [AssociatedUnit]
 
         @param checksum_type: checksum type to use when generating repodata; default is sha256
         @type  checksum_type: str
 
         @param skip_metadata_types: list of metadata ftypes to skip from the repodata
         @type  skip_metadata_types: []
+
+        @param group_xml_path: path to comps xml to be merged with repodata
+        @type group_xml_path: str
+
+        @param updateinfo_xml_path: path to updateinfo xml to be merged with repodata
+        @type updateinfo_xml_path: str
+
+        @param repo_scratchpad: repository scratchpad to lookup custom metadata if any
+        @param repo_scratchpad: {}
         """
         self.repodir = repodir
-        self.units = units_to_write
+        self.units = rpm_units_to_write
         self.checksum_type = checksum_type
         self.skip = skip_metadata_types or []
 
@@ -402,6 +412,9 @@ class YumMetadataGenerator(object):
         self.backup_repodata_dir = None
         self.is_cancelled=is_cancelled
         self.publish_conduit = publish_conduit
+        self.group_xml_path= group_xml_path
+        self.updateinfo_xml_path = updateinfo_xml_path
+        self.repo_scratchpad = repo_scratchpad
         self.setup_temp_working_dir()
         self.metadata_conf = self.setup_metadata_conf()
 
@@ -537,7 +550,11 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
         merge any repodata preserved on the repo scratchpad
         """
         _LOG.info("check scratchpad for any repodata")
-        repo_scratchpad = self.publish_conduit.get_repo_scratchpad()
+        if self.repo_scratchpad:
+            repo_scratchpad = self.repo_scratchpad
+        else:
+            repo_scratchpad = self.publish_conduit.get_repo_scratchpad()
+
         current_repo_dir = os.path.join(self.repodir, "repodata")
         if not repo_scratchpad.has_key("repodata"):
             return False
@@ -567,26 +584,36 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
         query package groups and categories units, generate and write comps xml
         """
         repodata_working_dir = os.path.join(self.repodir, "repodata")
-        criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY])
-        existing_units = self.publish_conduit.get_units(criteria=criteria)
-        existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
-        existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
-        groups_xml_path = comps_util.write_comps_xml(repodata_working_dir, existing_groups, existing_cats)
-        if groups_xml_path is not None and os.path.isfile(groups_xml_path):
-            _LOG.info("Modifying repo for %s metadata" % "comps")
-            modify_repo(repodata_working_dir, groups_xml_path)
+        if self.group_xml_path is not None and os.path.exists(self.group_xml_path):
+            groups_xml_path = self.group_xml_path
+        else:
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY])
+            existing_units = self.publish_conduit.get_units(criteria=criteria)
+            existing_groups = filter(lambda u : u.type_id in [TYPE_ID_PKG_GROUP], existing_units)
+            existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
+            groups_xml_path = comps_util.write_comps_xml(repodata_working_dir, existing_groups, existing_cats)
+            if groups_xml_path is None or not os.path.isfile(groups_xml_path):
+                # no group xml formed nothing to do
+                return
+        _LOG.info("Modifying repo for %s metadata" % "comps")
+        modify_repo(repodata_working_dir, groups_xml_path)
 
     def reconstruct_merge_updateinfo_xml(self):
         """
         query errata units, generate and write updateinfo xml
         """
         repodata_working_dir = os.path.join(self.repodir, "repodata")
-        criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
-        errata_units = self.publish_conduit.get_units(criteria=criteria)
-        updateinfo_path = updateinfo.updateinfo(errata_units, repodata_working_dir)
-        if updateinfo_path is not None and os.path.isfile(updateinfo_path):
-            _LOG.info("Modifying repo for %s metadata" % "updateinfo")
-            modify_repo(repodata_working_dir, updateinfo_path)
+        if self.updateinfo_xml_path is not None and os.path.exists(self.updateinfo_xml_path):
+            updateinfo_path = self.updateinfo_xml_path
+        else:
+            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
+            errata_units = self.publish_conduit.get_units(criteria=criteria)
+            updateinfo_path = updateinfo.updateinfo(errata_units, repodata_working_dir)
+            if updateinfo_path is None or not os.path.isfile(updateinfo_path):
+                # no updateinfo xml formed, nothing to do
+                return
+        _LOG.info("Modifying repo for %s metadata" % "updateinfo")
+        modify_repo(repodata_working_dir, updateinfo_path)
 
     def merge_other_filetypes(self):
         """
@@ -653,7 +680,8 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
         # merge any custom metadata stored on the scratchpad
         self.merge_repodata_on_scratchpad()
 
-def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, progress_callback=None, is_cancelled=False):
+def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, progress_callback=None,
+                          is_cancelled=False, group_xml_path=None, updateinfo_xml_path=None, repo_scratchpad=None):
     """
       build all the necessary info and invoke createrepo to generate metadata
 
@@ -677,7 +705,13 @@ def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, pro
     """
     errors = []
     metadata_progress_status = {"state" : "IN_PROGRESS"}
-    checksum_type = get_repo_checksum_type(publish_conduit, config)
+    if repo_scratchpad:
+        if repo_scratchpad.has_key("checksum_type"):
+            checksum_type = repo_scratchpad["checksum_type"]
+        else:
+            checksum_type = DEFAULT_CHECKSUM
+    else:
+        checksum_type = get_repo_checksum_type(publish_conduit, config)
     skip_metadata_types = config.get('skip') or []
     skip_metadata_types = convert_content_to_metadata_type(skip_metadata_types)
 
@@ -685,7 +719,8 @@ def generate_yum_metadata(repo_dir, units_to_write, publish_conduit, config, pro
     try:
         set_progress("metadata", metadata_progress_status, progress_callback)
         create_yum_metadata = YumMetadataGenerator(repo_dir, units_to_write, publish_conduit, checksum_type=checksum_type,
-            skip_metadata_types=skip_metadata_types, is_cancelled=is_cancelled)
+            skip_metadata_types=skip_metadata_types, is_cancelled=is_cancelled, group_xml_path=group_xml_path,
+            updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=repo_scratchpad)
         create_yum_metadata.run()
     except CancelException, ce:
         metadata_progress_status = {"state" : "CANCELED"}
