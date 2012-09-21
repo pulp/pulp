@@ -75,8 +75,6 @@ ISO_DISTRIBUTOR_CONFIG_KEYS = [
     ('https', 'serve_https'),
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
-    ('https_publish_dir', 'https_publish_dir'),
-    ('http_publish_dir', 'http_publish_dir'),
     ('start_date', 'start_date'),
     ('end_date', 'end_date'),
     ('iso_prefix', 'iso_prefix'),
@@ -177,7 +175,8 @@ class YumRepoCreateCommand(PulpCliCommand):
         # is done on the distributor
         yum_distributor_config['generate_metadata'] = True
         
-        
+        # Ensure default values for http, https and generate_metadata options for iso_distributor 
+        # if they are not set
         
         # Both http and https must be specified in the distributor config, so
         # make sure they are initiall set here (default to only https)
@@ -431,6 +430,7 @@ def add_repo_options(command, is_update):
     publish_group.add_option(PulpCliOption('--checksum-type', 'type of checksum to use during metadata generation', required=False))
     publish_group.add_option(PulpCliOption('--gpg-key', 'GPG key used to sign and verify packages in the repository', required=False))
     publish_group.add_option(PulpCliOption('--regenerate-metadata', 'if "true", when the repository is published the repo metadata will be regenerated instead of reusing the metadata downloaded from the feed; defaults to true', required=False))
+    publish_group.add_option(PulpCliOption('--iso-prefix', 'prefix to use in the generated iso naming, default: <repoid>-<current_date>.iso', required=False))
 
     # Publish Security Options
     repo_auth_group.add_option(PulpCliOption('--host-ca', 'full path to the CA certificate that signed the repository hosts\'s SSL certificate when serving over HTTPS', required=False))
