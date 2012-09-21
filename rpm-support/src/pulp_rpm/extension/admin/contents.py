@@ -241,9 +241,8 @@ class SearchErrataCommand(UnitAssociationCriteriaCommand):
         m = _('if specified, the full details of an individual erratum are '
               'displayed, and all other options are ignored except for '
               '--repo-id.')
-        erratum_group.add_option(PulpCliOption('--erratum-id',m, required=False))
+        erratum_group.add_option(PulpCliOption('--erratum-id', m, required=False))
         self.add_option_group(erratum_group)
-
 
     def errata(self, **kwargs):
         if kwargs['erratum-id'] is None:
@@ -285,9 +284,7 @@ class SearchErrataCommand(UnitAssociationCriteriaCommand):
             description = ''
             description_pieces = erratum_meta['description'].split('\n\n')
             for index, paragraph in enumerate(description_pieces):
-                single_line_paragraph = ''
-                for line in paragraph.split('\n'):
-                    single_line_paragraph += (line + ' ')
+                single_line_paragraph = paragraph.replace('\n', '')
 
                 indent = 2
                 wrapped = self.context.prompt.wrap((' ' * indent) + single_line_paragraph, remaining_line_indent=indent)
@@ -297,7 +294,8 @@ class SearchErrataCommand(UnitAssociationCriteriaCommand):
                     description +=  '\n\n'
 
         # Reformat packages affected
-        package_list = ['  %s-%s:%s-%s.%s' % (p['name'], p['epoch'], p['version'], p['release'], p['arch']) for p in erratum_meta['pkglist'][0]['packages']]
+        package_list = ['  %s-%s:%s-%s.%s' % (p['name'], p['epoch'], p['version'], p['release'], p['arch'])
+                        for p in erratum_meta['pkglist'][0]['packages']]
 
         # Reformat reboot flag
         if erratum_meta['reboot_suggested']:

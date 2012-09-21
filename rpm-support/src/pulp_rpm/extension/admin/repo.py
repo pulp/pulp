@@ -99,12 +99,12 @@ class RpmRepoCreateCommand(PulpCliCommand):
 
         try:
             notes = None
-            if 'note' in kwargs and kwargs['note'] is not None:
+            if kwargs.get('note') is not None:
                 notes = args_to_notes_dict(kwargs['note'], include_none=False)
             importer_config = args_to_importer_config(kwargs)
             distributor_config = args_to_distributor_config(kwargs)
         except InvalidConfig, e:
-            self.context.prompt.render_failure_message(e[0])
+            self.context.prompt.render_failure_message(str(e))
             return
 
         # During create (but not update), if the relative path isn't specified
@@ -122,15 +122,14 @@ class RpmRepoCreateCommand(PulpCliCommand):
                 distributor_config['relative_url'] = repo_id
 
         # Both http and https must be specified in the distributor config, so
-        # make sure they are initiall set here (default to only https)
+        # make sure they are initially set here (default to only https)
         if 'http' not in distributor_config and 'https' not in distributor_config:
             distributor_config['https'] = True
             distributor_config['http'] = False
 
         # Make sure both are referenced
         for k in ('http', 'https'):
-            if k not in distributor_config:
-                distributor_config[k] = False
+            distributor_config.setdefault(k, False)
 
         # Likely a temporary hack as we continue to refine how metadata generation
         # is done on the distributor
@@ -170,18 +169,18 @@ class RpmRepoUpdateCommand(PulpCliCommand):
 
         try:
             notes = None
-            if 'note' in kwargs and kwargs['note'] is not None:
+            if kwargs.get('note') is not None:
                 notes = args_to_notes_dict(kwargs['note'], include_none=True)
 
             importer_config = args_to_importer_config(kwargs)
         except InvalidConfig, e:
-            self.context.prompt.render_failure_message(e[0])
+            self.context.prompt.render_failure_message(str(e))
             return
 
         try:
             distributor_config = args_to_distributor_config(kwargs)
         except InvalidConfig, e:
-            self.context.prompt.render_failure_message(e[0])
+            self.context.prompt.render_failure_message(str(e))
             return
 
         distributor_configs = {DISTRIBUTOR_ID : distributor_config}
@@ -359,6 +358,7 @@ def add_repo_options(command, is_update):
     repo_auth_group.add_option(PulpCliOption('--auth-ca', 'full path to the CA certificate that should be used to verify client authentication certificates; setting this turns on client authentication for the repository', required=False))
     repo_auth_group.add_option(PulpCliOption('--auth-cert', 'full path to the entitlement certificate that will be given to bound consumers to grant access to this repository', required=False))
 
+
 def args_to_importer_config(kwargs):
     """
     Takes the arguments read from the CLI and converts the client-side input
@@ -391,6 +391,7 @@ def args_to_importer_config(kwargs):
     LOG.debug('Importer configuration options')
     LOG.debug(importer_config)
     return importer_config
+
 
 def args_to_distributor_config(kwargs):
     """
@@ -434,6 +435,7 @@ def args_to_distributor_config(kwargs):
 
     return distributor_config
 
+
 def _prep_config(kwargs, plugin_config_keys):
     """
     Performs common initialization for both importer and distributor config
@@ -470,6 +472,7 @@ def _prep_config(kwargs, plugin_config_keys):
     convert_removed_options(plugin_config)
 
     return plugin_config
+
 
 def _convert_skip_types(skip_types):
     """
