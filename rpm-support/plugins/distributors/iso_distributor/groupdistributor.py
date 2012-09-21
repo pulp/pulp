@@ -16,7 +16,7 @@ import gettext
 import shutil
 import time
 
-from pulp_rpm.yum_plugin import util, metadata
+from pulp_rpm.yum_plugin import util, metadata, updateinfo
 from pulp.plugins.distributor import GroupDistributor
 from iso_distributor.generate_iso import GenerateIsos
 from iso_distributor.exporter import RepoExporter
@@ -194,6 +194,7 @@ class GroupISODistributor(GroupDistributor):
             date_filter = repo_exporter.create_date_range_filter(config)
             _LOG.info("repo working dir %s" % repo_working_dir)
             groups_xml_path = None
+            updateinfo_xml_path = None
             if date_filter:
                 # If a date range is specified, we only export the errata within that range
                 # and associated rpm units. This might change once we have dates associated
@@ -207,14 +208,15 @@ class GroupISODistributor(GroupDistributor):
                 rpm_status, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
                 if self.canceled:
                     return publish_conduit.build_failure_report(summary, details)
-
                 # export errata and generate updateinfo xml
-                errata_summary, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
-
+                updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
+                progress_status['errata']["num_success"] = len(errata_units)
+                progress_status["errata"]["state"] = "FINISHED"
                 summary["num_package_units_attempted"] = len(rpm_units)
                 summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
                 summary["num_package_units_errors"] = len(rpm_errors)
-                details["errors"] = rpm_errors +  errata_errors
+                summary["num_errata_units_exported"] = len(errata_units)
+                details["errors"] = rpm_errors
             else:
 
                 # export rpm units(this includes binary, source and delta)
@@ -245,9 +247,13 @@ class GroupISODistributor(GroupDistributor):
                     return publish_conduit.build_failure_report(summary, details)
 
                 # export errata units and associated rpms
+                progress_status["errata"]["state"] = "STARTED"
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
-                errata_units = publish_conduit.get_units(repoid, criteria)
-                errata_summary, errata_errors = repo_exporter.export_errata(errata_units, progress_callback=progress_callback)
+                errata_units = publish_conduit.get_units(criteria=criteria)
+                progress_status['errata']['state'] = "IN_PROGRESS"
+                updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
+                progress_status['errata']["num_success"] = len(errata_units)
+                progress_status["errata"]["state"] = "FINISHED"
                 summary["num_errata_units_exported"] = len(errata_units)
 
                 # export distributions
@@ -261,7 +267,7 @@ class GroupISODistributor(GroupDistributor):
                 self.group_progress_status["repositories"][repoid] = progress_status
                 self.set_progress("repositories", self.group_progress_status["repositories"], group_progress_callback)
 
-                details["errors"] = rpm_errors + distro_errors + errata_errors
+                details["errors"] = rpm_errors + distro_errors
                 self.group_summary[repoid] = summary
                 self.group_details[repoid] = details
 
@@ -269,8 +275,8 @@ class GroupISODistributor(GroupDistributor):
             repo_scratchpad = publish_conduit.get_repo_scratchpad(repoid)
             _LOG.info("REPO SCRATCHPAD %s" % repo_scratchpad)
             metadata_status, metadata_errors = metadata.generate_yum_metadata(
-                repo_working_dir, rpm_units, publish_conduit, config, progress_callback, is_cancelled=self.canceled,
-                group_xml_path=groups_xml_path, updateinfo_xml_path=errata_summary["updateinfo_xml_path"], repo_scratchpad=repo_scratchpad)
+                repo_working_dir, rpm_units, config, progress_callback, is_cancelled=self.canceled,
+                group_xml_path=groups_xml_path, updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=repo_scratchpad)
             details["errors"] += metadata_errors
         # generate and publish isos
         self._publish_isos(repo_group, config, progress_callback=group_progress_callback)

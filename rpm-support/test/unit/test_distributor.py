@@ -288,7 +288,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         num_units = 10
         relative_url = "rel_a/rel_b/rel_c/"
         existing_units = self.get_units(count=num_units)
-        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        publish_conduit = distributor_mocks.get_publish_conduit(type_id="rpm", existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, relative_url=relative_url,
                 http=False, https=True)
         distributor = YumDistributor()

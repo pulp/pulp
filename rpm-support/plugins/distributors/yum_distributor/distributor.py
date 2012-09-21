@@ -22,7 +22,7 @@ from pulp.plugins.distributor import Distributor
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.common.ids import TYPE_ID_DISTRO, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY,\
         TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DISTRIBUTOR_YUM
-from pulp_rpm.yum_plugin import comps_util, util, metadata
+from pulp_rpm.yum_plugin import comps_util, util, metadata, updateinfo
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 
 
@@ -419,6 +419,11 @@ class YumDistributor(Distributor):
             if not distro_status:
                 _LOG.error("Unable to publish distribution tree %s items" % (len(distro_errors)))
 
+        updateinfo_xml_path = None
+        if 'erratum' not in skip_list:
+            criteria = UnitAssociationCriteria(type_ids=TYPE_ID_ERRATA)
+            errata_units = publish_conduit.get_units(criteria=criteria)
+            updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo.working_dir)
 
         if self.canceled:
             return publish_conduit.build_failure_report(summary, details)
@@ -440,7 +445,8 @@ class YumDistributor(Distributor):
         else:
             # default to per package metadata
             metadata_status, metadata_errors =  metadata.generate_yum_metadata(repo.working_dir, rpm_units,
-                publish_conduit, config, progress_callback, is_cancelled=self.canceled)
+                config, progress_callback, is_cancelled=self.canceled, group_xml_path=groups_xml_path,
+                updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=publish_conduit.get_repo_scratchpad())
         metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
