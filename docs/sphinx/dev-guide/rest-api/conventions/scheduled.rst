@@ -32,7 +32,7 @@ resources in Pulp's REST API. All scheduled tasks will have the following fields
 Scheduled tasks may have additional fields that are specific to that particular
 task.
 
-Sample scheduled task resource:
+Sample scheduled task resource ::
 
  {
   '_id': '505cba846157770636000000',

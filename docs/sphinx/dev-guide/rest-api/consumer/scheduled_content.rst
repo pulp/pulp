@@ -25,24 +25,24 @@ Scheduling Content Install
 
 :sample_response:`` ::
 
-[
- {'_id': '505cc1216157770636000001',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/install/505cc1216157770636000001/',
-  'schedule': 'P1DT',
+ [
+  {'_id': '505cc1216157770636000001',
+   '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/install/505cc1216157770636000001/',
+   'schedule': 'P1DT',
   'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': null,
-  'first_run': '2012-09-19T00:00:00Z',
-  'last_run': '2012-09-20T00:00:00Z',
-  'next_run': '2012-09-21T00:00:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm',
-             'unit_keys': {'name': 'zsh'}},
-            {'type_id': 'rpm',
-             'unit_keys': {'name': 'bash'}},]
- },
-]
+   'enabled': true,
+   'consecutive_failures': 0,
+   'remaining_runs': null,
+   'first_run': '2012-09-19T00:00:00Z',
+   'last_run': '2012-09-20T00:00:00Z',
+   'next_run': '2012-09-21T00:00:00Z',
+   'options': {},
+   'units': [{'type_id': 'rpm',
+              'unit_keys': {'name': 'zsh'}},
+             {'type_id': 'rpm',
+              'unit_keys': {'name': 'bash'}},]
+  },
+ ]
 
 
 **Creating a Schedule**
