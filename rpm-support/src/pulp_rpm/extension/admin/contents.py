@@ -119,7 +119,10 @@ class SearchRpmsCommand(UnitAssociationCriteriaCommand):
         self.context = context
 
     def rpm(self, **kwargs):
-        _content_command(self.context, [TYPE_RPM], **kwargs)
+        def out_func(document, filter=FIELDS_RPM):
+            # Inner function to filter rpm fields to display to the end user
+            self.context.prompt.render_document(document, filters=filter)
+        _content_command([TYPE_RPM], out_func=out_func, **kwargs)
 
 
 class SearchSrpmsCommand(UnitAssociationCriteriaCommand):
