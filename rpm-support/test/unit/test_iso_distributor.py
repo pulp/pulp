@@ -434,12 +434,10 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         report = iso_distributor.publish_repo(repo, publish_conduit, config)
         ftypes = util.get_repomd_filetypes("%s/%s" % (repo.working_dir, "repodata/repomd.xml"))
         self.assertTrue("updateinfo" in ftypes)
-        updateinfo_path = util.get_repomd_filetype_path("%s/%s" % (repo.working_dir, "repodata/repomd.xml"), "updateinfo")#"%s/%s" % (repo.working_dir, "updateinfo.xml")
-        print "GGGGGGGGGGGGG",updateinfo_path
+        updateinfo_path = util.get_repomd_filetype_path("%s/%s" % (repo.working_dir, "repodata/repomd.xml"), "updateinfo")
         updateinfo_path = os.path.join(repo.working_dir, updateinfo_path)
         self.assertTrue(os.path.exists(updateinfo_path))
         elist = updateinfo.get_errata(updateinfo_path)
-        print "FFFFFFFFFFFFFFFFFFF",elist
         self.assertEquals(len(elist), 1)
         self.assertTrue(unit_key_2['id'] not in elist[0])
         self.assertEquals(elist[0]['id'], unit_key['id'])

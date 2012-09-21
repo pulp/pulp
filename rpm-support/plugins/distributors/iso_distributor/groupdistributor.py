@@ -249,7 +249,7 @@ class GroupISODistributor(GroupDistributor):
                 # export errata units and associated rpms
                 progress_status["errata"]["state"] = "STARTED"
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
-                errata_units = publish_conduit.get_units(criteria=criteria)
+                errata_units = publish_conduit.get_units(repoid, criteria=criteria)
                 progress_status['errata']['state'] = "IN_PROGRESS"
                 updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
                 progress_status['errata']["num_success"] = len(errata_units)
