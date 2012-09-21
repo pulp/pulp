@@ -18,7 +18,7 @@
 
 Name: pulp-rpm
 Version: 0.0.328
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -165,8 +165,6 @@ client capabilites with RPM specific features.
 %{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
 %{_usr}/lib/pulp/admin/extensions/rpm_units_search/
 %{_usr}/lib/pulp/admin/extensions/rpm_upload/
-%{_usr}/lib/pulp/admin/extensions/rpm_package_group_upload/
-%{_usr}/lib/pulp/admin/extensions/rpm_errata_upload/
 %doc
 
 
