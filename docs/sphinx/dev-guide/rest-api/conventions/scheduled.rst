@@ -18,16 +18,16 @@ http://en.wikipedia.org/wiki/ISO_8601#Time_intervals
 Scheduled tasks are generally treated as sub-collections and corresponding
 resources in Pulp's REST API. All scheduled tasks will have the following fields:
 
- * `_id` The schedule id
- * `_href` The uri path of the schedule resource
- * `schedule` The schedule as specified as an iso8601 interval
- * `failure_threshold` The number of consecutive failures to allow before the scheduled task is automatically disabled
- * `enabled` Whether or not the scheduled task is enabled
- * `consecutive_failures` The number of consecutive failures the scheduled tasks has experienced
- * `remaining_runs` The number of runs remaining
- * `first_run` The date and time of the first run as an iso8601 datetime
- * `last_run` The date and time of the last run as an iso8601 datetime
- * `next_run` The date and time of the next run as an iso8601 datetime
+ * ``_id`` The schedule id
+ * ``_href`` The uri path of the schedule resource
+ * ``schedule`` The schedule as specified as an iso8601 interval
+ * ``failure_threshold`` The number of consecutive failures to allow before the scheduled task is automatically disabled
+ * ``enabled`` Whether or not the scheduled task is enabled
+ * ``consecutive_failures`` The number of consecutive failures the scheduled tasks has experienced
+ * ``remaining_runs`` The number of runs remaining
+ * ``first_run`` The date and time of the first run as an iso8601 datetime
+ * ``last_run`` The date and time of the last run as an iso8601 datetime
+ * ``next_run`` The date and time of the next run as an iso8601 datetime
 
 Scheduled tasks may have additional fields that are specific to that particular
 task.
