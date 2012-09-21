@@ -75,9 +75,6 @@ ISO_DISTRIBUTOR_CONFIG_KEYS = [
     ('https', 'serve_https'),
     ('https_ca', 'host_ca'),
     ('generate_metadata', 'regenerate_metadata'),
-    ('start_date', 'start_date'),
-    ('end_date', 'end_date'),
-    ('iso_prefix', 'iso_prefix'),
     ('skip', 'skip'),
 ]
 

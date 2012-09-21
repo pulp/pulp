@@ -25,30 +25,37 @@ DISTRIBUTOR_ID = 'yum_distributor'
 
 # -- commands -----------------------------------------------------------------
 
-#class RunPublishCommand(PulpCliCommand):
-#    def __init__(self, context, name, description):
-#        PulpCliCommand.__init__(self, name, description, self.publish)
-#        self.context = context
-#
-#        # In the RPM client, there are 2 distributors associated with a repo now, 
-#        # so we need to ask them for the distributor ID.
-#        self.create_option('--repo-id', _('identifies the repository to publish'), required=True)
-#        self.create_option('--distributor-id', _('identifies the distributor to be used to publish repo', required=True))
-#
-#        d = 'if specified, the CLI process will end but the publish will continue on '\
-#            'the server; the progress can be later displayed using the status command'
-#        self.create_flag('--bg', _(d))
-#
-#    def publish(self, **kwargs):
-#        repo_id = kwargs['repo-id']
-#        distributor_id = kwargs['distributor-id']
-#        foreground = not kwargs['bg']
-#
-#        self.context.prompt.render_title(_('Publishing Repository [%(r)s] using distributor [%(d)s]') % {'r' : repo_id, 'd' : distributor_id})
-#
-#        # TO DO: initialize renderer according to distributor type
-#        self.run_publish_command = RunPublishRepositoryCommand(context=self.context, renderer=self.renderer, distributor_id=distributor_id)
-#        self.run_publish_command.run()
+
+# This is not implemented completely yet. Once we have renderers in place for iso and yum publish, RunPublishCommand
+# will call RunYumPublishCommand and RunIsoPublishCommand as per distributor_id passed. 
+
+class RunYumPublishCommand(PulpCliCommand):
+    def __init__(self, context, name, description):
+        PulpCliCommand.__init__(self, name, description, self.publish)
+        self.context = context
+        self.renderer = None
+        
+        # In the RPM client, there are 2 distributors associated with a repo now, 
+        # so we need to ask them for the distributor ID.
+        self.create_option('--repo-id', _('identifies the repository to publish'), required=True)
+        self.create_option('--distributor-id', _('identifies the distributor to be used to publish repo', required=True))
+
+        d = 'if specified, the CLI process will end but the publish will continue on '\
+            'the server; the progress can be later displayed using the status command'
+        self.create_flag('--bg', _(d))
+
+    def publish(self, **kwargs):
+        repo_id = kwargs['repo-id']
+        distributor_id = kwargs['distributor-id']
+        foreground = not kwargs['bg']
+
+        self.context.prompt.render_title(_('Publishing Repository [%(r)s] using distributor [%(d)s]') % {'r' : repo_id, 'd' : distributor_id})
+
+        # TO DO: initialize renderer according to distributor type
+        self.run_publish_command = RunPublishRepositoryCommand(context=self.context, renderer=self.renderer, distributor_id=distributor_id)
+        self.run_publish_command.run()
+        
+ 
 
 class RunPublishCommand(PulpCliCommand):
     def __init__(self, context, name, description):
