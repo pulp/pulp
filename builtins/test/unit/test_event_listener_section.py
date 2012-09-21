@@ -38,7 +38,7 @@ class TestEventSection(unittest.TestCase):
 class TestGenericSection(unittest.TestCase):
     CREATE_ARGS = {
         'config' : {'a' : 'foo'},
-        'event_type' : 'repo-sync-started',
+        'event_types' : ['repo-sync-started'],
         'notifier_type' : 'email'
     }
 
@@ -50,7 +50,7 @@ class TestGenericSection(unittest.TestCase):
         self.section.context.server.event_listener.create.assert_called_once_with(
             'email',
             {'a': 'foo'},
-            'repo-sync-started'
+            ['repo-sync-started']
         )
 
         self.assertEqual(self.section.context.prompt.render_success_message.call_count, 1)
@@ -107,6 +107,48 @@ class TestListenerSection(unittest.TestCase):
         self.assertEqual(self.section.context.prompt.render_success_message.call_count, 1)
         self.section.context.server.event_listener.delete.assert_called_once_with(
             'foo')
+
+
+class TestAMQPSection(unittest.TestCase):
+    def setUp(self):
+        self.section = pulp_cli.AMQPSection(mock.MagicMock())
+
+    def test_create(self):
+        kwargs = {
+            'event-type' : 'repo-sync-finished',
+            'exchange' : 'pulp',
+        }
+        self.section.create(**kwargs)
+
+        self.section.context.server.event_listener.create.assert_called_once_with(
+            'amqp',
+            {
+                'exchange': 'pulp',
+            },
+            'repo-sync-finished'
+        )
+
+    def test_update_exchange(self):
+        kwargs = {
+            'listener-id' : 'listener1',
+            'exchange' : 'pulp',
+            'event-type' : None
+        }
+
+        self.section.update(**kwargs)
+        self.section.context.server.event_listener.update.assert_called_once_with(
+            'listener1', notifier_config={'exchange': 'pulp'})
+
+    def test_update_exchange_empty(self):
+        kwargs = {
+            'listener-id' : 'listener1',
+            'exchange' : '',
+            'event-type' : None
+        }
+
+        self.section.update(**kwargs)
+        self.section.context.server.event_listener.update.assert_called_once_with(
+            'listener1', notifier_config={'exchange': ''})
 
 
 class TestEmailSection(unittest.TestCase):

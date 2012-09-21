@@ -17,8 +17,8 @@
 # ---- Pulp (rpm) --------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.327
-Release: 1%{?dist}
+Version: 0.0.328
+Release: 2%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -255,6 +255,17 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-2
+- Fix for removed _upload extensions.
+
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
+- Added single definition of RPM extension structure (jason.dobies@redhat.com)
+- 854347 - standardize skip terminology (pkilambi@redhat.com)
+- 854238 - creating a category without a group can cause the pkggroupids to be
+  None; default to empty list if pkggroupids is None (pkilambi@redhat.com)
+- 847091 - Hiding unit association data by default during association queries
+  unless it is requested. (mhrivnak@redhat.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
 - 850929 - Fix url in bind payload in yum distributor. (jortel@redhat.com)
 - 852772 - Corrected help text (jason.dobies@redhat.com)

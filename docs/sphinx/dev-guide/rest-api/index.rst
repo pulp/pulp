@@ -1,4 +1,4 @@
-Pulp v2 REST API
+REST API
 ================
 
 APIs
@@ -25,4 +25,3 @@ Documentation
 
    conventions/index
    authentication
-   glossary

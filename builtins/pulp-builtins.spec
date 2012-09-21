@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.327
-Release: 1%{?dist}
+Version: 0.0.328
+Release: 2%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -69,7 +69,6 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
-%{_usr}/lib/pulp/admin/extensions/pulp_upload/
 %{_usr}/lib/pulp/admin/extensions/pulp_user/
 %{_usr}/lib/pulp/admin/extensions/pulp_server_info/
 %doc
@@ -95,6 +94,14 @@ client capabilities.
 
 
 %changelog
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-2
+- Remove pulp_upload extension. (jortel@redhat.com)
+
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
+- 854632 - added --password and -p options to user update command to update
+  password in a non-interactive and interactive fashion respectively
+  (skarmark@redhat.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
 - Refactored upload commands to reusable package and implemented Puppet
   module upload (jason.dobies@redhat.com)
