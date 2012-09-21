@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.327
+Version: 0.0.328
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -95,6 +95,11 @@ client capabilities.
 
 
 %changelog
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
+- 854632 - added --password and -p options to user update command to update
+  password in a non-interactive and interactive fashion respectively
+  (skarmark@redhat.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
 - Refactored upload commands to reusable package and implemented Puppet
   module upload (jason.dobies@redhat.com)
