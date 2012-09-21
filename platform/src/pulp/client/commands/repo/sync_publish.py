@@ -36,8 +36,6 @@ NAME_BACKGROUND = 'bg'
 DESC_BACKGROUND = _('if specified, the CLI process will end but the process will continue on '
                     'the server; the progress can be later displayed using the status command')
 
-DEFAULT_DISTRIBUTOR_ID = 'yum_distributor'
-
 # -- hooks --------------------------------------------------------------------
 
 class StatusRenderer(object):
@@ -129,7 +127,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
     entirely through a flag on the run command.
     """
 
-    def __init__(self, context, renderer, name='run', description=DESC_PUBLISH_RUN, method=None, distributor_id=DEFAULT_DISTRIBUTOR_ID):
+    def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN, method=None):
 
         if method is None:
             method = self.run
@@ -190,5 +188,5 @@ class PublishStatusCommand(PulpCliCommand):
         self.add_option(options.OPTION_REPO_ID)
 
 
-    def status(self, **kwargs):
+    def run(self, **kwargs):
         pass

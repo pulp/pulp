@@ -191,7 +191,6 @@ class StatusRendererTests(unittest.TestCase):
         self.assertTrue(sr.prompt is mock_prompt)
         
         
-
 class RunPublishRepositoryCommandTests(base.PulpClientTests):
 
     def setUp(self):
@@ -295,5 +294,4 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         tags = self.prompt.get_write_tags()
         self.assertEqual(2, len(tags))
         self.assertEqual(tags[1], 'background')
-
 
