@@ -16,7 +16,7 @@ from gettext import gettext as _
 from pulp.client.commands.repo.status import status, tasks
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand, PublishStatusCommand
 
-from pulp_rpm.extension.admin.status import RpmStatusRenderer
+from pulp_rpm.extension.admin.status import RpmStatusRenderer, RpmIsoStatusRenderer
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
@@ -45,8 +45,8 @@ class RpmRunPublishCommand(RunPublishRepositoryCommand):
         # Initialize renderer according to distributor type\
         if self.distributor_id == YUM_DISTRIBUTOR_TYPE_ID:
             self.renderer = RpmStatusRenderer(self.context)
-#        elif self.distributor_id == ISO_DISTRIBUTOR_TYPE_ID:
-#            self.renderer = ISOStatusRenderer(self.context)
+        elif self.distributor_id == ISO_DISTRIBUTOR_TYPE_ID:
+            self.renderer = RpmIsoStatusRenderer(self.context)
         else:
             self.prompt.render_failure_message(_('Invalid distributor type'))
 

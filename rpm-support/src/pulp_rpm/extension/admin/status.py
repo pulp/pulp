@@ -380,6 +380,209 @@ class RpmStatusRenderer(StatusRenderer):
             self.publish_https_last_state = new_state
         self._render_general_spinner_step(self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
 
+
+class RpmIsoStatusRenderer(StatusRenderer):
+
+    def __init__(self, context):
+        super(RpmIsoStatusRenderer, self).__init__(context)
+
+        # Publish Steps
+        self.rpms_last_state = constants.STATE_NOT_STARTED
+        self.distributions_last_state = constants.STATE_NOT_STARTED
+        self.isos_last_state = constants.STATE_NOT_STARTED
+        self.generate_metadata_last_state = constants.STATE_NOT_STARTED
+        self.publish_http_last_state = constants.STATE_NOT_STARTED
+        self.publish_https_last_state = constants.STATE_NOT_STARTED
+
+        # UI Widgets
+        self.rpms_bar = self.prompt.create_progress_bar()
+        self.distributions_bar = self.prompt.create_progress_bar()
+        self.isos_bar = self.prompt.create_progress_bar()
+        self.generate_metadata_spinner = self.prompt.create_spinner()
+        self.publish_http_spinner = self.prompt.create_spinner()
+        self.publish_https_spinner = self.prompt.create_spinner()
+
+    def display_report(self, progress_report):
+        """
+        Displays the contents of the progress report to the user. This will
+        aggregate the calls to render individual sections of the report.
+        """
+
+        # Publish Steps
+        if 'iso_distributor' in progress_report:
+            self.render_rpms_step(progress_report)
+            self.render_distributions_step(progress_report)
+            self.render_isos_step(progress_report)
+            self.render_generate_metadata_step(progress_report)
+            self.render_publish_http_step(progress_report)
+            self.render_publish_https_step(progress_report)
+
+    def render_rpms_step(self, progress_report):
+
+        # Example Data:
+        # "rpms": {
+        # "num_success": 20, 
+        # "items_left": 0, 
+        # "items_total": 20, 
+        # "state": "FINISHED", 
+        # "error_details": [], 
+        # "num_error": 0
+        # },
+
+        data = progress_report['iso_distributor']['rpms']
+        state = data['state']
+
+        if state == constants.STATE_NOT_STARTED:
+            return
+
+        # Only render this on the first non-not-started state
+        if self.rpms_last_state == constants.STATE_NOT_STARTED:
+            self.prompt.write(_('Publishing packages...'))
+
+        # If it's running or finished, the output is still the same. This way,
+        # if the status is viewed after this step, the content download
+        # summary is still available.
+
+        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.rpms_last_state not in constants.COMPLETE_STATES:
+
+            self.rpms_last_state = state
+            self._render_itemized_in_progress_state(data, _('rpms'), self.rpms_bar, state)
+
+        elif state == constants.STATE_FAILED and self.rpms_last_state not in constants.COMPLETE_STATES:
+
+            # This state means something went horribly wrong. There won't be
+            # individual rpms error details which is why they are only
+            # displayed above and not in this case.
+
+            self.prompt.write(_('... failed'))
+            self.rpms_last_state = constants.STATE_FAILED
+
+    def render_distributions_step(self, progress_report):
+
+        # Example Data:
+        # "distribution": {
+        #    "num_success": 0,
+        #    "items_left": 0,
+        #    "items_total": 0,
+        #    "state": "FINISHED",
+        #    "error_details": [],
+        #    "num_error": 0
+        # },
+
+        data = progress_report['iso_distributor']['distribution']
+        state = data['state']
+
+        if state == constants.STATE_NOT_STARTED:
+            return
+
+        # Only render this on the first non-not-started state
+        if self.distributions_last_state  == constants.STATE_NOT_STARTED:
+            self.prompt.write(_('Publishing distributions...'))
+
+        # If it's running or finished, the output is still the same. This way,
+        # if the status is viewed after this step, the content download
+        # summary is still available.
+
+        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.distributions_last_state not in constants.COMPLETE_STATES:
+
+            self.distributions_last_state = state
+            self._render_itemized_in_progress_state(data, _('distributions'), self.distributions_bar, state)
+
+        elif state == constants.STATE_FAILED and self.distributions_last_state not in constants.COMPLETE_STATES:
+
+            # This state means something went horribly wrong. There won't be
+            # individual package error details which is why they are only
+            # displayed above and not in this case.
+
+            self.prompt.write(_('... failed'))
+            self.distributions_last_state = constants.STATE_FAILED
+
+
+    def render_isos_step(self, progress_report):
+        
+        # Example Data:
+        # "isos": {
+        #     "num_success": 1, 
+        #     "size_total": 3361542, 
+        #     "written_files": [
+        #         "pulp-rhel6-20120920-01.iso"
+        #      ], 
+        #     "items_left": 0, 
+        #     "items_total": 1, 
+        #     "size_left": 0, 
+        #     "state": "FINISHED", 
+        #     "error_details": [], 
+        #     "current_file": null, 
+        #     "num_error": 0
+        #     },
+
+        data = progress_report['iso_distributor']['isos']
+        state = data['state']
+
+        if state == constants.STATE_NOT_STARTED:
+            return
+
+        # Only render this on the first non-not-started state
+        if self.isos_last_state  == constants.STATE_NOT_STARTED:
+            self.prompt.write(_('Creating ISOs...'))
+
+        # If it's running or finished, the output is still the same. This way,
+        # if the status is viewed after this step, the content download
+        # summary is still available.
+
+        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.isos_last_state not in constants.COMPLETE_STATES:
+
+            self.isos_last_state = state
+            self._render_itemized_in_progress_state(data, _('isos'), self.isos_bar, state)
+
+        elif state == constants.STATE_FAILED and self.isos_last_state not in constants.COMPLETE_STATES:
+
+            # This state means something went horribly wrong. There won't be
+            # individual package error details which is why they are only
+            # displayed above and not in this case.
+
+            self.prompt.write(_('... failed'))
+            self.isos_last_state = constants.STATE_FAILED
+            
+
+
+    def render_generate_metadata_step(self, progress_report):
+
+        # Example Data:
+        # "metadata": {
+        #    "state": "FINISHED"
+        # }
+
+        current_state = progress_report['iso_distributor']['metadata']['state']
+        def update_func(new_state):
+            self.generate_metadata_last_state = new_state
+        self._render_general_spinner_step(self.generate_metadata_spinner, current_state, self.generate_metadata_last_state, _('Generating metadata'), update_func)
+
+    def render_publish_http_step(self, progress_report):
+
+        # Example Data:
+        # "publish_http": {
+        #    "state": "SKIPPED"
+        # },
+
+        current_state = progress_report['iso_distributor']['publish_http']['state']
+        def update_func(new_state):
+            self.publish_http_last_state = new_state
+        self._render_general_spinner_step(self.publish_http_spinner, current_state, self.publish_http_last_state, _('Publishing repository over HTTP'), update_func)
+
+    def render_publish_https_step(self, progress_report):
+
+        # Example Data:
+        # "publish_http": {
+        #    "state": "SKIPPED"
+        # },
+
+        current_state = progress_report['iso_distributor']['publish_https']['state']
+        def update_func(new_state):
+            self.publish_https_last_state = new_state
+        self._render_general_spinner_step(self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
+
+
     # -- general rendering functions ----------------------------------------------
 
     def _render_general_spinner_step(self, spinner, current_state, last_state, start_text, state_update_func):
@@ -502,3 +705,4 @@ class RpmStatusRenderer(StatusRenderer):
 
                     self.prompt.render_failure_message(message)
                 self.prompt.render_spacer()
+
