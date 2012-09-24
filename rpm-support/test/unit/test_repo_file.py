@@ -15,7 +15,7 @@ import os
 import shutil
 import unittest
 
-from pulp_rpm.common.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp_rpm.handler.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 TEST_REPO_FILENAME = '/tmp/TestRepoFile.repo'
 TEST_MIRROR_LIST_FILENAME = '/tmp/TestRepoFile.mirrorlist'
