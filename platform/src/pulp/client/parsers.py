@@ -11,11 +11,58 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+"""
+Contains methods suitable for passing to the parse_func parameter of the
+option and flag client classes.
+"""
+
 import csv as csv_module
+from gettext import gettext as _
 
 import isodate
 
+from pulp.client import arg_utils
 from pulp.common import dateutils
+
+
+def parse_boolean(value):
+    """
+    Returns the boolean representation of the given user input, raising the
+    appopriate exception if the user input cannot be parsed.
+
+    :param value: user entered text extracted by the framework
+    :type  value: str
+    :rtype: bool
+    """
+
+    converted = arg_utils.arg_to_bool(value)
+
+    if converted is None:
+        raise ValueError(_('invalid boolean value'))
+    else:
+        return converted
+
+
+def parse_notes(value):
+    """
+    Returns a value suitable to send to the server for a notes value on a
+    repository. The given value will actually be a list of values regardless
+    of whether or not the user specified multiple notes.
+
+    :param value: list of user entered values or empty list if unspecified
+    :type  value: list
+    :return: dictionary representation of all user entered notes
+    :rtype: dict
+    """
+
+    if value is None:
+        return None
+
+    try:
+        return arg_utils.args_to_notes_dict(value)
+    except arg_utils.InvalidConfig:
+        raise ValueError(_('invalid syntax for specifying notes'))
+
 
 def iso8601(value):
     """
@@ -31,10 +78,12 @@ def iso8601(value):
     try:
         return dateutils.parse_iso8601_datetime_or_date(value).replace(microsecond=0).isoformat()
     except isodate.ISO8601Error:
-        raise ValueError('invalid ISO8601 string')
+        raise ValueError(_('invalid ISO8601 string'))
+
 
 def csv(input):
     return csv_module.reader((input,)).next()
+
 
 def key_csv(input):
     """
@@ -47,6 +96,7 @@ def key_csv(input):
     """
     key, value = input.split('=', 1)
     return (key, csv(value))
+
 
 def key_csv_multiple(input):
     """
@@ -62,6 +112,7 @@ def key_csv_multiple(input):
         return [key_csv(x) for x in input]
     else:
         return []
+
 
 def key_value_multiple(input):
     """
