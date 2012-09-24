@@ -40,12 +40,6 @@ def _migrate_rpm_unit_repodata():
             collection.save(rpm_unit, safe=True)
 
 
-def _migrate_repo_scratchpad_with_custom_repodata():
-    """
-    Looks up existing repos and stores the presto and other custom metadata on scratcpad
-    if not already available.
-    """
-
 def get_package_xml(pkg_path):
     """
     Method to generate repo xmls - primary, filelists and other
