@@ -12,16 +12,18 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-from rpm_sync import status, tasks
 
+from pulp.client.commands.repo.status import status, tasks
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand, PublishStatusCommand
+
+from pulp_rpm.extension.admin.status import RpmStatusRenderer
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
 # -- constants ----------------------------------------------------------------
 
-# This will go away once new RunPublishCommand is uncommented. 
-DISTRIBUTOR_ID = 'yum_distributor'
+YUM_DISTRIBUTOR_TYPE_ID = 'yum_distributor'
+ISO_DISTRIBUTOR_TYPE_ID = 'iso_distributor'
 
 # -- commands -----------------------------------------------------------------
 
@@ -29,76 +31,27 @@ DISTRIBUTOR_ID = 'yum_distributor'
 # This is not implemented completely yet. Once we have renderers in place for iso and yum publish, RunPublishCommand
 # will call RunYumPublishCommand and RunIsoPublishCommand as per distributor_id passed. 
 
-class RunYumPublishCommand(PulpCliCommand):
-    def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.publish)
-        self.context = context
-        self.renderer = None
+class RpmRunPublishCommand(RunPublishRepositoryCommand):
+    def __init__(self, context):
+        super(RpmRunPublishCommand, self).__init__(context=context, method=self.publish)
         
         # In the RPM client, there are 2 distributors associated with a repo now, 
-        # so we need to ask them for the distributor ID.
-        self.create_option('--repo-id', _('identifies the repository to publish'), required=True)
-        self.create_option('--distributor-id', _('identifies the distributor to be used to publish repo', required=True))
-
-        d = 'if specified, the CLI process will end but the publish will continue on '\
-            'the server; the progress can be later displayed using the status command'
-        self.create_flag('--bg', _(d))
+        # so we need to ask user for the distributor ID.
+        self.create_option('--distributor-id', _('identifies the distributor to be used to publish repo'), required=True)
 
     def publish(self, **kwargs):
-        repo_id = kwargs['repo-id']
-        distributor_id = kwargs['distributor-id']
-        foreground = not kwargs['bg']
-
-        self.context.prompt.render_title(_('Publishing Repository [%(r)s] using distributor [%(d)s]') % {'r' : repo_id, 'd' : distributor_id})
-
-        # TO DO: initialize renderer according to distributor type
-        self.run_publish_command = RunPublishRepositoryCommand(context=self.context, renderer=self.renderer, distributor_id=distributor_id)
-        self.run_publish_command.run()
+        self.distributor_id = kwargs['distributor-id']
         
- 
-
-class RunPublishCommand(PulpCliCommand):
-    def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.publish)
-        self.context = context
-
-        # In the RPM client, there is currently only one distributor for a
-        # repository, so we don't need to ask them for the distributor ID (yet).
-        self.create_option('--repo-id', _('identifies the repository to publish'), required=True)
-
-        d = 'if specified, the CLI process will end but the publish will continue on '\
-            'the server; the progress can be later displayed using the status command'
-        self.create_flag('--bg', _(d))
-
-    def publish(self, **kwargs):
-        repo_id = kwargs['repo-id']
-        foreground = not kwargs['bg']
-
-        self.context.prompt.render_title(_('Publishing Repository [%(r)s]') % {'r' : repo_id})
-
-        # If a publish is taking place, display it's progress instead. Again, we
-        # benefit from the fact that there is only one distributor per repo and
-        # if that changes in the future we'll need to rethink this.
-        existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
-
-        if task_id is not None:
-            msg = _('A publish task is already in progress for this repository. ')
-            if foreground:
-                msg += _('Its progress will be tracked below.')
-            self.context.prompt.render_paragraph(msg)
-
+        # Initialize renderer according to distributor type\
+        if self.distributor_id == YUM_DISTRIBUTOR_TYPE_ID:
+            self.renderer = RpmStatusRenderer(self.context)
+#        elif self.distributor_id == ISO_DISTRIBUTOR_TYPE_ID:
+#            self.renderer = ISOStatusRenderer(self.context)
         else:
-            # Trigger the publish call. Eventually the None in the call should
-            # be replaced with override options read in from the CLI.
-            response = self.context.server.repo_actions.publish(repo_id, DISTRIBUTOR_ID, None)
-            task_id = response.response_body.task_id
+            self.prompt.render_failure_message(_('Invalid distributor type'))
 
-        if foreground:
-            status.display_status(self.context, task_id=task_id)
-        else:
-            msg = 'The status of this publish request can be displayed using the status command.'
-            self.context.prompt.render_paragraph(_(msg))
+        super(RpmRunPublishCommand, self).run(**kwargs)
+
 
 class StatusCommand(PulpCliCommand):
     def __init__(self, context, name, description):
@@ -123,7 +76,7 @@ class StatusCommand(PulpCliCommand):
         if task_id is not None:
             msg = 'A publish task is queued on the server. Its progress will be tracked below.'
             self.context.prompt.render_paragraph(_(msg))
-            status.display_status(self.context, task_id=task_id)
+            status.display_task_status(self.context, task_id=task_id)
 
         else:
             self.context.prompt.render_paragraph(_('There are no publish tasks currently queued in the server.'))

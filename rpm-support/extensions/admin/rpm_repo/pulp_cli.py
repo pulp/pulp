@@ -13,7 +13,7 @@
 
 from pulp.client.commands.repo import cudl, group, sync_publish, upload
 
-from pulp_rpm.extension.admin import (contents, copy, remove, repo, status,
+from pulp_rpm.extension.admin import (contents, copy, publish, remove, repo, status,
                                       structure, sync_schedules)
 
 def initialize(context):
@@ -57,6 +57,10 @@ def initialize(context):
     renderer = status.RpmStatusRenderer(context)
     sync_section.add_command(sync_publish.RunSyncRepositoryCommand(context, renderer))
     sync_section.add_command(sync_publish.SyncStatusCommand(context, renderer))
+
+    publish_section = structure.repo_publish_section(context.cli)
+    publish_section.add_command(publish.RpmRunPublishCommand(context))
+#    publish_section.add_command(publish.PublishStatusCommand(context, renderer))
 
     sync_schedules_section = structure.repo_sync_schedules_section(context.cli)
     sync_schedules_section.add_command(sync_schedules.RpmCreateScheduleCommand(context))

@@ -127,7 +127,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
     entirely through a flag on the run command.
     """
 
-    def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN, method=None):
+    def __init__(self, context, renderer=None, distributor_id=None, name='run', description=DESC_PUBLISH_RUN, method=None):
 
         if method is None:
             method = self.run
@@ -147,7 +147,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         background = kwargs[NAME_BACKGROUND]
 
-        self.prompt.render_title(_('Publishing Repository [%(r)s]') % {'r' : repo_id})
+        self.prompt.render_title(_('Publishing Repository [%(r)s] using distributor [%(d)s] ') % {'r' : repo_id, 'd' : self.distributor_id})
 
         # See if an existing publish is running for the repo. If it is, resume
         # progress tracking.
