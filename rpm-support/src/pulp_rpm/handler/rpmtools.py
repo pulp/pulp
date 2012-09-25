@@ -317,6 +317,8 @@ class RPMCallback(RPMBaseCallback):
     with other reported progress information.
     @ivar report: A report object to be notified.
     @type report: L{ProgressReport}
+    @ivar events: A set of event keys.
+    @type events: set
     """
 
     def __init__(self, report):
@@ -331,6 +333,11 @@ class RPMCallback(RPMBaseCallback):
     def event(self, package, action, *unused):
         """
         Notification of package progress events.
+        This method is called multiple times to report progress on the
+        same package/event combination.  The reporting is to granular for
+        our purposes.  We store reported (package, action) tuples in a
+        set which is used to ignore subsequent events for the same package
+        and action combination.
         The event is forwarded to the report object to be consolidated
         with other reported progress information.
         @param package: A package object (subject of the event).
