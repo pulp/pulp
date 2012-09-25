@@ -17,6 +17,13 @@ from pulp_rpm.extension.admin import (contents, copy, export, remove, repo, stat
                                       structure, sync_schedules)
 from pulp_rpm.common import ids
 
+# -- constants -----------------------------------------------------------------
+
+DESC_EXPORT_STATUS = _('displays the status of a running ISO export of a repository')
+
+# ------------------------------------------------------------------------------
+
+
 def initialize(context):
     structure.ensure_repo_structure(context.cli)
 
@@ -66,8 +73,9 @@ def initialize(context):
     publish_section.add_command(sync_publish.PublishStatusCommand(context, renderer))
 
     export_section = structure.repo_export_section(context.cli)
+    renderer = status.RpmIsoStatusRenderer(context)
     export_section.add_command(export.RpmIsoExportCommand(context))
-    export_section.add_command(export.RpmIsoStatusCommand(context))
+    export_section.add_command(sync_publish.PublishStatusCommand(context, renderer, description=DESC_EXPORT_STATUS))
 
     sync_schedules_section = structure.repo_sync_schedules_section(context.cli)
     sync_schedules_section.add_command(sync_schedules.RpmCreateScheduleCommand(context))

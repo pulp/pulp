@@ -12,7 +12,7 @@
 from gettext import gettext as _
 
 from pulp.client.commands.repo.status import status, tasks
-from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand, PublishStatusCommand
+from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
 
 from pulp_rpm.common import ids
@@ -21,7 +21,6 @@ from pulp_rpm.extension.admin.status import RpmIsoStatusRenderer
 # -- commands -----------------------------------------------------------------
 
 DESC_EXPORT_RUN = _('triggers an immediate ISO export of a repository')
-DESC_EXPORT_STATUS = _('displays the status of a running ISO export of a repository')
 
 DESC_ISO_PREFIX = _('prefix to use in the generated iso naming, default: <repoid>-<current_date>.iso')
 OPTION_ISO_PREFIX = PulpCliOption('--iso-prefix', DESC_ISO_PREFIX, required=False)
@@ -45,10 +44,5 @@ class RpmIsoExportCommand(RunPublishRepositoryCommand):
     # Still need to overload run method to pass these options to iso distributor
       
 
-class RpmIsoStatusCommand(PublishStatusCommand):
-    def __init__(self, context):
-        super(RpmIsoStatusCommand, self).__init__(context=context, 
-                                                  renderer=RpmIsoStatusRenderer(context),
-                                                  description=DESC_EXPORT_STATUS)
 
         
