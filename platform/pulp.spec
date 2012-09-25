@@ -159,7 +159,7 @@ Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.1.5-1
+Requires: grinder >= 0.1.6-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl

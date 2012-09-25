@@ -95,22 +95,6 @@ class TestValidateConfig(rpm_support_base.PulpRPMTests):
         state, msg = self.distributor.validate_config(self.repo, config, [])
         self.assertTrue(state)
 
-    def test_config_generate_metadata(self):
-        http = True
-        https = False
-        relative_url = "test_path"
-        generate_metadata = "false"
-        config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https,
-            generate_metadata=generate_metadata)
-        state, msg = self.distributor.validate_config(self.repo, config, [])
-        self.assertFalse(state)
-
-        generate_metadata = True
-        config = distributor_mocks.get_basic_config(relative_url=relative_url, http=http, https=https,
-            generate_metadata=generate_metadata)
-        state, msg = self.distributor.validate_config(self.repo, config, [])
-        self.assertTrue(state)
-
     def test_config_checksum_type(self):
         http = True
         https = False
