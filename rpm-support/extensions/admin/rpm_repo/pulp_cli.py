@@ -11,13 +11,20 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.client.commands.repo import cudl, group, sync_publish, upload
+import os
 
-from pulp_rpm.extension.admin import (contents, copy, publish, remove, repo, status,
-                                      structure, sync_schedules)
+from pulp.client.commands.repo import (cudl, group, sync_publish, upload)
+from pulp.client.upload import manager as upload_lib
+
+from pulp_rpm.extension.admin import (contents, copy, publish, remove, repo,
+                                      status, structure, sync_schedules)
+from pulp_rpm.extension.admin.upload import (category, errata, package)
+from pulp_rpm.extension.admin.upload import group as package_group
+
 
 def initialize(context):
     structure.ensure_repo_structure(context.cli)
+    upload_manager = _upload_manager(context)
 
     repo_section = structure.repo_section(context.cli)
     repo_section.add_command(repo.RpmRepoCreateCommand(context))
@@ -53,6 +60,15 @@ def initialize(context):
     contents_section.add_command(contents.SearchDistributionsCommand(context))
     contents_section.add_command(contents.SearchErrataCommand(context))
 
+    uploads_section = structure.repo_uploads_section(context.cli)
+    uploads_section.add_command(package.CreateRpmCommand(context, upload_manager))
+    uploads_section.add_command(errata.CreateErratumCommand(context, upload_manager))
+    uploads_section.add_command(package_group.CreatePackageGroupCommand(context, upload_manager))
+    uploads_section.add_command(category.CreatePackageCategoryCommand(context, upload_manager))
+    uploads_section.add_command(upload.ResumeCommand(context, upload_manager))
+    uploads_section.add_command(upload.CancelCommand(context, upload_manager))
+    uploads_section.add_command(upload.ListCommand(context, upload_manager))
+
     sync_section = structure.repo_sync_section(context.cli)
     renderer = status.RpmStatusRenderer(context)
     sync_section.add_command(sync_publish.RunSyncRepositoryCommand(context, renderer))
@@ -60,11 +76,28 @@ def initialize(context):
 
     publish_section = structure.repo_publish_section(context.cli)
     publish_section.add_command(publish.RpmRunPublishCommand(context))
-#    publish_section.add_command(publish.PublishStatusCommand(context, renderer))
+    publish_section.add_command(publish.PublishStatusCommand(context, renderer))
 
     sync_schedules_section = structure.repo_sync_schedules_section(context.cli)
     sync_schedules_section.add_command(sync_schedules.RpmCreateScheduleCommand(context))
     sync_schedules_section.add_command(sync_schedules.RpmUpdateScheduleCommand(context))
     sync_schedules_section.add_command(sync_schedules.RpmDeleteScheduleCommand(context))
     sync_schedules_section.add_command(sync_schedules.RpmListScheduleCommand(context))
+
     sync_schedules_section.add_command(sync_schedules.RpmNextRunCommand(context))
+
+
+def _upload_manager(context):
+    """
+    Instantiates and configures the upload manager. The context is used to
+    access any necessary configuration.
+
+    :return: initialized and ready to run upload manager instance
+    :rtype:  UploadManager
+    """
+    upload_working_dir = context.config['filesystem']['upload_working_dir']
+    upload_working_dir = os.path.expanduser(upload_working_dir)
+    chunk_size = int(context.config['server']['upload_chunk_size'])
+    upload_manager = upload_lib.UploadManager(upload_working_dir, context.server, chunk_size)
+    upload_manager.initialize()
+    return upload_manager
