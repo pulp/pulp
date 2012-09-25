@@ -799,10 +799,10 @@ class UnitUpdateScheduleCollection(JSONController):
         consumer_manager.get_consumer(consumer_id)
 
         consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        install_tag = action_tag('scheduled_unit_update')
+        update_tag = action_tag('scheduled_unit_update')
 
         scheduler = dispatch_factory.scheduler()
-        scheduled_calls = scheduler.find(consumer_tag, install_tag)
+        scheduled_calls = scheduler.find(consumer_tag, update_tag)
 
         schedule_objs = []
         for call in scheduled_calls:
@@ -926,10 +926,10 @@ class UnitUninstallScheduleCollection(JSONController):
         consumer_manager.get_consumer(consumer_id)
 
         consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        install_tag = action_tag('scheduled_unit_uninstall')
+        uninstall_tag = action_tag('scheduled_unit_uninstall')
 
         scheduler = dispatch_factory.scheduler()
-        scheduled_calls = scheduler.find(consumer_tag, install_tag)
+        scheduled_calls = scheduler.find(consumer_tag, uninstall_tag)
 
         schedule_objs = []
         for call in scheduled_calls:
