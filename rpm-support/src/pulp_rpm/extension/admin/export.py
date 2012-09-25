@@ -11,9 +11,8 @@
 
 from gettext import gettext as _
 
-from pulp.client.commands.repo.status import status, tasks
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliOption
 
 from pulp_rpm.common import ids
 from pulp_rpm.extension.admin.status import RpmIsoStatusRenderer
@@ -25,24 +24,19 @@ DESC_EXPORT_RUN = _('triggers an immediate ISO export of a repository')
 DESC_ISO_PREFIX = _('prefix to use in the generated iso naming, default: <repoid>-<current_date>.iso')
 OPTION_ISO_PREFIX = PulpCliOption('--iso-prefix', DESC_ISO_PREFIX, required=False)
 
-DESC_START_DATE = _('start date for errata export')
+DESC_START_DATE = _('start date for errata export; only errata whose issued date is on or after the given value will be included in the generated iso; format eg: "2009-03-30 00:00:00"')
 OPTION_START_DATE = PulpCliOption('--start-date', DESC_START_DATE, required=False)
 
-DESC_END_DATE = _('end date for errata export')
+DESC_END_DATE = _('end date for errata export; only errata whose issued date is on or before the given value will be included in the generated iso; format eg: "2011-03-30 00:00:00"')
 OPTION_END_DATE = PulpCliOption('--end-date', DESC_END_DATE, required=False)
 
 class RpmIsoExportCommand(RunPublishRepositoryCommand):
     def __init__(self, context):
+        override_config_options = [OPTION_ISO_PREFIX, OPTION_START_DATE, OPTION_END_DATE]
+
         super(RpmIsoExportCommand, self).__init__(context=context, 
                                                   renderer=RpmIsoStatusRenderer(context),
                                                   distributor_id=ids.TYPE_ID_DISTRIBUTOR_ISO, 
-                                                  description=DESC_EXPORT_RUN)
-        self.add_option(OPTION_ISO_PREFIX)
-        self.add_option(OPTION_START_DATE)
-        self.add_option(OPTION_END_DATE)
-    
-    # Still need to overload run method to pass these options to iso distributor
-      
+                                                  description=DESC_EXPORT_RUN,
+                                                  override_config_options=override_config_options)
 
-
-        

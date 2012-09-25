@@ -441,7 +441,7 @@ class RpmIsoStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.rpms_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Publishing packages...'))
+            self.prompt.write(_('Exporting packages...'))
 
         # If it's running or finished, the output is still the same. This way,
         # if the status is viewed after this step, the content download
@@ -481,7 +481,7 @@ class RpmIsoStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.errata_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Publishing errata...'))
+            self.prompt.write(_('Exporting errata...'))
 
         # If it's running or finished, the output is still the same. This way,
         # if the status is viewed after this step, the content download
@@ -522,7 +522,7 @@ class RpmIsoStatusRenderer(StatusRenderer):
 
         # Only render this on the first non-not-started state
         if self.distributions_last_state  == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Publishing distributions...'))
+            self.prompt.write(_('Exporting distributions...'))
 
         # If it's running or finished, the output is still the same. This way,
         # if the status is viewed after this step, the content download
