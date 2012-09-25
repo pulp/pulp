@@ -50,6 +50,19 @@ def parse_skip_types(t):
 
     return parsed
 
+# -- group names --------------------------------------------------------------
+
+NAME_BASIC = _('Basic')
+NAME_THROTTLING = _('Throttling')
+NAME_FEED = _('Feed Authentication')
+NAME_PROXY = _('Feed Proxy')
+NAME_SYNC = _('Synchronization')
+NAME_PUBLISHING = _('Publishing')
+NAME_AUTH = _('Client Authentication')
+
+ALL_GROUP_NAMES = (NAME_BASIC, NAME_THROTTLING, NAME_FEED, NAME_PROXY, NAME_SYNC,
+                   NAME_PUBLISHING, NAME_AUTH)
+
 # -- metadata options ---------------------------------------------------------
 
 d = _('URL of the external source repository to sync')
@@ -88,7 +101,8 @@ d = _('URL to the proxy server to use')
 OPT_PROXY_URL = PulpCliOption('--proxy-url', d, required=False)
 
 d = _('port on the proxy server to make requests')
-OPT_PROXY_PORT = PulpCliOption('--proxy-port', d, required=False)
+OPT_PROXY_PORT = PulpCliOption('--proxy-port', d, required=False,
+                               parse_func=parsers.parse_positive_int)
 
 d = _('username used to authenticate with the proxy server')
 OPT_PROXY_USER = PulpCliOption('--proxy-user', d, required=False)
@@ -176,13 +190,13 @@ def add_to_command(command):
     """
 
     # Groups
-    basic_group = PulpCliOptionGroup(_('Basic'))
-    throttling_group = PulpCliOptionGroup(_('Throttling'))
-    ssl_group = PulpCliOptionGroup(_('Feed Authentication'))
-    proxy_group = PulpCliOptionGroup(_('Feed Proxy'))
-    sync_group = PulpCliOptionGroup(_('Synchronization'))
-    publish_group = PulpCliOptionGroup(_('Publishing'))
-    repo_auth_group = PulpCliOptionGroup(_('Client Authentication'))
+    basic_group = PulpCliOptionGroup(NAME_BASIC)
+    throttling_group = PulpCliOptionGroup(NAME_THROTTLING)
+    ssl_group = PulpCliOptionGroup(NAME_FEED)
+    proxy_group = PulpCliOptionGroup(NAME_PROXY)
+    sync_group = PulpCliOptionGroup(NAME_SYNC)
+    publish_group = PulpCliOptionGroup(NAME_PUBLISHING)
+    repo_auth_group = PulpCliOptionGroup(NAME_AUTH)
 
     # Order added indicates order in usage, so pay attention to this order when
     # dorking with it to make sure it makes sense
