@@ -560,11 +560,12 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
             ftype_xml_path = os.path.join(self.repodir, "%s.xml" % ftype)
             f = open(ftype_xml_path, "w")
             try:
-                data = fxml.encode('utf-8')
-                f.write(data)
-            except Exception, e:
-                _LOG.exception("Unable to write file type %s" % ftype)
-                continue
+                try:
+                    data = fxml.encode('utf-8')
+                    f.write(data)
+                except Exception, e:
+                    _LOG.exception("Unable to write file type %s" % ftype)
+                    continue
             finally:
                 f.close()
             # merge the xml we just wrote with repodata
