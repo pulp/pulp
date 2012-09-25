@@ -24,29 +24,23 @@ from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils as schedule_utils
 
 
+UNIT_INSTALL_ACTION = 'unit_install'
+UNIT_UPDATE_ACTION = 'unit_update'
+UNIT_UNINSTALL_ACTION = 'unit_uninstall'
 _UNIT_OPTION_KEYS = ('options',)
 
 
 class ConsumerScheduleManager(object):
+    """
+    Abstract base class for consumer content management schedules.
+    """
 
     @staticmethod
     def _validate_consumer(consumer_id):
         consumer_manager = managers_factory.consumer_manager()
         consumer_manager.get_consumer(consumer_id)
 
-    @property
-    def management_method(self):
-        raise NotImplementedError()
-
-    @property
-    def management_action_name(self):
-        raise NotImplementedError()
-
-    @property
-    def scheduled_management_action_name(self):
-        return 'scheduled_' + self.management_action_name
-
-    def _create_schedule(self, consumer_id, units, options, schedule_data):
+    def _create_schedule(self, management_method, management_action_name, consumer_id, units, options, schedule_data):
         self._validate_consumer(consumer_id)
         schedule_utils.validate_keys(options, _UNIT_OPTION_KEYS)
         if 'schedule' not in schedule_data:
@@ -57,9 +51,9 @@ class ConsumerScheduleManager(object):
                   'options': options.get('options', {})}
         weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag(self.management_action_name),
-                action_tag(self.scheduled_management_action_name)]
-        call_request = CallRequest(self.management_method, args, kwargs, weight=weight, tags=tags, archive=True)
+                action_tag(management_action_name),
+                action_tag('scheduled_' + management_action_name)]
+        call_request = CallRequest(management_method, args, kwargs, weight=weight, tags=tags, archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
 
         scheduler = dispatch_factory.scheduler()
@@ -90,12 +84,12 @@ class ConsumerScheduleManager(object):
         scheduler = dispatch_factory.scheduler()
         scheduler.remove(schedule_id)
 
-    def _delete_all_schedules(self, consumer_id):
+    def _delete_all_schedules(self, management_action_name, consumer_id):
         self._validate_consumer(consumer_id)
 
         scheduler = dispatch_factory.scheduler()
         consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        management_tag = action_tag(self.management_action_name)
+        management_tag = action_tag(management_action_name)
         reports = scheduler.find(consumer_tag, management_tag)
 
         for r in reports:
@@ -104,15 +98,6 @@ class ConsumerScheduleManager(object):
 # consumer content install schedule manager ------------------------------------
 
 class ConsumerContentInstallScheduleManager(ConsumerScheduleManager):
-
-    @property
-    def management_method(self):
-        manager = managers_factory.consumer_agent_manager()
-        return manager.install_content
-
-    @property
-    def management_action_name(self):
-        return 'unit_install'
 
     def create_unit_install_schedule(self, consumer_id, units, install_options, schedule_data ):
         """
@@ -123,7 +108,8 @@ class ConsumerContentInstallScheduleManager(ConsumerScheduleManager):
         @param schedule_data: scheduling data
         @return: schedule id
         """
-        return self._create_schedule(consumer_id, units, install_options, schedule_data)
+        manager = managers_factory.consumer_agent_manager()
+        return self._create_schedule(manager.install_content, UNIT_INSTALL_ACTION, consumer_id, units, install_options, schedule_data)
 
     def update_unit_install_schedule(self, consumer_id, schedule_id, units=None, install_options=None, schedule_data=None):
         """
@@ -150,20 +136,11 @@ class ConsumerContentInstallScheduleManager(ConsumerScheduleManager):
         Useful for unassociating consumers from the server.
         @param consumer_id: unique id of the consumer
         """
-        return self._delete_all_schedules(consumer_id)
+        return self._delete_all_schedules(UNIT_INSTALL_ACTION, consumer_id)
 
 # consumer content update schedule manager -------------------------------------
 
 class ConsumerContentUpdateScheduleManager(ConsumerScheduleManager):
-
-    @property
-    def management_method(self):
-        manager = managers_factory.consumer_agent_manager()
-        return manager.update_content
-
-    @property
-    def management_action_name(self):
-        return 'unit_update'
 
     def create_unit_update_schedule(self, consumer_id, units, update_options, schedule_data):
         """
@@ -174,7 +151,8 @@ class ConsumerContentUpdateScheduleManager(ConsumerScheduleManager):
         @param schedule_data: scheduling data
         @return: schedule id
         """
-        return self._create_schedule(consumer_id, units, update_options, schedule_data)
+        manager = managers_factory.consumer_agent_manager()
+        return self._create_schedule(manager.update_content, UNIT_UPDATE_ACTION, consumer_id, units, update_options, schedule_data)
 
     def update_unit_update_schedule(self, consumer_id, schedule_id, units=None, update_options=None, schedule_data=None):
         """
@@ -201,20 +179,11 @@ class ConsumerContentUpdateScheduleManager(ConsumerScheduleManager):
         Useful for unassociating consumers from the server.
         @param consumer_id: unique id of the consumer
         """
-        return self._delete_all_schedules(consumer_id)
+        return self._delete_all_schedules(UNIT_UPDATE_ACTION, consumer_id)
 
 # consumer content uninstall schedule manager ----------------------------------
 
 class ConsumerContentUninstallScheduleManager(ConsumerScheduleManager):
-
-    @property
-    def management_method(self):
-        manager = managers_factory.consumer_agent_manager()
-        return manager.uninstall_content
-
-    @property
-    def management_action_name(self):
-        return 'unit_uninstall'
 
     def create_unit_uninstall_schedule(self, consumer_id, units, uninstall_options, schedule_data):
         """
@@ -225,7 +194,8 @@ class ConsumerContentUninstallScheduleManager(ConsumerScheduleManager):
         @param schedule_data: scheduling data
         @return: schedule id
         """
-        return self._create_schedule(consumer_id, units, uninstall_options, schedule_data)
+        manager = managers_factory.consumer_agent_manager()
+        return self._create_schedule(manager.uninstall_content, UNIT_UNINSTALL_ACTION, consumer_id, units, uninstall_options, schedule_data)
 
     def update_unit_uninstall_schedule(self, consumer_id, schedule_id, units=None, uninstall_options=None, schedule_data=None):
         """
@@ -252,5 +222,5 @@ class ConsumerContentUninstallScheduleManager(ConsumerScheduleManager):
         Useful for unassociating consumers from the server.
         @param consumer_id: unique id of the consumer
         """
-        return self._delete_all_schedules(consumer_id)
+        return self._delete_all_schedules(UNIT_UNINSTALL_ACTION, consumer_id)
 
