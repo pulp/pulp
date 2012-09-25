@@ -78,7 +78,7 @@ Creating a Schedule
   "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
-:sample_response:`` ::
+:sample_response:`201` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/",
@@ -108,7 +108,7 @@ Retrieving a Schedule
 
 | :return:`schedule resource representation`
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/",
@@ -159,7 +159,7 @@ Updating a Schedule
             {"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/",
@@ -262,7 +262,7 @@ Creating a Schedule
   "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
-:sample_response:`` ::
+:sample_response:`201` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/",
@@ -292,7 +292,7 @@ Retrieving a Schedule
 
 | :return:`schedule resource representation`
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/",
@@ -343,7 +343,7 @@ Updating a Schedule
             {"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/",
@@ -446,7 +446,7 @@ Creating a Schedule
   "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
-:sample_response:`` ::
+:sample_response:`201` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/",
@@ -476,7 +476,7 @@ Retrieving a Schedule
 
 | :return:`schedule resource representation`
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/",
@@ -527,7 +527,7 @@ Updating a Schedule
             {"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  {"_id": "505ccb526157770636000002",
   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/",
