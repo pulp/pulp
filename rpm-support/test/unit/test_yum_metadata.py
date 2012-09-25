@@ -12,15 +12,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import mock
 import os
 import shutil
 import sys
 import tempfile
-import threading
 import time
-import traceback
-import unittest
+
+import mock
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/")
@@ -28,9 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../common")
 
 from pulp_rpm.yum_plugin  import metadata
-
 from pulp.plugins.model import Repository
-
 import distributor_mocks
 import rpm_support_base
 from pulp_rpm.yum_plugin.metadata import YumMetadataGenerator

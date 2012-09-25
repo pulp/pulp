@@ -119,13 +119,13 @@ class YumDistributor(Distributor):
                 return False, msg
             if key == 'protected':
                 protected = config.get('protected')
-                if protected is not None and not isinstance(protected, bool):
+                if not isinstance(protected, bool):
                     msg = _("protected should be a boolean; got %s instead" % protected)
                     _LOG.error(msg)
                     return False, msg
             if key == 'use_createrepo':
                 use_createrepo = config.get('use_createrepo')
-                if use_createrepo is not None and not isinstance(use_createrepo, bool):
+                if not isinstance(use_createrepo, bool):
                     msg = _("use_createrepo should be a boolean; got %s instead" % use_createrepo)
                     _LOG.error(msg)
                     return False, msg
@@ -137,7 +137,7 @@ class YumDistributor(Distributor):
                     return False, msg
             if key == 'skip':
                 metadata_types = config.get('skip')
-                if metadata_types is not None and not isinstance(metadata_types, list):
+                if not isinstance(metadata_types, list):
                     msg = _("skip should be a dictionary; got %s instead" % metadata_types)
                     _LOG.error(msg)
                     return False, msg
@@ -364,8 +364,7 @@ class YumDistributor(Distributor):
     def cancel_publish_repo(self, call_report, call_request):
         self.canceled = True
         if self.use_createrepo:
-            repo_working_dir = getattr(self, 'repo_working_dir')
-            return metadata.cancel_createrepo(repo_working_dir)
+            return metadata.cancel_createrepo(self.repo_working_dir)
 
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
@@ -444,7 +443,7 @@ class YumDistributor(Distributor):
                 repo.working_dir, publish_conduit, config, progress_callback, groups_xml_path)
         else:
             # default to per package metadata
-            metadata_status, metadata_errors =  metadata.generate_yum_metadata(repo.working_dir, rpm_units,
+            metadata_status, metadata_errors = metadata.generate_yum_metadata(repo.working_dir, rpm_units,
                 config, progress_callback, is_cancelled=self.canceled, group_xml_path=groups_xml_path,
                 updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=publish_conduit.get_repo_scratchpad())
         metadata_end_time = time.time()

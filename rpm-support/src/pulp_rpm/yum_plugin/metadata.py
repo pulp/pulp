@@ -22,12 +22,11 @@ import signal
 import time
 
 import rpmUtils
-from pulp_rpm.yum_plugin import util, comps_util, updateinfo
-from pulp.common.util import encode_unicode, decode_unicode
 from createrepo import MetaDataGenerator, MetaDataConfig
 from createrepo import yumbased, GzipFile
-from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp_rpm.common.ids import TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_ERRATA
+
+from pulp_rpm.yum_plugin import util
+from pulp.common.util import encode_unicode, decode_unicode
 
 _LOG = util.getLogger(__name__)
 __yum_lock = threading.Lock()
@@ -431,7 +430,7 @@ class YumMetadataGenerator(object):
     def _backup_existing_repodata(self):
         """
         Takes a backup of any existing repodata files. This is used in the final
-        step where other file types in rpeomd.xml such as presto, updateinfo, comps
+        step where other file types in repomd.xml such as presto, updateinfo, comps
         are copied back to the repodata.
         """
         current_repo_dir = os.path.join(self.repodir, "repodata")
@@ -453,7 +452,6 @@ class YumMetadataGenerator(object):
         """
         conf = MetaDataConfig()
         conf.directory = self.repodir
-#        conf.update = 1
         conf.database = 1
         conf.verbose = 1
         conf.skip_stat = 1
@@ -543,7 +541,7 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
             self.close_primary_xml()
             self.close_filelists_xml()
             self.close_other_xml()
-            end =  time.time()
+            end = time.time()
         _LOG.info("per unit metadata merge completed in %s seconds" % (end - start))
 
     def merge_custom_repodata(self):
@@ -562,12 +560,11 @@ xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s"> \n""" % len(self.u
             ftype_xml_path = os.path.join(self.repodir, "%s.xml" % ftype)
             f = open(ftype_xml_path, "w")
             try:
-                try:
-                    data = fxml.encode('utf-8')
-                    f.write(data)
-                except Exception, e:
-                    _LOG.exception("Unable to write file type %s" % ftype)
-                    continue
+                data = fxml.encode('utf-8')
+                f.write(data)
+            except Exception, e:
+                _LOG.exception("Unable to write file type %s" % ftype)
+                continue
             finally:
                 f.close()
             # merge the xml we just wrote with repodata
@@ -699,12 +696,8 @@ def generate_yum_metadata(repo_dir, units_to_write, config, progress_callback=No
     metadata_progress_status = {"state" : "IN_PROGRESS"}
     skip_metadata_types = config.get('skip') or []
     skip_metadata_types = convert_content_to_metadata_type(skip_metadata_types)
+    checksum_type = repo_scratchpad.get('checksum_type', DEFAULT_CHECKSUM)
     custom_metadata = {}
-    if repo_scratchpad.has_key("checksum_type"):
-        checksum_type = repo_scratchpad["checksum_type"]
-    else:
-        checksum_type = DEFAULT_CHECKSUM
-
     if repo_scratchpad.has_key("repodata"):
         custom_metadata = repo_scratchpad["repodata"]
     start = time.time()

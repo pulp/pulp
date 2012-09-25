@@ -59,10 +59,8 @@ class TestDRPMS(rpm_support_base.PulpRPMTests):
         repo.working_dir = self.working_dir
         repo.id = "test_repo"
         sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
-        sync_conduit.set_repo_scratchpad = mock.Mock()
-        sync_conduit.set_repo_scratchpad.side_effect = set_repo_scratchpad
-        sync_conduit.get_repo_scratchpad = mock.Mock()
-        sync_conduit.get_repo_scratchpad.side_effect = get_repo_scratchpad
+        sync_conduit.set_repo_scratchpad = mock.Mock(side_effect=set_repo_scratchpad)
+        sync_conduit.get_repo_scratchpad = mock.Mock(side_effect=get_repo_scratchpad)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)

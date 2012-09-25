@@ -53,7 +53,7 @@ class ISODistributor(Distributor):
 
     def __init__(self):
         super(ISODistributor, self).__init__()
-        self.canceled = False
+        self.cancelled = False
         self.summary = {}
         self.details = {}
 
@@ -137,7 +137,7 @@ class ISODistributor(Distributor):
         return True, None
 
     def cancel_publish_repo(self, call_request, call_report):
-        self.canceled = True
+        self.cancelled = True
         repo_working_dir = getattr(self, 'repo_working_dir')
         return metadata.cancel_createrepo(repo_working_dir)
 
@@ -163,7 +163,7 @@ class ISODistributor(Distributor):
 
         self.repo_working_dir = repo_working_dir = repo.working_dir
 
-        if self.canceled:
+        if self.cancelled:
             return publish_conduit.build_failure_report(self.summary, self.details)
 
         skip_types = config.get("skip") or []
@@ -180,12 +180,12 @@ class ISODistributor(Distributor):
             rpm_units = publish_conduit.get_units(criteria=criteria)
             rpm_units = repo_exporter.get_errata_rpms(errata_units, rpm_units)
             rpm_summary, rpm_errors = repo_exporter.export_rpms(rpm_units, progress_callback=progress_callback)
-            if self.canceled:
+            if self.cancelled:
                 return publish_conduit.build_failure_report(self.summary, self.details)
             updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
-            progress_status['errata']["num_success"] = len(errata_units)
+            progress_status["errata"]["num_success"] = len(errata_units)
             progress_status["errata"]["state"] = "FINISHED"
-            self.summary = dict(self.summary.items() + rpm_summary.items() )
+            self.summary = dict(self.summary.items() + rpm_summary.items())
             self.summary["num_errata_units_exported"] = len(errata_units)
             self.details["errors"] = rpm_errors
         else:
@@ -210,7 +210,7 @@ class ISODistributor(Distributor):
                 progress_status["packagegroups"]["state"] = "SKIPPED"
                 _LOG.info("packagegroup unit type in skip list [%s]; skipping export" % skip_types)
 
-            if self.canceled:
+            if self.cancelled:
                 return publish_conduit.build_failure_report(self.summary, self.details)
 
             # export errata
@@ -219,9 +219,9 @@ class ISODistributor(Distributor):
                 progress_status["errata"]["state"] = "STARTED"
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
                 errata_units = publish_conduit.get_units(criteria=criteria)
-                progress_status['errata']['state'] = "IN_PROGRESS"
+                progress_status["errata"]["state"] = "IN_PROGRESS"
                 updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
-                progress_status['errata']["num_success"] = len(errata_units)
+                progress_status["errata"]["num_success"] = len(errata_units)
                 progress_status["errata"]["state"] = "FINISHED"
                 self.summary["num_errata_units_exported"] = len(errata_units)
             else:
@@ -234,10 +234,10 @@ class ISODistributor(Distributor):
             distro_summary, distro_errors = repo_exporter.export_distributions(distro_units, progress_callback=progress_callback)
             # sum up summary and details
             self.details["errors"] = rpm_errors + distro_errors
-            self.summary = dict(self.summary.items() + rpm_summary.items() +  distro_summary.items())
+            self.summary = dict(self.summary.items() + rpm_summary.items() + distro_summary.items())
         # generate metadata
         metadata_status, metadata_errors = metadata.generate_yum_metadata(
-            repo_working_dir, rpm_units, config, progress_callback, is_cancelled=self.canceled,
+            repo_working_dir, rpm_units, config, progress_callback, is_cancelled=self.cancelled,
             group_xml_path=groups_xml_path, updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=publish_conduit.get_repo_scratchpad())
         _LOG.info("metadata generation complete at target location %s" % repo_working_dir)
         self.details["errors"] += metadata_errors

@@ -210,7 +210,7 @@ class GroupISODistributor(GroupDistributor):
                     return publish_conduit.build_failure_report(summary, details)
                 # export errata and generate updateinfo xml
                 updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
-                progress_status['errata']["num_success"] = len(errata_units)
+                progress_status["errata"]["num_success"] = len(errata_units)
                 progress_status["errata"]["state"] = "FINISHED"
                 summary["num_package_units_attempted"] = len(rpm_units)
                 summary["num_package_units_exported"] = len(rpm_units) - len(rpm_errors)
@@ -250,9 +250,9 @@ class GroupISODistributor(GroupDistributor):
                 progress_status["errata"]["state"] = "STARTED"
                 criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
                 errata_units = publish_conduit.get_units(repoid, criteria=criteria)
-                progress_status['errata']['state'] = "IN_PROGRESS"
+                progress_status["errata"]["state"] = "IN_PROGRESS"
                 updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo_working_dir)
-                progress_status['errata']["num_success"] = len(errata_units)
+                progress_status["errata"]["num_success"] = len(errata_units)
                 progress_status["errata"]["state"] = "FINISHED"
                 summary["num_errata_units_exported"] = len(errata_units)
 
@@ -273,7 +273,6 @@ class GroupISODistributor(GroupDistributor):
 
             # generate metadata for the exported repo
             repo_scratchpad = publish_conduit.get_repo_scratchpad(repoid)
-            _LOG.info("REPO SCRATCHPAD %s" % repo_scratchpad)
             metadata_status, metadata_errors = metadata.generate_yum_metadata(
                 repo_working_dir, rpm_units, config, progress_callback, is_cancelled=self.canceled,
                 group_xml_path=groups_xml_path, updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=repo_scratchpad)

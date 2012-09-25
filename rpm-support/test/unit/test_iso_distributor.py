@@ -549,7 +549,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         repo.id = "testrepo"
         repo.working_dir = self.repo_working_dir
         distributor = ISODistributor()
-        config = distributor_mocks.get_basic_config(http=True, https=False, skip=["rpm", "errata", "packagegroup"])
+        config = distributor_mocks.get_basic_config(http=True, https=False, skip=["rpm", "erratum", "packagegroup"])
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         report = distributor.publish_repo(repo, publish_conduit, config)
         print report.summary

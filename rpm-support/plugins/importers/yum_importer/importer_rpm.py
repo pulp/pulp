@@ -11,10 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import gzip
-
 import os
 import time
 import itertools
+
 from grinder.BaseFetch import BaseFetch
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
@@ -335,10 +335,11 @@ def set_repo_checksum_type(repo, sync_conduit, config):
     sync_conduit.set_repo_scratchpad(dict(checksum_type=checksum_type))
     _LOG.info("checksum type info [%s] set to repo scratchpad" % sync_conduit.get_repo_scratchpad())
 
+
 def preserve_custom_metadata_on_scratchpad(repo, sync_conduit, config):
     """
     Preserve custom metadata from repomd.xml on scratchpad for distributor to lookup and
-    publish. This includes prestodelta, productid or any other filetype that isnt the
+    publish. This includes prestodelta, productid or any other filetype that isn't the
     standard.
       @param repo: metadata describing the repository
       @type  repo: L{pulp.server.content.plugins.data.Repository}
