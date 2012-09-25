@@ -95,10 +95,6 @@ Publishing
   to consumers to use in verifying content in the repository. The value to this
   option must be the full path to the GPG key file to upload to the server.
 
-``--regenerate-metadata``
-  Flag indicating the repository metadata should be regenerated rather than
-  reused from the external source.
-
 Feed Authentication
 ^^^^^^^^^^^^^^^^^^^
 

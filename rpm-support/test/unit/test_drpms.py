@@ -44,11 +44,23 @@ class TestDRPMS(rpm_support_base.PulpRPMTests):
         self.assertTrue(TYPE_ID_DRPM in metadata["types"])
 
     def test_drpm_sync(self):
+        global repo_scratchpad
+        repo_scratchpad = {}
+
+        def set_repo_scratchpad(data):
+            global repo_scratchpad
+            repo_scratchpad = data
+
+        def get_repo_scratchpad():
+            global repo_scratchpad
+            return repo_scratchpad
         feed_url = "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_drpm_repo/"
         repo = mock.Mock(spec=Repository)
         repo.working_dir = self.working_dir
         repo.id = "test_repo"
         sync_conduit = importer_mocks.get_sync_conduit(pkg_dir=self.pkg_dir)
+        sync_conduit.set_repo_scratchpad = mock.Mock(side_effect=set_repo_scratchpad)
+        sync_conduit.get_repo_scratchpad = mock.Mock(side_effect=get_repo_scratchpad)
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)

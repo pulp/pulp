@@ -114,21 +114,6 @@ class TestGroupISODistributor(rpm_support_base.PulpRPMTests):
         http = True
         https = False
         relative_url = "test_path"
-        generate_metadata = "false"
-        config = distributor_mocks.get_basic_config(http=http, https=https,
-            generate_metadata=generate_metadata)
-        state, msg = distributor.validate_config(repo, config, [])
-        self.assertFalse(state)
-
-        generate_metadata = True
-        config = distributor_mocks.get_basic_config(http=http, https=https,
-            generate_metadata=generate_metadata)
-        state, msg = distributor.validate_config(repo, config, [])
-        self.assertTrue(state)
-
-        http = True
-        https = False
-        relative_url = "test_path"
         skip_content_types = "fake"
         config = distributor_mocks.get_basic_config(http=http, https=https,
             skip=skip_content_types)
