@@ -70,7 +70,6 @@ ISO_DISTRIBUTOR_CONFIG_KEYS = [
     ('http', 'serve_http'),
     ('https', 'serve_https'),
     ('https_ca', 'host_ca'),
-    ('generate_metadata', 'regenerate_metadata'),
     ('skip', 'skip'),
 ]
 
@@ -160,10 +159,6 @@ class RpmRepoCreateCommand(PulpCliCommand):
         for k in ('http', 'https'):
             if k not in iso_distributor_config:
                 iso_distributor_config[k] = False
-
-        # Likely a temporary hack as we continue to refine how metadata generation
-        # is done on the distributor
-        iso_distributor_config['generate_metadata'] = True
 
         # Package distributors for the call
         distributors = [(YUM_DISTRIBUTOR_TYPE_ID, yum_distributor_config, True, YUM_DISTRIBUTOR_ID),
