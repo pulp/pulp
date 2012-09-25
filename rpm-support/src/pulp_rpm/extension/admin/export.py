@@ -13,11 +13,10 @@ from gettext import gettext as _
 
 from pulp.client.commands.repo.status import status, tasks
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand, PublishStatusCommand
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
 
 from pulp_rpm.common import ids
 from pulp_rpm.extension.admin.status import RpmIsoStatusRenderer
-
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
 
 # -- commands -----------------------------------------------------------------
 

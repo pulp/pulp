@@ -120,8 +120,6 @@ def ensure_repo_structure(cli):
     publish_section = repo_publish_section(cli)
     publish_section.create_subsection(SECTION_PUBLISH_SCHEDULES, DESC_PUBLISH_SCHEDULES)
     
-    export_section = repo_export_section(cli)
-    
     return repo_section
 
 # -- section retrieval --------------------------------------------------------

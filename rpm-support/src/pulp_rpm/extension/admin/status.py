@@ -490,7 +490,7 @@ class RpmIsoStatusRenderer(StatusRenderer):
         if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.errata_last_state not in constants.COMPLETE_STATES:
 
             self.errata_last_state = state
-            render_itemized_in_progress_state(self.prompt, data, _('rpms'), self.errata_bar, state)
+            render_itemized_in_progress_state(self.prompt, data, _('errata'), self.errata_bar, state)
 
         elif state == constants.STATE_FAILED and self.errata_last_state not in constants.COMPLETE_STATES:
 
