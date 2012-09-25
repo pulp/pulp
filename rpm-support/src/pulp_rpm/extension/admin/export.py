@@ -45,6 +45,7 @@ class RpmIsoExportCommand(RunPublishRepositoryCommand):
         self.add_option(OPTION_START_DATE)
         self.add_option(OPTION_END_DATE)
     
+    # Still need to overload run method to pass these options to iso distributor
       
 
 class RpmIsoStatusCommand(PublishStatusCommand):

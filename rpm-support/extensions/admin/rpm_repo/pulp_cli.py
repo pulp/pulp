@@ -66,7 +66,6 @@ def initialize(context):
     publish_section.add_command(sync_publish.PublishStatusCommand(context, renderer))
 
     export_section = structure.repo_export_section(context.cli)
-    renderer = status.RpmIsoStatusRenderer(context)
     export_section.add_command(export.RpmIsoExportCommand(context))
     export_section.add_command(export.RpmIsoStatusCommand(context))
 
