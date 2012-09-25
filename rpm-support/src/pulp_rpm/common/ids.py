@@ -21,6 +21,9 @@ YUM_IMPORTER_ID = TYPE_ID_IMPORTER_YUM
 # Set when the distributor is added to the repo and later to refer to it specifically
 YUM_DISTRIBUTOR_ID = 'yum_distributor'
 
+# Set when the distributor is added to the repo and later to refer to it specifically
+ISO_DISTRIBUTOR_ID = 'iso_distributor'
+
 TYPE_ID_RPM = "rpm"
 TYPE_ID_SRPM = "srpm"
 UNIT_KEY_RPM = (

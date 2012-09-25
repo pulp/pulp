@@ -18,3 +18,7 @@ STATE_FAILED = 'FAILED'
 STATE_SKIPPED = 'SKIPPED'
 
 COMPLETE_STATES = (STATE_COMPLETE, STATE_FAILED, STATE_SKIPPED)
+
+# Used as a note on a repository to indicate it is a Puppet repository
+REPO_NOTE_KEY = '_repo-type' # needs to be standard across extensions
+REPO_NOTE_RPM = 'rpm-repo'
