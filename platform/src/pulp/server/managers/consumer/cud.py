@@ -127,6 +127,8 @@ class ConsumerManager(object):
         # delete any scheduled unit installs
         schedule_manager = factory.schedule_manager()
         schedule_manager.delete_all_unit_install_schedules(consumer_id)
+        schedule_manager.delete_all_unit_update_schedules(consumer_id)
+        schedule_manager.delete_all_unit_uninstall_schedules(consumer_id)
 
         # Database Updates
         try:
