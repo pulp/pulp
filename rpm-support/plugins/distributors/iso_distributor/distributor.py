@@ -162,6 +162,7 @@ class ISODistributor(Distributor):
             "packagegroups":      {"state": "NOT_STARTED"},
             "isos":               {"state": "NOT_STARTED"},
             "publish_http":       {"state": "NOT_STARTED"},
+            "publish_https":       {"state": "NOT_STARTED"},
             }
 
         def progress_callback(type_id, status):
