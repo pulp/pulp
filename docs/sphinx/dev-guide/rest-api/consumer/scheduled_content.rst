@@ -13,7 +13,8 @@ Note that all schedule resources are in the format described in
 Scheduling Content Installs
 ---------------------------
 
-**Listing Schedules**
+Listing Schedules
+^^^^^^^^^^^^^^^^^
 
 | :method:`GET`
 | :path:`/v2/consumers/<consumer id>/schedules/install/`
@@ -25,29 +26,30 @@ Scheduling Content Installs
 
 | :return:`(possibly empty) list of schedule resources`
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  [
-  {'_id': '505cc1216157770636000001',
-   '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/install/505cc1216157770636000001/',
-   'schedule': 'P1DT',
-  'failure_threshold': null,
-   'enabled': true,
-   'consecutive_failures': 0,
-   'remaining_runs': null,
-   'first_run': '2012-09-19T00:00:00Z',
-   'last_run': '2012-09-20T00:00:00Z',
-   'next_run': '2012-09-21T00:00:00Z',
-   'options': {},
-   'units': [{'type_id': 'rpm',
-              'unit_keys': {'name': 'zsh'}},
-             {'type_id': 'rpm',
-              'unit_keys': {'name': 'bash'}},]
+  {"_id": "505cc1216157770636000001",
+   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505cc1216157770636000001/",
+   "schedule": "P1DT",
+  "failure_threshold": null,
+   "enabled": true,
+   "consecutive_failures": 0,
+   "remaining_runs": null,
+   "first_run": "2012-09-19T00:00:00Z",
+   "last_run": "2012-09-20T00:00:00Z",
+   "next_run": "2012-09-21T00:00:00Z",
+   "options": {},
+   "units": [{"type_id": "rpm",
+              "unit_keys": {"name": "zsh"}},
+             {"type_id": "rpm",
+              "unit_keys": {"name": "bash"}},]
   },
  ]
 
 
-**Creating a Schedule**
+Creating a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`POST`
 | :path:`/v2/consumers/<consumer id>/schedules/install/`
@@ -56,7 +58,7 @@ Scheduling Content Installs
 
 * :param:`schedule,string,schedule in iso8601 interval format`
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
-* :param:`?enabled,boolean,whether or not the schedule is enabled`
+* :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
 * :param:`?options,object,key - value options to pass to the install agent`
 * :param:`units,array,list of units to install`
 
@@ -72,28 +74,29 @@ Scheduling Content Installs
 
 :sample_request:`_` ::
 
- {'schedule': 'R1/P1DT',
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}]
+ {"schedule": "R1/P1DT",
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/',
-  'schedule': 'R1/P1DT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': 1,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-22T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/",
+  "schedule": "R1/P1DT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": 1,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-22T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}],
  }
 
 
-**Inspecting a Schedule**
+Retrieving a Schedule
+^^^^^^^^^^^^^^^^^^^^^
 
 | :method:`GET`
 | :path:`/v2/consumers/<consumer id>/schedules/install/<schedule id>/`
@@ -107,30 +110,31 @@ Scheduling Content Installs
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/',
-  'schedule': 'R1/P1DT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': 1,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-22T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/",
+  "schedule": "R1/P1DT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": 1,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-22T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}],
  }
 
 
 
-**Updating a Schedule**
+Updating a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`PUT`
 | :path:`/v2/consumers/<consumer id>/schedules/install/<schedule id>/`
 | :permission:`UPDATE`
 | :param_list:`PUT`
 
-* :param:`?schedule,string,schedule as an iso8601 interval`
+* :param:`?schedule,string,schedule as an iso8601 interval (specifying a recurrence will affect remaining_runs)`
 * :param:`?failure_threshold,integer,number of allowed consecutive failures before the schedule is disabled`
 * :param:`?remaining_runs,integer,number of remaining runs for schedule`
 * :param:`?enabled,boolean,whether or not the schedule is enabled`
@@ -145,37 +149,37 @@ Scheduling Content Installs
 * :response_code:`400,if any of the params are invalid`
 * :response_code:`404,if the consumer or schedule does not exist`
 * :response_code:`409,if another server-side operation is permanently preventing the schedule from being updated`
-* :response_code:``
 
 | :return:`resource representation of the schedule`
 
 :sample_request:`_` ::
 
- {'schedule': 'P1WT',
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'grinder'}},
-            {'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}]
+ {"schedule": "P1WT",
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "grinder"}},
+            {"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/',
-  'schedule': 'P1WT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': null,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-29T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}},
-            {'type_id': 'rpm', 'unit_keys': {'name': 'grinder'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/install/505ccb526157770636000002/",
+  "schedule": "P1WT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": null,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-29T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}},
+            {"type_id": "rpm", "unit_keys": {"name": "grinder"}}],
  }
 
 
 
-**Deleting a Schedule**
+Deleting a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`DELETE`
 | :path:`/v2/consumers/<consumer id>/schedules/install/<schedule id>/`
@@ -193,7 +197,8 @@ Scheduling Content Installs
 Scheduling Content Updates
 --------------------------
 
-**Listing Schedules**
+Listing Schedules
+^^^^^^^^^^^^^^^^^
 
 | :method:`GET`
 | :path:`/v2/consumers/<consumer id>/schedules/update/`
@@ -205,29 +210,30 @@ Scheduling Content Updates
 
 | :return:`(possibly empty) list of schedule resources`
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  [
-  {'_id': '505cc1216157770636000001',
-   '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/update/505cc1216157770636000001/',
-   'schedule': 'P1DT',
-  'failure_threshold': null,
-   'enabled': true,
-   'consecutive_failures': 0,
-   'remaining_runs': null,
-   'first_run': '2012-09-19T00:00:00Z',
-   'last_run': '2012-09-20T00:00:00Z',
-   'next_run': '2012-09-21T00:00:00Z',
-   'options': {},
-   'units': [{'type_id': 'rpm',
-              'unit_keys': {'name': 'zsh'}},
-             {'type_id': 'rpm',
-              'unit_keys': {'name': 'bash'}},]
+  {"_id": "505cc1216157770636000001",
+   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505cc1216157770636000001/",
+   "schedule": "P1DT",
+  "failure_threshold": null,
+   "enabled": true,
+   "consecutive_failures": 0,
+   "remaining_runs": null,
+   "first_run": "2012-09-19T00:00:00Z",
+   "last_run": "2012-09-20T00:00:00Z",
+   "next_run": "2012-09-21T00:00:00Z",
+   "options": {},
+   "units": [{"type_id": "rpm",
+              "unit_keys": {"name": "zsh"}},
+             {"type_id": "rpm",
+              "unit_keys": {"name": "bash"}},]
   },
  ]
 
 
-**Creating a Schedule**
+Creating a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`POST`
 | :path:`/v2/consumers/<consumer id>/schedules/update/`
@@ -236,7 +242,7 @@ Scheduling Content Updates
 
 * :param:`schedule,string,schedule in iso8601 interval format`
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
-* :param:`?enabled,boolean,whether or not the schedule is enabled`
+* :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
 * :param:`?options,object,key - value options to pass to the update agent`
 * :param:`units,array,list of units to update`
 
@@ -252,28 +258,29 @@ Scheduling Content Updates
 
 :sample_request:`_` ::
 
- {'schedule': 'R1/P1DT',
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}]
+ {"schedule": "R1/P1DT",
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/',
-  'schedule': 'R1/P1DT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': 1,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-22T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/",
+  "schedule": "R1/P1DT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": 1,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-22T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}],
  }
 
 
-**Inspecting a Schedule**
+Retrieving a Schedule
+^^^^^^^^^^^^^^^^^^^^^
 
 | :method:`GET`
 | :path:`/v2/consumers/<consumer id>/schedules/update/<schedule id>/`
@@ -287,30 +294,31 @@ Scheduling Content Updates
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/',
-  'schedule': 'R1/P1DT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': 1,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-22T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/",
+  "schedule": "R1/P1DT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": 1,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-22T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}],
  }
 
 
 
-**Updating a Schedule**
+Updating a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`PUT`
 | :path:`/v2/consumers/<consumer id>/schedules/update/<schedule id>/`
 | :permission:`UPDATE`
 | :param_list:`PUT`
 
-* :param:`?schedule,string,schedule as an iso8601 interval`
+* :param:`?schedule,string,schedule as an iso8601 interval (specifying a recurrence will affect remaining_runs)`
 * :param:`?failure_threshold,integer,number of allowed consecutive failures before the schedule is disabled`
 * :param:`?remaining_runs,integer,number of remaining runs for schedule`
 * :param:`?enabled,boolean,whether or not the schedule is enabled`
@@ -325,37 +333,37 @@ Scheduling Content Updates
 * :response_code:`400,if any of the params are invalid`
 * :response_code:`404,if the consumer or schedule does not exist`
 * :response_code:`409,if another server-side operation is permanently preventing the schedule from being updated`
-* :response_code:``
 
 | :return:`resource representation of the schedule`
 
 :sample_request:`_` ::
 
- {'schedule': 'P1WT',
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'grinder'}},
-            {'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}]
+ {"schedule": "P1WT",
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "grinder"}},
+            {"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/',
-  'schedule': 'P1WT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': null,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-29T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}},
-            {'type_id': 'rpm', 'unit_keys': {'name': 'grinder'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/update/505ccb526157770636000002/",
+  "schedule": "P1WT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": null,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-29T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}},
+            {"type_id": "rpm", "unit_keys": {"name": "grinder"}}],
  }
 
 
 
-**Deleting a Schedule**
+Deleting a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`DELETE`
 | :path:`/v2/consumers/<consumer id>/schedules/update/<schedule id>/`
@@ -373,7 +381,8 @@ Scheduling Content Updates
 Scheduling Content Uninstalls
 -----------------------------
 
-**Listing Schedules**
+Listing Schedules
+^^^^^^^^^^^^^^^^^
 
 | :method:`GET`
 | :path:`/v2/consumers/<consumer id>/schedules/uninstall/`
@@ -385,29 +394,30 @@ Scheduling Content Uninstalls
 
 | :return:`(possibly empty) list of schedule resources`
 
-:sample_response:`` ::
+:sample_response:`200` ::
 
  [
-  {'_id': '505cc1216157770636000001',
-   '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505cc1216157770636000001/',
-   'schedule': 'P1DT',
-  'failure_threshold': null,
-   'enabled': true,
-   'consecutive_failures': 0,
-   'remaining_runs': null,
-   'first_run': '2012-09-19T00:00:00Z',
-   'last_run': '2012-09-20T00:00:00Z',
-   'next_run': '2012-09-21T00:00:00Z',
-   'options': {},
-   'units': [{'type_id': 'rpm',
-              'unit_keys': {'name': 'zsh'}},
-             {'type_id': 'rpm',
-              'unit_keys': {'name': 'bash'}},]
+  {"_id": "505cc1216157770636000001",
+   "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505cc1216157770636000001/",
+   "schedule": "P1DT",
+  "failure_threshold": null,
+   "enabled": true,
+   "consecutive_failures": 0,
+   "remaining_runs": null,
+   "first_run": "2012-09-19T00:00:00Z",
+   "last_run": "2012-09-20T00:00:00Z",
+   "next_run": "2012-09-21T00:00:00Z",
+   "options": {},
+   "units": [{"type_id": "rpm",
+              "unit_keys": {"name": "zsh"}},
+             {"type_id": "rpm",
+              "unit_keys": {"name": "bash"}},]
   },
  ]
 
 
-**Creating a Schedule**
+Creating a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`POST`
 | :path:`/v2/consumers/<consumer id>/schedules/uninstall/`
@@ -416,7 +426,7 @@ Scheduling Content Uninstalls
 
 * :param:`schedule,string,schedule in iso8601 interval format`
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
-* :param:`?enabled,boolean,whether or not the schedule is enabled`
+* :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
 * :param:`?options,object,key - value options to pass to the uninstall agent`
 * :param:`units,array,list of units to uninstall`
 
@@ -432,28 +442,29 @@ Scheduling Content Uninstalls
 
 :sample_request:`_` ::
 
- {'schedule': 'R1/P1DT',
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}]
+ {"schedule": "R1/P1DT",
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/',
-  'schedule': 'R1/P1DT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': 1,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-22T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/",
+  "schedule": "R1/P1DT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": 1,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-22T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}],
  }
 
 
-**Inspecting a Schedule**
+Retrieving a Schedule
+^^^^^^^^^^^^^^^^^^^^^
 
 | :method:`GET`
 | :path:`/v2/consumers/<consumer id>/schedules/uninstall/<schedule id>/`
@@ -467,30 +478,31 @@ Scheduling Content Uninstalls
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/',
-  'schedule': 'R1/P1DT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': 1,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-22T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/",
+  "schedule": "R1/P1DT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": 1,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-22T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}}],
  }
 
 
 
-**Updating a Schedule**
+Updating a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`PUT`
 | :path:`/v2/consumers/<consumer id>/schedules/uninstall/<schedule id>/`
 | :permission:`UPDATE`
 | :param_list:`PUT`
 
-* :param:`?schedule,string,schedule as an iso8601 interval`
+* :param:`?schedule,string,schedule as an iso8601 interval (specifying a recurrence will affect remaining_runs)`
 * :param:`?failure_threshold,integer,number of allowed consecutive failures before the schedule is disabled`
 * :param:`?remaining_runs,integer,number of remaining runs for schedule`
 * :param:`?enabled,boolean,whether or not the schedule is enabled`
@@ -505,37 +517,37 @@ Scheduling Content Uninstalls
 * :response_code:`400,if any of the params are invalid`
 * :response_code:`404,if the consumer or schedule does not exist`
 * :response_code:`409,if another server-side operation is permanently preventing the schedule from being updated`
-* :response_code:``
 
 | :return:`resource representation of the schedule`
 
 :sample_request:`_` ::
 
- {'schedule': 'P1WT',
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'grinder'}},
-            {'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}}]
+ {"schedule": "P1WT",
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "grinder"}},
+            {"type_id": "rpm", "unit_keys": {"name": "gofer"}}]
  }
 
 :sample_response:`` ::
 
- {'_id': '505ccb526157770636000002',
-  '_href': '/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/',
-  'schedule': 'P1WT',
-  'failure_threshold': null,
-  'enabled': true,
-  'consecutive_failures': 0,
-  'remaining_runs': null,
-  'first_run': '2012-09-22T14:15:00Z',
-  'last_run': null,
-  'next_run': '2012-09-29T14:15:00Z',
-  'options': {},
-  'units': [{'type_id': 'rpm', 'unit_keys': {'name': 'gofer'}},
-            {'type_id': 'rpm', 'unit_keys': {'name': 'grinder'}}],
+ {"_id": "505ccb526157770636000002",
+  "_href": "/pulp/api/v2/consumers/<consumer id>/schedules/uninstall/505ccb526157770636000002/",
+  "schedule": "P1WT",
+  "failure_threshold": null,
+  "enabled": true,
+  "consecutive_failures": 0,
+  "remaining_runs": null,
+  "first_run": "2012-09-22T14:15:00Z",
+  "last_run": null,
+  "next_run": "2012-09-29T14:15:00Z",
+  "options": {},
+  "units": [{"type_id": "rpm", "unit_keys": {"name": "gofer"}},
+            {"type_id": "rpm", "unit_keys": {"name": "grinder"}}],
  }
 
 
 
-**Deleting a Schedule**
+Deleting a Schedule
+^^^^^^^^^^^^^^^^^^^
 
 | :method:`DELETE`
 | :path:`/v2/consumers/<consumer id>/schedules/uninstall/<schedule id>/`
