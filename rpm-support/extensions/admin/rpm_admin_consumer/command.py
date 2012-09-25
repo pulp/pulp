@@ -100,6 +100,8 @@ class PollingCommand(PulpCliCommand):
             time.sleep(interval)
             response = server.tasks.get_task(task.task_id)
             task = response.response_body
+        if task.progress:
+            self.progress(task.progress)
         return task
 
     def progress(self, report):

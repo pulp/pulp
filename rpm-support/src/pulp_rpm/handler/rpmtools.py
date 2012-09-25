@@ -272,6 +272,8 @@ class ProgressReport:
         last = self.steps[-1]
         if last[1] is self.PENDING:
             last[1] = status
+            self.details = {}
+            self._updated()
 
     def set_action(self, action, package):
         """
