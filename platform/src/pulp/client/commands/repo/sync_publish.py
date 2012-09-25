@@ -203,7 +203,8 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         override_config = {}
         for option in self.override_config_keywords:
             if kwargs[option]:
-                override_config[option] = kwargs[option]
+                # Replace hyphens in option keywords to underscores eg. iso-prefix to iso_prefix
+                override_config[option.replace('-','_')] = kwargs[option]
         return override_config
 
 
