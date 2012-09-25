@@ -20,8 +20,67 @@ from gettext import gettext as _
 from command import PollingCommand
 from pulp.client.extensions.extensions import PulpCliSection
 from pulp.bindings.exceptions import NotFoundException
+from okaara.prompt import COLOR_GREEN, COLOR_RED, MOVE_UP, CLEAR_REMAINDER
 
 TYPE_ID = 'rpm'
+
+class ProgressTracker:
+
+    def __init__(self, prompt):
+        self.prompt = prompt
+        self.next_step = 0
+        self.details = None
+        self.OK = prompt.color('OK', COLOR_GREEN)
+        self.FAILED = prompt.color('FAILED', COLOR_RED)
+
+    def reset(self):
+        self.next_step = 0
+        self.details = None
+
+    def display(self, report):
+        self.display_steps(report['steps'])
+        self.display_details(report['details'])
+
+    def display_steps(self, steps):
+        num_steps = len(steps)
+        self.backup()
+        for i in range(self.next_step, num_steps):
+            self.write_step(steps[i])
+            self.next_step = i
+
+    def backup(self):
+        lines = 1
+        if self.details:
+            lines += len(self.details.split('\n'))
+        self.prompt.move(MOVE_UP % lines)
+        self.prompt.clear(CLEAR_REMAINDER)
+
+    def write_step(self, step):
+        name, status = step
+        if status is None:
+            self.prompt.write(name)
+            return
+        if status:
+            status = self.OK
+        else:
+            status = self.FAILED
+        self.prompt.write('%-60s[ %s ]' % (name, status))
+
+    def display_details(self, details):
+        action = details.get('action')
+        package = details.get('package')
+        error = details.get('error')
+        self.details = None
+        if action:
+            self.details = '%+12s: %s' % (action, package)
+            self.prompt.write(self.details)
+            return
+        if error:
+            action = 'Error'
+            self.details = '%+12s: %s' % (action, error)
+            self.prompt.write(self.details, COLOR_RED)
+            return
+
 
 class PackageSection(PulpCliSection):
 
@@ -63,6 +122,7 @@ class Install(PollingCommand):
         self.create_flag(
             '--import-keys',
             _('import GPG keys as needed'))
+        self.progress_tracker = ProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         consumer_id = kwargs['consumer-id']
@@ -98,6 +158,9 @@ class Install(PollingCommand):
         except NotFoundException:
             msg = _('Consumer [%s] not found') % consumer_id
             prompt.write(msg, tag='not-found')
+
+    def progress(self, report):
+        self.progress_tracker.display(report)
 
     def succeeded(self, id, task):
         prompt = self.context.prompt
@@ -154,6 +217,7 @@ class Update(PollingCommand):
             '--all',
             _('update all packages'),
             aliases=['-a'])
+        self.progress_tracker = ProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         consumer_id = kwargs['consumer-id']
@@ -203,6 +267,9 @@ class Update(PollingCommand):
             msg = _('Consumer [%s] not found') % consumer_id
             prompt.write(msg, tag='not-found')
 
+    def progress(self, report):
+        self.progress_tracker.display(report)
+
     def succeeded(self, id, task):
         prompt = self.context.prompt
         # reported as failed
@@ -251,6 +318,7 @@ class Uninstall(PollingCommand):
             required=True,
             allow_multiple=True,
             aliases=['-n'])
+        self.progress_tracker = ProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         consumer_id = kwargs['consumer-id']
@@ -284,6 +352,9 @@ class Uninstall(PollingCommand):
         except NotFoundException:
             msg = _('Consumer [%s] not found') % consumer_id
             prompt.write(msg, tag='not-found')
+
+    def progress(self, report):
+        self.progress_tracker.display(report)
 
     def succeeded(self, id, task):
         prompt = self.context.prompt

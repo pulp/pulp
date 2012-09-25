@@ -13,7 +13,7 @@
 
 from logging import getLogger
 
-from pulp_rpm.handler.yumlib import Package, PackageGroup, ProgressReport
+from pulp_rpm.handler.rpmtools import Package, PackageGroup, ProgressReport
 from rhsm.profile import get_profile
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ProfileReport, HandlerReport
@@ -55,7 +55,7 @@ class PackageProgress(ProgressReport):
         self.conduit = conduit
 
     def _updated(self):
-        report = dict(step=self.step, details=self.details)
+        report = dict(steps=self.steps, details=self.details)
         self.conduit.update_progress(report)
 
 

@@ -231,11 +231,16 @@ class PackageGroup:
 class ProgressReport:
     """
     Package (and group) progress reporting object.
-    @ivar step: A list package steps. The last step is the current step.
-    @type step: list
+    @ivar step: A list package steps.
+        Each step is: (name, status)
+    @type step: tuple
     @ivar details: Details about package actions taking place
         in the current step.
     """
+
+    PENDING = None
+    SUCCEEDED = True
+    FAILED = False
 
     def __init__(self):
         """
@@ -244,15 +249,29 @@ class ProgressReport:
         self.steps = []
         self.details = {}
 
-    def push_step(self, step):
+    def push_step(self, name):
         """
         Push the specified step.
-        @param step: The step to push.
-        @type step: str
+        First, update the last status to SUCCEEDED.
+        @param name: The step name to push.
+        @type name: str
         """
-        self.steps.append(step)
+        self.set_status(self.SUCCEEDED)
+        self.steps.append([name, self.PENDING])
         self.details = {}
         self._updated()
+
+    def set_status(self, status):
+        """
+        Update the status of the current step.
+        @param status: The status.
+        @type status: bool
+        """
+        if not self.steps:
+            return
+        last = self.steps[-1]
+        if last[1] is self.PENDING:
+            last[1] = status
 
     def set_action(self, action, package):
         """
@@ -269,6 +288,7 @@ class ProgressReport:
         @param msg: The error message to report.
         @type msg: str
         """
+        self.set_status(self.FAILED)
         self.details = dict(error=msg)
         self._updated()
 
@@ -416,7 +436,8 @@ class DownloadCallback(DownloadBaseCallback):
         @type now: float
         """
         action = 'Download'
-        self.report.set_action(action, self._getName())
+        package = ' | '.join((self._getName(), self.fsize))
+        self.report.set_action(action, package)
 
 
 class Yum(YumBase):
@@ -496,7 +517,12 @@ class Yum(YumBase):
         Process the transaction but first, set our callback.
         """
         cb = ProcessTransCallback(self.progress)
-        return YumBase.processTransaction(self, cb)
+        try:
+            YumBase.processTransaction(self, cb)
+            self.progress.set_status(True)
+        except Exception:
+            self.progress.set_status(False)
+            raise
 
     def runTransaction(self, cb):
         """
