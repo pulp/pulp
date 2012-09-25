@@ -370,13 +370,11 @@ def preserve_custom_metadata_on_scratchpad(repo, sync_conduit, config):
             _LOG.info("mdtype %s part of skip metadata; skipping" % ftype)
             continue
         filetype_path = os.path.join(importer_repodata_dir, os.path.basename(util.get_repomd_filetype_path(repomd_xml_path, ftype)))
-        renamed_filetype_path = os.path.join(os.path.dirname(filetype_path),\
-            ftype + '.' + '.'.join(os.path.basename(filetype_path).split('.')[1:]))
-        if renamed_filetype_path.endswith('.gz'):
+        if filetype_path.endswith('.gz'):
             # if file is gzipped, decompress
-            data = gzip.open(renamed_filetype_path).read().decode("utf-8", "replace")
+            data = gzip.open(filetype_path).read().decode("utf-8", "replace")
         else:
-            data = open(renamed_filetype_path).read().decode("utf-8", "replace")
+            data = open(filetype_path).read().decode("utf-8", "replace")
         existing_scratch_pad["repodata"].update({ftype : data})
     sync_conduit.set_repo_scratchpad(existing_scratch_pad)
 
