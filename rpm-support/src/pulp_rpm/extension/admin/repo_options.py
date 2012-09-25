@@ -24,7 +24,7 @@ from pulp_rpm.common import ids
 
 # -- data ---------------------------------------------------------------------
 
-# List of types that
+# Used to validate user entered skip types
 VALID_SKIP_TYPES = [ids.TYPE_ID_RPM, ids.TYPE_ID_DRPM, ids.TYPE_ID_DISTRO, ids.TYPE_ID_ERRATA]
 
 # -- validators ---------------------------------------------------------------
@@ -79,7 +79,8 @@ OPT_REMOVE_OLD = PulpCliOption('--remove-old', d, required=False, parse_func=par
 
 d = _('count indicating how many old rpm versions to retain; defaults to 0; '
       'this count only takes effect when remove-old option is set to true.')
-OPT_RETAIN_OLD_COUNT = PulpCliOption('--retain-old-count', d, required=False)
+OPT_RETAIN_OLD_COUNT = PulpCliOption('--retain-old-count', d, required=False,
+                                     parse_func=parsers.parse_positive_int)
 
 # -- proxy options ------------------------------------------------------------
 
@@ -99,10 +100,12 @@ OPT_PROXY_PASS = PulpCliOption('--proxy-pass', d, required=False)
 
 d = _('maximum bandwidth used per download thread, in KB/sec, when '
       'synchronizing the repo')
-OPT_MAX_SPEED = PulpCliOption('--max-speed', d, required=False)
+OPT_MAX_SPEED = PulpCliOption('--max-speed', d, required=False,
+                              parse_func=parsers.parse_positive_int)
 
 d = _('number of threads that will be used to synchronize the repo')
-OPT_NUM_THREADS = PulpCliOption('--num-threads', d, required=False)
+OPT_NUM_THREADS = PulpCliOption('--num-threads', d, required=False,
+                                parse_func=parsers.parse_positive_int)
 
 # -- ssl options --------------------------------------------------------------
 
@@ -112,7 +115,8 @@ OPT_FEED_CA_CERT = PulpCliOption('--feed-ca-cert', d, required=False)
 
 d = _('if "true", the feed\'s SSL certificate will be verified against the '
       'feed_ca_cert; defaults to false')
-OPT_VERIFY_FEED_SSL = PulpCliOption('--verify-feed-ssl', d, required=False)
+OPT_VERIFY_FEED_SSL = PulpCliOption('--verify-feed-ssl', d, required=False,
+                                    parse_func=parsers.parse_boolean)
 
 d = _('full path to the certificate to use for authentication when '
       'accessing the external feed')

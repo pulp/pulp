@@ -28,7 +28,7 @@ from pulp.common import dateutils
 def parse_boolean(value):
     """
     Returns the boolean representation of the given user input, raising the
-    appopriate exception if the user input cannot be parsed.
+    appropriate exception if the user input cannot be parsed.
 
     :param value: user entered text extracted by the framework
     :type  value: str
@@ -62,6 +62,21 @@ def parse_notes(value):
         return arg_utils.args_to_notes_dict(value)
     except arg_utils.InvalidConfig:
         raise ValueError(_('invalid syntax for specifying notes'))
+
+
+def parse_positive_int(value):
+    """
+    Returns an int representation of the user entered value, raising an
+    exception if it is not a positive number.
+
+    :param value: user entered value
+    :type  value: str
+    :rtype: int
+    """
+
+    i = int(value)
+    if i < 1:
+        raise ValueError(_('value must be a positive integer'))
 
 
 def iso8601(value):

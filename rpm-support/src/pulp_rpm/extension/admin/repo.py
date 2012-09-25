@@ -151,7 +151,7 @@ class RpmRepoCreateCommand(CreateRepositoryCommand):
         # Create the repository; let exceptions bubble up to the framework exception handler
         self.context.server.repo.create_and_configure(
             repo_id, display_name, description, notes,
-            ids.TYPE_ID_IMPORTER_YUM,importer_config, distributors
+            ids.TYPE_ID_IMPORTER_YUM, importer_config, distributors
         )
 
         msg = _('Successfully created repository [%(r)s]')
