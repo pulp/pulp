@@ -125,12 +125,11 @@ def render_itemized_in_progress_state(prompt, data, type_name, progress_bar, sta
                 'traceback' : traceback
             }
 
-            template  = 'File:    %(name)s\n'
-            template += 'Error:   %(error)s\n'
+            template  = _('File:    %(name)s\n')
+            template += _('Error:   %(error)s\n')
             if message_data["traceback"]:
-                template += 'Traceback:\n'
-                template += '%(traceback)s'
-            template = _(template)
+                template += _('Traceback:\n')
+                template += _('%(traceback)s')
 
             message = template % message_data
 
