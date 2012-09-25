@@ -390,9 +390,7 @@ class RpmIsoStatusRenderer(StatusRenderer):
         self.rpms_last_state = constants.STATE_NOT_STARTED
         self.distributions_last_state = constants.STATE_NOT_STARTED
         self.errata_last_state = constants.STATE_NOT_STARTED
-
-        # Holding off on tracking metadata generation until prad's changes in v2 metadata are merged
-        #self.generate_metadata_last_state = constants.STATE_NOT_STARTED
+        self.generate_metadata_last_state = constants.STATE_NOT_STARTED
         self.isos_last_state = constants.STATE_NOT_STARTED
         self.publish_http_last_state = constants.STATE_NOT_STARTED
         self.publish_https_last_state = constants.STATE_NOT_STARTED
@@ -401,8 +399,8 @@ class RpmIsoStatusRenderer(StatusRenderer):
         self.rpms_bar = self.prompt.create_progress_bar()
         self.distributions_bar = self.prompt.create_progress_bar()
         self.errata_bar = self.prompt.create_progress_bar()
+        self.generate_metadata_spinner = self.prompt.create_spinner()
         self.isos_bar = self.prompt.create_progress_bar()
-        #self.generate_metadata_spinner = self.prompt.create_spinner()
         self.publish_http_spinner = self.prompt.create_spinner()
         self.publish_https_spinner = self.prompt.create_spinner()
 
@@ -417,8 +415,9 @@ class RpmIsoStatusRenderer(StatusRenderer):
             self.render_rpms_step(progress_report)
             self.render_errata_step(progress_report)
             self.render_distributions_step(progress_report)
+            # Holding off on rendering metadata generation until prad's v2 metadata changes are merged
+            # self.render_generate_metadata_step(progress_report)
             self.render_isos_step(progress_report)
-            #self.render_generate_metadata_step(progress_report)
             self.render_publish_http_step(progress_report)
             self.render_publish_https_step(progress_report)
 

@@ -39,6 +39,8 @@ SECTION_SYNC_SCHEDULES = 'schedules'
 SECTION_PUBLISH = 'publish'
 SECTION_PUBLISH_SCHEDULES = 'schedules'
 
+SECTION_EXPORT = 'export'
+
 DESC_ROOT = _('contains commands for working with repositories containing RPM-related content')
 DESC_REPO = _('repository lifecycle commands')
 
@@ -54,6 +56,8 @@ DESC_SYNC = _('run, schedule, or view the status of sync tasks')
 DESC_SYNC_SCHEDULES = _('manage repository sync schedules')
 DESC_PUBLISH = _('run, schedule, or view the status of publish tasks')
 DESC_PUBLISH_SCHEDULES = _('manage repository publish schedules')
+
+DESC_EXPORT = _('run or view the status of ISO export of a repository')
 
 # -- creation -----------------------------------------------------------------
 
@@ -101,6 +105,7 @@ def ensure_repo_structure(cli):
         (SECTION_UPLOADS, DESC_UPLOADS),
         (SECTION_SYNC, DESC_SYNC),
         (SECTION_PUBLISH, DESC_PUBLISH),
+        (SECTION_EXPORT, DESC_EXPORT),
     )
     for name, description in direct_subsections:
         repo_section.create_subsection(name, description)
@@ -114,7 +119,9 @@ def ensure_repo_structure(cli):
 
     publish_section = repo_publish_section(cli)
     publish_section.create_subsection(SECTION_PUBLISH_SCHEDULES, DESC_PUBLISH_SCHEDULES)
-
+    
+    export_section = repo_export_section(cli)
+    
     return repo_section
 
 # -- section retrieval --------------------------------------------------------
@@ -157,6 +164,10 @@ def repo_sync_schedules_section(cli):
 
 def repo_publish_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_PUBLISH)
+
+
+def repo_export_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_EXPORT)
 
 
 def repo_publish_schedules_section(cli):
