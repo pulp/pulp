@@ -495,14 +495,15 @@ class Yum(YumBase):
         Clean handlers leaked by yum.
         """
         def strip(logger):
-            try:
-                for handler in logger.handlers:
-                    logger.removeHandler(handler)
-            except AttributeError:
-                log.exception(repr(logger))
-        for n,lg in Logger.manager.loggerDict.items():
-            if n.startswith('yum.'):
-                strip(lg)
+            for handler in logger.handlers:
+                logger.removeHandler(handler)
+        try:
+            for n,lg in Logger.manager.loggerDict.items():
+                if n.startswith('yum.') and isinstance(lg, Logger):
+                    strip(lg)
+        except Exception:
+            log.exception('logger cleanup failed')
+            raise
 
     def close(self):
         """
