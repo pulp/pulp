@@ -215,6 +215,7 @@ def add_to_command(command):
     basic_group.add_option(std_options.OPTION_NOTES)
 
     # Synchronization Options
+    sync_group.add_option(OPT_FEED)
     sync_group.add_option(OPT_NEWEST)
     sync_group.add_option(OPT_SKIP)
     sync_group.add_option(OPT_VERIFY_SIZE)
