@@ -29,6 +29,7 @@ from pulp.plugins.model import Unit, SyncReport
 from pulp_rpm.common.ids import TYPE_ID_IMPORTER_YUM, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY, TYPE_ID_DISTRO,\
         TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_RPM, TYPE_ID_SRPM
 from pulp_rpm.yum_plugin import util, depsolver
+from pulp_rpm.yum_plugin.metadata import get_package_xml
 
 _ = gettext.gettext
 _LOG = util.getLogger(__name__)
@@ -443,6 +444,8 @@ class YumImporter(Importer):
             return False, summary, details
         relative_path = "%s/%s/%s/%s/%s/%s" % (unit_key['name'], unit_key['version'],
                                                         unit_key['release'], unit_key['arch'], unit_key['checksum'], metadata['filename'])
+        # get the xml dumps for the pkg
+        metadata["repodata"] = get_package_xml(file_path)
         u = conduit.init_unit(TYPE_ID_RPM, unit_key, metadata, relative_path)
         new_path = u.storage_path
         try:

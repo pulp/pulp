@@ -390,7 +390,7 @@ class TestComps(rpm_support_base.PulpRPMTests):
         publish_conduit = distributor_mocks.get_publish_conduit(
                 existing_units=[grp_a, grp_b, cat_a, cat_b])
         config = distributor_mocks.get_basic_config(relative_url=repo.id, 
-                http=True, https=True, generate_metadata=True)
+                http=True, https=True, generate_metadata=True, use_createrepo=True)
         # Publish the repo, be sure 'generate_metadata' is True
         yum_distributor = YumDistributor()
         report = yum_distributor.publish_repo(repo, publish_conduit, config)

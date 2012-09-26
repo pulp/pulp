@@ -13,12 +13,15 @@
 
 
 from pulp.server.managers.schedule.consumer import (
-    ConsumerContentInstallScheduleManager)
+    ConsumerContentInstallScheduleManager, ConsumerContentUpdateScheduleManager,
+    ConsumerContentUninstallScheduleManager)
 from pulp.server.managers.schedule.repo import (
     RepoPublishScheduleManager, RepoSyncScheduleManager)
 
 
 class AggregateScheduleManager(ConsumerContentInstallScheduleManager,
+                               ConsumerContentUpdateScheduleManager,
+                               ConsumerContentUninstallScheduleManager,
                                RepoPublishScheduleManager,
                                RepoSyncScheduleManager):
     """
