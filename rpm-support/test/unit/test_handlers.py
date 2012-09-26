@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../rpm_s
 import mock_yum
 from mock import Mock
 from mock_yum import YumBase
-from unittest import TestCase
 from rpm_support_base import PulpRPMTests
 from pulp.agent.lib.container import Container, SYSTEM, CONTENT, BIND
 from pulp.agent.lib.dispatcher import Dispatcher
@@ -433,7 +432,6 @@ class TestGroups(HandlerTest):
         # Verify
         self.verify_succeeded(report, removed=groups)
         self.assertFalse(report.reboot['scheduled'])
-        self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
         self.assertTrue(YumBase.processTransaction.called)
         
@@ -492,96 +490,3 @@ class TestLinux(HandlerTest):
 
     def test_linux(self):
         pass
-
-
-class TestProgressReport(TestCase):
-
-    def setUp(self):
-        from yum.callbacks import PT_MESSAGES
-        from pulp_rpm.handler.rpmtools import\
-            ProcessTransCallback,\
-            RPMCallback,\
-            DownloadCallback,\
-            ProgressReport
-        self.PT_MESSAGES = PT_MESSAGES
-        self.ProcessTransCallback = ProcessTransCallback
-        self.RPMCallback = RPMCallback
-        self.DownloadCallback = DownloadCallback
-        self.ProgressReport = ProgressReport
-
-    def test_report_steps(self):
-        STEPS = ('A', 'B', 'C')
-        ACTION = ('downloading', 'package-xyz-1.0-1.f16.rpm')
-        pr = self.ProgressReport()
-        pr._updated = Mock()
-        for s in STEPS:
-            # validate steps pushed with status of None
-            pr.push_step(s)
-            name, status = pr.steps[-1]
-            self.assertEqual(name, s)
-            self.assertTrue(status is None)
-            # validate details cleared on state pushed
-            self.assertEqual(len(pr.details), 0)
-            # set the action
-            pr.set_action(ACTION[0], ACTION[1])
-            # validate action
-            self.assertEqual(pr.details['action'], ACTION[0])
-            self.assertEqual(pr.details['package'], ACTION[1])
-            # validate previous step status is set (True) on next
-            # push when status is None
-            prev = pr.steps[-2:-1]
-            if prev:
-                self.assertTrue(prev[0][1])
-
-    def test_report_steps_with_errors(self):
-        # Test that previous state with status=False is not
-        # set (True) on next state push
-        STEPS = ('A', 'B', 'C')
-        pr = self.ProgressReport()
-        pr._updated = Mock()
-        pr.push_step(STEPS[0])
-        pr.push_step(STEPS[1])
-        pr.set_status(False)
-        pr.push_step(STEPS[2])
-        self.assertTrue(pr.steps[0][1])
-        self.assertFalse(pr.steps[1][1])
-        self.assertTrue(pr.steps[2][1] is None)
-
-    def test_trans_callback(self):
-        pr = self.ProgressReport()
-        pr._updated = Mock()
-        cb = self.ProcessTransCallback(pr)
-        for state in sorted(self.PT_MESSAGES.keys()):
-            cb.event(state)
-        pr.set_status(True)
-        self.assertEqual(len(self.PT_MESSAGES), len(pr.steps))
-        i = 0
-        for state in sorted(self.PT_MESSAGES.keys()):
-            step = pr.steps[i]
-            name = self.PT_MESSAGES[state]
-            self.assertEqual(step[0], name)
-            self.assertTrue(step[1])
-            i += 1
-
-    def test_rpm_callback(self):
-        pr = self.ProgressReport()
-        pr._updated = Mock()
-        cb = self.RPMCallback(pr)
-        for action in sorted(cb.action.keys()):
-            package = '%s_package' % action
-            cb.event(package, action)
-            self.assertEqual(pr.details['action'], cb.action[action])
-            self.assertEqual(pr.details['package'], package)
-        self.assertEqual(len(pr.steps), 0)
-
-    def test_download_callback(self):
-        FILES = ('A', 'B', 'C')
-        pr = self.ProgressReport()
-        pr._updated = Mock()
-        cb = self.DownloadCallback(pr)
-        for file in FILES:
-            path = '/path/%s' % file
-            cb.start(filename=path, basename=file, size=1024)
-            self.assertEqual(pr.details['action'], 'Downloading')
-            self.assertEqual(pr.details['package'], '%s | 1.0 kB' % file)
-        self.assertEqual(len(pr.steps), 0)
