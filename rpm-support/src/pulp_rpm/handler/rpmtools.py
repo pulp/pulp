@@ -379,6 +379,7 @@ class RPMCallback(RPMBaseCallback):
         Notification of file related package events.
         The event is forwarded to the report object to be consolidated
         with other reported progress information.
+        Note: logging to /var/log/yum.log happens in the super impl.
         @param package: A package object (subject of the event).
         @type package: str
         @param action: The action in progress on the package.
@@ -456,6 +457,12 @@ class Yum(YumBase):
 
     def __init__(self, importkeys=False, progress=None):
         """
+        Construct a customized instance of YumBase.
+        This includes:
+          - loading yum plugins.
+          - custom configuration.
+          - setting the progress bar for download progress reporting.
+          - prime our progress report object.
         @param importkeys: Allow the import of GPG keys.
         @type importkeys: bool
         @param progress: A progress reporting object.
@@ -517,21 +524,17 @@ class Yum(YumBase):
 
     def processTransaction(self):
         """
-        Process the transaction but first, set our callback.
+        Process the transaction.
+        The method is overridden so we can add progress reporting.
+        The I{callback} is used to report high-level progress.
+        The I{display} is used to report rpm-level progress.
         """
-        cb = ProcessTransCallback(self.progress)
         try:
-            YumBase.processTransaction(self, cb)
+            callback = ProcessTransCallback(self.progress)
+            display = RPMCallback(self.progress)
+            YumBase.processTransaction(self, callback, rpmDisplay=display)
             self.progress.set_status(True)
         except Exception:
             self.progress.set_status(False)
             raise
 
-    def runTransaction(self, cb):
-        """
-        Run the transaction but first, setup the display.
-        @param cb: A progress callback.
-        @type cb: L{RPMTransaction}
-        """
-        cb.display = RPMCallback(self.progress)
-        return YumBase.runTransaction(self, cb)
