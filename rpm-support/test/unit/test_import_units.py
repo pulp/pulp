@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 import importer_mocks
 from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter
-from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM, TYPE_ID_ERRATA
+from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM, TYPE_ID_ERRATA, TYPE_ID_DISTRO
 from pulp_rpm.yum_plugin import util
 
 from pulp.plugins.model import Repository, Unit
@@ -269,6 +269,60 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(associated_units), len(errata_unit))
         for u in associated_units:
             self.assertTrue(u in errata_unit)
+
+
+    def test_distribution_unit_import(self):
+        existing_units = []
+        dunit_key = {}
+        dunit_key['id'] = "ks-TestFamily-TestVariant-16-x86_64"
+        dunit_key['version'] = "16"
+        dunit_key['arch'] = "x86_64"
+        dunit_key['family'] = "TestFamily"
+        dunit_key['variant'] = "TestVariant"
+        metadata = { "files" : [{"checksumtype" : "sha256", 	"relativepath" : "images/fileA.txt", 	"fileName" : "fileA.txt",
+                                 "downloadurl" : "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest//images/fileA.txt",
+                                 "item_type" : "tree_file",
+                                 "savepath" : "%s/testr1/images" % self.data_dir,
+                                 "checksum" : "22603a94360ee24b7034c74fa13d70dd122aa8c4be2010fc1361e1e6b0b410ab",
+                                 "filename" : "fileA.txt",
+                                 "pkgpath" : "%s/ks-TestFamily-TestVariant-16-x86_64/images" % self.pkg_dir,
+                                 "size" : 0 },
+                { 	"checksumtype" : "sha256", 	"relativepath" : "images/fileB.txt", 	"fileName" : "fileB.txt",
+                      "downloadurl" : "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest//images/fileB.txt",
+                      "item_type" : "tree_file",
+                      "savepath" : "%s/testr1/images" % self.data_dir,
+                      "checksum" : "8dc89e9883c098443f6616e60a8e489254bf239eeade6e4b4943b7c8c0c345a4",
+                      "filename" : "fileB.txt",
+                      "pkgpath" : "%s/ks-TestFamily-TestVariant-16-x86_64/images" % self.pkg_dir, 	"size" : 0 },
+                { 	"checksumtype" : "sha256", 	"relativepath" : "images/fileC.iso", 	"fileName" : "fileC.iso",
+                      "downloadurl" : "http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/pulp_unittest//images/fileC.iso",
+                      "item_type" : "tree_file",
+                      "savepath" : "%s/testr1/images" % self.data_dir,
+                      "checksum" : "099f2bafd533e97dcfee778bc24138c40f114323785ac1987a0db66e07086f74",
+                      "filename" : "fileC.iso",
+                      "pkgpath" : "%s/ks-TestFamily-TestVariant-16-x86_64/images" % self.pkg_dir, 	"size" : 0 } ],}
+        distro_unit = [Unit(TYPE_ID_DISTRO, dunit_key, metadata, '')]
+        distro_unit[0].storage_path = "%s/ks-TestFamily-TestVariant-16-x86_64" % self.pkg_dir
+        existing_units += distro_unit
+        # REPO A (source)
+        repoA = mock.Mock(spec=Repository)
+        repoA.working_dir = self.data_dir
+        repoA.id = "test_distro_unit_copy"
+        # REPO B (target)
+        repoB = mock.Mock(spec=Repository)
+        repoB.working_dir = self.working_dir
+        repoB.id = "repoB"
+        conduit = importer_mocks.get_import_conduit([distro_unit], existing_units=existing_units)
+        config = importer_mocks.get_basic_config()
+        importer = YumImporter()
+        # Test
+        result = importer.import_units(repoA, repoB, conduit, config, distro_unit)
+        # Verify
+        print conduit.associate_unit.call_args_list
+        associated_units = [mock_call[0][0] for mock_call in conduit.associate_unit.call_args_list]
+        self.assertEqual(len(associated_units), len(distro_unit))
+        for u in associated_units:
+            self.assertTrue(u in distro_unit)
 
 class TestImportDependencies(rpm_support_base.PulpRPMTests):
 
