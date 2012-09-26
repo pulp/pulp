@@ -424,6 +424,5 @@ class TestImportDependencies(rpm_support_base.PulpRPMTests):
         # Verify
         associated_units = [mock_call[0][0] for mock_call in conduit.associate_unit.call_args_list]
         self.assertEqual(len(associated_units), len(existing_units))
-        missing_deps = importer.find_missing_dependencies(repoA, units, conduit, config)
         for u in associated_units:
-            self.assertTrue(u in missing_deps + units)
+            self.assertTrue(u in existing_units + units)

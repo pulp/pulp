@@ -255,7 +255,7 @@ class YumImporter(Importer):
             if key == 'resolve_dependencies':
                 value = config.get(key)
                 if value is not None and not isinstance(value, bool) :
-                    msg = _("%s should be a bool; got '%s' instead" % (key, value))
+                    msg = _("%(k)s should be a bool; got '%(v)s' instead") % {'k' : key, 'v' : value}
                     _LOG.error(msg)
                     return False, msg
 
@@ -296,7 +296,7 @@ class YumImporter(Importer):
             # do any additional work associated with the unit
             if u.type_id == TYPE_ID_RPM:
                 # if its an rpm unit process dependencies and import them as well
-                self._import_unit_dependencies(source_repo, [u], import_conduit, config)
+                self._import_unit_dependencies(source_repo, [u], import_conduit, config, existing_rpm_units=existing_rpm_units_dict)
             if u.type_id == TYPE_ID_ERRATA:
                 # if erratum, lookup deps and process associated units
                 self._import_errata_unit_rpms(source_repo, u, import_conduit, config, existing_rpm_units_dict)
@@ -322,12 +322,12 @@ class YumImporter(Importer):
                     rpm_unit = existing_rpm_units[rpm_key]
                     import_conduit.associate_unit(rpm_unit)
                     # process any deps
-                    self._import_unit_dependencies(source_repo, [rpm_unit], import_conduit, config)
+                    self._import_unit_dependencies(source_repo, [rpm_unit], import_conduit, config, existing_rpm_units=existing_rpm_units)
                     _LOG.debug("Found matching rpm unit %s" % rpm_unit)
                 else:
                     _LOG.debug("rpm unit %s not found; skipping" % pinfo)
 
-    def _import_unit_dependencies(self, source_repo, units, import_conduit, config):
+    def _import_unit_dependencies(self, source_repo, units, import_conduit, config, existing_rpm_units=None):
         """
         Lookup any dependencies associated with the units and associate them through the import conduit
         """
@@ -337,7 +337,7 @@ class YumImporter(Importer):
             return
         _LOG.debug("resolving dependencies associated with rpm units %s" % units)
         missing_deps =\
-            self.find_missing_dependencies(source_repo, units, import_conduit, config)
+            self.find_missing_dependencies(source_repo, units, import_conduit, config, existing_rpm_units=existing_rpm_units)
         _LOG.debug("missing deps found %s" % missing_deps)
         for dep in missing_deps:
             import_conduit.associate_unit(dep)
@@ -600,7 +600,7 @@ class YumImporter(Importer):
                  key['checksum']))
         return keylist
 
-    def find_missing_dependencies(self, repo, units, conduit, config):
+    def find_missing_dependencies(self, repo, units, conduit, config, existing_rpm_units=None):
         """
         Find dependencies within the specified repository that are not
         included in the specified I{units} list.  This method is intended to
@@ -615,6 +615,8 @@ class YumImporter(Importer):
         @type conduit: L{pulp.plugins.conduits.unit_import.ImportConduit}
         @param config: plugin configuration
         @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        @param existing_rpm_units: a dict of existing rpm unit key and unit
+        @type existing_rpm_units: {}
         @return: The list of missing dependencies (units).
             Unit is: L{pulp.plugins.model.Unit}
         @rtype: list
@@ -625,8 +627,7 @@ class YumImporter(Importer):
         resolved = itertools.chain(*deps['resolved'].values())
         if resolved:
             keylist = self.keylist(resolved)
-            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM])
-            inventory = get_existing_units(conduit, criteria)
+            inventory = existing_rpm_units
             for key in keylist:
                 unit = inventory.get(key)
                 if unit is None:
