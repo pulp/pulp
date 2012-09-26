@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 import importer_mocks
 from yum_importer import importer_rpm
 from yum_importer.importer import YumImporter
-from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM
+from pulp_rpm.common.ids import TYPE_ID_RPM, UNIT_KEY_RPM, TYPE_ID_IMPORTER_YUM, TYPE_ID_ERRATA
 from pulp_rpm.yum_plugin import util
 
 from pulp.plugins.model import Repository, Unit
@@ -75,16 +75,6 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         status, summary, details = importer._sync_repo(source_repo, sync_conduit, config)
         self.assertTrue(status)
         self.assertEquals(summary["packages"]["num_synced_new_rpms"], 3)
-        # Confirm regular RPM files exist under self.pkg_dir
-        pkgs = self.get_files_in_dir("*.rpm", self.pkg_dir)
-        self.assertEquals(len(pkgs), 3)
-        for p in pkgs:
-            self.assertTrue(os.path.isfile(p))
-        # Confirm symlinks to RPMs exist under repo.working_dir
-        sym_links = self.get_files_in_dir("*.rpm", source_repo.working_dir)
-        self.assertEquals(len(pkgs), 3)
-        for link in sym_links:
-            self.assertTrue(os.path.islink(link))
         #
         # Now we have some test data in the source repo
         #
@@ -159,14 +149,6 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(associated_units), len(source_units))
         for u in associated_units:
             self.assertTrue(u in source_units)
-        #
-        # Test that we created the symlinks in the repo working directory
-        # Confirm symlinks to RPMs exist under repo.working_dir
-        #
-        sym_links = self.get_files_in_dir("*.rpm", dest_repo.working_dir)
-        self.assertEquals(len(sym_links), 3)
-        for link in sym_links:
-            self.assertTrue(os.path.islink(link))
 
     def test_import_specific_units(self):
         importer, source_repo, source_units, import_conduit, config = self.setup_source_repo()
@@ -187,16 +169,106 @@ class TestImportUnits(rpm_support_base.PulpRPMTests):
         self.assertEqual(len(associated_units), len(specific_units))
         for u in associated_units:
             self.assertTrue(u in specific_units)
-        #
-        # Test that we created the symlinks in the repo working directory
-        # Confirm symlinks to RPMs exist under repo.working_dir
-        #
-        sym_links = self.get_files_in_dir("*.rpm", dest_repo.working_dir)
-        self.assertEquals(len(sym_links), 2)
-        for link in sym_links:
-            self.assertTrue(os.path.islink(link))
 
-
+    def test_errata_import_units(self):
+        existing_units = []
+        unit_key = dict()
+        unit_key['id'] = "RHEA-2010:9999"
+        mdata = { 'description'  : "test",
+                  'from_str': 'security@redhat.com',
+                  'issued': '2010-03-30 08:07:30',
+                  'pkglist': [{'name': 'RHEL Virtualization (v. 5 for 32-bit x86)',
+                               'packages': [{'arch': 'x86_64',
+                                             'epoch': '0',
+                                             'filename': 'patb-0.1-2.x86_64.rpm',
+                                             'name': 'patb',
+                                             'release': '2',
+                                             'src': '',
+                                             'sum': ('sha',
+                                                     '017c12050a97cf6095892498750c2a39d2bf535e'),
+                                             'version': '0.1'},
+                                       {'arch': 'x86_64',
+                                        'epoch': '0',
+                                        'filename': 'emoticons-0.1-2.x86_64.rpm',
+                                        'name': 'emoticons',
+                                        'release': '2',
+                                        'src': '',
+                                        'sum': ('sha',
+                                                '663c89b0d29bfd5479d8736b716d50eed9495dbb'),
+                                        'version': '0.1'}],
+                               'short': 'rhel-i386-server-vt-5'}],
+                  'pushcount': 1,
+                  'reboot_suggested': False,
+                  'references': [],
+                  'release': '',
+                  'rights': '',
+                  'status': 'final',
+                  'summary': '',
+                  'title': 'emoticons enhancement fix and enhancement update',
+                  'updated': '2010-03-30 08:07:30',
+                  'version': '1',
+                  'type' : 'enhancement',
+                  'severity' : 'Low',
+                  'solution' : ''}
+        unit_key_2 = dict()
+        unit_key_2['id'] = "RHEA-2008:9999"
+        mdata_2 = { 'description'  : "test",
+                    'from_str': 'security@redhat.com',
+                    'issued': '2008-03-30 00:00:00',
+                    'pkglist': [{'name': 'RHEL Virtualization (v. 5 for 32-bit x86)',
+                                 'packages': [{'arch': 'x86_64',
+                                               'epoch': '0',
+                                               'filename': 'patb-0.1-2.x86_64.rpm',
+                                               'name': 'patb',
+                                               'release': '2',
+                                               'src': '',
+                                               'sum': ('sha',
+                                                       '017c12050a97cf6095892498750c2a39d2bf535e'),
+                                               'version': '0.1'},
+                                         {'arch': 'x86_64',
+                                          'epoch': '0',
+                                          'filename': 'emoticons-0.1-2.x86_64.rpm',
+                                          'name': 'emoticons',
+                                          'release': '2',
+                                          'src': '',
+                                          'sum': ('sha',
+                                                  '663c89b0d29bfd5479d8736b716d50eed9495dbb'),
+                                          'version': '0.1'}],
+                                 'short': 'rhel-i386-server-vt-5'}],
+                    'pushcount': 1,
+                    'reboot_suggested': False,
+                    'references': [],
+                    'release': '',
+                    'rights': '',
+                    'status': 'final',
+                    'summary': '',
+                    'title': 'emoticons enhancement fix and enhancement update',
+                    'updated': '2008-03-30 00:00:00',
+                    'version': '1',
+                    'type' : 'enhancement',
+                    'severity' : 'Low',
+                    'solution' : ''}
+        errata_unit = [Unit(TYPE_ID_ERRATA, unit_key, mdata, ''), Unit(TYPE_ID_ERRATA, unit_key_2,  mdata_2, '')]
+        existing_units += errata_unit
+        # REPO A (source)
+        repoA = mock.Mock(spec=Repository)
+        repoA.working_dir = self.data_dir
+        repoA.id = "test_errata_unit_copy"
+        # REPO B (target)
+        repoB = mock.Mock(spec=Repository)
+        repoB.working_dir = self.working_dir
+        repoB.id = "repoB"
+        conduit = importer_mocks.get_import_conduit(errata_unit, existing_units=existing_units)
+        config = importer_mocks.get_basic_config()
+        importer = YumImporter()
+        # Test
+        result = importer.import_units(repoA, repoB, conduit, config, errata_unit)
+        # Verify
+        print conduit.associate_unit.call_args_list
+        associated_units = [mock_call[0][0] for mock_call in conduit.associate_unit.call_args_list]
+        self.assertEqual(len(associated_units), len(errata_unit))
+        for u in associated_units:
+            self.assertTrue(u in errata_unit)
 
 class TestImportDependencies(rpm_support_base.PulpRPMTests):
 
@@ -298,5 +370,6 @@ class TestImportDependencies(rpm_support_base.PulpRPMTests):
         # Verify
         associated_units = [mock_call[0][0] for mock_call in conduit.associate_unit.call_args_list]
         self.assertEqual(len(associated_units), len(existing_units))
+        missing_deps = importer.find_missing_dependencies(repoA, units, conduit, config)
         for u in associated_units:
-            self.assertTrue(u in units)
+            self.assertTrue(u in missing_deps + units)
