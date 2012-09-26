@@ -50,6 +50,7 @@ TYPE_PASSWORD               = 'password-manager'
 TYPE_PERMISSION             = 'permission-manager'
 TYPE_PERMISSION_QUERY       = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER         = 'plugin-manager'
+TYPE_PRINCIPAL              = 'principal'
 TYPE_REPO                   = 'repo-manager'
 TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
@@ -65,6 +66,7 @@ TYPE_REPO_SYNC              = 'repo-sync-manager'
 TYPE_ROLE                   = 'role-manager'
 TYPE_ROLE_QUERY             = 'role-query-manager'
 TYPE_SCHEDULE               = 'schedule-manager'
+TYPE_TOPIC_PUBLISH          = 'topic-publish-manager'
 TYPE_USER                   = 'user-manager'
 TYPE_USER_QUERY             = 'user-query-manager'
 
@@ -238,6 +240,12 @@ def plugin_manager():
     """
     return get_manager(TYPE_PLUGIN_MANAGER)
 
+def principal_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.principal.PrincipalManager}
+    """
+    return get_manager(TYPE_PRINCIPAL)
+
 def repo_group_manager():
     """
     @rtype: L{pulp.server.managers.repo.group.cud.RepoGroupManager}
@@ -324,9 +332,15 @@ def role_query_manager():
 
 def schedule_manager():
     """
-    @rtype: L{pulp.server.manager.schedule.cud.ScheduleManager}
+    @rtype: L{pulp.server.managers.schedule.aggregate.AggregateScheduleManager}
     """
     return get_manager(TYPE_SCHEDULE)
+
+def topic_publish_manager():
+    """
+    @rtype: L{pulp.server.managers.event.remote.TopicPublishManager}
+    """
+    return get_manager(TYPE_TOPIC_PUBLISH)
 
 def user_manager():
     """
@@ -350,6 +364,7 @@ def initialize():
     # imports for individual managers to prevent circular imports
     from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
+    from pulp.server.managers.auth.principal import PrincipalManager
     from pulp.server.managers.auth.user.cud import UserManager
     from pulp.server.managers.auth.user.query import UserQueryManager
     from pulp.server.managers.auth.password import PasswordManager
@@ -373,6 +388,7 @@ def initialize():
     from pulp.server.managers.content.upload import ContentUploadManager
     from pulp.server.managers.event.crud import EventListenerManager
     from pulp.server.managers.event.fire import EventFireManager
+    from pulp.server.managers.event.remote import TopicPublishManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.dependency import DependencyManager
@@ -387,7 +403,7 @@ def initialize():
     from pulp.server.managers.repo.sync import RepoSyncManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
-    from pulp.server.managers.schedule.cud import ScheduleManager
+    from pulp.server.managers.schedule.aggregate import AggregateScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
@@ -415,6 +431,7 @@ def initialize():
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
+        TYPE_PRINCIPAL: PrincipalManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_ASSOCIATION_QUERY : RepoUnitAssociationQueryManager,
@@ -429,7 +446,8 @@ def initialize():
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
-        TYPE_SCHEDULE: ScheduleManager,
+        TYPE_SCHEDULE: AggregateScheduleManager,
+        TYPE_TOPIC_PUBLISH: TopicPublishManager,
         TYPE_USER: UserManager,
         TYPE_USER_QUERY: UserQueryManager,
     }

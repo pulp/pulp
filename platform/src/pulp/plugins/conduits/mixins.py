@@ -38,11 +38,13 @@ class ImporterConduitException(Exception):
     """
     pass
 
+
 class DistributorConduitException(Exception):
     """
     General exception that wraps any exception coming out of the Pulp server.
     """
     pass
+
 
 class ProfilerConduitException(Exception):
     """
@@ -65,9 +67,6 @@ class RepoScratchPadMixin(object):
         and distributors on the repository. Care should be taken to not destroy
         any data set by another plugin. This may be used to communicate between
         importers and distributors relevant data for the repository.
-
-        @raise ImporterConduitException: wraps any exception that may occur
-               in the Pulp server
         """
         try:
             repo_manager = manager_factory.repo_manager()
@@ -97,6 +96,33 @@ class RepoScratchPadMixin(object):
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
+
+class RepoScratchpadReadMixin(object):
+    """
+    Used for read only access to a repository's scratchpad. The intention is for
+    this to be used by repository group plugins to access but not change
+    the scratchpads for the repositories in the group.
+    """
+
+    def __init__(self, exception_class):
+        self.exception_class = exception_class
+
+    def get_repo_scratchpad(self, repo_id):
+        """
+        Returns the repository-level scratchpad for the indicated repository.
+
+        @raise ImporterConduitException: wraps any exception that may occur
+               in the Pulp server
+        """
+        try:
+            repo_manager = manager_factory.repo_manager()
+            value = repo_manager.get_repo_scratchpad(repo_id)
+            return value
+        except Exception, e:
+            _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : repo_id})
+            raise self.exception_class(e), None, sys.exc_info()[2]
+
+
 class SingleRepoUnitsMixin(object):
 
     def __init__(self, repo_id, exception_class):
@@ -120,6 +146,7 @@ class SingleRepoUnitsMixin(object):
         """
         return do_get_repo_units(self.repo_id, criteria, self.exception_class)
 
+
 class MultipleRepoUnitsMixin(object):
 
     def __init__(self, exception_class):
@@ -141,6 +168,7 @@ class MultipleRepoUnitsMixin(object):
         @rtype:  list of L{AssociatedUnit}
         """
         return do_get_repo_units(repo_id, criteria, self.exception_class)
+
 
 class ImporterScratchPadMixin(object):
 
@@ -188,6 +216,7 @@ class ImporterScratchPadMixin(object):
             _LOG.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
+
 class DistributorScratchPadMixin(object):
 
     def __init__(self, repo_id, distributor_id):
@@ -233,6 +262,7 @@ class DistributorScratchPadMixin(object):
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
+
 class RepoGroupDistributorScratchPadMixin(object):
 
     def __init__(self, group_id, distributor_id):
@@ -277,6 +307,7 @@ class RepoGroupDistributorScratchPadMixin(object):
         except Exception, e:
             _LOG.exception('Error setting scratchpad for repository [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
+
 
 class AddUnitMixin(object):
     """
@@ -443,6 +474,7 @@ class AddUnitMixin(object):
             _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
+
 class StatusMixin(object):
 
     def __init__(self, report_id, exception_class):
@@ -473,6 +505,7 @@ class StatusMixin(object):
                 # the log will tank and we don't want that exception to bubble up
                 pass
             raise self.exception_class(e), None, sys.exc_info()[2]
+
 
 class PublishReportMixin(object):
 

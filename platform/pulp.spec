@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.327
+Version: 0.0.328
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -159,12 +159,12 @@ Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.1.5-1
+Requires: grinder >= 0.1.6-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.70
+Requires: python-gofer >= 0.73
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.3-3.pulp
@@ -351,7 +351,7 @@ Summary: The Pulp agent
 Group: Development/Languages
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
-Requires: gofer >= 0.70
+Requires: gofer >= 0.73
 
 %description agent
 The pulp agent, used to provide remote command & control and
@@ -420,6 +420,31 @@ exit 0
 %endif
 
 %changelog
+* Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
+- Added conduit call for a group plugin to read a repo's scratchpad
+  (jason.dobies@redhat.com)
+- 858037 - Fixed and added safety check to avoid adding permissions with
+  resource type dict, added migrate script to delete all the old such entries
+  (skarmark@redhat.com)
+- Added sync schedule commands for Puppet repositories
+  (jason.dobies@redhat.com)
+- Added sync schedule support for Puppet repositories (jason.dobies@redhat.com)
+- Added reusable commands for schedule manipulation (jason.dobies@redhat.com)
+- 855380 - Fixed principal lookup to use correct API (jason.dobies@redhat.com)
+- 857176 - added reaper thread to dispatch history that removes archived calls
+  that have expired (jason.connor@gmail.com)
+- 854260 - Adding an optional 'repository_memberships' attribute to units that
+  are returned by a unit search. The new attribute is a list of repository IDs.
+  (mhrivnak@redhat.com)
+- 847091 - Hiding unit association data by default during association queries
+  unless it is requested. (mhrivnak@redhat.com)
+- added call_report field to current event handlers (jason.connor@gmail.com)
+- 855384 - providing a mechanism that propagates the principal information to
+  the task, which sets the principal around the execution of its call
+  (jason.connor@gmail.com)
+- 855380 - Changed import conduit to receive the association owner
+  (jason.dobies@redhat.com)
+
 * Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.327-1
 - 844751 - now storing repo create time in UTC and with the timezone explicitly
   serialized into the ISO8601 string. (mhrivnak@redhat.com)

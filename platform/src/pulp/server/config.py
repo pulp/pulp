@@ -59,6 +59,7 @@ _default_values = {
         'url': 'tcp://localhost:5672',
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
+        'topic_exchange': 'amq.topic',
     },
     'scheduler': {
         'dispatch_interval': '30',
@@ -87,6 +88,7 @@ _default_values = {
     'tasks': {
         'concurrency_threshold': '9',
         'dispatch_interval': '0.5',
+        'archived_call_lifetime': '48',
         'consumer_content_weight': '0',
         'create_weight': '0',
         'publish_weight': '1',

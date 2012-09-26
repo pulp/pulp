@@ -17,39 +17,54 @@ from pulp_puppet.extension.admin import structure
 
 class StructureTests(base_cli.ExtensionTests):
 
-    def test_structure(self):
+    def test_ensure_puppet_root(self):
         # Test
-        structure.ensure_structure(self.cli)
+        returned_root_section = structure.ensure_puppet_root(self.cli)
 
         # Verify
+        self.assertTrue(returned_root_section is not None)
+        self.assertEqual(returned_root_section.name, structure.SECTION_ROOT)
         puppet_root_section = self.cli.find_section(structure.SECTION_ROOT)
         self.assertTrue(puppet_root_section is not None)
-        self._assert_section(puppet_root_section, structure.STRUCTURE)
+        self.assertEqual(puppet_root_section.name, structure.SECTION_ROOT)
 
-    def test_structure_idempotency(self):
+    def test_ensure_puppet_root_idempotency(self):
         # Test
-        structure.ensure_structure(self.cli)
-        structure.ensure_structure(self.cli)
+        structure.ensure_puppet_root(self.cli)
+        returned_root_section = structure.ensure_puppet_root(self.cli)
 
         # Verify
+        self.assertTrue(returned_root_section is not None)
+        self.assertEqual(returned_root_section.name, structure.SECTION_ROOT)
         puppet_root_section = self.cli.find_section(structure.SECTION_ROOT)
         self.assertTrue(puppet_root_section is not None)
-        self._assert_section(puppet_root_section, structure.STRUCTURE)
+        self.assertEqual(puppet_root_section.name, structure.SECTION_ROOT)
 
-    def _assert_section(self, parent, child_dict):
-        self.assertTrue(parent is not None)
+    def test_ensure_repo_structure_no_root(self):
+        # Test
+        repo_section = structure.ensure_repo_structure(self.cli)
 
-        for child_name, grandchildren in child_dict.items():
-            child_section = parent.find_subsection(child_name)
-            self.assertTrue(child_section is not None, msg='Missing section: %s' % child_name)
+        # Verify
+        self.assertTrue(repo_section is not None)
+        self.assertEqual(repo_section.name, structure.SECTION_REPO)
+        puppet_root_section = self.cli.find_section(structure.SECTION_ROOT)
+        self.assertTrue(puppet_root_section is not None)
 
-            self._assert_section(child_section, grandchildren)
+    def test_ensure_repo_structure_idempotency(self):
+        # Test
+        structure.ensure_repo_structure(self.cli)
+        repo_section = structure.ensure_repo_structure(self.cli)
+
+        # Verify
+        self.assertTrue(repo_section is not None)
+        self.assertEqual(repo_section.name, structure.SECTION_REPO)
+
 
 class SectionRetrievalTests(base_cli.ExtensionTests):
 
     def setUp(self):
         super(SectionRetrievalTests, self).setUp()
-        structure.ensure_structure(self.cli)
+        structure.ensure_repo_structure(self.cli)
 
     def test_repo_section(self):
         section = structure.repo_section(self.cli)

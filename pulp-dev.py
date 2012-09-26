@@ -95,7 +95,6 @@ LINKS = (
     ('builtins/extensions/admin/pulp_role', DIR_ADMIN_EXTENSIONS + 'pulp_role'),
     ('builtins/extensions/admin/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
     ('builtins/extensions/admin/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
-    ('builtins/extensions/admin/pulp_upload', DIR_ADMIN_EXTENSIONS + 'pulp_upload'),
     ('builtins/extensions/admin/pulp_user', DIR_ADMIN_EXTENSIONS + 'pulp_user'),
 
     # Builtin Consumer Extensions
@@ -138,8 +137,6 @@ LINKS = (
     ('rpm-support/extensions/admin/rpm_units_remove', DIR_ADMIN_EXTENSIONS + 'rpm_units_remove'),
     ('rpm-support/extensions/admin/rpm_units_search', DIR_ADMIN_EXTENSIONS + 'rpm_units_search'),
     ('rpm-support/extensions/admin/rpm_upload', DIR_ADMIN_EXTENSIONS + 'rpm_upload'),
-    ('rpm-support/extensions/admin/rpm_package_group_upload', DIR_ADMIN_EXTENSIONS + 'rpm_package_group_upload'),
-    ('rpm-support/extensions/admin/rpm_errata_upload', DIR_ADMIN_EXTENSIONS + 'rpm_errata_upload'),
 
     # RPM Support Consumer Extensions
     ('rpm-support/extensions/consumer/rpm_consumer', DIR_CONSUMER_EXTENSIONS + 'rpm_consumer'),

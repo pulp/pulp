@@ -113,7 +113,7 @@ def _validate_consumer():
 
 def _validate_consumer_history():
     objectdb = ConsumerHistoryEvent.get_collection()
-    reference = ConsumerHistoryEvent('', '', '', {})
+    reference = ConsumerHistoryEvent('', '', '', None)
     return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
 def _validate_content_type():
@@ -174,7 +174,7 @@ def _validate_role():
     @return: number of errors found during validation
     """
     objectdb = Role.get_collection()
-    reference = Role(u'')
+    reference = Role(u'', None, None, None)
     return _validate_model(Role.__name__, objectdb, reference)
 
 

@@ -46,11 +46,11 @@ Synchronization
   Flag indicating if only the newest version of each package should be downloaded
   during synchronization.
 
-``--skip-types``
+``--skip``
   Comma-separated list of types to omit when synchronizing from the source. If
   unspecified, all types will be synchronized. Valid values are: packages,
   distributions, errata. Example usage to only synchronize packages:
-  ``--skip-types distributions,errata``
+  ``--skip distributions,errata``
 
 ``--verify-size``
   If true, as the repository is synchronized the size of each file will be verified
@@ -94,10 +94,6 @@ Publishing
   GPG key used to sign RPMs in this repository. This key will be made available
   to consumers to use in verifying content in the repository. The value to this
   option must be the full path to the GPG key file to upload to the server.
-
-``--regenerate-metadata``
-  Flag indicating the repository metadata should be regenerated rather than
-  reused from the external source.
 
 Feed Authentication
 ^^^^^^^^^^^^^^^^^^^

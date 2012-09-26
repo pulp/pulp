@@ -1,0 +1,35 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2012 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+import mock
+
+import base
+from pulp.server.event.amqp import handle_event
+
+
+class TestAMQPNotifier(base.PulpServerTests):
+    @mock.patch('pulp.server.managers.event.remote.TopicPublishManager.publish')
+    def test_handle_event(self, mock_publish):
+        event = mock.MagicMock()
+
+        handle_event({}, event)
+
+        mock_publish.assert_called_once_with(event, None)
+
+    @mock.patch('pulp.server.managers.event.remote.TopicPublishManager.publish')
+    def test_handle_event_with_exchange(self, mock_publish):
+        event = mock.MagicMock()
+
+        handle_event({'exchange': 'pulp'}, event)
+
+        mock_publish.assert_called_once_with(event, 'pulp')

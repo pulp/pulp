@@ -13,7 +13,8 @@
 
 import imp
 import os
-from pulp.common.config import Config, Validator, REQUIRED, OPTIONAL, BOOL, ANY
+from pulp.common.config import Config, Validator, SectionNotFound
+from pulp.common.config import REQUIRED, OPTIONAL, BOOL, ANY
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -165,7 +166,7 @@ class Typedef:
         """
         Construct the object and validate the configuration.
         @param cfg: The descriptor configuration.
-        @type cfg: INIConfig
+        @type cfg: Config
         @param section: The typedef section name within the descriptor.
         @type section: str
         """
@@ -176,9 +177,12 @@ class Typedef:
                 ),
              ),)
         cfg = Config(cfg, filter=[section])
-        validator = Validator(schema)
-        validator.validate(cfg)
-        self.cfg = cfg[section]
+        if cfg:
+            validator = Validator(schema)
+            validator.validate(cfg)
+            self.cfg = cfg[section]
+        else:
+            raise SectionNotFound(section)
 
 
 class Container:
@@ -194,6 +198,8 @@ class Container:
     @type path: list
     @ivar handlers: A mapping of typeid to handler.
     @type handlers: tuple (content={},distributor={})
+    @ivar raised: A list of handler loading exceptions.
+    @type raised: list
     """
 
     PATH = [
@@ -211,6 +217,7 @@ class Container:
         self.root = root
         self.path = path
         self.handlers = {}
+        self.raised = []
         self.reset()
 
     def reset(self):
@@ -221,6 +228,7 @@ class Container:
         for r in ROLES:
             d[r] = {}
         self.handlers = d
+        self.raised = []
 
     def load(self):
         """
@@ -257,6 +265,15 @@ class Container:
             all += self.handlers[role].items()
         return all
 
+    def errors(self):
+        """
+        Get a list of (exceptions) errors raised during
+        handler loading.
+        @return: A list of raised exceptions
+        @rtype: list
+        """
+        return self.raised
+
     def __import(self, name, descriptor):
         """
         Import the handler defined by the name and descriptor.
@@ -277,7 +294,8 @@ class Container:
                     hclass = getattr(mod, hclass)
                     handler = hclass(typedef.cfg)
                     self.handlers[role][typeid] = handler
-        except Exception:
+        except Exception, e:
+            self.raised.append(e)
             log.exception('handler "%s", import failed', name)
 
     def __mangled(self, name):

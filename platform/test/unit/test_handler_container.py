@@ -19,6 +19,8 @@ from pprint import pprint
 from mock_handlers import MockDeployer
 from pulp.agent.lib.container import *
 from pulp.agent.lib.dispatcher import *
+from pulp.agent.lib.conduit import Conduit
+from pulp.common.config import PropertyNotFound, SectionNotFound
 
 
 class TestHandlerContainer(unittest.TestCase):
@@ -38,10 +40,16 @@ class TestHandlerContainer(unittest.TestCase):
         container = self.container()
         # Test
         container.load()
-        handler = container.find('rpm')
         # Verify
+        handler = container.find('rpm')
         self.assertTrue(handler is not None)
-        
+        handler = container.find('puppet')
+        self.assertTrue(handler is None)
+        errors = container.errors()
+        self.assertEquals(len(errors), 2)
+        self.assertTrue(isinstance(errors[0], PropertyNotFound))
+        self.assertTrue(isinstance(errors[1], SectionNotFound))
+
     def test_find(self):
         # Setup
         container = self.container()
@@ -78,7 +86,8 @@ class TestDispatcher(unittest.TestCase):
         units.append(unit)
         options = {}
         # Test
-        report = dispatcher.install(units, options)
+        conduit = Conduit()
+        report = dispatcher.install(conduit, units, options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 2)
@@ -92,7 +101,8 @@ class TestDispatcher(unittest.TestCase):
             unit_key=dict(name='zsh'))
         options = dict(reboot=True)
         # Test
-        report = dispatcher.install([unit], options)
+        conduit = Conduit()
+        report = dispatcher.install(conduit, [unit], options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -112,7 +122,8 @@ class TestDispatcher(unittest.TestCase):
         units.append(unit)
         options = {}
         # Test
-        report = dispatcher.install(units, options)
+        conduit = Conduit()
+        report = dispatcher.install(conduit, units, options)
         pprint(report.dict())
         self.assertFalse(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -137,7 +148,8 @@ class TestDispatcher(unittest.TestCase):
         units.append(unit)
         options = {}
         # Test
-        report = dispatcher.update(units, options)
+        conduit = Conduit()
+        report = dispatcher.update(conduit, units, options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 2)
@@ -150,7 +162,8 @@ class TestDispatcher(unittest.TestCase):
             unit_key=dict(name='zsh'))
         options = {}
         # Test
-        report = dispatcher.uninstall([unit], options)
+        conduit = Conduit()
+        report = dispatcher.uninstall(conduit, [unit], options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -159,7 +172,8 @@ class TestDispatcher(unittest.TestCase):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        report = dispatcher.profile()
+        conduit = Conduit()
+        report = dispatcher.profile(conduit)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 0)
@@ -168,7 +182,8 @@ class TestDispatcher(unittest.TestCase):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        report = dispatcher.reboot()
+        conduit = Conduit()
+        report = dispatcher.reboot(conduit, {})
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 0)
@@ -177,8 +192,9 @@ class TestDispatcher(unittest.TestCase):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
+        conduit = Conduit()
         definition = dict(type_id='yum', repo={})
-        report = dispatcher.bind([definition,])
+        report = dispatcher.bind(conduit, [definition,])
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -187,8 +203,9 @@ class TestDispatcher(unittest.TestCase):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
+        conduit = Conduit()
         definition = dict(type_id='yum', repo={})
-        report = dispatcher.rebind([definition,])
+        report = dispatcher.rebind(conduit, [definition,])
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -197,7 +214,8 @@ class TestDispatcher(unittest.TestCase):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        report = dispatcher.unbind('repo-1')
+        conduit = Conduit()
+        report = dispatcher.unbind(conduit, 'repo-1')
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -206,7 +224,8 @@ class TestDispatcher(unittest.TestCase):
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
-        report = dispatcher.clean()
+        conduit = Conduit()
+        report = dispatcher.clean(conduit)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)

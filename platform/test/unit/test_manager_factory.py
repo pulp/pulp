@@ -29,6 +29,7 @@ from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 from pulp.server.managers.content.upload import ContentUploadManager
+from pulp.server.managers.event.remote import TopicPublishManager
 from pulp.server.managers.repo.cud import RepoManager
 from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
 from pulp.server.managers.repo.publish import RepoPublishManager
@@ -46,6 +47,8 @@ class FactoryTests(unittest.TestCase):
         """
         Tests the syntactic sugar methods for retrieving specific managers.
         """
+        # Setup
+        factory.initialize()
 
         # Test
         self.assertTrue(isinstance(factory.cert_generation_manager(), CertGenerationManager))
@@ -66,6 +69,7 @@ class FactoryTests(unittest.TestCase):
         self.assertTrue(isinstance(factory.content_query_manager(), ContentQueryManager))
         self.assertTrue(isinstance(factory.content_upload_manager(), ContentUploadManager))
         self.assertTrue(isinstance(factory.consumer_manager(), ConsumerManager))
+        self.assertTrue(isinstance(factory.topic_publish_manager(), TopicPublishManager))
 
     def test_get_manager(self):
         """

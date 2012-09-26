@@ -16,7 +16,7 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport, Unit
 
-def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksum_type="sha"):
+def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksum_type="sha", repodata=None):
     def build_success_report(summary, details):
         return PublishReport(True, summary, details)
 
@@ -41,10 +41,11 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
                     ret_val.append(u)
         return ret_val
 
-    def get_repo_scratchpad():
+    def get_repo_scratchpad(repoid=None):
         scratchpad = None
         if checksum_type:
             scratchpad = {"checksum_type" : checksum_type}
+
         return scratchpad
 
     publish_conduit = mock.Mock(spec=RepoPublishConduit)

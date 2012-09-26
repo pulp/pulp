@@ -20,7 +20,7 @@ from pulp.server.event import data as event_data
 from pulp.server.managers import factory as manager_factory
 
 
-class EventFireManagerTests(base.PulpServerTests):
+class EventFireManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(EventFireManagerTests, self).setUp()
@@ -66,6 +66,23 @@ class EventFireManagerTests(base.PulpServerTests):
 
         self.assertEqual({'2' : '2'}, notifier_2.fire.call_args[0][0])
         self.assertEqual(event, notifier_2.fire.call_args[0][1])
+
+    def test_do_fire_with_star(self):
+        # Setup
+        notifiers.NOTIFIER_FUNCTIONS.clear()
+
+        notifier_1 = mock.Mock()
+
+        notifiers.NOTIFIER_FUNCTIONS['notifier_1'] = notifier_1.fire
+
+        self.event_manager.create('notifier_1', {}, ['*'])
+
+        # Test
+        event = event_data.Event(event_data.TYPE_REPO_SYNC_STARTED, 'payload')
+        self.manager._do_fire(event)
+
+        # Verify
+        self.assertEqual(1, notifier_1.fire.call_count)
 
     def test_do_fire_with_exception(self):
         # Setup
@@ -140,4 +157,3 @@ class EventFireManagerTests(base.PulpServerTests):
 
         self.assertEqual(event.event_type, event_data.TYPE_REPO_SYNC_FINISHED)
         self.assertEqual(event.payload, result)
-

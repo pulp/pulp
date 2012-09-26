@@ -43,7 +43,7 @@ def handle_event(notifier_config, event):
     """
     if not config.getboolean('email', 'enabled'):
         return
-    body = json.dumps(event.payload, indent=2)
+    body = json.dumps(event.data(), indent=2)
     subject = notifier_config['subject']
     addresses = notifier_config['addresses']
 
@@ -77,14 +77,14 @@ def _send_email(subject, body, to_address):
     try:
         connection = smtplib.SMTP(host=host, port=port)
     except smtplib.SMTPConnectError:
-        logger.error('SMTP connection failed to %s on %s' % (host, port))
+        logger.exception('SMTP connection failed to %s on %s' % (host, port))
         return
 
     try:
         connection.sendmail(from_address, to_address, message.as_string())
     except smtplib.SMTPException, e:
         try:
-            logger.error('Error sending mail: %s' % e.message)
+            logger.exception('Error sending mail.')
         except AttributeError:
             logger.error('SMTP error while sending mail')
     connection.quit()

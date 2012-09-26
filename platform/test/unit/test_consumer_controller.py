@@ -892,6 +892,7 @@ class TestApplicability(base.PulpWebserviceTests):
         self.assertEquals(status, 200)
         self.assertEquals(len(body), 0)
 
+# scheduled content management tests -------------------------------------------
 
 class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
@@ -917,7 +918,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',
                 'units': units,
                 'options': options}
@@ -931,7 +932,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
                     'unit_key': {'name': 'zsh'}}
         options = {'importkeys': True}
 
-        path = '/v2/consumers/invalid-consumer/unit_install_schedules/'
+        path = '/v2/consumers/invalid-consumer/schedules/content/install/'
         body = {'schedule': schedule,
                 'units': [zsh_unit],
                 'options': options}
@@ -946,7 +947,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
                     'unit_key': {'name': 'zsh'}}
         options = {'importkeys': True}
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': schedule,
                 'units': [zsh_unit],
                 'options': options}
@@ -955,7 +956,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, response['_id'])
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, response['_id'])
 
         status, response = self.get(path)
 
@@ -967,7 +968,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
                     'unit_key': {'name': 'zsh'}}
         options = {'importkeys': True}
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': schedule,
                 'units': [zsh_unit],
                 'options': options}
@@ -976,7 +977,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
 
         status, response = self.get(path)
 
@@ -985,18 +986,18 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
     def test_get_scheduled_install_bad_consumer(self):
         schedule_id = str(ObjectId())
-        path = '/v2/consumers/invalid-consumer/unit_install_schedules/%s/' % schedule_id
+        path = '/v2/consumers/invalid-consumer/schedules/content/install/%s/' % schedule_id
         status, response = self.get(path)
         self.assertEqual(status, 404)
 
     def test_get_scheduled_install_bad_schedule(self):
         schedule_id = str(ObjectId())
-        path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, schedule_id)
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
         status, response = self.get(path)
         self.assertEqual(status, 404)
 
     def test_get_all_scheduled_installs_bad_consumer(self):
-        path = '/v2/consumers/invalid-consumer/unit_install_schedules/'
+        path = '/v2/consumers/invalid-consumer/schedules/content/install/'
         status, response = self.get(path)
         self.assertEqual(status, 404)
 
@@ -1006,7 +1007,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',
                 'units': units,
                 'options': options}
@@ -1015,7 +1016,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
         update_body = {'schedule': 'R2/PT1H'}
 
         status, response = self.put(update_path, update_body)
@@ -1027,7 +1028,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
 
-        path = '/v2/consumers/%s/unit_install_schedules/' % self.consumer_id
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',
                 'units': units,
                 'options': options}
@@ -1036,7 +1037,307 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/unit_install_schedules/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
+
+        status, response = self.delete(update_path)
+        self.assertEqual(status, 200)
+
+
+
+class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
+
+    def setUp(self):
+        super(ScheduledUnitUpdateTests, self).setUp()
+        plugin_api._create_manager()
+        mock_plugins.install()
+        mock_agent.install()
+        self.consumer_id = 'test-consumer'
+        self.consumer_manager = factory.consumer_manager()
+        self.consumer_manager.register(self.consumer_id)
+
+    def tearDown(self):
+        super(ScheduledUnitUpdateTests, self).tearDown()
+        self.consumer_manager = None
+        Consumer.get_collection().remove(safe=True)
+        ScheduledCall.get_collection().remove(safe=True)
+        mock_plugins.reset()
+
+    def test_create_scheduled_update(self):
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, body = self.post(path, body)
+        self.assertEquals(status, 201)
+
+    def test_create_scheduled_update_bad_consumer(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/invalid-consumer/schedules/content/update/'
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 404)
+
+    def test_get_scheduled_update(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/schedules/content/update/%s/' % (self.consumer_id, response['_id'])
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 200)
+
+    def test_get_all_scheduled_updates(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 200)
+        self.assertEqual(len(response), 1)
+
+    def test_get_scheduled_update_bad_consumer(self):
+        schedule_id = str(ObjectId())
+        path = '/v2/consumers/invalid-consumer/schedules/content/update/%s/' % schedule_id
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_get_scheduled_update_bad_schedule(self):
+        schedule_id = str(ObjectId())
+        path = '/v2/consumers/%s/schedules/content/update/%s/' % (self.consumer_id, schedule_id)
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_get_all_scheduled_updates_bad_consumer(self):
+        path = '/v2/consumers/invalid-consumer/schedules/content/update/'
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_update_scheduled_update(self):
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, response = self.post(path, body)
+        self.assertEquals(status, 201)
+
+        schedule_id = response['_id']
+        update_path = '/v2/consumers/%s/schedules/content/update/%s/' % (self.consumer_id, schedule_id)
+        update_body = {'schedule': 'R2/PT1H'}
+
+        status, response = self.put(update_path, update_body)
+        self.assertEqual(status, 200)
+
+    def test_delete_scheduled_update(self):
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, response = self.post(path, body)
+        self.assertEquals(status, 201)
+
+        schedule_id = response['_id']
+        update_path = '/v2/consumers/%s/schedules/content/update/%s/' % (self.consumer_id, schedule_id)
+
+        status, response = self.delete(update_path)
+        self.assertEqual(status, 200)
+
+
+
+class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
+
+    def setUp(self):
+        super(ScheduledUnitUninstallTests, self).setUp()
+        plugin_api._create_manager()
+        mock_plugins.install()
+        mock_agent.install()
+        self.consumer_id = 'test-consumer'
+        self.consumer_manager = factory.consumer_manager()
+        self.consumer_manager.register(self.consumer_id)
+
+    def tearDown(self):
+        super(ScheduledUnitUninstallTests, self).tearDown()
+        self.consumer_manager = None
+        Consumer.get_collection().remove(safe=True)
+        ScheduledCall.get_collection().remove(safe=True)
+        mock_plugins.reset()
+
+    def test_create_scheduled_uninstall(self):
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, body = self.post(path, body)
+        self.assertEquals(status, 201)
+
+    def test_create_scheduled_uninstall_bad_consumer(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/invalid-consumer/schedules/content/uninstall/'
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 404)
+
+    def test_get_scheduled_uninstall(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, response['_id'])
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 200)
+
+    def test_get_all_scheduled_uninstalls(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 200)
+        self.assertEqual(len(response), 1)
+
+    def test_get_scheduled_uninstall_bad_consumer(self):
+        schedule_id = str(ObjectId())
+        path = '/v2/consumers/invalid-consumer/schedules/content/uninstall/%s/' % schedule_id
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_get_scheduled_uninstall_bad_schedule(self):
+        schedule_id = str(ObjectId())
+        path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, schedule_id)
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_get_all_scheduled_uninstalls_bad_consumer(self):
+        path = '/v2/consumers/invalid-consumer/schedules/content/uninstall/'
+        status, response = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_update_scheduled_uninstall(self):
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, response = self.post(path, body)
+        self.assertEquals(status, 201)
+
+        schedule_id = response['_id']
+        update_path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, schedule_id)
+        update_body = {'schedule': 'R2/PT1H'}
+
+        status, response = self.put(update_path, update_body)
+        self.assertEqual(status, 200)
+
+    def test_delete_scheduled_uninstall(self):
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+
+        path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
+        body = {'schedule': 'R1/PT1H',
+                'units': units,
+                'options': options}
+
+        status, response = self.post(path, body)
+        self.assertEquals(status, 201)
+
+        schedule_id = response['_id']
+        update_path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, schedule_id)
 
         status, response = self.delete(update_path)
         self.assertEqual(status, 200)

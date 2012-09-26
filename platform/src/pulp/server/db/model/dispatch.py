@@ -74,10 +74,11 @@ class ArchivedCall(Model):
 
     collection_name = 'archived_calls'
     unique_indices = ()
-    search_indices = ()
+    search_indices = ('serialized_call_report.task_id',)
 
     def __init__(self, call_request, call_report):
         super(ArchivedCall, self).__init__()
+        self.timestamp = dateutils.now_utc_timestamp()
         self.serialized_call_request = call_request.serialize()
         self.serialized_call_report = call_report.serialize()
 

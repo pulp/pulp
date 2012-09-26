@@ -434,7 +434,8 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         report = iso_distributor.publish_repo(repo, publish_conduit, config)
         ftypes = util.get_repomd_filetypes("%s/%s" % (repo.working_dir, "repodata/repomd.xml"))
         self.assertTrue("updateinfo" in ftypes)
-        updateinfo_path = "%s/%s" % (repo.working_dir, "updateinfo.xml")
+        updateinfo_path = util.get_repomd_filetype_path("%s/%s" % (repo.working_dir, "repodata/repomd.xml"), "updateinfo")
+        updateinfo_path = os.path.join(repo.working_dir, updateinfo_path)
         self.assertTrue(os.path.exists(updateinfo_path))
         elist = updateinfo.get_errata(updateinfo_path)
         self.assertEquals(len(elist), 1)
@@ -470,21 +471,6 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
 
         https = True
         config = distributor_mocks.get_basic_config(http=http, https=https)
-        state, msg = distributor.validate_config(repo, config, [])
-        self.assertTrue(state)
-
-        http = True
-        https = False
-        relative_url = "test_path"
-        generate_metadata = "false"
-        config = distributor_mocks.get_basic_config(http=http, https=https,
-            generate_metadata=generate_metadata)
-        state, msg = distributor.validate_config(repo, config, [])
-        self.assertFalse(state)
-
-        generate_metadata = True
-        config = distributor_mocks.get_basic_config(http=http, https=https,
-            generate_metadata=generate_metadata)
         state, msg = distributor.validate_config(repo, config, [])
         self.assertTrue(state)
 
@@ -563,7 +549,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         repo.id = "testrepo"
         repo.working_dir = self.repo_working_dir
         distributor = ISODistributor()
-        config = distributor_mocks.get_basic_config(http=True, https=False, skip=["rpm", "errata", "packagegroup"])
+        config = distributor_mocks.get_basic_config(http=True, https=False, skip=["rpm", "erratum", "packagegroup"])
         publish_conduit = distributor_mocks.get_publish_conduit(existing_units=[], pkg_dir=self.pkg_dir)
         report = distributor.publish_repo(repo, publish_conduit, config)
         print report.summary

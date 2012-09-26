@@ -23,6 +23,7 @@ import logging
 from pulp.server.db.model.event import EventListener
 from pulp.server.event import notifiers
 from pulp.server.event import data as e
+from pulp.server.managers import factory
 
 _LOG = logging.getLogger(__name__)
 
@@ -77,9 +78,9 @@ class EventFireManager(object):
         @param event: event object to fire
         @type  event: pulp.server.event.data.Event
         """
-
         # Determine which listeners should be notified
-        listeners = list(EventListener.get_collection().find({'event_types' : event.event_type}))
+        listeners = list(EventListener.get_collection().find(
+            {'$or': ({'event_types' : event.event_type}, {'event_types' : '*'})}))
 
         # For each listener, retrieve the notifier and invoke it. Be sure that
         # an exception from a notifier is logged but does not interrupt the

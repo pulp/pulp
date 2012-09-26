@@ -107,7 +107,6 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         optional_kwargs['auth_ca'] = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
         optional_kwargs['https_ca'] = open(os.path.join(self.data_dir, "valid_ca.crt")).read()
         optional_kwargs['protected'] = True
-        optional_kwargs['generate_metadata'] = True
         optional_kwargs['checksum_type'] = "sha"
         optional_kwargs['skip'] = []
         optional_kwargs['auth_cert'] = open(os.path.join(self.data_dir, "cert.crt")).read()
@@ -289,7 +288,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
         num_units = 10
         relative_url = "rel_a/rel_b/rel_c/"
         existing_units = self.get_units(count=num_units)
-        publish_conduit = distributor_mocks.get_publish_conduit(existing_units=existing_units, pkg_dir=self.pkg_dir)
+        publish_conduit = distributor_mocks.get_publish_conduit(type_id="rpm", existing_units=existing_units, pkg_dir=self.pkg_dir)
         config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir, relative_url=relative_url,
                 http=False, https=True)
         distributor = YumDistributor()
@@ -692,7 +691,7 @@ class TestDistributor(rpm_support_base.PulpRPMTests):
 
             config = distributor_mocks.get_basic_config(https_publish_dir=self.https_publish_dir,
                 http_publish_dir=self.http_publish_dir, relative_url="rel_temp/",
-                generate_metadata=True, http=True, https=False)
+                generate_metadata=True, http=True, https=False, use_createrepo=True)
             test_thread = TestPublishThread(working_dir, self.pkg_dir, config)
             test_thread.start()
             running = False

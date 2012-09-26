@@ -11,13 +11,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base
+import mock
 
 from pulp.server.db.model.event import EventListener
+from pulp.server.dispatch.call import CallReport
 from pulp.server.event import data as event_data
 from pulp.server.event import rest_api
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.event import crud
+
+import base
 
 # -- test cases ---------------------------------------------------------------
 
@@ -159,3 +163,40 @@ class EventListenerManagerTests(base.PulpServerTests):
 
         # Verify
         self.assertEqual(0, len(listeners))
+
+    def test_validate_events(self):
+        crud._validate_event_types(event_data.ALL_EVENT_TYPES)
+
+    def test_validate_star(self):
+        crud._validate_event_types(['*'])
+
+    def test_validate_empty(self):
+        self.assertRaises(InvalidValue, crud._validate_event_types, [])
+
+# event tests ------------------------------------------------------------------
+
+_test_call_report = CallReport()
+
+class EventTests(base.PulpAsyncServerTests):
+
+    @mock.patch('pulp.server.dispatch.coordinator.Coordinator.find_call_reports', return_value=[_test_call_report])
+    def test_event_instantiation(self, mock_find):
+        event_type = 'test_type'
+        payload = 'test_payload'
+
+        try:
+            event = event_data.Event(event_type, payload)
+        except Exception, e:
+            self.fail(e.message)
+
+        self.assertEqual(mock_find.call_count, 1)
+        self.assertEqual(_test_call_report.serialize(), event.call_report)
+
+    @mock.patch('pulp.server.dispatch.coordinator.Coordinator.find_call_reports', return_value=[_test_call_report])
+    def test_data_call(self, mock_find):
+        data = {'event_type': 'test_type',
+                'payload': 'test_payload',
+                'call_report': _test_call_report.serialize()}
+        event = event_data.Event(data['event_type'], data['payload'])
+        self.assertEqual(data, event.data())
+

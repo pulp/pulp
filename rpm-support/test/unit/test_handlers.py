@@ -13,6 +13,7 @@ from mock_yum import YumBase
 from rpm_support_base import PulpRPMTests
 from pulp.agent.lib.container import Container, SYSTEM, CONTENT, BIND
 from pulp.agent.lib.dispatcher import Dispatcher
+from pulp.agent.lib.conduit import Conduit
 
 
 class Deployer:
@@ -116,7 +117,8 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
-        report = self.dispatcher.install(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.install(conduit, units, {})
         # Verify
         self.verify_succeeded(report, installed=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -132,8 +134,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'apply':False}
-        report = self.dispatcher.install(units, options)
+        report = self.dispatcher.install(conduit, units, options)
         # Verify
         self.verify_succeeded(report, installed=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -149,8 +152,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'importkeys':True}
-        report = self.dispatcher.install(units, options)
+        report = self.dispatcher.install(conduit, units, options)
         # Verify
         self.verify_succeeded(report, installed=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -166,7 +170,8 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':YumBase.UNKNOWN_PKG}},
         ]
         # Test
-        report = self.dispatcher.install(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.install(conduit, units, {})
         # Verify
         self.verify_failed(report)
         self.assertFalse(report.reboot['scheduled'])
@@ -182,8 +187,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'reboot':True}
-        report = self.dispatcher.install(units, options)
+        report = self.dispatcher.install(conduit, units, options)
         # Verify
         self.verify_succeeded(report, installed=units)
         self.assertTrue(report.reboot['scheduled'])
@@ -200,7 +206,8 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
-        report = self.dispatcher.update(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.update(conduit, units, {})
         # Verify
         self.verify_succeeded(report, updated=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -216,8 +223,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'apply':False}
-        report = self.dispatcher.update(units, options)
+        report = self.dispatcher.update(conduit, units, options)
         # Verify
         self.verify_succeeded(report, updated=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -233,8 +241,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'importkeys':True}
-        report = self.dispatcher.update(units, options)
+        report = self.dispatcher.update(conduit, units, options)
         # Verify
         self.verify_succeeded(report, updated=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -250,8 +259,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'reboot':True, 'minutes':5}
-        report = self.dispatcher.update(units, options)
+        report = self.dispatcher.update(conduit, units, options)
         # Verify
         self.verify_succeeded(report, updated=units)
         self.assertTrue(report.reboot['scheduled'])
@@ -266,7 +276,8 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
-        report = self.dispatcher.uninstall(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.uninstall(conduit, units, {})
         # Verify
         self.verify_succeeded(report, removed=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -280,8 +291,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'okaara'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'apply':False}
-        report = self.dispatcher.uninstall(units, options)
+        report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
         self.verify_succeeded(report, removed=units)
         self.assertFalse(report.reboot['scheduled'])
@@ -295,8 +307,9 @@ class TestPackages(HandlerTest):
             {'type_id':self.TYPE_ID, 'unit_key':{'name':'kmod'}},
         ]
         # Test
+        conduit = Conduit()
         options = {'reboot':True}
-        report = self.dispatcher.uninstall(units, options)
+        report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
         self.verify_succeeded(report, removed=units)
         self.assertTrue(report.reboot['scheduled'])
@@ -345,7 +358,8 @@ class TestGroups(HandlerTest):
         groups = ['mygroup', 'pulp']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
-        report = self.dispatcher.install(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.install(conduit, units, {})
         # Verify
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
@@ -357,8 +371,9 @@ class TestGroups(HandlerTest):
         groups = ['mygroup', 'pulp']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
+        conduit = Conduit()
         options = {'importkeys':True}
-        report = self.dispatcher.install(units, options)
+        report = self.dispatcher.install(conduit, units, options)
         # Verify
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
@@ -370,8 +385,9 @@ class TestGroups(HandlerTest):
         groups = ['mygroup', 'pulp']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
+        conduit = Conduit()
         options = {'apply':False}
-        report = self.dispatcher.install(units, options)
+        report = self.dispatcher.install(conduit, units, options)
         # Verify
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
@@ -383,7 +399,8 @@ class TestGroups(HandlerTest):
         groups = ['mygroup', 'pulp', 'xxxx']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
-        report = self.dispatcher.install(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.install(conduit, units, {})
         # Verify
         self.verify_failed(report)
         self.assertFalse(report.reboot['scheduled'])
@@ -395,8 +412,9 @@ class TestGroups(HandlerTest):
         groups = ['mygroup']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
+        conduit = Conduit()
         options = {'reboot':True}
-        report = self.dispatcher.install(units, options)
+        report = self.dispatcher.install(conduit, units, options)
         # Verify
         self.verify_succeeded(report, installed=groups)
         self.assertTrue(report.reboot['scheduled'])
@@ -409,7 +427,8 @@ class TestGroups(HandlerTest):
         groups = ['mygroup', 'pulp']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
-        report = self.dispatcher.uninstall(units, {})
+        conduit = Conduit()
+        report = self.dispatcher.uninstall(conduit, units, {})
         # Verify
         self.verify_succeeded(report, removed=groups)
         self.assertFalse(report.reboot['scheduled'])
@@ -422,8 +441,9 @@ class TestGroups(HandlerTest):
         groups = ['mygroup', 'pulp']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
+        conduit = Conduit()
         options = {'apply':False}
-        report = self.dispatcher.uninstall(units, options)
+        report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
         self.verify_succeeded(report, removed=groups)
         self.assertFalse(report.reboot['scheduled'])
@@ -436,8 +456,9 @@ class TestGroups(HandlerTest):
         groups = ['mygroup']
         units = [dict(type_id=self.TYPE_ID, unit_key=dict(name=g)) for g in groups]
         # Test
+        conduit = Conduit()
         options = {'reboot':True}
-        report = self.dispatcher.uninstall(units, options)
+        report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
         self.verify_succeeded(report, removed=groups)
         self.assertTrue(report.reboot['scheduled'])
