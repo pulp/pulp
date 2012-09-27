@@ -13,6 +13,7 @@
 
 import sys
 import traceback as tb
+
 from logging import getLogger
 
 
@@ -21,12 +22,13 @@ log = getLogger(__name__)
 
 class Report(object):
     """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
+    The base report.
+    @ivar status: The overall status (succeeded|failed).
     @type status: bool
     @ivar details: operation details.
     @type details: dict
-    @ivar chgcnt: The change count.
+    @ivar chgcnt: The number of changes made during the operation.
+        The granularity is up to the discretion of the handler.
     @type chgcnt: int
     """
 
@@ -52,11 +54,7 @@ class Report(object):
 
 class HandlerReport(Report):
     """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool
-    @ivar details: operation details.
-    @type details: dict
+    Generic handler report.
     """
 
     def succeeded(self, details=None, chgcnt=0):
@@ -66,14 +64,15 @@ class HandlerReport(Report):
         @type typeid: str
         @param details: The details of the operation.
         @type details: dict
-        @param chgcnt: The change count.
+        @param chgcnt: The number of changes made during the operation.
+            The granularity is up to the discretion of the handler.
         @type chgcnt: int
         """
         self.status = True
-        self.details = dict(status=True, details=(details or {}))
-        self.chgcnt += chgcnt
+        self.details = (details or {})
+        self.chgcnt = chgcnt
 
-    def failed(self, details):
+    def failed(self, details=None):
         """
         Called (by handler) on operation failed.
         @param typeid: The content type ID.
@@ -82,12 +81,44 @@ class HandlerReport(Report):
         @type details: dict
         """
         self.status = False
-        self.details = dict(status=False, details=details)
+        self.details = (details or {})
+
+
+class ContentReport(HandlerReport):
+    """
+    The content report is returned by handler methods
+    implementing content unit operations.
+    """
+    pass
+
+
+class ProfileReport(HandlerReport):
+    """
+    The profile report is returned by handler methods
+    implementing content profile reporting operations.
+    """
+    pass
+
+
+class BindReport(HandlerReport):
+    """
+    The profile report is returned by handler methods
+    implementing repository bind operations.
+    """
+    pass
+
+class CleanReport(HandlerReport):
+    """
+    The profile report is returned by handler methods
+    implementing clean operations.
+    """
+    pass
 
 
 class RebootReport(Report):
     """
-    Reboot report.
+    The profile report is returned by handler methods
+    implementing reboot operations.
     @ivar status: Overall status (succeeded|failed).
     @type status: bool
     @ivar scheduled: Indicates whether a reboot has been scheduled.
@@ -122,35 +153,42 @@ class RebootReport(Report):
         self.details = (details or {})
 
 
-class ProfileReport(HandlerReport):
-    """
-    Profile report.
-    """
-    pass
-
-
-class BindReport(HandlerReport):
-    """
-    A Bind Report
-    """
-    pass
-
-class CleanReport(HandlerReport):
-    """
-    A Clean Report
-    """
-    pass
-
-
 class DispatchReport(Report):
     """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
+    The dispatch report is returned for all handler methods
+    dispatched to handlers.  It represents an aggregation of
+    handler reports.  The handler (class) reports are collated by
+    type_id (content, distributor, system).  The overall status is
+    True (succeeded) only if all of the handler reports have a status
+    of True (succeeded).
+    Succeeded Example:
+      { status : True,
+        chgcnt : 10,
+        details : {
+          'type_A' : { 'status' : True, 'details' : {} },
+          'type_B' : { 'status' : True, 'details' : {} },
+          'type_C' : { 'status' : True, 'details' : {} },
+        }
+      }
+    Failed Example:
+      { status : False,
+        chgcnt : 6,
+        details : {
+          'type_A' : { 'status' : True, 'details' : {} },
+          'type_B' : { 'status' : True, 'details' : {} },
+          'type_C' : { 'status' : False,
+                       'details' : { 'message' : <message>, 'trace'=<trace> } },
+        }
+      }
+    @ivar status: The overall status (succeeded|failed).
     @type status: bool
-    @ivar reboot: Reboot status & details.
-    @type reboot: dict
-    @ivar details: operation details keyed by typeid.
+    @ivar details: operation details keyed by type_id.
+      Each value is:
+        { 'status' : True, details : {} }
     @type details: dict
+    @ivar chgcnt: The number of changes made during the operation.
+        The granularity is up to the discretion of the handlers.
+    @type chgcnt: int
     """
 
     def __init__(self):
@@ -171,7 +209,8 @@ class DispatchReport(Report):
             else:
                 self.status = False
         if isinstance(report, HandlerReport):
-            self.details[report.typeid] = report.details
+            self.details[report.typeid] = \
+                dict(status=report.status, details=report.details)
             return
         if isinstance(report, RebootReport):
             self.reboot = dict(

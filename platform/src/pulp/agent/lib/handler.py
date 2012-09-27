@@ -82,7 +82,7 @@ class ContentHandler(Handler):
         @param options: Unit install options.
         @type options: dict
         @return: An install report.
-        @rtype: L{pulp.agent.lib.report.HandlerReport}
+        @rtype: L{pulp.agent.lib.report.ContentReport}
         """
         raise NotImplementedError()
 
@@ -96,7 +96,7 @@ class ContentHandler(Handler):
         @param options: Unit update options.
         @type options: dict
         @return: An update report.
-        @rtype: L{pulp.agent.lib.report.HandlerReport}
+        @rtype: L{pulp.agent.lib.report.ContentReport}
         """
         raise NotImplementedError()
 
@@ -110,7 +110,7 @@ class ContentHandler(Handler):
         @param options: Unit uninstall options.
         @type options: dict
         @return: An uninstall report.
-        @rtype: L{pulp.agent.lib.report.HandlerReport}
+        @rtype: L{pulp.agent.lib.report.ContentReport}
         """
         raise NotImplementedError()
 
