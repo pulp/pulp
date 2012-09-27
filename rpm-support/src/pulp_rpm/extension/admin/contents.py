@@ -119,10 +119,16 @@ class SearchRpmsCommand(UnitAssociationCriteriaCommand):
         self.context = context
 
     def rpm(self, **kwargs):
-        def out_func(document, filter=FIELDS_RPM):
+
+        # This inner function breaks the --details support. I don't have time to
+        # deal with it right now, so I filed a bug to address revisiting this
+        # entire module as a whole and address it then (860693).
+        # jdob, Sep 26, 2012
+
+        def out_func(document_list, filter=FIELDS_RPM):
             # Inner function to filter rpm fields to display to the end user
-            self.context.prompt.render_document(document, filters=filter)
-        _content_command([TYPE_RPM], out_func=out_func, **kwargs)
+            self.context.prompt.render_document_list(document_list, filters=filter)
+        _content_command(self.context, [TYPE_RPM], out_func=out_func, **kwargs)
 
 
 class SearchSrpmsCommand(UnitAssociationCriteriaCommand):
@@ -182,14 +188,15 @@ class SearchDistributionsCommand(UnitAssociationCriteriaCommand):
     def distribution(self, **kwargs):
         _content_command(self.context, [TYPE_DISTRIBUTION], self.write_distro, **kwargs)
 
-    def write_distro(self, distro):
+    def write_distro(self, distro_list):
         """
         Write a distro out in a specially formatted way. It is not known why this
         was originally needed.
 
-        :param distro: one distribution document
-        :type  distro: dict
+        :param distro_list: list of distribution documents; will be of length 1
+        :type  distro_list: list
         """
+        distro = distro_list[0]
         distro_meta = distro['metadata']
 
         # Distro Metadata
@@ -260,23 +267,24 @@ class SearchErrataCommand(UnitAssociationCriteriaCommand):
             }
             _content_command(self.context, [TYPE_ERRATUM], self.write_erratum_detail, **new_kwargs)
 
-    def write_erratum(self, erratum):
+    def write_erratum(self, erratum_list):
         """
         Write an erratum's metadata out.
 
-        :param erratum: one erratum document
-        :type  erratum: dict
+        :param erratum_list: list of erratum documents; will be of length 1
+        :type  erratum_list: list
         """
-        self.context.prompt.render_document(erratum['metadata'])
+        self.context.prompt.render_document(erratum_list[0]['metadata'])
 
-    def write_erratum_detail(self, erratum):
+    def write_erratum_detail(self, erratum_list):
         """
         Write an erratum out in a specially formatted way. It is not known why this
         was originally needed.
 
-        :param erratum: one erratum document
-        :type  erratum: dict
+        :param erratum_list: list one erratum documents; will be of length 1
+        :type  erratum_list: list
         """
+        erratum = erratum_list[0]
         erratum_meta = erratum['metadata']
 
         self.context.prompt.render_title(_('Erratum: %(e)s') % {'e' : erratum_meta['id']})
@@ -352,14 +360,13 @@ def _content_command(context, type_ids, out_func=None, **kwargs):
     :param kwargs:  CLI options as input by the user and passed in by okaara
     :type  kwargs:  dict
     """
-    out_func = out_func or context.prompt.render_document
+    out_func = out_func or context.prompt.render_document_list
 
     repo_id = kwargs.pop('repo-id')
     kwargs['type_ids'] = type_ids
     units = context.server.repo_unit.search(repo_id, **kwargs).response_body
-    for unit in units:
-        # show the association only if specifically requested
-        if kwargs.get(UnitAssociationCriteriaCommand.ASSOCIATION_FLAG.keyword):
-            out_func(unit)
-        else:
-            out_func(unit['metadata'])
+
+    if not kwargs.get(UnitAssociationCriteriaCommand.ASSOCIATION_FLAG.keyword):
+        units = [u['metadata'] for u in units]
+
+    out_func(units)

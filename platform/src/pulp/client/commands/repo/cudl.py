@@ -132,7 +132,7 @@ class UpdateRepositoryCommand(PulpCliCommand):
             delta['display_name'] = kwargs[OPTION_NAME.keyword]
 
         if delta.pop(OPTION_NOTES.keyword, None) is not None:
-            delta['notes'] = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+            delta['notes'] = kwargs[OPTION_NOTES.keyword]
 
         try:
             self.context.server.repo.update(kwargs[OPTION_REPO_ID.keyword], delta)
