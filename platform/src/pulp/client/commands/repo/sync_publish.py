@@ -131,7 +131,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
     List of additional configuration override options can be passed in override_config_options.
     """
 
-    def __init__(self, context, renderer=None, distributor_id=None, name='run', description=DESC_PUBLISH_RUN, 
+    def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN, 
                  method=None, override_config_options=[]):
 
         if method is None:
