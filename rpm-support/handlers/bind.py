@@ -97,7 +97,7 @@ class RepoHandler(BindHandler):
         @rtype: L{BindReport}
         """
         log.info('(re)bind: %s', definitions)
-        self.clean()
+        self.clean(conduit)
         return self.bind(definitions)
 
     def unbind(self, conduit, repoid):
