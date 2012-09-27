@@ -24,10 +24,10 @@ DESC_EXPORT_RUN = _('triggers an immediate ISO export of a repository')
 DESC_ISO_PREFIX = _('prefix to use in the generated iso naming, default: <repoid>-<current_date>.iso')
 OPTION_ISO_PREFIX = PulpCliOption('--iso-prefix', DESC_ISO_PREFIX, required=False)
 
-DESC_START_DATE = _('start date for errata export; only errata whose issued date is on or after the given value will be included in the generated iso; format eg: "2009-03-30 00:00:00"')
+DESC_START_DATE = _('start date for errata export; only errata whose issued date is on or after the given value will be included in the generated iso; format: "2009-03-30 00:00:00"')
 OPTION_START_DATE = PulpCliOption('--start-date', DESC_START_DATE, required=False)
 
-DESC_END_DATE = _('end date for errata export; only errata whose issued date is on or before the given value will be included in the generated iso; format eg: "2011-03-30 00:00:00"')
+DESC_END_DATE = _('end date for errata export; only errata whose issued date is on or before the given value will be included in the generated iso; format: "2011-03-30 00:00:00"')
 OPTION_END_DATE = PulpCliOption('--end-date', DESC_END_DATE, required=False)
 
 class RpmIsoExportCommand(RunPublishRepositoryCommand):

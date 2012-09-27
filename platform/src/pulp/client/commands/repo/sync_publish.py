@@ -183,7 +183,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
         # Display override configuration used
         if override_config:
-            self.prompt.render_paragraph(_('Following override configuration options are used:'))
+            self.prompt.render_paragraph(_('The following publish configuration options will be used:'))
             self.prompt.render_document(override_config)
 
         # See if an existing publish is running for the repo. If it is, resume
@@ -211,8 +211,17 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
             
     def generate_override_config(self, **kwargs):
-        # Check if any of the override config options is passed by the user and create override_config
-        # dictionary
+        """
+        Check if any of the override config options is passed by the user and create override_config
+        dictionary
+
+        :param kwargs: all keyword arguments passed in by the user on the command line
+        :type kwargs: dict
+
+        :return: config option dictionary consisting of option values passed by user for valid publish config options
+                 (stored in override_config_keywords)
+        :rtype: dict
+        """
         override_config = {}
         for option in self.override_config_keywords:
             if kwargs[option]:
