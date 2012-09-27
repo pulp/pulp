@@ -13,14 +13,23 @@
 
 import os
 
+from gettext import gettext as _
+
+from pulp_rpm.common import ids
+
 from pulp.client.commands.repo import (cudl, group, sync_publish, upload)
 from pulp.client.upload import manager as upload_lib
 
-from pulp_rpm.extension.admin import (contents, copy, publish, remove, repo,
+from pulp_rpm.extension.admin import (contents, copy, export, remove, repo,
                                       status, structure, sync_schedules)
 from pulp_rpm.extension.admin.upload import (category, errata, package)
 from pulp_rpm.extension.admin.upload import group as package_group
 
+# -- constants -----------------------------------------------------------------
+
+DESC_EXPORT_STATUS = _('displays the status of a running ISO export of a repository')
+
+# ------------------------------------------------------------------------------
 
 def initialize(context):
     structure.ensure_repo_structure(context.cli)
@@ -81,8 +90,15 @@ def initialize(context):
     sync_section.add_command(sync_publish.SyncStatusCommand(context, renderer))
 
     publish_section = structure.repo_publish_section(context.cli)
-    publish_section.add_command(publish.RpmRunPublishCommand(context))
-    publish_section.add_command(publish.PublishStatusCommand(context, renderer))
+    renderer = status.RpmStatusRenderer(context)
+    distributor_id = ids.TYPE_ID_DISTRIBUTOR_YUM
+    publish_section.add_command(sync_publish.RunPublishRepositoryCommand(context, renderer, distributor_id))
+    publish_section.add_command(sync_publish.PublishStatusCommand(context, renderer))
+
+    export_section = structure.repo_export_section(context.cli)
+    renderer = status.RpmIsoStatusRenderer(context)
+    export_section.add_command(export.RpmIsoExportCommand(context))
+    export_section.add_command(sync_publish.PublishStatusCommand(context, renderer, description=DESC_EXPORT_STATUS))
 
     sync_schedules_section = structure.repo_sync_schedules_section(context.cli)
     sync_schedules_section.add_command(sync_schedules.RpmCreateScheduleCommand(context))
