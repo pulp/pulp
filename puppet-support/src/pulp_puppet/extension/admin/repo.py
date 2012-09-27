@@ -58,15 +58,14 @@ class CreatePuppetRepositoryCommand(CreateRepositoryCommand):
         # -- repository metadata --
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         description = kwargs[options.OPTION_DESCRIPTION.keyword]
-        notes = {}
-        if kwargs[options.OPTION_NOTES.keyword]:
-            notes = arg_utils.args_to_notes_dict(kwargs[options.OPTION_NOTES.keyword], include_none=True)
-        name = repo_id
-        if options.OPTION_NAME.keyword in kwargs:
-            name = kwargs[options.OPTION_NAME.keyword]
+        notes = kwargs.pop(options.OPTION_NOTES.keyword) or {}
 
         # Add a note to indicate this is a Puppet repository
         notes[constants.REPO_NOTE_KEY] = constants.REPO_NOTE_PUPPET
+
+        name = repo_id
+        if options.OPTION_NAME.keyword in kwargs:
+            name = kwargs[options.OPTION_NAME.keyword]
 
         # -- importer metadata --
         importer_config = {
@@ -108,13 +107,7 @@ class UpdatePuppetRepositoryCommand(UpdateRepositoryCommand):
         repo_id = kwargs.pop(options.OPTION_REPO_ID.keyword)
         description = kwargs.pop(options.OPTION_DESCRIPTION.keyword, None)
         name = kwargs.pop(options.OPTION_NAME.keyword, None)
-
-        notes = None
-        if options.OPTION_NOTES.keyword in kwargs and kwargs[options.OPTION_NOTES.keyword] is not None:
-            notes = arg_utils.args_to_notes_dict(kwargs[options.OPTION_NOTES.keyword], include_none=True)
-
-            # Make sure the note indicating it's a puppet repository is still present
-            notes[constants.REPO_NOTE_KEY] = constants.REPO_NOTE_PUPPET
+        notes = kwargs.pop(options.OPTION_NOTES.keyword, None)
 
         # -- importer metadata --
         importer_config = {
@@ -165,13 +158,15 @@ class ListPuppetRepositoriesCommand(ListRepositoriesCommand):
 class SearchPuppetRepositoriesCommand(CriteriaCommand):
 
     def __init__(self, context):
-        super(SearchPuppetRepositoriesCommand, self).__init__(self.run,
-            'search', DESC_SEARCH, include_search=True)
+        super(SearchPuppetRepositoriesCommand, self).__init__(
+            self.run, name='search', description=DESC_SEARCH,
+            include_search=True)
 
         self.context = context
         self.prompt = context.prompt
 
     def run(self, **kwargs):
+        self.prompt.render_title(_('Repositories'))
 
         # Limit to only Puppet repositories
         if kwargs.get('str-eq', None) is None:

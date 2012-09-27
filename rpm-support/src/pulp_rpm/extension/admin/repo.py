@@ -13,8 +13,9 @@ from gettext import gettext as _
 import logging
 from urlparse import urlparse
 
-from pulp.client.arg_utils import (InvalidConfig, convert_boolean_arguments,
-                                   convert_file_contents, convert_removed_options)
+from pulp.client.arg_utils import (InvalidConfig, convert_file_contents,
+                                   convert_removed_options)
+from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client.commands.repo.cudl import (CreateRepositoryCommand, ListRepositoriesCommand,
                                             UpdateRepositoryCommand)
 from pulp.client.commands import options as std_options
@@ -24,6 +25,8 @@ from pulp_rpm.common import constants, ids
 from pulp_rpm.extension.admin import repo_options
 
 # -- constants ----------------------------------------------------------------
+
+DESC_SEARCH = _('searches for RPM repositories on the server')
 
 # Tuples of importer key name to more user-friendly CLI name. This must be a
 # list of _all_ importer config values as the process of building up the
@@ -44,11 +47,8 @@ IMPORTER_CONFIG_KEYS = [
     ('num_threads', 'num_threads'),
     ('newest', 'only_newest'),
     ('skip', 'skip'),
-
-    # Not part of the CLI yet; may be removed entirely
     ('remove_old', 'remove_old'),
     ('num_old_packages', 'retain_old_count'),
-    ('purge_orphaned', 'remove_orphaned'),
 ]
 
 YUM_DISTRIBUTOR_CONFIG_KEYS = [
@@ -93,7 +93,7 @@ class RpmRepoCreateCommand(CreateRepositoryCommand):
         repo_id = kwargs.pop(std_options.OPTION_REPO_ID.keyword)
         description = kwargs.pop(std_options.OPTION_DESCRIPTION.keyword, None)
         display_name = kwargs.pop(std_options.OPTION_NAME.keyword, None)
-        notes = kwargs.pop(std_options.OPTION_NOTES, None)
+        notes = kwargs.pop(std_options.OPTION_NOTES.keyword) or {}
 
         # Add a note to indicate this is a Puppet repository
         notes[constants.REPO_NOTE_KEY] = constants.REPO_NOTE_RPM
@@ -170,13 +170,13 @@ class RpmRepoUpdateCommand(UpdateRepositoryCommand):
 
         repo_options.add_to_command(self)
 
-    def update(self, **kwargs):
+    def run(self, **kwargs):
 
         # Gather data
         repo_id = kwargs.pop(std_options.OPTION_REPO_ID.keyword)
-        description = kwargs.pop(std_options.DESC_DESCRIPTION.keyword, None)
-        display_name = kwargs.pop(std_options.DESC_NAME.keyword, None)
-        notes = kwargs.pop(std_options.OPTION_NOTES, None)
+        description = kwargs.pop(std_options.OPTION_DESCRIPTION.keyword, None)
+        display_name = kwargs.pop(std_options.OPTION_NAME.keyword, None)
+        notes = kwargs.pop(std_options.OPTION_NOTES.keyword, None)
 
         try:
             importer_config = args_to_importer_config(kwargs)
@@ -224,6 +224,32 @@ class RpmRepoListCommand(ListRepositoriesCommand):
 
         return rpm_repos
 
+
+class RpmRepoSearchCommand(CriteriaCommand):
+
+    def __init__(self, context):
+        super(RpmRepoSearchCommand, self).__init__(self.run, name='search',
+                                                   description=DESC_SEARCH,
+                                                   include_search=True)
+
+        self.context = context
+        self.prompt = context.prompt
+
+    def run(self, **kwargs):
+        self.prompt.render_title(_('Repositories'))
+
+        # Limit to only RPM repositories
+        if kwargs.get('str-eq', None) is None:
+            kwargs['str-eq'] = []
+        kwargs['str-eq'].append(['notes.%s' % constants.REPO_NOTE_KEY, constants.REPO_NOTE_RPM])
+
+        # Server call
+        repo_list = self.context.server.repo_search.search(**kwargs)
+
+        # Display the results
+        order = ['id', 'display_name', 'description']
+        self.prompt.render_document_list(repo_list, order=order)
+
 # -- utilities ----------------------------------------------------------------
 
 def args_to_importer_config(kwargs):
@@ -236,10 +262,6 @@ def args_to_importer_config(kwargs):
     """
 
     importer_config = _prep_config(kwargs, IMPORTER_CONFIG_KEYS)
-
-    # Parsing of true/false
-    boolean_arguments = ('ssl_verify', 'verify_size', 'verify_checksum', 'newest', 'remove_old')
-    convert_boolean_arguments(boolean_arguments, importer_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key')
@@ -264,10 +286,6 @@ def args_to_distributor_config(kwargs):
     @raise InvalidConfig: if one or more arguments is not valid for the distributor
     """
     distributor_config = _prep_config(kwargs, YUM_DISTRIBUTOR_CONFIG_KEYS)
-
-    # Parsing of true/false
-    boolean_arguments = ('http', 'https', 'generate_metadata')
-    convert_boolean_arguments(boolean_arguments, distributor_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('auth_cert', 'auth_ca', 'https_ca', 'gpgkey')
@@ -302,10 +320,6 @@ def args_to_iso_distributor_config(kwargs):
     @raise InvalidConfig: if one or more arguments is not valid for the distributor
     """
     distributor_config = _prep_config(kwargs, ISO_DISTRIBUTOR_CONFIG_KEYS)
-
-    # Parsing of true/false
-    boolean_arguments = ('http', 'https', 'generate_metadata')
-    convert_boolean_arguments(boolean_arguments, distributor_config)
 
     # Read in the contents of any files that were specified
     file_arguments = ('https_ca',)
