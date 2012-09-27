@@ -133,7 +133,20 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
     def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN, 
                  method=None, override_config_options=[]):
+        """
+        :param context: Pulp client context
+        :type context: See okaara
 
+        :param renderer: StatusRenderer subclass that will interpret the sync or publish progress report
+        :type  renderer: StatusRenderer
+
+        :param distributor_id: Id of a distributor to be used for publishing
+        :type distributor_id: str
+
+        :param override_config_options: Additional publish options to be accepted from user. These options will override 
+                                        respective options from the default publish config.
+        :type override_config_options: List of PulpCliOption and PulpCliFlag instances 
+        """
         if method is None:
             method = self.run
 
@@ -150,7 +163,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
         # Process and add config override options in their own group and save option keywords
         if override_config_options:
-            override_config_group = PulpCliOptionGroup("Config Override Options")
+            override_config_group = PulpCliOptionGroup(_("Publish Options"))
             self.add_option_group(override_config_group)
 
             for option in override_config_options:
