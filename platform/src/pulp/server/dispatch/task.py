@@ -60,13 +60,15 @@ class Task(object):
         assert isinstance(call_report, (types.NoneType, call.CallReport))
 
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
+        # state maintained separately from call_report for control flow/reporting disparities
+        self.state = dispatch_constants.CALL_WAITING_STATE
 
         self.call_request = call_request
         self.queued_call_id = None
 
         self.call_report = call_report or call.CallReport()
         self.call_report.call_request_id = self.call_request.id
-        self.call_report.state = dispatch_constants.CALL_WAITING_STATE
+        self.call_report.state = self.state
         self.call_report.task_id = self.id
         self.call_report.principal_login = self.call_report.principal_login or self.call_request.principal and self.call_request.principal['login']
         self.call_report.tags.extend(self.call_request.tags)
@@ -92,13 +94,11 @@ class Task(object):
 
     # task lifecycle -----------------------------------------------------------
 
-    def skip(self, reasons=None):
+    def skip(self):
         """
         Mark the task as skipped. Called *instead* of run.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
-        if reasons is not None:
-            self.call_report.reasons = reasons
         self._complete(dispatch_constants.CALL_SKIPPED_STATE)
 
     def run(self):
@@ -108,7 +108,7 @@ class Task(object):
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
         # NOTE using run wrapper so that state transition is protected by the
         # task queue lock and doesn't occur in another thread
-        self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        self.state = self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         task_thread = threading.Thread(target=self._run)
         task_thread.start()
         # I'm fairly certain these will always be called *before* the context
@@ -124,7 +124,7 @@ class Task(object):
         principal_manager = managers_factory.principal_manager()
         principal_manager.set_principal(self.call_request.principal)
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
-            self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+            self.state = self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
         dispatch_context.CONTEXT.set_task_attributes(self)
         call = self.call_request.call
@@ -176,13 +176,9 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        # FIXME we'll need to pass the state along with the task into the
-        # complete callback for conditional blocking tasks (conditional on the
-        # complete state), however this causes a race condition between when the
-        # task is marked as complete (by setting its state) and when it's done
-        # with that task queue
+        self.state = state
         self._call_complete_callback()
-        # don't set the state to complete until the task is actually complete
+        # don't set the state to complete in the report until the task is actually complete
         self.call_report.state = state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
         if not self.call_request.archive:
@@ -280,7 +276,7 @@ class AsyncTask(Task):
         principal_manager = managers_factory.principal_manager()
         principal_manager.set_principal(self.call_request.principal)
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
-            self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+            self.state = self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
         dispatch_context.CONTEXT.set_task_attributes(self)
         call = self.call_request.call

@@ -52,6 +52,7 @@ class TaskQueue(object):
         self.queued_call_collection = QueuedCall.get_collection()
 
         self.__waiting_tasks = []
+        self.__skipped_tasks = []
         self.__running_tasks = []
         self.__canceled_tasks = []
         self.__completed_tasks = []
@@ -79,9 +80,10 @@ class TaskQueue(object):
                 ready_tasks = self._get_ready_tasks()
                 for task in ready_tasks:
                     self._run_ready_task(task)
+                self._skip_tasks()
                 self._cancel_tasks()
                 self._purge_completed_task_cache()
-            except Exception, e:
+            except:
                 msg = _('Exception in task queue dispatcher thread:\n%(e)s')
                 _LOG.critical(msg % {'e': traceback.format_exception(*sys.exc_info())})
 
@@ -117,6 +119,17 @@ class TaskQueue(object):
             self.__running_tasks.append(task)
             self.__running_weight += task.call_request.weight
             task.run()
+        finally:
+            self.__lock.release()
+
+    def _skip_tasks(self):
+        self.__lock.acquire()
+        try:
+            for task in self.__skipped_tasks:
+                try:
+                    task.skip()
+                except Exception, e:
+                    _LOG.exception(e)
         finally:
             self.__lock.release()
 
@@ -258,8 +271,21 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            for potentially_blocked_task in self.__waiting_tasks:
-                potentially_blocked_task.blocking_tasks.pop(task.id, None)
+            for potentially_blocked_task in self.__waiting_tasks[:]:
+
+                if task.id not in potentially_blocked_task.blocking_tasks:
+                    continue
+
+                valid_states = potentially_blocked_task.blocking_tasks[task.id]
+
+                if task.state not in valid_states:
+                    # leave the task in the blocking_tasks dict
+                    potentially_blocked_task.blocking_tasks = subdict(potentially_blocked_task.blocking_tasks, [task.id])
+                    self.skip(potentially_blocked_task)
+                else:
+                    # remove the task from the blocking_tasks dict
+                    potentially_blocked_task.blocking_tasks.pop(task.id)
+
         finally:
             self.__lock.release()
 
@@ -276,6 +302,16 @@ class TaskQueue(object):
             self.__running_weight -= task.call_request.weight
             self.dequeue(task)
             self.__completed_tasks.append(task)
+        finally:
+            self.__lock.release()
+
+    def skip(self, task):
+        self.__lock.acquire()
+        try:
+            if task not in self.__waiting_tasks:
+                return
+            self.__waiting_tasks.remove(task)
+            self.__skipped_tasks.append(task)
         finally:
             self.__lock.release()
 
