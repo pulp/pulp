@@ -183,7 +183,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_validate_blocking_task(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.blocking_tasks[task_1.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         # blocking_tasks are actually replaced
@@ -192,7 +192,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_invalid_blocking_task(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.blocking_tasks[task_1.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_2)
         # task_1 cannot block task_2 because it is not queued
         self.assertFalse(task_1.id in task_2.blocking_tasks)
@@ -217,7 +217,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_get_ready_tasks_blocking(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.blocking_tasks[task_1.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         task_list = self.queue._get_ready_tasks()
@@ -245,7 +245,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_run_ready_task_blocked(self):
         task_1 = self.gen_async_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.blocking_tasks[task_1.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         self.queue._run_ready_task(task_1)
@@ -278,7 +278,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def task_dequeue_blocking(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.blocking_tasks[task_1.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         self.assertTrue(task_1.id in task_2.blocking_tasks)

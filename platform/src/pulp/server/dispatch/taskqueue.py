@@ -22,6 +22,7 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.util import subdict
 
 
 _LOG = logging.getLogger(__name__)
@@ -219,12 +220,12 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            valid_blocking_tasks = set()
+            valid_blocking_task_ids = []
             for potential_blocking_task in itertools.chain(self.__running_tasks, self.__waiting_tasks):
                 if potential_blocking_task.id not in task.blocking_tasks:
                     continue
-                valid_blocking_tasks.add(potential_blocking_task.id)
-            task.blocking_tasks = valid_blocking_tasks
+                valid_blocking_task_ids.append(potential_blocking_task.id)
+            task.blocking_tasks = subdict(task.blocking_tasks, valid_blocking_task_ids)
         finally:
             self.__lock.release()
 
@@ -258,7 +259,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             for potentially_blocked_task in self.__waiting_tasks:
-                potentially_blocked_task.blocking_tasks.discard(task.id)
+                potentially_blocked_task.blocking_tasks.pop(task.id, None)
         finally:
             self.__lock.release()
 

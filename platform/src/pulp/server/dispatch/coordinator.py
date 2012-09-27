@@ -54,14 +54,15 @@ class Coordinator(object):
         # drop all previous knowledge of running tasks
         task_resource_collection = TaskResource.get_collection()
         task_resource_collection.remove(safe=True)
+
         # re-start interrupted tasks
         queued_call_collection = QueuedCall.get_collection()
         queued_call_list = list(queued_call_collection.find().sort('timestamp'))
         queued_call_collection.remove(safe=True)
+
         for queued_call in queued_call_list:
             call_request = CallRequest.deserialize(queued_call['serialized_call_request'])
-            call_report = self.execute_call_asynchronously(call_request)
-            # TODO log rejected calls?
+            self.execute_call_asynchronously(call_request)
 
     # execution methods --------------------------------------------------------
 
@@ -179,37 +180,50 @@ class Coordinator(object):
         # between calculating the blocking/postponing tasks and enqueueing the
         # task when 2 or more tasks are being run that may have
         # interdependencies
+
         task_queue = dispatch_factory._task_queue()
         task_queue.lock()
         task_resource_collection = TaskResource.get_collection()
+
         try:
             response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
             task.call_report.reasons = reasons
+
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
                 return
-            task.blocking_tasks.update(blocking)
+
+            blocking_tasks = dict.fromkeys(blocking, dispatch_constants.CALL_COMPLETE_STATES)
+            blocking_tasks.update(task.blocking_tasks) # use the original values, when present
+            task.blocking_tasks = blocking_tasks
+
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, GrantPermmissionsForTaskV2())
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, RevokePermissionsForTaskV2())
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
+
             if task_resources:
                 set_task_id_on_task_resources(task.id, task_resources)
                 task_resource_collection.insert(task_resources, safe=True)
+
             task_queue.enqueue(task)
+
         finally:
             task_queue.unlock()
 
         # if the call has requested synchronous execution or can be
         # synchronously executed, do so
         if synchronous or (synchronous is None and response is dispatch_constants.CALL_ACCEPTED_RESPONSE):
+
             try:
-                # it's perfectly legitimate for the call to complete before the fist poll
+                # it's perfectly legitimate for the call to complete before the first poll
                 running_states = [dispatch_constants.CALL_RUNNING_STATE]
                 running_states.extend(dispatch_constants.CALL_COMPLETE_STATES)
                 wait_for_task(task, running_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
+
             except OperationTimedOut:
                 task_queue.dequeue(task)
                 raise
+
             else:
                 wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES,
                               poll_interval=self.task_state_poll_interval)
@@ -234,20 +248,29 @@ class Coordinator(object):
     # user-defined dependencies ------------------------------------------------
 
     def _analyze_dependencies(self, task_list):
-        # build a dependency graph to check the user-defined dependencies
+
+        # build a dependency graph to check the user-defined dependencies by
+        # converting the call_request dependency mapping to a task dependency
+        # mapping
         call_request_map = dict((task.call_request.id, task) for task in task_list)
         dependency_graph = {}
         for task in task_list:
             dependency_graph[task] = [call_request_map[id] for id in task.call_request.dependencies]
-        # check the dependencies with a topological sort
+
+        # check the dependencies with a topological sort and get a valid order
+        # in which to enqueue the tasks
         try:
             sorted_task_list = topological_sort(dependency_graph)
         except NoTopologicalOrderingExists:
             raise dispatch_exceptions.CircularDependencies(), None, sys.exc_info()[2]
-        # add the dependencies as actual blocking tasks
+
+        # update the blocking_tasks fields with the validated dependencies as
+        # (task_id, valid_exit_states) tuples
         for task in sorted_task_list:
-            dependency_tasks = [call_request_map[id].id for id in task.call_request.dependencies]
+            dependency_tasks = [(call_request_map[id].id, task.call_request.dependencies[id])
+                                for id in task.call_request.dependencies]
             task.blocking_tasks.update(dependency_tasks)
+
         return sorted_task_list
 
     def _find_conflicts(self, resources):
@@ -279,17 +302,17 @@ class Coordinator(object):
             proposed_operation = resources[task_resource['resource_type']][task_resource['resource_id']]
             postponing_operations = get_postponing_operations(proposed_operation)
             rejecting_operations = get_rejecting_operations(proposed_operation)
-            current_operation = task_resource['operation']
-            if current_operation in postponing_operations:
+            queued_operation = task_resource['operation']
+            if queued_operation in postponing_operations:
                 postponing_tasks.add(task_resource['task_id'])
                 reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
-                reason['operation'] = current_operation
+                reason['operation'] = queued_operation
                 if reason not in postponing_reasons:
                     postponing_reasons.append(reason)
-            if current_operation in rejecting_operations:
+            if queued_operation in rejecting_operations:
                 rejecting_tasks.add(task_resource['task_id'])
                 reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
-                reason['operation'] = current_operation
+                reason['operation'] = queued_operation
                 if reason not in rejecting_reasons:
                     rejecting_reasons.append(reason)
 

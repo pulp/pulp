@@ -159,7 +159,7 @@ class CallRequest(object):
 
     # convenient dependency management -----------------------------------------
 
-    def depends_on(self, call_request, states=None):
+    def depends_on(self, call_request, states=dispatch_constants.CALL_COMPLETE_STATES):
         # NOTE this overwrites any previous states associated with the call request
         self.dependencies[call_request.id] = states
 

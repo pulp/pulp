@@ -51,7 +51,7 @@ class Task(object):
     @ivar progress_callback: call request progress callback called to report execution progress
     @type progress_callback: callable or None
     @ivar blocking_tasks: set of task ids that block the execution of this task
-    @type blocking_tasks: set
+    @type blocking_tasks: dict
     """
 
     def __init__(self, call_request, call_report=None):
@@ -72,7 +72,7 @@ class Task(object):
         self.call_report.tags.extend(self.call_request.tags)
 
         self.complete_callback = None
-        self.blocking_tasks = set()
+        self.blocking_tasks = {}
 
     def __str__(self):
         return 'Task %s: %s' % (self.id, str(self.call_request))
