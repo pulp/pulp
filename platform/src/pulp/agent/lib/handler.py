@@ -139,6 +139,10 @@ class BindHandler(Handler):
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
+            Each definition is:
+                {'repository':<repository>, 'details':<details>}
+            The <repository> is a pulp repository object.
+            The content of <details> is at the discretion of the distributor.
         @type definitions: list
         @return: An bind report.
         @rtype: L{pulp.agent.lib.report.BindReport}
@@ -151,6 +155,10 @@ class BindHandler(Handler):
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
+            Each definition is:
+                {'repository':<repository>, 'details':<details>}
+            The <repository> is a pulp repository object.
+            The content of <details> is at the discretion of the distributor.
         @type definitions: list
         @return: An rebind report.
         @rtype: L{pulp.agent.lib.report.BindReport}
