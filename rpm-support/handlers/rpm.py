@@ -49,12 +49,25 @@ class GroupReport(HandlerReport):
 
 
 class PackageProgress(ProgressReport):
+    """
+    Provides integration with the handler conduit.
+    @ivar conduit: A handler conduit.
+    @type conduit: L{pulp.agent.lib.conduit.Conduit}
+    """
 
     def __init__(self, conduit):
+        """
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
+        """
         ProgressReport.__init__(self)
         self.conduit = conduit
 
     def _updated(self):
+        """
+        Notification that the report has been updated.
+        The updated report is sent to the server using the conduit.
+        """
         report = dict(steps=self.steps, details=self.details)
         self.conduit.update_progress(report)
 

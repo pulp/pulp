@@ -419,7 +419,7 @@ class RPMCallback(RPMBaseCallback):
         @param count: The transaction member count.
         @type count: int
         """
-        action = 'Verify'
+        action = 'Verifying'
         self.report.set_action(action, tx.po)
 
 
