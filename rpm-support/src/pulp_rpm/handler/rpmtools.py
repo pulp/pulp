@@ -117,6 +117,8 @@ class Package:
             resolved, deps = self.installed(yb.tsInfo)
             if self.apply and resolved:
                 yb.processTransaction()
+            else:
+                yb.progress.set_status(True)
         finally:
             yb.close()
         return dict(resolved=resolved, deps=deps)
@@ -138,6 +140,8 @@ class Package:
             resolved, deps = self.erased(yb.tsInfo)
             if self.apply and resolved:
                 yb.processTransaction()
+            else:
+                yb.progress.set_status(True)
         finally:
             yb.close()
         return dict(resolved=resolved, deps=deps)
@@ -163,6 +167,8 @@ class Package:
             resolved, deps = self.installed(yb.tsInfo)
             if self.apply and resolved:
                 yb.processTransaction()
+            else:
+                yb.progress.set_status(True)
         finally:
             yb.close()
         return dict(resolved=resolved, deps=deps)
@@ -201,6 +207,8 @@ class PackageGroup:
             resolved, deps = Package.installed(yb.tsInfo)
             if self.apply and resolved:
                 yb.processTransaction()
+            else:
+                yb.progress.set_status(True)
         finally:
             yb.close()
         return dict(resolved=resolved, deps=deps)
@@ -223,6 +231,8 @@ class PackageGroup:
             resolved, deps = Package.erased(yb.tsInfo)
             if self.apply and resolved:
                 yb.processTransaction()
+            else:
+                yb.progress.set_status(True)
         finally:
             yb.close()
         return dict(resolved=resolved, deps=deps)

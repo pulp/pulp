@@ -64,7 +64,7 @@ class ProgressTracker:
             status = self.OK
         else:
             status = self.FAILED
-        self.prompt.write('%-60s[ %s ]' % (name, status))
+        self.prompt.write('%-40s[ %s ]' % (name, status))
 
     def display_details(self, details):
         action = details.get('action')
