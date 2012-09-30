@@ -35,6 +35,9 @@ class NamedMock(mock.Mock):
 def call(*args, **kwargs):
     pass
 
+def error(*args, **kwargs):
+    raise Exception()
+
 # instantiation testing --------------------------------------------------------
 
 class TaskQueueInstantiationTests(base.PulpServerTests):
@@ -257,6 +260,18 @@ class TaskQueueControlFlowTests(TaskQueueTests):
         self.wait_for_task_to_complete(task_1)
         task_list = self.queue._get_ready_tasks()
         self.assertTrue(task_2 in task_list)
+
+    def test_run_ready_task_blocked_condition_failure(self):
+        task_1 = self.gen_task(call=error)
+        task_2 = self.gen_task()
+        task_2.blocking_tasks[task_1.id] = [dispatch_constants.CALL_FINISHED_STATE]
+        self.queue.enqueue(task_1)
+        self.queue.enqueue(task_2)
+        self.queue._run_ready_task(task_1)
+        self.wait_for_task_to_complete(task_1)
+        self.queue._skip_tasks()
+        self.wait_for_task_to_complete(task_2)
+        self.assertEqual(task_2.state, dispatch_constants.CALL_SKIPPED_STATE)
 
     def test_task_dequeue(self):
         task = self.gen_task()
