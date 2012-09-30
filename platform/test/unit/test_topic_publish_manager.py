@@ -92,9 +92,10 @@ class TestTopicPublishManager(unittest.TestCase):
         sender.return_value.send.assert_called_once_with(
             json.dumps(mock_event.data.return_value))
 
+    @mock.patch('qpid.messaging.Connection.open')
     @mock.patch('qpid.messaging.Connection.session', side_effect=MessagingError)
     @mock.patch.object(TopicPublishManager.logger, 'exception')
-    def test_publish_failed(self, mock_error, mock_session):
+    def test_publish_failed(self, mock_error, mock_session, mock_open):
         # make sure this just logs the error
         mock_event = mock.MagicMock()
         mock_event.data.return_value = {}

@@ -13,9 +13,14 @@
 
 import os
 
+from logging import getLogger
+
 from pulp.agent.lib.container import Container
 from pulp.agent.lib.container import SYSTEM, CONTENT, BIND
 from pulp.agent.lib.report import *
+
+
+log = getLogger(__name__)
 
 
 class HandlerNotFound(Exception):
@@ -71,6 +76,7 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
                 r.failed(ExceptionReport())
@@ -102,6 +108,7 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
                 r.failed(ExceptionReport())
@@ -133,6 +140,7 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
                 r.failed(ExceptionReport())
@@ -165,6 +173,7 @@ class Dispatcher:
                 # optional
                 pass
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.failed(ExceptionReport())
                 report.update(r)
@@ -189,6 +198,7 @@ class Dispatcher:
             r.typeid = typeid
             report.update(r)
         except Exception:
+            log.exception('handler failed')
             r = RebootReport()
             r.failed(ExceptionReport())
             report.update(r)
@@ -220,6 +230,7 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
                 r.failed(ExceptionReport())
@@ -252,6 +263,7 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
                 r.failed(ExceptionReport())
@@ -276,6 +288,7 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
                 r.failed(ExceptionReport())
@@ -305,6 +318,7 @@ class Dispatcher:
                 # optional
                 pass
             except Exception:
+                log.exception('handler failed')
                 r = CleanReport()
                 r.failed(ExceptionReport())
                 report.update(r)

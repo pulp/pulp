@@ -111,7 +111,7 @@ class RebootReport(Report):
         self.scheduled = scheduled
         self.details = (details or {})
 
-    def failed(self, details={}):
+    def failed(self, details=None):
         """
         Reboot requested and failed.
         @param details: Exception details.
@@ -119,7 +119,7 @@ class RebootReport(Report):
         """
         self.status = False
         self.scheduled = False
-        self.details = details
+        self.details = (details or {})
 
 
 class ProfileReport(HandlerReport):
