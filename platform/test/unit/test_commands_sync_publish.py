@@ -27,6 +27,9 @@ from pulp.bindings.responses import Response, Task
 from pulp.client.commands import options
 from pulp.client.commands.repo import sync_publish as sp
 
+from pulp.client.extensions.extensions import PulpCliOption
+
+
 CALL_REPORT_TEMPLATE = {
     "exception": None,
     "task_group_id": 'default-group',
@@ -197,12 +200,22 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         super(RunPublishRepositoryCommandTests, self).setUp()
         self.mock_renderer = mock.MagicMock()
         self.command = sp.RunPublishRepositoryCommand(self.context, self.mock_renderer, distributor_id='yum_distributor')
+        self.sample_option1 = PulpCliOption('--sample-option1', "sample_option1", required=False)
+        self.sample_option2 = PulpCliOption('--sample-option2', "sample_option2", required=False)
+        self.additional_publish_options = [self.sample_option1, self.sample_option2]
 
     def test_structure(self):
         # Ensure all of the expected options are there
+        self.command = sp.RunPublishRepositoryCommand(self.context, self.mock_renderer, distributor_id='yum_distributor',
+                                                      override_config_options=self.additional_publish_options)
         found_option_keywords = set([o.keyword for o in self.command.options])
+        found_group_option_keywords = set([o.keyword for o in self.command.option_groups[0].options])
+
         expected_option_keywords = set([options.OPTION_REPO_ID.keyword, sp.NAME_BACKGROUND])
+        expected_group_option_keywords = set([self.sample_option1.keyword, self.sample_option2.keyword])
+
         self.assertEqual(found_option_keywords, expected_option_keywords)
+        self.assertEqual(found_group_option_keywords, expected_group_option_keywords)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)
