@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.328
+Version: 0.0.329
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,10 @@ exit 0
 %endif
 
 %changelog
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- REST APIs providing schedule management for updating and uninstalling content
+  units on consumers (jason.connor@gmail.com)
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - Added conduit call for a group plugin to read a repo's scratchpad
   (jason.dobies@redhat.com)
