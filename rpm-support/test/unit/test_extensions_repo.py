@@ -204,3 +204,7 @@ class RpmRepoUpdateCommand(rpm_support_base.PulpClientTests):
         yum_dist_config = body['distributor_configs'][ids.YUM_DISTRIBUTOR_ID]
         self.assertEqual(yum_dist_config['http'], True)
         self.assertEqual(yum_dist_config['https'], True)
+        
+        iso_dist_config = body['distributor_configs'][ids.ISO_DISTRIBUTOR_ID]
+        self.assertEqual(iso_dist_config['http'], True)
+        self.assertEqual(iso_dist_config['https'], True)
