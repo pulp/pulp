@@ -148,18 +148,20 @@ class DispatchReport(Report):
     The overall status is True (succeeded) only if all of the handler reports have
     a status of True (succeeded).
     Succeeded Example:
-      { status : True,
-        chgcnt : 10,
-        details : {
+      { 'status' : True,
+        'chgcnt' : 10,
+        'reboot' : { 'scheduled' : False, details : {} },
+        'details' : {
           'type_A' : { 'status' : True, 'details' : {} },
           'type_B' : { 'status' : True, 'details' : {} },
           'type_C' : { 'status' : True, 'details' : {} },
         }
       }
     Failed Example:
-      { status : False,
-        chgcnt : 6,
-        details : {
+      { 'status' : False,
+        'chgcnt' : 6,
+        'reboot' : { 'scheduled' : False, details : {} },
+        'details' : {
           'type_A' : { 'status' : True, 'details' : {} },
           'type_B' : { 'status' : True, 'details' : {} },
           'type_C' : { 'status' : False,
