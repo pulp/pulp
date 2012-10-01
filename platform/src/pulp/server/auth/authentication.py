@@ -37,6 +37,13 @@ def _using_ldap():
     """
     return config.has_section('ldap')
 
+def _using_oauth():
+    """
+    Detects if pulp is configured for oauth
+    @rtype: bool
+    @return: True if using oauth, False otherwise
+    """
+    return config.has_section('oauth')
 
 def _check_username_password_ldap(username, password=None):
     """
@@ -101,8 +108,9 @@ def _check_username_password_local(username, password=None):
 
 def check_username_password(username, password=None):
     """
-    Check a username and password.
+    Check username and password.
     Return None if the username and password are not valid
+
     @type username: str
     @param username: the login of the user
     @type password: str or None
@@ -129,17 +137,21 @@ def check_user_cert(cert_pem):
     cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
+
     if not encoded_user:
         return None
+
     cert_gen_manager = factory.cert_generation_manager()
     if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
+
     try:
         username, id = cert_gen_manager.decode_admin_user(encoded_user)
     except PulpException:
         return None
+
     return check_username_password(username)
 
 def check_consumer_cert_no_user(cert_pem):
@@ -147,13 +159,16 @@ def check_consumer_cert_no_user(cert_pem):
     cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
+
     if encoded_user is None:
         return None
+
     cert_gen_manager = factory.cert_generation_manager()
     if not cert_gen_manager.verify_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
+
     return encoded_user
 
 def check_consumer_cert(cert_pem):
