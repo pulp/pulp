@@ -115,52 +115,38 @@ class CleanReport(HandlerReport):
     pass
 
 
-class RebootReport(Report):
+class RebootReport(HandlerReport):
     """
     The profile report is returned by handler methods
-    implementing reboot operations.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool
-    @ivar scheduled: Indicates whether a reboot has been scheduled.
-    @type scheduled: bool
-    @ivar details: reboot details.
-    @type details: dict
+    implementing reboot operations.  A chgcnt > 0 indicates
+    the report was scheduled.
+    """
+    pass
+
+
+class LastExceptionDetails(dict):
+    """
+    Last raised exception details.
+    Intended to be passed to HandlerReport failed() as the I{details} parameter.
+    This provides a structured way to consistently report exceptions raised
+    in the handler call.
     """
 
     def __init__(self):
-        Report.__init__(self)
-        self.scheduled = False
-
-    def succeeded(self, scheduled=True, details=None):
-        """
-        Reboot requested and succeeded.
-        @param scheduled: Indicates whether a reboot has been scheduled.
-        @type scheduled: bool
-        @param details: Scheduling details.
-        @type details: dict
-        """
-        self.scheduled = scheduled
-        self.details = (details or {})
-
-    def failed(self, details=None):
-        """
-        Reboot requested and failed.
-        @param details: Exception details.
-        @type details: dict
-        """
-        self.status = False
-        self.scheduled = False
-        self.details = (details or {})
+        info = sys.exc_info()
+        inst = info[1]
+        trace = '\n'.join(tb.format_exception(*info))
+        self['message'] = str(inst)
+        self['trace'] = trace
 
 
 class DispatchReport(Report):
     """
-    The dispatch report is returned for all handler methods
-    dispatched to handlers.  It represents an aggregation of
-    handler reports.  The handler (class) reports are collated by
-    type_id (content, distributor, system).  The overall status is
-    True (succeeded) only if all of the handler reports have a status
-    of True (succeeded).
+    The (internal) dispatch report is returned for all handler methods
+    dispatched to handlers.  It represents an aggregation of handler reports.
+    The handler (class) reports are collated by type_id (content, distributor, system).
+    The overall status is True (succeeded) only if all of the handler reports have
+    a status of True (succeeded).
     Succeeded Example:
       { status : True,
         chgcnt : 10,
@@ -208,31 +194,14 @@ class DispatchReport(Report):
                 self.chgcnt += report.chgcnt
             else:
                 self.status = False
+        # continue updating
+        if isinstance(report, RebootReport):
+            scheduled = (report.chgcnt > 0)
+            self.reboot = dict(scheduled=scheduled, details=report.details)
+            return
         if isinstance(report, HandlerReport):
             self.details[report.typeid] = \
                 dict(status=report.status, details=report.details)
             return
-        if isinstance(report, RebootReport):
-            self.reboot = dict(
-                scheduled=report.scheduled,
-                details=report.details)
-            return
         log.info('report: %s, ignored' % report)
         return self
-
-
-class ExceptionReport(dict):
-    """
-    Exception Report
-    @ivar message: The exception message.
-    @type message: str
-    @ivar trace: The stack trace.
-    @type trace: list
-    """
-
-    def __init__(self):
-        info = sys.exc_info()
-        inst = info[1]
-        trace = '\n'.join(tb.format_exception(*info))
-        self['message'] = str(inst)
-        self['trace'] = trace

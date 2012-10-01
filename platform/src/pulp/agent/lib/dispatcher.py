@@ -79,7 +79,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
@@ -111,7 +111,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
@@ -143,7 +143,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
@@ -175,7 +175,7 @@ class Dispatcher:
             except Exception:
                 log.exception('handler failed')
                 r = ProfileReport()
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -200,7 +200,7 @@ class Dispatcher:
         except Exception:
             log.exception('handler failed')
             r = RebootReport()
-            r.failed(ExceptionReport())
+            r.failed(LastExceptionDetails())
             report.update(r)
         return report
 
@@ -233,7 +233,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -266,7 +266,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -291,7 +291,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -320,7 +320,7 @@ class Dispatcher:
             except Exception:
                 log.exception('handler failed')
                 r = CleanReport()
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -377,7 +377,7 @@ class RebootManager:
             scheduled = dr.reboot['scheduled']
             details = dr.reboot['details']
             if dr.status:
-                report.succeeded(scheduled, details)
+                report.succeeded(details, chgcnt=1)
             else:
                 report.failed(details)
         return report
