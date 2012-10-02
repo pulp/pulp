@@ -25,7 +25,7 @@ import shutil
 from logging import getLogger
 from pulp.client.lock import Lock
 from pulp.common.util import encode_unicode, decode_unicode
-from pulp_rpm.common.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
+from pulp_rpm.handler.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 log = getLogger(__name__)
 

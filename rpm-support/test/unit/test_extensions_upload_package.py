@@ -10,15 +10,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import sys
 
 import mock
+
 from pulp.client.commands.repo.upload import UploadCommand
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 from pulp_rpm.common.ids import TYPE_ID_RPM
+from pulp_rpm.extension.admin.upload import package
 import rpm_support_base
-from rpm_upload import package
 
 
 RPM_DIR = os.path.abspath(os.path.dirname(__file__)) + '/data/simple_repo_no_comps'
