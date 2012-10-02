@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.329
+Version: 0.0.330
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -420,6 +420,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
 * Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
 - REST APIs providing schedule management for updating and uninstalling content
   units on consumers (jason.connor@gmail.com)
