@@ -13,7 +13,7 @@
 
 import os
 
-from pulp.client.commands.repo import cudl, group, sync_publish, upload
+from pulp.client.commands.repo import cudl, sync_publish, upload
 from pulp.client.upload.manager import UploadManager
 
 from pulp_puppet.extension.admin import (copy, modules, repo, structure, status,
@@ -33,17 +33,6 @@ def initialize(context):
 
     repo_section.add_command(modules.ModulesCommand(context))
     repo_section.add_command(copy.PuppetModuleCopyCommand(context))
-
-    group_section = structure.repo_group_section(context.cli)
-    group_section.add_command(group.CreateRepositoryGroupCommand(context))
-    group_section.add_command(group.UpdateRepositoryGroupCommand(context))
-    group_section.add_command(group.DeleteRepositoryGroupCommand(context))
-    group_section.add_command(group.ListRepositoryGroupsCommand(context))
-
-    members_section = structure.repo_group_members_section(context.cli)
-    members_section.add_command(group.AddRepositoryGroupMembersCommand(context))
-    members_section.add_command(group.RemoveRepositoryGroupMembersCommand(context))
-    members_section.add_command(group.ListRepositoryGroupMembersCommand(context))
 
     sync_section = structure.repo_sync_section(context.cli)
     renderer = status.PuppetStatusRenderer(context)

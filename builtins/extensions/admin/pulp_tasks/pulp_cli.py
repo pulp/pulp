@@ -242,7 +242,7 @@ class BaseTasksSection(PulpCliSection):
 
         @return: response from the server
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
 class AllTasksSection(BaseTasksSection):
     def retrieve_tasks(self, **kwargs):

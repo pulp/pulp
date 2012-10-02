@@ -14,7 +14,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
-# ---- Pulp --------------------------------------------------------------------
+# ---- Pulp (rpm) --------------------------------------------------------------
 
 Name: pulp-rpm
 Version: 0.0.329
@@ -59,6 +59,7 @@ popd
 
 # Directories
 mkdir -p /srv
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/pulp/content
 mkdir -p %{buildroot}/%{_sysconfdir}/pulp
 mkdir -p %{buildroot}/%{_usr}/lib
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
@@ -100,6 +101,41 @@ rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 rm -rf %{buildroot}
 
 
+
+# ---- RPM Common --------------------------------------------------------------
+
+%package -n python-pulp-rpm-common
+Summary: Pulp RPM support common library
+Group: Development/Languages
+Requires: python-pulp-common = %{version}
+
+%description -n python-pulp-rpm-common
+A collection of modules shared among all RPM components.
+
+%files -n python-pulp-rpm-common
+%defattr(-,root,root,-)
+%{python_sitelib}/pulp_rpm
+%{python_sitelib}/pulp_rpm/__init__.py*
+%{python_sitelib}/pulp_rpm/common/
+%doc
+
+
+# ---- RPM Extension Common ----------------------------------------------------
+
+%package -n python-pulp-rpm-extension
+Summary: The RPM extension common library
+Group: Development/Languages
+Requires: python-pulp-rpm-common = %{version}
+
+%description -n python-pulp-rpm-extension
+A collection of components shared among RPM extensions.
+
+%files -n python-pulp-rpm-extension
+%defattr(-,root,root,-)
+%{python_sitelib}/pulp_rpm/extension/
+%doc
+
+
 # ---- Plugins -----------------------------------------------------------------
 
 %package plugins
@@ -114,8 +150,11 @@ to provide RPM specific support.
 
 %files plugins
 %defattr(-,root,root,-)
+%{python_sitelib}/pulp_rpm/repo_auth/
+%{python_sitelib}/pulp_rpm/yum_plugin/
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_rpm.conf
+%dir %{_sysconfdir}/pki/pulp/content
 %{_usr}/lib/pulp/plugins/types/rpm_support.json
 %{_usr}/lib/pulp/plugins/importers/yum_importer/
 %{_usr}/lib/pulp/plugins/distributors/yum_distributor/
@@ -127,53 +166,31 @@ to provide RPM specific support.
 %doc
 
 
-# ---- RPM Common --------------------------------------------------------------
-
-%package -n python-pulp-rpm-common
-Summary: Pulp RPM support common library
-Group: Development/Languages
-Requires: python-pulp-common = %{version}
-
-%description -n python-pulp-rpm-common
-A collection of components share between RPM plugins, extensions and handlers.
-
-%files -n python-pulp-rpm-common
-%defattr(-,root,root,-)
-%{python_sitelib}/pulp_rpm/
-%doc
-
-
-# ---- Admin (builtin) Extensions ----------------------------------------------
+# ---- Admin Extensions --------------------------------------------------------
 
 %package admin-extensions
 Summary: The RPM admin client extensions
 Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
+Requires: python-pulp-rpm-extension = %{version}
 Requires: pulp-admin-client = %{version}
 
 %description admin-extensions
 A collection of extensions that supplement and override generic admin
 client capabilites with RPM specific features.
 
-
 %files admin-extensions
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/rpm_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
-%{_usr}/lib/pulp/admin/extensions/rpm_sync/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_search/
-%{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %doc
 
 
-# ---- Consumer (builtin) Extensions -------------------------------------------
+# ---- Consumer Extensions -----------------------------------------------------
 
 %package consumer-extensions
 Summary: The RPM consumer client extensions
 Group: Development/Languages
-Requires: python-pulp-rpm-common = %{version}
+Requires: python-pulp-rpm-extension = %{version}
 Requires: pulp-consumer-client = %{version}
 
 %description consumer-extensions
@@ -201,9 +218,9 @@ functionality within the Pulp agent.  This includes RPM install, update,
 uninstall; RPM profile reporting; binding through yum repository
 management and Linux specific commands such as system reboot.
 
-
 %files handlers
 %defattr(-,root,root,-)
+%{python_sitelib}/pulp_rpm/handler/
 %{_sysconfdir}/pulp/agent/conf.d/bind.conf
 %{_sysconfdir}/pulp/agent/conf.d/linux.conf
 %{_sysconfdir}/pulp/agent/conf.d/rpm.conf
@@ -229,8 +246,6 @@ A collection of yum plugins supplementing Pulp consumer operations.
 %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %{_usr}/lib/yum-plugins/pulp-profile-update.py*
 %doc
-
-
 
 
 
