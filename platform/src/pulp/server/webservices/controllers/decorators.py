@@ -23,8 +23,8 @@ import logging
 from gettext import gettext as _
 
 from pulp.server.auth.authentication import (
-    check_username_password, check_user_cert, check_consumer_cert_no_user,
-    check_oauth, _using_oauth)
+    check_username_password, check_user_cert, check_consumer_cert,
+    check_oauth, is_oauth_enabled)
 from pulp.server.managers import factory
 from pulp.server.compat import wraps
 from pulp.server.webservices import http
@@ -112,7 +112,7 @@ def auth_required(operation=None, super_user_only=False):
             def consumer_cert_authentication():
                 cert_pem = http.ssl_client_cert()
                 if cert_pem is not None:
-                    consumerid = check_consumer_cert_no_user(cert_pem)
+                    consumerid = check_consumer_cert(cert_pem)
                     if consumerid is not None:
                         _LOG.debug("Consumer cert authentication: %s" % consumerid)
                         return consumerid
@@ -120,7 +120,7 @@ def auth_required(operation=None, super_user_only=False):
 
             # Only install this one if oauth is configured
             def oauth_authentication():
-                if not _using_oauth():
+                if not is_oauth_enabled():
                     return None
                 username = http.request_info('HTTP_PULP_USER')
                 auth = http.http_authorization()
