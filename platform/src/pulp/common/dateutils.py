@@ -22,6 +22,7 @@ import time
 from gettext import gettext as _
 
 import isodate
+from isodate.duration import fquotmod, max_days_in_month
 
 # common globals ---------------------------------------------------------------
 
@@ -122,35 +123,6 @@ def to_naive_utc_datetime(dt):
     """
     udt = to_utc_datetime(dt)
     return udt.replace(tzinfo=None)
-
-# custom pickling --------------------------------------------------------------
-
-def pickle_tzinfo(tz):
-    offest = tz.utcoffset(None)
-    return unpickle_tzinfo, (offest,)
-
-
-def unpickle_tzinfo(offset):
-    utc_offset = utc_tz().utcoffset(None)
-    local_offset = local_tz().utcoffset(None)
-    if offset == utc_offset:
-        return utc_tz()
-    if offset == local_offset:
-        return local_tz()
-    hours = offset.days * 24
-    minutes = offset.seconds / 60
-    return isodate.FixedOffset(hours, minutes)
-
-
-def pickle_datetime(dt):
-    dt = to_utc_datetime(dt)
-    s = format_iso8601_datetime(dt)
-    return unpickle_datetime, (s,)
-
-
-def unpickle_datetime(s):
-    dt = parse_iso8601_datetime(s)
-    return to_utc_datetime(dt)
 
 # iso8601 functions ------------------------------------------------------------
 
@@ -316,20 +288,6 @@ def format_iso8601_interval(interval, start_time=None, recurrences=None):
     parts.append(isodate.strftime(interval, isodate.D_DEFAULT))
     return '/'.join(parts)
 
-
-# parsing string to datetime functions ------------------------------------------------------------
-
-def parse_datetime(datetime_str):
-    """
-    Parse a datetime string that uses the format string '%Y-%m-%d-%H-%M-%S'.
-    Example: 2011-06-10-00-00-00
-    @type datetime_str: str
-    @param datetime_str: datetime string using format string
-           '%Y-%m-%d-%H-%M-%S' to parse.
-    @rtype: datetime.datetime instance
-    """
-    return datetime.datetime.strptime(datetime_str, '%Y-%m-%d-%H-%M-%S')
-
 # timestamp functions ----------------------------------------------------------
 
 def datetime_to_utc_timestamp(dt):
@@ -351,4 +309,32 @@ def now_utc_timestamp():
     """
     now = datetime.datetime.now(tz=utc_tz())
     return datetime_to_utc_timestamp(now)
+
+# datetime math ----------------------------------------------------------------
+
+def add_interval_to_datetime(interval, dt):
+    """
+    Add a timedelta or isodate.Duration to a datetime and return the result.
+    This is a workaround to a bug in isodate 0.4.7-0.4.8 that prevents Duration
+    instances from being added to datetime instances.
+    @param interval: interval to add to the datetime instance
+    @param dt: datetime instance
+    @return: new datetime instance with interval added
+    @rtype: datetime.datetime
+    """
+    assert isinstance(interval, (datetime.timedelta, isodate.Duration))
+    assert isinstance(dt, datetime.datetime)
+
+    if isinstance(interval, datetime.timedelta):
+        return interval + dt
+
+    new_month = dt.month + interval.months
+    year_carry, new_month = fquotmod(new_month, 1, 13)
+    new_year = dt.year + interval.years + year_carry
+
+    max_days = max_days_in_month(new_year, new_month)
+    new_day = min(max_days, dt.day)
+
+    new_dt = dt.replace(year=int(new_year), month=int(new_month), day=int(new_day))
+    return interval.tdelta + new_dt
 
