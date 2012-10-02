@@ -182,11 +182,6 @@ client capabilites with RPM specific features.
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/rpm_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
-%{_usr}/lib/pulp/admin/extensions/rpm_sync/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_search/
-%{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %doc
 
 
