@@ -119,9 +119,18 @@ class RebootReport(HandlerReport):
     """
     The profile report is returned by handler methods
     implementing reboot operations.  A chgcnt > 0 indicates
-    the report was scheduled.
+    the reboot was scheduled.
     """
-    pass
+
+    def reboot_scheduled(self, details=None):
+        """
+        Indicates that the reboot operation succeeded and that
+        a reboot was scheduled.  Same as calling succeeded() and
+        setting the chgcnt = 1.
+        @param details: The details of the reboot.
+        @type details: dict
+        """
+        HandlerReport.succeeded(self, details, chgcnt=1)
 
 
 class LastExceptionDetails(dict):
