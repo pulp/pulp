@@ -630,7 +630,7 @@ class BaseSynchronizer(object):
                     elif e['updated'] == found['updated']:
                         log.debug("Erratum id and date matches for %s, checking for collections" % e['id'])
                         # Its the same errata as we already have, but the pkglist collections could be
-                        # different. compare the collection name in the list of what we already hvae
+                        # different. compare the collection name in the list of what we already have
                         # if the collection name is missing we add it to delta.
                         coll_names = [plist['name'] for plist in found['pkglist']]
                         for elist in e['pkglist']:
