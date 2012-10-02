@@ -22,7 +22,7 @@ from pulp.plugins.distributor import Distributor
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp_rpm.common.ids import TYPE_ID_DISTRO, TYPE_ID_DRPM, TYPE_ID_ERRATA, TYPE_ID_PKG_GROUP, TYPE_ID_PKG_CATEGORY,\
         TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DISTRIBUTOR_YUM
-from pulp_rpm.yum_plugin import comps_util, util, metadata
+from pulp_rpm.yum_plugin import comps_util, util, metadata, updateinfo
 from pulp_rpm.repo_auth import protected_repo_utils, repo_cert_utils
 
 
@@ -32,9 +32,8 @@ _LOG = util.getLogger(__name__)
 _ = gettext.gettext
 
 REQUIRED_CONFIG_KEYS = ["relative_url", "http", "https"]
-OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca",
-                        "https_ca", "gpgkey", "generate_metadata",
-                        "checksum_type", "skip", "https_publish_dir", "http_publish_dir"]
+OPTIONAL_CONFIG_KEYS = ["protected", "auth_cert", "auth_ca", "https_ca", "gpgkey",  "checksum_type",
+                        "skip", "https_publish_dir", "http_publish_dir", "use_createrepo"]
 
 SUPPORTED_UNIT_TYPES = [TYPE_ID_RPM, TYPE_ID_SRPM, TYPE_ID_DRPM, TYPE_ID_DISTRO]
 HTTP_PUBLISH_DIR="/var/lib/pulp/published/http/repos"
@@ -53,7 +52,7 @@ CONFIG_REPO_AUTH="/etc/pulp/repo_auth.conf"
 # auth_ca               - CA to use if repo authentication is required
 # https_ca              - CA to verify https communication
 # gpgkey                - GPG Key associated with the packages in this repo
-# generate_metadata     - True will run createrepo
+# use_createrepo        - This is  mostly a debug flag to override default snippet based metadata generation with createrepo
 #                         False will not run and uses existing metadata from sync
 # checksum_type         - Checksum type to use for metadata generation
 # skip                  - List of what content types to skip during sync, options:
@@ -76,6 +75,7 @@ class YumDistributor(Distributor):
     def __init__(self):
         super(YumDistributor, self).__init__()
         self.canceled = False
+        self.use_createrepo = False
 
     @classmethod
     def metadata(cls):
@@ -119,14 +119,14 @@ class YumDistributor(Distributor):
                 return False, msg
             if key == 'protected':
                 protected = config.get('protected')
-                if protected is not None and not isinstance(protected, bool):
+                if not isinstance(protected, bool):
                     msg = _("protected should be a boolean; got %s instead" % protected)
                     _LOG.error(msg)
                     return False, msg
-            if key == 'generate_metadata':
-                generate_metadata = config.get('generate_metadata')
-                if generate_metadata is not None and not isinstance(generate_metadata, bool):
-                    msg = _("generate_metadata should be a boolean; got %s instead" % generate_metadata)
+            if key == 'use_createrepo':
+                use_createrepo = config.get('use_createrepo')
+                if not isinstance(use_createrepo, bool):
+                    msg = _("use_createrepo should be a boolean; got %s instead" % use_createrepo)
                     _LOG.error(msg)
                     return False, msg
             if key == 'checksum_type':
@@ -137,7 +137,7 @@ class YumDistributor(Distributor):
                     return False, msg
             if key == 'skip':
                 metadata_types = config.get('skip')
-                if metadata_types is not None and not isinstance(metadata_types, list):
+                if not isinstance(metadata_types, list):
                     msg = _("skip should be a dictionary; got %s instead" % metadata_types)
                     _LOG.error(msg)
                     return False, msg
@@ -363,8 +363,8 @@ class YumDistributor(Distributor):
 
     def cancel_publish_repo(self, call_report, call_request):
         self.canceled = True
-        repo_working_dir = getattr(self, 'repo_working_dir')
-        return metadata.cancel_createrepo(repo_working_dir)
+        if self.use_createrepo:
+            return metadata.cancel_createrepo(self.repo_working_dir)
 
     def publish_repo(self, repo, publish_conduit, config):
         summary = {}
@@ -417,11 +417,12 @@ class YumDistributor(Distributor):
             distro_status, distro_errors = self.symlink_distribution_unit_files(distro_units, repo.working_dir, progress_callback)
             if not distro_status:
                 _LOG.error("Unable to publish distribution tree %s items" % (len(distro_errors)))
-        # update/generate metadata for the published repo
-        repo_scratchpad = publish_conduit.get_repo_scratchpad()
-        src_working_dir = ''
-        if repo_scratchpad.has_key("importer_working_dir"):
-            src_working_dir = repo_scratchpad['importer_working_dir']
+
+        updateinfo_xml_path = None
+        if 'erratum' not in skip_list:
+            criteria = UnitAssociationCriteria(type_ids=TYPE_ID_ERRATA)
+            errata_units = publish_conduit.get_units(criteria=criteria)
+            updateinfo_xml_path = updateinfo.updateinfo(errata_units, repo.working_dir)
 
         if self.canceled:
             return publish_conduit.build_failure_report(summary, details)
@@ -435,9 +436,16 @@ class YumDistributor(Distributor):
             existing_cats = filter(lambda u : u.type_id in [TYPE_ID_PKG_CATEGORY], existing_units)
             groups_xml_path = comps_util.write_comps_xml(repo.working_dir, existing_groups, existing_cats)
         metadata_start_time = time.time()
-        self.copy_importer_repodata(src_working_dir, repo.working_dir)
-        metadata_status, metadata_errors = metadata.generate_metadata(
+        # update/generate metadata for the published repo
+        self.use_createrepo = config.get('use_createrepo')
+        if self.use_createrepo:
+            metadata_status, metadata_errors = metadata.generate_metadata(
                 repo.working_dir, publish_conduit, config, progress_callback, groups_xml_path)
+        else:
+            # default to per package metadata
+            metadata_status, metadata_errors = metadata.generate_yum_metadata(repo.working_dir, rpm_units,
+                config, progress_callback, is_cancelled=self.canceled, group_xml_path=groups_xml_path,
+                updateinfo_xml_path=updateinfo_xml_path, repo_scratchpad=publish_conduit.get_repo_scratchpad())
         metadata_end_time = time.time()
         relpath = self.get_repo_relative_path(repo, config)
         if relpath.startswith("/"):
@@ -550,7 +558,7 @@ class YumDistributor(Distributor):
                 packages_progress_status["num_error"] += 1
                 packages_progress_status["items_left"] -= 1
                 continue
-            _LOG.info("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
+            _LOG.debug("Unit exists at: %s we need to symlink to: %s" % (source_path, symlink_path))
             try:
                 if not util.create_symlink(source_path, symlink_path):
                     msg = "Unable to create symlink for: %s pointing to %s" % (symlink_path, source_path)

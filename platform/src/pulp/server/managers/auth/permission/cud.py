@@ -218,7 +218,6 @@ class PermissionManager(object):
 
         operations = [self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE]
         self.grant(resource, user['login'], operations)
-        return True
 
 
     def grant_automatic_permissions_for_user(self, login):
@@ -229,12 +228,9 @@ class PermissionManager(object):
         @param login: login of the new user
         @type  login: str
         """
-        self.grant('/users/%s/' % login, login, [self.READ, self.UPDATE])
-        self.grant('/users/admin_certificate/', login, [self.READ])
         self.grant('/v2/actions/login/', login, [self.READ, self.UPDATE])
         self.grant('/v2/actions/logout/', login, [self.READ, self.UPDATE])
         self.grant('/v2/users/%s/' % login, login, [self.READ, self.UPDATE])
-        self.grant('/v2/users/admin_certificate/', login, [self.READ])
 
 
     def revoke_permission_from_user(self, resource, login, operation_names):
@@ -271,7 +267,9 @@ class PermissionManager(object):
             if login not in permission['users']:
                 continue
             del permission['users'][login]
-            Permission.get_collection().save(permission, safe=True)
-
-        return True
+            if permission['users']:
+                Permission.get_collection().save(permission, safe=True)
+            else:
+                # Delete entire permission if there are no more users 
+                Permission.get_collection().remove({'resource':permission['resource']}, safe=True)
 

@@ -104,7 +104,7 @@ def _upload_manager(context):
     access any necessary configuration.
 
     :return: initialized and ready to run upload manager instance
-    :rtype:  UploadManager
+    :rtype: UploadManager
     """
     upload_working_dir = context.config['filesystem']['upload_working_dir']
     upload_working_dir = os.path.expanduser(upload_working_dir)
