@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 from pulp.client.commands.unit import UnitCopyCommand
 from pulp.client.extensions.core import TAG_REASONS
 

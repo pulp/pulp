@@ -11,13 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base
+import mock
 
+import base
 from pulp.client.commands.options import (OPTION_GROUP_ID, OPTION_REPO_ID,
-    OPTION_DESCRIPTION, OPTION_NOTES, OPTION_NAME)
+    OPTION_DESCRIPTION, OPTION_NOTES, OPTION_NAME, FLAG_ALL)
 from pulp.client.commands.repo import group
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_DOCUMENT, TAG_TITLE
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 class CreateRepositoryGroupCommandTests(base.PulpClientTests):
 
@@ -412,10 +413,36 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'add')
         self.assertEqual(self.command.description, group.DESC_MEMBER_ADD)
 
+    @mock.patch('pulp.client.extensions.core.PulpPrompt.render_failure_message')
+    def test_requires_criteria_arg(self, mock_render_failure):
+        # make sure it requires at least one matching arg
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+        }
+        self.command.run(**data)
+
+        self.assertEqual(mock_render_failure.call_count, 1)
+
+    def test_adds_repo_to_search(self):
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : False,
+            OPTION_REPO_ID.keyword : ['repo1']
+        }
+        self.server_mock.request.return_value = 200, {}
+
+        self.command.run(**data)
+
+        criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
+
+        self.assertEqual(criteria['filters']['id']['$in'], ['repo1'])
+
     def test_run(self):
         # Setup
         data = {
             OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : True,
+            OPTION_REPO_ID.keyword : None
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -452,10 +479,36 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'remove')
         self.assertEqual(self.command.description, group.DESC_MEMBER_REMOVE)
 
+    @mock.patch('pulp.client.extensions.core.PulpPrompt.render_failure_message')
+    def test_requires_criteria_arg(self, mock_render_failure):
+        # make sure it requires at least one matching arg
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+        }
+        self.command.run(**data)
+
+        self.assertEqual(mock_render_failure.call_count, 1)
+
+    def test_adds_repo_to_search(self):
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : False,
+            OPTION_REPO_ID.keyword : ['repo1']
+        }
+        self.server_mock.request.return_value = 200, {}
+
+        self.command.run(**data)
+
+        criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
+
+        self.assertEqual(criteria['filters']['id']['$in'], ['repo1'])
+
     def test_run(self):
         # Setup
         data = {
             OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : True,
+            OPTION_REPO_ID.keyword : None
         }
 
         self.server_mock.request.return_value = 200, {}

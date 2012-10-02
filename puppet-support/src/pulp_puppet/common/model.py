@@ -18,7 +18,7 @@ and methods to serialize and deserialize them.
 
 import copy
 
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 from pulp_puppet.common import constants
 

@@ -15,7 +15,7 @@ import unittest
 import mock
 
 from pulp.bindings.content import OrphanContentAPI
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 
 class TestOrphanAPI(unittest.TestCase):
