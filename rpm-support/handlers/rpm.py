@@ -16,13 +16,13 @@ from optparse import OptionParser
 from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
 from rhsm.profile import get_profile
 from pulp.agent.lib.handler import ContentHandler
-from pulp.agent.lib.report import ProfileReport, HandlerReport
+from pulp.agent.lib.report import ProfileReport, ContentReport
 from logging import getLogger, Logger
 
 log = getLogger(__name__)
 
 
-class PackageReport(HandlerReport):
+class PackageReport(ContentReport):
     """
     Package (install|update|uninstall) report.
     Calculates the chgcnt.
@@ -32,10 +32,10 @@ class PackageReport(HandlerReport):
         chgcnt = \
             len(details['resolved'])+ \
             len(details['deps'])
-        HandlerReport.succeeded(self, details, chgcnt)
+        ContentReport.succeeded(self, details, chgcnt)
 
 
-class GroupReport(HandlerReport):
+class GroupReport(ContentReport):
     """
     Package Group (install|update|uninstall) report.
     Calculates the chgcnt.
@@ -45,7 +45,7 @@ class GroupReport(HandlerReport):
         chgcnt = \
             len(details['resolved'])+ \
             len(details['deps'])
-        HandlerReport.succeeded(self, details, chgcnt)
+        ContentReport.succeeded(self, details, chgcnt)
 
 
 class PackageHandler(ContentHandler):
@@ -68,7 +68,7 @@ class PackageHandler(ContentHandler):
           - reboot : Reboot after installed
         @type options: dict
         @return: An install report.  See: L{Package.install}
-        @rtype: L{HandlerReport}
+        @rtype: L{PackageReport}
         """
         report = PackageReport()
         pkg = self.__impl(options)
@@ -92,7 +92,7 @@ class PackageHandler(ContentHandler):
           - reboot : Reboot after installed
         @type options: dict
         @return: An update report.  See: L{Package.update}
-        @rtype: L{HandlerReport}
+        @rtype: L{PackageReport}
         """
         report = PackageReport()
         all = options.get('all', False)
@@ -115,7 +115,7 @@ class PackageHandler(ContentHandler):
           - reboot : Reboot after installed
         @type options: dict
         @return: An uninstall report.  See: L{Package.uninstall}
-        @rtype: L{HandlerReport}
+        @rtype: L{PackageReport}
         """
         report = PackageReport()
         pkg = self.__impl(options)
@@ -169,7 +169,7 @@ class GroupHandler(ContentHandler):
         @param options: Unit install options.
         @type options: dict
         @return: An install report.
-        @rtype: L{HandlerReport}
+        @rtype: L{GroupReport}
         """
         report = GroupReport()
         grp = self.__impl(options)
@@ -188,7 +188,7 @@ class GroupHandler(ContentHandler):
         @param options: Unit uninstall options.
         @type options: dict
         @return: An uninstall report.
-        @rtype: L{HandlerReport}
+        @rtype: L{GroupReport}
         """
         report = GroupReport()
         grp = self.__impl(options)

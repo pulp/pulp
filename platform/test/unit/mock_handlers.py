@@ -39,6 +39,8 @@ bind=yum
 
 [rpm]
 class=RpmHandler
+xxx=hello
+yyy=world
 
 [yum]
 class=YumHandler
@@ -55,6 +57,8 @@ from pulp.agent.lib.conduit import *
 class RpmHandler(ContentHandler):
 
   def install(self, conduit, units, options):
+    assert(self.cfg['xxx'] == 'hello')
+    assert(self.cfg['yyy'] == 'world')
     assert(isinstance(conduit, Conduit))
     assert(isinstance(units, list))
     assert(isinstance(options, dict))
