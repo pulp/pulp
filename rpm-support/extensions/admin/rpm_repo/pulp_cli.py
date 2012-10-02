@@ -17,7 +17,7 @@ from gettext import gettext as _
 
 from pulp_rpm.common import ids
 
-from pulp.client.commands.repo import (cudl, group, sync_publish, upload)
+from pulp.client.commands.repo import cudl, sync_publish, upload
 from pulp.client.upload import manager as upload_lib
 
 from pulp_rpm.extension.admin import (contents, copy, export, remove, repo,
@@ -41,17 +41,6 @@ def initialize(context):
     repo_section.add_command(cudl.DeleteRepositoryCommand(context))
     repo_section.add_command(repo.RpmRepoListCommand(context))
     repo_section.add_command(repo.RpmRepoSearchCommand(context))
-
-    group_section = structure.repo_group_section(context.cli)
-    group_section.add_command(group.CreateRepositoryGroupCommand(context))
-    group_section.add_command(group.UpdateRepositoryGroupCommand(context))
-    group_section.add_command(group.DeleteRepositoryGroupCommand(context))
-    group_section.add_command(group.ListRepositoryGroupsCommand(context))
-
-    members_section = structure.repo_group_members_section(context.cli)
-    members_section.add_command(group.AddRepositoryGroupMembersCommand(context))
-    members_section.add_command(group.RemoveRepositoryGroupMembersCommand(context))
-    members_section.add_command(group.ListRepositoryGroupMembersCommand(context))
 
     copy_section = structure.repo_copy_section(context.cli)
     copy_section.add_command(copy.RpmCopyCommand(context))
