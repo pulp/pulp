@@ -625,7 +625,22 @@ class BaseSynchronizer(object):
                 # Replace existing errata if the update date is newer
                 found = self.errata_api.erratum(e['id'])
                 if found:
-                    if e['updated'] <= found['updated']:
+                    if e['updated'] < found['updated']:
+                        continue
+                    elif e['updated'] == found['updated']:
+                        log.debug("Erratum id and date matches for %s, checking for collections" % e['id'])
+                        # Its the same errata as we already have, but the pkglist collections could be
+                        # different. compare the collection name in the list of what we already have
+                        # if the collection name is missing we add it to delta.
+                        coll_names = [plist['name'] for plist in found['pkglist']]
+                        for elist in e['pkglist']:
+                            delta = dict()
+                            if elist['name'] not in coll_names:
+                                # merge the pkglist and save
+                                found['pkglist'].append(elist)
+                                delta['pkglist'] = found['pkglist']
+                            self.errata_api.update(e['id'], delta)
+                        # we already have this errata and pkg list matches, skip
                         continue
                     log.debug("Updating errata %s, it's updated date %s is newer than %s." % \
                             (e['id'], e["updated"], found["updated"]))
