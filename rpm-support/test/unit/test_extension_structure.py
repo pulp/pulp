@@ -76,14 +76,6 @@ class SectionRetrievalTests(rpm_support_base.PulpClientTests):
         section = structure.repo_uploads_section(self.cli)
         self.assertEqual(section.name, structure.SECTION_UPLOADS)
 
-    def test_repo_group_section(self):
-        section = structure.repo_group_section(self.cli)
-        self.assertEqual(section.name, structure.SECTION_GROUP)
-
-    def test_repo_group_members_section(self):
-        section = structure.repo_group_members_section(self.cli)
-        self.assertEqual(section.name, structure.SECTION_GROUP_MEMBERS)
-
     def test_repo_sync_section(self):
         section = structure.repo_sync_section(self.cli)
         self.assertEqual(section.name, structure.SECTION_SYNC)
