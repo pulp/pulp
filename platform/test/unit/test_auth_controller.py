@@ -67,7 +67,6 @@ class UserCollectionTests(AuthControllersTests):
         self.assertTrue('password' not in body[0])
         self.assertTrue('_href' in body[0])
 
-
     def test_get_no_users(self):
         """
         Tests that a list with admin user is returned when no users are present.
@@ -79,7 +78,6 @@ class UserCollectionTests(AuthControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(1, len(body))
-
 
     def test_post(self):
         """
@@ -105,6 +103,30 @@ class UserCollectionTests(AuthControllersTests):
         self.assertTrue(user is not None)
         self.assertEqual(params['name'], user['name'])
         self.assertTrue(self.password_manager.check_password(user['password'], params['password']))
+   
+    def test_user_default_permissions(self):
+        """
+        Tests default permissions given to the user after creation.
+        """
+
+        # Setup
+        params = {
+            'login' : 'user-1',
+            'name' : 'User 1',
+            'password' : 'test-password',
+        }
+
+        # Test
+        self.post('/v2/users/', params=params)
+
+        # Verify
+        user = User.get_collection().find_one({'login' : 'user-1'})
+        self.assertTrue(user is not None)
+        
+        permission = Permission.get_collection().find_one({'resource' : '/v2/users/user-1/'})
+        self.assertTrue(permission is not None)
+        self.assertTrue('user-1' in permission['users'])
+        self.assertTrue('ws-user' in permission['users'])
 
     def test_post_bad_data(self):
         """
@@ -136,6 +158,7 @@ class UserCollectionTests(AuthControllersTests):
         # Verify
         self.assertEqual(409, status)
 
+
 class UserResourceTests(AuthControllersTests):
 
     def test_get(self):
@@ -154,7 +177,6 @@ class UserResourceTests(AuthControllersTests):
         self.assertEqual('user-1', body['login'])
         self.assertTrue('_href' in body)
         self.assertTrue(body['_href'].endswith('users/user-1/'))
-
 
     def test_get_missing_user(self):
         """
@@ -183,6 +205,27 @@ class UserResourceTests(AuthControllersTests):
 
         user = User.get_collection().find_one({'login' : 'doomed'})
         self.assertTrue(user is None)
+
+    def test_delete_user_permissions(self):
+        """
+        Tests deleting an existing user.
+        """
+
+        # Setup
+        params = {
+            'login' : 'user-1',
+            'name' : 'User 1',
+            'password' : 'test-password',
+        }
+        self.post('/v2/users/', params=params)
+
+        # Test
+        status, body = self.delete('/v2/users/user-1/')
+
+        # Verify that permissions are removed
+        self.assertEqual(200, status)
+        permission = Permission.get_collection().find_one({'resource' : '/v2/users/user-1/'})
+        self.assertTrue(permission is None)
 
     def test_delete_missing_user(self):
         """
@@ -245,7 +288,6 @@ class UserSearchTests(AuthControllersTests):
         for login in self.USER_LOGINS:
             user_manager = manager_factory.user_manager()
             user_manager.create_user(login=login, password=login, roles=[self.ROLE_ID])
-
     
     def validate(self, body, user_count=None):
         if user_count is None:
@@ -377,8 +419,6 @@ class UserSearchTests(AuthControllersTests):
         # Verify
         self.assertEqual(200, status)
         self.validate(body)
-
-
 
 
 class RoleCollectionTests(AuthControllersTests):

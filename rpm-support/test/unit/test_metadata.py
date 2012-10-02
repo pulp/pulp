@@ -60,16 +60,10 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
         mock_repo.scratchpad = {"checksum_type" : "sha"}
         mock_repo.working_dir = os.path.join(self.data_dir, "test_repo_metadata")
         # Confirm required and optional are successful
-        optional_kwargs = {"generate_metadata" :  1}
-        config = distributor_mocks.get_basic_config(**optional_kwargs)
+        config = distributor_mocks.get_basic_config()
         mock_publish_conduit = distributor_mocks.get_publish_conduit()
         status, errors = metadata.generate_metadata(mock_repo.working_dir, mock_publish_conduit, config)
         self.assertEquals(status, True)
-        optional_kwargs = {"generate_metadata" :  0}
-        config = distributor_mocks.get_basic_config(**optional_kwargs)
-        mock_publish_conduit = distributor_mocks.get_publish_conduit()
-        status, errors = metadata.generate_metadata(mock_repo.working_dir, mock_publish_conduit, config)
-        self.assertEquals(status, False)
 
     def test_get_checksum_type(self):
         mock_repo = mock.Mock(spec=Repository)
@@ -205,4 +199,14 @@ class TestMetadata(rpm_support_base.PulpRPMTests):
                     print "Caught exception from trying to cleanup: %s" % (working_dir)
                     traceback.print_exc()
 
+    def test_get_package_xml(self):
+        test_pkg_path = "%s/incisura-7.1.4-1.elfake.noarch.rpm" % self.data_dir
+        repodata_xml = metadata.get_package_xml(test_pkg_path)
+        self.assertTrue(repodata_xml.has_key("primary"))
+        self.assertTrue(repodata_xml.has_key("filelists"))
+        self.assertTrue(repodata_xml.has_key("other"))
+
+        bad_package_path = "%s/i_dont_exist-7.1.4-1.elfake.noarch.rpm" % self.data_dir
+        repodata_xml = metadata.get_package_xml(bad_package_path)
+        self.assertEquals(repodata_xml, {})
 

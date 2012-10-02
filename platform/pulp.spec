@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.328
+Version: 0.0.330
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -159,7 +159,7 @@ Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4-3.pulp
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.1.5-1
+Requires: grinder >= 0.1.6-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -420,6 +420,13 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- REST APIs providing schedule management for updating and uninstalling content
+  units on consumers (jason.connor@gmail.com)
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - Added conduit call for a group plugin to read a repo's scratchpad
   (jason.dobies@redhat.com)

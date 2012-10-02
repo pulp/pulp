@@ -61,7 +61,7 @@ def scheduled_publish_obj(scheduled_call):
     return obj
 
 
-def scheduled_unit_install_obj(scheduled_call):
+def scheduled_unit_management_obj(scheduled_call):
     obj = scheduled_call_obj(scheduled_call)
     obj['options'] = scheduled_call['call_request'].kwargs['options']
     obj['units'] = scheduled_call['call_request'].kwargs['units']

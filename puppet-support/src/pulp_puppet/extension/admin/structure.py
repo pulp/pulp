@@ -25,10 +25,8 @@ SECTION_ROOT = 'puppet'
 
 SECTION_REPO = 'repo'
 
-SECTION_GROUP = 'group'
 SECTION_REMOVE = 'remove'
 SECTION_UPLOADS = 'uploads'
-SECTION_GROUP_MEMBERS = 'members'
 
 SECTION_SYNC = 'sync'
 SECTION_SYNC_SCHEDULES = 'schedules'
@@ -38,8 +36,6 @@ SECTION_PUBLISH_SCHEDULES = 'schedules'
 DESC_ROOT = _('contains commands for working with Puppet repositories')
 DESC_REPO = _('repository lifecycle commands')
 
-DESC_GROUP = _('repository group lifecycle commands')
-DESC_GROUP_MEMBERS = _('manage membership in a repository group')
 DESC_REMOVE = _('remove copied or uploaded modules from a repository')
 DESC_UPLOADS = _('upload modules into a repository')
 
@@ -87,7 +83,6 @@ def ensure_repo_structure(cli):
 
     # Add the direct subsections of repo
     direct_subsections = (
-        (SECTION_GROUP, DESC_GROUP),
         (SECTION_REMOVE, DESC_REMOVE),
         (SECTION_UPLOADS, DESC_UPLOADS),
         (SECTION_SYNC, DESC_SYNC),
@@ -97,9 +92,6 @@ def ensure_repo_structure(cli):
         repo_section.create_subsection(name, description)
 
     # Add specific third-tier sections
-    group_section = repo_group_section(cli)
-    group_section.create_subsection(SECTION_GROUP_MEMBERS, DESC_GROUP_MEMBERS)
-
     sync_section = repo_sync_section(cli)
     sync_section.create_subsection(SECTION_SYNC_SCHEDULES, DESC_SYNC_SCHEDULES)
 
@@ -120,14 +112,6 @@ def repo_remove_section(cli):
 
 def repo_uploads_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_UPLOADS)
-
-
-def repo_group_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP)
-
-
-def repo_group_members_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP, SECTION_GROUP_MEMBERS)
 
 
 def repo_sync_section(cli):

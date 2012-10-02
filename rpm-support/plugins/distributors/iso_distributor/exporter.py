@@ -156,6 +156,7 @@ class RepoExporter(object):
         summary = {}
         repo_working_dir = self.repo_working_dir
         errors = []
+        summary["updateinfo_xml_path"] = None
         errata_progress_status = self.init_progress()
         if not errata_units:
             errata_progress_status["state"] = "FINISHED"
@@ -173,28 +174,11 @@ class RepoExporter(object):
         try:
             errata_progress_status['state'] = "IN_PROGRESS"
             self.set_progress("errata", errata_progress_status, progress_callback)
-
             updateinfo_path = updateinfo.updateinfo(errata_units, repo_working_dir)
-            if updateinfo_path:
-                repodata_dir = os.path.join(repo_working_dir, "repodata")
-                if not os.path.exists(repodata_dir):
-                    _LOG.error("Missing repodata; cannot run modifyrepo")
-                    return summary, errors
-                _LOG.debug("Modifying repo for updateinfo")
-                metadata.modify_repo(repodata_dir,  updateinfo_path)
+            summary["updateinfo_xml_path"] = updateinfo_path
             errata_progress_status["num_success"] = len(errata_units)
             errata_progress_status["items_left"] = 0
-        except metadata.ModifyRepoError, mre:
-            details["errors"] = errors
-            msg = "Unable to run modifyrepo to include updateinfo at target location %s; Error: %s" % (repo_working_dir, str(mre))
-            errors.append(msg)
-            _LOG.error(msg)
-            errata_progress_status['state'] = "FAILED"
-            errata_progress_status["num_success"] = 0
-            errata_progress_status["items_left"] = len(errata_units)
-            return summary, errors
         except Exception, e:
-            details["errors"] = errors
             errors.append(str(e))
             errata_progress_status['state'] = "FAILED"
             errata_progress_status["num_success"] = 0

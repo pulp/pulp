@@ -376,5 +376,5 @@ class Profile:
                 continue
             details = report['details']
             http = bindings.profile.send(myid, typeid, details)
-            log.info('profile (%s), reported: %d', typeid, http.response_code)
+            log.debug('profile (%s), reported: %d', typeid, http.response_code)
         return report

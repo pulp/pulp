@@ -17,8 +17,8 @@
 # ---- Pulp (rpm) --------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.328
-Release: 2%{?dist}
+Version: 0.0.330
+Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
 License: GPLv2
@@ -182,11 +182,6 @@ client capabilites with RPM specific features.
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/rpm_admin_consumer/
 %{_usr}/lib/pulp/admin/extensions/rpm_repo/
-%{_usr}/lib/pulp/admin/extensions/rpm_sync/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_copy/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_remove/
-%{_usr}/lib/pulp/admin/extensions/rpm_units_search/
-%{_usr}/lib/pulp/admin/extensions/rpm_upload/
 %doc
 
 
@@ -255,6 +250,12 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- Yum Distributor other metadata (pkilambi@redhat.com)
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-2
 - Fix for removed _upload extensions.
 
