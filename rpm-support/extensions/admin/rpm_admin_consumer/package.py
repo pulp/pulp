@@ -15,7 +15,6 @@
 Contains package (RPM) management section and commands.
 """
 
-import time
 from gettext import gettext as _
 from command import PollingCommand
 from pulp.client.extensions.extensions import PulpCliSection
@@ -146,7 +145,7 @@ class Install(PollingCommand):
         try:
             response = server.consumer_content.install(consumer_id, units=units, options=options)
             task = response.response_body
-            msg = _('Install task created with id [%s]') % task.task_id
+            msg = _('Install task created with id [%(id)s]') % dict(id=task.task_id)
             prompt.render_success_message(msg)
             response = server.tasks.get_task(task.task_id)
             task = response.response_body
@@ -254,7 +253,7 @@ class Update(PollingCommand):
         try:
             response = server.consumer_content.update(consumer_id, units=units, options=options)
             task = response.response_body
-            msg = _('Update task created with id [%s]') % task.task_id
+            msg = _('Update task created with id [%(id)s]') % dict(id=task.task_id)
             prompt.render_success_message(msg)
             response = server.tasks.get_task(task.task_id)
             task = response.response_body
@@ -340,7 +339,7 @@ class Uninstall(PollingCommand):
         try:
             response = server.consumer_content.uninstall(consumer_id, units=units, options=options)
             task = response.response_body
-            msg = _('Uninstall task created with id [%s]') % task.task_id
+            msg = _('Uninstall task created with id [%(id)s]') % dict(id=task.task_id)
             prompt.render_success_message(msg)
             response = server.tasks.get_task(task.task_id)
             task = response.response_body
