@@ -15,7 +15,7 @@ from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client.commands import options
 from pulp.client.commands.repo import cudl
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_REASONS, TAG_DOCUMENT, TAG_TITLE
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 import base_cli
 from pulp_puppet.common import constants
