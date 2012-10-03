@@ -130,7 +130,7 @@ def get_missing_rpms_and_units(available_rpms, existing_units, verify_options={}
             rpm_path = existing_units[key].storage_path
             if not util.verify_exists(rpm_path, existing_units[key].unit_key.get('checksum'),
                 existing_units[key].unit_key.get('checksumtype'), verify_options):
-                _LOG.info("Missing an existing unit: %s.  Will add to resync." % (rpm_path))
+                _LOG.debug("Missing an existing unit: %s.  Will add to resync." % (rpm_path))
                 missing_rpms[key] = available_rpms[key]
                 missing_units[key] = existing_units[key]
                 # Adjust storage path to match intended location
@@ -617,7 +617,7 @@ class ImporterRPM(object):
         status = True
         if removal_errors or details["sync_report"]["errors"]:
             status = False
-        _LOG.info("STATUS: %s; SUMMARY: %s; DETAILS: %s" % (status, summary, details))
+        _LOG.debug("STATUS: %s; SUMMARY: %s; DETAILS: %s" % (status, summary, details))
         return status, summary, details
 
     def _setup_rpms(self, repo, sync_conduit, verify_options, skip_content_types):
