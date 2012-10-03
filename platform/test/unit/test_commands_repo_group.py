@@ -11,13 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import mock
-
 import base
 from pulp.client.commands.options import (OPTION_GROUP_ID, OPTION_REPO_ID,
     OPTION_DESCRIPTION, OPTION_NOTES, OPTION_NAME, FLAG_ALL)
 from pulp.client.commands.repo import group
-from pulp.client.extensions.core import TAG_SUCCESS, TAG_DOCUMENT, TAG_TITLE
+from pulp.client.extensions.core import TAG_SUCCESS, TAG_DOCUMENT, TAG_TITLE, TAG_FAILURE
 from pulp.common.compat import json
 
 class CreateRepositoryGroupCommandTests(base.PulpClientTests):
@@ -413,15 +411,14 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'add')
         self.assertEqual(self.command.description, group.DESC_MEMBER_ADD)
 
-    @mock.patch('pulp.client.extensions.core.PulpPrompt.render_failure_message')
-    def test_requires_criteria_arg(self, mock_render_failure):
+    def test_requires_criteria_arg(self):
         # make sure it requires at least one matching arg
         data = {
             OPTION_GROUP_ID.keyword : 'test-group',
         }
         self.command.run(**data)
 
-        self.assertEqual(mock_render_failure.call_count, 1)
+        self.assertTrue(TAG_FAILURE in self.prompt.get_write_tags())
 
     def test_adds_repo_to_search(self):
         data = {
@@ -514,15 +511,14 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'remove')
         self.assertEqual(self.command.description, group.DESC_MEMBER_REMOVE)
 
-    @mock.patch('pulp.client.extensions.core.PulpPrompt.render_failure_message')
-    def test_requires_criteria_arg(self, mock_render_failure):
+    def test_requires_criteria_arg(self):
         # make sure it requires at least one matching arg
         data = {
             OPTION_GROUP_ID.keyword : 'test-group',
         }
         self.command.run(**data)
 
-        self.assertEqual(mock_render_failure.call_count, 1)
+        self.assertTrue(TAG_FAILURE in self.prompt.get_write_tags())
 
     def test_adds_repo_to_search(self):
         data = {
