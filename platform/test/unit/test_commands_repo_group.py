@@ -161,6 +161,13 @@ class UpdateRepositoryGroupCommandTests(base.PulpClientTests):
         url = self.server_mock.request.call_args[0][1]
         self.assertTrue(url.endswith('/repo_groups/test-group/'))
 
+        body = self.server_mock.request.call_args[0][2]
+        delta = json.loads(body)
+        self.assertTrue('display-name' not in delta)
+        self.assertEqual(delta['display_name'], 'Group')
+        self.assertEqual(delta['description'], 'Description')
+        self.assertEqual(delta['notes'], {'a' : 'a', 'b' : 'b'})
+
     def test_run_not_found(self):
         # Setup
         data = {
