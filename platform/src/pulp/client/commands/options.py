@@ -38,7 +38,9 @@ DESC_NOTE = _(
     'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
     'be changed by specifying this option multiple times; notes are deleted by '
     'specifying "" as the value')
-DESC_ALL = _('match all records')
+DESC_ALL = _('match all records. If other filters are specified, they will be'
+             'applied. This option is only useful when you need to explicitly'
+             'request that no filters be applied.')
 
 # -- common options -----------------------------------------------------------
 

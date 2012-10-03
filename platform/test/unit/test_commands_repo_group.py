@@ -437,6 +437,41 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
         self.assertEqual(criteria['filters']['id']['$in'], ['repo1'])
 
+    def test_repo_id_and_all(self):
+        # --all should not prevent other filters from being added.
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : True,
+            OPTION_REPO_ID.keyword : ['repo1']
+        }
+        self.server_mock.request.return_value = 200, {}
+
+        self.command.run(**data)
+
+        criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
+
+        self.assertEqual(criteria['filters']['id']['$in'], ['repo1'])
+
+    def test_repo_id_and_match(self):
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : False,
+            OPTION_REPO_ID.keyword : ['repo1'],
+            'match' : [('id', 'repo.+')]
+        }
+        self.server_mock.request.return_value = 200, {}
+
+        self.command.run(**data)
+
+        criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
+
+        self.assertEqual(len(criteria['filters']['$and']), 2)
+        # make sure each of these filter types shows up in the criteria
+        self.assertEqual(
+            len(set(['$in', '$regex']) & set(criteria['filters']['$and'][0]['id'])), 1)
+        self.assertEqual(
+            len(set(['$in', '$regex']) & set(criteria['filters']['$and'][1]['id'])), 1)
+
     def test_run(self):
         # Setup
         data = {
@@ -502,6 +537,41 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
         criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
 
         self.assertEqual(criteria['filters']['id']['$in'], ['repo1'])
+
+    def test_repo_id_and_all(self):
+        # --all should not prevent other filters from being added.
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : False,
+            OPTION_REPO_ID.keyword : ['repo1']
+        }
+        self.server_mock.request.return_value = 200, {}
+
+        self.command.run(**data)
+
+        criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
+
+        self.assertEqual(criteria['filters']['id']['$in'], ['repo1'])
+
+    def test_repo_id_and_match(self):
+        data = {
+            OPTION_GROUP_ID.keyword : 'test-group',
+            FLAG_ALL.keyword : False,
+            OPTION_REPO_ID.keyword : ['repo1'],
+            'match' : [('id', 'repo.+')]
+        }
+        self.server_mock.request.return_value = 200, {}
+
+        self.command.run(**data)
+
+        criteria = json.loads(self.server_mock.request.call_args[0][2])['criteria']
+
+        self.assertEqual(len(criteria['filters']['$and']), 2)
+        # make sure each of these filter types shows up in the criteria
+        self.assertEqual(
+            len(set(['$in', '$regex']) & set(criteria['filters']['$and'][0]['id'])), 1)
+        self.assertEqual(
+            len(set(['$in', '$regex']) & set(criteria['filters']['$and'][1]['id'])), 1)
 
     def test_run(self):
         # Setup
