@@ -421,7 +421,6 @@ class YumImporter(Importer):
         return report
 
     def _upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
-        _LOG.info("Invoking upload_unit with file_path: %s; metadata: %s; unit_key: %s; type_id: %s" % (file_path, metadata, unit_key, type_id))
         if type_id == TYPE_ID_RPM:
             return self._upload_unit_rpm(repo, unit_key, metadata, file_path, conduit, config)
         elif type_id == TYPE_ID_ERRATA:
@@ -455,7 +454,7 @@ class YumImporter(Importer):
                     # checksums dont match, remove existing file
                     os.remove(new_path)
                 else:
-                    _LOG.info("Existing file is the same ")
+                    _LOG.debug("Existing file is the same ")
             if not os.path.isdir(os.path.dirname(new_path)):
                 os.makedirs(os.path.dirname(new_path))
             # copy the unit to the final path
@@ -468,7 +467,7 @@ class YumImporter(Importer):
         conduit.save_unit(u)
         summary['num_units_processed'] = len([file_path])
         summary['num_units_saved'] = len([file_path])
-        _LOG.info("unit %s successfully saved" % u)
+        _LOG.debug("unit %s successfully saved" % u)
         # symlink content to repo working directory
         symlink_path = "%s/%s/%s" % (repo.working_dir, repo.id, metadata['filename'])
         try:
@@ -477,7 +476,7 @@ class YumImporter(Importer):
             if not os.path.isdir(os.path.dirname(symlink_path)):
                 os.makedirs(os.path.dirname(symlink_path))
             os.symlink(new_path, symlink_path)
-            _LOG.info("Successfully symlinked to final location %s" % symlink_path)
+            _LOG.debug("Successfully symlinked to final location %s" % symlink_path)
         except (IOError, OSError), e:
             msg = "Error creating a symlink to repo working directory; Error %s" % e
             _LOG.error(msg)
@@ -534,7 +533,7 @@ class YumImporter(Importer):
             results = dsolve.getDependencylist()
         solved, unsolved = dsolve.processResults(results)
         dep_pkgs_map = {}
-        _LOG.info(" results from depsolver %s" % results)
+        _LOG.debug(" results from depsolver %s" % results)
         criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM])
         existing_units = get_existing_units(dependency_conduit, criteria)
         for dep, pkgs in solved.items():
@@ -549,7 +548,7 @@ class YumImporter(Importer):
         result_dict['unresolved'] = unsolved
         result_dict['printable_dependency_result'] = dsolve.printable_result(results)
         dsolve.cleanup()
-        _LOG.info("result dict %s" % result_dict)
+        _LOG.debug("result dict %s" % result_dict)
         return result_dict
 
     def cancel_sync_repo(self, call_request, call_report):
