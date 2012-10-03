@@ -150,7 +150,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
             # Convert to transfer object
             for unit in units:
                 type_id = unit['unit_type_id']
-                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+                u = common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
                 all_units.append(u)
 
             return all_units
