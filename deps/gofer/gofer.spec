@@ -249,6 +249,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Wed Oct 03 2012 Jeff Ortel <jortel@redhat.com> 0.74-1
+- Better watchdog API. (jortel@redhat.com)
+
+* Wed Oct 03 2012 Jeff Ortel <jortel@redhat.com> 0.74-1
 - Make watchdog journal object configurable; watchdog singleton by URL only.
   (jortel@redhat.com)
 
