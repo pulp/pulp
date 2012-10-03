@@ -446,7 +446,7 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
     transfer_units = []
     for unit in associate_units:
         type_id = unit['unit_type_id']
-        u = conduit_common_utils.to_plugin_unit(unit, type_defs[type_id])
+        u = conduit_common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
         transfer_units.append(u)
 
     return transfer_units

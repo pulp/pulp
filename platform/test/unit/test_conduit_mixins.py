@@ -195,8 +195,8 @@ class SearchUnitsMixinTests(unittest.TestCase):
     def test_search_all_units(self, mock_query_call, mock_type_def_call):
         # Setup
         mock_query_call.return_value = [
-            {'unit_type_id' : 'type-1', 'metadata' : {'m' : 'm1', 'k1' : 'v1'}},
-            {'unit_type_id' : 'type-2', 'metadata' : {'m' : 'm1', 'k1' : 'v2'}},
+            {'m' : 'm1', 'k1' : 'v1'},
+            {'m' : 'm1', 'k1' : 'v2'},
         ]
 
         mock_type_def_call.return_value = {
@@ -205,13 +205,13 @@ class SearchUnitsMixinTests(unittest.TestCase):
         }
 
         # Test
-        units = self.mixin.search_all_units('t1', 'fake-criteria')
+        units = self.mixin.search_all_units('type-1', 'fake-criteria')
 
         # Verify
         self.assertEqual(2, len(units))
         self.assertEqual(1, mock_query_call.call_count)
         self.assertTrue(isinstance(units[0], Unit))
-        self.assertEqual(mock_query_call.call_args[0][0], 't1')
+        self.assertEqual(mock_query_call.call_args[0][0], 'type-1')
         self.assertEqual(mock_query_call.call_args[0][1], 'fake-criteria')
 
     @mock.patch('pulp.server.managers.content.query.ContentQueryManager.find_by_criteria')
