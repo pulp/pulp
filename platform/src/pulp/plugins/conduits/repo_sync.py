@@ -43,7 +43,10 @@ from gettext import gettext as _
 import logging
 import sys
 
-from   pulp.plugins.conduits.mixins import ImporterConduitException, AddUnitMixin, RepoScratchPadMixin, ImporterScratchPadMixin, SingleRepoUnitsMixin, StatusMixin
+from   pulp.plugins.conduits.mixins import (\
+    ImporterConduitException, AddUnitMixin, RepoScratchPadMixin,
+    ImporterScratchPadMixin, SingleRepoUnitsMixin, StatusMixin,
+    SearchUnitsMixin)
 from   pulp.plugins.model import SyncReport
 import pulp.server.managers.factory as manager_factory
 from   pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
@@ -54,7 +57,8 @@ _LOG = logging.getLogger(__name__)
 
 # -- classes -----------------------------------------------------------------
 
-class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin, SingleRepoUnitsMixin, StatusMixin):
+class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin,
+                      SingleRepoUnitsMixin, StatusMixin, SearchUnitsMixin):
     """
     Used to communicate back into the Pulp server while an importer performs
     a repo sync. Instances of this class should *not* be cached between repo
@@ -73,6 +77,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         AddUnitMixin.__init__(self, repo_id, importer_id, association_owner_type, association_owner_id)
         SingleRepoUnitsMixin.__init__(self, repo_id, ImporterConduitException)
         StatusMixin.__init__(self, importer_id, ImporterConduitException)
+        SearchUnitsMixin.__init__(self, ImporterConduitException)
 
         self._association_manager = manager_factory.repo_unit_association_manager()
 
