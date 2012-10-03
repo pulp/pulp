@@ -310,8 +310,8 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            self.__running_weight += task.weight
             self.__storage.store_running(task)
+            self.__running_weight += task.weight
             task.thread = TaskThread(target=task.run)
             task.thread.start()
             self._execute_hooks(task, task_running)
