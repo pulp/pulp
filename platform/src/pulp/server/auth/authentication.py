@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Copyright © 2010 Red Hat, Inc.
+# Copyright (c) 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -136,13 +134,13 @@ def check_username_password(username, password=None):
     :type password: str or None
     :param password: password of the user, None => do not validate the password
 
-    :rtype: L{pulp.server.db.model.auth.User} instance or None
-    :return: user corresponding to the credentials
+    :rtype: str or None
+    :return: user login corresponding to the credentials
     """
     user = _check_username_password_local(username, password)
     if user is None and is_ldap_enabled():
         user = _check_username_password_ldap(username, password)
-    return user
+    return user['login']
 
 # -- ssl cert authentication ---------------------------------------------------
 
@@ -154,8 +152,8 @@ def check_user_cert(cert_pem):
     :type cert_pem: str
     :param cert_pem: pem encoded ssl certificate
 
-    :rtype: L{pulp.server.db.model.auth.User} instance or None
-    :return: user corresponding to the credentials
+    :rtype: str or None
+    :return: user login corresponding to the credentials
     """
     cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
@@ -190,18 +188,18 @@ def check_consumer_cert(cert_pem):
     """
     cert = factory.certificate_manager(content=cert_pem)
     subject = cert.subject()
-    encoded_user = subject.get('CN', None)
+    consumerid = subject.get('CN', None)
 
-    if encoded_user is None:
+    if consumerid is None:
         return None
 
     cert_gen_manager = factory.cert_generation_manager()
     if not cert_gen_manager.verify_cert(cert_pem):
         _LOG.error('Auth certificate with CN [%s] is signed by a foreign CA' %
-                   encoded_user)
+                   consumerid)
         return None
 
-    return encoded_user
+    return consumerid
 
 # oauth authentication --------------------------------------------------------
 
@@ -225,8 +223,8 @@ def check_oauth(username, method, url, auth, query):
     :type query: str
     :param query: http request query string
 
-    :rtype: L{pulp.server.db.model.auth.User} instance or None
-    :return: user corresponding to the credentials
+    :rtype: str or None
+    :return: user login corresponding to the credentials
     """
     headers = {'Authorization': auth}
     req = oauth2.Request.from_request(method, url, headers, query_string=query)
@@ -251,5 +249,7 @@ def check_oauth(username, method, url, auth, query):
         _LOG.error('error verifying OAuth signature: %s' % e)
         return None
 
-    return _check_username_password_local(username)
-
+    user = _check_username_password_local(username)
+    if user is not None:
+        return user['login']
+    return None

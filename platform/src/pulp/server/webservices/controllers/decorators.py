@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
+# Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -33,6 +31,17 @@ from pulp.server.webservices import http
 
 _LOG = logging.getLogger(__name__)
 
+DEFAULT_CONSUMER_PERMISSIONS = {'/v2/consumers/' : [0, 1],
+                                '/v2/repositories/' : [1]}
+
+PREAUTHENTICATED_USER_FAIL_MSG = _('Given pre-authenticated remote user does not exist')
+USER_PASS_FAIL_MSG = _('Invalid username or password')
+CERT_FAIL_MSG = _('Invalid SSL Certificate')
+OAUTH_FAIL_MSG = _('Invalid OAuth Credentials')
+AUTHEN_FAIL_MSG = _('Authentication Failed')
+AUTHOR_FAIL_MSG = _('Permission Denied')
+
+# -- exceptions ---------------------------------------------------------------
 
 class AuthenticationFailed(Exception):
     def __str__(self):
@@ -40,6 +49,109 @@ class AuthenticationFailed(Exception):
         msg = _('Pulp auth exception occurred: %(c)s') % {'c': class_name}
         return msg.encode('utf-8')
 
+
+# -- supported authentication methods -----------------------------------------
+'''
+Each authentication method reads request header to get appropriate credentials information,  
+runs authentication check and returns corresponding user login or consumer id.
+'''
+
+def check_preauthenticated():
+    # Support web server level authentication of users
+    username = http.request_info("REMOTE_USER")
+    if username is not None:
+        # Omitting the password = assume preauthenticated
+        userid = check_username_password(username)
+        if userid is None:
+            # User is not in the local database, nor in LDAP
+            raise AuthenticationFailed(PREAUTHENTICATED_USER_FAIL_MSG)
+        else:
+            _LOG.debug("User preauthenticated: %s" % username)
+            return userid
+    return None
+
+def password_authentication():
+    username, password = http.username_password()
+    if username is not None:
+        userid = check_username_password(username, password)
+        if userid is None:
+            raise AuthenticationFailed(USER_PASS_FAIL_MSG)
+        else:
+            _LOG.debug("User [%s] authenticated with password" % username)
+            return userid
+    return None
+    
+def user_cert_authentication():
+    cert_pem = http.ssl_client_cert()
+    if cert_pem is not None:
+        userid = check_user_cert(cert_pem)
+        if userid:
+            _LOG.debug("User authenticated with ssl cert: %s" % userid)
+            return userid
+    return None
+
+def consumer_cert_authentication():
+    cert_pem = http.ssl_client_cert()
+    if cert_pem is not None:
+        consumerid = check_consumer_cert(cert_pem)
+        if consumerid is not None:
+            _LOG.debug("Consumer authenticated with ssl cert: %s" % consumerid)
+            return consumerid
+    return None
+
+def oauth_authentication():
+    if not is_oauth_enabled():
+        return None
+
+    username = http.request_info('HTTP_PULP_USER')
+    auth = http.http_authorization()
+    cert_pem = http.ssl_client_cert()
+    if username is None or auth is None:
+        if cert_pem is not None:
+            raise AuthenticationFailed(CERT_FAIL_MSG)
+        return None
+
+    meth = http.request_info('REQUEST_METHOD')
+    url = http.request_url()
+    query = http.request_info('QUERY_STRING')
+    userid = check_oauth(username, meth, url, auth, query)
+    if userid is None:
+        raise AuthenticationFailed(OAUTH_FAIL_MSG)
+    _LOG.debug("User authenticated with Oauth: %s" % userid)
+    return userid
+
+# -- consumer authorization checking -----------------------------------------
+
+def is_consumer_authorized(resource, consumerid, operation):
+    """
+    Checks consumer authorization for given resource uri.
+    Return True if authorized, False otherwise.
+
+    :type resource: str
+    :param resource: resource uri to check permissions for.
+
+    :type consumerid: str
+    :param consumerid: uniquely identifies consumer
+
+    :rtype: bool
+    :return:  True if authorized, False otherwise.
+    """
+    pm = factory.permission_manager()
+    permissions = DEFAULT_CONSUMER_PERMISSIONS
+    consumer_base_url = '/v2/consumers/%s/' % consumerid
+    # Add all permissions to base url for this consumer.
+    permissions[consumer_base_url] = [pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE]
+
+    parts = [p for p in resource.split('/') if p]
+    while parts:
+        current_resource = '/%s/' % '/'.join(parts)
+        if current_resource in permissions and permissions[current_resource] is not None:
+            if operation in permissions[current_resource]:
+                return True
+        parts = parts[:-1]
+    return False
+
+# -- decorator ---------------------------------------------------------------
 
 def auth_required(operation=None, super_user_only=False):
     """
@@ -53,92 +165,23 @@ def auth_required(operation=None, super_user_only=False):
     The super_user_only flag set to True means that only members of the
     built in SuperUsers role are authorized.
 
-    @type operation: int or None
-    @param operation: the operation a user needs permission for
+    :type operation: int or None
+    :param operation: the operation a user needs permission for
 
-    @type super_user_only: bool
-    @param super_user_only: only authorize a user if they are a super user
+    :type super_user_only: bool
+    :param super_user_only: only authorize a user if they are a super user
     """
     def _auth_required(method):
         """
         Closure method for decorator.
         """
-        user_pass_fail_msg = _('Invalid username or password')
-        cert_fail_msg = _('Invalid SSL Certificate')
-        oauth_fail_msg = _('Invalid OAuth Credentials')
-        authen_fail_msg = _('Authentication Required')
-        author_fail_msg = _('Permission Denied')
-
         @wraps(method)
         def _auth_decorator(self, *args, **kwargs):
 
+            # Check Authentication 
+
+            # Run through each registered and enabled auth function
             is_consumer = False
-            principal_manager = factory.principal_manager()
-
-            def check_preauthenticated():
-                # Support web server level authentication of users
-                username = http.request_info("REMOTE_USER")
-                if username is not None:
-                    # Omitting the password = assume preauthenticated
-                    user = check_username_password(username)
-                    if user is None:
-                        # User is not in the local database, nor in LDAP
-                        raise AuthenticationFailed('Given pre-authenticated user does not exist')
-                    else:
-                        _LOG.debug("User preauthenticated: %s" % username)
-                        return user
-                return None
-            
-            def password_authentication():
-                username, password = http.username_password()
-                if username is not None:
-                    user = check_username_password(username, password)
-                    if user is None:
-                        raise AuthenticationFailed(user_pass_fail_msg)
-                    else:
-                        _LOG.debug("User password authentication: %s" % username)
-                        return user
-                return None
-                
-            def user_cert_authentication():
-                cert_pem = http.ssl_client_cert()
-                if cert_pem is not None:
-                    user = check_user_cert(cert_pem)
-                    if user:
-                        _LOG.debug("User cert authentication: %s" % user)
-                        return user
-                return None
-
-            def consumer_cert_authentication():
-                cert_pem = http.ssl_client_cert()
-                if cert_pem is not None:
-                    consumerid = check_consumer_cert(cert_pem)
-                    if consumerid is not None:
-                        _LOG.debug("Consumer cert authentication: %s" % consumerid)
-                        return consumerid
-                return None
-
-            # Only install this one if oauth is configured
-            def oauth_authentication():
-                if not is_oauth_enabled():
-                    return None
-                username = http.request_info('HTTP_PULP_USER')
-                auth = http.http_authorization()
-                cert_pem = http.ssl_client_cert()
-                if username is None or auth is None:
-                    if cert_pem is not None:
-                        raise AuthenticationFailed(cert_fail_msg)
-                    return None
-                meth = http.request_info('REQUEST_METHOD')
-                url = http.request_url()
-                query = http.request_info('QUERY_STRING')
-                user = check_oauth(username, meth, url, auth, query)
-
-                if user is None:
-                    raise AuthenticationFailed(oauth_fail_msg)
-                _LOG.debug("Oauth authentication: %s" % user)
-                return user
-
             registered_auth_functions = [check_preauthenticated, 
                                          password_authentication, 
                                          user_cert_authentication, 
@@ -148,48 +191,40 @@ def auth_required(operation=None, super_user_only=False):
             user_authenticated = False
             for authenticate_user in registered_auth_functions:
                 try:
-                    user = authenticate_user()
+                    userid = authenticate_user()
                 except AuthenticationFailed, ex:
                     return self.unauthorized(ex)
-                
-                if user is not None:
+                if userid is not None:
                     user_authenticated = True
                     if authenticate_user == consumer_cert_authentication:
                         is_consumer = True
                     break
 
             if not user_authenticated:
-                return self.unauthorized(oauth_fail_msg)
-                
-            # procedure to check consumer permissions - part of the temporary solution described above
-            def is_consumer_authorized(resource, consumer, operation):
-                pm = factory.permission_manager()
-                permissions = {'/v2/consumers/' : [pm.CREATE, pm.READ]}
-                consumer_base_url = '/v2/consumers/%s/' % consumer
-                permissions[consumer_base_url] = [pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE]
-                if consumer_base_url in resource and operation in permissions[consumer_base_url]:
-                    return True
-                else:
-                    return False
+                return self.unauthorized(AUTHEN_FAIL_MSG)
 
-            # check authorization
+            # Check Authorization
+            
+            principal_manager = factory.principal_manager()
             user_query_manager = factory.user_query_manager()
-            if super_user_only and not user_query_manager.is_superuser(user['login']):
-                return self.unauthorized(author_fail_msg)
 
+            if super_user_only and not user_query_manager.is_superuser(userid):
+                return self.unauthorized(AUTHOR_FAIL_MSG)
             # if the operation is None, don't check authorization
             elif operation is not None:
-                if is_consumer and is_consumer_authorized(http.resource_path(), user, operation):
-                    value = method(self, *args, **kwargs)
-                    principal_manager.clear_principal()
-                    return value
-                elif user_query_manager.is_authorized(http.resource_path(), user['login'], operation):
-                    pass
+                if is_consumer: 
+                    if is_consumer_authorized(http.resource_path(), userid, operation):
+                        # set default principal = SYSTEM
+                        principal_manager.set_principal()
+                    else:
+                        return self.unauthorized(AUTHOR_FAIL_MSG)
+                elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
+                    user = user_query_manager.find_by_login(userid)
+                    principal_manager.set_principal(user)
                 else:
-                    return self.unauthorized(author_fail_msg)
+                    return self.unauthorized(AUTHOR_FAIL_MSG)
 
-            # everything ok, manage the principal and call the method
-            principal_manager.set_principal(user)
+            # Authentication and authorization succeeded. Call method and then clear principal.
             value = method(self, *args, **kwargs)
             principal_manager.clear_principal()
             return value
