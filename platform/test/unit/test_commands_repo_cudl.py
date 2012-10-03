@@ -13,7 +13,7 @@
 
 import mock
 
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 import base
 
@@ -150,7 +150,7 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
             OPTION_REPO_ID.keyword : repo_id,
             OPTION_NAME.keyword : 'Test Repository',
             OPTION_DESCRIPTION.keyword : 'Repository Description',
-            OPTION_NOTES.keyword : ['a=a', 'b=b'],
+            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
         }
 
         self.server_mock.request.return_value = 200, {}

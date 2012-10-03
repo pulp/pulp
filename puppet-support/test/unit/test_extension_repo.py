@@ -14,8 +14,8 @@
 from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client.commands import options
 from pulp.client.commands.repo import cudl
-from pulp.client.extensions.core import TAG_SUCCESS, TAG_REASONS, TAG_DOCUMENT
-from pulp.common.json_compat import json
+from pulp.client.extensions.core import TAG_SUCCESS, TAG_REASONS, TAG_DOCUMENT, TAG_TITLE
+from pulp.common.compat import json
 
 import base_cli
 from pulp_puppet.common import constants
@@ -49,7 +49,7 @@ class CreatePuppetRepositoryCommandTests(base_cli.ExtensionTests):
             options.OPTION_REPO_ID.keyword : 'test-repo',
             options.OPTION_NAME.keyword : 'Test Name',
             options.OPTION_DESCRIPTION.keyword : 'Test Description',
-            options.OPTION_NOTES.keyword : ['a=a'],
+            options.OPTION_NOTES.keyword : {'a' : 'a'},
             commands.OPTION_FEED.keyword : 'http://localhost',
             commands.OPTION_HTTP.keyword : 'true',
             commands.OPTION_HTTPS.keyword : 'true',
@@ -124,7 +124,7 @@ class UpdatePuppetRepositoryCommandTests(base_cli.ExtensionTests):
             options.OPTION_REPO_ID.keyword : 'test-repo',
             options.OPTION_NAME.keyword : 'Test Name',
             options.OPTION_DESCRIPTION.keyword : 'Test Description',
-            options.OPTION_NOTES.keyword : ['a=a'],
+            options.OPTION_NOTES.keyword : {'a' : 'a'},
             commands.OPTION_FEED.keyword : 'http://localhost',
             commands.OPTION_HTTP.keyword : 'true',
             commands.OPTION_HTTPS.keyword : 'true',
@@ -145,7 +145,7 @@ class UpdatePuppetRepositoryCommandTests(base_cli.ExtensionTests):
         self.assertEqual('Test Name', body['delta']['display_name'])
         self.assertEqual('Test Description', body['delta']['description'])
 
-        expected_notes = {'a' : 'a', constants.REPO_NOTE_KEY : constants.REPO_NOTE_PUPPET}
+        expected_notes = {'a' : 'a'}
         self.assertEqual(expected_notes, body['delta']['notes'])
 
         expected_config = {
@@ -233,5 +233,6 @@ class SearchPuppetRepositoriesCommand(base_cli.ExtensionTests):
         self.command.run()
 
         # Verify
-        expected_tags = map(lambda x : TAG_DOCUMENT, range(0, 12)) # 3 fields * 4 repos
+        expected_tags = [TAG_TITLE]
+        expected_tags += map(lambda x : TAG_DOCUMENT, range(0, 12)) # 3 fields * 4 repos
         self.assertEqual(expected_tags, self.prompt.get_write_tags())

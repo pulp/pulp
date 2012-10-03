@@ -24,7 +24,8 @@ manipulated with the desired changes.
 
 from gettext import gettext as _
 
-from pulp.client.extensions.extensions import PulpCliOption
+from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag
+from pulp.client import parsers
 
 # -- option descriptions ------------------------------------------------------
 
@@ -37,14 +38,20 @@ DESC_NOTE = _(
     'key-value pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
     'be changed by specifying this option multiple times; notes are deleted by '
     'specifying "" as the value')
+DESC_ALL = _('match all records. If other filters are specified, they will be'
+             'applied. This option is only useful when you need to explicitly'
+             'request that no filters be applied.')
 
 # -- common options -----------------------------------------------------------
 
 # General Resource
 OPTION_NAME = PulpCliOption('--display-name', DESC_NAME, required=False)
 OPTION_DESCRIPTION = PulpCliOption('--description', DESC_DESCRIPTION, required=False)
-OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False, allow_multiple=True)
+OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False,
+                             allow_multiple=True, parse_func=parsers.parse_notes)
 
 # IDs
 OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True)
 OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True)
+
+FLAG_ALL = PulpCliFlag('--all', DESC_ALL)

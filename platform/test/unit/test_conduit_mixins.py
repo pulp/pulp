@@ -183,6 +183,47 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
         self.assertRaises(mixins.ImporterConduitException, self.mixin.get_units, 'foo')
 
 
+class SearchUnitsMixinTests(unittest.TestCase):
+
+    def setUp(self):
+        manager_factory.initialize()
+
+        self.mixin = mixins.SearchUnitsMixin(mixins.ImporterConduitException)
+
+    @mock.patch('pulp.plugins.types.database.type_definition')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.find_by_criteria')
+    def test_search_all_units(self, mock_query_call, mock_type_def_call):
+        # Setup
+        mock_query_call.return_value = [
+            {'m' : 'm1', 'k1' : 'v1'},
+            {'m' : 'm1', 'k1' : 'v2'},
+        ]
+
+        mock_type_def_call.return_value = {
+            'id' : 'mock-type-def',
+            'unit_key' : ['k1']
+        }
+
+        # Test
+        units = self.mixin.search_all_units('type-1', 'fake-criteria')
+
+        # Verify
+        self.assertEqual(2, len(units))
+        self.assertEqual(1, mock_query_call.call_count)
+        self.assertTrue(isinstance(units[0], Unit))
+        self.assertEqual(mock_query_call.call_args[0][0], 'type-1')
+        self.assertEqual(mock_query_call.call_args[0][1], 'fake-criteria')
+
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.find_by_criteria')
+    def test_search_all_units_server_error(self, mock_call):
+        # Setup
+        mock_call.side_effect = Exception()
+
+        # Test
+        self.assertRaises(mixins.ImporterConduitException, self.mixin.search_all_units,
+                          't', 'fake-criteria')
+
+
 class ImporterScratchPadMixinTests(unittest.TestCase):
 
     def setUp(self):

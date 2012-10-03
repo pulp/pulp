@@ -22,7 +22,7 @@ import itertools
 
 from yum_importer.comps import ImporterComps
 from yum_importer.errata import ImporterErrata, link_errata_rpm_units
-from yum_importer.importer_rpm import ImporterRPM, get_existing_units
+from yum_importer.importer_rpm import ImporterRPM, get_existing_units, form_lookup_key
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.plugins.importer import Importer
 from pulp.plugins.model import Unit, SyncReport
@@ -255,7 +255,7 @@ class YumImporter(Importer):
             if key == 'resolve_dependencies':
                 value = config.get(key)
                 if value is not None and not isinstance(value, bool) :
-                    msg = _("%S should be a bool; got '%s' instead" % (key, value))
+                    msg = _("%(k)s should be a bool; got '%(v)s' instead") % {'k' : key, 'v' : value}
                     _LOG.error(msg)
                     return False, msg
 
@@ -286,40 +286,61 @@ class YumImporter(Importer):
         @param units: optional list of pre-filtered units to import
         @type  units: list of L{pulp.plugins.data.Unit}
         """
-        if units:
-            # units specified so need to make sure deps are included
-            if config.get('resolve_dependencies'):
-                missing_deps = \
-                    self.find_missing_dependencies(source_repo, units, import_conduit, config)
-                _LOG.info('Import adding (missing) deps:\n%s', missing_deps)
-                units += missing_deps
-        else:
+        if not units:
             # If no units are passed in, assume we will use all units from source repo
             units = import_conduit.get_source_units()
         _LOG.info("Importing %s units from %s to %s" % (len(units), source_repo.id, dest_repo.id))
+        existing_rpm_units_dict = get_existing_units(import_conduit, criteria=UnitAssociationCriteria(type_ids=[TYPE_ID_RPM, TYPE_ID_SRPM]))
         for u in units:
-            # We are assuming that Pulp is telling us about units which already exist in Pulp
-            # therefore they have already been downloaded and written to the correct location on the filesystem
-            # i.e. we are assuming unit.storage_path is correct and points to the actual unit if appropriate (non-errata, etc).
-            #
-            if u.metadata.has_key("filename") and u.storage_path:
-                sym_link = os.path.join(dest_repo.working_dir, dest_repo.id, u.metadata["filename"])
-                if os.path.lexists(sym_link):
-                    remove_link = True
-                    if os.path.islink(sym_link):
-                        existing_link_target = os.readlink(sym_link)
-                        if os.path.samefile(existing_link_target, u.storage_path):
-                            remove_link = False
-                    if remove_link:
-                        # existing symlink is wrong, remove it
-                        os.unlink(sym_link)
-                dirpath = os.path.dirname(sym_link)
-                if not os.path.exists(dirpath):
-                    os.makedirs(dirpath)
-                os.symlink(u.storage_path, sym_link)
             import_conduit.associate_unit(u)
-        _LOG.info("%s units from %s have been associated to %s" % (len(units), source_repo.id, dest_repo.id))
+            # do any additional work associated with the unit
+            if u.type_id == TYPE_ID_RPM:
+                # if its an rpm unit process dependencies and import them as well
+                self._import_unit_dependencies(source_repo, [u], import_conduit, config, existing_rpm_units=existing_rpm_units_dict)
+            if u.type_id == TYPE_ID_ERRATA:
+                # if erratum, lookup deps and process associated units
+                self._import_errata_unit_rpms(source_repo, u, import_conduit, config, existing_rpm_units_dict)
+            if u.type_id in [TYPE_ID_PKG_CATEGORY, TYPE_ID_PKG_GROUP]:
+                #TODO
+                pass
+        _LOG.debug("%s units from %s have been associated to %s" % (len(units), source_repo.id, dest_repo.id))
 
+    def _import_errata_unit_rpms(self, source_repo, erratum_unit, import_conduit, config, existing_rpm_units=None):
+        """
+        lookup rpms units associated with an erratum; resolve deps and import rpm units
+        """
+        pkglist = erratum_unit.metadata['pkglist']
+        existing_rpm_units = existing_rpm_units or {}
+        for pkg in pkglist:
+            for pinfo in pkg['packages']:
+                if not pinfo.has_key('sum'):
+                    _LOG.debug("Missing checksum info on package <%s> for linking a rpm to an erratum." % (pinfo))
+                    continue
+                pinfo['checksumtype'], pinfo['checksum'] = pinfo['sum']
+                rpm_key = form_lookup_key(pinfo)
+                if rpm_key in existing_rpm_units.keys():
+                    rpm_unit = existing_rpm_units[rpm_key]
+                    import_conduit.associate_unit(rpm_unit)
+                    # process any deps
+                    self._import_unit_dependencies(source_repo, [rpm_unit], import_conduit, config, existing_rpm_units=existing_rpm_units)
+                    _LOG.debug("Found matching rpm unit %s" % rpm_unit)
+                else:
+                    _LOG.debug("rpm unit %s not found; skipping" % pinfo)
+
+    def _import_unit_dependencies(self, source_repo, units, import_conduit, config, existing_rpm_units=None):
+        """
+        Lookup any dependencies associated with the units and associate them through the import conduit
+        """
+        if not config.get('resolve_dependencies'):
+            # config option turned off, nothing to do
+            _LOG.debug("resolve dependencies option is not enabled; skip dependency solving")
+            return
+        _LOG.debug("resolving dependencies associated with rpm units %s" % units)
+        missing_deps =\
+            self.find_missing_dependencies(source_repo, units, import_conduit, config, existing_rpm_units=existing_rpm_units)
+        _LOG.debug("missing deps found %s" % missing_deps)
+        for dep in missing_deps:
+            import_conduit.associate_unit(dep)
 
     def remove_units(self, repo, units, config):
         """
@@ -400,7 +421,6 @@ class YumImporter(Importer):
         return report
 
     def _upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
-        _LOG.info("Invoking upload_unit with file_path: %s; metadata: %s; unit_key: %s; type_id: %s" % (file_path, metadata, unit_key, type_id))
         if type_id == TYPE_ID_RPM:
             return self._upload_unit_rpm(repo, unit_key, metadata, file_path, conduit, config)
         elif type_id == TYPE_ID_ERRATA:
@@ -434,7 +454,7 @@ class YumImporter(Importer):
                     # checksums dont match, remove existing file
                     os.remove(new_path)
                 else:
-                    _LOG.info("Existing file is the same ")
+                    _LOG.debug("Existing file is the same ")
             if not os.path.isdir(os.path.dirname(new_path)):
                 os.makedirs(os.path.dirname(new_path))
             # copy the unit to the final path
@@ -447,7 +467,7 @@ class YumImporter(Importer):
         conduit.save_unit(u)
         summary['num_units_processed'] = len([file_path])
         summary['num_units_saved'] = len([file_path])
-        _LOG.info("unit %s successfully saved" % u)
+        _LOG.debug("unit %s successfully saved" % u)
         # symlink content to repo working directory
         symlink_path = "%s/%s/%s" % (repo.working_dir, repo.id, metadata['filename'])
         try:
@@ -456,7 +476,7 @@ class YumImporter(Importer):
             if not os.path.isdir(os.path.dirname(symlink_path)):
                 os.makedirs(os.path.dirname(symlink_path))
             os.symlink(new_path, symlink_path)
-            _LOG.info("Successfully symlinked to final location %s" % symlink_path)
+            _LOG.debug("Successfully symlinked to final location %s" % symlink_path)
         except (IOError, OSError), e:
             msg = "Error creating a symlink to repo working directory; Error %s" % e
             _LOG.error(msg)
@@ -513,7 +533,7 @@ class YumImporter(Importer):
             results = dsolve.getDependencylist()
         solved, unsolved = dsolve.processResults(results)
         dep_pkgs_map = {}
-        _LOG.info(" results from depsolver %s" % results)
+        _LOG.debug(" results from depsolver %s" % results)
         criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM])
         existing_units = get_existing_units(dependency_conduit, criteria)
         for dep, pkgs in solved.items():
@@ -528,7 +548,7 @@ class YumImporter(Importer):
         result_dict['unresolved'] = unsolved
         result_dict['printable_dependency_result'] = dsolve.printable_result(results)
         dsolve.cleanup()
-        _LOG.info("result dict %s" % result_dict)
+        _LOG.debug("result dict %s" % result_dict)
         return result_dict
 
     def cancel_sync_repo(self, call_request, call_report):
@@ -579,7 +599,7 @@ class YumImporter(Importer):
                  key['checksum']))
         return keylist
 
-    def find_missing_dependencies(self, repo, units, conduit, config):
+    def find_missing_dependencies(self, repo, units, conduit, config, existing_rpm_units=None):
         """
         Find dependencies within the specified repository that are not
         included in the specified I{units} list.  This method is intended to
@@ -594,6 +614,8 @@ class YumImporter(Importer):
         @type conduit: L{pulp.plugins.conduits.unit_import.ImportConduit}
         @param config: plugin configuration
         @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        @param existing_rpm_units: a dict of existing rpm unit key and unit
+        @type existing_rpm_units: {}
         @return: The list of missing dependencies (units).
             Unit is: L{pulp.plugins.model.Unit}
         @rtype: list
@@ -604,8 +626,7 @@ class YumImporter(Importer):
         resolved = itertools.chain(*deps['resolved'].values())
         if resolved:
             keylist = self.keylist(resolved)
-            criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_RPM])
-            inventory = get_existing_units(conduit, criteria)
+            inventory = existing_rpm_units
             for key in keylist:
                 unit = inventory.get(key)
                 if unit is None:

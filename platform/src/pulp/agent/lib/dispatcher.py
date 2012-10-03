@@ -13,9 +13,14 @@
 
 import os
 
+from logging import getLogger
+
 from pulp.agent.lib.container import Container
 from pulp.agent.lib.container import SYSTEM, CONTENT, BIND
 from pulp.agent.lib.report import *
+
+
+log = getLogger(__name__)
 
 
 class HandlerNotFound(Exception):
@@ -71,9 +76,10 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
@@ -102,9 +108,10 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
@@ -133,9 +140,10 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
@@ -165,8 +173,9 @@ class Dispatcher:
                 # optional
                 pass
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -189,8 +198,9 @@ class Dispatcher:
             r.typeid = typeid
             report.update(r)
         except Exception:
+            log.exception('handler failed')
             r = RebootReport()
-            r.failed(ExceptionReport())
+            r.failed(LastExceptionDetails())
             report.update(r)
         return report
 
@@ -220,9 +230,10 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -252,9 +263,10 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -276,9 +288,10 @@ class Dispatcher:
                 r.typeid = typeid
                 report.update(r)
             except Exception:
+                log.exception('handler failed')
                 r = ProfileReport()
                 r.typeid = typeid
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -305,8 +318,9 @@ class Dispatcher:
                 # optional
                 pass
             except Exception:
+                log.exception('handler failed')
                 r = CleanReport()
-                r.failed(ExceptionReport())
+                r.failed(LastExceptionDetails())
                 report.update(r)
         return report
 
@@ -363,7 +377,7 @@ class RebootManager:
             scheduled = dr.reboot['scheduled']
             details = dr.reboot['details']
             if dr.status:
-                report.succeeded(scheduled, details)
+                report.succeeded(details, chgcnt=1)
             else:
                 report.failed(details)
         return report

@@ -20,8 +20,34 @@ Then use json as you normally would:
 
 json.dumps(doc)
 """
+import __builtin__
 
 try:
     import json
 except ImportError:
     import simplejson as json
+
+
+def check_builtin(f):
+    """
+    This decorator tries to return a builtin function of the same name as f, and
+    falls back to just returning f. This is useful for backporting builtin
+    functions that don't exist on early versions of python.
+
+    :param f:   function being decorated
+    :type  f:   function
+    :return:    builtin function if found, else f
+    """
+    return getattr(__builtin__, f.__name__, f)
+
+
+@check_builtin
+def any(iterable):
+    """
+    This should behave like the builtin function "any()", which is not present
+    in python 2.4
+    """
+    for x in iterable:
+        if x:
+            return True
+    return False

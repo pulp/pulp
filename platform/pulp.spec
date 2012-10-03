@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.328
+Version: 0.0.330
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -124,9 +124,6 @@ ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 # Tools
 cp bin/* %{buildroot}/%{_bindir}
 
-# Init (init.d)
-cp etc/rc.d/init.d/* %{buildroot}/%{_sysconfdir}/rc.d/init.d/
-
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
@@ -205,7 +202,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # apache
 %defattr(-,apache,apache,-)
@@ -420,6 +416,13 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- REST APIs providing schedule management for updating and uninstalling content
+  units on consumers (jason.connor@gmail.com)
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - Added conduit call for a group plugin to read a repo's scratchpad
   (jason.dobies@redhat.com)

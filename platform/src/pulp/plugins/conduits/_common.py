@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.plugins.model import AssociatedUnit
+from pulp.plugins.model import AssociatedUnit, Unit
 
 def to_pulp_unit(plugin_unit):
     """
@@ -19,7 +19,7 @@ def to_pulp_unit(plugin_unit):
     dictionary persisted by the content manager.
 
     @param plugin_unit: populated with values for the unit
-    @type  plugin_unit: L{pulp.server.content.plugins.data.Unit}
+    @type  plugin_unit: pulp.plugins.model.Unit
 
     @return: dictionary persisted by Pulp's content manager
     @rtype:  dict
@@ -33,17 +33,50 @@ def to_pulp_unit(plugin_unit):
 
 def to_plugin_unit(pulp_unit, type_def):
     """
-    Parses the raw dictionary of content unit into the plugin's object
-    representation.
+    Parses the raw dictionary of a content unit into its plugin representation.
 
     @param pulp_unit: raw dictionary of unit metadata
     @type  pulp_unit: dict
 
     @param type_def: Pulp stored definition for the unit type
-    @type  type_def: L{pulp.server.db.model.content.ContentType}
+    @type  type_def: pulp.server.db.model.content.ContentType
 
     @return: plugin unit representation of the given unit
-    @rtype:  L{pulp.server.content.plugins.data.AssociatedUnit}
+    @rtype:  pulp.plugins.model.Unit
+    """
+
+    # Copy so we don't mangle the original unit
+    pulp_unit = dict(pulp_unit)
+
+    key_list = type_def['unit_key']
+
+    unit_key = {}
+
+    for k in key_list:
+        unit_key[k] = pulp_unit.pop(k)
+
+    storage_path = pulp_unit.pop('_storage_path', None)
+    unit_id = pulp_unit.pop('_id', None)
+
+    u = Unit(type_def['id'], unit_key, pulp_unit, storage_path)
+    u.id = unit_id
+
+    return u
+
+
+def to_plugin_associated_unit(pulp_unit, type_def):
+    """
+    Parses the raw dictionary of content unit associated to a repository into
+    the plugin's object representation.
+
+    @param pulp_unit: raw dictionary of unit metadata
+    @type  pulp_unit: dict
+
+    @param type_def: Pulp stored definition for the unit type
+    @type  type_def: pulp.server.db.model.content.ContentType
+
+    @return: plugin unit representation of the given unit
+    @rtype:  pulp.plugins.model.AssociatedUnit
     """
 
     # Copy so we don't mangle the original unit

@@ -17,7 +17,7 @@
 # ---- Pulp (puppet) -----------------------------------------------------------
 
 Name: pulp-puppet
-Version: 0.0.328
+Version: 0.0.330
 Release: 1%{?dist}
 Summary: Support for Puppet content in the Pulp platform
 Group: Development/Languages
@@ -158,7 +158,7 @@ client capabilites with Puppet specific features.
 # ---- Agent Handlers ----------------------------------------------------------
 
 %package handlers
-Summary: Pulp agent rpm handlers
+Summary: Pulp agent puppet handlers
 Group: Development/Languages
 Requires: python-rhsm
 Requires: python-pulp-rpm-common = %{version}
@@ -179,6 +179,12 @@ management and Linux specific commands such as system reboot.
 
 
 %changelog
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- Version alignment.
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - Version alignment.
 

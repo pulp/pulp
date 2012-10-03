@@ -16,7 +16,7 @@ import os
 from iniparse import INIConfig
 from pulp.agent.lib.handler import BindHandler
 from pulp.agent.lib.report import BindReport, CleanReport
-from pulp_rpm.common import repolib
+from pulp_rpm.handler import repolib
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -97,8 +97,8 @@ class RepoHandler(BindHandler):
         @rtype: L{BindReport}
         """
         log.info('(re)bind: %s', definitions)
-        self.clean()
-        return self.bind(definitions)
+        self.clean(conduit)
+        return self.bind(conduit, definitions)
 
     def unbind(self, conduit, repoid):
         """
