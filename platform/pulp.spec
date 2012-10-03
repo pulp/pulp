@@ -347,7 +347,7 @@ Summary: The Pulp agent
 Group: Development/Languages
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
-Requires: gofer >= 0.73
+Requires: gofer >= 0.74
 
 %description agent
 The pulp agent, used to provide remote command & control and
