@@ -170,6 +170,43 @@ class MultipleRepoUnitsMixin(object):
         return do_get_repo_units(repo_id, criteria, self.exception_class)
 
 
+class SearchUnitsMixin(object):
+
+    def __init__(self, exception_class):
+        super(SearchUnitsMixin, self).__init__()
+        self.exception_class = exception_class
+
+    def search_all_units(self, type_id, criteria):
+        """
+        Searches for units of a given type in the server, regardless of their
+        associations to any repositories.
+
+        @param type_id: indicates the type of units being retrieved
+        @type  type_id: str
+        @param criteria: used to query which units are returned
+        @type  criteria: pulp.server.db.model.criteria.Criteria
+
+        @return: list of unit instances
+        @rtype:  list of L{Unit}
+        """
+
+        try:
+            query_manager = manager_factory.content_query_manager()
+            units = query_manager.find_by_criteria(type_id, criteria)
+            type_def = types_db.type_definition(type_id)
+
+            transfer_units = []
+            for pulp_unit in units:
+                u = common_utils.to_plugin_unit(pulp_unit, type_def)
+                transfer_units.append(u)
+
+            return transfer_units
+
+        except Exception, e:
+            _LOG.exception('Exception from server requesting all units of type [%s]' % type_id)
+            raise self.exception_class(e), None, sys.exc_info()[2]
+
+
 class ImporterScratchPadMixin(object):
 
     def __init__(self, repo_id, importer_id):
