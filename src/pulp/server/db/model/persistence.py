@@ -51,7 +51,7 @@ class TaskSnapshot(Model):
         def _process_value(value):
             if not isinstance(value, basestring):
                 return v
-            if value is not unicode:
+            if isinstance(value, str):
                 value = value.decode('utf-8')
             return value.encode('utf-8').strip()
 
