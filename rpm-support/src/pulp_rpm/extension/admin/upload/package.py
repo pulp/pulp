@@ -16,7 +16,7 @@ import hashlib
 import os
 import rpm
 
-from pulp.client.commands.repo.upload import UploadCommand
+from pulp.client.commands.repo.upload import UploadCommand, MetadataException
 from pulp_rpm.common.ids import TYPE_ID_RPM
 
 
@@ -81,8 +81,14 @@ def _generate_rpm_data(rpm_filename):
     ts = rpm.TransactionSet()
     ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
     fd = os.open(rpm_filename, os.O_RDONLY)
-    headers = ts.hdrFromFdno(fd)
-    os.close(fd)
+    try:
+        headers = ts.hdrFromFdno(fd)
+        os.close(fd)
+    except rpm.error:
+        # Raised if the headers cannot be read
+        os.close(fd)
+        msg = _('The given file is not a valid RPM')
+        raise MetadataException(msg)
 
     # -- Unit Key -----------------------
 

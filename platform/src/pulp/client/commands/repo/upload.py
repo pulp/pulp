@@ -49,6 +49,25 @@ OPTION_DIR = PulpCliOption('--dir', DESC_DIR, aliases=['-d'], allow_multiple=Tru
 DESC_VERBOSE = _('display extra information about the upload process')
 FLAG_VERBOSE = PulpCliFlag('-v', DESC_VERBOSE)
 
+# -- exceptions ---------------------------------------------------------------
+
+class MetadataException(Exception):
+    """
+    Raised by the generate_* methods to indicate the necessary unit key or
+    metadata for a unit being uploaded/created could not be determined. This
+    exception will be gracefully handled by the upload workflow and will print
+    the provided message to the user to indicate why the metadata generation
+    failed. The message should be i18n-ified before being passed into the
+    exception instance.
+    """
+
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 # -- commands -----------------------------------------------------------------
 
 class UploadCommand(PulpCliCommand):
@@ -140,13 +159,32 @@ class UploadCommand(PulpCliCommand):
                 filename = file_bundle[0]
                 bar.render(i+1, len(file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
 
-                unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename, **kwargs)
+                try:
+                    unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename, **kwargs)
+                except MetadataException, e:
+                    msg = _('Metadata for %(name)s could not be generated. The '
+                            'specific error is as follows:')
+                    msg = msg % {'name' : filename}
+                    self.prompt.render_spacer()
+                    self.prompt.render_failure_message(msg)
+                    self.prompt.render_failure_message(e.message)
+                    return os.EX_DATAERR
+
                 type_id = self.determine_type_id(filename, **kwargs)
                 file_bundle[1] = type_id
                 file_bundle[2].update(unit_key)
                 file_bundle[3].update(unit_metadata)
         else:
-            unit_key, unit_metadata = self.generate_unit_key_and_metadata(None, **kwargs)
+            try:
+                unit_key, unit_metadata = self.generate_unit_key_and_metadata(None, **kwargs)
+            except MetadataException, e:
+                msg = _('Metadata for the unit to create could not be generated. '
+                        'The specific error is as follows:')
+                self.prompt.render_spacer()
+                self.prompt.render_failure_message(msg)
+                self.prompt.render_failure_message(e.message)
+                return os.EX_DATAERR
+
             type_id = self.determine_type_id(None, **kwargs)
             file_bundle = [None, type_id, unit_key, unit_metadata]
             file_bundles.append(file_bundle)
@@ -234,6 +272,9 @@ class UploadCommand(PulpCliCommand):
 
         :return: tuple of unit key and metadata to upload for the file
         :rtype:  tuple
+
+        :raise MetadataException: if the metadata or unit key cannot be
+               properly determined for the unit being uploaded
         """
         unit_key = self.generate_unit_key(filename, **kwargs)
         metadata = self.generate_metadata(filename, **kwargs)
@@ -252,6 +293,9 @@ class UploadCommand(PulpCliCommand):
 
         :return: unit key that should be uploaded for the file
         :rtype:  dict
+
+        :raise MetadataException: if the unit key cannot be properly determined
+               for the unit being uploaded
         """
         raise NotImplementedError()
 
@@ -268,6 +312,9 @@ class UploadCommand(PulpCliCommand):
 
         :return: metadata information that should be uploaded for the file
         :rtype:  dict
+
+        :raise MetadataException: if the metadata cannot be properly determined
+               for the unit being uploaded
         """
         return {}
 
