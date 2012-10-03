@@ -109,10 +109,10 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
         if key in existing_errata:
             existing_erratum = existing_errata[key]
             if available_errata[key]['updated'] <= existing_erratum.updated:
-                _LOG.info("Errata [%s] already exists and latest; skipping" % existing_erratum)
+                _LOG.debug("Errata [%s] already exists and latest; skipping" % existing_erratum)
                 continue
             # remove if erratum already exist so we can update it
-            _LOG.info("Removing Errata unit %s to update " % existing_erratum)
+            _LOG.debug("Removing Errata unit %s to update " % existing_erratum)
             sync_conduit.remove_unit(existing_erratum)
         erratum = available_errata[key]
         new_errata[key] = erratum
@@ -175,12 +175,12 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
                 rpm_key = importer_rpm.form_lookup_key(pinfo)
                 if rpm_key in existing_rpms.keys():
                     rpm_unit = existing_rpms[rpm_key]
-                    _LOG.info("Found matching rpm unit %s" % rpm_unit)
+                    _LOG.debug("Found matching rpm unit %s" % rpm_unit)
                     sync_conduit.link_unit(u, rpm_unit, bidirectional=True)
                     link_report['linked_units'].append(rpm_unit)
                 else:
                     link_report['missing_rpms'].append(pinfo)
-                    _LOG.info("rpm unit %s not found; skipping" % pinfo)
+                    _LOG.debug("rpm unit %s not found; skipping" % pinfo)
     return link_report
 
 class ErrataProgress(object):
@@ -262,7 +262,7 @@ class ImporterErrata(object):
         details["num_security_errata"] = len(errata_details['types']['security'])
         details["num_enhancement_errata"] = len(errata_details['types']['enhancement'])
         details['link_report'] = link_report
-        _LOG.info("Errata Summary: %s \n Details: %s" % (summary, details))
+        _LOG.debug("Errata Summary: %s \n Details: %s" % (summary, details))
         progress = {"state":"FINISHED", "num_errata":len(available_errata)}
         set_progress(progress)
         return True, summary, details

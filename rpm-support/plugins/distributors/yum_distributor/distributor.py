@@ -394,7 +394,7 @@ class YumDistributor(Distributor):
         drpm_units = filter(lambda u : u.type_id == TYPE_ID_DRPM, unfiltered_units)
         rpm_errors = []
         if 'rpm' not in skip_list:
-            _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
+            _LOG.debug("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
                     % (repo.id, len(unfiltered_units), len(rpm_units)))
             # Create symlinks under repo.working_dir
             rpm_status, rpm_errors = self.handle_symlinks(rpm_units, repo.working_dir, progress_callback)
@@ -402,7 +402,7 @@ class YumDistributor(Distributor):
                 _LOG.error("Unable to publish %s items" % (len(rpm_errors)))
         drpm_errors = []
         if 'drpm' not in skip_list:
-            _LOG.info("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
+            _LOG.debug("Publish on %s invoked. %s existing units, %s of which are supported to be published." \
                     % (repo.id, len(unfiltered_units), len(drpm_units)))
             # Create symlinks under repo.working_dir
             drpm_status, drpm_errors = self.handle_symlinks(drpm_units, repo.working_dir, progress_callback)
@@ -542,7 +542,7 @@ class YumDistributor(Distributor):
         @rtype (bool, [str])
         """
         packages_progress_status = self.init_progress()
-        _LOG.info("handle_symlinks invoked with %s units to %s dir" % (len(units), symlink_dir))
+        _LOG.debug("handle_symlinks invoked with %s units to %s dir" % (len(units), symlink_dir))
         self.set_progress("packages", packages_progress_status, progress_callback)
         errors = []
         packages_progress_status["items_total"] = len(units)
@@ -633,7 +633,7 @@ class YumDistributor(Distributor):
         """
         distro_progress_status = self.init_progress()
         self.set_progress("distribution", distro_progress_status, progress_callback)
-        _LOG.info("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
+        _LOG.debug("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
         errors = []
         for u in units:
             source_path_dir  = u.storage_path
@@ -641,7 +641,7 @@ class YumDistributor(Distributor):
                 msg = "No distribution files found for unit %s" % u
                 _LOG.error(msg)
             distro_files =  u.metadata['files']
-            _LOG.info("Found %s distribution files to symlink" % len(distro_files))
+            _LOG.debug("Found %s distribution files to symlink" % len(distro_files))
             distro_progress_status['items_total'] = len(distro_files)
             distro_progress_status['items_left'] = len(distro_files)
             for dfile in distro_files:

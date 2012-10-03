@@ -192,7 +192,7 @@ class GroupISODistributor(GroupDistributor):
             repo_exporter = RepoExporter(repo_working_dir, skip=skip_types)
             # check if any datefilter is set on the distributor
             date_filter = repo_exporter.create_date_range_filter(config)
-            _LOG.info("repo working dir %s" % repo_working_dir)
+            _LOG.debug("repo working dir %s" % repo_working_dir)
             groups_xml_path = None
             updateinfo_xml_path = None
             if date_filter:
