@@ -16,7 +16,7 @@ import logging
 from qpid.messaging import Connection
 from qpid.messaging.exceptions import ConnectionError, MessagingError
 
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 from pulp.server.config import config
 
 
