@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.12
+Version:        1.1.13
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,17 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Oct 04 2012 Jeff Ortel <jortel@redhat.com> 1.1.13-1
+- Merge pull request #92 from pulp/jconnor-862356-non-utf-8 (jortel@redhat.com)
+- 835586 - fixed improper comparison between basestring instance and unicode
+  type (jason.connor@gmail.com)
+- 862356 - moved running weight calculation to after task has been put in
+  running storage so that failures will not artificially increment the running
+  weight (jason.connor@gmail.com)
+- fix typo in comment (pkilambi@redhat.com)
+- 860800 - merge the errata spanning across multiple repos if their pkglist
+  collection doesnt match (pkilambi@redhat.com)
+
 * Fri Aug 17 2012 Jeff Ortel <jortel@redhat.com> 1.1.12-1
 - 848828 - Improve performance of re-promotions on parent cloned repos
   (pkilambi@redhat.com)
