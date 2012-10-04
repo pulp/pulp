@@ -131,7 +131,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
-        metadata = {}
+        metadata = {'updated' : '2010-03-30 08:07:30'}
         unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'md5',
                       'checksum': 'f3c197a29d9b66c5b65c5d62b25db5b4'}
         unit_key_b = {'id' : '', 'name' :'emoticons', 'version' :'0.1', 'release' :'2', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'md5',
@@ -266,15 +266,15 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
         unit_key_a = {'id' : '','name' :'pulp-dot-2.0-test', 'version' :'0.1.2', 'release' : '1.fc11', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'sha256',
                       'checksum': '435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979', 'type_id' : 'rpm'}
-        unit_a = Unit(TYPE_ID_RPM, unit_key_a, {}, '')
+        unit_a = Unit(TYPE_ID_RPM, unit_key_a, {'updated' : ''}, '')
         unit_a.storage_path = "%s/pulp-dot-2.0-test/0.1.2/1.fc11/x86_64/435d92e6c09248b501b8d2ae786f92ccfad69fab8b1bc774e2b66ff6c0d83979/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" % self.pkg_dir
         unit_key_b = {'id' : '', 'name' :'pulp-test-package', 'version' :'0.2.1', 'release' :'1.fc11', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'sha256',
                       'checksum': '4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7', 'type_id' : 'rpm', }
-        unit_b = Unit(TYPE_ID_RPM, unit_key_b, {}, '')
+        unit_b = Unit(TYPE_ID_RPM, unit_key_b, {'updated' : ''}, '')
         unit_b.storage_path = "%s/pulp-test-package/0.2.1/1.fc11/x86_64/4dbde07b4a8eab57e42ed0c9203083f1d61e0b13935d1a569193ed8efc9ecfd7/pulp-test-package-0.2.1-1.fc11.x86_64.rpm" % self.pkg_dir
         unit_key_c = {'id' : '', 'name' :'pulp-test-package', 'version' :'0.3.1', 'release' :'1.fc11', 'epoch':'0','arch' : 'x86_64', 'checksumtype' :'sha256',
                       'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f', 'type_id' : 'rpm', }
-        unit_c = Unit(TYPE_ID_RPM, unit_key_c, {}, '')
+        unit_c = Unit(TYPE_ID_RPM, unit_key_c, {'updated' : ''}, '')
         unit_c.storage_path =  "%s/pulp-test-package/0.3.1/1.fc11/x86_64/6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f/pulp-test-package-0.3.1-1.fc11.x86_64.rpm" % self.pkg_dir
         existing_units = []
         for unit in [unit_a, unit_b, unit_c]:
@@ -326,7 +326,7 @@ class TestISODistributor(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
-        metadata = {}
+        metadata = {'updated' : '2010-03-30 08:07:30'}
         existing_units = []
         unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'x86_64', 'checksumtype' : 'sha',
                       'checksum': '017c12050a97cf6095892498750c2a39d2bf535e'}
