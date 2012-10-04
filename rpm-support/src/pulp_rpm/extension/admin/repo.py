@@ -99,7 +99,7 @@ class RpmRepoCreateCommand(CreateRepositoryCommand):
 
         try:
             importer_config = args_to_importer_config(kwargs)
-            yum_distributor_config = args_to_distributor_config(kwargs)
+            yum_distributor_config = args_to_yum_distributor_config(kwargs)
             iso_distributor_config = args_to_iso_distributor_config(kwargs)
         except InvalidConfig, e:
             self.prompt.render_failure_message(str(e))
@@ -184,12 +184,19 @@ class RpmRepoUpdateCommand(UpdateRepositoryCommand):
             return
 
         try:
-            distributor_config = args_to_distributor_config(kwargs)
+            yum_distributor_config = args_to_yum_distributor_config(kwargs)
         except InvalidConfig, e:
             self.prompt.render_failure_message(str(e))
             return
 
-        distributor_configs = {ids.TYPE_ID_DISTRIBUTOR_YUM : distributor_config}
+        try:
+            iso_distributor_config = args_to_iso_distributor_config(kwargs)
+        except InvalidConfig, e:
+            self.prompt.render_failure_message(str(e))
+            return
+
+        distributor_configs = {ids.TYPE_ID_DISTRIBUTOR_YUM : yum_distributor_config,
+                               ids.TYPE_ID_DISTRIBUTOR_ISO : iso_distributor_config}
 
         response = self.context.server.repo.update_repo_and_plugins(
             repo_id, display_name, description, notes,
@@ -276,7 +283,7 @@ def args_to_importer_config(kwargs):
     return importer_config
 
 
-def args_to_distributor_config(kwargs):
+def args_to_yum_distributor_config(kwargs):
     """
     Takes the arguments read from the CLI and converts the client-side input
     to the server-side expectations. The supplied dict will not be modified.

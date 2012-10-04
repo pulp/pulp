@@ -79,7 +79,7 @@ class TestPackages(HandlerTest):
         handler = self.container.find(self.TYPE_ID, role=CONTENT)
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
-    def verify_succeeded(self, report, installed=[], updated=[], removed=[]):
+    def verify_succeeded(self, report, installed=[], updated=[], removed=[], reboot=False):
         resolved = []
         deps = []
         for unit in installed:
@@ -92,7 +92,10 @@ class TestPackages(HandlerTest):
             resolved.append(unit)
             deps = YumBase.REMOVE_DEPS
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, len(resolved)+len(deps))
+        chgcnt = len(resolved) + len(deps)
+        if reboot:
+            chgcnt += 1
+        self.assertEquals(report.chgcnt, chgcnt)
         self.assertEquals(len(report.details), 1)
         report = report.details[self.TYPE_ID]
         self.assertTrue(report['status'])
@@ -191,7 +194,7 @@ class TestPackages(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.install(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, installed=units)
+        self.verify_succeeded(report, installed=units, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
@@ -263,7 +266,7 @@ class TestPackages(HandlerTest):
         options = {'reboot':True, 'minutes':5}
         report = self.dispatcher.update(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, updated=units)
+        self.verify_succeeded(report, updated=units, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 5)
         os.system.assert_called_once_with('shutdown -r +5')
@@ -311,7 +314,7 @@ class TestPackages(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, removed=units)
+        self.verify_succeeded(report, removed=units, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
@@ -327,7 +330,7 @@ class TestGroups(HandlerTest):
         handler = self.container.find(self.TYPE_ID, role=CONTENT)
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
-    def verify_succeeded(self, report, installed=[], removed=[]):
+    def verify_succeeded(self, report, installed=[], removed=[], reboot=False):
         resolved = []
         deps = []
         for group in installed:
@@ -337,7 +340,10 @@ class TestGroups(HandlerTest):
             resolved += [str(p) for p in YumBase.GROUPS[group]]
             deps = YumBase.REMOVE_DEPS
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, len(resolved)+len(deps))
+        chgcnt = len(resolved)+len(deps)
+        if reboot:
+            chgcnt += 1
+        self.assertEquals(report.chgcnt, chgcnt)
         self.assertEquals(len(report.details), 1)
         report = report.details[self.TYPE_ID]
         self.assertTrue(report['status'])
@@ -416,7 +422,7 @@ class TestGroups(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.install(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, installed=groups)
+        self.verify_succeeded(report, installed=groups, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
@@ -459,7 +465,7 @@ class TestGroups(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, removed=groups)
+        self.verify_succeeded(report, removed=groups, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')

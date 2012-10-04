@@ -13,7 +13,7 @@
 
 import mock
 
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 import base
 

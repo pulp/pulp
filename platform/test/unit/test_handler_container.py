@@ -105,7 +105,7 @@ class TestDispatcher(unittest.TestCase):
         report = dispatcher.install(conduit, [unit], options)
         pprint(report.dict())
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertEquals(report.chgcnt, 2)
         self.assertTrue(report.reboot['scheduled'])
 
     def test_install_failed_no_handler(self):

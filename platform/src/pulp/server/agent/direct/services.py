@@ -23,7 +23,7 @@ from gofer.messaging import Topic
 from gofer.messaging.consumer import Consumer
 from gofer.messaging import Queue
 from gofer.rmi.async import ReplyConsumer, Listener
-from gofer.rmi.async import WatchDog
+from gofer.rmi.async import WatchDog, Journal
 from logging import getLogger
 
 
@@ -59,8 +59,8 @@ class Services:
         broker.clientcert = config.get('messaging', 'clientcert')
         log.info('AMQP broker configured')
         # watchdog
-        cls.watchdog = WatchDog(url=url)
-        cls.watchdog.journal('/var/lib/pulp/journal/watchdog')
+        journal = Journal('/var/lib/pulp/journal/watchdog')
+        cls.watchdog = WatchDog(url=url, journal=journal)
         cls.watchdog.start()
         log.info('AMQP watchdog started')
         # heartbeat

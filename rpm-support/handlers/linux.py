@@ -36,7 +36,6 @@ class LinuxHandler(SystemHandler):
         @type options: dict
         """
         report = RebootReport()
-        details = {}
         apply = options.get('apply', True)
         if apply:
             minutes = options.get('minutes', 1)
@@ -44,5 +43,7 @@ class LinuxHandler(SystemHandler):
             log.info(command)
             os.system(command)
             details = dict(minutes=minutes)
-        report.succeeded(details=details)
+            report.succeeded(details, chgcnt=1)
+        else:
+            report.succeeded()
         return report

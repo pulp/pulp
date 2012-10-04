@@ -20,7 +20,9 @@ from gettext import gettext as _
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import ImporterConduitException, ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepoUnitsMixin
+from pulp.plugins.conduits.mixins import (
+    ImporterConduitException, ImporterScratchPadMixin, RepoScratchPadMixin,
+    SingleRepoUnitsMixin, SearchUnitsMixin)
 import pulp.plugins.conduits._common as common_utils
 import pulp.plugins.types.database as types_db
 import pulp.server.managers.factory as manager_factory
@@ -41,7 +43,8 @@ class UnitImportConduitException(ImporterConduitException):
 
 # -- classes ------------------------------------------------------------------
 
-class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepoUnitsMixin):
+class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
+                        SingleRepoUnitsMixin, SearchUnitsMixin):
     """
     Used to interact with the Pulp server while importing units into a
     repository. Instances of this class should *not* be cached between import
@@ -75,6 +78,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepo
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
         RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
         SingleRepoUnitsMixin.__init__(self, source_repo_id, ImporterConduitException)
+        SearchUnitsMixin.__init__(self, ImporterConduitException)
 
         self.source_repo_id = source_repo_id
         self.dest_repo_id = dest_repo_id
@@ -146,7 +150,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin, SingleRepo
             # Convert to transfer object
             for unit in units:
                 type_id = unit['unit_type_id']
-                u = common_utils.to_plugin_unit(unit, type_defs[type_id])
+                u = common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
                 all_units.append(u)
 
             return all_units

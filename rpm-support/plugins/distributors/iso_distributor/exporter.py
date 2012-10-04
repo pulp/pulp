@@ -109,7 +109,7 @@ class RepoExporter(object):
                 packages_progress_status["num_error"] += 1
                 packages_progress_status["items_left"] -= 1
                 continue
-            _LOG.info("Unit exists at: %s we need to copy to: %s" % (source_path, symlink_path))
+            _LOG.debug("Unit exists at: %s we need to copy to: %s" % (source_path, symlink_path))
             try:
                 if not util.create_copy(source_path, symlink_path):
                     msg = "Unable to create copy for: %s pointing to %s" % (symlink_path, source_path)
@@ -204,7 +204,7 @@ class RepoExporter(object):
                     rpm_key = iso_util.form_lookup_key(pinfo)
                     if rpm_key in existing_rpm_units.keys():
                         rpm_unit = existing_rpm_units[rpm_key]
-                        _LOG.info("Found matching rpm unit %s" % rpm_unit)
+                        _LOG.debug("Found matching rpm unit %s" % rpm_unit)
                         rpm_units.append(rpm_unit)
         return rpm_units
 
@@ -233,7 +233,7 @@ class RepoExporter(object):
             self.set_progress("distribution", distro_progress_status, progress_callback)
             _LOG.info("distribution unit type in skip list [%s]; skipping export" % self.skip)
             return summary, []
-        _LOG.info("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
+        _LOG.debug("Process symlinking distribution files with %s units to %s dir" % (len(units), symlink_dir))
         errors = []
         for u in units:
             source_path_dir  = u.storage_path
@@ -241,7 +241,7 @@ class RepoExporter(object):
                 msg = "No distribution files found for unit %s" % u
                 _LOG.error(msg)
             distro_files =  u.metadata['files']
-            _LOG.info("Found %s distribution files to symlink" % len(distro_files))
+            _LOG.debug("Found %s distribution files to symlink" % len(distro_files))
             distro_progress_status['items_total'] = len(distro_files)
             distro_progress_status['items_left'] = len(distro_files)
             for dfile in distro_files:

@@ -107,7 +107,7 @@ def get_missing_distros_and_units(available_distro, existing_distro_units, verif
                 distro_file_path = os.path.join(existing_distro_units[key].storage_path, ksfile["fileName"])
                 if not util.verify_exists(distro_file_path, ksfile['checksum'],
                     ksfile['checksumtype'], verify_options):
-                    _LOG.info("Missing an existing unit: %s.  Will add to resync." % distro_file_path)
+                    _LOG.debug("Missing an existing unit: %s.  Will add to resync." % distro_file_path)
                     # Adjust storage path to match intended location
                     # Grinder will use this 'pkgpath' to write the file
                     ksfile["pkgpath"] = os.path.dirname(distro_file_path)

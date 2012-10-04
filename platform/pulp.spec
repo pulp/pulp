@@ -124,9 +124,6 @@ ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 # Tools
 cp bin/* %{buildroot}/%{_bindir}
 
-# Init (init.d)
-cp etc/rc.d/init.d/* %{buildroot}/%{_sysconfdir}/rc.d/init.d/
-
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
@@ -164,7 +161,7 @@ Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.73
+Requires: python-gofer >= 0.74
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.3-3.pulp
@@ -205,7 +202,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%{_sysconfdir}/rc.d/init.d/pulp-server
 %{_bindir}/pulp-migrate
 # apache
 %defattr(-,apache,apache,-)
@@ -351,7 +347,7 @@ Summary: The Pulp agent
 Group: Development/Languages
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
-Requires: gofer >= 0.73
+Requires: gofer >= 0.74
 
 %description agent
 The pulp agent, used to provide remote command & control and

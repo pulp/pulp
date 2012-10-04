@@ -106,7 +106,7 @@ class DependencyManager(object):
 
         for unit in units:
             type_id = unit['unit_type_id']
-            u = conduit_common_utils.to_plugin_unit(unit, type_defs[type_id])
+            u = conduit_common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
             transfer_units.append(u)
 
         # Invoke the importer
