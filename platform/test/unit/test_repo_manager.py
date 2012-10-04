@@ -160,8 +160,10 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         importer_type_id = 'mock-importer'
         importer_repo_plugin_config = {'i' : 'i'}
         distributors = [
-            ('mock-distributor', {'d' : 'd'}, True, 'dist1'),
-            ('mock-distributor', {'d' : 'd'}, True, 'dist2')
+            dict(distributor_type='mock-distributor', distributor_config={'d' : 'd'},
+                 auto_publish=True, distributor_id='dist1'),
+            dict(distributor_type='mock-distributor', distributor_config={'d' : 'd'},
+                 auto_publish=True, distributor_id='dist2')
         ]
 
         # Test
@@ -181,12 +183,12 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(importer['importer_type_id'], importer_type_id)
         self.assertEqual(importer['config'], importer_repo_plugin_config)
 
-        for distributor_type, config, auto_publish, distributor_id in distributors:
-            distributor = RepoDistributor.get_collection().find_one({'id' : distributor_id})
+        for d in distributors:
+            distributor = RepoDistributor.get_collection().find_one({'id' : d['distributor_id']})
             self.assertEqual(distributor['repo_id'], repo_id)
-            self.assertEqual(distributor['distributor_type_id'], distributor_type)
-            self.assertEqual(distributor['auto_publish'], auto_publish)
-            self.assertEqual(distributor['config'], config)
+            self.assertEqual(distributor['distributor_type_id'], d['distributor_type'])
+            self.assertEqual(distributor['auto_publish'], d['auto_publish'])
+            self.assertEqual(distributor['config'], d['distributor_config'])
 
     def test_create_and_configure_repo_bad_importer(self):
         """
@@ -215,7 +217,8 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = False, ''
 
         # Test
-        distributors = [('mock-distributor', {}, True, None)]
+        distributors = [dict(distributor_type='mock-distributor', distributor_config={},
+                             auto_publish=True, distributor_id=None)]
         self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo, 'repo-1', distributor_list=distributors)
 
         # Verify the repo was deleted

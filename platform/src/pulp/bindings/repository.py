@@ -53,7 +53,19 @@ class RepositoryAPI(PulpAPI):
         * RepositoryImporterAPI.create
         * RepositoryDistributorAPI.create (for each distributor passed in)
 
-        Both importer and distributors are optional in this call.
+        Both importer and distributors are optional in this call. If distributors
+        is specified, it must be a list that contains one or more distributor
+        descriptions. Each distributor is specified as a dict containing the
+        following keys:
+
+          distributor_type - ID of the type of distributor being added
+          distributor_config - values sent to the distributor when used by
+                               this repository
+          auto_publish - boolean indicating if the distributor should automatically
+                         publish with every sync; defaults to False
+          distributor_id - used to refer to the distributor later; if omitted,
+                           one will be generated
+
 
         :param importer_type_id: type of importer to add
         :type  importer_type_id: str

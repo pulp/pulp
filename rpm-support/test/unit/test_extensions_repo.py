@@ -121,11 +121,11 @@ class RpmRepoCreateCommandTests(rpm_support_base.PulpClientTests):
         # instead of index.
 
         yum_distributor = body['distributors'][0]
-        self.assertEqual(ids.TYPE_ID_DISTRIBUTOR_YUM, yum_distributor[0])
-        self.assertEqual(True, yum_distributor[2])
-        self.assertEqual(ids.YUM_DISTRIBUTOR_ID, yum_distributor[3])
+        self.assertEqual(ids.TYPE_ID_DISTRIBUTOR_YUM, yum_distributor['distributor_type'])
+        self.assertEqual(True, yum_distributor['auto_publish'])
+        self.assertEqual(ids.YUM_DISTRIBUTOR_ID, yum_distributor['distributor_id'])
 
-        yum_config = yum_distributor[1]
+        yum_config = yum_distributor['distributor_config']
         self.assertEqual(yum_config['relative_url'], '/repo')
         self.assertEqual(yum_config['http'], True)
         self.assertEqual(yum_config['https'], True)
@@ -137,11 +137,11 @@ class RpmRepoCreateCommandTests(rpm_support_base.PulpClientTests):
         self.assertEqual(yum_config['skip'], [ids.TYPE_ID_RPM])
 
         iso_distributor = body['distributors'][1]
-        self.assertEqual(ids.TYPE_ID_DISTRIBUTOR_ISO, iso_distributor[0])
-        self.assertEqual(False, iso_distributor[2])
-        self.assertEqual(ids.ISO_DISTRIBUTOR_ID, iso_distributor[3])
+        self.assertEqual(ids.TYPE_ID_DISTRIBUTOR_ISO, iso_distributor['distributor_id'])
+        self.assertEqual(False, iso_distributor['auto_publish'])
+        self.assertEqual(ids.ISO_DISTRIBUTOR_ID, iso_distributor['distributor_id'])
 
-        iso_config = iso_distributor[1]
+        iso_config = iso_distributor['distributor_config']
         self.assertEqual(iso_config['http'], True)
         self.assertEqual(iso_config['https'], True)
         self.assertTrue(iso_config['https_ca'] is not None)

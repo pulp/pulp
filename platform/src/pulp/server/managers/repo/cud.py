@@ -103,6 +103,17 @@ class RepoManager(object):
         methods should be consulted for more information on the parameters to
         this method that correspond to those calls.
 
+        Multiple distributors can be created in this call. Each distributor
+        is specified as a dict with the following keys:
+
+          distributor_type - ID of the type of distributor being added
+          distributor_config - values sent to the distributor when used by
+                               this repository
+          auto_publish - boolean indicating if the distributor should automatically
+                         publish with every sync; defaults to False
+          distributor_id - used to refer to the distributor later; if omitted,
+                           one will be generated
+
         @param repo_id: unique identifier for the repo
         @type  repo_id: str
 
@@ -119,9 +130,8 @@ class RepoManager(object):
                be added to the repo
         @type  importer_type_id: str
 
-        @param distributor_list: list of tuples containing distributor_type_id,
-               repo_plugin_config, auto_publish, and distributor_id (the same
-               that would be passed to the RepoDistributorManager.add_distributor call).
+        @param distributor_list: list of dicts describing the distributors to
+               add; more details in the docstring above
         @type  distributor_list: list
 
         @raise DuplicateResource: if there is already a repo with the requested ID
@@ -147,19 +157,20 @@ class RepoManager(object):
         # importer was added, we only need a single call to delete_repo in the
         # error block. That call will take care of all of the cleanup.
         distributor_manager = manager_factory.repo_distributor_manager()
-        if distributor_list is not None:
-            for distributor in distributor_list:
-                type_id = distributor[0]
-                plugin_config = distributor[1]
-                auto_publish = distributor[2]
-                distributor_id = distributor[3]
 
-                try:
-                    distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
-                except Exception, e:
-                    _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
-                    self.delete_repo(repo_id)
-                    raise e, None, sys.exc_info()[2]
+        for distributor in distributor_list or []:
+            # Don't bother with any validation here, the manager will run it
+            type_id = distributor.get('distributor_type')
+            plugin_config = distributor.get('distributor_config')
+            auto_publish = distributor.get('auto_publish', False)
+            distributor_id = distributor.get('distributor_id')
+
+            try:
+                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
+            except Exception, e:
+                _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
+                self.delete_repo(repo_id)
+                raise e, None, sys.exc_info()[2]
 
         return repo
 
