@@ -19,7 +19,7 @@ import time
 import yum
 from pulp_rpm.common.ids import TYPE_ID_ERRATA, UNIT_KEY_ERRATA, METADATA_ERRATA
 from pulp_rpm.yum_plugin import util, updateinfo
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from yum_importer import importer_rpm
 
 _LOG = util.getLogger(__name__)
@@ -87,15 +87,12 @@ def get_orphaned_errata(available_errata, existing_errata):
             orphaned_errata[key] = existing_errata[key]
     return orphaned_errata
 
-def get_new_errata_units(available_errata, existing_errata, sync_conduit):
+def get_new_errata_units(available_errata, sync_conduit):
     """
         Determines which errata to add  or remove and will initialize new units
 
         @param available_errata a dict of available errata
         @type available_errata {}
-
-        @param existing_errata dict of existing errata Units
-        @type existing_errata {pulp.server.content.plugins.model.Unit}
 
         @param sync_conduit
         @type sync_conduit pulp.server.content.conduits.repo_sync.RepoSyncConduit
@@ -106,14 +103,31 @@ def get_new_errata_units(available_errata, existing_errata, sync_conduit):
     new_errata = {}
     new_units = {}
     for key in available_errata:
-        if key in existing_errata:
-            existing_erratum = existing_errata[key]
-            if available_errata[key]['updated'] <= existing_erratum.updated:
-                _LOG.debug("Errata [%s] already exists and latest; skipping" % existing_erratum)
+        criteria = Criteria(filters={'id' : key})
+        try:
+            # errata id is unique and will return only 1 entry if matched
+            existing_erratum = sync_conduit.search_all_units(type_id=TYPE_ID_ERRATA, criteria=criteria)[0]
+        except IndexError:
+            existing_erratum = None
+        if existing_erratum:
+            if available_errata[key]['updated'] < existing_erratum.metadata['updated']:
+                # erratum we have is already newer, skip to the next one
                 continue
-            # remove if erratum already exist so we can update it
-            _LOG.debug("Removing Errata unit %s to update " % existing_erratum)
-            sync_conduit.remove_unit(existing_erratum)
+            elif available_errata[key]['updated'] == existing_erratum.metadata['updated']:
+                # Its the same errata as we already have, but the pkglist collections could be
+                # different. compare the collection name in the list of what we already have
+                # if the collection name is missing we add it to delta.
+                coll_names = [plist['name'] for plist in existing_erratum.metadata['pkglist']]
+                for elist in available_errata[key]['pkglist']:
+                    if elist['name'] not in coll_names:
+                        # merge the pkglist and save
+                        existing_erratum.metadata['pkglist'].append(elist)
+                        #sync_conduit.save_unit(existing_erratum)
+                        new_units[key] = existing_erratum
+                        new_errata[key] = available_errata[key]
+                continue
+        # If we're here, the existing erratum is outdated or doesnt exist. Let's create/update
+        # new available erratum.
         erratum = available_errata[key]
         new_errata[key] = erratum
         unit_key  = form_errata_unit_key(erratum)
@@ -175,12 +189,12 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
                 rpm_key = importer_rpm.form_lookup_key(pinfo)
                 if rpm_key in existing_rpms.keys():
                     rpm_unit = existing_rpms[rpm_key]
-                    _LOG.debug("Found matching rpm unit %s" % rpm_unit)
+                    #_LOG.info("Found matching rpm unit %s" % rpm_unit)
                     sync_conduit.link_unit(u, rpm_unit, bidirectional=True)
                     link_report['linked_units'].append(rpm_unit)
                 else:
                     link_report['missing_rpms'].append(pinfo)
-                    _LOG.debug("rpm unit %s not found; skipping" % pinfo)
+                    #_LOG.info("rpm unit %s not found; skipping" % pinfo)
     return link_report
 
 class ErrataProgress(object):
@@ -228,15 +242,14 @@ class ImporterErrata(object):
         start = time.time()
         repo_dir = "%s/%s" % (repo.working_dir, repo.id)
         available_errata = get_available_errata(repo_dir)
-        _LOG.info("Available Errata %s" % len(available_errata))
+        _LOG.debug("Available Errata %s" % len(available_errata))
         progress = {"state":"IN_PROGRESS", "num_errata":len(available_errata)}
         set_progress(progress)
 
         criteria = UnitAssociationCriteria(type_ids=[TYPE_ID_ERRATA])
         existing_errata = get_existing_errata(sync_conduit, criteria=criteria)
-        _LOG.info("Existing Errata %s" % len(existing_errata))
         orphaned_units = get_orphaned_errata(available_errata, existing_errata)
-        new_errata, new_units, sync_conduit = get_new_errata_units(available_errata, existing_errata, sync_conduit)
+        new_errata, new_units, sync_conduit = get_new_errata_units(available_errata, sync_conduit)
         # Save the new units
         for u in new_units.values():
             sync_conduit.save_unit(u)
