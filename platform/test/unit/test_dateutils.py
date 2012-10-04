@@ -135,6 +135,7 @@ class ISO8601Tester(unittest.TestCase):
         self.assertEqual(t1, t2)
         self.assertEqual(r1, r2)
 
+
 class TestParseDatetimeOrDate(unittest.TestCase):
     def test_value_error(self):
         # I know, this isn't actually a ValueError, but it should be!
@@ -153,4 +154,24 @@ class TestParseDatetimeOrDate(unittest.TestCase):
     def test_datetime(self):
         ret = dateutils.parse_iso8601_datetime_or_date('2012-07-31T09:43:15')
         self.assertTrue(isinstance(ret, datetime.datetime))
+
+# datetime math tests ----------------------------------------------------------
+
+class DatetimeMathTests(unittest.TestCase):
+
+    def test_add_timedelta(self):
+        dt = datetime.datetime(2012, 10, 24)
+        td = datetime.timedelta(days=8)
+
+        result_1 = dateutils.add_interval_to_datetime(td, dt)
+        result_2 = dt + td
+        self.assertEqual(result_1, result_2)
+
+    def test_add_duration(self):
+        dt = datetime.datetime(2012, 10, 31)
+        dr = isodate.Duration(months=1)
+
+        result = dateutils.add_interval_to_datetime(dr, dt)
+        self.assertEqual(result.month, 11)
+        self.assertEqual(result.day, 30)
 

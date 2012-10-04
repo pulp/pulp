@@ -57,10 +57,10 @@ class ScheduledCall(Model):
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
         self.first_run = start or now
+        # NOTE using != because ordering comparison with a Duration is not allowed
         while interval != zero and self.first_run <= now:
-            # NOTE using != because ordering comparison with a Duration is not allowed
             # try to schedule the first run in the future
-            self.first_run += interval
+            self.first_run = dateutils.add_interval_to_datetime(interval, self.first_run)
         self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
         self.next_run = None # will calculated and set by the scheduler
         self.remaining_runs = runs
