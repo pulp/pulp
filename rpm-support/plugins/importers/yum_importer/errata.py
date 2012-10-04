@@ -189,12 +189,11 @@ def link_errata_rpm_units(sync_conduit, new_errata_units):
                 rpm_key = importer_rpm.form_lookup_key(pinfo)
                 if rpm_key in existing_rpms.keys():
                     rpm_unit = existing_rpms[rpm_key]
-                    #_LOG.info("Found matching rpm unit %s" % rpm_unit)
                     sync_conduit.link_unit(u, rpm_unit, bidirectional=True)
                     link_report['linked_units'].append(rpm_unit)
                 else:
                     link_report['missing_rpms'].append(pinfo)
-                    #_LOG.info("rpm unit %s not found; skipping" % pinfo)
+                    _LOG.debug("rpm unit %s not found; skipping" % pinfo)
     return link_report
 
 class ErrataProgress(object):
