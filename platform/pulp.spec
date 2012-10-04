@@ -161,13 +161,14 @@ Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.73
+Requires: python-gofer >= 0.74
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.3-3.pulp
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
+Requires: qpid-cpp-server-daemon
 # RHEL5
 %if 0%{?rhel} == 5
 Group: Development/Languages
@@ -347,7 +348,7 @@ Summary: The Pulp agent
 Group: Development/Languages
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-agent-lib = %{version}
-Requires: gofer >= 0.73
+Requires: gofer >= 0.74
 
 %description agent
 The pulp agent, used to provide remote command & control and

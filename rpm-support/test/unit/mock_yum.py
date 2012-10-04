@@ -106,6 +106,7 @@ class YumBase:
         self.conf = Config()
         self.preconf = Config()
         self.tsInfo = []
+        self.repos = mock.Mock()
 
     def install(self, pattern):
         state = 'i'

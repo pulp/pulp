@@ -131,7 +131,6 @@ class JSONController(object):
         @return: JSON encoded response
         """
         http.status_ok()
-
         return self._output(data)
 
     def created(self, location, data):
