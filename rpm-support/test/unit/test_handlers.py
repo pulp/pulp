@@ -4,9 +4,6 @@ import os
 import tempfile
 import shutil
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platform/src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../rpm_support/src/")
-
 import mock_yum
 from mock import Mock
 from mock_yum import YumBase

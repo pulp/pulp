@@ -17,9 +17,6 @@ from mock import Mock
 from mock_yum import YumBase
 from rpm_support_base import PulpRPMTests
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../rpm_support/src/")
-
-
 
 class ToolTest(PulpRPMTests):
 
