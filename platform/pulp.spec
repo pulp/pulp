@@ -161,7 +161,7 @@ Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.73
+Requires: python-gofer >= 0.74
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.3-3.pulp
