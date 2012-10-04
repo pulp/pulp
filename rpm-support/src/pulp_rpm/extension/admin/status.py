@@ -389,7 +389,6 @@ class RpmIsoStatusRenderer(StatusRenderer):
         # Publish Steps
         self.rpms_last_state = constants.STATE_NOT_STARTED
         self.distributions_last_state = constants.STATE_NOT_STARTED
-        self.errata_last_state = constants.STATE_NOT_STARTED
         self.generate_metadata_last_state = constants.STATE_NOT_STARTED
         self.isos_last_state = constants.STATE_NOT_STARTED
         self.publish_http_last_state = constants.STATE_NOT_STARTED
@@ -398,7 +397,6 @@ class RpmIsoStatusRenderer(StatusRenderer):
         # UI Widgets
         self.rpms_bar = self.prompt.create_progress_bar()
         self.distributions_bar = self.prompt.create_progress_bar()
-        self.errata_bar = self.prompt.create_progress_bar()
         self.generate_metadata_spinner = self.prompt.create_spinner()
         self.isos_bar = self.prompt.create_progress_bar()
         self.publish_http_spinner = self.prompt.create_spinner()
@@ -409,17 +407,14 @@ class RpmIsoStatusRenderer(StatusRenderer):
         Displays the contents of the progress report to the user. This will
         aggregate the calls to render individual sections of the report.
         """
-
         # Publish Steps
         if 'iso_distributor' in progress_report:
             self.render_rpms_step(progress_report)
-            self.render_errata_step(progress_report)
             self.render_distributions_step(progress_report)
-            # Holding off on rendering metadata generation until prad's v2 metadata changes are merged
-            # self.render_generate_metadata_step(progress_report)
-            self.render_isos_step(progress_report)
-            self.render_publish_http_step(progress_report)
+            self.render_generate_metadata_step(progress_report)
+            #self.render_isos_step(progress_report)
             self.render_publish_https_step(progress_report)
+            self.render_publish_http_step(progress_report)
 
     def render_rpms_step(self, progress_report):
 
@@ -460,46 +455,6 @@ class RpmIsoStatusRenderer(StatusRenderer):
 
             self.prompt.write(_('... failed'))
             self.rpms_last_state = constants.STATE_FAILED
-
-    def render_errata_step(self, progress_report):
-
-        # Example Data:
-        # "errata": {
-        #    "num_success": 0, 
-        #    "items_left": 0, 
-        #    "items_total": 0, 
-        #    "state": "FINISHED", 
-        #    "error_details": [], 
-        #    "num_error": 0
-        #    }, 
-        
-        data = progress_report['iso_distributor']['errata']
-        state = data['state']
-
-        if state == constants.STATE_NOT_STARTED:
-            return
-
-        # Only render this on the first non-not-started state
-        if self.errata_last_state == constants.STATE_NOT_STARTED:
-            self.prompt.write(_('Exporting errata...'))
-
-        # If it's running or finished, the output is still the same. This way,
-        # if the status is viewed after this step, the content download
-        # summary is still available.
-
-        if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.errata_last_state not in constants.COMPLETE_STATES:
-
-            self.errata_last_state = state
-            render_itemized_in_progress_state(self.prompt, data, _('errata'), self.errata_bar, state)
-
-        elif state == constants.STATE_FAILED and self.errata_last_state not in constants.COMPLETE_STATES:
-
-            # This state means something went horribly wrong. There won't be
-            # individual rpms error details which is why they are only
-            # displayed above and not in this case.
-
-            self.prompt.write(_('... failed'))
-            self.errata_last_state = constants.STATE_FAILED
 
 
     def render_distributions_step(self, progress_report):
@@ -572,14 +527,56 @@ class RpmIsoStatusRenderer(StatusRenderer):
             self.prompt.write(_('Creating ISOs...'))
 
         # If it's running or finished, the output is still the same. This way,
-        # if the status is viewed after this step, the content download
-        # summary is still available.
-
+        # if the status is viewed after this step, summary is still available.
         if state in (constants.STATE_RUNNING, constants.STATE_COMPLETE) and self.isos_last_state not in constants.COMPLETE_STATES:
 
             self.isos_last_state = state
-            render_itemized_in_progress_state(self.prompt, data, _('isos'), self.isos_bar, state)
 
+            overall_done = data['items_total'] - data['items_left']
+            overall_total = data['items_total']
+
+            if overall_total is 0:
+                overall_total = overall_done = 1
+
+            self.isos_bar.render(overall_done, overall_total)
+            
+            if state == constants.STATE_COMPLETE:
+                self.prompt.write(_('... completed'))
+                self.prompt.render_spacer()
+
+                # If there are any errors, write them out here
+                # TODO: read this from config
+                # display_error_count = self.context.extension_config.getint('main', 'num_display_errors')
+                display_error_count = 5
+
+                num_errors = min(len(data['error_details']), display_error_count)
+
+                if num_errors > 0:
+                    self.prompt.render_failure_message(_('Individual errors encountered during publishing:'))
+
+                    for i in range(0, num_errors):
+                        error = data['error_details'][i]
+                        error_msg = error['error']
+                        traceback = '\n'.join(error['traceback'])
+
+                        message_data = {
+                            'name'      : error['filename'],
+                            'error'      : error_msg,
+                            'traceback' : traceback
+                        }
+
+                        template  = _('File:    %(name)s\n')
+                        template += _('Error:   %(error)s\n')
+                        if message_data["traceback"]:
+                            template += _('Traceback:\n')
+                            template += _('%(traceback)s')
+
+                        message = template % message_data
+
+                        self.prompt.render_failure_message(message)
+
+                    self.prompt.render_spacer()
+            
         elif state == constants.STATE_FAILED and self.isos_last_state not in constants.COMPLETE_STATES:
 
             # This state means something went horribly wrong. There won't be
@@ -624,4 +621,9 @@ class RpmIsoStatusRenderer(StatusRenderer):
         def update_func(new_state):
             self.publish_https_last_state = new_state
         render_general_spinner_step(self.prompt, self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
+        if current_state == constants.STATE_COMPLETE and self.publish_https_last_state not in constants.COMPLETE_STATES:
+            self.prompt.write(_('ISOs created -'))
+            filenames = progress_report['iso_distributor']['written_files']
+            for filename in filenames:
+                self.prompt.write('%s' % filename)
 
