@@ -476,6 +476,7 @@ class TestBind(HandlerTest):
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
     def test_bind(self):
+        # TODO: implement test
         pass
 
 
@@ -489,4 +490,5 @@ class TestLinux(HandlerTest):
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
     def test_linux(self):
+        # TODO: implement test
         pass

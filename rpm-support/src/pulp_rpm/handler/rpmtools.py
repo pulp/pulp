@@ -9,6 +9,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+"""
+Contains classes used by the RPM handler to perform
+operations using YumBase.  This is provided by the following
+collections of classes:
+ * Layer 1: YumBase wrapper and callbacks
+ * Layer 2: Package & PackageGroup provide a higher level abstraction for
+   package and package group operations.
+"""
+
 from logging import getLogger, Logger
 
 from yum import YumBase
