@@ -168,6 +168,7 @@ Requires: mod_wsgi >= 3.3-3.pulp
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
+Requires: qpid-cpp-server-daemon
 # RHEL5
 %if 0%{?rhel} == 5
 Group: Development/Languages
