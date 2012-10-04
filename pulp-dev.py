@@ -115,7 +115,6 @@ LINKS = (
     ('platform/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
     ('platform/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
     ('platform/etc/pulp/logging', '/etc/pulp/logging'),
-    ('platform/etc/rc.d/init.d/pulp-server', '/etc/rc.d/init.d/pulp-server'),
 
     # Server Web Configuration
     ('platform/src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
