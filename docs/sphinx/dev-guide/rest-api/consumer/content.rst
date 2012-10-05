@@ -4,9 +4,20 @@ Content Management
 Install Content on a Consumer
 -----------------------------
 
-Install one or more content units on a consumer.  This operation is asynchrnous
-and idempotent.  If a unit is already installed, no action is taken.  Dependancies
+Install one or more content units on a consumer.  This operation is asynchronous
+and idempotent.  If a unit is already installed, no action is taken.  Dependencies
 are automatically installed or updated as needed and reflected in the installation report.
+
+The units to be installed are specified in a list.  Each unit in the list of *units* is an
+object containing two required attributes.  The first is the **type_id** which a string
+that defines the unit's content type.  The value is unrestricted by the Pulp server but
+must match a type mapped to a content :term:`handler` in the agent.  The second is the
+**unit_key** which identifies the unit or units to be installed.  Both the structure and
+content are handler specific.
+
+The caller can pass additional options using an *options* object.  Both the structure and
+content are handler specific.
+
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/install/`
@@ -14,7 +25,7 @@ are automatically installed or updated as needed and reflected in the installati
 | :param_list:`post`
 
 * :param:`units,list,list of content units to install`
-* :param:`options,string,install options`
+* :param:`options,object,install options`
 
 | :response_list:`_`
 
@@ -26,17 +37,15 @@ are automatically installed or updated as needed and reflected in the installati
 
 :sample_request:`_` ::
 
- [
-  {
-    "type_id":"rpm",
-    "unit_key": {"name":"zsh"}
-  },
-  {
-    "type_id":"rpm",
-    "unit_key": {"name":"gofer-0.66"}
-  },
- ]
- 
+ {
+   "units": [
+     {"unit_key": {"name": "zsh"}, "type_id": "rpm"}
+   ],
+   "options": {
+     "apply": true, "reboot": false
+   }
+ }
+
 :sample_response:`202` ::
 
  {
@@ -47,9 +56,19 @@ are automatically installed or updated as needed and reflected in the installati
 Update Content on a Consumer
 ----------------------------
 
-Update one or more content units on a consumer.  This operation is asynchrnous
-and idempotent.  If a unit is already up to date, no action is taken.  Dependancies
+Update one or more content units on a consumer.  This operation is asynchronous
+and idempotent.  If a unit is already up to date, no action is taken.  Dependencies
 are automatically installed or updated as needed and reflected in the installation report.
+
+The units to be updated are specified in a list.  Each unit in the list of *units* is an
+object containing two required attributes.  The first is the **type_id** which a string
+that defines the unit's content type.  The value is unrestricted by the Pulp server but
+must match a type mapped to a content :term:`handler` in the agent.  The second is the
+**unit_key** which identifies the unit or units to be updated.  Both the structure and
+content are handler specific.
+
+The caller can pass additional options using an *options* object.  Both the structure and
+content are handler specific.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/update/`
@@ -57,7 +76,7 @@ are automatically installed or updated as needed and reflected in the installati
 | :param_list:`post`
 
 * :param:`units,list,list of content units to update`
-* :param:`options,string,update options`
+* :param:`options,object,update options`
 
 | :response_list:`_`
 
@@ -69,16 +88,14 @@ are automatically installed or updated as needed and reflected in the installati
 
 :sample_request:`_` ::
 
- [
-  {
-    "type_id":"rpm",
-    "unit_key": {"name":"zsh"}
-  },
-  {
-    "type_id":"rpm",
-    "unit_key": {"name":"gofer-0.66"}
-  },
- ]
+ {
+   "units": [
+     {"unit_key": {"name": "zsh"}, "type_id": "rpm"}
+   ],
+   "options": {
+     "apply": true, "reboot": false
+   }
+ }
  
 :sample_response:`202` ::
 
@@ -89,8 +106,18 @@ are automatically installed or updated as needed and reflected in the installati
 Uninstall Content on a Consumer
 -------------------------------
 
-Uninstall one or more content units on a consumer.  This operation is asynchrnous
+Uninstall one or more content units on a consumer.  This operation is asynchronous
 and idempotent.  If a unit is not installed, no action is taken.
+
+The units to be uninstalled are specified in a list.  Each unit in the list of *units* is an
+object containing two required attributes.  The first is the **type_id** which a string
+that defines the unit's content type.  The value is unrestricted by the Pulp server but
+must match a type mapped to a content :term:`handler` in the agent.  The second is the
+**unit_key** which identifies the unit or units to be uninstalled.  The value is completely
+defined by the handler mapped to the unit's type_id.
+
+The caller can pass additional options using an *options* object.  Both the structure and
+content are handler specific.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/uninstall/`
@@ -98,7 +125,7 @@ and idempotent.  If a unit is not installed, no action is taken.
 | :param_list:`post`
 
 * :param:`units,list,list of content units to uninstall`
-* :param:`options,string,uninstall options`
+* :param:`options,object,uninstall options`
 
 | :response_list:`_`
 
@@ -110,16 +137,14 @@ and idempotent.  If a unit is not installed, no action is taken.
 
 :sample_request:`_` ::
 
- [
-  {
-    "type_id":"rpm",
-    "unit_key": {"name":"zsh"}
-  },
-  {
-    "type_id":"rpm",
-    "unit_key": {"name":"gofer-0.66"}
-  },
- ]
+ {
+   "units": [
+     {"unit_key": {"name": "zsh"}, "type_id": "rpm"}
+   ],
+   "options": {
+     "apply": true, "reboot": false
+   }
+ }
  
 :sample_response:`202` ::
 
