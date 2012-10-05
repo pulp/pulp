@@ -15,6 +15,7 @@ from gettext import gettext as _
 import hashlib
 import os
 import rpm
+import sys
 
 from pulp.client.commands.repo.upload import UploadCommand, MetadataException
 from pulp_rpm.common.ids import TYPE_ID_RPM
@@ -88,7 +89,7 @@ def _generate_rpm_data(rpm_filename):
         # Raised if the headers cannot be read
         os.close(fd)
         msg = _('The given file is not a valid RPM')
-        raise MetadataException(msg)
+        raise MetadataException(msg), None, sys.exc_info()[2]
 
     # -- Unit Key -----------------------
 
