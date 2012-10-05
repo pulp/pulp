@@ -20,9 +20,6 @@ that certain other methods will exist.
 import logging
 from gettext import gettext as _
 
-from pulp.server.auth.authentication import (
-    check_username_password, check_user_cert, check_consumer_cert,
-    check_oauth, is_oauth_enabled)
 from pulp.server.managers import factory
 from pulp.server.compat import wraps
 from pulp.server.webservices import http
@@ -61,7 +58,7 @@ def check_preauthenticated():
     username = http.request_info("REMOTE_USER")
     if username is not None:
         # Omitting the password = assume preauthenticated
-        userid = check_username_password(username)
+        userid = factory.authentication_manager().check_username_password(username)
         if userid is None:
             # User is not in the local database, nor in LDAP
             raise AuthenticationFailed(PREAUTHENTICATED_USER_FAIL_MSG)
@@ -73,7 +70,7 @@ def check_preauthenticated():
 def password_authentication():
     username, password = http.username_password()
     if username is not None:
-        userid = check_username_password(username, password)
+        userid = factory.authentication_manager().check_username_password(username, password)
         if userid is None:
             raise AuthenticationFailed(USER_PASS_FAIL_MSG)
         else:
@@ -84,7 +81,7 @@ def password_authentication():
 def user_cert_authentication():
     cert_pem = http.ssl_client_cert()
     if cert_pem is not None:
-        userid = check_user_cert(cert_pem)
+        userid = factory.authentication_manager().check_user_cert(cert_pem)
         if userid:
             _LOG.debug("User authenticated with ssl cert: %s" % userid)
             return userid
@@ -93,14 +90,14 @@ def user_cert_authentication():
 def consumer_cert_authentication():
     cert_pem = http.ssl_client_cert()
     if cert_pem is not None:
-        consumerid = check_consumer_cert(cert_pem)
+        consumerid = factory.authentication_manager().check_consumer_cert(cert_pem)
         if consumerid is not None:
             _LOG.debug("Consumer authenticated with ssl cert: %s" % consumerid)
             return consumerid
     return None
 
 def oauth_authentication():
-    if not is_oauth_enabled():
+    if not factory.authentication_manager().is_oauth_enabled():
         return None
 
     username = http.request_info('HTTP_PULP_USER')
@@ -110,11 +107,10 @@ def oauth_authentication():
         if cert_pem is not None:
             raise AuthenticationFailed(CERT_FAIL_MSG)
         return None
-
     meth = http.request_info('REQUEST_METHOD')
     url = http.request_url()
     query = http.request_info('QUERY_STRING')
-    userid = check_oauth(username, meth, url, auth, query)
+    userid = factory.authentication_manager().check_oauth(username, meth, url, auth, query)
     if userid is None:
         raise AuthenticationFailed(OAUTH_FAIL_MSG)
     _LOG.debug("User authenticated with Oauth: %s" % userid)
