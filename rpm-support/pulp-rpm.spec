@@ -17,7 +17,7 @@
 # ---- Pulp (rpm) --------------------------------------------------------------
 
 Name: pulp-rpm
-Version: 0.0.330
+Version: 0.0.331
 Release: 1%{?dist}
 Summary: Support for RPM content in the Pulp platform
 Group: Development/Languages
@@ -250,6 +250,19 @@ A collection of yum plugins supplementing Pulp consumer operations.
 
 
 %changelog
+* Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1
+- 853503 - fix the unit remove logic to not worry about symlinks causing
+  packagegroup category to fail (pkilambi@redhat.com)
+- 860802 - add logic to new errata call to handle case where errata could span
+  across multiple repos (pkilambi@redhat.com)
+- 856642 - Changed the signature for create with distributors to be keyword
+  based (jason.dobies@redhat.com)
+- 852072 - Added the ability to circumvent the upload workflow in the event of
+  a metadata generation failure and have the workflow print gracefully handle
+  the exception and notify the user (jason.dobies@redhat.com)
+- 860686 - turning off verbose logging at various places in the plugin
+  (pkilambi@redhat.com)
+
 * Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
 - Version alignment.
 
