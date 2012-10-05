@@ -354,11 +354,7 @@ class YumImporter(Importer):
         @type  remove_conduit: ?
         """
         _LOG.info("remove_units invoked for %s units" % (len(units)))
-        for u in units:
-            # Assuming Pulp will delete u.storage_path from filesystem
-            sym_link = os.path.join(repo.working_dir, repo.id, u.metadata["filename"])
-            if os.path.lexists(sym_link):
-                os.unlink(sym_link)
+
     # -- actions --------------------------------------------------------------
 
     def sync_repo(self, repo, sync_conduit, config):
@@ -468,19 +464,6 @@ class YumImporter(Importer):
         summary['num_units_processed'] = len([file_path])
         summary['num_units_saved'] = len([file_path])
         _LOG.debug("unit %s successfully saved" % u)
-        # symlink content to repo working directory
-        symlink_path = "%s/%s/%s" % (repo.working_dir, repo.id, metadata['filename'])
-        try:
-            if os.path.islink(symlink_path):
-                os.unlink(symlink_path)
-            if not os.path.isdir(os.path.dirname(symlink_path)):
-                os.makedirs(os.path.dirname(symlink_path))
-            os.symlink(new_path, symlink_path)
-            _LOG.debug("Successfully symlinked to final location %s" % symlink_path)
-        except (IOError, OSError), e:
-            msg = "Error creating a symlink to repo working directory; Error %s" % e
-            _LOG.error(msg)
-            details['errors'].append(msg)
         summary["state"] = "FINISHED"
         if len(details['errors']):
             summary['num_errors'] = len(details['errors'])
