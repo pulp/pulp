@@ -300,6 +300,8 @@ def _current_task_state():
 
 def _map_task_state_to_sync_result_code(task_state, default=RepoSyncResult.RESULT_ERROR):
     if task_state is None:
+        msg = _('Repo sync exited with unknown dispatch task state, setting sync result code to: %(c)s')
+        _LOG.error(msg % {'c': default})
         return default
     if task_state is dispatch_constants.CALL_FINISHED_STATE:
         return RepoSyncResult.RESULT_SUCCESS
