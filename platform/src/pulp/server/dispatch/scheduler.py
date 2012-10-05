@@ -198,7 +198,7 @@ class Scheduler(object):
         interval = dateutils.parse_iso8601_interval(scheduled_call['schedule'])[0]
         next_run = last_run
         while next_run < now:
-            next_run += interval
+            next_run = dateutils.add_interval_to_datetime(interval, next_run)
         return next_run
 
     # schedule control methods -------------------------------------------------

@@ -122,7 +122,7 @@ class SyncStatusCommand(PulpCliCommand):
 
 class RunPublishRepositoryCommand(PulpCliCommand):
     """
-    Base class for rpm repo publish operation. 
+    Base class for repo publish operation. 
     
     Requests an immediate publish for a repository. Specified distributor_id is used 
     for publishing. If the publish begins (it is not postponed or rejected), 
@@ -179,7 +179,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         if self.override_config_keywords:
             override_config = self.generate_override_config(**kwargs)
 
-        self.prompt.render_title(_('Publishing Repository [%(r)s] using distributor [%(d)s] ') % {'r' : repo_id, 'd' : self.distributor_id})
+        self.prompt.render_title(_('Publishing Repository [%(r)s]') % {'r' : repo_id})
 
         # Display override configuration used
         if override_config:
