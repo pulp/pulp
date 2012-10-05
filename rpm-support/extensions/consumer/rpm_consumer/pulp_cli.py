@@ -61,7 +61,7 @@ class BindCommand(PulpCliCommand):
             resources = e.extra_data['resources']
             if 'consumer' in resources:
                 r_type = 'Consumer'
-                r_id = id
+                r_id = consumer_id
             else:
                 r_type = 'Repository'
                 r_id = repo_id
