@@ -30,6 +30,10 @@ Glossary
     based on the desired approach of the distributor. A repository may have
     more than one distributor associated with it at a given time.
 
+  handler
+    Agent plugin that implements content type specific or operating system specific
+    operations on the consumer.
+
   importer
     Server-side plugin that provides support for synchronizing content from an
     external source and importing that content into the Pulp server. Importers
