@@ -22,8 +22,6 @@ from pulp.server.exceptions import PulpException
 
 _LOG = logging.getLogger(__name__)
 
-DEFAULT_LDAP_URI = "ldap://localhost"
-DEFAULT_LDAP_BASE = "dc=localhost"
 
 # -- classes ------------------------------------------------------------------
 
@@ -32,26 +30,6 @@ class AuthenticationManager(object):
     """
     Manages user and consumer authentication in pulp.
     """
-    
-    # -- functions to check configured authentication methods ---------------------
-
-    def is_ldap_enabled(self):
-        """
-        Detects if ldap authentication is enabled in pulp server config file
-
-        :rtype: bool
-        :return: True if ldap authentication is enabled, False otherwise
-        """
-        return config.has_section('ldap')
-
-    def is_oauth_enabled(self):
-        """
-        Detects if oauth authentication is enabled in pulp server config file
-
-        :rtype: bool
-        :return: True if oauth authentication is enabled, False otherwise
-        """
-        return config.has_section('oauth')
     
     # -- username:password authentication ------------------------------------------
 
@@ -101,25 +79,14 @@ class AuthenticationManager(object):
         :rtype: L{pulp.server.db.model.auth.User} instance or None
         :return: user corresponding to the credentials
         """
-        ldap_uri = DEFAULT_LDAP_URI
-        if config.has_option('ldap', 'uri'):
-            ldap_uri = config.get("ldap", "uri")
-        else:
-            _LOG.info("No valid server found, default to localhost")
-    
-        ldap_base = DEFAULT_LDAP_BASE
-        if config.has_option('ldap', 'base'):
-            ldap_base = config.get('ldap', 'base')
-        else:
-            _LOG.info("No valid base found, default to localhost")
-    
+
+        ldap_uri = config.get('ldap', 'uri')
+        ldap_base = config.get('ldap', 'base')
+        ldap_tls = config.getboolean('ldap', 'tls')
+        
         ldap_filter = None
         if config.has_option('ldap', 'filter'):
             ldap_filter = config.get('ldap', 'filter')
-    
-        ldap_tls = False
-        if config.has_option('ldap', 'tls'):
-            ldap_tls = config.getboolean('ldap', 'tls')
     
         ldap_server = ldap_connection.LDAPConnection(server=ldap_uri, tls=ldap_tls)
         ldap_server.connect()
@@ -142,10 +109,12 @@ class AuthenticationManager(object):
         :return: user login corresponding to the credentials
         """
         user = self._check_username_password_local(username, password)
-        if user is None and self.is_ldap_enabled():
+        if user is None and config.getboolean('ldap', 'enabled'):
             user = self._check_username_password_ldap(username, password)
-        return user['login']
-    
+        if user is not None:
+            return user['login']
+        return None
+
     # -- ssl cert authentication ---------------------------------------------------
     
     def check_user_cert(self, cert_pem):
@@ -235,13 +204,15 @@ class AuthenticationManager(object):
     
         if not req:
             return None
-        if not (config.has_option('oauth', 'oauth_key') and
+   
+        if not (config.has_option('oauth', 'oauth_key') and 
                 config.has_option('oauth', 'oauth_secret')):
             _LOG.error("Attempting OAuth authentication and you do not have oauth_key and oauth_secret in pulp.conf")
             return None
-    
+
         key = config.get('oauth', 'oauth_key')
         secret = config.get('oauth', 'oauth_secret')
+
         consumer = oauth2.Consumer(key=key, secret=secret)
         server = oauth2.Server()
         server.add_signature_method(oauth2.SignatureMethod_HMAC_SHA1())

@@ -44,7 +44,15 @@ _default_values = {
         'send_enabled': 'false',
         'recv_enabled': 'false',
     },
-    # XXX should 'ldap' be in here or not?
+    'oauth': {
+        'enabled': 'false',
+    },
+    'ldap': {
+        'enabled': 'false',
+        'uri': 'ldap://localhost',
+        'base': 'dc=localhost',
+        'tls': 'false',
+    },
     'logs': {
         'config': '/etc/pulp/logging/basic.cfg',
         # XXX are the rest of these even used?
@@ -68,9 +76,6 @@ _default_values = {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
         'ssl_ca_certificate' : '/etc/pki/pulp/ssl_ca.crt',
-        # XXX should these be in here?
-        #'oauth_key': '',
-        #'oauth_secret': '',
         'user_cert_expiration': '7',
         'consumer_cert_expiration': '3650',
         'serial_number_path': '/var/lib/pulp/sn.dat',
@@ -106,11 +111,11 @@ def check_config_files():
     Check for read permissions on the configuration files. Raise a runtime error
     if the file doesn't exist or the read permissions are lacking.
     """
-    for file in _config_files:
-        if not os.access(file, os.F_OK):
-            raise RuntimeError('Cannot find configuration file: %s' % file)
-        if not os.access(file, os.R_OK):
-            raise RuntimeError('Cannot read configuration file: %s' % file)
+    for config_file in _config_files:
+        if not os.access(config_file, os.F_OK):
+            raise RuntimeError('Cannot find configuration file: %s' % config_file)
+        if not os.access(config_file, os.R_OK):
+            raise RuntimeError('Cannot read configuration file: %s' % config_file)
     return 'Yeah!'
 
 

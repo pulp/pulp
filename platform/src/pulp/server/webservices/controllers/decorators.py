@@ -20,32 +20,37 @@ that certain other methods will exist.
 import logging
 from gettext import gettext as _
 
-from pulp.server.managers import factory
+from pulp.common.util import encode_unicode
+from pulp.server.config import config
 from pulp.server.compat import wraps
+from pulp.server.managers import factory
+from pulp.server.managers.auth.permission.cud import PermissionManager
 from pulp.server.webservices import http
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
-DEFAULT_CONSUMER_PERMISSIONS = {'/v2/consumers/' : [0, 1],
-                                '/v2/repositories/' : [1]}
+PM = PermissionManager()
+DEFAULT_CONSUMER_PERMISSIONS = {'/v2/consumers/' : [PM.CREATE, PM.READ],
+                                '/v2/repositories/' : [PM.CREATE]}
 
-PREAUTHENTICATED_USER_FAIL_MSG = _('Given pre-authenticated remote user does not exist')
-USER_PASS_FAIL_MSG = _('Invalid username or password')
-CERT_FAIL_MSG = _('Invalid SSL Certificate')
-OAUTH_FAIL_MSG = _('Invalid OAuth Credentials')
 AUTHEN_FAIL_MSG = _('Authentication Failed')
 AUTHOR_FAIL_MSG = _('Permission Denied')
+CERT_FAIL_MSG = _('Invalid SSL Certificate')
+OAUTH_FAIL_MSG = _('Invalid OAuth Credentials')
+PREAUTHENTICATED_USER_FAIL_MSG = _('Given pre-authenticated remote user does not exist')
+USER_PASS_FAIL_MSG = _('Invalid username or password')
 
 # -- exceptions ---------------------------------------------------------------
 
 class AuthenticationFailed(Exception):
-    def __str__(self):
-        class_name = self.__class__.__name__
-        msg = _('Pulp auth exception occurred: %(c)s') % {'c': class_name}
-        return msg.encode('utf-8')
 
+    def __init__(self, msg=None):
+        if msg is None:
+            class_name = self.__class__.__name__
+            msg = _('Pulp auth exception occurred: %(c)s') % {'c': class_name}
+        self.msg = encode_unicode(msg)            
 
 # -- supported authentication methods -----------------------------------------
 '''
@@ -97,7 +102,7 @@ def consumer_cert_authentication():
     return None
 
 def oauth_authentication():
-    if not factory.authentication_manager().is_oauth_enabled():
+    if not config.getboolean('oauth', 'enabled'):
         return None
 
     username = http.request_info('HTTP_PULP_USER')
@@ -132,11 +137,10 @@ def is_consumer_authorized(resource, consumerid, operation):
     :rtype: bool
     :return:  True if authorized, False otherwise.
     """
-    pm = factory.permission_manager()
     permissions = DEFAULT_CONSUMER_PERMISSIONS
     consumer_base_url = '/v2/consumers/%s/' % consumerid
     # Add all permissions to base url for this consumer.
-    permissions[consumer_base_url] = [pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE]
+    permissions[consumer_base_url] = [PM.CREATE, PM.READ, PM.UPDATE, PM.DELETE, PM.EXECUTE]
 
     parts = [p for p in resource.split('/') if p]
     while parts:
@@ -188,8 +192,8 @@ def auth_required(operation=None, super_user_only=False):
             for authenticate_user in registered_auth_functions:
                 try:
                     userid = authenticate_user()
-                except AuthenticationFailed, ex:
-                    return self.unauthorized(ex)
+                except AuthenticationFailed as ex:
+                    return self.unauthorized(ex.msg)
                 if userid is not None:
                     user_authenticated = True
                     if authenticate_user == consumer_cert_authentication:
