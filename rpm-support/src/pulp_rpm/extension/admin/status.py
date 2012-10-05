@@ -393,6 +393,7 @@ class RpmIsoStatusRenderer(StatusRenderer):
         self.isos_last_state = constants.STATE_NOT_STARTED
         self.publish_http_last_state = constants.STATE_NOT_STARTED
         self.publish_https_last_state = constants.STATE_NOT_STARTED
+        self.displayed_generated_isos = False
 
         # UI Widgets
         self.rpms_bar = self.prompt.create_progress_bar()
@@ -412,9 +413,10 @@ class RpmIsoStatusRenderer(StatusRenderer):
             self.render_rpms_step(progress_report)
             self.render_distributions_step(progress_report)
             self.render_generate_metadata_step(progress_report)
-            #self.render_isos_step(progress_report)
+            self.render_isos_step(progress_report)
             self.render_publish_https_step(progress_report)
             self.render_publish_http_step(progress_report)
+            self.display_generated_isos(progress_report)
 
     def render_rpms_step(self, progress_report):
 
@@ -606,9 +608,15 @@ class RpmIsoStatusRenderer(StatusRenderer):
         # },
 
         current_state = progress_report['iso_distributor']['publish_http']['state']
-        def update_func(new_state):
-            self.publish_http_last_state = new_state
-        render_general_spinner_step(self.prompt, self.publish_http_spinner, current_state, self.publish_http_last_state, _('Publishing repository over HTTP'), update_func)
+
+        if current_state == constants.STATE_COMPLETE and self.publish_http_last_state not in constants.COMPLETE_STATES:
+            self.publish_http_last_state = current_state
+            self.prompt.write(_('Successfully published ISOs over HTTP'))
+            self.prompt.render_spacer()
+        if current_state == constants.STATE_FAILED and self.publish_http_last_state not in constants.COMPLETE_STATES:
+            self.publish_http_last_state = current_state
+            self.prompt.write(_('Failed to publish ISOs over HTTP'))
+            self.prompt.render_spacer()
 
     def render_publish_https_step(self, progress_report):
 
@@ -618,12 +626,46 @@ class RpmIsoStatusRenderer(StatusRenderer):
         # },
 
         current_state = progress_report['iso_distributor']['publish_https']['state']
-        def update_func(new_state):
-            self.publish_https_last_state = new_state
-        render_general_spinner_step(self.prompt, self.publish_https_spinner, current_state, self.publish_https_last_state, _('Publishing repository over HTTPS'), update_func)
+
         if current_state == constants.STATE_COMPLETE and self.publish_https_last_state not in constants.COMPLETE_STATES:
-            self.prompt.write(_('ISOs created -'))
-            filenames = progress_report['iso_distributor']['written_files']
-            for filename in filenames:
-                self.prompt.write('%s' % filename)
+            self.publish_https_last_state = current_state
+            self.prompt.write(_('Successfully published ISOs over HTTPS'))
+            self.prompt.render_spacer()
+        if current_state == constants.STATE_FAILED and self.publish_https_last_state not in constants.COMPLETE_STATES:
+            self.publish_https_last_state = current_state
+            self.prompt.write(_('Failed to publish ISOs over HTTPS'))
+            self.prompt.render_spacer()
+
+    def display_generated_isos(self, progress_report):
+
+        # Example Data:
+        # "isos": {
+        #     "num_success": 1, 
+        #     "size_total": 3361542, 
+        #     "written_files": [
+        #         "pulp-rhel6-20120920-01.iso"
+        #      ], 
+        #     "items_left": 0, 
+        #     "items_total": 1, 
+        #     "size_left": 0, 
+        #     "state": "FINISHED", 
+        #     "error_details": [], 
+        #     "current_file": null, 
+        #     "num_error": 0
+        #     },
+
+        https_state = progress_report['iso_distributor']['publish_https']['state']
+        http_state = progress_report['iso_distributor']['publish_http']['state']
+
+        if not self.displayed_generated_isos:
+            if https_state in constants.COMPLETE_STATES and http_state in constants.COMPLETE_STATES: 
+                filenames = progress_report['iso_distributor']['isos']['written_files']
+                if filenames:
+                    self.prompt.write(_('ISOs created:'))
+                    for filename in filenames:
+                        self.prompt.write('    %s' % filename)
+                    self.prompt.render_spacer()
+                    self.displayed_generated_isos = True
+
+
 
