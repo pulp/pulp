@@ -74,7 +74,7 @@ The update consumer call is used to change the details of an existing consumer.
   dictionary. Descriptions for each parameter can be found under the register
   consumer API:
 
-* :param:`display-name,,`
+* :param:`display_name,,`
 * :param:`description,,`
 * :param:`notes,,`
 
