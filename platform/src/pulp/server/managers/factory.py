@@ -26,6 +26,7 @@ do so may indirectly break other tests.
 # -- constants ----------------------------------------------------------------
 
 # Keys used to look up a specific builtin manager (please alphabetize)
+TYPE_AUTHENTICATION         = 'authentication-manager'
 TYPE_CDS                    = 'cds-manager'
 TYPE_CERTIFICATE            = 'certificate-manager'
 TYPE_CERT_GENERATION        = 'cert-generation-manager'
@@ -101,12 +102,17 @@ class InvalidType(Exception):
 # Be sure to add an entry to test_syntactic_sugar_methods in test_manager_factory.py
 # to verify the correct type of manager is returned.
 
+def authentication_manager():
+    """
+    @rtype: L{pulp.server.managers.auth.authentication.AuthenticationManager}
+    """
+    return get_manager(TYPE_AUTHENTICATION)
+
 def certificate_manager(content=None):
     """
     @rtype: L{pulp.server.managers.auth.cert.certificate.CertificateManager}
     """
     return get_manager(TYPE_CERTIFICATE, content)
-
 
 def cert_generation_manager():
     """
@@ -362,6 +368,7 @@ def initialize():
     (read: default) managers.
     """
     # imports for individual managers to prevent circular imports
+    from pulp.server.managers.auth.authentication import AuthenticationManager
     from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
     from pulp.server.managers.auth.principal import PrincipalManager
@@ -408,6 +415,7 @@ def initialize():
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {
+        TYPE_AUTHENTICATION : AuthenticationManager,
         TYPE_CERTIFICATE : CertificateManager,
         TYPE_CERT_GENERATION: CertGenerationManager,
         TYPE_CONSUMER: ConsumerManager,
