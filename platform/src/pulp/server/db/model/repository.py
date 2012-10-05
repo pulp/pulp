@@ -251,6 +251,7 @@ class RepoSyncResult(Model):
     RESULT_SUCCESS = 'success'
     RESULT_FAILED = 'failed'
     RESULT_ERROR = 'error'
+    RESULT_CANCELED = 'canceled'
 
     @classmethod
     def error_result(cls, repo_id, importer_id, importer_type_id, started, completed, exception, traceback):

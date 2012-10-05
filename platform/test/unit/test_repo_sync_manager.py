@@ -23,6 +23,7 @@ import mock_plugins
 from pulp.common import dateutils
 from pulp.plugins.model import SyncReport
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import PulpExecutionException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
@@ -397,6 +398,24 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertTrue(history[0]['error_message'] is None)
         self.assertTrue(history[0]['exception'] is None)
         self.assertTrue(history[0]['traceback'] is None)
+
+    @mock.patch('pulp.server.managers.repo.sync._current_task_state', return_value=dispatch_constants.CALL_CANCELED_STATE)
+    def test_sync_cancelled(self, mock_current_task_state):
+        """
+        Test the repo sync result on a cancelled sync.
+        """
+        repo_id = 'cancelled_repo'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, 'mock-importer', {})
+        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None
+
+        importer, config = self.sync_manager._get_importer_instance_and_config(repo_id)
+        self.sync_manager.sync(repo_id, importer, config)
+
+        sync_result = RepoSyncResult.get_collection().find_one({'repo_id': repo_id})
+        self.assertFalse(sync_result is None)
+        self.assertEqual(sync_result['result'], RepoSyncResult.RESULT_CANCELED)
+        self.assertEqual(mock_current_task_state.call_count, 1)
 
     def test_sync_history(self):
         """

@@ -35,6 +35,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -198,13 +199,17 @@ class RepoSyncManager(object):
             if sync_report.success_flag:
                 result_code = RepoSyncResult.RESULT_SUCCESS
             else:
-                result_code = RepoSyncResult.RESULT_FAILED
+                task_state = _current_task_state()
+                result_code = _map_task_state_to_sync_result_code(task_state, RepoSyncResult.RESULT_FAILED)
+
         else:
             _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
 
             added_count = updated_count = removed_count = -1
             summary = details = _('Unknown')
-            result_code = RepoSyncResult.RESULT_SUCCESS
+            task_state = _current_task_state()
+            result_code = _map_task_state_to_sync_result_code(task_state, RepoSyncResult.RESULT_SUCCESS)
+
 
         result = RepoSyncResult.expected_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
                                                 sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
@@ -265,6 +270,7 @@ class RepoSyncManager(object):
 
         return dir
 
+
 def _now_timestamp():
     """
     @return: timestamp suitable for indicating when a sync completed
@@ -274,7 +280,33 @@ def _now_timestamp():
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
 
+
 def _repo_storage_dir():
     storage_dir = pulp_config.config.get('server', 'storage_dir')
     dir = os.path.join(storage_dir, 'repos')
     return dir
+
+
+def _current_task_state():
+    context = dispatch_factory.context()
+    if context.task_id is None:
+        return None
+    coordinator = dispatch_factory.coordinator()
+    tasks = coordinator.find_tasks(task_id=context.task_id)
+    if not tasks:
+        return None
+    return tasks[0].state
+
+
+def _map_task_state_to_sync_result_code(task_state, default=RepoSyncResult.RESULT_ERROR):
+    if task_state is None:
+        msg = _('Repo sync exited with unknown dispatch task state, setting sync result code to: %(c)s')
+        _LOG.error(msg % {'c': default})
+        return default
+    if task_state is dispatch_constants.CALL_FINISHED_STATE:
+        return RepoSyncResult.RESULT_SUCCESS
+    if task_state is dispatch_constants.CALL_ERROR_STATE:
+        return RepoSyncResult.RESULT_ERROR
+    if task_state is dispatch_constants.CALL_CANCELED_STATE:
+        return RepoSyncResult.RESULT_CANCELED
+    return RepoSyncResult.RESULT_FAILED
