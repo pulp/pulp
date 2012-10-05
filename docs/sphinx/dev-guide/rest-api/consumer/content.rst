@@ -4,9 +4,9 @@ Content Management
 Install Content on a Consumer
 -----------------------------
 
-Install one or more content units on a consumer.  This operation is asynchronous
-and idempotent.  If a unit is already installed, no action is taken.  Dependencies
-are automatically installed or updated as needed and reflected in the installation report.
+Install one or more content units on a consumer.  This operation is asynchronous.
+If dependencies are automatically installed or updated, it is reflected in the
+installation report.
 
 The units to be installed are specified in a list.  Each unit in the list of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
@@ -16,7 +16,7 @@ must match a type mapped to a content :term:`handler` in the agent.  The second 
 content are handler specific.
 
 The caller can pass additional options using an *options* object.  Both the structure and
-content are handler specific.
+content are handler specific.  The options drive how the handler performs the operation.
 
 
 | :method:`post`
@@ -39,7 +39,7 @@ content are handler specific.
 
  {
    "units": [
-     {"unit_key": {"name": "zsh"}, "type_id": "rpm"}
+     {"unit_key": {"name": "zsh", "version": "4.3.17"}, "type_id": "rpm"}
    ],
    "options": {
      "apply": true, "reboot": false
@@ -56,9 +56,9 @@ content are handler specific.
 Update Content on a Consumer
 ----------------------------
 
-Update one or more content units on a consumer.  This operation is asynchronous
-and idempotent.  If a unit is already up to date, no action is taken.  Dependencies
-are automatically installed or updated as needed and reflected in the installation report.
+Update one or more content units on a consumer.  This operation is asynchronous.
+If dependencies are automatically installed or updated, it is reflected in the
+update report.
 
 The units to be updated are specified in a list.  Each unit in the list of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
@@ -68,7 +68,7 @@ must match a type mapped to a content :term:`handler` in the agent.  The second 
 content are handler specific.
 
 The caller can pass additional options using an *options* object.  Both the structure and
-content are handler specific.
+content are handler specific.  The options drive how the handler performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/update/`
@@ -106,8 +106,8 @@ content are handler specific.
 Uninstall Content on a Consumer
 -------------------------------
 
-Uninstall one or more content units on a consumer.  This operation is asynchronous
-and idempotent.  If a unit is not installed, no action is taken.
+Uninstall one or more content units on a consumer.  This operation is asynchronous.
+If dependencies are automatically removed, it is reflected in the uninstall report.
 
 The units to be uninstalled are specified in a list.  Each unit in the list of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
@@ -117,7 +117,7 @@ must match a type mapped to a content :term:`handler` in the agent.  The second 
 defined by the handler mapped to the unit's type_id.
 
 The caller can pass additional options using an *options* object.  Both the structure and
-content are handler specific.
+content are handler specific.  The options drive how the handler performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/uninstall/`
