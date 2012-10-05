@@ -101,12 +101,12 @@ class LDAPConnection:
         except ldap.LDAPError, e:
             log.error("Failed to delete user with dn %s to the ldap server" % dn)
             
-    def authenticate_user(self, base, username, password, filter=None):
+    def authenticate_user(self, base, username, password=None, filter=None):
         """
         @param base: The base DN of the ldap server
                      Ex: dc=example,dc=com
         @param username:  Userid to be validated in ldap server
-        @param password: password credentials for userid
+        @param password: password credentials for userid (None = don't validate)
         @param filter: Optional additional LDAP filter to use when
                        searching for the user. Ex: (gidNumber=200)
         
@@ -114,19 +114,22 @@ class LDAPConnection:
         bind succeeds; else returns None
         """
         user = self.lookup_user(base, username, filter=filter)
-        if user:
+        if user is None:
+            return None
+        
+        if password is not None:
             userdn = user[0]
             try:
                 self.lconn.simple_bind_s(userdn, password)
                 log.info("Found user with id %s with matching credentials" %
                          username)
-                return self._add_from_ldap(username, user)
             except:
                 log.info("Invalid credentials for %s" % username)
                 return None
-        else:
-            return None
 
+        return self._add_from_ldap(username, user)
+        
+        
     def _add_from_ldap(self, username, userdata):
         """
         @param username:  Username to be added

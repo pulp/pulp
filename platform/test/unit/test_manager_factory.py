@@ -16,6 +16,8 @@
 import unittest
 
 from pulp.server.managers import factory
+
+from pulp.server.managers.auth.authentication import AuthenticationManager
 from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
 from pulp.server.managers.auth.cert.certificate import CertificateManager
 from pulp.server.managers.auth.password import PasswordManager
@@ -51,6 +53,7 @@ class FactoryTests(unittest.TestCase):
         factory.initialize()
 
         # Test
+        self.assertTrue(isinstance(factory.authentication_manager(), AuthenticationManager))
         self.assertTrue(isinstance(factory.cert_generation_manager(), CertGenerationManager))
         self.assertTrue(isinstance(factory.certificate_manager(), CertificateManager))
         self.assertTrue(isinstance(factory.password_manager(), PasswordManager))
