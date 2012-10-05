@@ -141,8 +141,13 @@ class UpdateRepositoryGroupCommand(PulpCliCommand):
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop(OPTION_GROUP_ID.keyword) # not needed in the delta
 
+        # Conversion between arg hyphens and server-side underscores
+        if delta.get(OPTION_NAME.keyword, None) is not None:
+            delta['display_name'] = delta.pop(OPTION_NAME.keyword)
+
         if delta.pop(OPTION_NOTES.keyword, None) is not None:
             delta['notes'] = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+
         try:
             self.context.server.repo_group.update(kwargs[OPTION_GROUP_ID.keyword], delta)
             msg = 'Repo group [%(g)s] successfully updated'
