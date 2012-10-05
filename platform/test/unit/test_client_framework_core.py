@@ -187,6 +187,22 @@ class RenderTests(unittest.TestCase):
         # Verify
         self.assertEqual(0, len(p.get_write_tags()))
 
+    def test_render_document_list_no_valid_fields(self):
+        # if there are no fields to print, don't print anything. This comes from
+        # a bug (BZ 847091) where blank lines were printed for each document,
+        # even if no fields from that document were printed.
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
+        docs = [
+            {'id' : 'd1', 'name' : 'document 1', 'description' : 'description 1'},
+            {'id' : 'd2', 'name' : 'document 2', 'description' : 'description 2'},
+            {'id' : 'd3', 'name' : 'document 3', 'description' : 'description 3'},
+        ]
+        f = ['notavalidfield']
+        p.render_document_list(docs, order=['name'], filters=f)
+        # only print the ANSI reset and new line character, but not any documents
+        self.assertEqual(len(r.lines), 2)
+
     def test_create_progress_bar(self):
         # Test
         p = core.PulpPrompt(record_tags=True)
