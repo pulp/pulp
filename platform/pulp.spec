@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.330
+Version: 0.0.331
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -417,6 +417,36 @@ exit 0
 %endif
 
 %changelog
+* Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1
+- 862787 - fixing pulp server conf filename at a couple of places
+  (skarmark@redhat.com)
+- 860425 - fix consumer update() passing display-name instead of display_name.
+  (jortel@redhat.com)
+- 851712 - add the fallback of inspecting the current task state to better
+  guess what the sync result code should be, including utilizing the new
+  canceled result code (jason.connor@gmail.com)
+- 856713 - add requires: qpid-cpp-server-daemon. (jortel@redhat.com)
+- 856642 - Changed the signature for create with distributors to be keyword
+  based (jason.dobies@redhat.com)
+- 862423 - Fixed the translation into the transfer objects
+  (jason.dobies@redhat.com)
+- 853080 - Client should translate arg display-name to server display_name
+  (jason.dobies@redhat.com)
+- 852072 - Added the ability to circumvent the upload workflow in the event of
+  a metadata generation failure and have the workflow print gracefully handle
+  the exception and notify the user (jason.dobies@redhat.com)
+- 862423 - Added conduit ability to search units outside of just a repository
+  (jason.dobies@redhat.com)
+- 859124 - init.d/pulp-server removed. (jortel@redhat.com)
+- 853196 - utilizing new workaround function in dateutils to for scheduling
+  instead of isodate builtin support for addition (which is buggy)
+  (jason.connor@gmail.com)
+- 860408 - repo group member adding and removing now honors the --repo-id
+  option, includes a new --all flag, and fails if no matching options are
+  passed. (mhrivnak@redhat.com)
+- 843627 - added processing of request body to ensure proper utf-8 encoding of
+  all strings to pulp bindings (jason.connor@gmail.com)
+
 * Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
 - Version alignment.
 
