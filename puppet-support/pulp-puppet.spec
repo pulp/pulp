@@ -17,7 +17,7 @@
 # ---- Pulp (puppet) -----------------------------------------------------------
 
 Name: pulp-puppet
-Version: 0.0.330
+Version: 0.0.331
 Release: 1%{?dist}
 Summary: Support for Puppet content in the Pulp platform
 Group: Development/Languages
@@ -179,6 +179,11 @@ management and Linux specific commands such as system reboot.
 
 
 %changelog
+* Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1
+- 860408 - repo group member adding and removing now honors the --repo-id
+  option, includes a new --all flag, and fails if no matching options are
+  passed. (mhrivnak@redhat.com)
+
 * Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
 - Version alignment.
 
