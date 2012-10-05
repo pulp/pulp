@@ -176,8 +176,8 @@ class ConsumerManager(object):
             else:
                 consumer['notes'] = update_notes(consumer['notes'], delta['notes'])
 
-        if 'display-name' in delta:
-            consumer['display_name'] = delta['display-name']
+        if 'display_name' in delta:
+            consumer['display_name'] = delta['display_name']
 
         if 'description' in delta:
             consumer['description'] = delta['description']

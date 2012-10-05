@@ -172,7 +172,7 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
         self.manager.register('update-me', display_name='display_name_1', description='description_1', notes={'a' : 'a'})
 
         delta = {
-            'display-name' : 'display_name_2',
+            'display_name' : 'display_name_2',
             'description'  : 'description_2',
             'disregard'    : 'ignored',
         }
@@ -182,10 +182,10 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
 
         # Verify
         consumer = Consumer.get_collection().find_one({'id' : 'update-me'})
-        self.assertEqual(consumer['display_name'], delta['display-name'])
+        self.assertEqual(consumer['display_name'], delta['display_name'])
         self.assertEqual(consumer['description'], delta['description'])
 
-        self.assertEqual(updated['display_name'], delta['display-name'])
+        self.assertEqual(updated['display_name'], delta['display_name'])
         self.assertEqual(updated['description'], delta['description'])
 
     def test_update_missing_consumer(self):

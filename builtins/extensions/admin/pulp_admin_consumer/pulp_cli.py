@@ -118,6 +118,12 @@ class AdminConsumerSection(PulpCliSection):
             if delta['note']:
                 delta['notes'] = self._parse_notes(delta['note'])
             delta.pop('note')
+        # convert display-name to display_name
+        key = 'display-name'
+        if key in delta:
+            v = delta.pop(key)
+            key = key.replace('-', '_')
+            delta[key] = v
 
         try:
             self.context.server.consumer.update(kwargs['consumer-id'], delta)
