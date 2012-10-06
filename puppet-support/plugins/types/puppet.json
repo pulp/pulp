@@ -1,9 +1,0 @@
-{"types": [
-    {
-        "id" : "puppet_module",
-        "display_name" : "Puppet Module",
-        "description" : "Puppet Module",
-        "unit_key" : ["name", "version", "author"],
-        "search_indexes" : ["author", "tag_list"]
-    }
-]}
