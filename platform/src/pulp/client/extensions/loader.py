@@ -17,16 +17,19 @@ context is constructed ahead of time and provided to this module, which
 then uses it to instantiate the extension components.
 """
 
-from ConfigParser import SafeConfigParser
 import copy
 from gettext import gettext as _
 import logging
 import os
 import sys
 
-# -- constants ----------------------------------------------------------------
+import pkg_resources
+
+from pulp.common.constants import ENTRY_POINT_EXTENSIONS
 
 _LOG = logging.getLogger(__name__)
+
+# -- constants ----------------------------------------------------------------
 
 # Names of the modules in each extension pack for initializing the pack
 _MODULE_CLI = 'pulp_cli'
@@ -74,6 +77,18 @@ class InitError(ExtensionLoaderException): pass
 class InvalidExtensionConfig(ExtensionLoaderException): pass
 
 # -- loading ------------------------------------------------------------------
+
+def load_entry_point_extensions(context):
+    """
+    Load extensions that advertise themselves via an entry point in their
+    package's setup.py.
+
+    @param context: pre-populated context the extensions should be given to
+                    interact with the client
+    @type  context: ClientContext
+    """
+    for extension in pkg_resources.iter_entry_points(ENTRY_POINT_EXTENSIONS):
+        extension.load()(context)
 
 def load_extensions(extensions_dir, context):
     """

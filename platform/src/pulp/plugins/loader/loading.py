@@ -17,10 +17,9 @@ import re
 import sys
 from gettext import gettext as _
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import pkg_resources
+
+from pulp.common.compat import json
 
 # constants --------------------------------------------------------------------
 
@@ -62,11 +61,37 @@ def load_plugins_from_path(path, base_class, plugin_map):
             continue
 
         for cls, cfg in plugin_tuples:
-            id = get_plugin_metadata_field(cls, 'id', cls.__name__)
-            types = get_plugin_types(cls)
-            if None in (id, types):
-                continue
-            plugin_map.add_plugin(id, cls, cfg, types)
+            add_plugin_to_map(cls, cfg, plugin_map)
+
+
+def add_plugin_to_map(cls, cfg, plugin_map):
+    """
+    Add a plugin and its config to the given plugin map
+
+    @param cls: class for the plugin
+    @param cfg: config for the plugin
+    @type  cfg: dict
+    @param plugin_map: pulp.plugins.loader.manager._PluginMap instance
+    """
+    id = get_plugin_metadata_field(cls, 'id', cls.__name__)
+    types = get_plugin_types(cls)
+    if None in (id, types):
+        return
+    plugin_map.add_plugin(id, cls, cfg, types)
+
+
+def load_plugins_from_entry_point(entry_point_group_name, plugin_map):
+    """
+    Load plugins by looking for entry points. Packages providing plugins should
+    advertise them through entry point groups with names we pre-determine.
+
+    @param entry_point_group_name: name of an entry point group
+    @param plugin_map: plugin map to which plugins should be added
+    @type  plugin_map: pulp.plugins.loader.manager._PluginMap instance
+    """
+    for entry_point in pkg_resources.iter_entry_points(entry_point_group_name):
+        cls, cfg = entry_point.load()()
+        add_plugin_to_map(cls, cfg, plugin_map)
 
 
 def get_plugin_dirs(plugin_root):

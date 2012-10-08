@@ -15,11 +15,13 @@
 import os
 import sys
 import unittest
+import mock
 
 from pulp.client.extensions import loader
 from pulp.client.extensions.core import PulpCli, PulpPrompt, ClientContext
 
 # -- test data ----------------------------------------------------------------
+from pulp.common import constants
 
 TEST_DIRS_ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'extensions_loader_tests')
 
@@ -140,3 +142,16 @@ class ExtensionLoaderTests(unittest.TestCase):
         mod = __import__('no_init_function')
 
         self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
+
+    @mock.patch('pkg_resources.iter_entry_points', autospec=True)
+    def test_load_entry_points(self, mock_iter):
+        # Make sure we try to load extensions through entry points.
+        context = mock.MagicMock()
+        entry_point = mock.MagicMock()
+        mock_iter.return_value = [entry_point]
+
+        loader.load_entry_point_extensions(context)
+
+        mock_iter.assert_called_once_with(constants.ENTRY_POINT_EXTENSIONS)
+        entry_point.load.assert_called_once_with()
+        entry_point.load.return_value.assert_called_once_with(context)
