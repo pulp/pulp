@@ -57,9 +57,16 @@ class BindCommand(PulpCliCommand):
             self.context.server.bind.bind(consumer_id, repo_id, YUM_DISTRIBUTOR_TYPE_ID)
             m = 'Consumer [%(c)s] successfully bound to repository [%(r)s]'
             self.prompt.render_success_message(_(m) % {'c' : consumer_id, 'r' : repo_id})
-        except NotFoundException:
-            m = 'Consumer [%(c)s] does not exist on the server'
-            self.prompt.render_failure_message(_(m) % {'c' : consumer_id})
+        except NotFoundException, e:
+            resources = e.extra_data['resources']
+            if 'consumer' in resources:
+                r_type = 'Consumer'
+                r_id = consumer_id
+            else:
+                r_type = 'Repository'
+                r_id = repo_id
+            msg = _('%(t)s [%(id)s] does not exist on the server')
+            self.context.prompt.write(msg % {'t':r_type, 'id':r_id}, tag='not-found')
 
 class UnbindCommand(PulpCliCommand):
 
