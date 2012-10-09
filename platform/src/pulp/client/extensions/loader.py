@@ -150,6 +150,8 @@ def _load_pack_modules(extensions_dir):
 
     pack_names = sorted(os.listdir(extensions_dir))
     for pack in pack_names:
+        if pack.startswith('.'):
+            continue
         try:
             mod = __import__(pack)
             modules.append(mod)
