@@ -95,7 +95,6 @@ def main(config_filenames):
     extensions_dir = os.path.expanduser(extensions_dir)
     try:
         extensions_loader.load_extensions(extensions_dir, context)
-        extensions_loader.load_entry_point_extensions(context)
     except extensions_loader.LoadFailed, e:
         prompt.write(_('The following extensions failed to load: %(f)s' % {'f' : ', '.join(e.failed_packs)}))
         prompt.write(_('More information on the failures can be found in %(l)s' % {'l' : config['logging']['filename']}))

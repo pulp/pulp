@@ -35,8 +35,11 @@ _LOG = logging.getLogger(__name__)
 _MODULE_CLI = 'pulp_cli'
 _MODULE_SHELL = 'pulp_shell'
 
-_PRIORITY_VAR = 'PRIORITY'
-_DEFAULT_PRIORITY = 5
+PRIORITY_VAR = 'PRIORITY'
+DEFAULT_PRIORITY = 5
+
+_MODULES = 'modules'
+_ENTRY_POINTS = 'entry points'
 
 # -- exceptions ---------------------------------------------------------------
 
@@ -78,22 +81,16 @@ class InvalidExtensionConfig(ExtensionLoaderException): pass
 
 # -- loading ------------------------------------------------------------------
 
-def load_entry_point_extensions(context):
-    """
-    Load extensions that advertise themselves via an entry point in their
-    package's setup.py.
-
-    @param context: pre-populated context the extensions should be given to
-                    interact with the client
-    @type  context: ClientContext
-    """
-    for extension in pkg_resources.iter_entry_points(ENTRY_POINT_EXTENSIONS):
-        extension.load()(context)
-
 def load_extensions(extensions_dir, context):
     """
     @param extensions_dir: directory in which to find extension packs
     @type  extensions_dir: str
+
+    The "sorted_extensions" data structure is a dict whose keys are priorities.
+    Each value in the dict is a new dict in this form:
+    { _MODULES : [<list of modules>], _ENTRY_POINTS : [<list of entry points>]}
+    This way we can load the modules and entry points for a given priority at
+    the same time.
 
     @param context: pre-populated context the extensions should be given to
                     interact with the client
@@ -104,21 +101,30 @@ def load_extensions(extensions_dir, context):
     if not os.access(extensions_dir, os.F_OK | os.R_OK):
         raise InvalidExtensionsDirectory(extensions_dir)
 
+    # identify modules and sort them
     try:
         unsorted_modules = _load_pack_modules(extensions_dir)
-        sorted_modules = _resolve_order(unsorted_modules)
+        sorted_extensions = _resolve_order(unsorted_modules)
     except ImportFailed, e:
         raise LoadFailed([e.pack_name]), None, sys.exc_info()[2]
 
+    # find extensions from entry points and add them to the sorted structure
+    for extension in pkg_resources.iter_entry_points(ENTRY_POINT_EXTENSIONS):
+        priority = getattr(extension, PRIORITY_VAR, DEFAULT_PRIORITY)
+        sorted_extensions.setdefault(priority, {}).setdefault(_ENTRY_POINTS, []).append(extension)
+
     error_packs = []
-    for m in sorted_modules:
-        try:
-            _load_pack(extensions_dir, m, context)
-        except ExtensionLoaderException, e:
-            # Do a best-effort attempt to load all extensions. If any fail,
-            # the cause will be logged by _load_pack. This method should
-            # continue to load extensions so all of the errors are logged.
-            error_packs.append(m.__name__)
+    for priority in sorted(sorted_extensions.keys()):
+        for module in sorted_extensions[priority].get(_MODULES, []):
+            try:
+                _load_pack(extensions_dir, module, context)
+            except ExtensionLoaderException, e:
+                # Do a best-effort attempt to load all extensions. If any fail,
+                # the cause will be logged by _load_pack. This method should
+                # continue to load extensions so all of the errors are logged.
+                error_packs.append(module.__name__)
+        for entry_point in sorted_extensions[priority].get(_ENTRY_POINTS, []):
+            entry_point.load()(context)
 
     if len(error_packs) > 0:
         raise LoadFailed(error_packs)
@@ -165,8 +171,9 @@ def _resolve_order(modules):
     @param modules: list of extension module instances
     @type  modules: list
 
-    @return: ordered list of modules; new list, the parameter is untouched
-    @rtype:  list
+    @return: dict where keys are priority levels, and values are dicts with key
+             = _MODULES and value = list of modules
+    @rtype:  dict
     """
 
     # Split apart the modules by priority first
@@ -174,23 +181,21 @@ def _resolve_order(modules):
 
     for m in modules:
         try:
-            m_priority = int(getattr(m, _PRIORITY_VAR))
+            m_priority = int(getattr(m, PRIORITY_VAR))
         except AttributeError, e:
             # Priority is optional; the default is applied here
-            m_priority = _DEFAULT_PRIORITY
+            m_priority = DEFAULT_PRIORITY
 
-        priority_mods = modules_by_priority.setdefault(m_priority, [])
+        priority_level = modules_by_priority.setdefault(m_priority, {})
+        priority_mods = priority_level.setdefault(_MODULES, [])
         priority_mods.append(m)
 
     # Within each priority, sort each module alphabetically by name
-    all_sorted_modules = []
+    for priority in modules_by_priority.keys():
+        priority_modules = modules_by_priority[priority].get(_MODULES, [])
+        priority_modules.sort(key=lambda x : x.__name__)
 
-    for priority in sorted(modules_by_priority.keys()):
-        unsorted_priority_modules = modules_by_priority[priority]
-        sorted_priority_modules = sorted(unsorted_priority_modules, key=lambda x : x.__name__)
-        all_sorted_modules += sorted_priority_modules
-
-    return all_sorted_modules
+    return modules_by_priority
 
 def _load_pack(extensions_dir, pack_module, context):
 
