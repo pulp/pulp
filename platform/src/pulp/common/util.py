@@ -1,13 +1,15 @@
-# Copyright (c) 2010 Red Hat, Inc.
+# -*- coding: utf-8 -*-
 #
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+# Copyright © 2012 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the License
+# (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied, including the
+# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
+# PARTICULAR PURPOSE.
+# You should have received a copy of GPLv2 along with this software; if not,
+# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 
 def encode_unicode(path):
@@ -18,6 +20,7 @@ def encode_unicode(path):
         path = path.encode('utf-8')
     return path
 
+
 def decode_unicode(path):
     """
     Check if given path is of type str and if yes, convert it to unicode
@@ -25,3 +28,21 @@ def decode_unicode(path):
     if type(path) is str:
         path = path.decode('utf-8')
     return path
+
+
+def ensure_utf_8(s):
+    """
+    Ensure any string passed in is properly encoded to utf-8
+    Simply returns the parameter if it is not an instance of basestring,
+    otherwise it attempts to decode the string from latin-1, if it's not already
+    an instance of unicode, and then encode it to utf-8.
+
+    @param s: string to ensure utf-8 encoding on
+    @return: encoded string or original parameter if not a string
+    """
+    if not isinstance(s, basestring):
+        return s
+    if isinstance(s, str):
+        s = s.decode('iso-8859-1')
+    u = s.encode('utf-8')
+    return u

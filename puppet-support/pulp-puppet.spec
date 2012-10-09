@@ -17,7 +17,7 @@
 # ---- Pulp (puppet) -----------------------------------------------------------
 
 Name: pulp-puppet
-Version: 0.0.328
+Version: 0.0.331
 Release: 1%{?dist}
 Summary: Support for Puppet content in the Pulp platform
 Group: Development/Languages
@@ -158,7 +158,7 @@ client capabilites with Puppet specific features.
 # ---- Agent Handlers ----------------------------------------------------------
 
 %package handlers
-Summary: Pulp agent rpm handlers
+Summary: Pulp agent puppet handlers
 Group: Development/Languages
 Requires: python-rhsm
 Requires: python-pulp-rpm-common = %{version}
@@ -179,6 +179,17 @@ management and Linux specific commands such as system reboot.
 
 
 %changelog
+* Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1
+- 860408 - repo group member adding and removing now honors the --repo-id
+  option, includes a new --all flag, and fails if no matching options are
+  passed. (mhrivnak@redhat.com)
+
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- Version alignment.
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-1
 - Version alignment.
 

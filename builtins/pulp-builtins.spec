@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.328
-Release: 2%{?dist}
+Version: 0.0.331
+Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -94,6 +94,16 @@ client capabilities.
 
 
 %changelog
+* Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1
+- 860425 - fix consumer update() passing display-name instead of display_name.
+  (jortel@redhat.com)
+
+* Tue Oct 02 2012 Jeff Ortel <jortel@redhat.com> 0.0.330-1
+- Version alignment.
+
+* Sun Sep 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.329-1
+- Version alignment.
+
 * Fri Sep 21 2012 Jeff Ortel <jortel@redhat.com> 0.0.328-2
 - Remove pulp_upload extension. (jortel@redhat.com)
 

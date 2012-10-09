@@ -11,18 +11,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from yum import YumBase
-from optparse import OptionParser
-from yum.plugins import TYPE_CORE, TYPE_INTERACTIVE
+from logging import getLogger
+
+from pulp_rpm.handler.rpmtools import Package, PackageGroup, ProgressReport
 from rhsm.profile import get_profile
 from pulp.agent.lib.handler import ContentHandler
-from pulp.agent.lib.report import ProfileReport, HandlerReport
-from logging import getLogger, Logger
+from pulp.agent.lib.report import ProfileReport, ContentReport
 
 log = getLogger(__name__)
 
 
-class PackageReport(HandlerReport):
+class PackageReport(ContentReport):
     """
     Package (install|update|uninstall) report.
     Calculates the chgcnt.
@@ -32,10 +31,10 @@ class PackageReport(HandlerReport):
         chgcnt = \
             len(details['resolved'])+ \
             len(details['deps'])
-        HandlerReport.succeeded(self, details, chgcnt)
+        ContentReport.succeeded(self, details, chgcnt)
 
 
-class GroupReport(HandlerReport):
+class GroupReport(ContentReport):
     """
     Package Group (install|update|uninstall) report.
     Calculates the chgcnt.
@@ -45,7 +44,31 @@ class GroupReport(HandlerReport):
         chgcnt = \
             len(details['resolved'])+ \
             len(details['deps'])
-        HandlerReport.succeeded(self, details, chgcnt)
+        ContentReport.succeeded(self, details, chgcnt)
+
+
+class PackageProgress(ProgressReport):
+    """
+    Provides integration with the handler conduit.
+    @ivar conduit: A handler conduit.
+    @type conduit: L{pulp.agent.lib.conduit.Conduit}
+    """
+
+    def __init__(self, conduit):
+        """
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
+        """
+        ProgressReport.__init__(self)
+        self.conduit = conduit
+
+    def _updated(self):
+        """
+        Notification that the report has been updated.
+        The updated report is sent to the server using the conduit.
+        """
+        report = dict(steps=self.steps, details=self.details)
+        self.conduit.update_progress(report)
 
 
 class PackageHandler(ContentHandler):
@@ -68,10 +91,10 @@ class PackageHandler(ContentHandler):
           - reboot : Reboot after installed
         @type options: dict
         @return: An install report.  See: L{Package.install}
-        @rtype: L{HandlerReport}
+        @rtype: L{PackageReport}
         """
         report = PackageReport()
-        pkg = self.__impl(options)
+        pkg = self.__impl(conduit, options)
         names = [key['name'] for key in units]
         details = pkg.install(names)
         report.succeeded(details)
@@ -92,11 +115,11 @@ class PackageHandler(ContentHandler):
           - reboot : Reboot after installed
         @type options: dict
         @return: An update report.  See: L{Package.update}
-        @rtype: L{HandlerReport}
+        @rtype: L{PackageReport}
         """
         report = PackageReport()
         all = options.get('all', False)
-        pkg = self.__impl(options)
+        pkg = self.__impl(conduit, options)
         names = [key['name'] for key in units if key]
         if names or all:
             details = pkg.update(names)
@@ -115,10 +138,10 @@ class PackageHandler(ContentHandler):
           - reboot : Reboot after installed
         @type options: dict
         @return: An uninstall report.  See: L{Package.uninstall}
-        @rtype: L{HandlerReport}
+        @rtype: L{PackageReport}
         """
         report = PackageReport()
-        pkg = self.__impl(options)
+        pkg = self.__impl(conduit, options)
         names = [key['name'] for key in units]
         details = pkg.uninstall(names)
         report.succeeded(details)
@@ -136,9 +159,8 @@ class PackageHandler(ContentHandler):
         details = get_profile("rpm").collect()
         report.succeeded(details)
         return report
-        
 
-    def __impl(self, options):
+    def __impl(self, conduit, options):
         """
         Get package implementation.
         @param options: Passed options.
@@ -148,7 +170,10 @@ class PackageHandler(ContentHandler):
         """
         apply = options.get('apply', True)
         importkeys = options.get('importkeys', False)
-        impl = Package(apply=apply, importkeys=importkeys)
+        impl = Package(
+            apply=apply,
+            importkeys=importkeys,
+            progress=PackageProgress(conduit))
         return impl
 
 
@@ -169,10 +194,10 @@ class GroupHandler(ContentHandler):
         @param options: Unit install options.
         @type options: dict
         @return: An install report.
-        @rtype: L{HandlerReport}
+        @rtype: L{GroupReport}
         """
         report = GroupReport()
-        grp = self.__impl(options)
+        grp = self.__impl(conduit, options)
         names = [key['name'] for key in units]
         details = grp.install(names)
         report.succeeded(details)
@@ -188,16 +213,16 @@ class GroupHandler(ContentHandler):
         @param options: Unit uninstall options.
         @type options: dict
         @return: An uninstall report.
-        @rtype: L{HandlerReport}
+        @rtype: L{GroupReport}
         """
         report = GroupReport()
-        grp = self.__impl(options)
+        grp = self.__impl(conduit, options)
         names = [key['name'] for key in units]
         details = grp.uninstall(names)
         report.succeeded(details)
         return report
 
-    def __impl(self, options):
+    def __impl(self, conduit, options):
         """
         Get package group implementation.
         @param options: Passed options.
@@ -207,273 +232,8 @@ class GroupHandler(ContentHandler):
         """
         apply = options.get('apply', True)
         importkeys = options.get('importkeys', False)
-        impl = PackageGroup(apply=apply, importkeys=importkeys)
+        impl = PackageGroup(
+            apply=apply,
+            importkeys=importkeys,
+            progress=PackageProgress(conduit))
         return impl
-
-
-#
-# Implementation
-#
-
-
-class Yum(YumBase):
-    """
-    Provides custom configured yum object.
-    """
-
-    def __init__(self, importkeys=False):
-        """
-        @param importkeys: Allow the import of GPG keys.
-        @type importkeys: bool
-        """
-        parser = OptionParser()
-        parser.parse_args([])
-        self.__parser = parser
-        YumBase.__init__(self)
-        self.preconf.optparser = self.__parser
-        self.preconf.plugin_types = (TYPE_CORE, TYPE_INTERACTIVE)
-        self.conf.assumeyes = importkeys
-
-    def doPluginSetup(self, *args, **kwargs):
-        """
-        Set command line arguments.
-        Support TYPE_INTERACTIVE plugins.
-        """
-        YumBase.doPluginSetup(self, *args, **kwargs)
-        p = self.__parser
-        options, args = p.parse_args([])
-        self.plugins.setCmdLine(options, args)
-
-    def registerCommand(self, command):
-        """
-        Support TYPE_INTERACTIVE plugins.
-        Commands ignored.
-        """
-        pass
-
-    def cleanLoggers(self):
-        """
-        Clean handlers leaked by yum.
-        """
-        def strip(logger):
-            try:
-                for handler in logger.handlers:
-                    logger.removeHandler(handler)
-            except AttributeError:
-                log.exception(repr(logger))
-        for n,lg in Logger.manager.loggerDict.items():
-            if n.startswith('yum.'):
-                strip(lg)
-
-    def close(self):
-        """
-        This should be handled by __del__() but YumBase
-        objects never seem to completely go out of scope and
-        garbage collected.
-        """
-        YumBase.close(self)
-        self.closeRpmDB()
-        self.cleanLoggers()
-
-
-class Package:
-    """
-    Package management.
-    Returned I{Package} NEVRA+ objects:
-      - qname   : qualified name
-      - repoid  : repository id
-      - name    : package name
-      - epoch   : package epoch
-      - version : package version
-      - release : package release
-      - arch    : package arch
-    """
-
-    @classmethod
-    def summary(cls, tsInfo, states=('i','u')):
-        """
-        Get transaction summary.
-        @param tsInfo: A yum transaction.
-        @type tsInfo: YumTransaction
-        @param states: A list of yum transaction states.
-        @type states: tuple|list
-        @return: (resolved[],deps[])
-        @rtype: tuple
-        """
-        resolved = []
-        deps = []
-        for t in tsInfo:
-            if t.ts_state not in states:
-                continue
-            qname = str(t.po)
-            package = dict(
-                qname=qname,
-                repoid=t.repoid,
-                name=t.po.name,
-                version=t.po.ver,
-                release=t.po.rel,
-                arch=t.po.arch,
-                epoch=t.po.epoch)
-            if t.isDep:
-                deps.append(package)
-            else:
-                resolved.append(package)
-        return (resolved, deps)
-
-    @classmethod
-    def installed(cls, tsInfo):
-        """
-        Get transaction summary for installed packages.
-        @param tsInfo: A yum transaction.
-        @type tsInfo: YumTransaction
-        @return: (resolved[],deps[])
-        @rtype: tuple
-        """
-        return cls.summary(tsInfo)
-
-    @classmethod
-    def erased(cls, tsInfo):
-        """
-        Get transaction summary for erased packages.
-        @param tsInfo: A yum transaction.
-        @type tsInfo: YumTransaction
-        @return: (resolved[],deps[])
-        @rtype: tuple
-        """
-        return cls.summary(tsInfo, ('e',))
-
-    def __init__(self, apply=True, importkeys=False):
-        """
-        @param apply: Apply changes (not dry-run).
-        @type apply: bool
-        @param importkeys: Allow the import of GPG keys.
-        @type importkeys: bool
-        """
-        self.apply = apply
-        self.importkeys = importkeys
-
-    def install(self, names):
-        """
-        Install packages by name.
-        @param names: A list of package names.
-        @type names: [str,]
-        @return: Packages installed.
-            {resolved=[Package,],deps=[Package,]}
-        @rtype: dict
-        """
-        yb = Yum(self.importkeys)
-        try:
-            for info in names:
-                yb.install(pattern=info)
-            yb.resolveDeps()
-            resolved, deps = self.installed(yb.tsInfo)
-            if self.apply and resolved:
-                yb.processTransaction()
-        finally:
-            yb.close()
-        return dict(resolved=resolved, deps=deps)
-
-    def uninstall(self, names):
-        """
-        Uninstall (erase) packages by name.
-        @param names: A list of package names to be removed.
-        @type names: list
-        @return: Packages uninstalled (erased).
-            {resolved=[Package,],deps=[Package,]}
-        @rtype: dict
-        """
-        yb = Yum()
-        try:
-            for info in names:
-                yb.remove(pattern=info)
-            yb.resolveDeps()
-            resolved, deps = self.erased(yb.tsInfo)
-            if self.apply and resolved:
-                yb.processTransaction()
-        finally:
-            yb.close()
-        return dict(resolved=resolved, deps=deps)
-
-    def update(self, names=[]):
-        """
-        Update installed packages.
-        When (names) is not specified, all packages are updated.
-        @param names: A list of package names.
-        @type names: [str,]
-        @return: Packages installed (updated).
-            {resolved=[Package,],deps=[Package,]}
-        @rtype: dict
-        """
-        yb = Yum(self.importkeys)
-        try:
-            if names:
-                for info in names:
-                    yb.update(pattern=info)
-            else:
-                yb.update()
-            yb.resolveDeps()
-            resolved, deps = self.installed(yb.tsInfo)
-            if self.apply and resolved:
-                yb.processTransaction()
-        finally:
-            yb.close()
-        return dict(resolved=resolved, deps=deps)
-
-
-class PackageGroup:
-    """
-    PackageGroup management.
-    """
-
-    def __init__(self, apply=True, importkeys=False):
-        """
-        @param apply: Apply changes (not dry-run).
-        @type apply: bool
-        @param importkeys: Allow the import of GPG keys.
-        @type importkeys: bool
-        """
-        self.apply = apply
-        self.importkeys = importkeys
-
-    def install(self, names):
-        """
-        Install package groups by name.
-        @param names: A list of package group names.
-        @type names: list
-        @return: Packages installed.
-            {resolved=[Package,],deps=[Package,]}
-        @rtype: dict
-        """
-        yb = Yum(self.importkeys)
-        try:
-            for name in names:
-                yb.selectGroup(name)
-            yb.resolveDeps()
-            resolved, deps = Package.installed(yb.tsInfo)
-            if self.apply and resolved:
-                yb.processTransaction()
-        finally:
-            yb.close()
-        return dict(resolved=resolved, deps=deps)
-
-    def uninstall(self, names):
-        """
-        Uninstall package groups by name.
-        @param names: A list of package group names.
-        @type names: [str,]
-        @return: Packages uninstalled.
-            {resolved=[Package,],deps=[Package,]}
-        @rtype: dict
-        """
-        removed = {}
-        yb = Yum()
-        try:
-            for name in names:
-                yb.groupRemove(name)
-            yb.resolveDeps()
-            resolved, deps = Package.erased(yb.tsInfo)
-            if self.apply and resolved:
-                yb.processTransaction()
-        finally:
-            yb.close()
-        return dict(resolved=resolved, deps=deps)

@@ -14,9 +14,10 @@
 import base64
 import locale
 import logging
-from M2Crypto import SSL, httpslib
 import urllib
-from pulp.bindings.responses import Response, Task
+from types import NoneType
+
+from M2Crypto import SSL, httpslib
 
 try:
     import json
@@ -24,6 +25,8 @@ except ImportError:
     import simplejson as json
 
 import pulp.bindings.exceptions as exceptions
+from pulp.bindings.responses import Response, Task
+from pulp.common.util import ensure_utf_8
 
 # -- server connection --------------------------------------------------------
 
@@ -119,7 +122,8 @@ class PulpConnection(object):
                     request
         """
         url = self._build_url(path, queries)
-        if not isinstance(body, (type(None), str,)):
+        body = self._process_body(body)
+        if not isinstance(body, (NoneType, basestring)):
             body = json.dumps(body)
         self.log.debug('sending %s request to %s' % (method, url))
 
@@ -141,6 +145,18 @@ class PulpConnection(object):
                 body = Task(response_body)
 
         return Response(response_code, body)
+
+    def _process_body(self, body):
+        """
+        Process the request body, ensuring the proper encoding.
+        @param body: request body to process
+        @return: properly encoded request body
+        """
+        if isinstance(body, (list, set, tuple)):
+            return [self._process_body(b) for b in body]
+        elif isinstance(body, dict):
+            return dict((self._process_body(k), self._process_body(v)) for k, v in body.items())
+        return ensure_utf_8(body)
 
     def _handle_exceptions(self, response_code, response_body):
 

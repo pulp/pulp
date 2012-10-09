@@ -11,16 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 from datetime import timedelta
 import logging
 import sys
 from gettext import gettext as _
 
-# 3rd Party
 import web
 
-# Pulp
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
@@ -79,8 +76,8 @@ def _merge_related_objects(name, manager, repos):
 
     return repos
 
-
 # -- repo controllers ---------------------------------------------------------
+
 class RepoCollection(JSONController):
 
     # Scope: Collection
@@ -207,23 +204,6 @@ class RepoSearch(SearchController):
         Searches based on a Criteria object. Requires a posted parameter
         'criteria' which has a data structure that can be turned into a
         Criteria instance.
-
-        @param criteria:    Required. data structure that can be turned into
-                            an instance of the Criteria model.
-        @type  criteria:    dict
-
-        @param importers:   Optional. iff evaluates to True, will include
-                            each repo's related importers on the 'importers'
-                            attribute.
-        @type  imports:     bool
-
-        @param distributors:    Optional. iff evaluates to True, will include
-                                each repo's related distributors on the
-                                'importers' attribute.
-        @type  distributors:    bool
-
-        @return:    list of matching repositories
-        @rtype:     list
         """
         items = self._get_query_results_from_post()
 

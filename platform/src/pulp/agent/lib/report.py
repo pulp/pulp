@@ -13,6 +13,7 @@
 
 import sys
 import traceback as tb
+
 from logging import getLogger
 
 
@@ -21,12 +22,13 @@ log = getLogger(__name__)
 
 class Report(object):
     """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
+    The base report.
+    @ivar status: The overall status (succeeded|failed).
     @type status: bool
     @ivar details: operation details.
     @type details: dict
-    @ivar chgcnt: The change count.
+    @ivar chgcnt: The number of changes made during the operation.
+        The granularity is up to the discretion of the handler.
     @type chgcnt: int
     """
 
@@ -52,11 +54,7 @@ class Report(object):
 
 class HandlerReport(Report):
     """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool
-    @ivar details: operation details.
-    @type details: dict
+    Generic handler report.
     """
 
     def succeeded(self, details=None, chgcnt=0):
@@ -66,14 +64,15 @@ class HandlerReport(Report):
         @type typeid: str
         @param details: The details of the operation.
         @type details: dict
-        @param chgcnt: The change count.
+        @param chgcnt: The number of changes made during the operation.
+            The granularity is up to the discretion of the handler.
         @type chgcnt: int
         """
         self.status = True
-        self.details = dict(status=True, details=(details or {}))
-        self.chgcnt += chgcnt
+        self.details = (details or {})
+        self.chgcnt = chgcnt
 
-    def failed(self, details):
+    def failed(self, details=None):
         """
         Called (by handler) on operation failed.
         @param typeid: The content type ID.
@@ -82,75 +81,111 @@ class HandlerReport(Report):
         @type details: dict
         """
         self.status = False
-        self.details = dict(status=False, details=details)
-
-
-class RebootReport(Report):
-    """
-    Reboot report.
-    @ivar status: Overall status (succeeded|failed).
-    @type status: bool
-    @ivar scheduled: Indicates whether a reboot has been scheduled.
-    @type scheduled: bool
-    @ivar details: reboot details.
-    @type details: dict
-    """
-
-    def __init__(self):
-        Report.__init__(self)
-        self.scheduled = False
-
-    def succeeded(self, scheduled=True, details=None):
-        """
-        Reboot requested and succeeded.
-        @param scheduled: Indicates whether a reboot has been scheduled.
-        @type scheduled: bool
-        @param details: Scheduling details.
-        @type details: dict
-        """
-        self.scheduled = scheduled
         self.details = (details or {})
 
-    def failed(self, details=None):
-        """
-        Reboot requested and failed.
-        @param details: Exception details.
-        @type details: dict
-        """
-        self.status = False
-        self.scheduled = False
-        self.details = (details or {})
+
+class ContentReport(HandlerReport):
+    """
+    The content report is returned by handler methods
+    implementing content unit operations.
+    """
+    pass
 
 
 class ProfileReport(HandlerReport):
     """
-    Profile report.
+    The profile report is returned by handler methods
+    implementing content profile reporting operations.
     """
     pass
 
 
 class BindReport(HandlerReport):
     """
-    A Bind Report
+    The profile report is returned by handler methods
+    implementing repository bind operations.
     """
     pass
 
 class CleanReport(HandlerReport):
     """
-    A Clean Report
+    The profile report is returned by handler methods
+    implementing clean operations.
     """
     pass
 
 
+class RebootReport(HandlerReport):
+    """
+    The profile report is returned by handler methods
+    implementing reboot operations.  A chgcnt > 0 indicates
+    the reboot was scheduled.
+    """
+
+    def reboot_scheduled(self, details=None):
+        """
+        Indicates that the reboot operation succeeded and that
+        a reboot was scheduled.  Same as calling succeeded() and
+        setting the chgcnt = 1.
+        @param details: The details of the reboot.
+        @type details: dict
+        """
+        HandlerReport.succeeded(self, details, chgcnt=1)
+
+
+class LastExceptionDetails(dict):
+    """
+    Last raised exception details.
+    Intended to be passed to HandlerReport failed() as the I{details} parameter.
+    This provides a structured way to consistently report exceptions raised
+    in the handler call.
+    """
+
+    def __init__(self):
+        info = sys.exc_info()
+        inst = info[1]
+        trace = '\n'.join(tb.format_exception(*info))
+        self['message'] = str(inst)
+        self['trace'] = trace
+
+
 class DispatchReport(Report):
     """
-    Content install/update/uninstall report.
-    @ivar status: Overall status (succeeded|failed).
+    The (internal) dispatch report is returned for all handler methods
+    dispatched to handlers.  It represents an aggregation of handler reports.
+    The handler (class) reports are collated by type_id (content, distributor, system).
+    The overall status is True (succeeded) only if all of the handler reports have
+    a status of True (succeeded).
+    Succeeded Example:
+      { 'status' : True,
+        'chgcnt' : 10,
+        'reboot' : { 'scheduled' : False, details : {} },
+        'details' : {
+          'type_A' : { 'status' : True, 'details' : {} },
+          'type_B' : { 'status' : True, 'details' : {} },
+          'type_C' : { 'status' : True, 'details' : {} },
+        }
+      }
+    Failed Example:
+      { 'status' : False,
+        'chgcnt' : 6,
+        'reboot' : { 'scheduled' : False, details : {} },
+        'details' : {
+          'type_A' : { 'status' : True, 'details' : {} },
+          'type_B' : { 'status' : True, 'details' : {} },
+          'type_C' : { 'status' : False,
+                       'details' : { 'message' : <message>, 'trace'=<trace> } },
+        }
+      }
+    @ivar status: The overall status (succeeded|failed).
     @type status: bool
-    @ivar reboot: Reboot status & details.
-    @type reboot: dict
-    @ivar details: operation details keyed by typeid.
+    @ivar details: operation details keyed by type_id.
+      Each value is:
+        { 'status' : True, details : {} }
     @type details: dict
+    @ivar chgcnt: The number of changes made during the operation.
+        The granularity is up to the discretion of the handlers.
+    @type chgcnt: int
     """
 
     def __init__(self):
@@ -170,30 +205,14 @@ class DispatchReport(Report):
                 self.chgcnt += report.chgcnt
             else:
                 self.status = False
-        if isinstance(report, HandlerReport):
-            self.details[report.typeid] = report.details
-            return
+        # continue updating
         if isinstance(report, RebootReport):
-            self.reboot = dict(
-                scheduled=report.scheduled,
-                details=report.details)
+            scheduled = (report.chgcnt > 0)
+            self.reboot = dict(scheduled=scheduled, details=report.details)
+            return
+        if isinstance(report, HandlerReport):
+            self.details[report.typeid] = \
+                dict(status=report.status, details=report.details)
             return
         log.info('report: %s, ignored' % report)
         return self
-
-
-class ExceptionReport(dict):
-    """
-    Exception Report
-    @ivar message: The exception message.
-    @type message: str
-    @ivar trace: The stack trace.
-    @type trace: list
-    """
-
-    def __init__(self):
-        info = sys.exc_info()
-        inst = info[1]
-        trace = '\n'.join(tb.format_exception(*info))
-        self['message'] = str(inst)
-        self['trace'] = trace

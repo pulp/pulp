@@ -31,8 +31,9 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client import arg_utils
 from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client.commands.options import (OPTION_REPO_ID, OPTION_DESCRIPTION,
-    OPTION_NAME, OPTION_NOTES, OPTION_GROUP_ID)
+    OPTION_NAME, OPTION_NOTES, OPTION_GROUP_ID, FLAG_ALL)
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
+from pulp.common import compat
 
 # -- constants ----------------------------------------------------------------
 
@@ -140,8 +141,13 @@ class UpdateRepositoryGroupCommand(PulpCliCommand):
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         delta.pop(OPTION_GROUP_ID.keyword) # not needed in the delta
 
+        # Conversion between arg hyphens and server-side underscores
+        if delta.get(OPTION_NAME.keyword, None) is not None:
+            delta['display_name'] = delta.pop(OPTION_NAME.keyword)
+
         if delta.pop(OPTION_NOTES.keyword, None) is not None:
             delta['notes'] = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+
         try:
             self.context.server.repo_group.update(kwargs[OPTION_GROUP_ID.keyword], delta)
             msg = 'Repo group [%(g)s] successfully updated'
@@ -248,23 +254,24 @@ class ListRepositoryGroupMembersCommand(PulpCliCommand):
                 self.prompt.render_paragraph(msg, tag='no-members')
 
 
-class AddRepositoryGroupMembersCommand(CriteriaCommand):
+class RepositoryGroupMembersCommand(CriteriaCommand):
     """
-    Allows the user to specify Pulp criteria to select repositories to add
-    to an existing group.
+    Base class that adds options, enforces behavior with respect to the --all
+    flag, and adds an optional list of repo IDs to the criteria.
     """
-
-    def __init__(self, context, name='add', description=DESC_MEMBER_ADD, method=None):
+    def __init__(self, context, name, description, method=None):
         self.context = context
         self.prompt = context.prompt
 
         if method is None:
             method = self.run
 
-        super(AddRepositoryGroupMembersCommand, self).__init__(method, name=name,
-            description=description, include_search=False)
+        super(RepositoryGroupMembersCommand, self).__init__(
+            method, name=name, description=description, include_search=False
+        )
 
         self.add_option(OPTION_GROUP_ID)
+        self.add_flag(FLAG_ALL)
 
         # Copy the repo ID option so we can dork with it
         repo_id_option = copy.copy(OPTION_REPO_ID)
@@ -274,32 +281,60 @@ class AddRepositoryGroupMembersCommand(CriteriaCommand):
 
     def run(self, **kwargs):
         group_id = kwargs.pop(OPTION_GROUP_ID.keyword)
+        if not compat.any(kwargs.values()):
+            self.prompt.render_failure_message(
+                _('at least one matching option must be provided.'))
+            return
+        del kwargs[FLAG_ALL.keyword]
+        repo_ids = kwargs.pop(OPTION_REPO_ID.keyword)
+        if repo_ids:
+            # automatically add the supplied repo IDs to the search
+            in_arg = kwargs.get('in') or []
+            in_arg.append(('id', ','.join(repo_ids)))
+            kwargs['in'] = in_arg
+
+        self._action(group_id, **kwargs)
+
+    def _action(self, group_id, **kwargs):
+        """
+        override this in base classes. It should call an appropriate remote
+        method to execute an action.
+
+        :param group_id:    primary key for a repo group
+        :type  group_id:    str
+        """
+        raise NotImplementedError
+
+
+class AddRepositoryGroupMembersCommand(RepositoryGroupMembersCommand):
+    """
+    Allows the user to specify Pulp criteria to select repositories to add
+    to an existing group.
+    """
+
+    def __init__(self, context, name='add', description=DESC_MEMBER_ADD, method=None):
+
+        super(AddRepositoryGroupMembersCommand, self).__init__(
+            context, name, description, method)
+
+    def _action(self, group_id, **kwargs):
         self.context.server.repo_group_actions.associate(group_id, **kwargs)
 
         msg = _('Successfully added members to repository group [%(g)s]')
         self.prompt.render_success_message(msg % {'g' : group_id})
 
 
-class RemoveRepositoryGroupMembersCommand(CriteriaCommand):
+class RemoveRepositoryGroupMembersCommand(RepositoryGroupMembersCommand):
     """
     Allows the user to specify Pulp criteria to indicate repositories to remove
     from a group.
     """
 
     def __init__(self, context, name='remove', description=DESC_MEMBER_REMOVE, method=None):
-        self.context = context
-        self.prompt = context.prompt
+        super(RemoveRepositoryGroupMembersCommand, self).__init__(
+            context, name, description, method)
 
-        if method is None:
-            method = self.run
-
-        super(RemoveRepositoryGroupMembersCommand, self).__init__(method, name=name,
-            description=description, include_search=False)
-
-        self.add_option(OPTION_GROUP_ID)
-
-    def run(self, **kwargs):
-        group_id = kwargs.pop(OPTION_GROUP_ID.keyword)
+    def _action(self, group_id, **kwargs):
         self.context.server.repo_group_actions.unassociate(group_id, **kwargs)
 
         msg = _('Successfully removed members from repository group [%(g)s]')

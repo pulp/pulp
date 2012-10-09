@@ -26,28 +26,32 @@ SECTION_ROOT = 'rpm'
 SECTION_REPO = 'repo'
 # Eventually there will be a consumer section
 
-SECTION_GROUP = 'group'
-SECTION_REMOVE = 'remove'
+SECTION_COPY = 'copy'
 SECTION_UPLOADS = 'uploads'
-SECTION_GROUP_MEMBERS = 'members'
+SECTION_REMOVE = 'remove'
+SECTION_CONTENTS = 'content'
 
 SECTION_SYNC = 'sync'
 SECTION_SYNC_SCHEDULES = 'schedules'
 SECTION_PUBLISH = 'publish'
 SECTION_PUBLISH_SCHEDULES = 'schedules'
 
+SECTION_EXPORT = 'export'
+
 DESC_ROOT = _('contains commands for working with repositories containing RPM-related content')
 DESC_REPO = _('repository lifecycle commands')
 
-DESC_GROUP = _('repository group lifecycle commands')
-DESC_GROUP_MEMBERS = _('manage membership in a repository group')
-DESC_REMOVE = _('remove copied or uploaded modules from a repository')
+DESC_COPY = _('copies one or more content units between repositories')
 DESC_UPLOADS = _('upload modules into a repository')
+DESC_REMOVE = _('remove copied or uploaded modules from a repository')
+DESC_CONTENTS = _('search the contents of a repository')
 
 DESC_SYNC = _('run, schedule, or view the status of sync tasks')
 DESC_SYNC_SCHEDULES = _('manage repository sync schedules')
 DESC_PUBLISH = _('run, schedule, or view the status of publish tasks')
 DESC_PUBLISH_SCHEDULES = _('manage repository publish schedules')
+
+DESC_EXPORT = _('run or view the status of ISO export of a repository')
 
 # -- creation -----------------------------------------------------------------
 
@@ -88,31 +92,34 @@ def ensure_repo_structure(cli):
 
     # Add the direct subsections of repo
     direct_subsections = (
-        (SECTION_GROUP, DESC_GROUP),
+        (SECTION_COPY, DESC_COPY),
         (SECTION_REMOVE, DESC_REMOVE),
+        (SECTION_CONTENTS, DESC_CONTENTS),
         (SECTION_UPLOADS, DESC_UPLOADS),
         (SECTION_SYNC, DESC_SYNC),
         (SECTION_PUBLISH, DESC_PUBLISH),
+        (SECTION_EXPORT, DESC_EXPORT),
     )
     for name, description in direct_subsections:
         repo_section.create_subsection(name, description)
 
     # Add specific third-tier sections
-    group_section = repo_group_section(cli)
-    group_section.create_subsection(SECTION_GROUP_MEMBERS, DESC_GROUP_MEMBERS)
-
     sync_section = repo_sync_section(cli)
     sync_section.create_subsection(SECTION_SYNC_SCHEDULES, DESC_SYNC_SCHEDULES)
 
     publish_section = repo_publish_section(cli)
     publish_section.create_subsection(SECTION_PUBLISH_SCHEDULES, DESC_PUBLISH_SCHEDULES)
-
+    
     return repo_section
 
 # -- section retrieval --------------------------------------------------------
 
 def repo_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO)
+
+
+def repo_copy_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_COPY)
 
 
 def repo_remove_section(cli):
@@ -123,12 +130,8 @@ def repo_uploads_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_UPLOADS)
 
 
-def repo_group_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP)
-
-
-def repo_group_members_section(cli):
-    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_GROUP, SECTION_GROUP_MEMBERS)
+def repo_contents_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_CONTENTS)
 
 
 def repo_sync_section(cli):
@@ -141,6 +144,10 @@ def repo_sync_schedules_section(cli):
 
 def repo_publish_section(cli):
     return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_PUBLISH)
+
+
+def repo_export_section(cli):
+    return _find_section(cli, SECTION_ROOT, SECTION_REPO, SECTION_EXPORT)
 
 
 def repo_publish_schedules_section(cli):

@@ -13,7 +13,7 @@ Server Configuration
 
 Two configuration file changes are necessary to enable repository authentication.
 
-* Edit ``/etc/pulp/pulp.conf`` and set the ``ssl_ca_certificate`` option to
+* Edit ``/etc/pulp/server.conf`` and set the ``ssl_ca_certificate`` option to
   the full path of the CA certificate that signed the Pulp server's httpd SSL certificate.
   If this option is not set, it will default to ``/etc/pki/pulp/ssl_ca.crt``.
   This file must be readable by the apache user.

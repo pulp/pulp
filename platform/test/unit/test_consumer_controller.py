@@ -177,7 +177,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID, display_name='hungry')
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
-        body = {'delta' : {'display-name' : 'thanksgiving'}}
+        body = {'delta' : {'display_name' : 'thanksgiving'}}
         # Test
         status, body = self.put(path, params=body)
         # Verify

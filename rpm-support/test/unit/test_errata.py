@@ -83,7 +83,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
     def test_get_existing_errata(self):
         unit_key = dict()
         unit_key['id'] = "RHBA-2007:0112"
-        metadata = {}
+        metadata = {'updated' : "2007-03-13 00:00:00"}
         existing_units = [Unit(TYPE_ID_ERRATA, unit_key, metadata, '')]
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         created_existing_units = errata.get_existing_errata(sync_conduit)
@@ -97,16 +97,16 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         self.assertEqual(52, len(available_errata))
         unit_key = dict()
         unit_key['id'] = "RHBA-2007:0112"
-        metadata = {}
+        metadata = {'updated' : "2006-03-13 00:00:00"}
         existing_units = [Unit(TYPE_ID_ERRATA, unit_key, metadata, '')]
-        existing_units[0].updated = "2007-03-14 00:00:00"
+        existing_units[0].updated = "2006-03-13 00:00:00"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         created_existing_units = errata.get_existing_errata(sync_conduit)
         self.assertEquals(len(created_existing_units), 1)
         self.assertEquals(len(existing_units), len(created_existing_units))
-        new_errata, new_units, sync_conduit = errata.get_new_errata_units(available_errata, created_existing_units, sync_conduit)
+        new_errata, new_units, sync_conduit = errata.get_new_errata_units(available_errata, sync_conduit)
         print len(available_errata) - len(created_existing_units), len(new_errata)
-        self.assertEquals(len(available_errata) - len(created_existing_units), len(new_errata))
+        self.assertEquals(len(available_errata), len(new_errata))
 
     def test_update_errata_units(self):
         # existing errata is older than available; should purge and resync
@@ -115,13 +115,13 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         self.assertEqual(52, len(available_errata))
         unit_key = dict()
         unit_key['id'] = "RHBA-2007:0112"
-        metadata = {}
+        metadata = {'updated' : "2007-03-13 00:00:00"}
         existing_units = [Unit(TYPE_ID_ERRATA, unit_key, metadata, '')]
         existing_units[0].updated = "2007-03-13 00:00:00"
         sync_conduit = importer_mocks.get_sync_conduit(existing_units=existing_units)
         created_existing_units = errata.get_existing_errata(sync_conduit)
         self.assertEquals(len(created_existing_units), 1)
-        new_errata, new_units, sync_conduit = errata.get_new_errata_units(available_errata, created_existing_units, sync_conduit)
+        new_errata, new_units, sync_conduit = errata.get_new_errata_units(available_errata, sync_conduit)
         self.assertEquals(len(available_errata), len(new_errata))
 
     def test_link_errata_rpm_units(self):
@@ -134,7 +134,7 @@ class TestErrata(rpm_support_base.PulpRPMTests):
         config = importer_mocks.get_basic_config(feed_url=feed_url)
         importerRPM = importer_rpm.ImporterRPM()
         status, summary, details = importerRPM.sync(repo, sync_conduit, config)
-        metadata = {}
+        metadata = {'updated' : "2007-03-13 00:00:00"}
         unit_key_a = {'id' : '','name' :'patb', 'version' :'0.1', 'release' : '2', 'epoch':'0', 'arch' : 'noarch', 'checksumtype' : 'sha',
                       'checksum': '017c12050a97cf6095892498750c2a39d2bf535e'}
         unit_key_b = {'id' : '', 'name' :'emoticons', 'version' :'0.1', 'release' :'2', 'epoch':'0','arch' : 'noarch', 'checksumtype' :'sha',

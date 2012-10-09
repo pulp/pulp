@@ -82,7 +82,7 @@ class ContentHandler(Handler):
         @param options: Unit install options.
         @type options: dict
         @return: An install report.
-        @rtype: L{pulp.agent.lib.report.HandlerReport}
+        @rtype: L{pulp.agent.lib.report.ContentReport}
         """
         raise NotImplementedError()
 
@@ -96,7 +96,7 @@ class ContentHandler(Handler):
         @param options: Unit update options.
         @type options: dict
         @return: An update report.
-        @rtype: L{pulp.agent.lib.report.HandlerReport}
+        @rtype: L{pulp.agent.lib.report.ContentReport}
         """
         raise NotImplementedError()
 
@@ -110,7 +110,7 @@ class ContentHandler(Handler):
         @param options: Unit uninstall options.
         @type options: dict
         @return: An uninstall report.
-        @rtype: L{pulp.agent.lib.report.HandlerReport}
+        @rtype: L{pulp.agent.lib.report.ContentReport}
         """
         raise NotImplementedError()
 
@@ -139,6 +139,10 @@ class BindHandler(Handler):
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
+            Each definition is:
+                {'repository':<repository>, 'details':<details>}
+            The <repository> is a pulp repository object.
+            The content of <details> is at the discretion of the distributor.
         @type definitions: list
         @return: An bind report.
         @rtype: L{pulp.agent.lib.report.BindReport}
@@ -151,6 +155,10 @@ class BindHandler(Handler):
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
+            Each definition is:
+                {'repository':<repository>, 'details':<details>}
+            The <repository> is a pulp repository object.
+            The content of <details> is at the discretion of the distributor.
         @type definitions: list
         @return: An rebind report.
         @rtype: L{pulp.agent.lib.report.BindReport}

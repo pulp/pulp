@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.bindings.base import PulpAPI
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 
 class OrphanContentAPI(PulpAPI):

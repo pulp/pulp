@@ -12,28 +12,22 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
-import os
-import sys
 import threading
 import traceback
 
-try:
-    from bson.objectid import ObjectId
-except ImportError:
-    from pymongo.objectid import ObjectId
-
+import isodate
 import mock
-import base
 
 from pulp.common import dateutils
+from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallReport, CallRequest
-from pulp.server.dispatch.coordinator import Coordinator
 from pulp.server.dispatch.scheduler import Scheduler
-from pulp.server.dispatch.taskqueue import TaskQueue
+
+import base
 
 # test data --------------------------------------------------------------------
 
@@ -186,6 +180,21 @@ class SchedulerSchedulingTests(SchedulerTests):
         self.assertTrue(next_run == scheduled_call['first_run'])
         self.scheduler.update_last_run(scheduled_call)
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
+        updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
+        self.assertTrue(updated_next_run == updated_scheduled_call['last_run'])
+
+    def test_calculate_next_run_duration(self):
+        call_request = CallRequest(call)
+        now = datetime.datetime.now()
+        interval = isodate.Duration(months=1)
+        schedule = dateutils.format_iso8601_interval(interval, now)
+        schedule_id = self.scheduler.add(call_request, schedule)
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        next_run = self.scheduler.calculate_next_run(scheduled_call)
+        self.assertFalse(next_run is None)
+        self.assertTrue(next_run == scheduled_call['first_run'])
+        self.scheduler.update_last_run(scheduled_call)
+        updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
         self.assertTrue(updated_next_run == updated_scheduled_call['last_run'])
 

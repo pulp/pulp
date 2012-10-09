@@ -155,6 +155,12 @@ class UpdateCommand(PulpCliCommand):
             if delta['note']:
                 delta['notes'] = args_to_notes_dict(kwargs['note'], include_none=False)
             delta.pop('note')
+        # convert display-name to display_name
+        key = 'display-name'
+        if key in delta:
+            v = delta.pop(key)
+            key = key.replace('-', '_')
+            delta[key] = v
 
         try:
             self.context.server.consumer.update(consumer_id, delta)

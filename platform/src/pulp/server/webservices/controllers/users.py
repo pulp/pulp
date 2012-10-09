@@ -137,6 +137,10 @@ class UserResource(JSONController):
                                    [login],
                                    resources=resources,
                                    tags=tags)
+        # Remove permissions
+        user_link = serialization.link.current_link_obj()
+        permission_manager = managers.permission_manager()
+        permission_manager.delete_permission(user_link['_href'])
         return execution.execute_ok(self, call_request)
 
 

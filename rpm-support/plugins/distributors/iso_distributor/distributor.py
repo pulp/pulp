@@ -152,9 +152,11 @@ class ISODistributor(Distributor):
             "rpms":               {"state": "NOT_STARTED"},
             "errata":             {"state": "NOT_STARTED"},
             "distribution":       {"state": "NOT_STARTED"},
+            "metadata":           {"state": "NOT_STARTED"},
             "packagegroups":      {"state": "NOT_STARTED"},
             "isos":               {"state": "NOT_STARTED"},
             "publish_http":       {"state": "NOT_STARTED"},
+            "publish_https":      {"state": "NOT_STARTED"},
             }
 
         def progress_callback(type_id, status):

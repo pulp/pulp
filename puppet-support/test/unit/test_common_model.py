@@ -13,7 +13,7 @@
 
 import unittest
 
-from pulp.common.json_compat import json
+from pulp.common.compat import json
 
 from pulp_puppet.common.model import RepositoryMetadata, Module
 

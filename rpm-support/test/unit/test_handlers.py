@@ -3,12 +3,9 @@ import sys
 import os
 import tempfile
 import shutil
-from mock import Mock
-from unittest import TestCase
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platform/src/")
 
 import mock_yum
+from mock import Mock
 from mock_yum import YumBase
 from rpm_support_base import PulpRPMTests
 from pulp.agent.lib.container import Container, SYSTEM, CONTENT, BIND
@@ -79,7 +76,7 @@ class TestPackages(HandlerTest):
         handler = self.container.find(self.TYPE_ID, role=CONTENT)
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
-    def verify_succeeded(self, report, installed=[], updated=[], removed=[]):
+    def verify_succeeded(self, report, installed=[], updated=[], removed=[], reboot=False):
         resolved = []
         deps = []
         for unit in installed:
@@ -92,7 +89,10 @@ class TestPackages(HandlerTest):
             resolved.append(unit)
             deps = YumBase.REMOVE_DEPS
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, len(resolved)+len(deps))
+        chgcnt = len(resolved) + len(deps)
+        if reboot:
+            chgcnt += 1
+        self.assertEquals(report.chgcnt, chgcnt)
         self.assertEquals(len(report.details), 1)
         report = report.details[self.TYPE_ID]
         self.assertTrue(report['status'])
@@ -123,7 +123,7 @@ class TestPackages(HandlerTest):
         self.verify_succeeded(report, installed=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_install_noapply(self):
         # Setup
@@ -159,7 +159,7 @@ class TestPackages(HandlerTest):
         self.verify_succeeded(report, installed=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_install_notfound(self):
         # Setup
@@ -191,11 +191,11 @@ class TestPackages(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.install(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, installed=units)
+        self.verify_succeeded(report, installed=units, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_update(self):
         # Setup
@@ -212,7 +212,7 @@ class TestPackages(HandlerTest):
         self.verify_succeeded(report, updated=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
         
     def test_update_noapply(self):
         # Setup
@@ -248,7 +248,7 @@ class TestPackages(HandlerTest):
         self.verify_succeeded(report, updated=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_update_with_reboot(self):
         # Setup
@@ -263,11 +263,11 @@ class TestPackages(HandlerTest):
         options = {'reboot':True, 'minutes':5}
         report = self.dispatcher.update(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, updated=units)
+        self.verify_succeeded(report, updated=units, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 5)
         os.system.assert_called_once_with('shutdown -r +5')
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_uninstall(self):
         # Setup
@@ -282,7 +282,7 @@ class TestPackages(HandlerTest):
         self.verify_succeeded(report, removed=units)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
         
     def test_uninstall_noapply(self):
         # Setup
@@ -311,11 +311,11 @@ class TestPackages(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, removed=units)
+        self.verify_succeeded(report, removed=units, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
 
 class TestGroups(HandlerTest):
@@ -327,7 +327,7 @@ class TestGroups(HandlerTest):
         handler = self.container.find(self.TYPE_ID, role=CONTENT)
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
-    def verify_succeeded(self, report, installed=[], removed=[]):
+    def verify_succeeded(self, report, installed=[], removed=[], reboot=False):
         resolved = []
         deps = []
         for group in installed:
@@ -337,7 +337,10 @@ class TestGroups(HandlerTest):
             resolved += [str(p) for p in YumBase.GROUPS[group]]
             deps = YumBase.REMOVE_DEPS
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, len(resolved)+len(deps))
+        chgcnt = len(resolved)+len(deps)
+        if reboot:
+            chgcnt += 1
+        self.assertEquals(report.chgcnt, chgcnt)
         self.assertEquals(len(report.details), 1)
         report = report.details[self.TYPE_ID]
         self.assertTrue(report['status'])
@@ -364,7 +367,7 @@ class TestGroups(HandlerTest):
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
         
     def test_install_importkeys(self):
         # Setup
@@ -378,7 +381,7 @@ class TestGroups(HandlerTest):
         self.verify_succeeded(report, installed=groups)
         self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
         
     def test_install_noapply(self):
         # Setup
@@ -416,11 +419,11 @@ class TestGroups(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.install(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, installed=groups)
+        self.verify_succeeded(report, installed=groups, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
     def test_uninstall(self):
         # Setup
@@ -432,9 +435,8 @@ class TestGroups(HandlerTest):
         # Verify
         self.verify_succeeded(report, removed=groups)
         self.assertFalse(report.reboot['scheduled'])
-        self.assertFalse(report.reboot['scheduled'])
         self.assertFalse(os.system.called)
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
         
     def test_uninstall_noapply(self):
         # Setup
@@ -460,11 +462,11 @@ class TestGroups(HandlerTest):
         options = {'reboot':True}
         report = self.dispatcher.uninstall(conduit, units, options)
         # Verify
-        self.verify_succeeded(report, removed=groups)
+        self.verify_succeeded(report, removed=groups, reboot=True)
         self.assertTrue(report.reboot['scheduled'])
         self.assertEquals(report.reboot['details']['minutes'], 1)
         os.system.assert_called_once_with('shutdown -r +1')
-        YumBase.processTransaction.assert_called_once_with()
+        self.assertTrue(YumBase.processTransaction.called)
 
 
 class TestBind(HandlerTest):
@@ -477,6 +479,7 @@ class TestBind(HandlerTest):
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
     def test_bind(self):
+        # TODO: implement test
         pass
 
 
@@ -490,4 +493,5 @@ class TestLinux(HandlerTest):
         self.assertTrue(handler is not None, msg='%s handler not loaded' % self.TYPE_ID)
 
     def test_linux(self):
+        # TODO: implement test
         pass

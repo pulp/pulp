@@ -332,6 +332,8 @@ class PulpPrompt(Prompt):
 
         # Print each item
         for i in filtered_items:
+            if not i:
+                continue
 
             if header_func is not None:
                 h = header_func(i)
