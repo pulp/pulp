@@ -1401,7 +1401,7 @@ class RemovePackages(AdminRepoAction):
             self.repository_api.remove_package(id, pobj)
             print _("Successfully removed package %s from repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (pkg, id))
         except Exception:
-            print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
+            print _("Unable to remove package [%s] from repo [%s]" % (pkg, id))
 
 
 class AddErrata(AdminRepoAction):
@@ -1539,7 +1539,7 @@ class RemoveErrata(AdminRepoAction):
             if pkgdeps:
                 self.repository_api.remove_package(id, pkgdeps)
         except Exception:
-            print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
+            print _("Unable to remove errata [%s] from repo [%s]" % (errataids, id))
         print _("Successfully removed Errata %s from repo [%s]. Please run `pulp-admin repo generate_metadata` to update the repository metadata." % (errataids, id))
 
 
