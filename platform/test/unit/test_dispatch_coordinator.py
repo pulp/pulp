@@ -448,9 +448,9 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
         call_request_3 = call.CallRequest(dummy_call)
 
         # use the convenience api
-        call_request_3.depends_on(call_request_1)
-        call_request_3.depends_on(call_request_2)
-        call_request_2.depends_on(call_request_1)
+        call_request_3.depends_on(call_request_1.id)
+        call_request_3.depends_on(call_request_2.id)
+        call_request_2.depends_on(call_request_1.id)
 
         call_requests = [call_request_3, call_request_2, call_request_1]
 
@@ -480,7 +480,7 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
         call_request_1 = call.CallRequest(dummy_call)
         call_request_2 = call.CallRequest(dummy_call)
 
-        call_request_2.depends_on(call_request_1)
+        call_request_2.depends_on(call_request_1.id)
 
         self.coordinator.execute_multiple_calls([call_request_2, call_request_1])
 
