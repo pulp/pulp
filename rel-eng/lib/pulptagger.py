@@ -10,10 +10,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import re
-from tito.common import get_latest_tagged_version
 from tito.tagger import VersionTagger
 
-MASTER_PACKAGE = 'pulp'
+
 BUGZILLA_REGEX = re.compile('([0-9]+\s+\-\s+)(.+)')
 FEATURE_REGEX = re.compile('([\-]\s+)(.+)')
 EMBEDDED_REGEX = re.compile('(\[\[)([^$]+)(\]\])')
@@ -52,26 +51,3 @@ class PulpTagger(VersionTagger):
                 entry.append(match.group(2).strip())
                 continue
         return '\n'.join(entry)
-            
-
-class SlavedTagger(PulpTagger):
-    """
-    Slaved tagger used for sub-projects.
-    Used to I{slave} version from the master project.
-    """
-    
-    def run(self, options):
-        """
-        Tag using the (platform) project as master for the version.
-        @param options: tagging options.
-        @type options: options
-        """
-        tag = get_latest_tagged_version(MASTER_PACKAGE)
-        options.use_version = tag.split('-', 1)[0]
-        PulpTagger.run(self, options)
-
-    def _bump_version(self):
-        """
-        Force options we need.
-        """
-        return VersionTagger._bump_version(self, False, False, True)
