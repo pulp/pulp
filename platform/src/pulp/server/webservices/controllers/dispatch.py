@@ -130,7 +130,7 @@ class QueuedCallResource(JSONController):
     @auth_required(authorization.READ)
     def GET(self, task_id):
         coordinator = dispatch_factory.coordinator()
-        tasks = coordinator.find_tasks(task_id=task_id)
+        tasks = coordinator._find_tasks(task_id=task_id)
         if not tasks:
             raise QueuedCallNotFound(task_id)
         return self.ok(tasks[0].queued_call_id)
@@ -138,7 +138,7 @@ class QueuedCallResource(JSONController):
     @auth_required(authorization.DELETE)
     def DELETE(self, task_id):
         coordinator = dispatch_factory.coordinator()
-        tasks = coordinator.find_tasks(task_id=task_id)
+        tasks = coordinator._find_tasks(task_id=task_id)
         if not tasks:
             raise QueuedCallNotFound(task_id)
         collection = QueuedCall.get_collection()

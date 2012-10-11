@@ -20,7 +20,7 @@ import uuid
 
 from pulp.server.auth.authorization import (
     GrantPermmissionsForTaskV2, RevokePermissionsForTaskV2)
-from pulp.server.db.model.dispatch import QueuedCall, TaskResource
+from pulp.server.db.model.dispatch import QueuedCall, CallResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import factory as dispatch_factory
@@ -28,7 +28,13 @@ from pulp.server.dispatch import history as dispatch_history
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.exceptions import OperationTimedOut
-from pulp.server.util import NoTopologicalOrderingExists, topological_sort
+from pulp.server.util import subdict, NoTopologicalOrderingExists, topological_sort
+
+
+_VALID_SEARCH_CRITERIA = frozenset(('call_request_id', 'call_request_group_id',
+                                    'state', 'callable_name', 'args', 'kwargs',
+                                    'resources', 'tags'))
+
 
 # coordinator class ------------------------------------------------------------
 
@@ -43,19 +49,21 @@ class Coordinator(object):
     def __init__(self, task_state_poll_interval=0.5):
 
         self.task_state_poll_interval = task_state_poll_interval
+        self.call_resource_collection = CallResource.get_collection()
 
     # explicit initialization --------------------------------------------------
 
     def start(self):
         """
-        Start the coordinator by clearing conflict metadata and restarting any
+        Start the coordinator by clearing conflicting metadata and restarting any
         interrupted tasks.
         """
-        # drop all previous knowledge of running tasks
-        task_resource_collection = TaskResource.get_collection()
-        task_resource_collection.remove(safe=True)
+        # drop all previous knowledge of previous calls
+        self.call_resource_collection.remove(safe=True)
 
         # re-start interrupted tasks
+        # XXX this is entirely too simple, we need to re-validate call request
+        # groups and log those that cannot be run due to unresolvable dependencies
         queued_call_collection = QueuedCall.get_collection()
         queued_call_list = list(queued_call_collection.find().sort('timestamp'))
         queued_call_collection.remove(safe=True)
@@ -79,10 +87,11 @@ class Coordinator(object):
         @rtype:  L{call.CallReport} instance
         """
         task = self._create_task(call_request, call_report)
-        synchronous = None
-        if isinstance(task, AsyncTask):
-            synchronous = False
-        self._run_task(task, synchronous)
+        self._ready_task(task)
+
+        if not isinstance(task, AsyncTask) and task.call_report.response is dispatch_constants.CALL_ACCEPTED_RESPONSE:
+            self._run_task(task)
+
         return copy.copy(task.call_report)
 
     def execute_call_synchronously(self, call_request, call_report=None, timeout=None):
@@ -100,10 +109,17 @@ class Coordinator(object):
         @rtype:  L{call.CallReport} instance
         """
         assert isinstance(timeout, (datetime.timedelta, types.NoneType))
+
         task = self._create_task(call_request, call_report)
+
         if isinstance(task, AsyncTask):
-            raise dispatch_exceptions.AsynchronousExecutionError('asynchronous')
-        self._run_task(task, True, timeout)
+            raise dispatch_exceptions.AsynchronousExecutionError(['asynchronous'])
+
+        self._ready_task(task)
+
+        if task.call_report.response is not dispatch_constants.CALL_REJECTED_RESPONSE:
+            self._run_task(task, timeout)
+
         return copy.copy(task.call_report)
 
     def execute_call_asynchronously(self, call_request, call_report=None):
@@ -118,7 +134,8 @@ class Coordinator(object):
         @rtype:  L{call.CallReport} instance
         """
         task = self._create_task(call_request, call_report)
-        self._run_task(task, False)
+        self._ready_task(task)
+
         return copy.copy(task.call_report)
 
     def execute_multiple_calls(self, call_request_list):
@@ -130,107 +147,124 @@ class Coordinator(object):
         @return: list of call reports pertaining to the running of the request calls
         @rtype:  list of L{call.CallReport} instances
         """
-        task_group_id = self._generate_task_group_id()
+        call_request_group_id = self._generate_call_request_group_id()
         task_list = []
         call_report_list = []
+
         for call_request in call_request_list:
-            task = self._create_task(call_request, task_group_id=task_group_id)
+            task = self._create_task(call_request, call_request_group_id=call_request_group_id)
             task_list.append(task)
+
         sorted_task_list = self._analyze_dependencies(task_list)
-        for task in sorted_task_list:
-            self._run_task(task, False)
-            call_report_list.append(copy.copy(task.call_report))
+
+        task_queue = dispatch_factory._task_queue()
+
+        # locking the task queue so that the dependency validation can take place
+        # for all tasks in the group *before* any of them are run, eliminating
+        # a race condition in the dependency validation
+
+        task_queue.lock()
+
+        try:
+            for task in sorted_task_list:
+                self._ready_task(task)
+                call_report_list.append(copy.copy(task.call_report))
+        finally:
+            task_queue.unlock()
+
         return call_report_list
 
     # execution utilities ------------------------------------------------------
 
-    def _create_task(self, call_request, call_report=None, task_group_id=None):
+    def _create_task(self, call_request, call_report=None, call_request_group_id=None):
         """
         Create the task for the given call request.
         @param call_request: call request to encapsulate in a task
         @type  call_request: L{call.CallRequest} instance
         @param call_report: call report for call request
         @type  call_report: L{call.CallReport} instance or None
-        @param task_group_id: optional task group id
-        @type  task_group_id: None or str
+        @param call_request_group_id: optional call request group id
+        @type  call_request_group_id: None or str
         @return: task that encapsulates the call request
         @rtype:  L{Task} instance
         """
+        if call_request_group_id is not None:
+            call_request.group_id = call_request_group_id
+
         if not call_request.asynchronous:
             task = Task(call_request, call_report)
         else:
             task = AsyncTask(call_request, call_report)
-        task.call_report.task_id = task.id
-        task.call_report.task_group_id = task_group_id
+
         return task
 
-    def _run_task(self, task, synchronous=None, timeout=None):
+    def _ready_task(self, task):
         """
-        Run a task.
-        @param task: task to run
+        Look for and potentially resolve resource conflicts and enqueue the task.
+        @param task: task to ready
         @type  task: L{Task} instance
-        @param synchronous: whether or not to run the task synchronously,
-                            None means dependent on what the conflict response is
-        @type  synchronous: None or bool
-        @param timeout: how much time to wait for a synchronous task to start
-                        None means indefinitely
-        @type  timeout: None or datetime.timedelta
         """
+
         # we have to lock the task queue here as there is a race condition
         # between calculating the blocking/postponing tasks and enqueueing the
-        # task when 2 or more tasks are being run that may have
-        # interdependencies
+        # task when 2 or more tasks are being run that may have interdependencies
 
         task_queue = dispatch_factory._task_queue()
         task_queue.lock()
-        task_resource_collection = TaskResource.get_collection()
 
         try:
-            response, blocking, reasons, task_resources = self._find_conflicts(task.call_request.resources)
+            response, blocking, reasons, call_resources = self._find_conflicts(task.call_request.resources)
             task.call_report.response = response
             task.call_report.reasons = reasons
 
             if response is dispatch_constants.CALL_REJECTED_RESPONSE:
                 return
 
-            blocking_tasks = dict.fromkeys(blocking, dispatch_constants.CALL_COMPLETE_STATES)
-            blocking_tasks.update(task.blocking_tasks) # use the original values, when present
-            task.blocking_tasks = blocking_tasks
+            dependencies = dict.fromkeys(blocking, dispatch_constants.CALL_COMPLETE_STATES)
+            dependencies.update(task.call_request.dependencies) # use the original (possibly more restrictive) values, when present
+            task.call_request.dependencies = dependencies
 
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, GrantPermmissionsForTaskV2())
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, RevokePermissionsForTaskV2())
             task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
 
-            if task_resources:
-                set_task_id_on_task_resources(task.id, task_resources)
-                task_resource_collection.insert(task_resources, safe=True)
+            if call_resources:
+                set_call_request_id_on_call_resources(task.call_request.id, call_resources)
+                self.call_resource_collection.insert(call_resources, safe=True)
 
             task_queue.enqueue(task)
 
         finally:
             task_queue.unlock()
 
-        # if the call has requested synchronous execution or can be
-        # synchronously executed, do so
-        if synchronous or (synchronous is None and response is dispatch_constants.CALL_ACCEPTED_RESPONSE):
-
-            try:
-                # it's perfectly legitimate for the call to complete before the first poll
-                running_states = [dispatch_constants.CALL_RUNNING_STATE]
-                running_states.extend(dispatch_constants.CALL_COMPLETE_STATES)
-                wait_for_task(task, running_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
-
-            except OperationTimedOut:
-                task_queue.dequeue(task)
-                raise
-
-            else:
-                wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES,
-                              poll_interval=self.task_state_poll_interval)
-
-    def _generate_task_group_id(self):
+    def _run_task(self, task, timeout=None):
         """
-        Generate a unique task group id.
+        Run a task "synchronously".
+        @param task: task to run
+        @type  task: L{Task} instance
+        @param timeout: how much time to wait for a synchronous task to start
+                        None means indefinitely
+        @type  timeout: None or datetime.timedelta
+        """
+        task_queue = dispatch_factory._task_queue()
+        valid_states = [dispatch_constants.CALL_RUNNING_STATE]
+        # it's perfectly legitimate for the call to complete before the first poll
+        valid_states.extend(dispatch_constants.CALL_COMPLETE_STATES)
+
+        try:
+            wait_for_task(task, valid_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
+
+        except OperationTimedOut:
+            task_queue.dequeue(task)
+            raise
+
+        else:
+            wait_for_task(task, dispatch_constants.CALL_COMPLETE_STATES,
+                          poll_interval=self.task_state_poll_interval)
+
+    def _generate_call_request_group_id(self):
+        """
+        Generate a unique call request group id.
         @return: uuid string
         @rtype:  str
         """
@@ -240,46 +274,44 @@ class Coordinator(object):
         task_queue = dispatch_factory._task_queue()
         task_queue.lock()
         try:
-            task_group_id = str(uuid.uuid4())
-            return task_group_id
+           return str(uuid.uuid4())
         finally:
             task_queue.unlock()
 
     # user-defined dependencies ------------------------------------------------
 
     def _analyze_dependencies(self, task_list):
+        """
+        Analyze and validate the user-defined dependencies among a list of tasks.
+        @param task_list: list of tasks
+        @type task_list: list
+        @return: sorted task list
+        @rtype: list
+        """
 
-        # build a dependency graph to check the user-defined dependencies by
-        # converting the call_request dependency mapping to a task dependency
-        # mapping
         call_request_map = dict((task.call_request.id, task) for task in task_list)
-        dependency_graph = {}
-        for task in task_list:
-            dependency_graph[task] = [call_request_map[id] for id in task.call_request.dependencies]
+        dependency_graph = dict((task.call_request.id, task.call_request.dependencies.keys()) for task in task_list)
 
         # check the dependencies with a topological sort and get a valid order
         # in which to enqueue the tasks
+
         try:
-            sorted_task_list = topological_sort(dependency_graph)
+            sorted_call_request_ids = topological_sort(dependency_graph)
         except NoTopologicalOrderingExists:
             raise dispatch_exceptions.CircularDependencies(), None, sys.exc_info()[2]
+        # XXX except malformed graph exception
 
-        # update the blocking_tasks fields with the validated dependencies as
-        # (task_id, valid_exit_states) tuples
-        for task in sorted_task_list:
-            dependency_tasks = [(call_request_map[id].id, task.call_request.dependencies[id])
-                                for id in task.call_request.dependencies]
-            task.blocking_tasks.update(dependency_tasks)
-
+        sorted_task_list = [call_request_map[id] for id in sorted_call_request_ids]
         return sorted_task_list
 
     def _find_conflicts(self, resources):
         """
         Find conflicting tasks, if any, and provide the following:
         * a task response, (accepted, postponed, rejected)
-        * a (possibly empty) set of blocking task ids
+        * a (possibly empty) set of blocking call request ids
         * a list of blocking "reasons" in the form of TaskResource instances
         * a list of task resources corresponding to the given resources
+
         @param resources: dictionary of resources and their proposed operations
         @type  resources: dict
         @return: tuple of objects described above
@@ -288,68 +320,104 @@ class Coordinator(object):
         if not resources:
             return dispatch_constants.CALL_ACCEPTED_RESPONSE, set(), [], []
 
-        postponing_tasks = set()
+        postponing_call_requests = set()
         postponing_reasons = []
-        rejecting_tasks = set()
+        rejecting_call_requests = set()
         rejecting_reasons = []
 
-        task_resource_collection = TaskResource.get_collection()
-        task_resources = resource_dict_to_task_resources(resources)
-        or_query = filter_dicts(task_resources, ('resource_type', 'resource_id'))
-        cursor = task_resource_collection.find({'$or': or_query})
+        call_resource_collection = CallResource.get_collection()
+        call_resources = resource_dict_to_call_resources(resources)
+        or_query = filter_dicts(call_resources, ('resource_type', 'resource_id'))
+        cursor = call_resource_collection.find({'$or': or_query})
 
-        for task_resource in cursor:
-            proposed_operation = resources[task_resource['resource_type']][task_resource['resource_id']]
+        for call_resource in cursor:
+            proposed_operation = resources[call_resource['resource_type']][call_resource['resource_id']]
+            queued_operation = call_resource['operation']
+
             postponing_operations = get_postponing_operations(proposed_operation)
-            rejecting_operations = get_rejecting_operations(proposed_operation)
-            queued_operation = task_resource['operation']
+
             if queued_operation in postponing_operations:
-                postponing_tasks.add(task_resource['task_id'])
-                reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
+                postponing_call_requests.add(call_resource['call_request_id'])
+                reason = filter_dicts([call_resource], ('resource_type', 'resource_id'))[0]
                 reason['operation'] = queued_operation
+
                 if reason not in postponing_reasons:
                     postponing_reasons.append(reason)
+
+            rejecting_operations = get_rejecting_operations(proposed_operation)
+
             if queued_operation in rejecting_operations:
-                rejecting_tasks.add(task_resource['task_id'])
-                reason = filter_dicts([task_resource], ('resource_type', 'resource_id'))[0]
+                rejecting_call_requests.add(call_resource['call_request_id'])
+                reason = filter_dicts([call_resource], ('resource_type', 'resource_id'))[0]
                 reason['operation'] = queued_operation
+
                 if reason not in rejecting_reasons:
                     rejecting_reasons.append(reason)
 
-        if rejecting_tasks:
-            return dispatch_constants.CALL_REJECTED_RESPONSE, rejecting_tasks, rejecting_reasons, task_resources
-        if postponing_tasks:
-            return dispatch_constants.CALL_POSTPONED_RESPONSE, postponing_tasks, postponing_reasons, task_resources
-        return dispatch_constants.CALL_ACCEPTED_RESPONSE, set(), [], task_resources
+        if rejecting_call_requests:
+            return dispatch_constants.CALL_REJECTED_RESPONSE, rejecting_call_requests, rejecting_reasons, call_resources
+
+        if postponing_call_requests:
+            return dispatch_constants.CALL_POSTPONED_RESPONSE, postponing_call_requests, postponing_reasons, call_resources
+
+        return dispatch_constants.CALL_ACCEPTED_RESPONSE, set(), [], call_resources
 
     # query methods ------------------------------------------------------------
 
-    def find_tasks(self, **criteria):
+    def get_call_reports_by_call_request_ids(self, call_request_id_list, include_completed=False):
+        """
+        Get all the call reports for corresponding to the given call request ids.
+        @param call_request_id_list: list of call request ids
+        @type: list or tuple
+        @param include_completed: toggle inclusion of cached completed tasks
+        @type include_completed: bool
+        @return: list of call reports for all call request ids found in the task queue
+        @rtype: list
+        """
+        task_queue = dispatch_factory._task_queue()
+
+        if include_completed:
+            queued_tasks = task_queue.all_tasks()
+        else:
+            queued_tasks = task_queue.incomplete_tasks()
+
+        call_reports = []
+
+        for task in queued_tasks:
+            if task.call_request.id not in call_request_id_list:
+                continue
+            call_reports.append(task.call_report)
+
+        return call_reports
+
+    def _find_tasks(self, **criteria):
         """
         Find call reports that match the criteria given as key word arguments.
 
         Supported criteria:
-         * task_id
-         * task_group_id
+         * call_request_id
+         * call_request_group_id
          * state
-         * call_name
-         * class_name
+         * callable_name
          * args
          * kwargs
          * resources
          * tags
         """
-        valid_criteria = set(('task_id', 'task_group_id', 'state', 'call_name',
-                              'class_name', 'args', 'kwargs', 'resources', 'tags'))
         provided_criteria = set(criteria.keys())
-        superfluous_criteria = provided_criteria - valid_criteria
+
+        superfluous_criteria = provided_criteria - _VALID_SEARCH_CRITERIA
+
         if superfluous_criteria:
             raise dispatch_exceptions.UnrecognizedSearchCriteria(*list(superfluous_criteria))
+
         tasks = []
         task_queue = dispatch_factory._task_queue()
+
         for task in task_queue.all_tasks():
             if task_matches_criteria(task, criteria):
                 tasks.append(task)
+
         return tasks
 
     def find_call_reports(self, **criteria):
@@ -357,84 +425,92 @@ class Coordinator(object):
         Find call reports that match the criteria given as key word arguments.
 
         Supported criteria:
-         * task_id
-         * task_group_id
+         * call_request_id
+         * call_request_group_id
          * state
-         * call_name
-         * class_name
+         * callable_name
          * args
          * kwargs
          * resources
          * tags
         """
-        tasks = self.find_tasks(**criteria)
-        call_reports = [t.call_report for t in tasks]
-        # XXX should we be appending history here?
-        #for archived_call in dispatch_history.find_archived_calls(**criteria):
-        #    call_reports.append(archived_call['serialized_call_report'])
-        return call_reports
+        tasks = self._find_tasks(**criteria)
+        return [t.call_report for t in tasks]
 
     # control methods ----------------------------------------------------------
 
-    def complete_call_success(self, task_id, result=None):
-        task_list = self.find_tasks(task_id=task_id)
+    def complete_call_success(self, call_request_id, result=None):
+        """
+        Report an asynchronous call's success.
+        @param call_request_id: call request id of the asynchronous call
+        @type call_request_id: str
+        @param result: optional result of the successful call
+        """
+        task_list = self._find_tasks(call_request_id=call_request_id)
         if not task_list:
-            # XXX raise an error
-            return None
+            return
         task = task_list[0]
+        assert isinstance(task, AsyncTask)
         task._succeeded(result)
 
-    def complete_call_failure(self, task_id, exception=None, traceback=None):
-        task_list = self.find_tasks(task_id=task_id)
+    def complete_call_failure(self, call_request_id, exception=None, traceback=None):
+        """
+        Report an asynchronous call's failure.
+        @param call_request_id: call request id of the asynchronous call
+        @type call_request_id: str
+        @param exception: optional exception thrown during call
+        @param traceback: optional traceback corresponding the exception
+        """
+        task_list = self._find_tasks(call_request_id=call_request_id)
         if not task_list:
-            # XXX raise an error
-            return None
+            return
         task = task_list[0]
+        assert isinstance(task, AsyncTask)
         task._failed(exception, traceback)
 
-    def cancel_call(self, task_id):
+    def cancel_call(self, call_request_id):
         """
-        Cancel a call request using the task id.
-        @param task_id: task id for call request to cancel
-        @type  task_id: str
+        Cancel a call request using the call request id.
+        @param call_request_id: id for call request to cancel
+        @type  call_request_id: str
         @return: True if the task is being cancelled, False if not, or None if the task was not found
         @rtype:  bool or None
         """
         task_queue = dispatch_factory._task_queue()
-        task = task_queue.get(task_id)
+        task = task_queue.get(call_request_id)
         if task is None:
             return None
         return task_queue.cancel(task)
 
-    def cancel_multiple_calls(self, task_group_id):
+    def cancel_multiple_calls(self, call_request_group_id):
         """
-        Cancel multiple call requests using the task_group id.
-        @param task_group_id: task_group id for multiple calls
-        @type  task_group_id: str
-        @return: dictionary of {task id: cancel return} for tasks associated with the task_group id
+        Cancel multiple call requests using the call request group id.
+        @param call_request_group_id: call request group id for multiple calls
+        @type  call_request_group_id: str
+        @return: dictionary of {call request id: cancel return} for tasks associated with the call request group id
         @rtype:  dict
         """
         cancel_returns = {}
         task_queue = dispatch_factory._task_queue()
         for task in task_queue.all_tasks():
-            if task_group_id != task.call_report.task_group_id:
+            if call_request_group_id != task.call_request.group_id:
                 continue
-            cancel_returns[task.id] = task_queue.cancel(task)
+            cancel_returns[task.call_request.id] = task_queue.cancel(task)
         return cancel_returns
 
     # progress reporting methods -----------------------------------------------
 
-    def report_call_progress(self, task_id, progress):
+    def report_call_progress(self, call_request_id, progress):
         """
         Add a progress report to the task's call report.
-        @param task_id: task id for call to add progress report to
-        @type task_id: str
+        @param call_request_id: id for call to add progress report to
+        @type call_request_id: str
         @param progress: progress report to add
         @type progress: dict
         """
-        task_list = self.find_tasks(task_id=task_id)
+        task_list = self._find_tasks(call_request_id=call_request_id)
         if not task_list:
-            return None
+            return
         task_list[0].call_report.progress = progress
 
 # conflict detection utility functions -----------------------------------------
@@ -452,10 +528,8 @@ def filter_dicts(dicts, fields):
     """
     filtered_dicts = []
     for d in dicts:
-        n = {}
-        for f in fields:
-            n[f] = d[f]
-        filtered_dicts.append(n)
+        s = subdict(d, fields)
+        filtered_dicts.append(s)
     return filtered_dicts
 
 
@@ -491,32 +565,32 @@ def get_rejecting_operations(operation):
     return rejecting
 
 
-def resource_dict_to_task_resources(resource_dict):
+def resource_dict_to_call_resources(resource_dict):
     """
     Convert a resources dictionary to a list of task resource instances
     @param resource_dict: dict in the form of {resource_type: {resource_id: [operations list]}}
     @type  resource_dict: dict
-    @return: list of task resource objects pertaining to the values of the resource_dict
-    @rtype:  list of L{TaskResource} instances
+    @return: list of call resource objects pertaining to the values of the resource_dict
+    @rtype:  list of L{CallResource} instances
     """
-    task_resources = []
+    call_resources = []
     for resource_type, resource_operations in resource_dict.items():
         for resource_id, operation in resource_operations.items():
-            task_resource = TaskResource(None, resource_type, resource_id, operation)
-            task_resources.append(task_resource)
-    return task_resources
+            call_resource = CallResource(None, resource_type, resource_id, operation)
+            call_resources.append(call_resource)
+    return call_resources
 
 # call run utility functions ---------------------------------------------------
 
-def set_task_id_on_task_resources(task_id, task_resources):
+def set_call_request_id_on_call_resources(call_request_id, call_resources):
     """
     Set the task_id field on an iterable of task resources.
-    @param task_id: task_id field value
-    @param task_resources: iterable of task resources to set task_id on
-    @type  task_resources: iterable of L{TaskResource} instances
+    @param call_request_id: task_id field value
+    @param call_resources: iterable of task resources to set task_id on
+    @type  call_resources: iterable of L{TaskResource} instances
     """
-    for task_resource in task_resources:
-        task_resource['task_id'] = task_id
+    for call_resource in call_resources:
+        call_resource['call_resource_id'] = call_request_id
 
 
 def wait_for_task(task, states, poll_interval=0.5, timeout=None):
@@ -525,7 +599,7 @@ def wait_for_task(task, states, poll_interval=0.5, timeout=None):
     @param task: task to wait for
     @type  task: L{Task}
     @param states: set of valid states
-    @type  states: list, set, or tuple
+    @type  states: list or tuple
     @param poll_interval: time, in seconds, to wait in between polling the task
     @type  poll_interval: float or int
     @param timeout: maximum amount of time to poll task, None means indefinitely
@@ -558,18 +632,18 @@ def task_matches_criteria(task, criteria):
     @return: True if the task matches, False otherwise
     @rtype:  bool
     """
-    if 'task_id' in criteria and criteria['task_id'] != task.call_report.task_id:
+    if 'call_request_id' in criteria and criteria['call_request_id'] != task.call_request.id:
         return False
-    if 'task_group_id' in criteria and criteria['task_group_id'] != task.call_report.task_group_id:
+    if 'call_request_group_id' in criteria and criteria['call_request_group_id'] != task.call_request.group_id:
         return False
     if 'state' in criteria and criteria['state'] != task.call_report.state:
         return False
-    if 'call_name' in criteria and dispatch_history.callable_name(criteria.get('class_name'), criteria['call_name']) != task.call_request.callable_name():
+    if 'callable_name' in criteria and criteria['callable_name'] != task.call_request.callable_name():
         return False
     for a in criteria.get('args', []):
         if a not in task.call_request.args:
             return False
-    for k, v in criteria.get('kwargs', {}):
+    for k, v in criteria.get('kwargs', {}).items():
         if k not in task.call_request.kwargs or v != task.call_request.kwargs[k]:
             return False
     for t in criteria.get('tags', []):
@@ -588,8 +662,6 @@ def coordinator_dequeue_callback(call_request, call_report):
     @param call_report: call report for the call
     @type  call_report: L{call.CallReport} instance
     """
-    # yes, I know that the call_request is not being used
-    task_id = call_report.task_id
-    collection = TaskResource.get_collection()
-    collection.remove({'task_id': task_id}, safe=True)
+    collection = CallResource.get_collection()
+    collection.remove({'call_request_id': call_request.id}, safe=True)
 

@@ -19,6 +19,22 @@ from pulp.server.db.model.base import Model
 from pulp.server.dispatch import constants as dispatch_constants
 
 
+class CallResource(Model):
+    """
+    Information for an individual resource used by a call request.
+    """
+
+    collection_name = 'call_resources'
+    search_indices = ('call_request_id', 'resource_type', 'resource_id')
+
+    def __init__(self, call_request_id, resource_type, resource_id, operation):
+        super(CallResource, self).__init__()
+        self.call_request_id = call_request_id
+        self.resource_type = resource_type
+        self.resource_id  = resource_id
+        self.operation = operation
+
+
 class QueuedCall(Model):
     """
     Serialized queued call request
@@ -31,6 +47,23 @@ class QueuedCall(Model):
         super(QueuedCall, self).__init__()
         self.serialized_call_request = call_request.serialize()
         self.timestamp = datetime.now()
+
+
+class QueuedCallGroup(Model):
+    """
+    """
+
+    collection_name = 'queued_call_groups'
+    unique_indices = ('group_id',)
+
+    def __init__(self, call_request_group_id, call_request_ids):
+        super(QueuedCallGroup, self).__init__()
+
+        self.call_request_group_id = call_request_group_id
+        self.call_request_ids = call_request_ids
+
+        self.total_calls = len(call_request_ids)
+        self.completed_calls = 0
 
 
 class ScheduledCall(Model):
@@ -74,7 +107,7 @@ class ArchivedCall(Model):
 
     collection_name = 'archived_calls'
     unique_indices = ()
-    search_indices = ('serialized_call_report.task_id',)
+    search_indices = ('serialized_call_request.id', 'serialized_call_request.group_id')
 
     def __init__(self, call_request, call_report):
         super(ArchivedCall, self).__init__()
@@ -82,19 +115,4 @@ class ArchivedCall(Model):
         self.serialized_call_request = call_request.serialize()
         self.serialized_call_report = call_report.serialize()
 
-
-class TaskResource(Model):
-    """
-    Information for an individual resource used by a task.
-    """
-
-    collection_name = 'task_resources'
-    search_indices = ('task_id', 'resource_type', 'resource_id')
-
-    def __init__(self, task_id, resource_type, resource_id, operation):
-        super(TaskResource, self).__init__()
-        self.task_id = task_id
-        self.resource_type = resource_type
-        self.resource_id  = resource_id
-        self.operation = operation
 

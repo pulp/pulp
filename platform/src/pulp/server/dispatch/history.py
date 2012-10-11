@@ -22,17 +22,35 @@ from pulp.server.db.model.dispatch import ArchivedCall
 # public api -------------------------------------------------------------------
 
 def archive_call(call_request, call_report):
+    """
+    Store a completed call request in the database.
+    @param call_request: call request to store
+    @type call_request: L{pulp.server.dispatch.call.CallRequest}
+    @param call_report: call report corresponding to the call request
+    @type call_report: L{pulp.server.dispatch.call.CallReport}
+    """
     archived_call = ArchivedCall(call_request, call_report)
     collection = ArchivedCall.get_collection()
     collection.insert(archived_call, safe=True)
 
 
 def find_archived_calls(**criteria):
+    """
+    Find archived call requests that match the given criteria.
+    Criteria is passed in as keyword arguments.
+
+    Currently supported criteria:
+    * call_request_id
+    * call_request_group_id
+
+    @return: (possibly empty) mongo collection cursor containing the matching archived calls
+    @rtype: L{pymongo.cursor.Cursor}
+    """
     query = {}
-    if 'task_id' in criteria:
-        query['serialized_call_report.task_id'] = criteria['task_id']
-    if 'task_group_id' in criteria:
-        query['serialized_call_report.task_group_id'] = criteria['task_group_id']
+    if 'call_request_id' in criteria:
+        query['serialized_call_request.id'] = criteria['call_request_id']
+    if 'call_request_group_id' in criteria:
+        query['serialized_call_request.group_id'] = criteria['call_request_group_id']
 
     collection = ArchivedCall.get_collection()
     cursor = collection.find(query)
@@ -60,9 +78,11 @@ def purge_archived_tasks():
     Remove archived tasks from the database that have expired.
     """
     archived_call_lifetime = pulp_config.config.getint('tasks', 'archived_call_lifetime')
+
     delta = datetime.timedelta(hours=archived_call_lifetime)
     now = datetime.datetime.now(tz=dateutils.utc_tz())
     expired_timestamp = dateutils.datetime_to_utc_timestamp(now - delta)
+
     collection = ArchivedCall.get_collection()
     collection.remove({'timestamp': {'$lte': expired_timestamp}}, safe=True)
 

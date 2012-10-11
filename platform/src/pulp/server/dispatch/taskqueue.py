@@ -33,6 +33,7 @@ class TaskQueue(object):
     """
     TaskQueue class
     Manager and dispatcher of concurrent, asynchronous task execution
+
     @ivar concurrency_threshold: measurement of total allowed concurrency
     @type concurrency_threshold: int
     @ivar dispatch_interval: time, in seconds, between checks for ready tasks
@@ -49,16 +50,16 @@ class TaskQueue(object):
         self.concurrency_threshold = concurrency_threshold
         self.dispatch_interval = dispatch_interval
         self.completed_task_cache_life = timedelta(seconds=completed_task_cache_life)
+
         self.queued_call_collection = QueuedCall.get_collection()
 
         self.__waiting_tasks = []
-        self.__skipped_tasks = []
         self.__running_tasks = []
-        self.__canceled_tasks = []
         self.__completed_tasks = []
 
         self.__running_weight = 0
         self.__exit = False
+
         self.__lock = threading.RLock()
         self.__condition = threading.Condition(self.__lock)
         self.__dispatcher = None
@@ -80,8 +81,6 @@ class TaskQueue(object):
                 ready_tasks = self._get_ready_tasks()
                 for task in ready_tasks:
                     self._run_ready_task(task)
-                self._skip_tasks()
-                self._cancel_tasks()
                 self._purge_completed_task_cache()
             except:
                 msg = _('Exception in task queue dispatcher thread:\n%(e)s')
@@ -89,7 +88,7 @@ class TaskQueue(object):
 
     def _get_ready_tasks(self):
         """
-        Algorithm at the heart of the task scheduler. Gets the tasks that are
+        Algorithm at the heart of the task dispatcher. Gets the tasks that are
         ready to run (i.e. not blocked) within the limits of the available
         concurrency threshold and returns them. Note that this algorithm checks
         all the tasks as some may have a weight of 0.
@@ -99,7 +98,7 @@ class TaskQueue(object):
             tasks = []
             available_weight = self.concurrency_threshold - self.__running_weight
             for task in self.__waiting_tasks:
-                if task.blocking_tasks:
+                if task.call_request.dependecies:
                     continue
                 if task.call_request.weight > available_weight:
                     continue
@@ -119,31 +118,6 @@ class TaskQueue(object):
             self.__running_tasks.append(task)
             self.__running_weight += task.call_request.weight
             task.run()
-        finally:
-            self.__lock.release()
-
-    def _skip_tasks(self):
-        self.__lock.acquire()
-        try:
-            for task in self.__skipped_tasks:
-                try:
-                    task.skip()
-                except Exception, e:
-                    _LOG.exception(e)
-        finally:
-            self.__lock.release()
-
-    def _cancel_tasks(self):
-        """
-        Asynchronously cancel tasks that have been marked for cancellation
-        """
-        self.__lock.acquire()
-        try:
-            for task in self.__canceled_tasks:
-                try:
-                    task.cancel()
-                except Exception, e:
-                    _LOG.exception(e)
         finally:
             self.__lock.release()
 
@@ -192,17 +166,31 @@ class TaskQueue(object):
 
     def lock(self):
         """
-        Existentially lock the task queue
+        Externally lock the task queue
         """
         self.__lock.acquire()
 
     def unlock(self):
         """
-        Existentially unlock the task queue
+        Externally unlock the task queue
         """
         self.__lock.release()
 
     # task management methods --------------------------------------------------
+
+    def batch_enqueue(self, task_list):
+        """
+        Enqueue multiple tasks so that dependency validation occurs while the
+        queue is locked, eliminating race conditions where one task can complete
+        before dependent tasks have time to validate their dependencies.
+        @param task_list: list of tasks to enqueue
+        @type task_list: list or tuple
+        """
+        self.__lock.acquire()
+        try:
+            map(self.enqueue, task_list)
+        finally:
+            self.__lock.release()
 
     def enqueue(self, task):
         """
@@ -216,29 +204,30 @@ class TaskQueue(object):
             task.queued_call_id = queued_call['_id']
             self.queued_call_collection.save(queued_call, safe=True)
             task.complete_callback = self._complete
-            self._validate_blocking_tasks(task)
+            self._validate_call_request_dependencies(task)
             self.__waiting_tasks.append(task)
             task.call_life_cycle_callbacks(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK)
             self.__condition.notify()
         finally:
             self.__lock.release()
 
-    def _validate_blocking_tasks(self, task):
+    def _validate_call_request_dependencies(self, task):
         """
-        Validate a task's blocking tasks.
+        Validate a task's call request dependencies.
         NOTE: A task cannot be blocked by a task that is not currently (already)
               in the task queue
-        @param task: task to have its blockers validated
+        @param task: task to have its call request dependencies validated
         @type  task: pulp.server.dispatch.task.Task
         """
         self.__lock.acquire()
         try:
-            valid_blocking_task_ids = []
+            valid_call_request_dependency_ids = []
             for potential_blocking_task in itertools.chain(self.__running_tasks, self.__waiting_tasks):
-                if potential_blocking_task.id not in task.blocking_tasks:
+                if potential_blocking_task.call_request.id not in task.call_request.dependencies:
                     continue
-                valid_blocking_task_ids.append(potential_blocking_task.id)
-            task.blocking_tasks = subdict(task.blocking_tasks, valid_blocking_task_ids)
+                valid_call_request_dependency_ids.append(potential_blocking_task.call_request.id)
+            # DANGER this ignores valid call complete states of dependencies!!
+            task.call_request.dependencies = subdict(task.call_request.dependencies, valid_call_request_dependency_ids)
         finally:
             self.__lock.release()
 
@@ -265,7 +254,7 @@ class TaskQueue(object):
 
     def _unblock_tasks(self, task):
         """
-        Remove a task from all other tasks' list of blockers
+        Remove a task call request id from all other task call requests' dependencies
         @param task: task to be removed
         @type  task: pulp.server.dispatch.task.Task
         """
@@ -273,18 +262,18 @@ class TaskQueue(object):
         try:
             for potentially_blocked_task in self.__waiting_tasks[:]:
 
-                if task.id not in potentially_blocked_task.blocking_tasks:
+                if task.call_request.id not in potentially_blocked_task.call_request.dependencies:
                     continue
 
-                valid_states = potentially_blocked_task.blocking_tasks[task.id]
+                valid_states = potentially_blocked_task.call_request.dependencies[task.call_request.id]
 
-                if task.state not in valid_states:
-                    # leave the task in the blocking_tasks dict
-                    potentially_blocked_task.blocking_tasks = subdict(potentially_blocked_task.blocking_tasks, [task.id])
+                if task.call_request_exit_state not in valid_states:
+                    potentially_blocked_task.call_report.dependency_failures[task.call_request.id] = {'expected': valid_states,
+                                                                                                      'actual': task.call_request_exit_state}
                     self.skip(potentially_blocked_task)
                 else:
                     # remove the task from the blocking_tasks dict
-                    potentially_blocked_task.blocking_tasks.pop(task.id)
+                    potentially_blocked_task.call_request.dependencies.pop(task.call_request.id)
 
         finally:
             self.__lock.release()
@@ -310,8 +299,7 @@ class TaskQueue(object):
         try:
             if task not in self.__waiting_tasks:
                 return
-            self.__waiting_tasks.remove(task)
-            self.__skipped_tasks.append(task)
+            return task.skip()
         finally:
             self.__lock.release()
 
@@ -329,11 +317,11 @@ class TaskQueue(object):
 
     # task query methods -------------------------------------------------------
 
-    def get(self, task_id):
+    def get(self, call_request_id):
         """
         Get a single task by its id
-        @param task_id: unique task id
-        @type  task_id: str
+        @param call_request_id: unique task id
+        @type  call_request_id: str
         @return: task instance if found, otherwise None
         @rtype:  pulp.server.dispatch.task.Task or None
         """
@@ -342,7 +330,7 @@ class TaskQueue(object):
             for task in itertools.chain(self.__completed_tasks,
                                         self.__running_tasks,
                                         self.__waiting_tasks):
-                if task.id != task_id:
+                if task.call_request.id != call_request_id:
                     continue
                 return task
             return None
@@ -393,6 +381,31 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             return self.__running_tasks[:]
+        finally:
+            self.__lock.release()
+
+    def incomplete_tasks(self):
+        """
+        List of all tasks that have not yet completed
+        @return: (potentially empty) iterator of incomplete tasks
+        @rtype: iterator
+        """
+        self.__lock.acquire()
+        try:
+            return itertools.chain(self.__running_tasks[:],
+                                   self.__waiting_tasks[:])
+        finally:
+            self.__lock.release()
+
+    def completed_tasks(self):
+        """
+        List all of the completed tasks in the queue cache
+        @return (potentially empty) list of tasks that are completed
+        @rtype: list of pulp.server.dispatch.task.Task
+        """
+        self.__lock.acquire()
+        try:
+            return self.__completed_tasks[:]
         finally:
             self.__lock.release()
 

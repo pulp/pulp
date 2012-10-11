@@ -25,10 +25,10 @@ class Context(local):
     """
     Dispatch thread-local store, making pertinent information and calls
     available to calls being executed within a dispatch task.
-    @ivar task_id: unique id of the task executing the call
-    @type task_id: str or None
-    @ivar task_group_id: unique id of the task_group the task is part of
-    @type task_group_id: str or None
+    @ivar call_request_id: unique id of the call request for the call
+    @type call_request_id: str or None
+    @ivar call_request_group_id: unique id of the call request group the call request is part of
+    @type call_request_group_id: str or None
     @ivar report_progress: callback to pass progress information into
     @type report_progress: callable
     """
@@ -38,13 +38,13 @@ class Context(local):
         self.clear_task_attributes()
 
     def set_task_attributes(self, task):
-        self.task_id = task.id
-        self.task_group_id = task.call_report.task_group_id
+        self.call_request_id = task.call_request.id
+        self.call_request_group_id = task.call_request.group_id
         self.report_progress = task._report_progress
 
     def clear_task_attributes(self):
-        self.task_id = None
-        self.task_group_id = None
+        self.call_request_id = None
+        self.call_request_group_id = None
         self.report_progress = self._report_progress
 
     def _report_progress(self, progress):

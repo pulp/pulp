@@ -19,7 +19,7 @@ import mock
 
 import base
 
-from pulp.server.db.model.dispatch import TaskResource
+from pulp.server.db.model.dispatch import CallResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
@@ -48,7 +48,7 @@ class CoordinatorTests(base.PulpServerTests):
         self.coordinator = coordinator.Coordinator()
         self._task_queue_factory = dispatch_factory._task_queue
         dispatch_factory._task_queue = mock.Mock() # replace the task queue
-        self.collection = TaskResource.get_collection()
+        self.collection = CallResource.get_collection()
 
     def tearDown(self):
         super(CoordinatorTests, self).tearDown()
@@ -75,8 +75,8 @@ class OrQueryTests(CoordinatorTests):
             }
         }
         try:
-            task_resources = coordinator.resource_dict_to_task_resources(resources)
-            coordinator.set_task_id_on_task_resources(task_id, task_resources)
+            task_resources = coordinator.resource_dict_to_call_resources(resources)
+            coordinator.set_call_request_id_on_call_resources(task_id, task_resources)
             self.collection.insert(task_resources, safe=True)
         except:
             self.fail(traceback.format_exc())
@@ -88,7 +88,7 @@ class OrQueryTests(CoordinatorTests):
                 repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        task_resources = coordinator.resource_dict_to_call_resources(resources)
         self.collection.insert(task_resources, safe=True)
 
         or_query = {'$or': coordinator.filter_dicts(task_resources, ('resource_type', 'resource_id'))}
@@ -104,7 +104,7 @@ class OrQueryTests(CoordinatorTests):
                 repo_2_id: dispatch_constants.RESOURCE_CREATE_OPERATION,
             }
         }
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        task_resources = coordinator.resource_dict_to_call_resources(resources)
         self.collection.insert(task_resources, safe=True)
 
         or_query = {'$or': [{'resource_type': dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'resource_id': repo_2_id}]}
@@ -120,7 +120,7 @@ class OrQueryTests(CoordinatorTests):
                 repo_2_id: dispatch_constants.RESOURCE_CREATE_OPERATION,
                 }
         }
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
+        task_resources = coordinator.resource_dict_to_call_resources(resources)
         self.collection.insert(task_resources, safe=True)
 
         or_query = coordinator.filter_dicts(task_resources, ('resource_type', 'resource_id'))
@@ -202,8 +202,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
         # read does not conflict with read
 
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
-        coordinator.set_task_id_on_task_resources(task_id, task_resources)
+        task_resources = coordinator.resource_dict_to_call_resources(resources)
+        coordinator.set_call_request_id_on_call_resources(task_id, task_resources)
         self.collection.insert(task_resources, safe=True)
 
         response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
@@ -225,8 +225,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 content_unit_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
-        existing_task_resources = coordinator.resource_dict_to_task_resources(existing_resources)
-        coordinator.set_task_id_on_task_resources(task_id, existing_task_resources)
+        existing_task_resources = coordinator.resource_dict_to_call_resources(existing_resources)
+        coordinator.set_call_request_id_on_call_resources(task_id, existing_task_resources)
         self.collection.insert(existing_task_resources, safe=True)
 
         # delete on content unit is postponed by read
@@ -266,10 +266,10 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 consumer_2: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
             }
         }
-        task_1_resources = coordinator.resource_dict_to_task_resources(bind_1_resources)
-        coordinator.set_task_id_on_task_resources(task_1, task_1_resources)
-        task_2_resources = coordinator.resource_dict_to_task_resources(bind_2_resources)
-        coordinator.set_task_id_on_task_resources(task_2, task_2_resources)
+        task_1_resources = coordinator.resource_dict_to_call_resources(bind_1_resources)
+        coordinator.set_call_request_id_on_call_resources(task_1, task_1_resources)
+        task_2_resources = coordinator.resource_dict_to_call_resources(bind_2_resources)
+        coordinator.set_call_request_id_on_call_resources(task_2, task_2_resources)
         self.collection.insert(task_1_resources, safe=True)
         self.collection.insert(task_2_resources, safe=True)
 
@@ -297,8 +297,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 cds_id: dispatch_constants.RESOURCE_DELETE_OPERATION
             }
         }
-        deletion_task_resources = coordinator.resource_dict_to_task_resources(deletion_resources)
-        coordinator.set_task_id_on_task_resources(task_id, deletion_task_resources)
+        deletion_task_resources = coordinator.resource_dict_to_call_resources(deletion_resources)
+        coordinator.set_call_request_id_on_call_resources(task_id, deletion_task_resources)
         self.collection.insert(deletion_task_resources, safe=True)
 
         # a cds sync should be rejected by the deletion
