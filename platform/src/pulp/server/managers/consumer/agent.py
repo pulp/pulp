@@ -51,22 +51,49 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.unregistered()
 
-    def bind(self, id, repo_id):
+    def bind(self, id, definitions, options):
         """
         Apply a bind to the agent.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param id: A consumer ID.
+        @type id: str
+        @param definitions: A list of bind definitions.
+        Each definition is:
+            {type_id:<str>, repository:<repository>, details:<dict>}
+              The <repository> is a pulp repository object.
+              The content of <details> is at the discretion of the distributor.
+        @type definitions: list
+        @param options: Bind options.
+        @type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
         agent = PulpAgent(consumer)
-        agent.consumer.bind(repo_id)
+        agent.consumer.bind(definitions, options)
+
+    def rebind(self, id, definitions, options):
+        """
+        Apply a rebind to the agent.
+        @param id: The consumer ID.
+        @type id: str
+        @param definitions: A list of bind definitions.
+        Each definition is:
+            {type_id:<str>, repository:<repository>, details:<dict>}
+              The <repository> is a pulp repository object.
+              The content of <details> is at the discretion of the distributor.
+        @type definitions: list
+        @param options: Bind options.
+        @type options: dict
+        """
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(id)
+        agent = PulpAgent(consumer)
+        agent.consumer.rebind(definitions, options)
 
     def unbind(self, id, repo_id):
         """
         Apply a unbind to the agent.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param id: The consumer ID.
+        @type id: str
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)

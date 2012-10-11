@@ -64,11 +64,12 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             pass
-        manager = factory.consumer_agent_manager()
-        manager.bind(consumer_id, repo_id)
         consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
-        factory.consumer_history_manager().record_event(consumer_id, 'repo_bound', consumer_event_details)
+        manager = factory.consumer_history_manager()
+        manager.record_event(consumer_id, 'repo_bound', consumer_event_details)
         return bind
+
+
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
@@ -93,10 +94,9 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        manager = factory.consumer_agent_manager()
-        manager.unbind(consumer_id, repo_id)
         consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
-        factory.consumer_history_manager().record_event(consumer_id, 'repo_unbound', consumer_event_details)
+        manager = factory.consumer_history_manager()
+        manager.record_event(consumer_id, 'repo_unbound', consumer_event_details)
         return bind
 
     def consumer_deleted(self, id):

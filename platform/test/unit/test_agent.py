@@ -22,7 +22,14 @@ from pulp.server.agent.hub.pulpagent import PulpAgent as RestAgent
 from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
 
 
-REPOID = 'TEST-REPO'
+REPO_ID = 'repo_1'
+REPOSITORY = {'id':REPO_ID}
+DETAILS = {}
+DEFINITIONS = [
+    {'type_id':'yum',
+     'repository':REPOSITORY,
+     'details':DETAILS,}
+]
 CONSUMER = {
     'id':'gc',
     'certificate':'XXX',
@@ -35,93 +42,147 @@ UNIT = {
 }
 UNITS = [UNIT,]
 OPTIONS = {
-    'importkeys':True,
+    'xxx':True,
 }
 
 TASKID = 'TASK-123'
-AGENT_CLASSES = (DirectAgent, RestAgent)
 
 
-class TestRestAgent(base.PulpServerTests):
+class TestAgent(base.PulpServerTests):
     
     def setUp(self):
         base.PulpServerTests.setUp(self)
         mock_agent.install()
+        mock_agent.reset()
     
     def test_unregistered(self):
-        for Agent in AGENT_CLASSES:
-            # Test
-            agent = Agent(CONSUMER)
-            agent.consumer.unregistered()
-            # Verify
-            # TODO:
+        # Test
+        agent = DirectAgent(CONSUMER)
+        agent.consumer.unregistered()
+        # Verify
+        mock_agent.Consumer.unregistered.assert_called_once_with()
         
     def test_bind(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            agent = Agent(CONSUMER)
-            print agent.consumer.bind(REPOID)
-            # Verify
-            # TODO:
+        agent = DirectAgent(CONSUMER)
+        result = agent.consumer.bind(DEFINITIONS, OPTIONS)
+        # Verify
+        mock_agent.Consumer.bind.assert_called_once_with(DEFINITIONS, OPTIONS)
+
+    def test_rebind(self):
+        # Test
+        agent = DirectAgent(CONSUMER)
+        result = agent.consumer.rebind(DEFINITIONS, OPTIONS)
+        # Verify
+        mock_agent.Consumer.rebind.assert_called_once_with(DEFINITIONS, OPTIONS)
         
     def test_unbind(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            agent = Agent(CONSUMER)
-            print agent.consumer.unbind(REPOID)
-            # Verify
-            # TODO:
+        agent = DirectAgent(CONSUMER)
+        result = agent.consumer.unbind(REPO_ID)
+        # Verify
+        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID)
         
     def test_install_content(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            agent = Agent(CONSUMER)
-            report = agent.content.install(UNITS, OPTIONS)
-            self.validate_succeeded(report)
-            print report
+        agent = DirectAgent(CONSUMER)
+        result = agent.content.install(UNITS, OPTIONS)
+        # Verify
+        mock_agent.Content.install.assert_called_once_with(UNITS, OPTIONS)
         
     def test_update_content(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            agent = Agent(CONSUMER)
-            report = agent.content.update(UNITS, OPTIONS)
-            self.validate_succeeded(report)
-            print report
+        agent = DirectAgent(CONSUMER)
+        result = agent.content.update(UNITS, OPTIONS)
+        # Verify
+        mock_agent.Content.update.assert_called_once_with(UNITS, OPTIONS)
         
     def test_uninstall_content(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            agent = Agent(CONSUMER)
-            report = agent.content.uninstall(UNITS, OPTIONS)
-            self.validate_succeeded(report)
-            print report
+        agent = DirectAgent(CONSUMER)
+        result = agent.content.uninstall(UNITS, OPTIONS)
+        # Verify
+        mock_agent.Content.uninstall.assert_called_once_with(UNITS, OPTIONS)
 
     def test_profile_send(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            agent = Agent(CONSUMER)
-            print agent.profile.send()
-            # Verify
-            # TODO:
+        agent = DirectAgent(CONSUMER)
+        print agent.profile.send()
+        # Verify
+        mock_agent.Profile.send.assert_called_once_with()
 
     def test_status(self):
         # Test
-        for Agent in AGENT_CLASSES:
-            print Agent.status(['A','B'])
-            # Verify
-            # TODO:
-            
-    def validate_succeeded(self, report):
-        # The (direct) implementation returns literal mock method
-        # return values (even for asynchronous RMI).
-        # The (hub)
-        # return (httpcode, mock_return)
-        if isinstance(report, tuple):
-            # hub
-            report = report[1]
-        self.assertTrue(report['status'])
-        self.assertTrue('reboot' in report)
-        details = report['details']
-        self.assertEqual(details['units'], UNITS)
-        self.assertEqual(details['options'], OPTIONS)
-        
+        print RestAgent.status(['A','B'])
+        # Verify
+        # TODO: verify
+
+
+class TestRestAgent(base.PulpServerTests):
+
+    def setUp(self):
+        base.PulpServerTests.setUp(self)
+        mock_agent.install()
+        mock_agent.reset()
+
+    def test_unregistered(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        agent.consumer.unregistered()
+        # Verify
+        mock_agent.Consumer.unregistered.assert_called_once_with()
+
+    def test_bind(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        result = agent.consumer.bind(DEFINITIONS, OPTIONS)
+        # Verify
+        mock_agent.Consumer.bind.assert_called_once_with(DEFINITIONS, OPTIONS)
+
+    def test_rebind(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        result = agent.consumer.rebind(DEFINITIONS, OPTIONS)
+        # Verify
+        mock_agent.Consumer.rebind.assert_called_once_with(DEFINITIONS, OPTIONS)
+
+    def test_unbind(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        result = agent.consumer.unbind(REPO_ID)
+        # Verify
+        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID)
+
+    def test_install_content(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        result = agent.content.install(UNITS, OPTIONS)
+        # Verify
+        mock_agent.Content.install.assert_called_once_with(UNITS, OPTIONS)
+
+    def test_update_content(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        result = agent.content.update(UNITS, OPTIONS)
+        # Verify
+        mock_agent.Content.update.assert_called_once_with(UNITS, OPTIONS)
+
+    def test_uninstall_content(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        result = agent.content.uninstall(UNITS, OPTIONS)
+        # Verify
+        mock_agent.Content.uninstall.assert_called_once_with(UNITS, OPTIONS)
+
+    def test_profile_send(self):
+        # Test
+        agent = RestAgent(CONSUMER)
+        print agent.profile.send()
+        # Verify
+        mock_agent.Profile.send.assert_called_once_with()
+
+    def test_status(self):
+        # Test
+        print RestAgent.status(['A','B'])
+        # Verify
+        # TODO: verify

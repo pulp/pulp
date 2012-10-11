@@ -18,7 +18,8 @@
 # as needed.
 #
 
-from gofer.rmi import mock
+from mock import Mock
+from gofer.rmi import mock as mock
 from pulp.server.agent.direct.services import Services, HeartbeatListener
 from pulp.server.agent.hub import pulpagent as restagent
 from pulp.agent.lib.report import DispatchReport
@@ -36,6 +37,9 @@ def install():
 
 def reset():
     mock.reset()
+    Consumer.reset()
+    Content.reset()
+    Profile.reset()
 
 def all():
     return mock.all()
@@ -65,17 +69,11 @@ class MockRest:
         kwargs = request['kwargs']
         taskid = options.get('any')
         result = method(*args, **kwargs)
-        if taskid and result[0] == 202:
-            self.notify_coordinator(taskid, result)
-        return result
-    
-    def notify_coordinator(self, taskid, result):
-        # TODO: notify coordinator
-        pass
+        return (202, result)
 
     def method(self, path):
         try:
-            Class = 'Rest'+path[5]
+            Class = path[5]
             Method = path[6]
             inst = globals()[Class]()
             return getattr(inst, Method)
@@ -84,114 +82,57 @@ class MockRest:
         except AttributeError:
             raise Exception, '%s, not mocked' % Method
 
-#
-# Capabilities
-#
+
+def dispatch(self=None, details=None):
+    r = DispatchReport()
+    r.details = (details or {})
+    return r.dict()
 
 #
-# Direct Impl
+# Capabilities
 #
 
 class Consumer(object):
     """
     Mock consumer capability.
     """
+    
+    @classmethod
+    def reset(cls):
+        cls.bind.reset_mock()
+        cls.rebind.reset_mock()
+        cls.unbind.reset_mock()
+        cls.unregistered.reset_mock()
 
-    def unregistered(self):
-        pass
-
-    def bind(self, repoid):
-        pass
-
-    def rebind(self):
-        pass
-
-    def unbind(self, repoid):
-        pass
+    bind = Mock(side_effect=dispatch)
+    rebind = Mock(side_effect=dispatch)
+    unbind = Mock(side_effect=dispatch)
+    unregistered = Mock(side_effect=dispatch)
 
 
 class Content(object):
     """
     Mock content capability.
     """
+    
+    @classmethod
+    def reset(cls):
+        cls.install.reset_mock()
+        cls.update.reset_mock()
+        cls.uninstall.reset_mock()
 
-    def install(self, units, options):
-        report = DispatchReport()
-        report.details = \
-            dict(units=units, options=options)
-        return report.dict()
-
-    def update(self, units, options):
-        report = DispatchReport()
-        report.details = \
-            dict(units=units, options=options)
-        return report.dict()
-
-    def uninstall(self, units, options):
-        report = DispatchReport()
-        report.details = \
-            dict(units=units, options=options)
-        return report.dict()
+    install = Mock(side_effect=dispatch)
+    update = Mock(side_effect=dispatch)
+    uninstall = Mock(side_effect=dispatch)
 
 
 class Profile(object):
     """
     Mock profile capability.
     """
-
-    def send(self):
-        pass
-
-#
-# Agenthub Impl
-#
-
-class RestConsumer(object):
-    """
-    Mock consumer capability.
-    """
-
-    def unregistered(self):
-        return (202, None)
     
-    def bind(self, repoid):
-        return (202, repoid)
-    
-    def rebind(self):
-        return (202, None)
+    @classmethod
+    def reset(cls):
+        cls.send.reset_mock()
 
-    def unbind(self, repoid):
-        return (202, repoid)
-
-
-class RestContent(object):
-    """
-    Mock content capability.
-    """
-    
-    def install(self, units, options):
-        report = DispatchReport()
-        report.details = \
-            dict(units=units, options=options)
-        return (202, report.dict())
-    
-    def update(self, units, options):
-        report = DispatchReport()
-        report.details = \
-            dict(units=units, options=options)
-        return (202, report.dict())
-    
-    def uninstall(self, units, options):
-        report = DispatchReport()
-        report.details = \
-            dict(units=units, options=options)
-        return (202, report.dict())
-
-
-class RestProfile(object):
-    """
-    Mock profile capability.
-    """
-    
-    def send(self):
-        return (202, None)
+    send = Mock(side_effect=dispatch)

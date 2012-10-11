@@ -184,17 +184,6 @@ class Synchronization:
     """
     Misc actions used to synchronize with the server.
     """
-
-    @action(days=0x8E94)
-    def rebind(self):
-        """
-        (Re)bind on agent statup.
-        """
-        if self.registered():
-            consumer = Consumer()
-            consumer.rebind()
-        else:
-            log.info('not registered, rebind skipped')
             
     @action(minutes=cfg.profile.minutes)
     def profile(self):
@@ -239,59 +228,58 @@ class Consumer:
         return report.dict()
 
     @remote(secret=secret)
-    def bind(self, repoid):
+    def bind(self, definitions, options):
         """
         Bind to the specified repository ID.
         Delegated to content handlers.
-        @param repoid: A repository ID.
-        @type repoid: str
-        @return: A dispatch report.
-        @rtype: DispatchReport
-        """
-        bundle = Bundle()
-        myid = bundle.cn()
-        bindings = PulpBindings()
-        http = bindings.bind.find_by_id(myid, repoid)
-        if http.response_code == 200:
-            conduit = Conduit()
-            definitions = http.response_body
-            report = dispatcher.bind(conduit, definitions)
-            return report.dict()
-        else:
-            raise Exception('bind failed, http:%d', http.response_code)
-
-    @remote(secret=secret)
-    def rebind(self):
-        """
-        (Re)bind to all repositories.
-        Runs at plugin initialization and delegated to content handlers.
-        @return: A dispatch report.
-        @rtype: DispatchReport
-        """
-        bundle = Bundle()
-        myid = bundle.cn()
-        bindings = PulpBindings()
-        http = bindings.bind.find_by_id(myid)
-        if http.response_code == 200:
-            conduit = Conduit()
-            definitions = http.response_body
-            report = dispatcher.rebind(conduit, definitions)
-            return report.dict()
-        else:
-            raise Exception('rebind failed, http:%d', http.response_code)
-
-    @remote(secret=secret)
-    def unbind(self, repoid):
-        """
-        Unbind to the specified repository ID.
-        Delegated to content handlers.
-        @param repoid: A repository ID.
-        @type repoid: str
+        @param definitions: A list of bind definitions.
+        Each definition is:
+            {type_id:<str>, repository:<repository>, details:<dict>}
+              The <repository> is a pulp repository object.
+              The content of <details> is at the discretion of the distributor.
+        @type definitions: list
+        @param options: Bind options.
+        @type options: dict
         @return: A dispatch report.
         @rtype: DispatchReport
         """
         conduit = Conduit()
-        report = dispatcher.unbind(conduit, repoid)
+        report = dispatcher.bind(conduit, definitions, options)
+        return report.dict()
+
+    @remote(secret=secret)
+    def rebind(self, definitions, options):
+        """
+        Rebind to all repositories.
+        @param definitions: A list of bind definitions.
+        Each definition is:
+            {type_id:<str>, repository:<repository>, details:<dict>}
+              The <repository> is a pulp repository object.
+              The content of <details> is at the discretion of the distributor.
+        @type definitions: list
+        @param options: Rebind options.
+        @type options: dict
+        @return: A dispatch report.
+        @rtype: DispatchReport
+        """
+        conduit = Conduit()
+        report = dispatcher.rebind(conduit, definitions, options)
+        return report.dict()
+
+    @remote(secret=secret)
+    def unbind(self, repo_id, options):
+        """
+        Unbind to the specified repository ID.
+        Delegated to content handlers.
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        @param options: Unbind options.
+        @type options: dict
+        @return: A dispatch report.
+        @rtype: DispatchReport
+        """
+        conduit = Conduit()
+        report = dispatcher.unbind(conduit, repo_id, options)
         return report.dict()
 
 

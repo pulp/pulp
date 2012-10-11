@@ -204,20 +204,19 @@ class Dispatcher:
             report.update(r)
         return report
 
-    def bind(self, conduit, definitions):
+    def bind(self, conduit, definitions, options):
         """
         Bind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: The list of bind definitions.
-        Definition:
-            {consumer_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>,
-             href:<str>,
-             type_id:<str>,
-             details:<dict>}
+        Each definition is:
+          {type_id:<str>, repository:<repository>, details:<dict>}
+            The <repository> is a pulp repository object.
+            The content of <details> is at the discretion of the distributor.
         @type definitions: list
+        @param options: Bind options.
+        @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
@@ -226,7 +225,7 @@ class Dispatcher:
         for typeid, definition in collated.items():
             try:
                 handler = self.__handler(typeid, BIND)
-                r = handler.bind(conduit, definition)
+                r = handler.bind(conduit, definition, options)
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -237,20 +236,19 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def rebind(self, conduit, definitions):
+    def rebind(self, conduit, definitions, options):
         """
         (Re)bind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: The list of bind definitions.
-        Definition:
-            {consumer_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>,
-             href:<str>,
-             type_id:<str>,
-             details:<dict>}
+        Each definition is:
+          {type_id:<str>, repository:<repository>, details:<dict>}
+            The <repository> is a pulp repository object.
+            The content of <details> is at the discretion of the distributor.
         @type definitions: list
+        @param options: Rebind options.
+        @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
@@ -259,7 +257,7 @@ class Dispatcher:
         for typeid, definition in collated.items():
             try:
                 handler = self.__handler(typeid, BIND)
-                r = handler.rebind(conduit, definition)
+                r = handler.rebind(conduit, definition, options)
                 r.typeid = typeid
                 report.update(r)
             except Exception:
@@ -270,21 +268,23 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def unbind(self, conduit, repoid):
+    def unbind(self, conduit, repo_id, options):
         """
         Unbind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         Dispatch unbind() to all BIND handlers.
-        @param repoid: A repository ID.
-        @type repoid: str
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        @param options: Unbind options.
+        @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
         report = DispatchReport()
         for typeid, handler in self.container.all(BIND):
             try:
-                r = handler.unbind(conduit, repoid)
+                r = handler.unbind(conduit, repo_id, options)
                 r.typeid = typeid
                 report.update(r)
             except Exception:

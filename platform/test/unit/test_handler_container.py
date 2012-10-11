@@ -193,8 +193,9 @@ class TestDispatcher(unittest.TestCase):
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
-        definition = dict(type_id='yum', repo={})
-        report = dispatcher.bind(conduit, [definition,])
+        definition = dict(type_id='yum', repository={}, details={})
+        options = {}
+        report = dispatcher.bind(conduit, [definition,], options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -204,8 +205,9 @@ class TestDispatcher(unittest.TestCase):
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
-        definition = dict(type_id='yum', repo={})
-        report = dispatcher.rebind(conduit, [definition,])
+        definition = dict(type_id='yum', repository={}, details={})
+        options = {}
+        report = dispatcher.rebind(conduit, [definition,], options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
@@ -215,7 +217,8 @@ class TestDispatcher(unittest.TestCase):
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
-        report = dispatcher.unbind(conduit, 'repo-1')
+        options = {}
+        report = dispatcher.unbind(conduit, 'repo-1', options)
         pprint(report.dict())
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)

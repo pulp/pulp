@@ -88,23 +88,32 @@ class RpmHandler(ContentHandler):
 
 class YumHandler(BindHandler):
 
-  def bind(self, conduit, definitions):
+  def bind(self, conduit, definitions, options):
     assert(isinstance(conduit, Conduit))
     assert(isinstance(definitions, list))
+    assert(isinstance(options, dict))
+    for definition in definitions:
+      assert('repository' in definition)
+      assert('details' in definition)
     report = BindReport()
     report.succeeded({}, 1)
     return report
 
-  def rebind(self, conduit, definitions):
+  def rebind(self, conduit, definitions, options):
     assert(isinstance(conduit, Conduit))
     assert(isinstance(definitions, list))
+    assert(isinstance(options, dict))
+    for definition in definitions:
+      assert('repository' in definition)
+      assert('details' in definition)
     report = BindReport()
     report.succeeded({}, 1)
     return report
 
-  def unbind(self, conduit, repo_id):
+  def unbind(self, conduit, repo_id, options):
     assert(isinstance(conduit, Conduit))
     assert(isinstance(repo_id, (int,str)))
+    assert(isinstance(options, dict))
     report = BindReport()
     report.succeeded({}, 1)
     return report

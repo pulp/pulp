@@ -133,7 +133,7 @@ class BindHandler(Handler):
     to implement BIND management requests.
     """
 
-    def bind(self, conduit, definitions):
+    def bind(self, conduit, definitions, options):
         """
         Bind a repository.
         @param conduit: A handler conduit.
@@ -144,14 +144,16 @@ class BindHandler(Handler):
             The <repository> is a pulp repository object.
             The content of <details> is at the discretion of the distributor.
         @type definitions: list
+        @param options: Bind options.
+        @type options: dict
         @return: An bind report.
         @rtype: L{pulp.agent.lib.report.BindReport}
         """
         raise NotImplementedError()
 
-    def rebind(self, conduit, definitions):
+    def rebind(self, conduit, definitions, options):
         """
-        Bind a repository.
+        Rebind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param definitions: A list of bind definitions.
@@ -160,19 +162,23 @@ class BindHandler(Handler):
             The <repository> is a pulp repository object.
             The content of <details> is at the discretion of the distributor.
         @type definitions: list
+        @param options: Rebind options.
+        @type options: dict
         @return: An rebind report.
         @rtype: L{pulp.agent.lib.report.BindReport}
         """
         raise NotImplementedError()
 
-    def unbind(self, conduit, repoid):
+    def unbind(self, conduit, repo_id, options):
         """
         Unbind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param repoid: The repo ID.
-        @type repoid: str
-        @return: An inbind report.
+        @param repo_id: The repo ID.
+        @type repo_id: str
+        @param options: Unbind options.
+        @type options: dict
+        @return: An unbind report.
         @rtype: L{pulp.agent.lib.report.BindReport}
         """
         raise NotImplementedError()

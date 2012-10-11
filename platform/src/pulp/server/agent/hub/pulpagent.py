@@ -112,13 +112,19 @@ class Consumer(Capability):
             raise Exception('Unregistered Failed')
         return (status, result)
 
-    def bind(self, repo_id):
+    def bind(self, definitions, options):
         """
         Bind a consumer to the specified repository.
-        @param repo_id: A repository ID.
-        @type repo_id: str
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @param definitions: A list of bind definitions.
+        Each definition is:
+            {type_id:<str>, repository:<repository>, details:<dict>}
+              The <repository> is a pulp repository object.
+              The content of <details> is at the discretion of the distributor.
+        @type definitions: list
+        @param options: Bind options.
+        @type options: dict
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
@@ -126,9 +132,34 @@ class Consumer(Capability):
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        status, result = consumer.bind(repo_id)
+        status, result = consumer.bind(definitions, options)
         if status != 202:
             raise Exception('Bind Failed')
+        return (status, result)
+
+    def rebind(self, definitions, options):
+        """
+        Rebind a consumer to the specified repository.
+        @param definitions: A list of bind definitions.
+        Each definition is:
+            {type_id:<str>, repository:<repository>, details:<dict>}
+              The <repository> is a pulp repository object.
+              The content of <details> is at the discretion of the distributor.
+        @type definitions: list
+        @param options: Bind options.
+        @type options: dict
+        @return: The RMI request serial number.
+        @rtype: str
+        """
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            secret=self.context.secret,
+            async=True)
+        consumer = agent.Consumer()
+        status, result = consumer.rebind(definitions, options)
+        if status != 202:
+            raise Exception('Rebind Failed')
         return (status, result)
 
     def unbind(self, repo_id):
@@ -227,6 +258,7 @@ class Content(Capability):
         if status != 202:
             raise Exception('Uninstall Failed')
         return (status, result)
+
 
 class Profile(Capability):
     """
