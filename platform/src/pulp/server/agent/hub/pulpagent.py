@@ -162,11 +162,13 @@ class Consumer(Capability):
             raise Exception('Rebind Failed')
         return (status, result)
 
-    def unbind(self, repo_id):
+    def unbind(self, repo_id, options):
         """
         Unbind a consumer from the specified repository.
         @param repo_id: A repository ID.
         @type repo_id: str
+        @param options: Unbind options.
+        @type options: dict
         @return: Tuple (<httpcode>, None); 202 expected.
         @rtype: tuple
         """
@@ -176,7 +178,7 @@ class Consumer(Capability):
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        status, result = consumer.unbind(repo_id)
+        status, result = consumer.unbind(repo_id, options)
         if status != 202:
             raise Exception('Unbind Failed')
         return (status, result)

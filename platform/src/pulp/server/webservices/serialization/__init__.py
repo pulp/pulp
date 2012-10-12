@@ -33,5 +33,6 @@ import dispatch
 import error
 import link
 import consumer
+import db
 
-__all__ = ['binding', 'content', 'dispatch', 'error', 'link', 'consumer']
+__all__ = ['binding', 'content', 'dispatch', 'error', 'link', 'consumer', 'db']

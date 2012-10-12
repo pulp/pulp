@@ -141,11 +141,13 @@ class Consumer(Capability):
         consumer = agent.Consumer()
         return consumer.rebind(definitions, options)
 
-    def unbind(self, repo_id):
+    def unbind(self, repo_id, options):
         """
         Unbind a consumer from the specified repository.
         @param repo_id: A repository ID.
         @type repo_id: str
+        @param options: Unbind options.
+        @type options: dict
         @return: The RMI request serial number.
         @rtype: str
         """
@@ -154,7 +156,7 @@ class Consumer(Capability):
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
-        return consumer.unbind(repo_id)
+        return consumer.unbind(repo_id, options)
 
 
 class Content(Capability):

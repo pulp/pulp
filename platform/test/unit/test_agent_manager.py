@@ -112,9 +112,9 @@ class AgentManagerTests(base.PulpServerTests):
             self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.unbind(self.CONSUMER_ID, self.REPO_ID)
+        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.OPTIONS)
         # verify
-        mock_agent.Consumer.unbind.assert_called_once_with(self.REPO_ID)
+        mock_agent.Consumer.unbind.assert_called_once_with(self.REPO_ID, self.OPTIONS)
 
     def test_content_install(self):
         # Setup

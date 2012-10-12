@@ -68,6 +68,26 @@ def expand_consumers(options, consumers):
     return consumers
 
 
+def bind_definition(repo_id, distributor_id):
+    """
+    Assemble bind definition to be sent to the agent.
+    @param repo_id: A repo ID
+    @param distributor_id: A distributor ID.
+    @return: A bind definition
+    @rtype: dict
+    """
+    manager = managers.repo_query_manager()
+    repository = manager.get_repository(repo_id)
+    manager = managers.repo_distributor_manager()
+    distributor = manager.get_distributor(repo_id, distributor_id)
+    details = manager.create_bind_payload(repo_id, distributor_id)
+    definition = dict(
+        type_id=distributor['distributor_type_id'],
+        repository=serialization.db.scrub_mongo_fields(repository),
+        details=details)
+    return definition
+
+
 # -- controllers --------------------------------------------------------------
 
 class Consumers(JSONController):
@@ -237,6 +257,10 @@ class Bindings(JSONController):
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
+        options = body.get('options', {})
+        call_requests = []
+
+        # bind request
         resources = {
             dispatch_constants.RESOURCE_CONSUMER_TYPE:
                 {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
@@ -256,12 +280,28 @@ class Bindings(JSONController):
             args,
             resources=resources,
             weight=0)
-        link = serialization.link.child_link_obj(
+        call_requests.append(call_request)
+
+        # notify agent
+        definition = bind_definition(repo_id, distributor_id)
+        args = [
             consumer_id,
-            repo_id,
-            distributor_id)
-        result = execution.execute_sync_created(self, call_request, link)
-        return result
+            [definition],
+            options,
+        ]
+        manager = managers.consumer_agent_manager()
+        call_request = CallRequest(
+            manager.bind,
+            args,
+            weight=0
+        )
+        call_requests.append(call_request)
+
+        # set dependencies
+        call_requests[1].depends_on(call_requests[0])
+
+        # execute
+        execution.execute_multiple(call_requests)
 
 
 class Binding(JSONController):
@@ -310,6 +350,9 @@ class Binding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
+        call_requests = []
+
+        # unbind
         manager = managers.consumer_bind_manager()
         resources = {
             dispatch_constants.RESOURCE_CONSUMER_TYPE:
@@ -334,7 +377,28 @@ class Binding(JSONController):
                                    args=args,
                                    resources=resources,
                                    tags=tags)
-        return self.ok(execution.execute(call_request))
+        call_requests.append(call_request)
+
+        # notify agent
+        options = {}
+        args = [
+            consumer_id,
+            repo_id,
+            options,
+        ]
+        manager = managers.consumer_agent_manager()
+        call_request = CallRequest(
+            manager.unbind,
+            args,
+            weight=0
+        )
+        call_requests.append(call_request)
+
+        # set dependencies
+        call_requests[1].depends_on(call_requests[0])
+
+        # execute
+        execution.execute_multiple(call_requests)
 
 
 class Content(JSONController):

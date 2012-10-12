@@ -79,9 +79,9 @@ class TestAgent(base.PulpServerTests):
     def test_unbind(self):
         # Test
         agent = DirectAgent(CONSUMER)
-        result = agent.consumer.unbind(REPO_ID)
+        result = agent.consumer.unbind(REPO_ID, OPTIONS)
         # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID)
+        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID, OPTIONS)
         
     def test_install_content(self):
         # Test
@@ -149,9 +149,9 @@ class TestRestAgent(base.PulpServerTests):
     def test_unbind(self):
         # Test
         agent = RestAgent(CONSUMER)
-        result = agent.consumer.unbind(REPO_ID)
+        result = agent.consumer.unbind(REPO_ID, OPTIONS)
         # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID)
+        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID, OPTIONS)
 
     def test_install_content(self):
         # Test

@@ -89,16 +89,18 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.rebind(definitions, options)
 
-    def unbind(self, id, repo_id):
+    def unbind(self, id, repo_id, options):
         """
         Apply a unbind to the agent.
         @param id: The consumer ID.
         @type id: str
+        @param options: Bind options.
+        @type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
         agent = PulpAgent(consumer)
-        agent.consumer.unbind(repo_id)
+        agent.consumer.unbind(repo_id, options)
 
     def install_content(self, id, units, options):
         """

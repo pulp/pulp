@@ -283,6 +283,30 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         self.exception = exception
         self.traceback = traceback
 
+    def wait_for_task(self, task, timeout=3):
+        """
+        Wait for the specified task to finish.
+        @param task: A task to wait for.
+        @type task: Task
+        @param timeout: seconds to wait
+        @type timeout: int
+        @return The call report.
+        @raise Exception, when not found
+
+        """
+        n_polls = (timeout * 4)
+        task_id = task['task_id']
+        for i in range(0, n_polls):
+            found = self.coordinator.find_call_reports(task_id=task_id)
+            if not found:
+                break
+            if found[0].state in dispatch_constants.CALL_COMPLETE_STATES:
+                return found[0]
+            else:
+                time.sleep(.25)
+        raise Exception, 'task [%s], not found' % task_id
+
+
 
 class PulpClientTests(unittest.TestCase):
     """

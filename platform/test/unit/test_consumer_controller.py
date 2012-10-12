@@ -12,6 +12,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import time
+
 import mock
 
 import base
@@ -21,13 +23,11 @@ import mock_agent
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
-from pulp.plugins.loader import api as plugin_api
 from pulp.server.compat import ObjectId
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-
 
 class ConsumerTest(base.PulpWebserviceTests):
 
@@ -537,7 +537,8 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
-    def test_bind(self):
+    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.bind')
+    def test_bind(self, agent_bind):
         # Setup
         self.populate()
         # Test
@@ -547,15 +548,23 @@ class BindTest(base.PulpWebserviceTests):
             distributor_id=self.DISTRIBUTOR_ID,)
         status, body = self.post(path, body)
         # Verify
+        self.assertEquals(status, 202)
+        # wait for task to complete
+        for task in body:
+            self.wait_for_task(task)
+        # verify bind
         manager = factory.consumer_bind_manager()
-        self.assertEquals(status, 201)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
         bind = binds[0]
-        for k in ('consumer_id', 'repo_id', 'distributor_id'):
-            self.assertEquals(bind[k], body[k])
+        bind['consumer_id'] == self.CONSUMER_ID
+        bind['repo_id'] = self.REPO_ID
+        bind['distributor_id'] = self.DISTRIBUTOR_ID
+        # verify agent notified
+        self.assertTrue(agent_bind.called)
 
-    def test_unbind(self):
+    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.unbind')
+    def test_unbind(self, agent_unbind):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -567,9 +576,14 @@ class BindTest(base.PulpWebserviceTests):
              self.DISTRIBUTOR_ID)
         status, body = self.delete(path)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
+        # wait for task to complete
+        for task in body:
+            call_report = self.wait_for_task(task)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
+        # verify agent notified
+        self.assertTrue(agent_unbind.called)
 
     #
     # Failure Cases
@@ -587,8 +601,10 @@ class BindTest(base.PulpWebserviceTests):
             distributor_id=self.DISTRIBUTOR_ID,)
         status, body = self.post(path, body)
         # Verify
+        self.assertEquals(status, 202)
+        for task in body:
+            self.wait_for_task(task)
         manager = factory.consumer_bind_manager()
-        self.assertEquals(status, 404)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
