@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Copyright © 2010 Red Hat, Inc.
+# Copyright (c) 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -15,7 +13,6 @@ import logging
 
 import pymongo
 
-#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model.base import Model
 
 

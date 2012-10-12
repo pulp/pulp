@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011-2012 Red Hat, Inc.
+# Copyright (c) 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License as
 # published by the Free Software Foundation; either version 2 of the License
@@ -24,8 +22,6 @@ from pulp.plugins.loader.manager import PluginManager
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
-
-# constants --------------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
@@ -53,9 +49,6 @@ def initialize(validate=True):
     global _MANAGER
     # pre-initialization validation
     assert not _is_initialized()
-
-    # initialization
-    _load_content_types(_TYPES_DIR)
 
     _create_manager()
     # add plugins here in the form (path, base class, manager map)
@@ -349,6 +342,7 @@ def get_profiler_by_id(id):
     cls, cfg = _MANAGER.profilers.get_plugin_by_id(id)
     return cls(), cfg
 
+
 def get_profiler_by_type(type_id):
     """
     Get a profiler instance that supports the specified content type.
@@ -364,6 +358,19 @@ def get_profiler_by_type(type_id):
     cls, cfg = _MANAGER.profilers.get_plugin_by_id(ids[0])
     return cls(), cfg
 
+
+def load_content_types(types_dir=_TYPES_DIR):
+    """
+    :type types_dir: str
+    """
+    if not os.access(types_dir, os.F_OK | os.R_OK):
+        msg = _('Cannot load types: path does not exist or cannot be read: %(p)s')
+        _LOG.critical(msg % {'p': types_dir})
+        raise IOError(msg)
+    descriptors = _load_type_descriptors(types_dir)
+    _load_type_definitions(descriptors)
+
+
 # initialization methods -------------------------------------------------------
 
 def _is_initialized():
@@ -375,17 +382,6 @@ def _is_initialized():
 def _create_manager():
     global _MANAGER
     _MANAGER = PluginManager()
-
-def _load_content_types(types_dir):
-    """
-    @type types_dir: str
-    """
-    if not os.access(types_dir, os.F_OK | os.R_OK):
-        msg = _('Cannot load types: path does not exist or cannot be read: %(p)s')
-        _LOG.critical(msg % {'p': types_dir})
-        return
-    descriptors = _load_type_descriptors(types_dir)
-    _load_type_definitions(descriptors)
 
 
 def _load_type_descriptors(path):
