@@ -227,6 +227,7 @@ class CallRequest(object):
 
         constructor_kwargs = dict(data)
         constructor_kwargs.pop('callable_name') # added for search
+
         for key, value in constructor_kwargs.items():
             constructor_kwargs[encode_unicode(key)] = constructor_kwargs.pop(key)
 
@@ -238,10 +239,15 @@ class CallRequest(object):
             _LOG.exception(e)
             return None
 
+        id = constructor_kwargs.pop('id')
+        group_id = constructor_kwargs.pop('group_id')
         execution_hooks = constructor_kwargs.pop('execution_hooks')
         control_hooks = constructor_kwargs.pop('control_hooks')
 
         instance = cls(**constructor_kwargs)
+
+        instance.id = id
+        instance.group_id = group_id
 
         for key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS:
             if not execution_hooks[key]:
