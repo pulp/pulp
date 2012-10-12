@@ -9,11 +9,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import lgettext as _
+from optparse import OptionParser, SUPPRESS_HELP
 import logging
 import traceback
 import os
 import sys
-from optparse import OptionParser, SUPPRESS_HELP
 
 from pulp.plugins.loader.api import load_content_types
 from pulp.server.db import connection
@@ -44,18 +45,18 @@ def parse_args():
     parser.add_option('--force', action='store_true', dest='force',
                       default=False, help=SUPPRESS_HELP)
     parser.add_option('--from', dest='start', default=None,
-                      help='Run the migration starting at the version passed in')
+                      help=_('Run the migration starting at the version passed in'))
     parser.add_option('--test', action='store_true', dest='test',
                       default=False,
-                      help='Run migration, but do not update version')
+                      help=_('Run migration, but do not update version'))
     parser.add_option('--log-file', dest='log_file',
                       default='/var/log/pulp/db.log',
-                      help='File for log messages')
+                      help=_('File for log messages'))
     parser.add_option('--log-level', dest='log_level', default='info',
-                      help='Level of logging (debug, info, error, critical)')
+                      help=_('Level of logging (debug, info, error, critical)'))
     options, args = parser.parse_args()
     if args:
-        parser.error('unknown arguments: %s' % ', '.join(args))
+        parser.error(_('Unknown arguments: %s') % ', '.join(args))
     return options
 
 
@@ -73,7 +74,7 @@ def migrate_database(options):
             'Version in use (%d) greater than expected version (%d).' % \
             (version, VERSION)
     if version == VERSION:
-        print 'Data model in use matches the current version.'
+        print _('Data model in use matches the current version.')
         return
     for mod in get_migration_modules():
         # it is assumed here that each migration module will have two members:
@@ -82,22 +83,22 @@ def migrate_database(options):
         if mod.version <= version:
             continue
         if mod.version > VERSION:
-            raise DataError('Migration provided for higher version than is expected.')
+            raise DataError(_('Migration provided for higher version than is expected.'))
         try:
             mod.migrate()
         except Exception, e:
-            _log.critical('Migration to data model version %d failed.' %
+            _log.critical(_('Migration to data model version %d failed.') %
                           mod.version)
             print >> sys.stderr, \
-                    'Migration to version %d failed, see %s for details.' % \
+                    _('Migration to version %d failed, see %s for details.') % \
                     (mod.version, options.log_file)
             raise e
         if not options.test:
             set_version(mod.version)
         version = mod.version
     if version < VERSION:
-        raise DataError('The current version is still lower than the expected version, even ' +\
-                        'after migrations were applied.')
+        raise DataError(_('The current version is still lower than the expected version, even ' +\
+                        'after migrations were applied.'))
     validate_database_migrations(options)
 
 
@@ -106,7 +107,7 @@ def validate_database_migrations(options):
     if not is_validated():
         errors = validate()
     if errors:
-        error_message = '%d errors on validation, see %s for details'%(errors, options.log_file)
+        error_message = _('%d errors on validation, see %s for details')%(errors, options.log_file)
         raise DataError(error_message)
     if not options.test:
         set_validated()
@@ -130,19 +131,19 @@ def main():
 
 def _auto_manage_db(options):
     if options.force:
-        print 'Clearing previous versions.'
+        print _('Clearing previous versions.')
         clean_db()
 
     if options.start is not None:
         last = int(options.start) - 1
-        print 'Reverting db to version %d.' % last
+        print _('Reverting db to version %d.') % last
         revert_to_version(last)
 
-    print 'Beginning database migrations.'
+    print _('Beginning database migrations.')
     migrate_database(options)
-    print 'Database migrations complete.'
+    print _('Database migrations complete.')
 
-    print 'Loading content types.'
+    print _('Loading content types.')
     load_content_types()
-    print 'Content types loaded.'
+    print _('Content types loaded.')
     return os.EX_OK
