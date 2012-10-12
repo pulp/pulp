@@ -590,7 +590,7 @@ def set_call_request_id_on_call_resources(call_request_id, call_resources):
     @type  call_resources: iterable of L{TaskResource} instances
     """
     for call_resource in call_resources:
-        call_resource['call_resource_id'] = call_request_id
+        call_resource['call_request_id'] = call_request_id
 
 
 def wait_for_task(task, states, poll_interval=0.5, timeout=None):
