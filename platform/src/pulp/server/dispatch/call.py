@@ -411,3 +411,4 @@ class CallReport(object):
                 data[field] = None
 
         return data
+

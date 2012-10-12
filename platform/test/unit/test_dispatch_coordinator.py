@@ -27,7 +27,7 @@ from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.task import Task
 from pulp.server.exceptions import OperationTimedOut
-from pulp.server.util import NoTopologicalOrderingExists, topological_sort
+from pulp.server.util import CycleExists, topological_sort
 
 # coordinator instantiation tests ----------------------------------------------
 
@@ -425,14 +425,14 @@ class TopologicalSortTests(unittest.TestCase):
         graph = {v1: [v2, v3],
                  v2: [v3],
                  v3: [v1]}
-        self.assertRaises(NoTopologicalOrderingExists,
+        self.assertRaises(CycleExists,
                           topological_sort,
                           graph)
 
     def test_single_vertex_cyclic_graph(self):
         v1 = 'vertex 1'
         graph = {v1: [v1]}
-        self.assertRaises(NoTopologicalOrderingExists,
+        self.assertRaises(CycleExists,
                           topological_sort,
                           graph)
 

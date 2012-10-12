@@ -13,10 +13,11 @@
 
 import copy
 import datetime
-import sys
+import logging
 import time
 import types
 import uuid
+from gettext import gettext as _
 
 from pulp.server.auth.authorization import (
     GrantPermmissionsForTaskV2, RevokePermissionsForTaskV2)
@@ -24,12 +25,13 @@ from pulp.server.db.model.dispatch import QueuedCall, CallResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch import history as dispatch_history
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.exceptions import OperationTimedOut
-from pulp.server.util import subdict, NoTopologicalOrderingExists, topological_sort
+from pulp.server.util import subdict, TopologicalSortError, topological_sort
 
+
+_LOG = logging.getLogger(__name__)
 
 _VALID_SEARCH_CRITERIA = frozenset(('call_request_id', 'call_request_group_id',
                                     'state', 'callable_name', 'args', 'kwargs',
@@ -62,15 +64,31 @@ class Coordinator(object):
         self.call_resource_collection.remove(safe=True)
 
         # re-start interrupted tasks
-        # XXX this is entirely too simple, we need to re-validate call request
-        # groups and log those that cannot be run due to unresolvable dependencies
         queued_call_collection = QueuedCall.get_collection()
         queued_call_list = list(queued_call_collection.find().sort('timestamp'))
         queued_call_collection.remove(safe=True)
 
-        for queued_call in queued_call_list:
-            call_request = CallRequest.deserialize(queued_call['serialized_call_request'])
-            self.execute_call_asynchronously(call_request)
+        queued_call_request_list = [CallRequest.deserialize(q['serialized_call_request']) for q in queued_call_list]
+
+        while queued_call_request_list:
+            call_request = queued_call_request_list[0]
+
+            # individually call un-grouped calls
+            if call_request.group_id is None:
+                queued_call_request_list.remove(call_request)
+                self.execute_call_asynchronously(call_request)
+                continue
+
+            # call grouped calls at all at once
+            call_request_group = [c for c in queued_call_request_list if c.group_id == call_request.group_id]
+            map(queued_call_request_list.remove, call_request_group)
+
+            try:
+                # NOTE (jconnor 2012-10-12) this will change the group_id, but I don't think I care
+                self.execute_multiple_calls(call_request_group)
+            except TopologicalSortError, e:
+                log_msg = _('Cannot execute call request group: %(g)s' % {'g': call_request.group_id})
+                _LOG.warn('\n'.join((log_msg, str(e))))
 
     # execution methods --------------------------------------------------------
 
@@ -146,6 +164,7 @@ class Coordinator(object):
         @type  call_request_list: list of L{call.CallRequest} instances
         @return: list of call reports pertaining to the running of the request calls
         @rtype:  list of L{call.CallReport} instances
+        @raise: L{TopologicalSortError} if inter-task dependencies are malformed
         """
         call_request_group_id = self._generate_call_request_group_id()
         task_list = []
@@ -255,7 +274,7 @@ class Coordinator(object):
             wait_for_task(task, valid_states, poll_interval=self.task_state_poll_interval, timeout=timeout)
 
         except OperationTimedOut:
-            task_queue.dequeue(task)
+            task_queue.dequeue(task) # dequeue or cancel? really need timed out support
             raise
 
         else:
@@ -295,11 +314,7 @@ class Coordinator(object):
         # check the dependencies with a topological sort and get a valid order
         # in which to enqueue the tasks
 
-        try:
-            sorted_call_request_ids = topological_sort(dependency_graph)
-        except NoTopologicalOrderingExists:
-            raise dispatch_exceptions.CircularDependencies(), None, sys.exc_info()[2]
-        # XXX except malformed graph exception
+        sorted_call_request_ids = topological_sort(dependency_graph)
 
         sorted_task_list = [call_request_map[id] for id in sorted_call_request_ids]
         return sorted_task_list
