@@ -98,7 +98,7 @@ class TaskQueue(object):
             tasks = []
             available_weight = self.concurrency_threshold - self.__running_weight
             for task in self.__waiting_tasks:
-                if task.call_request.dependecies:
+                if task.call_request.dependencies:
                     continue
                 if task.call_request.weight > available_weight:
                     continue
