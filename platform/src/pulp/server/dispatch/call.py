@@ -382,6 +382,11 @@ class CallReport(object):
                       'state', 'progress', 'result', 'dependency_failures'):
             data[field] = getattr(self, field)
 
+        # legacy fields
+
+        data['task_id'] = self.call_request_id
+        data['task_group_id'] = self.call_request_group_id
+
         # format the exception and traceback, if they exist
 
         ex = getattr(self, 'exception')

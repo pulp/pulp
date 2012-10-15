@@ -74,6 +74,11 @@ class TaskCollection(JSONController):
         valid_filters = ['tag']
         filters = self.filters(valid_filters)
         criteria = {'tags': filters.get('tag', [])}
+        # support legacy search criteria
+        if 'task_id' in criteria:
+            criteria['call_request_id'] = criteria.pop('task_id')
+        if 'task_group_id' in criteria:
+            criteria['call_request_group_id'] = criteria.pop('task_group_id')
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(**criteria)
         serialized_call_reports = [c.serialize() for c in call_reports]
@@ -83,29 +88,29 @@ class TaskCollection(JSONController):
 class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
-    def GET(self, task_id):
-        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
+    def GET(self, call_request_id):
+        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_request_id)
         coordinator = dispatch_factory.coordinator()
-        call_reports = coordinator.find_call_reports(task_id=task_id)
+        call_reports = coordinator.find_call_reports(call_request_id=call_request_id)
         if call_reports:
             serialized_call_report = call_reports[0].serialize()
             serialized_call_report.update(link)
             return self.ok(serialized_call_report)
-        archived_calls = dispatch_history.find_archived_calls(task_id=task_id)
+        archived_calls = dispatch_history.find_archived_calls(call_request_id=call_request_id)
         if archived_calls.count() > 0:
             serialized_call_report = archived_calls[0]['serialized_call_report']
             serialized_call_report.update(link)
             return self.ok(serialized_call_report)
-        raise TaskNotFound(task_id)
+        raise TaskNotFound(call_request_id)
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, task_id):
+    def DELETE(self, call_request_id):
         coordinator = dispatch_factory.coordinator()
-        result = coordinator.cancel_call(task_id)
+        result = coordinator.cancel_call(call_request_id)
         if result is None:
-            raise MissingResource(task_id)
+            raise MissingResource(call_request_id)
         if result is False:
-            raise TaskCancelNotImplemented(task_id)
+            raise TaskCancelNotImplemented(call_request_id)
         link = serialization.link.current_link_obj()
         return self.accepted(link)
 
@@ -128,19 +133,19 @@ class QueuedCallCollection(JSONController):
 class QueuedCallResource(JSONController):
 
     @auth_required(authorization.READ)
-    def GET(self, task_id):
+    def GET(self, call_request_id):
         coordinator = dispatch_factory.coordinator()
-        tasks = coordinator._find_tasks(task_id=task_id)
+        tasks = coordinator._find_tasks(call_request_id=call_request_id)
         if not tasks:
-            raise QueuedCallNotFound(task_id)
+            raise QueuedCallNotFound(call_request_id)
         return self.ok(tasks[0].queued_call_id)
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, task_id):
+    def DELETE(self, call_request_id):
         coordinator = dispatch_factory.coordinator()
-        tasks = coordinator._find_tasks(task_id=task_id)
+        tasks = coordinator._find_tasks(call_request_id=call_request_id)
         if not tasks:
-            raise QueuedCallNotFound(task_id)
+            raise QueuedCallNotFound(call_request_id)
         collection = QueuedCall.get_collection()
         collection.remove({'_id': tasks[0].queued_call_id}, safe=True)
         link = serialization.link.current_link_obj()
@@ -152,16 +157,18 @@ class TaskGroupCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        task_group_ids = set()
+        call_request_group_ids = set()
         task_queue = dispatch_factory._task_queue()
         for task in task_queue.all_tasks():
-            task_group_id = task.call_report.task_group_id
-            if task_group_id is None:
+            call_request_group_id = task.call_request.id
+            if call_request_group_id is None:
                 continue
-            task_group_ids.add(task_group_id)
+            call_request_group_ids.add(call_request_group_id)
         task_group_links = []
-        for id in task_group_ids:
-            link = {'task_group_id': id}
+        for id in call_request_group_ids:
+            # continue to support legacy task ids
+            link = {'task_group_id': id,
+                    'call_request_group_id': id}
             link.update(serialization.link.child_link_obj(id))
             task_group_links.append(link)
         return self.ok(task_group_links)
@@ -170,27 +177,27 @@ class TaskGroupCollection(JSONController):
 class TaskGroupResource(JSONController):
 
     @auth_required(authorization.READ)
-    def GET(self, task_group_id):
-        link = serialization.link.link_obj('/pulp/api/v2/task_groups/%s/' % task_group_id)
+    def GET(self, call_request_group_id):
+        link = serialization.link.link_obj('/pulp/api/v2/task_groups/%s/' % call_request_group_id)
         coordinator = dispatch_factory.coordinator()
-        call_reports = coordinator.find_call_reports(task_group_id=task_group_id)
+        call_reports = coordinator.find_call_reports(call_request_group_id=call_request_group_id)
         serialized_call_reports = [c.serialize() for c in call_reports]
-        archived_calls = dispatch_history.find_archived_calls(task_group_id=task_group_id)
+        archived_calls = dispatch_history.find_archived_calls(task_group_id=call_request_group_id)
         serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
         if not serialized_call_reports:
-            raise TaskGroupNotFound(task_group_id)
+            raise TaskGroupNotFound(call_request_group_id)
         map(lambda r: r.update(link), serialized_call_reports)
         return self.ok(serialized_call_reports)
 
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, task_group_id):
+    def DELETE(self, call_request_group_id):
         coordinator = dispatch_factory.coordinator()
-        results = coordinator.cancel_multiple_calls(task_group_id)
+        results = coordinator.cancel_multiple_calls(call_request_group_id)
         if not results:
-            raise TaskGroupNotFound(task_group_id)
+            raise TaskGroupNotFound(call_request_group_id)
         if None in results.values():
-            raise TaskGroupCancelNotImplemented(task_group_id)
+            raise TaskGroupCancelNotImplemented(call_request_group_id)
         return self.accepted(results)
 
 # web.py applications ----------------------------------------------------------
