@@ -18,6 +18,7 @@ Contains (proxy) classes that represent the pulp agent.
 from gofer.proxy import Agent
 from pulp.server.agent.context import Context, Capability
 from pulp.server.agent.direct.services import Services
+from pulp.server.compat import json, json_util
 from logging import getLogger
 
 
@@ -118,6 +119,8 @@ class Consumer(Capability):
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
+        # make sure definitions can be json serialized
+        definitions = json.loads(json.dumps(definitions, default=json_util.default))
         return consumer.bind(definitions, options)
 
     def rebind(self, definitions, options):
@@ -139,6 +142,8 @@ class Consumer(Capability):
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
+        # make sure definitions can be json serialized
+        definitions = json.loads(json.dumps(definitions, default=json_util.default))
         return consumer.rebind(definitions, options)
 
     def unbind(self, repo_id, options):

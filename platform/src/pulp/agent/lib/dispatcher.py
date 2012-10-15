@@ -230,7 +230,7 @@ class Dispatcher:
                 report.update(r)
             except Exception:
                 log.exception('handler failed')
-                r = ProfileReport()
+                r = BindReport()
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
                 report.update(r)
@@ -262,7 +262,7 @@ class Dispatcher:
                 report.update(r)
             except Exception:
                 log.exception('handler failed')
-                r = ProfileReport()
+                r = BindReport()
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
                 report.update(r)
@@ -289,7 +289,7 @@ class Dispatcher:
                 report.update(r)
             except Exception:
                 log.exception('handler failed')
-                r = ProfileReport()
+                r = BindReport()
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
                 report.update(r)

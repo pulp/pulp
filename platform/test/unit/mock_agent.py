@@ -23,6 +23,7 @@ from gofer.rmi import mock as mock
 from pulp.server.agent.direct.services import Services, HeartbeatListener
 from pulp.server.agent.hub import pulpagent as restagent
 from pulp.agent.lib.report import DispatchReport
+from pulp.server.compat import json
 
 
 def install():
@@ -83,9 +84,12 @@ class MockRest:
             raise Exception, '%s, not mocked' % Method
 
 
-def dispatch(self=None, details=None):
+def dispatch(*args):
+    # test json serialization
+    for a in args:
+        json.dumps(a)
+    # return a dispatch report
     r = DispatchReport()
-    r.details = (details or {})
     return r.dict()
 
 #
@@ -107,7 +111,7 @@ class Consumer(object):
     bind = Mock(side_effect=dispatch)
     rebind = Mock(side_effect=dispatch)
     unbind = Mock(side_effect=dispatch)
-    unregistered = Mock(side_effect=dispatch)
+    unregistered = Mock()
 
 
 class Content(object):

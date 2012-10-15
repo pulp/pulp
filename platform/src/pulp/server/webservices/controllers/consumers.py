@@ -83,7 +83,7 @@ def bind_definition(repo_id, distributor_id):
     details = manager.create_bind_payload(repo_id, distributor_id)
     definition = dict(
         type_id=distributor['distributor_type_id'],
-        repository=serialization.db.scrub_mongo_fields(repository),
+        repository=repository,
         details=details)
     return definition
 

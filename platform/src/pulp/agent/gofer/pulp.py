@@ -16,6 +16,8 @@ Pulp (gofer) plugin.
 Contains recurring actions and remote classes.
 """
 
+import os
+
 from hashlib import sha256
 from logging import getLogger
 
@@ -27,6 +29,7 @@ from gofer.pmon import PathMonitor
 from gofer.agent.rmi import Context
 
 from pulp.common.bundle import Bundle as BundleImpl
+from pulp.common.config import Config
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
@@ -86,6 +89,17 @@ class Conduit(HandlerConduit):
     Provides integration between the gofer progress reporting
     and agent handler frameworks.
     """
+
+    def get_consumer_config(self):
+        """
+        Get the consumer configuration.
+        @return: The consumer configuration object.
+        @rtype: L{pulp.common.config.Config}
+        """
+        cfg = Config(
+            '/etc/pulp/consumer/consumer.conf',
+            os.path.expanduser('~/.pulp/consumer.conf'))
+        return cfg
 
     def update_progress(self, report):
         """
