@@ -96,9 +96,11 @@ class Conduit(HandlerConduit):
         @return: The consumer configuration object.
         @rtype: L{pulp.common.config.Config}
         """
-        cfg = Config(
-            '/etc/pulp/consumer/consumer.conf',
-            os.path.expanduser('~/.pulp/consumer.conf'))
+        paths = ['/etc/pulp/consumer/consumer.conf']
+        overrides = os.path.expanduser('~/.pulp/consumer.conf')
+        if os.path.exists(overrides):
+            paths.append(overrides)
+        cfg = Config(*paths)
         return cfg
 
     def update_progress(self, report):
