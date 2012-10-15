@@ -291,7 +291,7 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
             old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
             old_pkgs = map(package_api.package, old_pkgs)
             def repo_defined(pkg):
-                if pkg is None or not pkg.has_key("repo_defined") or not pkg["repo_defined"]:
+                if pkg is None or not pkg.get("repo_defined"):
                     return None
                 return pkg
             old_pkgs = filter(repo_defined, old_pkgs)

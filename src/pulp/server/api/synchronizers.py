@@ -572,8 +572,8 @@ class BaseSynchronizer(object):
                 self.package_api.update(newpkg["id"], delta)
             except:
                 if num_retries > 0:
-                    log.debug("Retrying package import on %s" % newpkg['id'])
                     time.sleep(random.randrange(1, 10, 1))
+                    log.debug("Retrying package import on %s" % newpkg['id'])
                     self.import_package(package, repo, repo_defined, num_retries = num_retries - 1)
             return newpkg
         except Exception, e:
