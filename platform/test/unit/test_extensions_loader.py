@@ -16,8 +16,12 @@ import os
 import sys
 import unittest
 
+import mock
+
 from pulp.client.extensions import loader
 from pulp.client.extensions.core import PulpCli, PulpPrompt, ClientContext
+from pulp.client.extensions import decorator
+from pulp.common import constants
 
 # -- test data ----------------------------------------------------------------
 
@@ -25,6 +29,9 @@ TEST_DIRS_ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data'
 
 # Contains 4 properly structured plugins, 3 of which contain the CLI init module
 VALID_SET = TEST_DIRS_ROOT + '/valid_set'
+
+# Contains no plugins
+EMPTY_SET = TEST_DIRS_ROOT + '/empty_set'
 
 # Contains 2 plugins, 1 of which loads correct and another that fails
 PARTIAL_FAIL_SET = TEST_DIRS_ROOT + '/partial_fail_set'
@@ -47,7 +54,9 @@ class ExtensionLoaderTests(unittest.TestCase):
         self.cli = PulpCli(self.prompt)
         self.context = ClientContext(None, None, None, self.prompt, None, cli=self.cli)
 
-    def test_load_valid_set_cli(self):
+    # prevent entry points from being loaded
+    @mock.patch('pkg_resources.iter_entry_points', return_value=())
+    def test_load_valid_set_cli(self, mock_entry):
         """
         Tests loading the set of CLI extensions in the valid_set directory. These
         extensions have the following properties:
@@ -74,11 +83,12 @@ class ExtensionLoaderTests(unittest.TestCase):
         sorted_modules = loader._resolve_order(modules)
 
         # Verify
-        self.assertEqual(4, len(sorted_modules))
-        self.assertEqual('ext3', sorted_modules[0].__name__)
-        self.assertEqual('ext1', sorted_modules[1].__name__)
-        self.assertEqual('ext4', sorted_modules[2].__name__)
-        self.assertEqual('ext2', sorted_modules[3].__name__)
+        # 3 priority levels
+        self.assertEqual(3, len(sorted_modules))
+        self.assertEqual('ext3', sorted_modules[1][loader._MODULES][0].__name__)
+        self.assertEqual('ext1', sorted_modules[5][loader._MODULES][0].__name__)
+        self.assertEqual('ext4', sorted_modules[5][loader._MODULES][1].__name__)
+        self.assertEqual('ext2', sorted_modules[7][loader._MODULES][0].__name__)
 
 
     def test_load_extensions_bad_dir(self):
@@ -91,7 +101,9 @@ class ExtensionLoaderTests(unittest.TestCase):
             self.assertEqual(e.dir, 'fake_dir')
             print(e) # for coverage
 
-    def test_load_partial_fail_set_cli(self):
+    # prevent entry points from being loaded
+    @mock.patch('pkg_resources.iter_entry_points', return_value=())
+    def test_load_partial_fail_set_cli(self, mock_entry):
         # Test
         try:
             loader.load_extensions(PARTIAL_FAIL_SET, self.context)
@@ -140,3 +152,60 @@ class ExtensionLoaderTests(unittest.TestCase):
         mod = __import__('no_init_function')
 
         self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
+
+    @mock.patch('pkg_resources.iter_entry_points', autospec=True)
+    def test_load_entry_points(self, mock_iter):
+        # Make sure we try to load extensions through entry points.
+        context = mock.MagicMock()
+        entry_point = mock.MagicMock()
+        mock_iter.return_value = [entry_point]
+
+        loader.load_extensions(EMPTY_SET, context)
+
+        mock_iter.assert_called_once_with(constants.ENTRY_POINT_EXTENSIONS)
+        entry_point.load.assert_called_once_with()
+        entry_point.load.return_value.assert_called_once_with(context)
+
+    @mock.patch('pkg_resources.iter_entry_points', autospec=True)
+    def test_entry_point_priority(self, mock_iter):
+    # Make sure we load extensions in the correct order based on priority.
+        class MockLoad(object):
+            """
+            Used to determine in what order the load() methods were called.
+            """
+            def __init__(self, i, order_of_calling):
+                self.i = i
+                self.order_of_calling = order_of_calling
+
+            def __call__(self, *args, **kwargs):
+                self.order_of_calling.append(self)
+                return mock.MagicMock()
+
+        order_of_calling = []
+        context = mock.MagicMock()
+        entry_point1 = decorator.priority()(mock.MagicMock())
+        entry_point1.load = MockLoad(1, order_of_calling)
+        entry_point2 = decorator.priority(loader.DEFAULT_PRIORITY - 10)(mock.MagicMock())
+        entry_point2.load = MockLoad(2, order_of_calling)
+        entry_point3 = decorator.priority(loader.DEFAULT_PRIORITY + 10)(mock.MagicMock())
+        entry_point3.load = MockLoad(3, order_of_calling)
+        mock_iter.return_value = [entry_point1, entry_point2, entry_point3]
+
+        loader.load_extensions(EMPTY_SET, context)
+
+        self.assertEqual(len(order_of_calling), 3)
+        print order_of_calling
+        self.assertEqual([load.i for load in order_of_calling], [2, 1, 3])
+
+    def test_priority_decorator(self):
+        @decorator.priority(3)
+        def foo():
+            pass
+        self.assertEqual(getattr(foo, loader.PRIORITY_VAR), 3)
+
+    def test_priority_decorator_default_value(self):
+        @decorator.priority()
+        def foo():
+            pass
+        self.assertEqual(getattr(foo, loader.PRIORITY_VAR), loader.DEFAULT_PRIORITY)
+

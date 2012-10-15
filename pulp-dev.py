@@ -68,8 +68,6 @@ DIRS = (
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
-    '/var/www/pulp_puppet/http/repos',
-    '/var/www/pulp_puppet/https/repos',
 )
 
 #
@@ -119,48 +117,6 @@ LINKS = (
     # Server Web Configuration
     ('platform/src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
-
-    # RPM Support Configuration
-    ('rpm-support/etc/httpd/conf.d/pulp_rpm.conf', '/etc/httpd/conf.d/pulp_rpm.conf'),
-    ('rpm-support/etc/pulp/repo_auth.conf', '/etc/pulp/repo_auth.conf'),
-    ('rpm-support/etc/pulp/agent/conf.d/rpm.conf', '/etc/pulp/agent/conf.d/rpm.conf'),
-    ('rpm-support/etc/pulp/agent/conf.d/bind.conf', '/etc/pulp/agent/conf.d/bind.conf'),
-    ('rpm-support/etc/pulp/agent/conf.d/linux.conf', '/etc/pulp/agent/conf.d/linux.conf'),
-    ('rpm-support/etc/yum/pluginconf.d/pulp-profile-update.conf', '/etc/yum/pluginconf.d/pulp-profile-update.conf'),
-
-    # RPM Support Admin Extensions
-    ('rpm-support/extensions/admin/rpm_admin_consumer', DIR_ADMIN_EXTENSIONS + 'rpm_admin_consumer'),
-    ('rpm-support/extensions/admin/rpm_repo', DIR_ADMIN_EXTENSIONS + 'rpm_repo'),
-
-    # RPM Support Consumer Extensions
-    ('rpm-support/extensions/consumer/rpm_consumer', DIR_CONSUMER_EXTENSIONS + 'rpm_consumer'),
-
-    # RPM Support Agent Handlers
-    ('rpm-support/handlers/rpm.py', '/usr/lib/pulp/agent/handlers/rpm.py'),
-    ('rpm-support/handlers/bind.py', '/usr/lib/pulp/agent/handlers/bind.py'),
-    ('rpm-support/handlers/linux.py', '/usr/lib/pulp/agent/handlers/linux.py'),
-
-    # RPM Support Plugins
-    ('rpm-support/plugins/types/rpm_support.json', DIR_PLUGINS + '/types/rpm_support.json'),
-    ('rpm-support/plugins/importers/yum_importer', DIR_PLUGINS + '/importers/yum_importer'),
-    ('rpm-support/plugins/distributors/yum_distributor', DIR_PLUGINS + '/distributors/yum_distributor'),
-    ('rpm-support/plugins/distributors/iso_distributor', DIR_PLUGINS + '/distributors/iso_distributor'),
-    ('rpm-support/plugins/profilers/rpm_errata_profiler', DIR_PLUGINS + '/profilers/rpm_errata_profiler'),
-
-    # RPM Support Web Configuration
-    ('rpm-support/usr/lib/yum-plugins/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
-    ('rpm-support/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
-
-    # Puppet Support Plugins
-    ('puppet-support/etc/httpd/conf.d/pulp_puppet.conf', '/etc/httpd/conf.d/pulp_puppet.conf'),
-    ('puppet-support/plugins/types/puppet.json', DIR_PLUGINS + '/types/puppet.json'),
-    ('puppet-support/plugins/importers/puppet_importer', DIR_PLUGINS + '/importers/puppet_importer'),
-    ('puppet-support/plugins/distributors/puppet_distributor', DIR_PLUGINS + '/distributors/puppet_distributor'),
-
-    # Puppet Support Admin Extensions
-    ('puppet-support/extensions/admin/puppet_repo', DIR_ADMIN_EXTENSIONS + 'puppet_repo'),
-    ('puppet-support/etc/pulp/admin/conf.d/puppet.conf', '/etc/pulp/admin/conf.d/puppet.conf')
-
 )
 
 def parse_cmdline():
@@ -241,7 +197,6 @@ def install(opts):
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
     os.system('chown -R apache:apache /var/lib/pulp/published')
-    os.system('chown -R apache:apache /var/www/pulp_puppet')
 
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
