@@ -290,7 +290,11 @@ def _sync(repo_id, skip=None, progress_callback=None, synchronizer=None,
         if not skip.has_key('packages') or skip['packages'] != 1:
             old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
             old_pkgs = map(package_api.package, old_pkgs)
-            old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
+            def repo_defined(pkg):
+                if pkg is None or not pkg.get("repo_defined"):
+                    return None
+                return pkg
+            old_pkgs = filter(repo_defined, old_pkgs)
             new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"])))
             new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
             log.info("%s old packages to process, %s new packages to process" % \

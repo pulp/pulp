@@ -514,7 +514,7 @@ class BaseSynchronizer(object):
                 # retry for infrequent scenario of getting a DuplicateKeyError
                 # yet the document isn't available yet for a find()
                 time.sleep(random.randrange(1, 10, 1))
-                return self.__safe_import(package, repo_defined, num_retries=num_retries-1)
+                return self.__import_package_with_retry(package, repo, repo_defined, num_retries=num_retries-1)
             if not found:
                 log.error(e)
                 log.error("Caught DuplicateKeyError yet we didn't find a matching package in database")
@@ -524,7 +524,7 @@ class BaseSynchronizer(object):
             newpkg = found
         return newpkg
 
-    def import_package(self, package, repo=None, repo_defined=False):
+    def import_package(self, package, repo=None, repo_defined=False, num_retries=5):
         """
         @param package - package to add to repo
         @param repo_id - repo_id to hold package
@@ -568,7 +568,13 @@ class BaseSynchronizer(object):
                     newpkg["repoids"].append(repo['id'])
             newpkg = pulp.server.util.translate_to_utf8(newpkg)
             delta = Delta(newpkg, filter)
-            self.package_api.update(newpkg["id"], delta)
+            try:
+                self.package_api.update(newpkg["id"], delta)
+            except:
+                if num_retries > 0:
+                    time.sleep(random.randrange(1, 10, 1))
+                    log.debug("Retrying package import on %s" % newpkg['id'])
+                    self.import_package(package, repo, repo_defined, num_retries = num_retries - 1)
             return newpkg
         except Exception, e:
             log.error('Package "%s", import failed', package, exc_info=True)
