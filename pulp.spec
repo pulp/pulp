@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.13
+Version:        1.1.14
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue Oct 16 2012 Jeff Ortel <jortel@redhat.com> 1.1.14-1
+- 865003 - fixing race condition where a package object is accessed for update
+  before mongo persists it (pkilambi@redhat.com)
+
 * Thu Oct 04 2012 Jeff Ortel <jortel@redhat.com> 1.1.13-1
 - Merge pull request #92 from pulp/jconnor-862356-non-utf-8 (jortel@redhat.com)
 - 835586 - fixed improper comparison between basestring instance and unicode
