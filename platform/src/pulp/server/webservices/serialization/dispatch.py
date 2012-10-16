@@ -17,15 +17,15 @@ from pulp.common import dateutils
 
 
 def task_href(call_report):
-    if call_report.task_id is None:
+    if call_report.call_request_id is None:
         return {}
-    return {'_href': '/pulp/api/v2/tasks/%s/' % call_report.task_id}
+    return {'_href': '/pulp/api/v2/tasks/%s/' % call_report.call_request_id}
 
 
 def task_group_href(call_report):
-    if call_report.task_group_id is None:
+    if call_report.call_request_group_id is None:
         return {}
-    return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.task_group_id}
+    return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.call_request_group_id}
 
 
 def scheduled_call_obj(scheduled_call):

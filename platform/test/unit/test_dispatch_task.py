@@ -81,7 +81,7 @@ class TaskInstanceTests(base.PulpServerTests):
         task_1 = Task(call_request)
         task_2 = Task(call_request)
         self.assertTrue(task_1 == task_1)
-        self.assertFalse(task_1 == task_2)
+        self.assertTrue(task_1 == task_2)
 
 # task testing -----------------------------------------------------------------
 
@@ -227,7 +227,7 @@ class TaskArchivalTests(base.PulpServerTests):
         except:
             self.fail(traceback.format_exc())
         collection = ArchivedCall.get_collection()
-        archived_call = collection.find_one({'serialized_call_report.task_id': task.id})
+        archived_call = collection.find_one({'serialized_call_report.call_request_id': task.call_request.id})
         self.assertFalse(archived_call is None)
 
 # principal tests --------------------------------------------------------------

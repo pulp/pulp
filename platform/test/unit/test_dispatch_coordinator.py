@@ -19,15 +19,14 @@ import mock
 
 import base
 
-from pulp.server.db.model.dispatch import TaskResource
+from pulp.server.db.model.dispatch import CallResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
-from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.task import Task
 from pulp.server.exceptions import OperationTimedOut
-from pulp.server.util import NoTopologicalOrderingExists, topological_sort
+from pulp.server.util import CycleExists, topological_sort
 
 # coordinator instantiation tests ----------------------------------------------
 
@@ -48,7 +47,7 @@ class CoordinatorTests(base.PulpServerTests):
         self.coordinator = coordinator.Coordinator()
         self._task_queue_factory = dispatch_factory._task_queue
         dispatch_factory._task_queue = mock.Mock() # replace the task queue
-        self.collection = TaskResource.get_collection()
+        self.collection = CallResource.get_collection()
 
     def tearDown(self):
         super(CoordinatorTests, self).tearDown()
@@ -75,9 +74,9 @@ class OrQueryTests(CoordinatorTests):
             }
         }
         try:
-            task_resources = coordinator.resource_dict_to_task_resources(resources)
-            coordinator.set_task_id_on_task_resources(task_id, task_resources)
-            self.collection.insert(task_resources, safe=True)
+            call_resources = coordinator.resource_dict_to_call_resources(resources)
+            coordinator.set_call_request_id_on_call_resources(task_id, call_resources)
+            self.collection.insert(call_resources, safe=True)
         except:
             self.fail(traceback.format_exc())
 
@@ -88,10 +87,10 @@ class OrQueryTests(CoordinatorTests):
                 repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
-        self.collection.insert(task_resources, safe=True)
+        call_resources = coordinator.resource_dict_to_call_resources(resources)
+        self.collection.insert(call_resources, safe=True)
 
-        or_query = {'$or': coordinator.filter_dicts(task_resources, ('resource_type', 'resource_id'))}
+        or_query = {'$or': coordinator.filter_dicts(call_resources, ('resource_type', 'resource_id'))}
         cursor = self.collection.find(or_query)
         self.assertTrue(cursor.count() == 1, '%d' % cursor.count())
 
@@ -104,8 +103,8 @@ class OrQueryTests(CoordinatorTests):
                 repo_2_id: dispatch_constants.RESOURCE_CREATE_OPERATION,
             }
         }
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
-        self.collection.insert(task_resources, safe=True)
+        call_resources = coordinator.resource_dict_to_call_resources(resources)
+        self.collection.insert(call_resources, safe=True)
 
         or_query = {'$or': [{'resource_type': dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'resource_id': repo_2_id}]}
         cursor = self.collection.find(or_query)
@@ -120,10 +119,10 @@ class OrQueryTests(CoordinatorTests):
                 repo_2_id: dispatch_constants.RESOURCE_CREATE_OPERATION,
                 }
         }
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
-        self.collection.insert(task_resources, safe=True)
+        call_resources = coordinator.resource_dict_to_call_resources(resources)
+        self.collection.insert(call_resources, safe=True)
 
-        or_query = coordinator.filter_dicts(task_resources, ('resource_type', 'resource_id'))
+        or_query = coordinator.filter_dicts(call_resources, ('resource_type', 'resource_id'))
         cursor = self.collection.find({'$or': or_query})
         self.assertTrue(cursor.count() == 2, '%d' % cursor.count())
 
@@ -202,11 +201,11 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
         # read does not conflict with read
 
-        task_resources = coordinator.resource_dict_to_task_resources(resources)
-        coordinator.set_task_id_on_task_resources(task_id, task_resources)
-        self.collection.insert(task_resources, safe=True)
+        call_resources = coordinator.resource_dict_to_call_resources(resources)
+        coordinator.set_call_request_id_on_call_resources(task_id, call_resources)
+        self.collection.insert(call_resources, safe=True)
 
-        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+        response, blockers, reasons, call_resources = self.coordinator._find_conflicts(resources)
 
         self.assertTrue(response is dispatch_constants.CALL_ACCEPTED_RESPONSE)
         self.assertFalse(blockers)
@@ -225,8 +224,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 content_unit_id: dispatch_constants.RESOURCE_READ_OPERATION
             }
         }
-        existing_task_resources = coordinator.resource_dict_to_task_resources(existing_resources)
-        coordinator.set_task_id_on_task_resources(task_id, existing_task_resources)
+        existing_task_resources = coordinator.resource_dict_to_call_resources(existing_resources)
+        coordinator.set_call_request_id_on_call_resources(task_id, existing_task_resources)
         self.collection.insert(existing_task_resources, safe=True)
 
         # delete on content unit is postponed by read
@@ -236,7 +235,7 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 content_unit_id: dispatch_constants.RESOURCE_DELETE_OPERATION
             }
         }
-        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+        response, blockers, reasons, call_resources = self.coordinator._find_conflicts(resources)
 
         self.assertTrue(response is dispatch_constants.CALL_POSTPONED_RESPONSE)
         self.assertTrue(task_id in blockers)
@@ -245,17 +244,18 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
 
     def test_multiple_conflicts(self):
         # modeling binding a consumer group to a repository
-        task_1 = 'first_task'
-        task_2 = 'second_task'
+        call_1_id = 'first_task'
+        call_2_id = 'second_task'
         repo_id = 'my_awesome_repo'
-        consumer_1 = 'my_awesome_consumer'
-        consumer_2 = 'my_less_awesome_consumer'
+        consumer_1_id = 'my_awesome_consumer'
+        consumer_2_id = 'my_less_awesome_consumer'
+
         bind_1_resources = {
             dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
                 repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             },
             dispatch_constants.RESOURCE_CONSUMER_TYPE: {
-                consumer_1: dispatch_constants.RESOURCE_UPDATE_OPERATION
+                consumer_1_id: dispatch_constants.RESOURCE_UPDATE_OPERATION
             }
         }
         bind_2_resources = {
@@ -263,13 +263,16 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 repo_id: dispatch_constants.RESOURCE_READ_OPERATION
             },
             dispatch_constants.RESOURCE_CONSUMER_TYPE: {
-                consumer_2: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
+                consumer_2_id: [dispatch_constants.RESOURCE_UPDATE_OPERATION]
             }
         }
-        task_1_resources = coordinator.resource_dict_to_task_resources(bind_1_resources)
-        coordinator.set_task_id_on_task_resources(task_1, task_1_resources)
-        task_2_resources = coordinator.resource_dict_to_task_resources(bind_2_resources)
-        coordinator.set_task_id_on_task_resources(task_2, task_2_resources)
+
+        task_1_resources = coordinator.resource_dict_to_call_resources(bind_1_resources)
+        coordinator.set_call_request_id_on_call_resources(call_1_id, task_1_resources)
+
+        task_2_resources = coordinator.resource_dict_to_call_resources(bind_2_resources)
+        coordinator.set_call_request_id_on_call_resources(call_2_id, task_2_resources)
+
         self.collection.insert(task_1_resources, safe=True)
         self.collection.insert(task_2_resources, safe=True)
 
@@ -281,11 +284,11 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
             }
         }
 
-        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+        response, blockers, reasons, call_resources = self.coordinator._find_conflicts(resources)
 
         self.assertTrue(response is dispatch_constants.CALL_POSTPONED_RESPONSE, response)
-        self.assertTrue(task_1 in blockers)
-        self.assertTrue(task_2 in blockers)
+        self.assertTrue(call_1_id in blockers)
+        self.assertTrue(call_2_id in blockers)
         self.assertTrue(reasons)
 
     def test_rejected(self):
@@ -297,8 +300,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
                 cds_id: dispatch_constants.RESOURCE_DELETE_OPERATION
             }
         }
-        deletion_task_resources = coordinator.resource_dict_to_task_resources(deletion_resources)
-        coordinator.set_task_id_on_task_resources(task_id, deletion_task_resources)
+        deletion_task_resources = coordinator.resource_dict_to_call_resources(deletion_resources)
+        coordinator.set_call_request_id_on_call_resources(task_id, deletion_task_resources)
         self.collection.insert(deletion_task_resources, safe=True)
 
         # a cds sync should be rejected by the deletion
@@ -312,7 +315,7 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
             }
         }
 
-        response, blockers, reasons, task_resources = self.coordinator._find_conflicts(resources)
+        response, blockers, reasons, call_resources = self.coordinator._find_conflicts(resources)
 
         self.assertTrue(response is dispatch_constants.CALL_REJECTED_RESPONSE)
         self.assertTrue(task_id in blockers)
@@ -337,14 +340,15 @@ class CoordinatorRunTaskTests(CoordinatorTests):
 
     def test_run_task_async(self):
         task = Task(call.CallRequest(dummy_call))
-        self.coordinator._run_task(task, False)
+        self.coordinator._ready_task(task)
         self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK]) == 1)
         self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK]) == 2)
         self.assertTrue(coordinator.coordinator_dequeue_callback in task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK])
 
     def test_run_task_sync(self):
         task = Task(call.CallRequest(dummy_call))
-        self.coordinator._run_task(task, True)
+        self.coordinator._ready_task(task)
+        self.coordinator._run_task(task)
         self.assertTrue(coordinator.wait_for_task.call_count == 2, coordinator.wait_for_task.call_count)
 
 
@@ -355,34 +359,36 @@ class CoordinatorWaitForTaskTests(CoordinatorTests):
         timeout = datetime.timedelta(seconds=0.001)
         self.assertRaises(OperationTimedOut,
                           self.coordinator._run_task,
-                          task, True, timeout)
+                          task, timeout)
 
 
 class CoordinatorCallExecutionTests(CoordinatorTests):
 
     def setUp(self):
         super(CoordinatorCallExecutionTests, self).setUp()
+        self.coordinator._ready_task = mock.Mock()
         self.coordinator._run_task = mock.Mock()
 
     def test_execute_call(self):
         call_request = call.CallRequest(dummy_call)
         call_report = self.coordinator.execute_call(call_request)
         self.assertTrue(isinstance(call_report, call.CallReport))
-        self.assertTrue(self.coordinator._run_task.call_count == 1)
-        task = self.coordinator._run_task.call_args[0][0]
+        self.assertTrue(self.coordinator._ready_task.call_count == 1)
+        task = self.coordinator._ready_task.call_args[0][0]
         self.assertTrue(isinstance(task, Task))
-        # XXX no idea why this fails
-        #self.assertFalse(call_report.task_id == task.id, '"%s" != "%s"' % (call_report.task_id, task.id))
+        self.assertTrue(call_report.call_request_id == task.call_request.id, '"%s" != "%s"' % (call_report.call_request_id, task.call_request.id))
 
     def test_execute_call_synchronously(self):
         call_request = call.CallRequest(dummy_call)
         self.coordinator.execute_call_synchronously(call_request)
+        self.assertTrue(self.coordinator._ready_task.call_count == 1)
         self.assertTrue(self.coordinator._run_task.call_count == 1)
 
     def test_execute_call_asynchronously(self):
         call_request = call.CallRequest(dummy_call)
         self.coordinator.execute_call_asynchronously(call_request)
-        self.assertTrue(self.coordinator._run_task.call_count == 1)
+        self.assertTrue(self.coordinator._ready_task.call_count == 1)
+        self.assertTrue(self.coordinator._run_task.call_count == 0)
 
 # multiple call execution tests ------------------------------------------------
 
@@ -418,14 +424,14 @@ class TopologicalSortTests(unittest.TestCase):
         graph = {v1: [v2, v3],
                  v2: [v3],
                  v3: [v1]}
-        self.assertRaises(NoTopologicalOrderingExists,
+        self.assertRaises(CycleExists,
                           topological_sort,
                           graph)
 
     def test_single_vertex_cyclic_graph(self):
         v1 = 'vertex 1'
         graph = {v1: [v1]}
-        self.assertRaises(NoTopologicalOrderingExists,
+        self.assertRaises(CycleExists,
                           topological_sort,
                           graph)
 
@@ -434,13 +440,13 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
     def setUp(self):
         super(CoordinatorMultipleCallExecutionTests, self).setUp()
-        self.coordinator._run_task = mock.Mock()
+        self.coordinator._ready_task = mock.Mock()
 
     def test_execute_multiple_calls(self):
         call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
         call_reports = self.coordinator.execute_multiple_calls(call_requests)
         self.assertTrue(len(call_requests) == len(call_reports))
-        self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
+        self.assertTrue(self.coordinator._ready_task.call_count == len(call_requests))
 
     def test_execute_multiple_calls_dependencies(self):
         call_request_1 = call.CallRequest(dummy_call)
@@ -448,15 +454,15 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
         call_request_3 = call.CallRequest(dummy_call)
 
         # use the convenience api
-        call_request_3.depends_on(call_request_1)
-        call_request_3.depends_on(call_request_2)
-        call_request_2.depends_on(call_request_1)
+        call_request_3.depends_on(call_request_1.id)
+        call_request_3.depends_on(call_request_2.id)
+        call_request_2.depends_on(call_request_1.id)
 
         call_requests = [call_request_3, call_request_2, call_request_1]
 
         call_reports = self.coordinator.execute_multiple_calls(call_requests)
         self.assertTrue(len(call_requests) == len(call_reports))
-        self.assertTrue(self.coordinator._run_task.call_count == len(call_requests))
+        self.assertTrue(self.coordinator._ready_task.call_count == len(call_requests))
 
     def test_execute_multiple_calls_circular_dependencies(self):
         call_request_1 = call.CallRequest(dummy_call)
@@ -470,25 +476,25 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
         call_requests = [call_request_3, call_request_2, call_request_1]
 
-        self.assertRaises(dispatch_exceptions.CircularDependencies,
+        self.assertRaises(CycleExists,
                           self.coordinator.execute_multiple_calls,
                           call_requests)
-        self.assertTrue(self.coordinator._run_task.call_count == 0)
+        self.assertTrue(self.coordinator._ready_task.call_count == 0)
 
 
     def test_task_blockers_from_dependencies(self):
         call_request_1 = call.CallRequest(dummy_call)
         call_request_2 = call.CallRequest(dummy_call)
 
-        call_request_2.depends_on(call_request_1)
+        call_request_2.depends_on(call_request_1.id)
 
         self.coordinator.execute_multiple_calls([call_request_2, call_request_1])
 
-        task_1 = self.coordinator._run_task.call_args_list[0][0][0]
-        task_2 = self.coordinator._run_task.call_args_list[1][0][0]
+        task_1 = self.coordinator._ready_task.call_args_list[0][0][0]
+        task_2 = self.coordinator._ready_task.call_args_list[1][0][0]
 
         self.assertTrue(task_1.call_request is call_request_1)
         self.assertTrue(task_2.call_request is call_request_2)
-        self.assertTrue(task_1.id in task_2.blocking_tasks)
-        self.assertFalse(task_2.id in task_1.blocking_tasks)
+        self.assertTrue(task_1.call_request.id in task_2.call_request.dependencies)
+        self.assertFalse(task_2.call_request.id in task_1.call_request.dependencies)
 

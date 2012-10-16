@@ -38,4 +38,4 @@ class Context(object):
         hash = hashlib.sha256()
         hash.update(certificate.strip())
         self.secret = hash.hexdigest()
-        self.taskid = factory.context().task_id
+        self.callid = factory.context().call_request_id
