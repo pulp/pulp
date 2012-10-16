@@ -18,6 +18,7 @@ import sys
 
 from pulp.plugins.loader.api import load_content_types
 from pulp.server.db import connection
+from pulp.server.db.migrate import utils
 
 # the db connection and auditing need to be initialied before any further
 # imports since the imports execute initialization code relying on the
@@ -28,9 +29,7 @@ _log = logging.getLogger('pulp')
 
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.migrate.versions import get_migration_modules
-from pulp.server.db.version import (
-    VERSION, get_version_in_use, set_version, is_validated, set_validated,
-    revert_to_version, clean_db)
+from pulp.server.db.model.migration_tracker import MigrationTracker
 
 
 class DataError(Exception):
@@ -69,37 +68,40 @@ def start_logging(options):
 
 
 def migrate_database(options):
-    version = get_version_in_use()
-    assert version <= VERSION, \
-            'Version in use (%d) greater than expected version (%d).' % \
-            (version, VERSION)
-    if version == VERSION:
-        print _('Data model in use matches the current version.')
-        return
-    for mod in get_migration_modules():
-        # it is assumed here that each migration module will have two members:
-        # 1. version - an integer value of the version the module migrates to
-        # 2. migrate() - a function that performs the migration
-        if mod.version <= version:
+    migration_packages = utils.get_migration_packages()
+    for migration_package in migration_packages:
+        current_version = utils.get_current_package_version(migration_package)
+        migrations = utils.get_migrations(migration_package)
+        #If there are no migrations for this package, the latest version is 0
+        latest_version = migrations[-1].version if migrations else 0
+
+        if current_version is None:
+            # This must be a new migration package that wasn't here before. We should create a new
+            # DB object to track that we are at the latest version.
+            print _('Found new migration package %s. Fast forwarding DB to version %s.'%(
+                    migration_package.__name__, latest_version))
+            new_mt = MigrationTracker(id=migration_package.__name__, version=latest_version)
+            MigrationTracker.get_collection().insert(new_mt)
             continue
-        if mod.version > VERSION:
-            raise DataError(_('Migration provided for higher version than is expected.'))
-        try:
-            mod.migrate()
-        except Exception, e:
-            _log.critical(_('Migration to data model version %d failed.') %
-                          mod.version)
-            print >> sys.stderr, \
-                    _('Migration to version %d failed, see %s for details.') % \
-                    (mod.version, options.log_file)
-            raise e
-        if not options.test:
-            set_version(mod.version)
-        version = mod.version
-    if version < VERSION:
-        raise DataError(_('The current version is still lower than the expected version, even ' +\
-                        'after migrations were applied.'))
-    validate_database_migrations(options)
+        if current_version > latest_version:
+            raise DataError(_('The database for migration package %s is at version %s, which ' +\
+                              'is larger than the latest version available, %s.')%(
+                              migration_package.__name__, current_version, latest_version))
+        if current_version == latest_version:
+            print _('Migration package %s is up to date at version %s'%(migration_package.__name__,
+                                                                        latest_version))
+            continue
+        # Filter out the unapplied migrations
+        migrations = [migration for migration in migrations if migration.version > current_version]
+        for migration in migrations:
+            print _('Applying %s version %s'%(migration_package.__name__, migration.version))
+            migration.migrate()
+            MigrationTracker.get_collection().update({'id': migration_package.__name__},
+                                                     {'$set': {'version': migration.version}},
+                                                     safe=True)
+            current_version = migration.version
+            print _('Migration to %s version %s complete.'%(migration_package.__name__,
+                                                            current_version))
 
 
 def validate_database_migrations(options):

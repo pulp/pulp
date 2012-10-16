@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Copyright © 2010-2011 Red Hat, Inc.
+# Copyright (c) 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -17,10 +15,9 @@ from pulp.server.db.model.auth import User, Role, Permission
 from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.content import ContentType
 from pulp.server.db.model.event import EventListener
-from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoDistributor, RepoImporter, RepoPublishResult, RepoSyncResult
+from pulp.server.db.model.repository import (Repo, RepoContentUnit, RepoDistributor,
+                                             RepoImporter, RepoPublishResult, RepoSyncResult)
 from pulp.server.db.model.base import Model
-
-from pulp.server.db import version
 
 _log = getLogger('pulp')
 
@@ -106,25 +103,30 @@ def _validate_bind():
     reference = Bind('', '', '')
     return _validate_model(Bind.__name__, objectdb, reference)
 
+
 def _validate_consumer():
     objectdb = Consumer.get_collection()
     reference = Consumer('', '')
     return _validate_model(Consumer.__name__, objectdb, reference)
+
 
 def _validate_consumer_history():
     objectdb = ConsumerHistoryEvent.get_collection()
     reference = ConsumerHistoryEvent('', '', '', None)
     return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
+
 def _validate_content_type():
     objectdb = ContentType.get_collection()
     reference = ContentType('', '', '', [], [], [])
     return _validate_model(ConsumerHistoryEvent.__name__, objectdb, reference)
 
+
 def _validate_event_listener():
     objectdb = EventListener.get_collection()
     reference = EventListener('', {}, [])
     return _validate_model(EventListener.__name__, objectdb, reference)
+
 
 def _validate_permission():
     """
@@ -137,35 +139,42 @@ def _validate_permission():
     _base_id(reference)
     return _validate_model(Permission.__name__, objectdb, reference)
 
+
 def _validate_repo():
     objectdb = Repo.get_collection()
     reference = Repo('', '')
     return _validate_model(Repo.__name__, objectdb, reference)
+
 
 def _validate_repo_content_unit():
     objectdb = RepoContentUnit.get_collection()
     reference = RepoContentUnit('', '', '', '', '')
     return _validate_model(RepoContentUnit.__name__, objectdb, reference)
 
+
 def _validate_repo_distributor():
     objectdb = RepoDistributor.get_collection()
     reference = RepoDistributor('', '', '', {}, True)
     return _validate_model(RepoDistributor.__name__, objectdb, reference)
+
 
 def _validate_repo_importer():
     objectdb = RepoImporter.get_collection()
     reference = RepoImporter('', '', '', {})
     return _validate_model(RepoImporter.__name__, objectdb, reference)
 
+
 def _validate_repo_publish_result():
     objectdb = RepoPublishResult.get_collection()
     reference = RepoPublishResult('', '', '', '', '', '')
     return _validate_model(RepoPublishResult.__name__, objectdb, reference)
 
+
 def _validate_repo_sync_result():
     objectdb = RepoSyncResult.get_collection()
     reference = RepoSyncResult('', '', '', '', '', '')
     return _validate_model(RepoSyncResult.__name__, objectdb, reference)
+
 
 def _validate_role():
     """
