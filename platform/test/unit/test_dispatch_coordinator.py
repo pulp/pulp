@@ -23,7 +23,6 @@ from pulp.server.db.model.dispatch import CallResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
-from pulp.server.dispatch import exceptions as dispatch_exceptions
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.task import Task
 from pulp.server.exceptions import OperationTimedOut
@@ -477,7 +476,7 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
         call_requests = [call_request_3, call_request_2, call_request_1]
 
-        self.assertRaises(dispatch_exceptions.CircularDependencies,
+        self.assertRaises(CycleExists,
                           self.coordinator.execute_multiple_calls,
                           call_requests)
         self.assertTrue(self.coordinator._ready_task.call_count == 0)
