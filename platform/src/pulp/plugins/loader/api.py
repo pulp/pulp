@@ -15,7 +15,6 @@ import logging
 import os
 from gettext import gettext as _
 
-from pulp.common import constants
 from pulp.plugins.distributor import Distributor, GroupDistributor
 from pulp.plugins.importer import Importer, GroupImporter
 from pulp.plugins.loader import exceptions as loader_exceptions
@@ -25,13 +24,21 @@ from pulp.plugins.profiler import Profiler
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
 
-# constants --------------------------------------------------------------------
-
 _LOG = logging.getLogger(__name__)
 
 # implicit singleton instance of PluginManager
 
 _MANAGER = None
+
+# constants --------------------------------------------------------------------
+
+# entry point names
+ENTRY_POINT_EXTENSIONS = 'pulp.extensions'
+ENTRY_POINT_DISTRIBUTORS = 'pulp.distributors'
+ENTRY_POINT_GROUP_DISTRIBUTORS = 'pulp.group_distributors'
+ENTRY_POINT_IMPORTERS = 'pulp.importers'
+ENTRY_POINT_GROUP_IMPORTERS = 'pulp.group_importers'
+ENTRY_POINT_PROFILERS = 'pulp.profilers'
 
 # plugin locations
 
@@ -68,11 +75,11 @@ def initialize(validate=True):
         loading.load_plugins_from_path(path, base_class, plugin_map)
 
     plugin_entry_points = (
-        (constants.ENTRY_POINT_DISTRIBUTORS, _MANAGER.distributors),
-        (constants.ENTRY_POINT_GROUP_DISTRIBUTORS, _MANAGER.group_distributors),
-        (constants.ENTRY_POINT_IMPORTERS, _MANAGER.importers),
-        (constants.ENTRY_POINT_GROUP_IMPORTERS, _MANAGER.group_importers),
-        (constants.ENTRY_POINT_PROFILERS, _MANAGER.profilers),
+        (ENTRY_POINT_DISTRIBUTORS, _MANAGER.distributors),
+        (ENTRY_POINT_GROUP_DISTRIBUTORS, _MANAGER.group_distributors),
+        (ENTRY_POINT_IMPORTERS, _MANAGER.importers),
+        (ENTRY_POINT_GROUP_IMPORTERS, _MANAGER.group_importers),
+        (ENTRY_POINT_PROFILERS, _MANAGER.profilers),
     )
     for entry_point in plugin_entry_points:
         loading.load_plugins_from_entry_point(*entry_point)
