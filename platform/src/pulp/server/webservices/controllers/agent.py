@@ -41,15 +41,15 @@ class Reply(JSONController):
         body = self.params()
         _LOG.info('agent (%s) reply:\n%s', uuid, body)
         coordinator = dispatch_factory.coordinator()
-        task_id = body['any']
+        call_request_id = body['any']
         if body['status'] == 200:
             result = body['reply']
-            coordinator.complete_call_success(task_id, result)
+            coordinator.complete_call_success(call_request_id, result)
         else:
             raised = body['exception']
             exception = raised['xmsg']
             traceback = raised['xstate']['trace']
-            coordinator.complete_call_failure(task_id, exception, traceback)
+            coordinator.complete_call_failure(call_request_id, exception, traceback)
         return self.ok({})
 
 # -- web.py application -------------------------------------------------------

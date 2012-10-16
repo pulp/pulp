@@ -22,10 +22,6 @@ class MissingCancelControlHook(MissingValue):
 class AsynchronousExecutionError(InvalidValue):
     pass
 
-
-class CircularDependencies(PulpExecutionException):
-    pass
-
 # call validation exceptions ---------------------------------------------------
 
 class UnrecognizedSearchCriteria(InvalidValue):

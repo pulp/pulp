@@ -34,6 +34,7 @@ class CallRequest(object):
     """
     Call request class
     Represents an asynchronous call request
+
     @ivar id: unique id for this call request
     @type id: str
     @ivar call: python callable
@@ -42,37 +43,37 @@ class CallRequest(object):
     @type args: list
     @ivar kwargs: dictionary of keyword arguments for the callable
     @type kwargs: dict
+    @ivar principal: user that submitted this call request
+    @type principal: user
+    @ivar tags: list of arbitrary tags
+    @type tags: list
     @ivar resources: dictionary of resources and operations used by the request
     @type resources: dict
     @ivar dependencies: dictionary of call request ids this call request depends on
     @type dependencies: dict
     @ivar weight: weight of callable in relation concurrency resources
     @type weight: int
-    @ivar principal: user that submitted this call request
-    @type principal: user
-    @ivar execution_hooks: callbacks to be executed during lifecycle of callable
-    @type execution_hooks: dict
-    @ivar control_hooks: callbacks used to control the lifecycle of the callable
-    @type control_hooks: dict
-    @ivar tags: list of arbitrary tags
-    @type tags: list
     @ivar asynchronous: toggle asynchronous execution of call
     @type asynchronous: bool
     @ivar archive: toggle archival of call request on completion
     @type archive: bool
     @ivar obfuscate_args: toggle obfuscation of arguments when cast to a string
     @type obfuscate_args: bool
+    @ivar execution_hooks: callbacks to be executed during lifecycle of callable
+    @type execution_hooks: dict
+    @ivar control_hooks: callbacks used to control the lifecycle of the callable
+    @type control_hooks: dict
     """
 
     def __init__(self,
                  call,
                  args=None,
                  kwargs=None,
+                 principal=None,
+                 tags=None,
                  resources=None,
                  dependencies=None,
                  weight=1,
-                 principal=None,
-                 tags=None,
                  asynchronous=False,
                  archive=False,
                  obfuscate_args=False):
@@ -80,30 +81,38 @@ class CallRequest(object):
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
         assert isinstance(kwargs, (NoneType, dict))
+        assert isinstance(principal, (NoneType, User, dict))
+        assert isinstance(tags, (NoneType, list))
         assert isinstance(resources, (NoneType, dict))
         assert isinstance(dependencies, (NoneType, dict))
         assert isinstance(weight, int)
         assert weight > -1
-        assert isinstance(principal, (NoneType, User, dict))
-        assert isinstance(tags, (NoneType, list))
         assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
         assert isinstance(obfuscate_args, bool)
 
         self.id = str(uuid.uuid4())
+        self.group_id = None
+
         self.call = call
         self.args = args or []
         self.kwargs = kwargs or {}
+
+        self.principal = principal or managers_factory.principal_manager().get_principal()
+        self.tags = tags or []
+
         self.resources = resources or {}
         self.dependencies = dependencies or {}
-        self.principal = principal or managers_factory.principal_manager().get_principal()
         self.weight = weight
-        self.tags = tags or []
+
         self.asynchronous = asynchronous
         self.archive = archive
         self.obfuscate_args = obfuscate_args
+
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
+
+    # str and repr methods -----------------------------------------------------
 
     def callable_name(self):
         name = getattr(self.call, '__name__', 'UNKNOWN_CALL')
@@ -159,9 +168,9 @@ class CallRequest(object):
 
     # convenient dependency management -----------------------------------------
 
-    def depends_on(self, call_request, states=None):
+    def depends_on(self, call_request_id, states=dispatch_constants.CALL_COMPLETE_STATES):
         # NOTE this overwrites any previous states associated with the call request
-        self.dependencies[call_request.id] = states
+        self.dependencies[call_request_id] = states
 
     # hooks management ---------------------------------------------------------
 
@@ -175,7 +184,7 @@ class CallRequest(object):
 
     # call request serialization/deserialization -------------------------------
 
-    copied_fields = ('resources', 'weight', 'tags', 'asynchronous', 'archive')
+    copied_fields = ('id', 'group_id', 'tags', 'resources', 'weight', 'asynchronous', 'archive')
     pickled_fields = ('call', 'args', 'kwargs', 'principal', 'execution_hooks', 'control_hooks')
     all_fields = itertools.chain(copied_fields, pickled_fields)
 
@@ -218,6 +227,7 @@ class CallRequest(object):
 
         constructor_kwargs = dict(data)
         constructor_kwargs.pop('callable_name') # added for search
+
         for key, value in constructor_kwargs.items():
             constructor_kwargs[encode_unicode(key)] = constructor_kwargs.pop(key)
 
@@ -229,10 +239,15 @@ class CallRequest(object):
             _LOG.exception(e)
             return None
 
+        id = constructor_kwargs.pop('id')
+        group_id = constructor_kwargs.pop('group_id')
         execution_hooks = constructor_kwargs.pop('execution_hooks')
         control_hooks = constructor_kwargs.pop('control_hooks')
 
         instance = cls(**constructor_kwargs)
+
+        instance.id = id
+        instance.group_id = group_id
 
         for key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS:
             if not execution_hooks[key]:
@@ -252,19 +267,24 @@ class CallRequest(object):
 class CallReport(object):
     """
     Call report class
-    Represents a call request's progress
-    @ivar response: state of request in concurrency system
+    Represents the current state of a call request
+
+    @ivar call_request_id: identity of the call request this report corresponds to
+    @type call_request_id: str
+    @ivar call_request_group_id: identity of the call request group the corresponding call request belongs to
+    @type call_request_group_id: str
+    @ivar call_request_tags: custom tags on the call request
+    @type call_request_tags: list
+    @ivar principal_login: the login name of the principal that issued the call request
+    @type principal_login: str
+    @ivar schedule_id: identity of the schedule that made this call
+    @type schedule_id: str
+    @ivar response: state of request in dispatch system
     @type response: str
     @ivar reasons: list of resources and operations related to the response
     @type reasons: list
     @ivar state: state of callable in its lifecycle
     @type state: str
-    @ivar task_id: identity of task executing call
-    @type task_id: str
-    @ivar task_group_id: identity of task group the call is a part of
-    @type task_group_id: str
-    @ivar schedule_id: identity of the schedule that made this call
-    @type schedule_id: str
     @ivar progress: dictionary of progress information
     @type progress: dict
     @ivar result: return value of the callable, if any
@@ -273,60 +293,111 @@ class CallReport(object):
     @type exception: Exception
     @ivar traceback: traceback from callable, if any
     @type traceback: TracebackType
+    @ivar start_time: time the call in the call request was executed
+    @type start_time: datetime.datetime
+    @ivar finish_time: time the call in the call request completed
+    @type finish_time: datetime.datetime
     """
 
+    @classmethod
+    def from_call_request(cls, call_request, schedule_id=None):
+        """
+        Factory method that leverages an existing call request.
+
+        @param cls: CallReport class
+        @type cls: type
+        @param call_request: call request to leverage
+        @type call_request: L{CallRequest}
+        @param schedule_id: optional schedule id
+        @type schedule_id: None or str
+        @return: CallReport instance
+        @rtype: L{CallReport}
+        """
+        call_report = cls(call_request.id,
+                          call_request.group_id,
+                          call_request.tags,
+                          call_request.principal['login'],
+                          schedule_id)
+        return call_report
+
     def __init__(self,
+                 call_request_id=None,
+                 call_request_group_id=None,
+                 call_request_tags=None,
+                 principal_login=None,
+                 schedule_id=None,
                  response=None,
                  reasons=None,
                  state=None,
-                 task_id=None,
-                 task_group_id=None,
-                 schedule_id=None,
                  progress=None,
                  result=None,
                  exception=None,
-                 traceback=None,
-                 principal=None,
-                 tags=None):
+                 traceback=None):
 
+        assert isinstance(call_request_id, (NoneType, basestring))
+        assert isinstance(call_request_group_id, (NoneType, basestring))
+        assert isinstance(call_request_tags, (NoneType, list))
+        assert isinstance(principal_login, (NoneType, basestring))
+        assert isinstance(schedule_id, (NoneType, basestring))
         assert isinstance(response, (NoneType, basestring))
         assert isinstance(reasons, (NoneType, list))
         assert isinstance(state, (NoneType, basestring))
-        assert isinstance(task_id, (NoneType, basestring))
-        assert isinstance(task_group_id, (NoneType, basestring))
-        assert isinstance(schedule_id, (NoneType, basestring))
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
-        assert isinstance(principal, (NoneType, User, dict))
 
-        self.call_request_id = None
+        self.call_request_id = call_request_id
+        self.call_request_group_id = call_request_group_id
+        self.call_request_tags = call_request_tags or []
+
+        self.schedule_id = schedule_id
+        self.principal_login = principal_login
+
         self.response = response
         self.reasons = reasons or []
         self.state = state
-        self.task_id = task_id
-        self.task_group_id = task_group_id
-        self.schedule_id = schedule_id
         self.progress = progress or {}
         self.result = result
         self.exception = exception
         self.traceback = traceback
+
+        self.dependency_failures = {}
+
         self.start_time = None
         self.finish_time = None
-        self.principal_login = principal and principal['login']
-        self.tags = tags or []
 
     def serialize(self):
+        """
+        Serialize the call report for either the wire or storage in the db.
+        @return: dictionary containing the serialized fields of the call report.
+        @rtype: dict
+        """
+
         data = {}
-        for field in ('response', 'reasons', 'state', 'task_id', 'task_group_id',
-                      'schedule_id', 'progress', 'result', 'principal_login', 'tags'):
+
+        # straight forward fields
+
+        for field in ('call_request_id', 'call_request_group_id', 'call_request_tags',
+                      'schedule_id', 'principal_login', 'response', 'reasons',
+                      'state', 'progress', 'result', 'dependency_failures'):
             data[field] = getattr(self, field)
+
+        # legacy fields
+
+        data['task_id'] = self.call_request_id
+        data['task_group_id'] = self.call_request_group_id
+
+        # format the exception and traceback, if they exist
+
         ex = getattr(self, 'exception')
+
         if ex is not None:
             data['exception'] = traceback.format_exception_only(type(ex), ex)
         else:
             data['exception'] = None
+
         tb = getattr(self, 'traceback')
+
         if tb is not None:
             if isinstance(tb, (str, list, tuple)):
                 data['traceback'] = str(tb)
@@ -334,10 +405,15 @@ class CallReport(object):
                 data['traceback'] = traceback.format_tb(tb)
         else:
             data['traceback'] = None
+
+        # format the date times in iso8601 format
+
         for field in ('start_time', 'finish_time'):
             dt = getattr(self, field)
             if dt is not None:
                 data[field] = dateutils.format_iso8601_datetime(dt)
             else:
                 data[field] = None
+
         return data
+

@@ -842,7 +842,7 @@ class RepoSync(JSONController):
             publish_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
             publish_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
                                                          repo_publish_manager.prep_publish)
-            publish_call_request.depends_on(sync_call_request)
+            publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
 
             call_requests.append(publish_call_request)
 
