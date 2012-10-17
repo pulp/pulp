@@ -68,25 +68,26 @@ def start_logging(options):
     logger.addHandler(handler)
 
 
-#TODO: Use dictionary substitution everywhere.
 def migrate_database(options):
     migration_packages = utils.get_migration_packages()
     for migration_package in migration_packages:
         if migration_package.current_version > migration_package.latest_available_version:
-            raise DataError(_('The database for migration package %s is at version %s, which ' +\
-                              'is larger than the latest version available, %s.')%(
-                              migration_package.name, migration_package.current_version,
-                              migration_package.latest_available_version))
+            raise DataError(_('The database for migration package %(p)s is at version %(v)s, ' +\
+                              'which is larger than the latest version available, %(a)s.')%({
+                                'p': migration_package.name, 'v': migration_package.current_version,
+                                'a': migration_package.latest_available_version}))
         if migration_package.current_version == migration_package.latest_available_version:
-            print _('Migration package %s is up to date at version %s'%(migration_package.name,
-                migration_package.latest_available_version))
+            print _('Migration package %(p)s is up to date at version %(v)s'%({
+                'p': migration_package.name,
+                'v': migration_package.latest_available_version}))
             continue
 
         for migration in migration_package.unapplied_migrations:
-            print _('Applying %s version %s'%(migration_package.name, migration.version))
+            print _('Applying %(p)s version %(v)s'%({
+                'p': migration_package.name, 'v': migration.version}))
             migration_package.apply_migration(migration)
-            print _('Migration to %s version %s complete.'%(migration_package.name,
-                                                            migration_package.current_version))
+            print _('Migration to %(p)s version %(v)s complete.'%({'p': migration_package.name,
+                                                        'v': migration_package.current_version}))
 
 
 def validate_database_migrations(options):
@@ -94,7 +95,8 @@ def validate_database_migrations(options):
     if not is_validated():
         errors = validate()
     if errors:
-        error_message = _('%d errors on validation, see %s for details')%(errors, options.log_file)
+        error_message = _('%(e)d errors on validation, see %(l)s for details')%({
+            'e': errors, 'l': options.log_file})
         raise DataError(error_message)
     if not options.test:
         set_validated()
@@ -123,7 +125,7 @@ def _auto_manage_db(options):
 
     if options.start is not None:
         last = int(options.start) - 1
-        print _('Reverting db to version %d.') % last
+        print _('Reverting db to version %(v)d.') % ({'v': last},)
         revert_to_version(last)
 
     print _('Beginning database migrations.')

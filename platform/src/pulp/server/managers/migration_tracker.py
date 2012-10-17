@@ -11,6 +11,10 @@
 
 from pulp.server.db.model.migration_tracker import MigrationTracker
 
+class DoesNotExist(Exception):
+    pass
+
+
 class MigrationTrackerManager(object):
     def __init__(self):
         self._collection = MigrationTracker.get_collection()
