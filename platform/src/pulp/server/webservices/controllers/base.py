@@ -12,15 +12,34 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import sys
 from gettext import gettext as _
 
 import web
 
+from pulp.common.util import decode_unicode, encode_unicode
 from pulp.server.compat import json, json_util
+from pulp.server.exceptions import PulpDataException
 from pulp.server.webservices import http, serialization
 
 
 _log = logging.getLogger(__name__)
+
+
+class InputEncodingError(PulpDataException):
+    """
+    Error raised when input strings are not encoded in utf-8
+    """
+
+    def __init__(self, value):
+        PulpDataException.__init__(self, value)
+        self.value = value
+
+    def __str__(self):
+        return _('Pulp only accepts input encoded in UTF-8: %(v)s') % {'v': self.value}
+
+    def data_dict(self):
+        return {'value': self.value}
 
 
 class JSONController(object):
@@ -58,7 +77,8 @@ class JSONController(object):
         data = web.data()
         if not data:
             return {}
-        return json.loads(data)
+        deserialized_data = json.loads(data)
+        return self._ensure_input_encoding(deserialized_data)
 
     def data(self):
         """
@@ -74,7 +94,28 @@ class JSONController(object):
         @param valid: list of expected query parameters
         @return: dict of param: [value(s)] of uri query parameters
         """
-        return http.query_parameters(valid)
+        parameters = http.query_parameters(valid)
+        return self._ensure_input_encoding(parameters)
+
+    def _ensure_input_encoding(self, input):
+        """
+        Recursively traverse any input structures and ensure any strings are
+        encoded as utf-8
+        @param input: input data
+        @return: input data with strings encoded as utf-8
+        """
+
+        def _ensure_string_encoding(s):
+            try:
+                return encode_unicode(decode_unicode(s))
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                raise InputEncodingError(s), None, sys.exc_info()[2]
+
+        if isinstance(input, (list, set, tuple)):
+            return [_ensure_string_encoding(i) for i in input]
+        if isinstance(input, dict):
+            return dict((_ensure_string_encoding(k), _ensure_string_encoding(v)) for k, v in input.items())
+        return _ensure_string_encoding(input)
 
     # result methods ----------------------------------------------------------
 
