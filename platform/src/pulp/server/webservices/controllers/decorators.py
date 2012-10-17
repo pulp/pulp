@@ -32,8 +32,7 @@ from pulp.server.webservices import http
 _LOG = logging.getLogger(__name__)
 
 PM = PermissionManager()
-DEFAULT_CONSUMER_PERMISSIONS = {'/v2/consumers/' : [PM.CREATE, PM.READ],
-                                '/v2/repositories/' : [PM.CREATE]}
+DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/' : [PM.READ]}
 
 AUTHEN_FAIL_MSG = _('Authentication Failed')
 AUTHOR_FAIL_MSG = _('Permission Denied')
@@ -103,7 +102,7 @@ def consumer_cert_authentication():
 
 def oauth_authentication():
     if not config.getboolean('oauth', 'enabled'):
-        return None
+        return None, False
 
     username = http.request_info('HTTP_PULP_USER')
     auth = http.http_authorization()
@@ -111,15 +110,15 @@ def oauth_authentication():
     if username is None or auth is None:
         if cert_pem is not None:
             raise AuthenticationFailed(CERT_FAIL_MSG)
-        return None
+        return None, False
     meth = http.request_info('REQUEST_METHOD')
     url = http.request_url()
     query = http.request_info('QUERY_STRING')
-    userid = factory.authentication_manager().check_oauth(username, meth, url, auth, query)
+    userid, is_consumer = factory.authentication_manager().check_oauth(username, meth, url, auth, query)
     if userid is None:
         raise AuthenticationFailed(OAUTH_FAIL_MSG)
     _LOG.debug("User authenticated with Oauth: %s" % userid)
-    return userid
+    return userid, is_consumer
 
 # -- consumer authorization checking -----------------------------------------
 
@@ -191,9 +190,13 @@ def auth_required(operation=None, super_user_only=False):
             user_authenticated = False
             for authenticate_user in registered_auth_functions:
                 try:
-                    userid = authenticate_user()
+                    if authenticate_user == oauth_authentication:
+                        userid, is_consumer = authenticate_user()
+                    else:
+                        userid = authenticate_user()
                 except AuthenticationFailed as ex:
                     return self.unauthorized(ex.msg)
+
                 if userid is not None:
                     user_authenticated = True
                     if authenticate_user == consumer_cert_authentication:
