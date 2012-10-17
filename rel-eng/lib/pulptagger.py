@@ -9,7 +9,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
 import re
+
 from tito.tagger import VersionTagger
 
 
@@ -17,11 +19,25 @@ BUGZILLA_REGEX = re.compile('([0-9]+\s+\-\s+)(.+)')
 FEATURE_REGEX = re.compile('([\-]\s+)(.+)')
 EMBEDDED_REGEX = re.compile('(\[\[)([^$]+)(\]\])')
 
+FORCED_VERSION = 'TITO_FORCED_VERSION'
+
 
 class PulpTagger(VersionTagger):
     """
     Pulp custom tagger.
     """
+
+    def _bump_version(self):
+        """
+        Force options we need.
+        """
+        version = os.environ.get(FORCED_VERSION)
+        if version:
+            self._use_version = version
+            forced = True
+        else:
+            forced = False
+        return VersionTagger._bump_version(self, False, False, forced)
 
     def _generate_default_changelog(self, last_tag):
         """
