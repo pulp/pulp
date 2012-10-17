@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.331
+Version: 0.0.332
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -417,6 +417,13 @@ exit 0
 %endif
 
 %changelog
+* Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-1
+- 862115 - Updating oauth authentication to also check for existing consumer
+  with given id along with user and then check authorization according to
+  whether it is a user or a consumer (skarmark@redhat.com)
+- tasks are now skipped if any of their dependencies finish in a state that is
+  not considered valid (jason.connor@gmail.com)
+
 * Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1
 - 862787 - fixing pulp server conf filename at a couple of places
   (skarmark@redhat.com)
