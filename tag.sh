@@ -4,13 +4,11 @@
 #
 
 VERSION=
-TITO_TAG_FLAGS=
 BUILD_TAG=
-TAG="git tag"
-PUSH="git push"
-TITO_TAG="tito tag"
-TAG_FLAGS="-m \"Correlated Build\""
-PUSH_TAGS="git push --tags"
+GIT="git"
+TITO="tito"
+TITO_TAG_FLAGS=
+TAG_FLAGS="-m \"Build Tag\""
 
 GIT_ROOTS="pulp pulp_rpm pulp_puppet"
 PACKAGES="
@@ -40,14 +38,14 @@ set_version()
 tito_tag()
 {
   pushd $1
-  $TITO_TAG $TITO_TAG_FLAGS && $PUSH && $PUSH_TAGS
+  $TITO tag $TITO_TAG_FLAGS && $GIT push && $GIT push --tags
   popd
 }
 
 git_tag()
 {
   pushd $1
-  $TAG $TAG_FLAGS $BUILD_TAG && $PUSH_TAGS
+  $GIT tag $TAG_FLAGS $BUILD_TAG && $GIT push --tags
   popd
 }
 
@@ -107,7 +105,7 @@ then
 fi
 
 # used by tagger
-TITO_FORCED_VERSION=VERSION
+TITO_FORCED_VERSION=$VERSION
 export TITO_FORCED_VERSION
 
 BUILD_TAG="build-$VERSION"
@@ -119,6 +117,7 @@ do
   if [ $? != 0 ]; then
     exit
   fi
+  sleep 10
 done
 
 # git (correlated build) tagging
@@ -128,5 +127,6 @@ do
   if [ $? != 0 ]; then
     exit
   fi
+  sleep 10
 done
 
