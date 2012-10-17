@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 0.0.332
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -168,7 +168,6 @@ Requires: mod_wsgi >= 3.3-3.pulp
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
-Requires: qpid-cpp-server-daemon
 # RHEL5
 %if 0%{?rhel} == 5
 Group: Development/Languages
