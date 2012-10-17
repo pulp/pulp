@@ -8,7 +8,6 @@ BUILD_TAG=
 GIT="git"
 TITO="tito"
 TITO_TAG_FLAGS=
-TAG_FLAGS="-m \"Build Tag\""
 
 GIT_ROOTS="pulp pulp_rpm pulp_puppet"
 PACKAGES="
@@ -39,13 +38,19 @@ tito_tag()
 {
   pushd $1
   $TITO tag $TITO_TAG_FLAGS && $GIT push && $GIT push --tags
+  if [ $? != 0 ]; then
+    exit
+  fi
   popd
 }
 
 git_tag()
 {
   pushd $1
-  $GIT tag $TAG_FLAGS $BUILD_TAG && $GIT push --tags
+  $GIT tag -m "Build Tag" $BUILD_TAG && $GIT push --tags
+  if [ $? != 0 ]; then
+    exit
+  fi
   popd
 }
 
@@ -96,7 +101,7 @@ fi
 # confirmation
 echo "Using:"
 echo "  version [$VERSION]"
-echo "  tito options [$TITO_TAG_FLAGS]"
+echo "  tito options: $TITO_TAG_FLAGS"
 echo ""
 read -p "Continue [y|n]: " ANS
 if [ $ANS != "y" ]
@@ -114,19 +119,11 @@ BUILD_TAG="build-$VERSION"
 for PACKAGE in $PACKAGES
 do
   tito_tag $PACKAGE
-  if [ $? != 0 ]; then
-    exit
-  fi
-  sleep 10
 done
 
 # git (correlated build) tagging
 for GIT_ROOT in $GIT_ROOTS
 do
   git_tag $GIT_ROOT
-  if [ $? != 0 ]; then
-    exit
-  fi
-  sleep 10
 done
 
