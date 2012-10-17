@@ -416,6 +416,9 @@ exit 0
 %endif
 
 %changelog
+* Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-2
+- Revert fix for 856713. (jortel@redhat.com)
+
 * Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-1
 - 862115 - Updating oauth authentication to also check for existing consumer
   with given id along with user and then check authorization according to
