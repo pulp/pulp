@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright (c) 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -14,7 +14,101 @@ import pkgutil
 import re
 
 from pulp.server.db import migrations
-from pulp.server.db.model.migration_tracker import MigrationTracker
+from pulp.server.managers.migration_tracker import MigrationTrackerManager
+import pulp.server.db.migrations.platform
+
+
+class MigrationModule(object):
+    """
+    This is a wrapper around the real migration module. It allows us to add a version attribute to
+    the module without interfering with the module's namespace. It has a reference to the module's
+    migration function as its migrate attribute.
+    """
+    def __init__(self, python_module_name):
+        self._module = _import_all_the_way(python_module_name)
+        self.version = self._get_version()
+        self.migrate = self._module.migrate
+
+    def _get_version(self):
+        migration_module_name = self._module.__name__.split('.')[-1]
+        version = int(re.match(r'(?P<version>\d+)_.*',
+            migration_module_name).groupdict()['version'])
+        return version
+
+
+class MigrationPackage(object):
+    """
+    A wrapper around the migration packages found in pulp.server.db.migrations. Has methods to
+    retrieve which migrations are found there, and to apply the migrations.
+    """
+    def __init__(self, python_package_name):
+        self._package = _import_all_the_way(python_package_name)
+        migration_tracker_manager = MigrationTrackerManager()
+        self._migration_tracker = migration_tracker_manager.get_or_create(
+            id=self._package.__name__,
+            defaults={'version': self.latest_available_version})
+
+    def apply_migration(self, migration):
+        migration.migrate()
+        self._migration_tracker.version = migration.version
+        self._migration_tracker.save()
+
+    @property
+    def available_versions(self):
+        migrations = self.migrations
+        versions = [migration.version for migration in migrations]
+        return versions
+
+    @property
+    def current_version(self):
+        """
+        An integer that represents the migration version that the database is currently at.
+        None means that the migration package has never been run before.
+        """
+        return self._migration_tracker.version
+
+    @property
+    def latest_available_version(self):
+        return self.available_versions[-1] if self.available_versions else 0
+
+    @property
+    def migrations(self):
+        """
+        Finds all available migration modules for the MigrationPackage,
+        and then sorts by the version.
+
+        :returns:       A list of the migration modules for the typedef, sorted by version.
+        :rtype:         L{Python modules}
+        """
+        module_names = [name for module_loader, name, ispkg in \
+                        pkgutil.iter_modules([os.path.dirname(self._package.__file__)])]
+        migration_modules = [MigrationModule('%s.%s'%(self.name, module_name)) \
+                             for module_name in module_names]
+        # TODO: Check on sorted's key dealio
+        # Check also on sort for this
+        migration_modules = sorted(migration_modules,
+                                   cmp=lambda x,y: cmp(x.version, y.version))
+        return migration_modules
+
+    @property
+    def name(self):
+        return self._package.__name__
+
+    @property
+    def unapplied_migrations(self):
+        return [migration for migration in self.migrations \
+                if migration.version > self.current_version]
+
+    def __cmp__(self, other_package):
+        """
+        This method returns -1 if self.name < other_package.name, 0 if they are
+        equal, and 1 if self.name > other_package.name. There is an exception to
+        this sorting rule, in that if self._package is pulp.server.db.migrations.platform, this
+        method will always return -1.
+        """
+        if self._package is pulp.server.db.migrations.platform:
+            return -1
+        return cmp(self.name, other_package.name)
 
 
 def add_field_with_default_value(objectdb, field, default=None):
@@ -87,73 +181,19 @@ def delete_field(objectdb, field):
         objectdb.save(model, safe=True)
 
 
-def get_current_package_version(migration_package):
-    """
-    Returns an integer that represents the migration version that the database is currently at. None
-    means that the migration package has never been run before.
-    """
-    migration_version_collection = MigrationTracker.get_collection()
-    migration_tracker = migration_version_collection.find_one({'id': migration_package.__name__})
-    if migration_tracker is not None:
-        migration_version = migration_tracker['version']
-    else:
-        migration_version = None
-    return migration_version
-
-
 def get_migration_packages():
     """
     This method finds all Python packages in pulp.server.db.migrations. It then sorts them
-    alphabetically by name, and then prepends the pulp.server.db.platform pacage to the list.
+    alphabetically by name, except that pulp.server.db.platform unconditionally sorts to the front
+    of the list.
     """
     migration_package_names = ['%s.%s'%(migrations.__name__, name) for \
                                module_loader, name, ispkg in \
                                pkgutil.iter_modules([os.path.dirname(migrations.__file__)])]
-    migration_packages = [_get_python_module(migration_package_name) for \
+    migration_packages = [MigrationPackage(migration_package_name) for \
                           migration_package_name in migration_package_names]
-    print 'These aren\'t properly sorted yet.'
+    migration_packages.sort()
     return migration_packages
-
-
-def get_migrations(migration_package):
-    """
-    Finds all available migration modules for the given typedef, adds a version attribute to them
-    based on the number found at the beginning of their name, and then sorts by the version.
-
-    :param typedef: The typedef in question
-    :type typedef:  BSON object
-    :returns:       A list of the migration modules for the typedef, sorted by version.
-    :rtype:         L{Python modules}
-    """
-    module_names = [name for _, name, _ in \
-                    pkgutil.iter_modules([os.path.dirname(migration_package.__file__)])]
-    migration_modules = [_get_python_module('%s.%s'%(migration_package.__name__, module_name)) \
-                         for module_name in module_names]
-    for module in migration_modules:
-        module.version = _get_migration_module_version(module)
-    migration_modules = sorted(migration_modules,
-                               cmp=lambda x,y: cmp(x.version, y.version))
-    return migration_modules
-
-
-def _get_migration_module_version(module):
-    migration_module_name = module.__name__.split('.')[-1]
-    version = int(re.match(r'(?P<version>\d+)_.*', migration_module_name).groupdict()['version'])
-    return version
-
-
-def _get_python_module(module_string):
-    """
-    The __import__ method returns the top level module when asked for a module with the dotted
-    notation. For example, __import__('a.b.c') will return a, not c. This is fine, but we could use
-    something that returns c for our migration discovery code. That's what this does.
-    """
-    module = __import__(module_string)
-    parts_to_import = module_string.split('.')
-    parts_to_import.pop(0)
-    for part in parts_to_import:
-        module = getattr(module, part)
-    return module
 
 
 def migrate_field(objectdb,
@@ -182,3 +222,17 @@ def migrate_field(objectdb,
         if delete_from:
             del model[from_field]
         objectdb.save(model, safe=True)
+
+
+def _import_all_the_way(module_string):
+    """
+    The __import__ method returns the top level module when asked for a module with the dotted
+    notation. For example, __import__('a.b.c') will return a, not c. This is fine, but we could
+    use something that returns c for our migration discovery code. That's what this does.
+    """
+    module = __import__(module_string)
+    parts_to_import = module_string.split('.')
+    parts_to_import.pop(0)
+    for part in parts_to_import:
+        module = getattr(module, part)
+    return module

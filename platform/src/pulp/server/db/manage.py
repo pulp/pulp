@@ -30,6 +30,7 @@ _log = logging.getLogger('pulp')
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.migrate.versions import get_migration_modules
 from pulp.server.db.model.migration_tracker import MigrationTracker
+from pulp.server.managers import factory
 
 
 class DataError(Exception):
@@ -67,41 +68,25 @@ def start_logging(options):
     logger.addHandler(handler)
 
 
+#TODO: Use dictionary substitution everywhere.
 def migrate_database(options):
     migration_packages = utils.get_migration_packages()
     for migration_package in migration_packages:
-        current_version = utils.get_current_package_version(migration_package)
-        migrations = utils.get_migrations(migration_package)
-        #If there are no migrations for this package, the latest version is 0
-        latest_version = migrations[-1].version if migrations else 0
-
-        if current_version is None:
-            # This must be a new migration package that wasn't here before. We should create a new
-            # DB object to track that we are at the latest version.
-            print _('Found new migration package %s. Fast forwarding DB to version %s.'%(
-                    migration_package.__name__, latest_version))
-            new_mt = MigrationTracker(id=migration_package.__name__, version=latest_version)
-            MigrationTracker.get_collection().insert(new_mt)
-            continue
-        if current_version > latest_version:
+        if migration_package.current_version > migration_package.latest_available_version:
             raise DataError(_('The database for migration package %s is at version %s, which ' +\
                               'is larger than the latest version available, %s.')%(
-                              migration_package.__name__, current_version, latest_version))
-        if current_version == latest_version:
-            print _('Migration package %s is up to date at version %s'%(migration_package.__name__,
-                                                                        latest_version))
+                              migration_package.name, migration_package.current_version,
+                              migration_package.latest_available_version))
+        if migration_package.current_version == migration_package.latest_available_version:
+            print _('Migration package %s is up to date at version %s'%(migration_package.name,
+                migration_package.latest_available_version))
             continue
-        # Filter out the unapplied migrations
-        migrations = [migration for migration in migrations if migration.version > current_version]
-        for migration in migrations:
-            print _('Applying %s version %s'%(migration_package.__name__, migration.version))
-            migration.migrate()
-            MigrationTracker.get_collection().update({'id': migration_package.__name__},
-                                                     {'$set': {'version': migration.version}},
-                                                     safe=True)
-            current_version = migration.version
-            print _('Migration to %s version %s complete.'%(migration_package.__name__,
-                                                            current_version))
+
+        for migration in migration_package.unapplied_migrations:
+            print _('Applying %s version %s'%(migration_package.name, migration.version))
+            migration_package.apply_migration(migration)
+            print _('Migration to %s version %s complete.'%(migration_package.name,
+                                                            migration_package.current_version))
 
 
 def validate_database_migrations(options):

@@ -31,3 +31,15 @@ class MigrationTracker(Model):
 
         self.id = id
         self.version = version
+        self._collection = self.get_collection()
+
+    def delete(self):
+        self._collection.remove({'id': self.id})
+
+    def save(self):
+        # Determine if this object exists in the DB or not
+        existing_mt = self._collection.find_one({'id': self.id})
+        if existing_mt:
+            self._collection.update({'id': self.id}, {'$set': {'version': self.version}}, safe=True)
+        else:
+            self._collection.insert({'id': self.id, 'version': self.version}, safe=True)
