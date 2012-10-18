@@ -386,6 +386,7 @@ class CallReport(object):
 
         data['task_id'] = self.call_request_id
         data['task_group_id'] = self.call_request_group_id
+        data['tags'] = self.call_request_tags
 
         # format the exception and traceback, if they exist
 
