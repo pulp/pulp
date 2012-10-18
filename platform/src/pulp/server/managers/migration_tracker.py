@@ -12,19 +12,42 @@
 from pulp.server.db.model.migration_tracker import MigrationTracker
 
 class DoesNotExist(Exception):
+    """
+    This Exception is raised when the manager is asked to retrieve a MigrationTracker that is not
+    found in the database.
+    """
     pass
 
 
 class MigrationTrackerManager(object):
+    """
+    A manager that is used to create or retrieve MigrationTracker objects from the database.
+    """
     def __init__(self):
         self._collection = MigrationTracker.get_collection()
 
     def create(self, id, version):
+        """
+        Create and return a MigrationTracker with specified id and version.
+
+        :param id:      The name of the package that the MigrationTracker is tracking.
+        :type  id:      str
+        :param version: The version we want to store on the new MigrationTracker.
+        :type  version: int
+        :rtype:         MigrationTracker
+        """
         new_mt = MigrationTracker(id=id, version=version)
         new_mt.save()
         return new_mt
 
     def get(self, id):
+        """
+        Retrieve a MigrationTracker from the database by id.
+
+        :param id: The id of the MigrationTracker that we wish to retrieve.
+        :type  id: str
+        :rtype:    MigrationTracker
+        """
         migration_tracker = self._collection.find_one({'id': id})
         if migration_tracker is not None:
             migration_tracker = MigrationTracker(id=migration_tracker['id'],
@@ -33,6 +56,18 @@ class MigrationTrackerManager(object):
         raise DoesNotExist('MigrationTracker with id %s does not exist.')
 
     def get_or_create(self, id, defaults=None):
+        """
+        Try to retrieve a MigrationTracker with specified id from the database. If it exists, return
+        it. If it doesn't exist, create a new one with specified id, and with the version attribute
+        specified in a dictionary passed to defaults with one key, 'version'.
+
+        :param id:      The id of the MigrationTracker to get or create
+        :type id:       str
+        :param default: An optional dictionary with a single key, 'version'. This is used to set a
+                        version on a new MigrationTracker, in the event that this method creates one
+        :type  default: dict
+        :rtype:         MigrationTracker
+        """
         try:
             migration_tracker = self.get(id)
         except DoesNotExist:
