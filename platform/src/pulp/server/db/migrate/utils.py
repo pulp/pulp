@@ -35,6 +35,9 @@ class MigrationModule(object):
             migration_module_name).groupdict()['version'])
         return version
 
+    def __cmp__(self, other_module):
+        return cmp(self.version, other_module.version)
+
 
 class MigrationPackage(object):
     """
@@ -84,10 +87,7 @@ class MigrationPackage(object):
                         pkgutil.iter_modules([os.path.dirname(self._package.__file__)])]
         migration_modules = [MigrationModule('%s.%s'%(self.name, module_name)) \
                              for module_name in module_names]
-        # TODO: Check on sorted's key dealio
-        # Check also on sort for this
-        migration_modules = sorted(migration_modules,
-                                   cmp=lambda x,y: cmp(x.version, y.version))
+        migration_modules.sort()
         return migration_modules
 
     @property

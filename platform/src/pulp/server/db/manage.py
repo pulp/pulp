@@ -69,6 +69,11 @@ def start_logging(options):
 
 
 def migrate_database(options):
+    """
+    Perform the migrations for each migration package found in pulp.server.db.migrations.
+
+    :param options: The command line parameters from the user
+    """
     migration_packages = utils.get_migration_packages()
     for migration_package in migration_packages:
         if migration_package.current_version > migration_package.latest_available_version:
@@ -90,6 +95,8 @@ def migrate_database(options):
                                                         'v': migration_package.current_version}))
 
 
+# TODO: I'm not sure what the validation stuff was doing. Look into it and see if we need anything
+#       like it with the new approach
 def validate_database_migrations(options):
     errors = 0
     if not is_validated():
@@ -118,7 +125,14 @@ def main():
         print >> sys.stderr, str(e)
         return os.EX_SOFTWARE
 
+
 def _auto_manage_db(options):
+    """
+    Find and apply all available database migrations, and install or update all available content
+    types.
+
+    :param options: The command line parameters from the user.
+    """
     if options.force:
         print _('Clearing previous versions.')
         clean_db()
