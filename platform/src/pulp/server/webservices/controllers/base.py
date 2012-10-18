@@ -104,18 +104,14 @@ class JSONController(object):
         @param input: input data
         @return: input data with strings encoded as utf-8
         """
-
-        def _ensure_string_encoding(s):
-            try:
-                return encode_unicode(decode_unicode(s))
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                raise InputEncodingError(s), None, sys.exc_info()[2]
-
         if isinstance(input, (list, set, tuple)):
-            return [_ensure_string_encoding(i) for i in input]
+            return [self._ensure_input_encoding(i) for i in input]
         if isinstance(input, dict):
-            return dict((_ensure_string_encoding(k), _ensure_string_encoding(v)) for k, v in input.items())
-        return _ensure_string_encoding(input)
+            return dict((self._ensure_input_encoding(k), self._ensure_input_encoding(v)) for k, v in input.items())
+        try:
+            return encode_unicode(decode_unicode(input))
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            raise InputEncodingError(input), None, sys.exc_info()[2]
 
     # result methods ----------------------------------------------------------
 
