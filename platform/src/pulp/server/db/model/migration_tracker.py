@@ -26,6 +26,7 @@ class MigrationTracker(Model):
     collection_name = 'migration_trackers'
     unique_indices = ('id',)
 
+    # TODO: Change id to package_name
     def __init__(self, id, version):
         """
         Initialize the MigrationTracker for id and version.
@@ -48,6 +49,7 @@ class MigrationTracker(Model):
         """
         self._collection.remove({'id': self.id})
 
+    # TODO: Use an upsert operation to do this
     def save(self):
         """
         Save any changes made to this MigrationTracker to the database. If it doesn't exist in the

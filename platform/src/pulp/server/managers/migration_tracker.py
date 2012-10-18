@@ -11,6 +11,7 @@
 
 from pulp.server.db.model.migration_tracker import MigrationTracker
 
+# TODO: Use the standard exceptions from pulp.server.exceptions
 class DoesNotExist(Exception):
     """
     This Exception is raised when the manager is asked to retrieve a MigrationTracker that is not
@@ -19,6 +20,7 @@ class DoesNotExist(Exception):
     pass
 
 
+# TODO: Change all docstring types to full Python name
 class MigrationTrackerManager(object):
     """
     A manager that is used to create or retrieve MigrationTracker objects from the database.

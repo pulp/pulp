@@ -39,7 +39,7 @@ class MigrationModule(object):
     def _get_version(self):
         """
         Parse the module's name with a regex to determine the version of the module. The module is
-        expected to be named something along the lines of ####_<name>.py. We don't care how many
+        expected to be named something along the lines of ####<name>.py. We don't care how many
         digits are used to represent the number, but we do expect it to be the beginning of the
         name, and we do expect a trailing underscore.
 
@@ -47,8 +47,8 @@ class MigrationModule(object):
         :rtype:     int
         """
         migration_module_name = self._module.__name__.split('.')[-1]
-        version = int(re.match(r'^(?P<version>\d+)_.*',
-            migration_module_name).groupdict()['version'])
+        version = int(re.match(r'^(?P<version>\d+).*',
+                      migration_module_name).groupdict()['version'])
         return version
 
     def __cmp__(self, other_module):
@@ -136,9 +136,9 @@ class MigrationPackage(object):
         :rtype:         L{MigrationModule}
         """
         # Generate a list of the names of the modules found inside this package
-        module_names = [name for module_loader, name, ispkg in \
+        module_names = [name for module_loader, name, ispkg in
                         pkgutil.iter_modules([os.path.dirname(self._package.__file__)])]
-        migration_modules = [MigrationModule('%s.%s'%(self.name, module_name)) \
+        migration_modules = [MigrationModule('%s.%s'%(self.name, module_name))
                              for module_name in module_names]
         migration_modules.sort()
         return migration_modules
@@ -254,10 +254,10 @@ def get_migration_packages():
 
     :rtype: L{MigrationPackage}
     """
-    migration_package_names = ['%s.%s'%(migrations.__name__, name) for \
-                               module_loader, name, ispkg in \
+    migration_package_names = ['%s.%s'%(migrations.__name__, name) for
+                               module_loader, name, ispkg in
                                pkgutil.iter_modules([os.path.dirname(migrations.__file__)])]
-    migration_packages = [MigrationPackage(migration_package_name) for \
+    migration_packages = [MigrationPackage(migration_package_name) for
                           migration_package_name in migration_package_names]
     migration_packages.sort()
     return migration_packages

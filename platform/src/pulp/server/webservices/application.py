@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2012 Red Hat, Inc.
+# Copyright (c) 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -45,7 +43,6 @@ db_connection.initialize()
 from pulp.server.agent.direct.services import Services as AgentServices
 
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history

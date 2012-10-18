@@ -15,7 +15,6 @@ from mock import mock_open, patch
 
 from pulp.common.compat import json
 from pulp.server.db import manage
-from pulp.server.db.version import VERSION
 import base
 import pulp.plugins.types.database as types_db
 
@@ -34,10 +33,6 @@ _test_type_json = '''{"types": [{
 }]}'''
 
 
-def _fake_get_version_in_use(*args, **kwargs):
-    return VERSION
-
-
 class TestTypeImporting(base.PulpServerTests):
     def clean(self):
         super(self.__class__, self).clean()
@@ -45,8 +40,7 @@ class TestTypeImporting(base.PulpServerTests):
 
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', _fake_listdir)
-    @patch('sys.argv', ["pulp-manage-db", "--force"])
-    @patch('pulp.server.db.manage.get_version_in_use', return_value=sdffsdf_fake_get_version_in_use)
+    @patch('sys.argv', ["pulp-manage-db",])
     def test_pulp_manage_db_loads_types(self):
         """
         Test calling pulp-manage-db imports types on a clean types database.
@@ -65,7 +59,7 @@ class TestTypeImporting(base.PulpServerTests):
         for attribute in ['id', 'display_name', 'description', 'unit_key', 'search_indexes']:
             self.assertEquals(test_json['types'][0][attribute], db_type_definitions[0][attribute])
 
-        # Now let's ensure that we… 
+        # Now let's ensure that we have the correct indexes 
         collection = types_db.type_units_collection('test_type_id')
         self.assertEqual(collection.index_information(), {
             u'_id_': {u'key': [(u'_id', 1)], u'v': 1},
