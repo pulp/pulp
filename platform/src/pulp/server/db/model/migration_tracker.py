@@ -27,6 +27,15 @@ class MigrationTracker(Model):
     unique_indices = ('id',)
 
     def __init__(self, id, version):
+        """
+        Initialize the MigrationTracker for id and version.
+
+        :param id:      The id is used to store the name of the migration package this object is
+                        tracking
+        :type  id:      str
+        :param version: The version we want to set for the MigrationTracker
+        :type  version: int
+        """
         super(self.__class__, self).__init__()
 
         self.id = id
@@ -34,9 +43,16 @@ class MigrationTracker(Model):
         self._collection = self.get_collection()
 
     def delete(self):
+        """
+        Remove this MigrationTracker from the database.
+        """
         self._collection.remove({'id': self.id})
 
     def save(self):
+        """
+        Save any changes made to this MigrationTracker to the database. If it doesn't exist in the
+        database already, insert a new record to represent it.
+        """
         # Determine if this object exists in the DB or not
         existing_mt = self._collection.find_one({'id': self.id})
         if existing_mt:
