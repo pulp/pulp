@@ -42,12 +42,6 @@ class MigrationTracker(Model):
         self.version = version
         self._collection = self.get_collection()
 
-    def delete(self):
-        """
-        Remove this MigrationTracker from the database.
-        """
-        self._collection.remove({'name': self.name})
-
     def save(self):
         """
         Save any changes made to this MigrationTracker to the database. If it doesn't exist in the
