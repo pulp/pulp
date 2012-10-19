@@ -175,6 +175,12 @@ class MigrationPackage(object):
             return -1
         return cmp(self.name, other_package.name)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self)
+
 
 def add_field_with_default_value(objectdb, field, default=None):
     """

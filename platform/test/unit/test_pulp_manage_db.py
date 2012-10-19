@@ -15,15 +15,45 @@ from mock import mock_open, patch
 
 from pulp.common.compat import json
 from pulp.server.db import manage
+from pulp.server.db.migrate import utils
 import base
 import pulp.plugins.types.database as types_db
+import test_migration_packages
+import test_migration_packages.platform
 
 
-# These are used for mocking
-def _fake_listdir(*args, **kwargs):
-    return ['test_type.json']
+def _fake_pkgutil_iter_modules(list_of_paths):
+    print list_of_paths
+    return [
+        ('junk', 'a', True),
+        ('junk', 'platform', True),
+        ('junk', 'z', True),
+    ]
 
 
+class TestDatabaseMigrations(base.PulpServerTests):
+    @unittest.expectedFailure
+    def test_migrate_platform(self):
+        self.fail()
+
+    @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
+    @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
+           test_migration_packages.platform)
+    def test_get_migration_packages(self):
+        """
+        Ensure that pulp.server.db.migrate.utils.get_migration_packages functions correctly.
+        """
+        packages = utils.get_migration_packages()
+        print packages
+        self.assertEquals(len(packages), 3)
+        self.assertTrue(all([isinstance(package, utils.MigrationPackage) for package in packages]))
+        # Make sure that the packages are sorted correctly, with platform first
+        self.assertEquals(packages[0].name, 'test_migration_packages.platform')
+        self.assertEquals(packages[1].name, 'test_migration_packages.a')
+        self.assertEquals(packages[2].name, 'test_migration_packages.z')
+
+
+# This is used for mocking
 _test_type_json = '''{"types": [{
     "id" : "test_type_id",
     "display_name" : "Test Type",
@@ -39,9 +69,9 @@ class TestTypeImporting(base.PulpServerTests):
         types_db.clean()
 
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
-    @patch('os.listdir', _fake_listdir)
+    @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db",])
-    def test_pulp_manage_db_loads_types(self):
+    def test_pulp_manage_db_loads_types(self, listdir_mock):
         """
         Test calling pulp-manage-db imports types on a clean types database.
         """
@@ -70,9 +100,3 @@ class TestTypeImporting(base.PulpServerTests):
                                                                     (u'attribute_3', 1)]},
             u'attribute_1_1': {u'v': 1, u'dropDups': False, u'key': [(u'attribute_1', 1)]},
             u'attribute_3_1': {u'v': 1, u'dropDups': False, u'key': [(u'attribute_3', 1)]}})
-
-
-class TestDatabaseMigrations(base.PulpServerTests):
-    @unittest.expectedFailure
-    def test_migrate_platform(self):
-        self.fail()
