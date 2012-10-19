@@ -12,12 +12,12 @@
 
 import logging
 import os
-import tempfile
 import unittest
 
 import mock
 
 from pulp.server.upgrade import main
+from pulp.server.upgrade.model import UpgradeStepReport
 
 
 TEST_DATABASE_NAME = 'pulp_upgrade_db'
@@ -38,14 +38,14 @@ class MainTests(unittest.TestCase):
         super(MainTests, self).setUp()
 
         self.mock_upgrade_call_1 = mock.MagicMock().upgrade
-        self.mock_upgrade_call_1.return_value = main.UpgradeStepReport()
+        self.mock_upgrade_call_1.return_value = UpgradeStepReport()
         self.mock_upgrade_call_1.return_value.succeeded()
         self.mock_upgrade_call_1.return_value.message('Upgrading collection 1')
         self.mock_upgrade_call_1.return_value.warning('Small problem with collection 3')
 
         self.mock_upgrade_calls = [(self.mock_upgrade_call_1, 'Mock 1')]
 
-        self.upgrader = main.Upgrader(db_name=TEST_DATABASE_NAME,
+        self.upgrader = main.Upgrader(prod_db_name=TEST_DATABASE_NAME,
                                       db_upgrade_calls=self.mock_upgrade_calls)
 
     def tearDown(self):
@@ -79,11 +79,11 @@ class MainTests(unittest.TestCase):
     def test_main_with_partial_error(self):
         # Setup
         m = mock.MagicMock()
-        m.call_1.return_value = main.UpgradeStepReport()
+        m.call_1.return_value = UpgradeStepReport()
         m.call_1.return_value.succeeded()
-        m.call_2.return_value = main.UpgradeStepReport()
+        m.call_2.return_value = UpgradeStepReport()
         m.call_2.return_value.failed()
-        m.call_3.return_value = main.UpgradeStepReport()
+        m.call_3.return_value = UpgradeStepReport()
         m.call_3.return_value.succeeded()
 
         self.upgrader.db_upgrade_calls = (

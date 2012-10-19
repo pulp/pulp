@@ -40,40 +40,19 @@ DB_UPGRADE_CALLS = (
     (repos.upgrade, _('Repositories, Content')),
 )
 
-# Default information about the database to upgrade
+# Name of the production Pulp database
 PULP_DATABASE_NAME = 'pulp_database'
+
+# Name of the temporary database used to assemble the v2 database
+TEMP_DATABASE_NAME = 'pulp_database'
+
+# Name the v1 database will be backed up to if configured to do so
+V1_BACKUP_DATABASE_NAME = 'pulp_database_v1'
+
+# If not explicitly specified, used for connecting to mongo
 DEFAULT_SEEDS = 'localhost:27017'
 
 _LOG = logging.getLogger(__name__)
-
-
-class UpgradeStepReport(object):
-    """
-    Captures the success/failure of an upgrade step and any messages to
-    be displayed to the user. Any messages added to this report should be
-    i18n'd before being passed in.
-    """
-
-    def __init__(self):
-        self.success = None
-        self.messages = []
-        self.warnings = []
-        self.errors = []
-
-    def succeeded(self):
-        self.success = True
-
-    def failed(self):
-        self.success = False
-
-    def message(self, msg):
-        self.messages.append(msg)
-
-    def warning(self, msg):
-        self.warnings.append(msg)
-
-    def error(self, msg):
-        self.errors.append(msg)
 
 
 class InvalidStepReportException(Exception): pass
@@ -97,12 +76,20 @@ class Upgrader(object):
 
     def __init__(self,
                  stream_file=STREAM_FILE,
-                 db_name=PULP_DATABASE_NAME,
+                 prod_db_name=PULP_DATABASE_NAME,
+                 tmp_db_name=TEMP_DATABASE_NAME,
+                 v1_backup_db_name=V1_BACKUP_DATABASE_NAME,
+                 backup_v1_db=False,
                  db_seeds=DEFAULT_SEEDS,
                  db_upgrade_calls=DB_UPGRADE_CALLS):
         self.stream_file = stream_file
 
-        self.db_name = db_name
+        self.prod_db_name = prod_db_name
+        self.tmp_db_name = tmp_db_name
+        self.v1_backup_db_name = v1_backup_db_name
+
+        self.backup_v1_db = backup_v1_db
+
         self.db_seeds = db_seeds
         self.db_upgrade_calls = db_upgrade_calls
 
@@ -128,7 +115,8 @@ class Upgrader(object):
     def _upgrade_database(self):
         self._print(_('Upgrading Database'))
 
-        database = self._database(self.db_name, self.db_seeds)
+        v1_database = self._database(self.prod_db_name)
+        tmp_database = self._database(self.tmp_db_name)
 
         for db_call, description in self.db_upgrade_calls:
             self._print(_('Upgrading: %(d)s') % {'d' : description})
@@ -136,7 +124,7 @@ class Upgrader(object):
             spinner.start()
 
             try:
-                report = db_call(database)
+                report = db_call(v1_database, tmp_database)
             except:
                 spinner.stop()
                 spinner.clear() # temporary until okaara supports this
@@ -162,18 +150,49 @@ class Upgrader(object):
 
             self.prompt.write('')
 
+        # Handle the v1 database to get it out of the way
+        if self.backup_v1_db:
+            self._print(_('Backing up the v1 database to %(db)s') % self.v1_backup_db_name)
+            self._backup_v1()
+        else:
+            self._print(_('The v1 database will not be backed up'))
+
+        # Install the v2 database
+        self._print(_('Installing the v2 database'))
+        self._install_v2()
+
+        self._print(_(''))
+        self._cleanup()
+
     # -- utilities ----------------------------------------------------------------
 
-    def _print(self, line):
-        _LOG.info(line)
-        self.prompt.write(line)
+    def _connection(self):
+        connection = Connection(self.db_seeds)
+        return connection
 
-    def _database(self, db_name, seeds):
-        connection = Connection(seeds)
+    def _database(self, db_name):
+        connection = self._connection()
         database = getattr(connection, db_name)
         database.add_son_manipulator(NamespaceInjector())
         database.add_son_manipulator(AutoReference(database))
         return database
+
+    def _backup_v1(self):
+        connection = self._connection()
+        connection.copy_database(self.prod_db_name, self.v1_backup_db_name)
+
+    def _install_v2(self):
+        connection = self._connection()
+        connection.drop_database(self.prod_db_name)
+        connection.copy_database(self.tmp_db_name, self.prod_db_name)
+
+    def _cleanup(self):
+        connection = self._connection()
+        connection.drop_database(self.tmp_db_name)
+
+    def _print(self, line):
+        _LOG.info(line)
+        self.prompt.write(line)
 
     def _print_report_data(self, title, items):
         if len(items) > 0:

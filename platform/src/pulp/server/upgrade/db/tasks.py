@@ -10,6 +10,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.server.upgrade.model import UpgradeStepReport
 
-def upgrade(database, report):
-    pass
+
+def upgrade(v1_database, v2_database):
+    report = UpgradeStepReport()
+    report.succeeded()
+    return report
+

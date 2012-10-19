@@ -10,6 +10,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.server.upgrade.model import UpgradeStepReport
 
-def upgrade(database, report):
-    pass
+
+def upgrade(v1_database, v2_database):
+
+    # At the time of this upgrade, we don't know what CDS implementation will
+    # look like in v2. There's a really good chance that it'll look so
+    # drastically different on the CDS side that it won't be migratable anyway,
+    # so we're not copying anything CDS-related from the v1 database into
+    # the v2.
+    #
+    # tl;dr - Intentionally a no-op
+
+    report = UpgradeStepReport()
+    report.succeeded()
+    return report
