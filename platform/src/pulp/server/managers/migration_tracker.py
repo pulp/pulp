@@ -28,53 +28,53 @@ class MigrationTrackerManager(object):
     def __init__(self):
         self._collection = MigrationTracker.get_collection()
 
-    def create(self, id, version):
+    def create(self, name, version):
         """
-        Create and return a MigrationTracker with specified id and version.
+        Create and return a MigrationTracker with specified name and version.
 
-        :param id:      The name of the package that the MigrationTracker is tracking.
-        :type  id:      str
+        :param name:    The name of the package that the MigrationTracker is tracking.
+        :type  name:    str
         :param version: The version we want to store on the new MigrationTracker.
         :type  version: int
         :rtype:         MigrationTracker
         """
-        new_mt = MigrationTracker(id=id, version=version)
+        new_mt = MigrationTracker(name=name, version=version)
         new_mt.save()
         return new_mt
 
-    def get(self, id):
+    def get(self, name):
         """
-        Retrieve a MigrationTracker from the database by id.
+        Retrieve a MigrationTracker from the database by name.
 
-        :param id: The id of the MigrationTracker that we wish to retrieve.
-        :type  id: str
-        :rtype:    MigrationTracker
+        :param name: The name of the MigrationTracker that we wish to retrieve.
+        :type  name: str
+        :rtype:      MigrationTracker
         """
-        migration_tracker = self._collection.find_one({'id': id})
+        migration_tracker = self._collection.find_one({'name': name})
         if migration_tracker is not None:
-            migration_tracker = MigrationTracker(id=migration_tracker['id'],
+            migration_tracker = MigrationTracker(id=migration_tracker['name'],
                                                  version=migration_tracker['version'])
             return migration_tracker
         raise DoesNotExist('MigrationTracker with id %s does not exist.')
 
-    def get_or_create(self, id, defaults=None):
+    def get_or_create(self, name, defaults=None):
         """
-        Try to retrieve a MigrationTracker with specified id from the database. If it exists, return
-        it. If it doesn't exist, create a new one with specified id, and with the version attribute
-        specified in a dictionary passed to defaults with one key, 'version'.
+        Try to retrieve a MigrationTracker with specified name from the database. If it exists,
+        return it. If it doesn't exist, create a new one with specified name, and with the version
+        attribute specified in a dictionary passed to defaults with one key, 'version'.
 
-        :param id:      The id of the MigrationTracker to get or create
-        :type id:       str
+        :param name:    The name of the MigrationTracker to get or create
+        :type  name:    str
         :param default: An optional dictionary with a single key, 'version'. This is used to set a
                         version on a new MigrationTracker, in the event that this method creates one
         :type  default: dict
         :rtype:         MigrationTracker
         """
         try:
-            migration_tracker = self.get(id)
+            migration_tracker = self.get(name)
         except DoesNotExist:
             if defaults is None:
                 defaults = {}
             version = defaults.get('version', None)
-            migration_tracker = self.create(id, version=version)
+            migration_tracker = self.create(name, version=version)
         return migration_tracker

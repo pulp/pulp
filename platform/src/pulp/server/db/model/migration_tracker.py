@@ -17,29 +17,28 @@ class MigrationTracker(Model):
     migration package in pulp.server.db.migrations, and we will track which migration version each
     of those packages have been advanced to.
 
-    :ivar id:      Uniquely identifies the package, and is the name of the package
-    :type id:      str
+    :ivar name:    Uniquely identifies the package, and is the name of the package
+    :type name:    str
     :ivar version: The version that the migration package is currently at
     :type version: int
     """
 
     collection_name = 'migration_trackers'
-    unique_indices = ('id',)
+    unique_indices = ('name',)
 
-    # TODO: Change id to package_name
-    def __init__(self, id, version):
+    def __init__(self, name, version):
         """
-        Initialize the MigrationTracker for id and version.
+        Initialize the MigrationTracker with name and version.
 
-        :param id:      The id is used to store the name of the migration package this object is
+        :param name:    The name is used to store the name of the migration package this object is
                         tracking
-        :type  id:      str
+        :type  name:    str
         :param version: The version we want to set for the MigrationTracker
         :type  version: int
         """
         super(self.__class__, self).__init__()
 
-        self.id = id
+        self.name = name
         self.version = version
         self._collection = self.get_collection()
 
@@ -47,7 +46,7 @@ class MigrationTracker(Model):
         """
         Remove this MigrationTracker from the database.
         """
-        self._collection.remove({'id': self.id})
+        self._collection.remove({'name': self.name})
 
     # TODO: Use an upsert operation to do this
     def save(self):
@@ -56,8 +55,9 @@ class MigrationTracker(Model):
         database already, insert a new record to represent it.
         """
         # Determine if this object exists in the DB or not
-        existing_mt = self._collection.find_one({'id': self.id})
+        existing_mt = self._collection.find_one({'name': self.name})
         if existing_mt:
-            self._collection.update({'id': self.id}, {'$set': {'version': self.version}}, safe=True)
+            self._collection.update({'name': self.name},
+                {'$set': {'version': self.version}}, safe=True)
         else:
-            self._collection.insert({'id': self.id, 'version': self.version}, safe=True)
+            self._collection.insert({'name': self.name, 'version': self.version}, safe=True)
