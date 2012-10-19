@@ -17,6 +17,7 @@ from pulp.common.compat import json
 from pulp.server.db import manage
 from pulp.server.db.migrate import utils
 from pulp.server.db.model.migration_tracker import MigrationTracker
+from pulp.server.managers.migration_tracker import DoesNotExist, MigrationTrackerManager
 import base
 import pulp.plugins.types.database as types_db
 import test_migration_packages
@@ -35,7 +36,7 @@ _test_type_json = '''{"types": [{
 
 class MigrationTest(base.PulpServerTests):
     def clean(self):
-        base.PulpServerTests.clean(self)
+        super(MigrationTest, self).clean()
         # Make sure each test doesn't have any lingering MigrationTrackers
         MigrationTracker.get_collection().remove({})
 
@@ -127,6 +128,59 @@ class TestMigrationTracker(MigrationTest):
         mt_bson = mt._collection.find_one({'name': 'meaning_of_life'})
         self.assertEquals(mt_bson['name'], 'meaning_of_life')
         self.assertEquals(mt_bson['version'], 42)
+
+
+class TestMigrationTrackerManager(MigrationTest):
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        self.mtm = MigrationTrackerManager()
+
+    def test___init__(self):
+        self.assertEquals(self.mtm._collection, MigrationTracker.get_collection())
+
+    def test_create(self):
+        mt = self.mtm.create('first_prime', 2)
+        self.assertEquals(mt.name, 'first_prime')
+        self.assertEquals(mt.version, 2)
+        # Make sure the DB got to the correct state
+        self.assertEquals(mt._collection.find({}).count(), 1)
+        mt_bson = mt._collection.find_one({'name': 'first_prime'})
+        self.assertEquals(mt_bson['name'], 'first_prime')
+        self.assertEquals(mt_bson['version'], 2)
+
+    def test_get(self):
+        self.mtm.create('only_even_prime', 2)
+        mt = self.mtm.get('only_even_prime')
+        self.assertEquals(mt.name, 'only_even_prime')
+        self.assertEquals(mt.version, 2)
+        # Now try to get one that doesn't exist
+        try:
+            self.mtm.get("doesn't exist")
+            self.fail("The get() should have raised DoesNotExist, but did not.")
+        except DoesNotExist:
+            # This is the expected behavior
+            pass
+
+    def test_get_or_create(self):
+        # Insert one for getting
+        self.mtm.create('smallest_perfect_number', 6)
+        # Now get or create it with an incorrect version. The incorrect version should not be set
+        mt = self.mtm.get_or_create('smallest_perfect_number', defaults={'version': 7})
+        self.assertEquals(mt.name, 'smallest_perfect_number')
+        self.assertEquals(mt.version, 6) # not 7
+        mt_bson = mt._collection.find_one({'name': 'smallest_perfect_number'})
+        self.assertEquals(mt_bson['name'], 'smallest_perfect_number')
+        self.assertEquals(mt_bson['version'], 6)
+        # This will cause a create
+        self.assertEquals(mt._collection.find({'name': 'x^y=y^x'}).count(), 0)
+        # 16 is the only number for which x^y = y^x, where x != y
+        mt = self.mtm.get_or_create('x^y=y^x', defaults={'version': 16})
+        self.assertEquals(mt._collection.find({'name': 'x^y=y^x'}).count(), 1)
+        self.assertEquals(mt.name, 'x^y=y^x')
+        self.assertEquals(mt.version, 16)
+        mt_bson = mt._collection.find_one({'name': 'x^y=y^x'})
+        self.assertEquals(mt_bson['name'], 'x^y=y^x')
+        self.assertEquals(mt_bson['version'], 16)
 
 
 class TestMigrationUtils(MigrationTest):
