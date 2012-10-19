@@ -55,8 +55,9 @@ class MigrationModule(object):
         """
         This is used to get MigrationModules to sort by their version.
 
-        :returns:   A negative value if self's version is less that other's, 0 if they are equal,
-                    and a positive value if self's version is greater than other's.
+        :returns: A negative value if self's version is less that other's, 0 if they are equal,
+                  and a positive value if self's version is greater than other's.
+        :rtype:   int
         """
         return cmp(self.version, other_module.version)
 
@@ -88,7 +89,7 @@ class MigrationPackage(object):
         migration represents.
 
         :param migration: The migration to apply
-        :type  migration: MigrationModule
+        :type  migration: pulp.server.db.migrate.utils.MigrationModule
         """
         migration.migrate()
         self._migration_tracker.version = migration.version
@@ -133,7 +134,7 @@ class MigrationPackage(object):
         Finds all available migration modules for the MigrationPackage,
         and then sorts by the version.
 
-        :rtype:         L{MigrationModule}
+        :rtype:         L{pulp.server.db.migrate.utils.MigrationModule}
         """
         # Generate a list of the names of the modules found inside this package
         module_names = [name for module_loader, name, ispkg in
@@ -157,7 +158,7 @@ class MigrationPackage(object):
         """
         Return a list of MigrationModules in this package that have not been applied yet.
 
-        :rtype: L{MigrationModule}
+        :rtype: L{pulp.server.db.migrate.utils.MigrationModule}
         """
         return [migration for migration in self.migrations \
                 if migration.version > self.current_version]
@@ -258,7 +259,7 @@ def get_migration_packages():
     alphabetically by name, except that pulp.server.db.platform unconditionally sorts to the front
     of the list.
 
-    :rtype: L{MigrationPackage}
+    :rtype: L{pulp.server.db.migrate.utils.MigrationPackage}
     """
     migration_package_names = ['%s.%s'%(migrations.__name__, name) for
                                module_loader, name, ispkg in
@@ -305,7 +306,7 @@ def _import_all_the_way(module_string):
 
     :param module_string: A dot notation of the Python module to be imported and returned
     :type  module_string: str
-    :rtype:               Python package or module
+    :rtype:               module
     """
     module = __import__(module_string)
     parts_to_import = module_string.split('.')

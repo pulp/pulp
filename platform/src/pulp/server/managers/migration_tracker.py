@@ -12,6 +12,8 @@
 from pulp.server.db.model.migration_tracker import MigrationTracker
 
 # TODO: Use the standard exceptions from pulp.server.exceptions
+#       It was suggested to use MissingResource, but that exception seems to imply that maybe it is
+#       for use with HTTP. Check on that.
 class DoesNotExist(Exception):
     """
     This Exception is raised when the manager is asked to retrieve a MigrationTracker that is not
@@ -20,7 +22,6 @@ class DoesNotExist(Exception):
     pass
 
 
-# TODO: Change all docstring types to full Python name
 class MigrationTrackerManager(object):
     """
     A manager that is used to create or retrieve MigrationTracker objects from the database.
@@ -36,7 +37,7 @@ class MigrationTrackerManager(object):
         :type  name:    str
         :param version: The version we want to store on the new MigrationTracker.
         :type  version: int
-        :rtype:         MigrationTracker
+        :rtype:         pulp.server.db.model.migration_tracker.MigrationTracker
         """
         new_mt = MigrationTracker(name=name, version=version)
         new_mt.save()
@@ -48,7 +49,7 @@ class MigrationTrackerManager(object):
 
         :param name: The name of the MigrationTracker that we wish to retrieve.
         :type  name: str
-        :rtype:      MigrationTracker
+        :rtype:      pulp.server.db.model.migration_tracker.MigrationTracker
         """
         migration_tracker = self._collection.find_one({'name': name})
         if migration_tracker is not None:
@@ -68,7 +69,7 @@ class MigrationTrackerManager(object):
         :param default: An optional dictionary with a single key, 'version'. This is used to set a
                         version on a new MigrationTracker, in the event that this method creates one
         :type  default: dict
-        :rtype:         MigrationTracker
+        :rtype:         pulp.server.db.model.migration_tracker.MigrationTracker
         """
         try:
             migration_tracker = self.get(name)
