@@ -44,13 +44,19 @@ class TestDatabaseMigrations(base.PulpServerTests):
         Ensure that pulp.server.db.migrate.utils.get_migration_packages functions correctly.
         """
         packages = utils.get_migration_packages()
-        print packages
         self.assertEquals(len(packages), 3)
         self.assertTrue(all([isinstance(package, utils.MigrationPackage) for package in packages]))
         # Make sure that the packages are sorted correctly, with platform first
         self.assertEquals(packages[0].name, 'test_migration_packages.platform')
         self.assertEquals(packages[1].name, 'test_migration_packages.a')
         self.assertEquals(packages[2].name, 'test_migration_packages.z')
+
+    def test__import_all_the_way(self):
+        """
+        Make sure that utils._import_all_the_way() gives back the most specific module.
+        """
+        module = utils._import_all_the_way('test_migration_packages.z.0001_test')
+        self.assertEqual(module.__name__, 'test_migration_packages.z.0001_test')
 
 
 # This is used for mocking
