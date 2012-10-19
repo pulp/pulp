@@ -15,13 +15,18 @@ import base
 import mock_plugins
 import mock_agent
 
+from mock import patch
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.profiler import InvalidUnitsRequested
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import PulpDataException
-from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
-import pulp.server.managers.factory as factory
+from pulp.server.managers import factory
+from pulp.server.compat import json, json_util
+
+
+CONSUMER_PAYLOAD = dict(A=1, B=2, C=3)
+
 
 # -- test cases ---------------------------------------------------------------
 
@@ -29,14 +34,9 @@ class AgentManagerTests(base.PulpServerTests):
 
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'test-distributor'
+    DISTRIBUTOR_ID = 'mock-distributor'
     REPOSITORY = {'id':REPO_ID}
     DETAILS = {}
-    DEFINITIONS = [
-        {'type_id':'yum',
-         'repository':REPOSITORY,
-         'details':DETAILS,}
-    ]
     OPTIONS = { 'xxx' : 123 }
 
     def setUp(self):
@@ -80,27 +80,58 @@ class AgentManagerTests(base.PulpServerTests):
         # verify
         mock_agent.Consumer.unregistered.assert_called_once_with()
 
-    def test_bind(self):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
+           return_value=CONSUMER_PAYLOAD)
+    def test_bind(self, unused):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.bind(self.CONSUMER_ID, self.DEFINITIONS, self.OPTIONS)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
         # verify
-        mock_agent.Consumer.bind.assert_called_once_with(self.DEFINITIONS, self.OPTIONS)
+        manager = factory.repo_query_manager()
+        repo = manager.get_repository(self.REPO_ID)
+        definitions = [
+            dict(type_id=self.DISTRIBUTOR_ID,
+                 repository=repo,
+                 details=CONSUMER_PAYLOAD)
+        ]
+        args = mock_agent.Consumer.bind.call_args[0]
+        self.assertEquals(json.dumps(args[0], default=json_util.default),
+                          json.dumps(definitions, default=json_util.default))
+        self.assertEquals(json.dumps(args[1], default=json_util.default),
+                          json.dumps(self.OPTIONS, default=json_util.default))
 
-    def test_rebind(self):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
+           return_value=CONSUMER_PAYLOAD)
+    def test_rebind(self, unused):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
+        binding = dict(
+            consumer_id=self.CONSUMER_ID,
+            repo_id=self.REPO_ID,
+            distributor_id=self.DISTRIBUTOR_ID
+        )
         manager = factory.consumer_agent_manager()
-        manager.rebind(self.CONSUMER_ID, self.DEFINITIONS, self.OPTIONS)
+        manager.rebind(self.CONSUMER_ID, [binding], self.OPTIONS)
         # verify
-        mock_agent.Consumer.rebind.assert_called_once_with(self.DEFINITIONS, self.OPTIONS)
+        manager = factory.repo_query_manager()
+        repo = manager.get_repository(self.REPO_ID)
+        definitions = [
+            dict(type_id=self.DISTRIBUTOR_ID,
+                 repository=repo,
+                 details=CONSUMER_PAYLOAD)
+        ]
+        args = mock_agent.Consumer.rebind.call_args[0]
+        self.assertEquals(json.dumps(args[0], default=json_util.default),
+                          json.dumps(definitions, default=json_util.default))
+        self.assertEquals(json.dumps(args[1], default=json_util.default),
+                          json.dumps(self.OPTIONS, default=json_util.default))
 
     def test_unbind(self):
         # Setup

@@ -64,16 +64,16 @@ class BindManager(object):
         except DuplicateKeyError:
             # idempotent
             pass
-        consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
+        details = {'repo_id':repo_id, 'distributor_id':distributor_id}
         manager = factory.consumer_history_manager()
-        manager.record_event(consumer_id, 'repo_bound', consumer_event_details)
+        manager.record_event(consumer_id, 'repo_bound', details)
         return bind
 
 
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
-        Unbind consumer to a specifiec distirbutor associated with
+        Unbind consumer to a specific distributor associated with
         a repository.  This call is idempotent.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
@@ -94,9 +94,9 @@ class BindManager(object):
             # idempotent
             return
         collection.remove(bind, safe=True)
-        consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
+        details = {'repo_id':repo_id, 'distributor_id':distributor_id}
         manager = factory.consumer_history_manager()
-        manager.record_event(consumer_id, 'repo_unbound', consumer_event_details)
+        manager.record_event(consumer_id, 'repo_unbound', details)
         return bind
 
     def consumer_deleted(self, id):
@@ -111,7 +111,7 @@ class BindManager(object):
         for bind in self.find_by_consumer(id):
             collection.remove(bind, safe=True)
             repo_id = bind['repo_id']
-            agent_manager.unbind(id, repo_id)
+            agent_manager.unbind(id, repo_id, {})
 
     def repo_deleted(self, repo_id):
         """
@@ -125,7 +125,7 @@ class BindManager(object):
         for bind in self.find_by_repo(repo_id):
             collection.remove(bind, safe=True)
             consumer_id = bind['consumer_id']
-            agent_manager.unbind(consumer_id, repo_id)
+            agent_manager.unbind(consumer_id, repo_id, {})
 
     def distributor_deleted(self, repo_id, distributor_id):
         """
@@ -141,7 +141,7 @@ class BindManager(object):
         for bind in self.find_by_distributor(repo_id, distributor_id):
             collection.remove(bind, safe=True)
             consumer_id = bind['consumer_id']
-            agent_manager.unbind(consumer_id, repo_id)
+            agent_manager.unbind(consumer_id, repo_id, {})
 
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """

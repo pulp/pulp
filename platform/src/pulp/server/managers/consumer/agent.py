@@ -27,6 +27,7 @@ from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
+from pulp.server.compat import json, json_util
 from pulp.server.agent import PulpAgent
 
 
@@ -51,41 +52,39 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.unregistered()
 
-    def bind(self, id, definitions, options):
+    def bind(self, id, repo_id, distributor_id, options):
         """
         Apply a bind to the agent.
-        @param id: A consumer ID.
+        @param id: The consumer ID.
         @type id: str
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Bind options.
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        @param distributor_id: A distributor ID.
+        @type distributor_id: str
+        @param options: The options are handler specific.
         @type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
+        binding = dict(repo_id=repo_id, distributor_id=distributor_id)
+        definitions = self.__definitions([binding])
         agent = PulpAgent(consumer)
         agent.consumer.bind(definitions, options)
 
-    def rebind(self, id, definitions, options):
+    def rebind(self, id, bindings, options):
         """
         Apply a rebind to the agent.
         @param id: The consumer ID.
         @type id: str
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Bind options.
+        @param bindings: A list of bindings.
+          Each binding is: {repo_id:<str>, distributor_id:<str>}
+        @type bindings: list
+        @param options: The options are handler specific.
         @type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(id)
+        definitions = self.__definitions(bindings)
         agent = PulpAgent(consumer)
         agent.consumer.rebind(definitions, options)
 
@@ -94,7 +93,7 @@ class AgentManager(object):
         Apply a unbind to the agent.
         @param id: The consumer ID.
         @type id: str
-        @param options: Bind options.
+        @param options: The options are handler specific.
         @type options: dict
         """
         manager = managers.consumer_manager()
@@ -221,6 +220,35 @@ class AgentManager(object):
             profile = p['profile']
             profiles[typeid] = profile
         return ProfiledConsumer(id, profiles)
+
+    def __definitions(self, bindings):
+        """
+        Build the bind definitions needed by the agent.
+        @param bindings: A list of bindings.
+          Each binding is:
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @type bindings: list
+        @return A list of bind definitions.
+        @rtype: list
+        """
+        definitions = []
+        for binding in bindings:
+            manager = managers.repo_query_manager()
+            repository = manager.get_repository(binding['repo_id'])
+            manager = managers.repo_distributor_manager()
+            distributor = manager.get_distributor(
+                binding['repo_id'],
+                binding['distributor_id'])
+            details = manager.create_bind_payload(
+                binding['repo_id'],
+                binding['distributor_id'])
+            definition = dict(
+                type_id=distributor['distributor_type_id'],
+                repository=repository,
+                details=details)
+            definitions.append(definition)
+        definitions = json.loads(json.dumps(definitions, default=json_util.default))
+        return definitions
 
 
 class Units(dict):

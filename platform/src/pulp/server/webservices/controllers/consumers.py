@@ -68,26 +68,6 @@ def expand_consumers(options, consumers):
     return consumers
 
 
-def bind_definition(repo_id, distributor_id):
-    """
-    Assemble bind definition to be sent to the agent.
-    @param repo_id: A repo ID
-    @param distributor_id: A distributor ID.
-    @return: A bind definition
-    @rtype: dict
-    """
-    manager = managers.repo_query_manager()
-    repository = manager.get_repository(repo_id)
-    manager = managers.repo_distributor_manager()
-    distributor = manager.get_distributor(repo_id, distributor_id)
-    details = manager.create_bind_payload(repo_id, distributor_id)
-    definition = dict(
-        type_id=distributor['distributor_type_id'],
-        repository=repository,
-        details=details)
-    return definition
-
-
 # -- controllers --------------------------------------------------------------
 
 class Consumers(JSONController):
@@ -283,16 +263,21 @@ class Bindings(JSONController):
         call_requests.append(call_request)
 
         # notify agent
-        definition = bind_definition(repo_id, distributor_id)
+        resources = {
+            dispatch_constants.RESOURCE_CONSUMER_BINDING_TYPE:
+                {str((consumer_id, repo_id, distributor_id)): dispatch_constants.RESOURCE_UPDATE_OPERATION}
+        }
         args = [
             consumer_id,
-            [definition],
-            options,
+            repo_id,
+            distributor_id,
+            options
         ]
         manager = managers.consumer_agent_manager()
         call_request = CallRequest(
             manager.bind,
             args,
+            resources=resources,
             weight=0
         )
         call_requests.append(call_request)
