@@ -31,7 +31,7 @@ def _fake_pkgutil_iter_modules(list_of_paths):
     ]
 
 
-class TestDatabaseMigrations(base.PulpServerTests):
+class TestDatabaseMigrationUtils(base.PulpServerTests):
     @unittest.expectedFailure
     def test_migrate_platform(self):
         self.fail()
@@ -67,6 +67,22 @@ _test_type_json = '''{"types": [{
     "unit_key" : ["attribute_1", "attribute_2", "attribute_3"],
     "search_indexes" : ["attribute_1", "attribute_3"]
 }]}'''
+
+
+class TestMigrationPackage(base.PulpServerTests):
+    def test_migrations(self):
+        migration_package = utils.MigrationPackage('test_migration_packages.z')
+        migrations = migration_package.migrations
+        self.assertEqual(len(migrations), 3)
+        self.assertTrue(all([isinstance(migration, utils.MigrationModule)
+                        for migration in migrations]))
+        # Make sure their versions are set and sorted appropriately
+        self.assertEqual([1, 2, 3], [migration.version for migration in migrations])
+        # Check the names
+        self.assertEqual(['test_migration_packages.z.0001_test',
+                          'test_migration_packages.z.0002_test',
+                          'test_migration_packages.z.0003_test'],
+                         [migration._module.__name__ for migration in migrations])
 
 
 class TestTypeImporting(base.PulpServerTests):

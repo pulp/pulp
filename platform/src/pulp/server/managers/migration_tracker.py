@@ -52,7 +52,7 @@ class MigrationTrackerManager(object):
         """
         migration_tracker = self._collection.find_one({'name': name})
         if migration_tracker is not None:
-            migration_tracker = MigrationTracker(id=migration_tracker['name'],
+            migration_tracker = MigrationTracker(name=migration_tracker['name'],
                                                  version=migration_tracker['version'])
             return migration_tracker
         raise DoesNotExist('MigrationTracker with id %s does not exist.')

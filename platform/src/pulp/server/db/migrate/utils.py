@@ -79,7 +79,7 @@ class MigrationPackage(object):
         # This is an object representation of the DB object that keeps track of the migration
         # version that has been applied
         self._migration_tracker = migration_tracker_manager.get_or_create(
-            id=self._package.__name__,
+            name=self._package.__name__,
             defaults={'version': self.latest_available_version})
 
     def apply_migration(self, migration):
