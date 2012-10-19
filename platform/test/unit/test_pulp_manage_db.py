@@ -84,6 +84,15 @@ class TestManageDB(MigrationTest):
             u'attribute_3_1': {u'v': 1, u'dropDups': False, u'key': [(u'attribute_3', 1)]}})
 
 
+class TestMigrationModule(MigrationTest):
+    def test___init__(self):
+        mm = utils.MigrationModule('test_migration_packages.z.0002_test')
+        self.assertEquals(mm._module.__name__, 'test_migration_packages.z.0002_test')
+        self.assertEquals(mm.version, 2)
+        # It should have a migrate attribute that is callable
+        self.assertTrue(hasattr(mm.migrate, '__call__'))
+
+
 class TestMigrationPackage(MigrationTest):
     def test_migrations(self):
         migration_package = utils.MigrationPackage('test_migration_packages.z')
