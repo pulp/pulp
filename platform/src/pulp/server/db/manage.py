@@ -27,7 +27,6 @@ connection.initialize()
 
 _log = logging.getLogger('pulp')
 
-from pulp.server.db.migrate.validate import validate
 from pulp.server.db.migrate.versions import get_migration_modules
 from pulp.server.db.model.migration_tracker import MigrationTracker
 from pulp.server.managers import factory
@@ -93,20 +92,6 @@ def migrate_database(options):
             migration_package.apply_migration(migration)
             print _('Migration to %(p)s version %(v)s complete.'%({'p': migration_package.name,
                                                         'v': migration_package.current_version}))
-
-
-# TODO: I'm not sure what the validation stuff was doing. Look into it and see if we need anything
-#       like it with the new approach
-def validate_database_migrations(options):
-    errors = 0
-    if not is_validated():
-        errors = validate()
-    if errors:
-        error_message = _('%(e)d errors on validation, see %(l)s for details')%({
-            'e': errors, 'l': options.log_file})
-        raise DataError(error_message)
-    if not options.test:
-        set_validated()
 
 
 def main():
