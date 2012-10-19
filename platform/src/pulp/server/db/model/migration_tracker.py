@@ -48,16 +48,11 @@ class MigrationTracker(Model):
         """
         self._collection.remove({'name': self.name})
 
-    # TODO: Use an upsert operation to do this
     def save(self):
         """
         Save any changes made to this MigrationTracker to the database. If it doesn't exist in the
         database already, insert a new record to represent it.
         """
-        # Determine if this object exists in the DB or not
-        existing_mt = self._collection.find_one({'name': self.name})
-        if existing_mt:
-            self._collection.update({'name': self.name},
-                {'$set': {'version': self.version}}, safe=True)
-        else:
-            self._collection.insert({'name': self.name, 'version': self.version}, safe=True)
+        self._collection.update({'name': self.name},
+                                {'name': self.name, 'version': self.version},
+                                upsert=True, safe=True)
