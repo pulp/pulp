@@ -11,7 +11,7 @@
 import os
 import unittest
 
-from mock import mock_open, patch
+from mock import MagicMock, mock_open, patch
 
 from pulp.common.compat import json
 from pulp.server.db import manage
@@ -92,8 +92,45 @@ class TestMigrationModule(MigrationTest):
         # It should have a migrate attribute that is callable
         self.assertTrue(hasattr(mm.migrate, '__call__'))
 
+    def test__get_version(self):
+        mm = utils.MigrationModule('test_migration_packages.z.0003_test')
+        self.assertEquals(mm._get_version(), 3)
+
+    def test___cmp__(self):
+        mm_2 = utils.MigrationModule('test_migration_packages.z.0002_test')
+        mm_3 = utils.MigrationModule('test_migration_packages.z.0003_test')
+        self.assertEquals(cmp(mm_2, mm_3), -1)
+
 
 class TestMigrationPackage(MigrationTest):
+    def test___init__(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEquals(mp._package.__name__, 'test_migration_packages.z')
+        self.assertEquals(mp._migration_tracker.name, 'test_migration_packages.z')
+        # We auto update to the latest version since this is a new package
+        self.assertEquals(mp._migration_tracker.version, 3)
+
+    def test_apply_migration(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        # Let's fake the migration version being at 2 instead of 3
+        mp._migration_tracker.version = 2
+        mp._migration_tracker.save()
+        # Now, let's apply version 3
+        mm_v3 = mp.unapplied_migrations[-1]
+        self.assertEqual(mm_v3.version, 3)
+        # Let's change the migrate() function to one that tracks that it gets called.
+        mm_v3.migrate = MagicMock(name='migrate')
+        self.assertEquals(mm_v3.migrate.called, False)
+        # Now try to run the migration and assert that it gets called
+        mp.apply_migration(mm_v3)
+        self.assertEquals(mm_v3.migrate.called, True)
+        # Now the mp should be at v3
+        self.assertEqual(mp.current_version, 3)
+
+    def test_available_versions(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEquals(mp.available_versions, [1, 2, 3])
+
     def test_migrations(self):
         migration_package = utils.MigrationPackage('test_migration_packages.z')
         migrations = migration_package.migrations
