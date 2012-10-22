@@ -52,8 +52,8 @@ class TaskSnapshot(Model):
             if not isinstance(value, basestring):
                 return v
             if isinstance(value, str):
-                value = value.decode('utf-8')
-            return value.encode('utf-8').strip()
+                value = value.decode('unicode-escape')
+            return value.encode('unicode-escape').strip()
 
         return dict([(k, _process_value(v)) for k, v in serialized_task.items()])
 
