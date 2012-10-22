@@ -131,6 +131,25 @@ class TestMigrationPackage(MigrationTest):
         mp = utils.MigrationPackage('test_migration_packages.z')
         self.assertEquals(mp.available_versions, [1, 2, 3])
 
+    def test_current_version(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEqual(mp.current_version, 3)
+        # Now let's change the version to 4 and see what happens
+        mp._migration_tracker.version = 4
+        mp._migration_tracker.save()
+        # Now we should be able to reinstantiate this mammajamma and see that the version is right
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEqual(mp.current_version, 4)
+
+    def test_latest_available_version(self):
+        # This one has no migrations, so the latest is 0
+        self.assertEqual(
+            utils.MigrationPackage('test_migration_packages.a').latest_available_version, 0)
+        self.assertEqual(
+            utils.MigrationPackage('test_migration_packages.platform').latest_available_version, 1)
+        self.assertEqual(
+            utils.MigrationPackage('test_migration_packages.z').latest_available_version, 3)
+
     def test_migrations(self):
         migration_package = utils.MigrationPackage('test_migration_packages.z')
         migrations = migration_package.migrations
@@ -144,6 +163,46 @@ class TestMigrationPackage(MigrationTest):
                           'test_migration_packages.z.0002_test',
                           'test_migration_packages.z.0003_test'],
                          [migration._module.__name__ for migration in migrations])
+
+    def test_name(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEqual(mp.name, 'test_migration_packages.z')
+
+    def test_unapplied_migrations(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        # Drop the version to 1, which should make this method return two migrations
+        mp._migration_tracker.version = 1
+        mp._migration_tracker.save()
+        unapplied = mp.unapplied_migrations
+        self.assertEqual(len(unapplied), 2)
+        self.assertEqual([m.version for m in unapplied], [2, 3])
+        self.assertEqual([m._module.__name__ for m in unapplied],
+            ['test_migration_packages.z.0002_test', 'test_migration_packages.z.0003_test'])
+
+    @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
+           test_migration_packages.platform)
+    def test___cmp__(self):
+        mp_1 = utils.MigrationPackage('test_migration_packages.a')
+        mp_2 = utils.MigrationPackage('test_migration_packages.platform')
+        mp_3 = utils.MigrationPackage('test_migration_packages.z')
+        # platform should always sort first, and they should otherwise be alphabeticalness
+        self.assertEqual(cmp(mp_1, mp_1), 0)
+        self.assertEqual(cmp(mp_1, mp_2), 1)
+        self.assertEqual(cmp(mp_1, mp_3), -1)
+        self.assertEqual(cmp(mp_2, mp_1), -1)
+        self.assertEqual(cmp(mp_2, mp_2), 0)
+        self.assertEqual(cmp(mp_2, mp_3), -1)
+        self.assertEqual(cmp(mp_3, mp_1), 1)
+        self.assertEqual(cmp(mp_3, mp_2), 1)
+        self.assertEqual(cmp(mp_3, mp_3), 0)
+
+    def test___str__(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEqual(str(mp), 'test_migration_packages.z')
+
+    def test___repr__(self):
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        self.assertEqual(repr(mp), 'test_migration_packages.z')
 
 
 class TestMigrationTracker(MigrationTest):

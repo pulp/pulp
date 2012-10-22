@@ -168,12 +168,14 @@ class MigrationPackage(object):
         This method returns a negative value if self.name < other_package.name, 0 if they are
         equal, and a positive value if self.name > other_package.name. There is an exception to
         this sorting rule, in that if self._package is pulp.server.db.migrations.platform, this
-        method will always return -1.
+        method will always return -1, and if other_package is platform, it will always return 1.
 
         :rtype: int
         """
         if self._package is pulp.server.db.migrations.platform:
             return -1
+        if other_package._package is pulp.server.db.migrations.platform:
+            return 1
         return cmp(self.name, other_package.name)
 
     def __str__(self):
