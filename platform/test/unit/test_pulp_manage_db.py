@@ -141,6 +141,16 @@ class TestMigrationPackage(MigrationTest):
         mp = utils.MigrationPackage('test_migration_packages.z')
         self.assertEqual(mp.current_version, 4)
 
+    def test_duplicate_versions(self):
+        error_message = 'There are two migration modules that share version 2 in ' +\
+            'test_migration_packages.duplicate_versions.'
+        try:
+            mp = utils.MigrationPackage('test_migration_packages.duplicate_versions')
+            self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
+                'but was not raised.')
+        except utils.MigrationPackage.DuplicateVersions, e:
+            self.assertEquals(str(e), error_message)
+
     def test_latest_available_version(self):
         # This one has no migrations, so the latest is 0
         self.assertEqual(
@@ -315,7 +325,8 @@ class TestMigrationUtils(MigrationTest):
     @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
            test_migration_packages.platform)
-    def test_get_migration_packages(self):
+    @patch('pulp.server.db.migrate.utils.logger.error')
+    def test_get_migration_packages(self, log_mock):
         """
         Ensure that pulp.server.db.migrate.utils.get_migration_packages functions correctly.
         """
@@ -326,6 +337,9 @@ class TestMigrationUtils(MigrationTest):
         self.assertEquals(packages[0].name, 'test_migration_packages.platform')
         self.assertEquals(packages[1].name, 'test_migration_packages.a')
         self.assertEquals(packages[2].name, 'test_migration_packages.z')
+        # Assert that we logged the duplicate version exception
+        log_mock.assert_called_with('There are two migration modules that share version 2 in '
+                                    'test_migration_packages.duplicate_versions.')
 
     def test__import_all_the_way(self):
         """

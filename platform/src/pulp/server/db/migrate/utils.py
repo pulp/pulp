@@ -26,10 +26,17 @@ class MigrationModule(object):
     migration version. It has a reference to the module's migrate() function as its migrate
     attribute.
     """
+    class MissingMigrate(Exception):
+        """
+        This is raised when something attempts to instantiate a MigrationModule with a module that
+        has no migrate() function.
+        """
+        pass
+
     class MissingVersion(Exception):
         """
         This is raised when something attempts to instantiate a MigrationModule with a module that
-        either does not conform to the standard version naming conventions.
+        does not conform to the standard version naming conventions.
         """
         pass
 
@@ -42,6 +49,8 @@ class MigrationModule(object):
         """
         self._module = _import_all_the_way(python_module_name)
         self.version = self._get_version()
+        if not hasattr(self._module, 'migrate'):
+            raise self.__class__.MissingMigrate()
         self.migrate = self._module.migrate
 
     def _get_version(self):
@@ -79,6 +88,19 @@ class MigrationPackage(object):
     A wrapper around the migration packages found in pulp.server.db.migrations. Has methods to
     retrieve information about the migrations that are found there, and to apply the migrations.
     """
+    class DuplicateVersions(Exception):
+        """
+        This is raised when a single migration package has two MigrationModules in it that have the
+        same version.
+        """
+        pass
+
+    class MissingVersion(Exception):
+        """
+        This is raised when a migration package has a gap in the MigrationModule versions.
+        """
+        pass
+
     def __init__(self, python_package_name):
         """
         Initialize the MigrationPackage to represent the Python migration package passed in.
@@ -154,12 +176,31 @@ class MigrationPackage(object):
         migration_modules = []
         for module_name in module_names:
             try:
-                migration_modules.append(MigrationModule('%s.%s'%(self.name, module_name)))
+                module_name = '%s.%s'%(self.name, module_name)
+                migration_modules.append(MigrationModule(module_name))
+            except MigrationModule.MissingMigrate:
+                logger.debug(("The module %s is missing a migrate() function. "
+                              "It will be ignored.")%module_name)
             except MigrationModule.MissingVersion:
-                logger.debug("The module "
-                    "test_migration_packages.z.doesnt_conform_to_naming_convention doesn't conform "
-                    "to the migration package naming conventions. It will be ignored.")
+                logger.debug(("The module %s doesn't conform to the migration package naming "
+                              "conventions. It will be ignored.")%module_name)
         migration_modules.sort()
+        # We should have migrations starting at version 1, which each module version being exactly
+        # one larger than the migration preceeding it.
+        last_version = 0
+        for module in migration_modules:
+            if module.version == 0:
+                error_message = '0 is a reserved migration version number. It appears that the ' +\
+                                'module %s has been assigned that value.'%module.name
+                raise self.__class__.DuplicateVersions(error_message)
+            if module.version == last_version:
+                error_message = 'There are two migration modules that share version 2 in ' +\
+                                '%s.'%self.name
+                raise self.__class__.DuplicateVersions(error_message)
+            if module.version != last_version + 1:
+                raise self.__class__.MissingVersion(('Migration version %s seems to be '
+                    'missing.')%(last_version + 1))
+            last_version = module.version
         return migration_modules
 
     @property
@@ -284,8 +325,12 @@ def get_migration_packages():
     migration_package_names = ['%s.%s'%(migrations.__name__, name) for
                                module_loader, name, ispkg in
                                pkgutil.iter_modules([os.path.dirname(migrations.__file__)])]
-    migration_packages = [MigrationPackage(migration_package_name) for
-                          migration_package_name in migration_package_names]
+    migration_packages = []
+    for name in migration_package_names:
+        try:
+            migration_packages.append(MigrationPackage(name))
+        except MigrationPackage.DuplicateVersions, e:
+            logger.error(str(e))
     migration_packages.sort()
     return migration_packages
 
