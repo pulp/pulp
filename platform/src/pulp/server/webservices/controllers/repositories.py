@@ -23,6 +23,7 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
+from pulp.server.complex_tasks.repos import sync_call_requests
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.dispatch import constants as dispatch_constants
@@ -809,42 +810,7 @@ class RepoSync(JSONController):
         params = self.params()
         overrides = params.get('override_config', None)
 
-        # Execute the sync asynchronously
-        repo_sync_manager = manager_factory.repo_sync_manager()
-
-        sync_weight = pulp_config.config.getint('tasks', 'sync_weight')
-        sync_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                     action_tag('sync')]
-
-        sync_call_request = CallRequest(repo_sync_manager.sync,
-                                        [repo_id],
-                                        {'sync_config_override': overrides},
-                                        weight=sync_weight,
-                                        tags=sync_tags,
-                                        archive=True)
-        sync_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        sync_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                                  repo_sync_manager.prep_sync)
-
-        call_requests = [sync_call_request]
-
-        repo_publish_manager = manager_factory.repo_publish_manager()
-        auto_publish_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                             action_tag('auto_publish'), action_tag('publish')]
-        auto_distributors = repo_publish_manager.auto_distributors(repo_id)
-
-        for distributor in auto_distributors:
-            distributor_id = distributor['id']
-            publish_call_request = CallRequest(repo_publish_manager.publish,
-                                               [repo_id, distributor_id],
-                                               tags=auto_publish_tags,
-                                               archive=True)
-            publish_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-            publish_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                                         repo_publish_manager.prep_publish)
-            publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
-
-            call_requests.append(publish_call_request)
+        call_requests = sync_call_requests(repo_id, overrides)
 
         # this raises an exception that is handled by the middleware,
         # so no return is needed
