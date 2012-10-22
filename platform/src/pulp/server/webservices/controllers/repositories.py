@@ -23,7 +23,7 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.complex_tasks.repos import sync_call_requests
+from pulp.server.orchestration.repo import sync_call_requests
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.dispatch import constants as dispatch_constants
