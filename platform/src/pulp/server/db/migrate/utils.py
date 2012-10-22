@@ -8,7 +8,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+import logging
 import os
 import pkgutil
 import re
@@ -17,6 +17,7 @@ from pulp.server.db import migrations
 from pulp.server.managers.migration_tracker import MigrationTrackerManager
 import pulp.server.db.migrations.platform
 
+logger = logging.getLogger(__name__)
 
 class MigrationModule(object):
     """
@@ -25,6 +26,13 @@ class MigrationModule(object):
     migration version. It has a reference to the module's migrate() function as its migrate
     attribute.
     """
+    class MissingVersion(Exception):
+        """
+        This is raised when something attempts to instantiate a MigrationModule with a module that
+        either does not conform to the standard version naming conventions.
+        """
+        pass
+
     def __init__(self, python_module_name):
         """
         Initialize a MigrationModule to represent the module passed in by python_module_name.
@@ -47,8 +55,12 @@ class MigrationModule(object):
         :rtype:     int
         """
         migration_module_name = self._module.__name__.split('.')[-1]
-        version = int(re.match(r'^(?P<version>\d+).*',
-                      migration_module_name).groupdict()['version'])
+        version_match = re.match(r'^(?P<version>\d+).*', migration_module_name)
+        if not version_match:
+            # If the version regex doesn't match, this is not a module that follows our naming
+            # convention
+            raise self.__class__.MissingVersion()
+        version = int(version_match.groupdict()['version'])
         return version
 
     def __cmp__(self, other_module):
@@ -139,8 +151,14 @@ class MigrationPackage(object):
         # Generate a list of the names of the modules found inside this package
         module_names = [name for module_loader, name, ispkg in
                         pkgutil.iter_modules([os.path.dirname(self._package.__file__)])]
-        migration_modules = [MigrationModule('%s.%s'%(self.name, module_name))
-                             for module_name in module_names]
+        migration_modules = []
+        for module_name in module_names:
+            try:
+                migration_modules.append(MigrationModule('%s.%s'%(self.name, module_name)))
+            except MigrationModule.MissingVersion:
+                logger.debug("The module "
+                    "test_migration_packages.z.doesnt_conform_to_naming_convention doesn't conform "
+                    "to the migration package naming conventions. It will be ignored.")
         migration_modules.sort()
         return migration_modules
 

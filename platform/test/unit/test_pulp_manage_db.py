@@ -168,6 +168,29 @@ class TestMigrationPackage(MigrationTest):
         mp = utils.MigrationPackage('test_migration_packages.z')
         self.assertEqual(mp.name, 'test_migration_packages.z')
 
+    @patch('pulp.server.db.migrate.utils.logger.debug')
+    def test_nonconforming_module_names(self, log_mock):
+        # The z package has a module called doesnt_conform_to_naming_convention.py. This shouldn't
+        # count as a migration module, but it also should not interfere with the existing migration
+        # modules, and the debug log should mention that the file was found but was not found to be
+        # a migration module
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        migrations = mp.migrations
+        self.assertEqual(len(migrations), 3)
+        self.assertTrue(all([isinstance(migration, utils.MigrationModule)
+                        for migration in migrations]))
+        # Make sure their versions are set and sorted appropriately
+        self.assertEqual([1, 2, 3], [migration.version for migration in migrations])
+        # Check the names
+        self.assertEqual(['test_migration_packages.z.0001_test',
+                          'test_migration_packages.z.0002_test',
+                          'test_migration_packages.z.0003_test'],
+                         [migration._module.__name__ for migration in migrations])
+        # Now let's assert that the non-conforming dealio was logged
+        log_mock.assert_called_with('The module '
+            'test_migration_packages.z.doesnt_conform_to_naming_convention doesn\'t conform to '
+            'the migration package naming conventions. It will be ignored.')
+
     def test_unapplied_migrations(self):
         mp = utils.MigrationPackage('test_migration_packages.z')
         # Drop the version to 1, which should make this method return two migrations
