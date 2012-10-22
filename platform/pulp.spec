@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.332
-Release: 2%{?dist}
+Version: 0.0.333
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -416,6 +416,10 @@ exit 0
 %endif
 
 %changelog
+* Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
+- 865527 - removed unused unit_profile from consumer model
+  (skarmark@redhat.com)
+
 * Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-2
 - Revert fix for 856713. (jortel@redhat.com)
 
