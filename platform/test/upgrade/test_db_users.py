@@ -27,6 +27,7 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
+        # Verify Roles
         v1_roles = list(self.v1_test_db.database.roles.find().sort('name', 1))
         v2_roles = list(self.tmp_test_db.database.roles.find().sort('display_name', 1))
         self.assertEqual(len(v1_roles), len(v2_roles))
@@ -37,6 +38,29 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_role['name'], v2_role['display_name'])
             self.assertEqual(v1_role['permissions'], v2_role['permissions'])
             self.assertTrue('name' not in v2_role)
+
+        # Verify Users
+        v1_users = list(self.v1_test_db.database.users.find().sort('login', 1))
+        v2_users = list(self.tmp_test_db.database.users.find().sort('login', 1))
+        self.assertEqual(len(v1_users), len(v2_users))
+
+        for v1_user, v2_user in zip(v1_users, v2_users):
+            self.assertEqual(v1_user['login'], v2_user['login'])
+            self.assertEqual(v1_user['password'], v2_user['password'])
+            self.assertEqual(v1_user['roles'], v2_user['roles'])
+
+            # Check for new rules around name in v2
+            self.assertTrue( (v2_user['name'] == v1_user['name']) or
+                             (v2_user['name'] == v1_user['login']))
+
+        # Verify Permissions
+        v1_perms = list(self.v1_test_db.database.permissions.find().sort('_id'))
+        v2_perms = list(self.tmp_test_db.database.permissions.find().sort('_id'))
+
+        for v1_perm, v2_perm in zip(v1_perms, v2_perms):
+            self.assertEqual(v1_perm['_id'], v2_perm['_id'])
+            self.assertEqual(v1_perm['resource'], v2_perm['resource'])
+            self.assertEqual(v1_perm['users'], v2_perm['users'])
 
     def test_users_resumed(self):
         # Setup
