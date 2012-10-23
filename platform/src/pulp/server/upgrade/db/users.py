@@ -23,19 +23,29 @@ def upgrade(v1_database, v2_database):
 
     # Collection: roles
     v1_roles_coll = v1_database.roles
+    v2_roles_coll = v2_database.roles
+
     all_v1_roles = list(v1_roles_coll.find())
-    all_v2_roles = []
+    v2_roles_to_add = []
 
     for v1_role in all_v1_roles:
+
+        # Idempotency: If there's already a role with the given name, don't
+        # re-add it.
+
+        existing = v2_roles_coll.find_one({'display_name' : v1_role['name']})
+        if existing is not None:
+            continue
+
         v2_role = {
             'display_name' : v1_role['name'],
             'description' : None,
             'permissions' : v1_role['permissions'],
         }
-        all_v2_roles.append(v2_role)
+        v2_roles_to_add.append(v2_role)
 
-    v2_roles_coll = v2_database.roles
-    v2_roles_coll.insert(all_v2_roles)
+    if len(v2_roles_to_add) > 0:
+        v2_roles_coll.insert(v2_roles_to_add)
 
     # Final report
     report = UpgradeStepReport()

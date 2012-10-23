@@ -37,3 +37,34 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_role['name'], v2_role['display_name'])
             self.assertEqual(v1_role['permissions'], v2_role['permissions'])
             self.assertTrue('name' not in v2_role)
+
+    def test_users_resumed(self):
+        # Setup
+        users.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        self.v1_test_db.database.roles.insert({'name' : 'new-to-v1', 'permissions' : {}})
+
+        # Test
+        report = users.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        self.assertTrue(isinstance(report, UpgradeStepReport))
+        self.assertTrue(report.success)
+
+        v1_roles = list(self.v1_test_db.database.roles.find().sort('name', 1))
+        v2_roles = list(self.tmp_test_db.database.roles.find().sort('display_name', 1))
+        self.assertEqual(len(v1_roles), len(v2_roles))
+
+    def test_users_idempotency(self):
+        # Setup
+        users.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Test
+        report = users.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        self.assertTrue(isinstance(report, UpgradeStepReport))
+        self.assertTrue(report.success)
+
+        v1_roles = list(self.v1_test_db.database.roles.find().sort('name', 1))
+        v2_roles = list(self.tmp_test_db.database.roles.find().sort('display_name', 1))
+        self.assertEqual(len(v1_roles), len(v2_roles))
