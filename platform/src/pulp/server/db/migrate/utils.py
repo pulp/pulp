@@ -121,7 +121,7 @@ class MigrationPackage(object):
         # This is an object representation of the DB object that keeps track of the migration
         # version that has been applied
         self._migration_tracker = migration_tracker_manager.get_or_create(
-            name=self._package.__name__,
+            name=self.name,
             defaults={'version': self.latest_available_version})
 
     def apply_migration(self, migration):
@@ -167,7 +167,8 @@ class MigrationPackage(object):
         # If there aren't any versions available because this package is empty, we should return 0.
         # This means that we need to require migration writers not to create versions that are less
         # than 1.
-        return self.available_versions[-1] if self.available_versions else 0
+        available_versions = self.available_versions
+        return available_versions[-1] if available_versions else 0
 
     @property
     def migrations(self):
@@ -186,7 +187,7 @@ class MigrationPackage(object):
                 module_name = '%s.%s'%(self.name, module_name)
                 migration_modules.append(MigrationModule(module_name))
             except MigrationModule.MissingMigrate:
-                logger.debug(("The module %s is missing a migrate() function. "
+                logger.debug(("The module %s doesn't have a migrate function. "
                               "It will be ignored.")%module_name)
             except MigrationModule.MissingVersion:
                 logger.debug(("The module %s doesn't conform to the migration package naming "

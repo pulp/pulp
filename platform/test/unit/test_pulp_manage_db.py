@@ -183,11 +183,13 @@ class TestMigrationPackage(MigrationTest):
         self.assertEqual(mp.name, 'test_migration_packages.z')
 
     @patch('pulp.server.db.migrate.utils.logger.debug')
-    def test_nonconforming_module_names(self, log_mock):
+    def test_nonconforming_modules(self, log_mock):
         # The z package has a module called doesnt_conform_to_naming_convention.py. This shouldn't
         # count as a migration module, but it also should not interfere with the existing migration
         # modules, and the debug log should mention that the file was found but was not found to be
-        # a migration module
+        # a migration module. The z package also has a module called 0004_doesnt_have_migrate.py.
+        # Since it doesn't have a migrate function, it should just be logged and things should keep
+        # going as usual.
         mp = utils.MigrationPackage('test_migration_packages.z')
         migrations = mp.migrations
         self.assertEqual(len(migrations), 3)
@@ -199,11 +201,19 @@ class TestMigrationPackage(MigrationTest):
         self.assertEqual(['test_migration_packages.z.0001_test',
                           'test_migration_packages.z.0002_test',
                           'test_migration_packages.z.0003_test'],
-                         [migration._module.__name__ for migration in migrations])
-        # Now let's assert that the non-conforming dealio was logged
-        log_mock.assert_called_with('The module '
-            'test_migration_packages.z.doesnt_conform_to_naming_convention doesn\'t conform to '
-            'the migration package naming conventions. It will be ignored.')
+                         [migration.name for migration in migrations])
+        # Now let's assert that the non-conforming dealios were logged
+        # They actually get logged twice each, once for when we initialized the MP, and the other
+        # when we retrieved the migrations
+        log_mock.assert_has_calls([
+            call('The module test_migration_packages.z.0004_doesnt_have_migrate doesn\'t have a '
+                 'migrate function. It will be ignored.'),
+            call('The module test_migration_packages.z.doesnt_conform_to_naming_convention doesn\'t'
+                 ' conform to the migration package naming conventions. It will be ignored.'),
+            call('The module test_migration_packages.z.0004_doesnt_have_migrate doesn\'t have a '
+                 'migrate function. It will be ignored.'),
+            call('The module test_migration_packages.z.doesnt_conform_to_naming_convention doesn\'t'
+                 ' conform to the migration package naming conventions. It will be ignored.'),])
 
     def test_unapplied_migrations(self):
         mp = utils.MigrationPackage('test_migration_packages.z')
