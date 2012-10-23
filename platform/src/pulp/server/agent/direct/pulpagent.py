@@ -115,8 +115,11 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
+            timeout=(10, 90),
             secret=self.context.secret,
-            async=True)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.taskid)
         consumer = agent.Consumer()
         return consumer.bind(definitions, options)
 
@@ -136,8 +139,11 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
+            timeout=(10, 90),
             secret=self.context.secret,
-            async=True)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.taskid)
         consumer = agent.Consumer()
         return consumer.rebind(definitions, options)
 
@@ -153,8 +159,11 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
+            timeout=(10, 90),
             secret=self.context.secret,
-            async=True)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.taskid)
         consumer = agent.Consumer()
         return consumer.unbind(repo_id, options)
 

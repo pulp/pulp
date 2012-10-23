@@ -15,7 +15,7 @@ from pulp.server.dispatch.call import CallRequest
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers
-from pulp.server.orchestration import factory as orchestration
+from pulp.server.orchestration.bind import unbind_call_requests
 
 
 _LOG = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ def delete(repo_id, distributor_id):
     options = {}
     manager = managers.consumer_bind_manager()
     for bind in manager.find_by_distributor(repo_id, distributor_id):
-        unbind_requests = orchestration.bind.unbind(
+        unbind_requests = unbind_call_requests(
             bind['consumer_id'],
             bind['repo_id'],
             bind['distributor_id'],

@@ -20,7 +20,7 @@ from pulp.server.managers import factory as managers
 _LOG = logging.getLogger(__name__)
 
 
-def bind(consumer_id, repo_id, distributor_id, options):
+def bind_call_requests(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
 
@@ -67,7 +67,7 @@ def bind(consumer_id, repo_id, distributor_id, options):
     return call_requests
 
 
-def unbind(consumer_id, repo_id, distributor_id, options):
+def unbind_call_requests(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
 

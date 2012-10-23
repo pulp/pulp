@@ -20,7 +20,6 @@ from web.webapi import BadRequest
 
 # Pulp
 import pulp.server.managers.factory as managers
-from pulp.server.orchestration import factory as orchestration
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
@@ -29,6 +28,7 @@ from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.exceptions import MissingResource, MissingValue
+from pulp.server.orchestration.bind import bind_call_requests, unbind_call_requests
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -239,7 +239,7 @@ class Bindings(JSONController):
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
         options = body.get('options', {})
-        call_requests = orchestration.bind.bind(consumer_id, repo_id, distributor_id, options)
+        call_requests = bind_call_requests(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
 
@@ -289,8 +289,7 @@ class Binding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        options = {}
-        call_requests = orchestration.bind.unbind(consumer_id, repo_id, distributor_id, options)
+        call_requests = unbind_call_requests(consumer_id, repo_id, distributor_id, {})
         execution.execute_multiple(call_requests)
 
 

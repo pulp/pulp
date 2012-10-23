@@ -20,7 +20,9 @@ import web
 
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
-from pulp.server.orchestration import factory as orchestration
+from pulp.server.orchestration.repository import (
+    distributor_delete_call_requests, repo_delete_call_requests
+)
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
@@ -252,7 +254,7 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-        call_requests = orchestration.repository.delete(id)
+        call_requests = repo_delete_call_requests(id)
         return execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
@@ -571,7 +573,7 @@ class RepoDistributor(JSONController):
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
-        call_requests = orchestration.distributor.delete(repo_id, distributor_id)
+        call_requests = distributor_delete_call_requests(repo_id, distributor_id)
         return execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)

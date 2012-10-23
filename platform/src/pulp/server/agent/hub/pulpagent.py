@@ -129,8 +129,10 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
+            timeout=(10, 90),
             secret=self.context.secret,
-            async=True)
+            replyto=self.context.replyto,
+            any=self.context.taskid)
         consumer = agent.Consumer()
         status, result = consumer.bind(definitions, options)
         if status != 202:
@@ -154,8 +156,10 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
+            timeout=(10, 90),
             secret=self.context.secret,
-            async=True)
+            replyto=self.context.replyto,
+            any=self.context.taskid)
         consumer = agent.Consumer()
         status, result = consumer.rebind(definitions, options)
         if status != 202:
@@ -175,8 +179,10 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
+            timeout=(10, 90),
             secret=self.context.secret,
-            async=True)
+            replyto=self.context.replyto,
+            any=self.context.taskid)
         consumer = agent.Consumer()
         status, result = consumer.unbind(repo_id, options)
         if status != 202:
@@ -203,7 +209,7 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.taskid)
@@ -227,7 +233,7 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.taskid)
@@ -251,7 +257,7 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.taskid)
