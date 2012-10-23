@@ -17,8 +17,9 @@
 Contains agent management classes
 """
 
-from logging import getLogger
 import sys
+
+from logging import getLogger
 
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugin_api
@@ -39,24 +40,24 @@ class AgentManager(object):
     The agent manager.
     """
 
-    def unregistered(self, id):
+    def unregistered(self, consumer_id):
         """
         Notification that a consumer (agent) has
         been unregistered.  This ensure that all registration
         artifacts have been cleaned up.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         agent = PulpAgent(consumer)
         agent.consumer.unregistered()
 
-    def bind(self, id, repo_id, distributor_id, options):
+    def bind(self, consumer_id, repo_id, distributor_id, options):
         """
         Apply a bind to the agent.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         @param repo_id: A repository ID.
         @type repo_id: str
         @param distributor_id: A distributor ID.
@@ -65,17 +66,17 @@ class AgentManager(object):
         @type options: dict
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         binding = dict(repo_id=repo_id, distributor_id=distributor_id)
         definitions = self.__definitions([binding])
         agent = PulpAgent(consumer)
         agent.consumer.bind(definitions, options)
 
-    def rebind(self, id, bindings, options):
+    def rebind(self, consumer_id, bindings, options):
         """
         Apply a rebind to the agent.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         @param bindings: A list of bindings.
           Each binding is: {repo_id:<str>, distributor_id:<str>}
         @type bindings: list
@@ -83,29 +84,29 @@ class AgentManager(object):
         @type options: dict
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         definitions = self.__definitions(bindings)
         agent = PulpAgent(consumer)
         agent.consumer.rebind(definitions, options)
 
-    def unbind(self, id, repo_id, options):
+    def unbind(self, consumer_id, repo_id, options):
         """
         Apply a unbind to the agent.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         @param options: The options are handler specific.
         @type options: dict
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         agent = PulpAgent(consumer)
         agent.consumer.unbind(repo_id, options)
 
-    def install_content(self, id, units, options):
+    def install_content(self, consumer_id, units, options):
         """
         Install content units on a consumer.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         @param units: A list of content units to be installed.
         @type units: list of:
             { type_id:<str>, unit_key:<dict> }
@@ -113,23 +114,29 @@ class AgentManager(object):
         @type options: dict
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
-            pc = self.__profiled_consumer(id)
+            pc = self.__profiled_consumer(consumer_id)
             profiler, cfg = self.__profiler(typeid)
-            units = self.__invoke_plugin(profiler.install_units, pc, units, options, cfg, conduit)
+            units = self.__invoke_plugin(
+                profiler.install_units,
+                pc,
+                units,
+                options,
+                cfg,
+                conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
         agent.content.install(units, options)
 
-    def update_content(self, id, units, options):
+    def update_content(self, consumer_id, units, options):
         """
         Update content units on a consumer.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         @param units: A list of content units to be updated.
         @type units: list of:
             { type_id:<str>, unit_key:<dict> }
@@ -137,23 +144,29 @@ class AgentManager(object):
         @type options: dict
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
-            pc = self.__profiled_consumer(id)
+            pc = self.__profiled_consumer(consumer_id)
             profiler, cfg = self.__profiler(typeid)
-            units = self.__invoke_plugin(profiler.update_units, pc, units, options, cfg, conduit)
+            units = self.__invoke_plugin(
+                profiler.update_units,
+                pc,
+                units,
+                options,
+                cfg,
+                conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
         agent.content.update(units, options)
 
-    def uninstall_content(self, id, units, options):
+    def uninstall_content(self, consumer_id, units, options):
         """
         Uninstall content units on a consumer.
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         @param units: A list of content units to be uninstalled.
         @type units: list of:
             { type_id:<str>, type_id:<dict> }
@@ -161,25 +174,31 @@ class AgentManager(object):
         @type options: dict
         """
         manager = managers.consumer_manager()
-        consumer = manager.get_consumer(id)
+        consumer = manager.get_consumer(consumer_id)
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
-            pc = self.__profiled_consumer(id)
+            pc = self.__profiled_consumer(consumer_id)
             profiler, cfg = self.__profiler(typeid)
-            units = self.__invoke_plugin(profiler.uninstall_units, pc, units, options, cfg, conduit)
+            units = self.__invoke_plugin(
+                profiler.uninstall_units,
+                pc,
+                units,
+                options,
+                cfg,
+                conduit)
             collated[typeid] = units
         units = collated.join()
         agent = PulpAgent(consumer)
         agent.content.uninstall(units, options)
 
-    def send_profile(self, id):
+    def send_profile(self, consumer_id):
         """
         Send the content profile(s).
-        @param id: The consumer ID.
-        @type id: str
+        @param consumer_id: The consumer ID.
+        @type consumer_id: str
         """
-        _LOG.info(id)
+        _LOG.info(consumer_id)
 
     def __invoke_plugin(self, call, *args, **kwargs):
         try:
@@ -205,7 +224,7 @@ class AgentManager(object):
             cfg = {}
         return plugin, cfg
 
-    def __profiled_consumer(self, id):
+    def __profiled_consumer(self, consumer_id):
         """
         Get a profiler consumer model object.
         @param id: A consumer ID.
@@ -215,11 +234,11 @@ class AgentManager(object):
         """
         profiles = {}
         manager = managers.consumer_profile_manager()
-        for p in manager.get_profiles(id):
+        for p in manager.get_profiles(consumer_id):
             typeid = p['content_type']
             profile = p['profile']
             profiles[typeid] = profile
-        return ProfiledConsumer(id, profiles)
+        return ProfiledConsumer(consumer_id, profiles)
 
     def __definitions(self, bindings):
         """

@@ -421,7 +421,7 @@ class RepoResourceTests(RepoControllersTests):
         status, body = self.delete('/v2/repositories/doomed/')
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(202, status)
 
         repo = Repo.get_collection().find_one({'id' : 'doomed'})
         self.assertTrue(repo is None)

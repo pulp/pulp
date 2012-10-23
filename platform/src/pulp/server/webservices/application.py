@@ -50,6 +50,7 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
 from pulp.server.managers import factory as manager_factory
+from pulp.server.orchestration import factory as orchestration_factory
 from pulp.server.webservices.controllers import (
     agent, consumer_groups, consumers, contents, dispatch, events, permissions,
     plugins, repo_groups, repositories, roles, root_actions, users)
@@ -99,6 +100,7 @@ def _initialize_pulp():
 
     # pulp generic content initialization
     manager_factory.initialize()
+    orchestration_factory.initialize()
     plugin_api.initialize()
 
     # new async dispatch initialization

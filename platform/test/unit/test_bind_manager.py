@@ -71,10 +71,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         self.populate()
         # Test
         manager = factory.consumer_bind_manager()
-        manager.bind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Verify
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
@@ -88,14 +85,17 @@ class BindManagerTests(base.PulpAsyncServerTests):
         self.test_bind()
         # Test
         manager = factory.consumer_bind_manager()
-        manager.unbind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        binding = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Verify
         collection = Bind.get_collection()
-        bind = collection.find_one(self.QUERY)
-        self.assertTrue(bind is None)
+        bind_id = dict(
+            consumer_id=self.CONSUMER_ID,
+            repo_id=self.REPO_ID,
+            distributor_id=self.DISTRIBUTOR_ID)
+        bind = collection.find_one(bind_id)
+        self.assertTrue(bind is not None)
+        self.assertTrue(bind['deleted'])
 
     def test_get_bind(self):
         # Setup
@@ -151,7 +151,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         ret = manager.find_by_consumer_list(CONSUMER_IDS)
 
         mock_collection.find.assert_called_once_with(
-            {'consumer_id': {'$in': CONSUMER_IDS}})
+            {'consumer_id': {'$in': CONSUMER_IDS}, 'deleted':False})
 
         self.assertTrue(isinstance(ret, dict))
         self.assertTrue('consumer1' in ret)
@@ -195,30 +195,6 @@ class BindManagerTests(base.PulpAsyncServerTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
-    def test_repo_deleted(self):
-        # Setup
-        self.test_bind()
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_repo(self.REPO_ID)
-        self.assertEquals(len(binds), 1)
-        # Test
-        manager.repo_deleted(self.REPO_ID)
-        # Verify
-        binds = manager.find_by_repo(self.REPO_ID)
-        self.assertEquals(len(binds), 0)
-
-    def test_distributor_deleted(self):
-        # Setup
-        self.test_bind()
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEquals(len(binds), 1)
-        # Test
-        manager.distributor_deleted(self.REPO_ID, self.DISTRIBUTOR_ID)
-        # Verify
-        binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEquals(len(binds), 0)
-
     def test_consumer_unregister_cleanup(self):
         # Setup
         self.test_bind()
@@ -233,7 +209,8 @@ class BindManagerTests(base.PulpAsyncServerTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
-    def test_remove_repo_cleanup(self):
+    def ___test_remove_repo_cleanup(self):
+        # TODO: Reimplement after moved to controller
         # Setup
         self.test_bind()
         manager = factory.consumer_bind_manager()
@@ -247,7 +224,8 @@ class BindManagerTests(base.PulpAsyncServerTests):
         binds = manager.find_by_repo(self.REPO_ID)
         self.assertEquals(len(binds), 0)
 
-    def test_remove_distributor_cleanup(self):
+    def ___test_remove_distributor_cleanup(self):
+        # TODO: Reimplement after moved to controller
         # Setup
         self.test_bind()
         manager = factory.consumer_bind_manager()

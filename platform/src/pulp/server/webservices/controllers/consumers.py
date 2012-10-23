@@ -20,6 +20,7 @@ from web.webapi import BadRequest
 
 # Pulp
 import pulp.server.managers.factory as managers
+from pulp.server.orchestration import factory as orchestration
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
@@ -238,54 +239,7 @@ class Bindings(JSONController):
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
         options = body.get('options', {})
-        call_requests = []
-
-        # bind request
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_id,
-            repo_id,
-            distributor_id,
-        ]
-        manager = managers.consumer_bind_manager()
-        call_request = CallRequest(
-            manager.bind,
-            args,
-            resources=resources,
-            weight=0)
-        call_requests.append(call_request)
-
-        # notify agent
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_BINDING_TYPE:
-                {str((consumer_id, repo_id, distributor_id)): dispatch_constants.RESOURCE_UPDATE_OPERATION}
-        }
-        args = [
-            consumer_id,
-            repo_id,
-            distributor_id,
-            options
-        ]
-        manager = managers.consumer_agent_manager()
-        call_request = CallRequest(
-            manager.bind,
-            args,
-            resources=resources,
-            weight=0
-        )
-        call_requests.append(call_request)
-
-        # set dependencies
-        call_requests[1].depends_on(call_requests[0])
-
-        # execute
+        call_requests = orchestration.bind.bind(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
 
@@ -335,54 +289,8 @@ class Binding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        call_requests = []
-
-        # unbind
-        manager = managers.consumer_bind_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_id,
-            repo_id,
-            distributor_id,
-        ]
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('unbind')
-        ]
-        call_request = CallRequest(manager.unbind,
-                                   args=args,
-                                   resources=resources,
-                                   tags=tags)
-        call_requests.append(call_request)
-
-        # notify agent
         options = {}
-        args = [
-            consumer_id,
-            repo_id,
-            options,
-        ]
-        manager = managers.consumer_agent_manager()
-        call_request = CallRequest(
-            manager.unbind,
-            args,
-            weight=0
-        )
-        call_requests.append(call_request)
-
-        # set dependencies
-        call_requests[1].depends_on(call_requests[0])
-
-        # execute
+        call_requests = orchestration.bind.unbind(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
 

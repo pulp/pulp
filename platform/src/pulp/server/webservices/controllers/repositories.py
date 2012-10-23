@@ -20,6 +20,7 @@ import web
 
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
+from pulp.server.orchestration import factory as orchestration
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
@@ -251,17 +252,8 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-        repo_manager = manager_factory.repo_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
-                action_tag('delete')]
-
-        call_request = CallRequest(repo_manager.delete_repo,
-                                   [id],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        call_requests = orchestration.repository.delete(id)
+        return execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -579,18 +571,8 @@ class RepoDistributor(JSONController):
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('remove_distributor')]
-        call_request = CallRequest(distributor_manager.remove_distributor,
-                                   [repo_id, distributor_id],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        call_requests = orchestration.distributor.delete(repo_id, distributor_id)
+        return execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):

@@ -67,6 +67,11 @@ class Bind(Model):
     @type repo_id: str
     @ivar distributor_id: uniquely identifies a distributor.
     @type distributor_id: str
+    @ivar consumer_requests: Tracks outstanding or failed consumer requests.
+      Each entry: {request_id:<str>, status:<str>}
+        Status: (pending|succeeded|failed)
+    @ivar deleted: Indicates the bind has been deleted.
+    @type deleted: bool
     """
 
     collection_name = 'consumer_bindings'
@@ -90,6 +95,8 @@ class Bind(Model):
         self.consumer_id = consumer_id
         self.repo_id = repo_id
         self.distributor_id = distributor_id
+        self.consumer_requests = []
+        self.deleted = False
 
 
 class UnitProfile(Model):

@@ -14,6 +14,7 @@
 """
 Contains bind management classes
 """
+
 from logging import getLogger
 
 from pymongo.errors import DuplicateKeyError
@@ -69,8 +70,6 @@ class BindManager(object):
         manager.record_event(consumer_id, 'repo_bound', details)
         return bind
 
-
-
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
         Unbind consumer to a specific distributor associated with
@@ -84,17 +83,21 @@ class BindManager(object):
         @return: The Bind object
         @rtype: SON
         """
+        collection = Bind.get_collection()
         query = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
-        collection = Bind.get_collection()
+            distributor_id=distributor_id,
+            deleted=False)
         bind = collection.find_one(query)
         if bind is None:
             # idempotent
             return
-        collection.remove(bind, safe=True)
-        details = {'repo_id':repo_id, 'distributor_id':distributor_id}
+        self.mark_deleted(consumer_id, repo_id, distributor_id)
+        details = {
+            'repo_id':repo_id,
+            'distributor_id':distributor_id
+        }
         manager = factory.consumer_history_manager()
         manager.record_event(consumer_id, 'repo_unbound', details)
         return bind
@@ -107,41 +110,9 @@ class BindManager(object):
         @type id: str
         """
         collection = Bind.get_collection()
-        agent_manager = factory.consumer_agent_manager()
-        for bind in self.find_by_consumer(id):
-            collection.remove(bind, safe=True)
-            repo_id = bind['repo_id']
-            agent_manager.unbind(id, repo_id, {})
-
-    def repo_deleted(self, repo_id):
-        """
-        Notification that a repository has been deleted.
-        Associated binds are removed.
-        @param repo_id: A repo ID.
-        @type repo_id: str
-        """
-        collection = Bind.get_collection()
-        agent_manager = factory.consumer_agent_manager()
-        for bind in self.find_by_repo(repo_id):
-            collection.remove(bind, safe=True)
-            consumer_id = bind['consumer_id']
-            agent_manager.unbind(consumer_id, repo_id, {})
-
-    def distributor_deleted(self, repo_id, distributor_id):
-        """
-        Notification that a distributor has been deleted.
-        Associated binds are removed.
-        @param repo_id: A Repo ID.
-        @type repo_id: str
-        @param distributor_id: A Distributor ID.
-        @type distributor_id: str
-        """
-        collection = Bind.get_collection()
-        agent_manager = factory.consumer_agent_manager()
-        for bind in self.find_by_distributor(repo_id, distributor_id):
-            collection.remove(bind, safe=True)
-            consumer_id = bind['consumer_id']
-            agent_manager.unbind(consumer_id, repo_id, {})
+        query = dict(consumer_id=id)
+        for bind in collection.find(query):
+            self.delete(bind['consumer_id'], bind['repo_id'], bind['distributor_id'])
 
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """
@@ -160,7 +131,8 @@ class BindManager(object):
         query = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
+            distributor_id=distributor_id,
+            deleted=False)
         bind = collection.find_one(query)
         if bind is None:
             key = '.'.join((consumer_id, repo_id, distributor_id))
@@ -174,7 +146,8 @@ class BindManager(object):
         @rtype: list
         """
         collection = Bind.get_collection()
-        cursor = collection.find({})
+        query = dict(deleted=False)
+        cursor = collection.find(query)
         return list(cursor)
 
     def find_by_consumer(self, id, repo_id=None):
@@ -189,9 +162,9 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         if repo_id:
-            query = dict(consumer_id=id, repo_id=repo_id)
+            query = dict(consumer_id=id, repo_id=repo_id, deleted=False)
         else:
-            query = dict(consumer_id=id)
+            query = dict(consumer_id=id, deleted=False)
         cursor = collection.find(query)
         return list(cursor)
 
@@ -208,10 +181,11 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         result = dict([(consumer_id, []) for consumer_id in consumer_ids])
-        cursor = collection.find({'consumer_id': {'$in': consumer_ids}})
-        for binding in cursor:
-            consumer_id = binding['consumer_id']
-            result[consumer_id].append(binding)
+        query = {'consumer_id': {'$in': consumer_ids}, 'deleted':False}
+        cursor = collection.find(query)
+        for bind in cursor:
+            consumer_id = bind['consumer_id']
+            result[consumer_id].append(bind)
         return result
 
     def find_by_repo(self, id):
@@ -223,7 +197,7 @@ class BindManager(object):
         @rtype: list
         """
         collection = Bind.get_collection()
-        query = dict(repo_id=id)
+        query = dict(repo_id=id, deleted=False)
         cursor = collection.find(query)
         return list(cursor)
 
@@ -240,6 +214,90 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = dict(
             repo_id=repo_id,
-            distributor_id=distributor_id)
+            distributor_id=distributor_id,
+            deleted=False)
         cursor = collection.find(query)
         return list(cursor)
+
+    def mark_deleted(self, consumer_id, repo_id, distributor_id):
+        """
+        Mark the bind as deleted.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        """
+        collection = Bind.get_collection()
+        bind_id = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id)
+        collection.update(bind_id, {'$set':{'deleted':True}}, safe=True)
+
+    def delete(self, consumer_id, repo_id, distributor_id):
+        """
+        Delete the bind.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        """
+        collection = Bind.get_collection()
+        pending = collection.find({'consumer_requests.status':'pending'})
+        if len(list(pending)):
+            raise Exception, 'Bind with outstanding consumer requests may not be deleted'
+        bind_id = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id)
+        collection.remove(bind_id, safe=True)
+
+    def request_pending(self, bind_id, request_id):
+        """
+        Add (pending) request for tracking.
+        @param bind_id: A bind ID.
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @type bind_id: dict
+        @param request_id: The ID of the request to begin tracking.
+        @type request_id: str
+        """
+        collection = Bind.get_collection()
+        entry = dict(request_id=request_id, status='pending')
+        update = {'$push':{'consumer_requests':entry}}
+        collection.update(bind_id, update, safe=True)
+
+    def request_succeeded(self, bind_id, request_id):
+        """
+        A tracked consumer request has succeeded.
+        @param bind_id: A bind ID.
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @type bind_id: dict
+        @param request_id: The ID of the request to begin tracking.
+        @type request_id: str
+        """
+        collection = Bind.get_collection()
+        # delete the request
+        update = {'$pull':{'consumer_requests':{'request_id':request_id}}}
+        collection.update(bind_id, update, safe=True)
+        # purge all failed requests
+        update = {'$pull':{'consumer_requests':{'status':'failed'}}}
+        collection.update(bind_id, update, safe=True)
+
+    def request_failed(self, bind_id, request_id):
+        """
+        A tracked consumer request has failed.
+        @param bind_id: A bind ID.
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @type bind_id: dict
+        @param request_id: The ID of the request to begin tracking.
+        @type request_id: str
+        """
+        collection = Bind.get_collection()
+        query = dict(bind_id)
+        query['consumer_requests.request_id'] = request_id
+        update = {'$set':{'consumer_requests.$.status':'failed'}}
+        collection.update(query, update, safe=True)

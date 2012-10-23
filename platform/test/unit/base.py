@@ -49,6 +49,7 @@ from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 from pulp.server.managers import factory as manager_factory
+from pulp.server.orchestration import factory as orchestration_factory
 from pulp.server.webservices import http
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
@@ -89,6 +90,7 @@ class PulpServerTests(unittest.TestCase):
         PulpServerTests.CONFIG = load_test_config()
         connection.initialize()
         manager_factory.initialize()
+        orchestration_factory.initialize()
 
     def setUp(self):
         super(PulpServerTests, self).setUp()
