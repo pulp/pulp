@@ -20,7 +20,8 @@ from pulp.server.upgrade import main
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
-TEST_DATABASE_NAME = 'pulp_upgrade_db'
+V1_DB_NAME = 'pulp_upgrade_db_v1'
+TMP_DB_NAME = 'pulp_upgrade_db_tmp'
 
 LOG_FILENAME = '/tmp/pulp-upgrate-unit-tests.log'
 STREAM_FILENAME = '/tmp/pulp-upgrade-stream'
@@ -45,7 +46,8 @@ class MainTests(unittest.TestCase):
 
         self.mock_upgrade_calls = [(self.mock_upgrade_call_1, 'Mock 1')]
 
-        self.upgrader = main.Upgrader(prod_db_name=TEST_DATABASE_NAME,
+        self.upgrader = main.Upgrader(prod_db_name=V1_DB_NAME,
+                                      tmp_db_name=TMP_DB_NAME,
                                       db_upgrade_calls=self.mock_upgrade_calls)
 
     def tearDown(self):
@@ -60,7 +62,15 @@ class MainTests(unittest.TestCase):
 
         # Verify
         self.assertTrue(os.path.exists(LOG_FILENAME))
+
         self.assertEqual(1, self.mock_upgrade_call_1.call_count)
+        call_args = self.mock_upgrade_call_1.call_args[0]
+        self.assertEqual(call_args[0].name, V1_DB_NAME)
+        self.assertEqual(call_args[1].name, TMP_DB_NAME)
+
+        connection = self.upgrader._connection()
+        self.assertTrue(V1_DB_NAME in connection.database_names())
+        self.assertTrue(not TMP_DB_NAME in connection.database_names())
 
     def test_main_with_error(self):
         # Setup
@@ -75,6 +85,7 @@ class MainTests(unittest.TestCase):
 
         # Verify
         self.assertEqual(1, self.mock_upgrade_call_1.call_count)
+
 
     def test_main_with_partial_error(self):
         # Setup
