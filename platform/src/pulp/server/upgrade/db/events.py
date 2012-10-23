@@ -14,6 +14,10 @@ from pulp.server.upgrade.model import UpgradeStepReport
 
 
 def upgrade(v1_database, v2_database):
+
+    # The events collection is used for the auditing capabilities which were
+    # disabled in v1, so there's nothing to bother copying here.
+
     report = UpgradeStepReport()
     report.succeeded()
     return report

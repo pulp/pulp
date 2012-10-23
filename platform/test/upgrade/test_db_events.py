@@ -10,15 +10,20 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from base_db_upgrade import BaseDbUpgradeTests
 from pulp.server.upgrade.model import UpgradeStepReport
+from pulp.server.upgrade.db import events
 
 
-def upgrade(v1_database, v2_database):
+class EventsUpgradeTests(BaseDbUpgradeTests):
 
-    # Given the changes in v2, the task history and snapshots are simply not
-    # going to be copied into the v2 database.
+    def test_events(self):
+        # Test
+        report = events.upgrade(self.v1_test_db, self.tmp_test_db)
 
-    report = UpgradeStepReport()
-    report.succeeded()
-    return report
+        # Verify
+        self.assertTrue(isinstance(report, UpgradeStepReport))
+        self.assertTrue(report.success)
 
+        db = self.tmp_test_db.database()
+        self.assertTrue('events' not in db.collection_names())
