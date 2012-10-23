@@ -95,6 +95,12 @@ class TestManageDB(MigrationTest):
         for package in utils.get_migration_packages():
             self.assertEqual(package.current_version, package.latest_available_version)
 
+        # Calling main() again should still not call apply_migration() or change the versions
+        manage.main()
+        self.assertFalse(mocked_apply_migration.called)
+        for package in utils.get_migration_packages():
+            self.assertEqual(package.current_version, package.latest_available_version)
+
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db",])
