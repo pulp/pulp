@@ -53,6 +53,13 @@ class MigrationModule(object):
             raise self.__class__.MissingMigrate()
         self.migrate = self._module.migrate
 
+    @property
+    def name(self):
+        """
+        We use self._module.__name__ as self.name for convenience.
+        """
+        return self._module.__name__
+
     def _get_version(self):
         """
         Parse the module's name with a regex to determine the version of the module. The module is
@@ -63,7 +70,7 @@ class MigrationModule(object):
         :returns:   The version of the module
         :rtype:     int
         """
-        migration_module_name = self._module.__name__.split('.')[-1]
+        migration_module_name = self.name.split('.')[-1]
         version_match = re.match(r'^(?P<version>\d+).*', migration_module_name)
         if not version_match:
             # If the version regex doesn't match, this is not a module that follows our naming
@@ -190,16 +197,16 @@ class MigrationPackage(object):
         last_version = 0
         for module in migration_modules:
             if module.version == 0:
-                error_message = '0 is a reserved migration version number. It appears that the ' +\
-                                'module %s has been assigned that value.'%module.name
+                error_message = '0 is a reserved migration version number, but the ' +\
+                                'module %s has been assigned that version.'%module.name
                 raise self.__class__.DuplicateVersions(error_message)
             if module.version == last_version:
                 error_message = 'There are two migration modules that share version 2 in ' +\
                                 '%s.'%self.name
                 raise self.__class__.DuplicateVersions(error_message)
             if module.version != last_version + 1:
-                raise self.__class__.MissingVersion(('Migration version %s seems to be '
-                    'missing.')%(last_version + 1))
+                raise self.__class__.MissingVersion(('Migration version %s is '
+                    'missing in %s.')%(last_version + 1, self.name))
             last_version = module.version
         return migration_modules
 
@@ -329,7 +336,7 @@ def get_migration_packages():
     for name in migration_package_names:
         try:
             migration_packages.append(MigrationPackage(name))
-        except MigrationPackage.DuplicateVersions, e:
+        except (MigrationPackage.DuplicateVersions, MigrationPackage.MissingVersion), e:
             logger.error(str(e))
     migration_packages.sort()
     return migration_packages

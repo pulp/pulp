@@ -11,7 +11,7 @@
 import os
 import unittest
 
-from mock import MagicMock, mock_open, patch
+from mock import call, MagicMock, mock_open, patch
 
 from pulp.common.compat import json
 from pulp.server.db import manage
@@ -100,6 +100,10 @@ class TestMigrationModule(MigrationTest):
         mm_2 = utils.MigrationModule('test_migration_packages.z.0002_test')
         mm_3 = utils.MigrationModule('test_migration_packages.z.0003_test')
         self.assertEquals(cmp(mm_2, mm_3), -1)
+
+    def test_name(self):
+        mm = utils.MigrationModule('test_migration_packages.z.0003_test')
+        self.assertEqual(mm.name, 'test_migration_packages.z.0003_test')
 
 
 class TestMigrationPackage(MigrationTest):
@@ -211,6 +215,32 @@ class TestMigrationPackage(MigrationTest):
         self.assertEqual([m.version for m in unapplied], [2, 3])
         self.assertEqual([m._module.__name__ for m in unapplied],
             ['test_migration_packages.z.0002_test', 'test_migration_packages.z.0003_test'])
+
+    def test_migration_version_gap(self):
+        """
+        Make sure that we require migration versions to be continuous, with no gaps.
+        """
+        error_message = 'Migration version 2 is missing in ' +\
+            'test_migration_packages.version_gap.'
+        try:
+            mp = utils.MigrationPackage('test_migration_packages.version_gap')
+            self.fail('The MigrationPackage.MissingVersion exception should have been raised, '
+                'but was not raised.')
+        except utils.MigrationPackage.MissingVersion, e:
+            self.assertEquals(str(e), error_message)
+
+    def test_migration_version_cant_be_zero(self):
+        """
+        Make sure that we reserve migration zero.
+        """
+        error_message = '0 is a reserved migration version number, but the module ' +\
+            'test_migration_packages.version_zero.0000_not_allowed has been assigned that version.'
+        try:
+            mp = utils.MigrationPackage('test_migration_packages.version_zero')
+            self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
+                'but was not raised.')
+        except utils.MigrationPackage.DuplicateVersions, e:
+            self.assertEquals(str(e), error_message)
 
     @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
            test_migration_packages.platform)
@@ -337,9 +367,12 @@ class TestMigrationUtils(MigrationTest):
         self.assertEquals(packages[0].name, 'test_migration_packages.platform')
         self.assertEquals(packages[1].name, 'test_migration_packages.a')
         self.assertEquals(packages[2].name, 'test_migration_packages.z')
-        # Assert that we logged the duplicate version exception
-        log_mock.assert_called_with('There are two migration modules that share version 2 in '
-                                    'test_migration_packages.duplicate_versions.')
+        # Assert that we logged the duplicate version exception and the version gap exception
+        expected_log_calls = [call('There are two migration modules that share version 2 in '
+                              'test_migration_packages.duplicate_versions.'),
+                              call('Migration version 2 is missing in '
+                              'test_migration_packages.version_gap.')]
+        log_mock.assert_has_calls(expected_log_calls)
 
     def test__import_all_the_way(self):
         """
