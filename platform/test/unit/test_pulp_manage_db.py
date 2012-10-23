@@ -46,17 +46,48 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
-    @patch('__builtin__.open', mock_open(read_data=_test_type_json))
-    @patch('os.listdir', return_value=['test_type.json'])
     @patch('pulp.server.db.migrate.utils.MigrationPackage.apply_migration')
+    @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
+    @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
+           test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
-    def test_migrate_with_new_packages(self, mocked_apply_migration, listdir_mock):
+    def test_migrate(self, mocked_apply_migration):
+        """
+        Let's set all the packages to be at version 0, and then check that the migrations get called
+        in the correct order.
+        """
+        # Make sure we start out with a clean slate
+        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        # Make sure that our mock works. There are three valid packages.
+        self.assertEquals(len(utils.get_migration_packages()), 3)
+        # Set all versions back to 0
+        for package in utils.get_migration_packages():
+            package._migration_tracker.version = 0
+            package._migration_tracker.save()
+        manage.main()
+        migration_modules_called = [call[1][0].name for call in mocked_apply_migration.mock_calls]
+        expected_migration_modules_called = ['test_migration_packages.platform.0001_stuff_and_junk',
+            'test_migration_packages.z.0001_test', 'test_migration_packages.z.0002_test',
+            'test_migration_packages.z.0003_test']
+        self.assertEquals(migration_modules_called, expected_migration_modules_called)
+        # If we weren't mocking the apply, it would have changed the version. Since we mocked it,
+        # the versions weren't changed, so we won't assert that behavior. There are other tests that
+        # assert correct operation of the apply_migration() method.
+
+    @patch('pulp.server.db.migrate.utils.MigrationPackage.apply_migration')
+    @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
+    @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
+           test_migration_packages.platform)
+    @patch('sys.argv', ["pulp-manage-db",])
+    def test_migrate_with_new_packages(self, mocked_apply_migration):
         """
         Adding new packages to a system that doesn't have any trackers should automatically advance
         each package to the latest available version without calling any migrate() functions.
         """
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        # Make sure that our mock works. There are three valid packages.
+        self.assertEquals(len(utils.get_migration_packages()), 3)
         manage.main()
         # No calls to apply_migration should have been made, and we should be at the latest package
         # versions for each of the packages that have valid migrations.
