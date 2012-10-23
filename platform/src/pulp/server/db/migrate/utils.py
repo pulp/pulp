@@ -132,6 +132,9 @@ class MigrationPackage(object):
         :param migration: The migration to apply
         :type  migration: pulp.server.db.migrate.utils.MigrationModule
         """
+        if migration.version != self.current_version + 1:
+            raise Exception(('Cannot apply migration %s, because the next migration version is '
+                '%s.')%(migration.name, self.current_version + 1))
         migration.migrate()
         self._migration_tracker.version = migration.version
         self._migration_tracker.save()

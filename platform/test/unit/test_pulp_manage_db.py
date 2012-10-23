@@ -131,6 +131,30 @@ class TestMigrationPackage(MigrationTest):
         # Now the mp should be at v3
         self.assertEqual(mp.current_version, 3)
 
+    def test_apply_wrong_migration(self):
+        """
+        We want to assert that apply_migration() only allows migrations of current_version + 1.
+        """
+        mp = utils.MigrationPackage('test_migration_packages.z')
+        # Let's fake the migration version being at 1 instead of 3
+        mp._migration_tracker.version = 1
+        mp._migration_tracker.save()
+        # Now, let's try to apply version 3
+        mm_v3 = mp.unapplied_migrations[-1]
+        self.assertEqual(mm_v3.version, 3)
+        # Let's change the migrate() function to one that tracks whether it gets called.
+        mm_v3.migrate = MagicMock(name='migrate')
+        # Now try to run the migration and assert that it didn't get called
+        try:
+            mp.apply_migration(mm_v3)
+            self.fail('Applying migration 3 should have raised an Exception, but it did not.')
+        except Exception, e:
+            self.assertEquals(str(e), 'Cannot apply migration ' +\
+                'test_migration_packages.z.0003_test, because the next migration version is 2.')
+        self.assertEquals(mm_v3.migrate.called, False)
+        # The MP should still be at v1
+        self.assertEqual(mp.current_version, 1)
+
     def test_available_versions(self):
         mp = utils.MigrationPackage('test_migration_packages.z')
         self.assertEquals(mp.available_versions, [1, 2, 3])
