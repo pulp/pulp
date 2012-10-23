@@ -45,6 +45,8 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(len(v1_users), len(v2_users))
 
         for v1_user, v2_user in zip(v1_users, v2_users):
+            self.assertTrue(isinstance(v2_user['id'], ObjectId))
+            self.assertEqual(v2_user['id'], v2_user['_id'])
             self.assertEqual(v1_user['login'], v2_user['login'])
             self.assertEqual(v1_user['password'], v2_user['password'])
             self.assertEqual(v1_user['roles'], v2_user['roles'])
@@ -59,7 +61,8 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(len(v1_perms), len(v2_perms))
 
         for v1_perm, v2_perm in zip(v1_perms, v2_perms):
-            self.assertEqual(v1_perm['_id'], v2_perm['_id'])
+            self.assertTrue(isinstance(v2_perm['_id'], ObjectId))
+            self.assertEqual(v2_perm['_id'], v2_perm['id'])
             self.assertEqual(v1_perm['resource'], v2_perm['resource'])
             self.assertEqual(v1_perm['users'], v2_perm['users'])
 

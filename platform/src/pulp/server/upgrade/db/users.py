@@ -10,6 +10,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pymongo.objectid import ObjectId
+
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
@@ -41,6 +43,7 @@ def _roles(v1_database, v2_database):
             continue
 
         v2_role = {
+            '_id' : ObjectId(),
             'id' : v1_role['name'],
             'display_name' : v1_role['name'],
             'description' : None,
@@ -56,15 +59,16 @@ def _permissions(v1_database, v2_database):
     v1_coll = v1_database.permissions
     v2_coll = v2_database.permissions
 
-    # Idempotency: There's no unique ID other than _id, so we're explicitly
-    # maintaining them in the upgrade for this check.
-    v2_ids = [x['_id'] for x in list(v2_coll.find({}, {'_id' : 1}))]
-    missing_v1_permissions = list(v1_coll.find({'_id' : {'$nin' : v2_ids}}))
+    # Idempotency: The resource can be used as a uniqueness check
+    v2_resources = [x['resource'] for x in list(v2_coll.find({}, {'resource' : 1}))]
+    missing_v1_permissions = list(v1_coll.find({'resource' : {'$nin' : v2_resources}}))
 
     v2_permissions_to_add = []
     for v1_permission in missing_v1_permissions:
+        id = ObjectId()
         v2_permission = {
-            '_id' : v1_permission['_id'], # for uniqueness check by this script
+            '_id' : id,
+            'id' : id,
             'resource' : v1_permission['resource'],
             'users' : v1_permission['users'],
         }
@@ -84,7 +88,10 @@ def _users(v1_database, v2_database):
 
     v2_users_to_add = []
     for v1_user in missing_v1_users:
+        id = ObjectId()
         v2_user = {
+            '_id' : id,
+            'id' : id,
             'login' : v1_user['login'],
             'password' : v1_user['password'],
             'name' : v1_user['name'] or v1_user['login'],
