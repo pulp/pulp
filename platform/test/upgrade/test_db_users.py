@@ -56,6 +56,7 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         # Verify Permissions
         v1_perms = list(self.v1_test_db.database.permissions.find().sort('_id'))
         v2_perms = list(self.tmp_test_db.database.permissions.find().sort('_id'))
+        self.assertEqual(len(v1_perms), len(v2_perms))
 
         for v1_perm, v2_perm in zip(v1_perms, v2_perms):
             self.assertEqual(v1_perm['_id'], v2_perm['_id'])
@@ -74,9 +75,17 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
-        v1_roles = list(self.v1_test_db.database.roles.find().sort('name', 1))
-        v2_roles = list(self.tmp_test_db.database.roles.find().sort('display_name', 1))
+        v1_roles = list(self.v1_test_db.database.roles.find())
+        v2_roles = list(self.tmp_test_db.database.roles.find())
         self.assertEqual(len(v1_roles), len(v2_roles))
+
+        v1_users = list(self.v1_test_db.database.users.find())
+        v2_users = list(self.tmp_test_db.database.users.find())
+        self.assertEqual(len(v1_users), len(v2_users))
+
+        v1_perms = list(self.v1_test_db.database.permissions.find())
+        v2_perms = list(self.tmp_test_db.database.permissions.find())
+        self.assertEqual(len(v1_perms), len(v2_perms))
 
     def test_users_idempotency(self):
         # Setup
@@ -89,6 +98,14 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
-        v1_roles = list(self.v1_test_db.database.roles.find().sort('name', 1))
-        v2_roles = list(self.tmp_test_db.database.roles.find().sort('display_name', 1))
+        v1_roles = list(self.v1_test_db.database.roles.find())
+        v2_roles = list(self.tmp_test_db.database.roles.find())
         self.assertEqual(len(v1_roles), len(v2_roles))
+
+        v1_users = list(self.v1_test_db.database.users.find())
+        v2_users = list(self.tmp_test_db.database.users.find())
+        self.assertEqual(len(v1_users), len(v2_users))
+
+        v1_perms = list(self.v1_test_db.database.permissions.find())
+        v2_perms = list(self.tmp_test_db.database.permissions.find())
+        self.assertEqual(len(v1_perms), len(v2_perms))
