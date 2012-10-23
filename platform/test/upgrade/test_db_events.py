@@ -19,11 +19,11 @@ class EventsUpgradeTests(BaseDbUpgradeTests):
 
     def test_events(self):
         # Test
-        report = events.upgrade(self.v1_test_db, self.tmp_test_db)
+        report = events.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
 
         # Verify
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
-        db = self.tmp_test_db.database()
+        db = self.tmp_test_db.database
         self.assertTrue('events' not in db.collection_names())

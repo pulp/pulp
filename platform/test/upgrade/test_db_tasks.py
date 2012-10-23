@@ -15,16 +15,16 @@ from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.db import tasks
 
 
-class EventsUpgradeTests(BaseDbUpgradeTests):
+class TasksUpgradeTests(BaseDbUpgradeTests):
 
-    def test_events(self):
+    def test_tasks(self):
         # Test
-        report = tasks.upgrade(self.v1_test_db, self.tmp_test_db)
+        report = tasks.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
 
         # Verify
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
-        db = self.tmp_test_db.database()
+        db = self.tmp_test_db.database
         self.assertTrue('task_history' not in db.collection_names())
         self.assertTrue('task_snapshots' not in db.collection_names())

@@ -58,18 +58,20 @@ class PulpTestDatabase(object):
         """
         Deletes the database from mongo.
         """
-        connection = self._connection()
+        connection = self.connection
         connection.drop_database(self.db_name)
 
+    @property
     def database(self):
         """
         Returns a connection to the given database.
         """
-        connection = self._connection()
+        connection = self.connection
         database = getattr(connection, self.db_name)
         database.add_son_manipulator(NamespaceInjector())
         database.add_son_manipulator(AutoReference(database))
         return database
 
-    def _connection(self):
+    @property
+    def connection(self):
         return Connection(self.seeds)

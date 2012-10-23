@@ -30,7 +30,7 @@ class PulpTestDatabaseTests(unittest.TestCase):
         test_db.load_from_file(db_file)
 
         # Verify - Load
-        db = test_db.database()
+        db = test_db.database
         self.assertTrue('repos' in db.collection_names())
 
         # Test - Delete

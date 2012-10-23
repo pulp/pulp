@@ -19,11 +19,11 @@ class CdsUpgradeTests(BaseDbUpgradeTests):
 
     def test_cds(self):
         # Test
-        report = cds.upgrade(self.v1_test_db, self.tmp_test_db)
+        report = cds.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
 
         # Verify
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
-        db = self.tmp_test_db.database()
+        db = self.tmp_test_db.database
         self.assertTrue('cds' not in db.collection_names())
