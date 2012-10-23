@@ -46,9 +46,23 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
-    @unittest.expectedFailure
-    def test_migrate_platform(self):
-        self.fail()
+    @patch('__builtin__.open', mock_open(read_data=_test_type_json))
+    @patch('os.listdir', return_value=['test_type.json'])
+    @patch('pulp.server.db.migrate.utils.MigrationPackage.apply_migration')
+    @patch('sys.argv', ["pulp-manage-db",])
+    def test_migrate_with_new_packages(self, mocked_apply_migration, listdir_mock):
+        """
+        Adding new packages to a system that doesn't have any trackers should automatically advance
+        each package to the latest available version without calling any migrate() functions.
+        """
+        # Make sure we start out with a clean slate
+        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        manage.main()
+        # No calls to apply_migration should have been made, and we should be at the latest package
+        # versions for each of the packages that have valid migrations.
+        self.assertFalse(mocked_apply_migration.called)
+        for package in utils.get_migration_packages():
+            self.assertEqual(package.current_version, package.latest_available_version)
 
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
