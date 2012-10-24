@@ -158,7 +158,7 @@ class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
     def __call__(self, call_request, call_report):
         if self.user_name is factory.principal_manager().system_login:
             return
-        resource = '/v2/tasks/%s/' % call_report.task_id
+        resource = '/v2/tasks/%s/' % call_report.call_request_id
         operations = ['READ', 'DELETE']
         factory.permission_manager().grant(resource, self.user_name, operations)
 
@@ -168,7 +168,7 @@ class RevokePermissionsForTaskV2(RevokePermissionsForTask):
     def __call__(self, call_request, call_report):
         if self.user_name is factory.principal_manager().system_login:
             return
-        resource = '/v2/tasks/%s/' % call_report.task_id
+        resource = '/v2/tasks/%s/' % call_report.call_request_id
         operations = ['READ', 'DELETE']
         factory.permission_manager().revoke(resource, self.user_name, operations)
 

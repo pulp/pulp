@@ -289,10 +289,10 @@ def _repo_storage_dir():
 
 def _current_task_state():
     context = dispatch_factory.context()
-    if context.task_id is None:
+    if context.call_request_id is None:
         return None
     coordinator = dispatch_factory.coordinator()
-    tasks = coordinator.find_tasks(task_id=context.task_id)
+    tasks = coordinator._find_tasks(call_request_id=context.call_request_id)
     if not tasks:
         return None
     return tasks[0].state

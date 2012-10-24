@@ -35,6 +35,9 @@ class NamedMock(mock.Mock):
 def call(*args, **kwargs):
     pass
 
+def error(*args, **kwargs):
+    raise Exception()
+
 # instantiation testing --------------------------------------------------------
 
 class TaskQueueInstantiationTests(base.PulpServerTests):
@@ -44,16 +47,6 @@ class TaskQueueInstantiationTests(base.PulpServerTests):
             TaskQueue(1)
         except:
             self.fail(traceback.format_exc())
-
-    def _test_singleton(self):
-        # task queues with same concurrency threshold
-        queue_1 = TaskQueue(1)
-        queue_2 = TaskQueue(1)
-        # task queue with different concurrency threshold
-        queue_3 = TaskQueue(2)
-        # test singleton
-        self.assertTrue(queue_1 is queue_2)
-        self.assertFalse(queue_1 is queue_3)
 
 # queue start/stop testing -----------------------------------------------------
 
@@ -183,19 +176,19 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_validate_blocking_task(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.call_request.dependencies[task_1.call_request.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         # blocking_tasks are actually replaced
-        self.assertTrue(task_1.id in task_2.blocking_tasks)
+        self.assertTrue(task_1.call_request.id in task_2.call_request.dependencies)
 
     def test_invalid_blocking_task(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.call_request.dependencies[task_1.call_request.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_2)
         # task_1 cannot block task_2 because it is not queued
-        self.assertFalse(task_1.id in task_2.blocking_tasks)
+        self.assertFalse(task_1.call_request.id in task_2.call_request.dependencies)
 
     def test_get_ready_task(self):
         task = self.gen_task()
@@ -217,7 +210,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_get_ready_tasks_blocking(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.call_request.dependencies[task_1.call_request.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         task_list = self.queue._get_ready_tasks()
@@ -245,7 +238,7 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def test_run_ready_task_blocked(self):
         task_1 = self.gen_async_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.call_request.dependencies[task_1.call_request.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
         self.queue._run_ready_task(task_1)
@@ -257,6 +250,17 @@ class TaskQueueControlFlowTests(TaskQueueTests):
         self.wait_for_task_to_complete(task_1)
         task_list = self.queue._get_ready_tasks()
         self.assertTrue(task_2 in task_list)
+
+    def test_run_ready_task_blocked_condition_failure(self):
+        task_1 = self.gen_task(call=error)
+        task_2 = self.gen_task()
+        task_2.call_request.dependencies[task_1.call_request.id] = [dispatch_constants.CALL_FINISHED_STATE]
+        self.queue.enqueue(task_1)
+        self.queue.enqueue(task_2)
+        self.queue._run_ready_task(task_1)
+        self.wait_for_task_to_complete(task_1)
+        self.wait_for_task_to_complete(task_2)
+        self.assertEqual(task_2.call_request_exit_state, dispatch_constants.CALL_SKIPPED_STATE)
 
     def test_task_dequeue(self):
         task = self.gen_task()
@@ -278,12 +282,12 @@ class TaskQueueControlFlowTests(TaskQueueTests):
     def task_dequeue_blocking(self):
         task_1 = self.gen_task()
         task_2 = self.gen_task()
-        task_2.blocking_tasks.add(task_1.id)
+        task_2.call_request.dependencies[task_1.call_request.id] = dispatch_constants.CALL_COMPLETE_STATES
         self.queue.enqueue(task_1)
         self.queue.enqueue(task_2)
-        self.assertTrue(task_1.id in task_2.blocking_tasks)
+        self.assertTrue(task_1.call_request.id in task_2.call_request.dependencies)
         self.queue.dequeue(task_1)
-        self.assertFalse(task_1.id in task_2.blocking_tasks)
+        self.assertFalse(task_1.call_request.id in task_2.call_request.dependencies)
 
 # task queue query tests -------------------------------------------------------
 
@@ -292,7 +296,7 @@ class TaskQueueQueryTests(TaskQueueTests):
     def test_get(self):
         task_1 = self.gen_task()
         self.queue.enqueue(task_1)
-        task_2 = self.queue.get(task_1.id)
+        task_2 = self.queue.get(task_1.call_request.id)
         self.assertTrue(task_2 is task_1)
 
     def test_find_single_tag(self):

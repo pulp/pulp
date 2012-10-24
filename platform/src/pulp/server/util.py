@@ -14,6 +14,8 @@
 # XXX this is not a dumping grounds for any random code. It is a place to put
 # paradigm-changing code that allows you to get unique or more efficient behaviors
 
+from gettext import gettext as _
+
 from pulp.server.exceptions import PulpExecutionException
 
 
@@ -71,11 +73,38 @@ class subdict(dict):
 
 # topological sorting ----------------------------------------------------------
 
-class NoTopologicalOrderingExists(PulpExecutionException):
+class TopologicalSortError(PulpExecutionException):
+
+    def __init__(self, vertex):
+        PulpExecutionException.__init__(self, vertex)
+        self.vertex = vertex
+
+    def __str__(self):
+        pass
+
+    def data_dict(self):
+        return {'vertex': self.vertex}
+
+
+class CycleExists(TopologicalSortError):
     """
     Raised when no topological ordering exists on a directed graph.
     """
-    pass
+
+    def __str__(self):
+        msg = _('Cycle at vertex: %(v)s' % {'v': str(self.vertex)})
+        return msg.encode('utf-8')
+
+
+class MalformedGraph(TopologicalSortError):
+    """
+    Raised when a graph has an edge (v1, v2) and v2 does not have a
+    corresponding adjacency list.
+    """
+
+    def __str__(self):
+        msg = _('Vertex missing from graph: %(v)s' % {'v': str(self.vertex)})
+        return msg.encode('utf-8')
 
 
 def topological_sort(graph):
@@ -91,21 +120,31 @@ def topological_sort(graph):
     @rtype:  list
     """
     assert isinstance(graph, dict)
+
     discovered_vertices = set()
     completed_vertices = set()
     sorted_vertices = []
 
     def _recursive_topological_sort(vertex):
         # topological sort via depth-first-search
+
         if vertex in completed_vertices:
-            # vertex and it's subtree is already sorted
+            # vertex and its subtree are already sorted
             return
+
         if vertex in discovered_vertices:
             # we've run into an ancestor, which means a cycle
-            raise NoTopologicalOrderingExists()
+            raise CycleExists(vertex)
+
+        if vertex not in graph:
+            # we've run into an edge to nowhere
+            raise MalformedGraph(vertex)
+
         discovered_vertices.add(vertex)
+
         for adjacent in graph[vertex]:
             _recursive_topological_sort(adjacent)
+
         discovered_vertices.discard(vertex)
         completed_vertices.add(vertex)
         sorted_vertices.append(vertex)
@@ -115,6 +154,7 @@ def topological_sort(graph):
 
     return sorted_vertices
 
+# legacy delta -----------------------------------------------------------------
 
 class Delta(dict):
     """

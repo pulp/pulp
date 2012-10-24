@@ -25,8 +25,6 @@ import sys
 
 import pkg_resources
 
-from pulp.common.constants import ENTRY_POINT_EXTENSIONS
-
 _LOG = logging.getLogger(__name__)
 
 # -- constants ----------------------------------------------------------------
@@ -40,6 +38,8 @@ DEFAULT_PRIORITY = 5
 
 _MODULES = 'modules'
 _ENTRY_POINTS = 'entry points'
+# name of the entry point
+ENTRY_POINT_EXTENSIONS = 'pulp.extensions'
 
 # -- exceptions ---------------------------------------------------------------
 

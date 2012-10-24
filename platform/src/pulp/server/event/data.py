@@ -50,7 +50,7 @@ class Event(object):
     def _get_call_report():
         context = dispatch_factory.context()
         coordinator = dispatch_factory.coordinator()
-        call_report_list = coordinator.find_call_reports(task_id=context.task_id)
+        call_report_list = coordinator.find_call_reports(call_request_id=context.call_request_id)
         if not call_report_list:
             return None
         return call_report_list[0].serialize()
