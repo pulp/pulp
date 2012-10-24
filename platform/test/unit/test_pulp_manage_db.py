@@ -46,7 +46,8 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
-    @patch('pulp.server.db.migrate.utils.MigrationPackage.apply_migration')
+    @patch.object(utils.MigrationPackage, 'apply_migration',
+           side_effect=utils.MigrationPackage.apply_migration, autospec=True)
     @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
            test_migration_packages.platform)
@@ -59,20 +60,31 @@ class TestManageDB(MigrationTest):
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
         # Make sure that our mock works. There are three valid packages.
-        self.assertEquals(len(utils.get_migration_packages()), 3)
+        self.assertEquals(len(utils.get_migration_packages()), 4)
         # Set all versions back to 0
         for package in utils.get_migration_packages():
             package._migration_tracker.version = 0
             package._migration_tracker.save()
         manage.main()
-        migration_modules_called = [call[1][0].name for call in mocked_apply_migration.mock_calls]
+        migration_modules_called = [call[1][1].name for call in mocked_apply_migration.mock_calls]
+        # Note that none of the migrations that don't meet our criteria show up in this list. Also,
+        # Note that test_migration_packages.raise_exception.0003_shouldnt_run doesn't appear since
+        # test_migration_packages.raise_exception.0002_oh_no raised an Exception. Note also that
+        # even though the raise_exception package raised an Exception, we still run all the z
+        # migrations because we don't want one package to break another.
         expected_migration_modules_called = ['test_migration_packages.platform.0001_stuff_and_junk',
+            'test_migration_packages.raise_exception.0001_works_fine',
+            'test_migration_packages.raise_exception.0002_oh_no',
             'test_migration_packages.z.0001_test', 'test_migration_packages.z.0002_test',
             'test_migration_packages.z.0003_test']
         self.assertEquals(migration_modules_called, expected_migration_modules_called)
-        # If we weren't mocking the apply, it would have changed the version. Since we mocked it,
-        # the versions weren't changed, so we won't assert that behavior. There are other tests that
-        # assert correct operation of the apply_migration() method.
+        # Assert that our precious versions have been updated correctly
+        for package in utils.get_migration_packages():
+            if package.name != 'test_migration_packages.raise_exception':
+                self.assertEqual(package.current_version, package.latest_available_version)
+            else:
+                # The raised Exception should have prevented us from getting past version 1
+                self.assertEqual(package.current_version, 1)
 
     @patch('pulp.server.db.migrate.utils.MigrationPackage.apply_migration')
     @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
@@ -87,7 +99,7 @@ class TestManageDB(MigrationTest):
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
         # Make sure that our mock works. There are three valid packages.
-        self.assertEquals(len(utils.get_migration_packages()), 3)
+        self.assertEquals(len(utils.get_migration_packages()), 4)
         manage.main()
         # No calls to apply_migration should have been made, and we should be at the latest package
         # versions for each of the packages that have valid migrations.
@@ -446,12 +458,13 @@ class TestMigrationUtils(MigrationTest):
         Ensure that pulp.server.db.migrate.utils.get_migration_packages functions correctly.
         """
         packages = utils.get_migration_packages()
-        self.assertEquals(len(packages), 3)
+        self.assertEquals(len(packages), 4)
         self.assertTrue(all([isinstance(package, utils.MigrationPackage) for package in packages]))
         # Make sure that the packages are sorted correctly, with platform first
         self.assertEquals(packages[0].name, 'test_migration_packages.platform')
         self.assertEquals(packages[1].name, 'test_migration_packages.a')
-        self.assertEquals(packages[2].name, 'test_migration_packages.z')
+        self.assertEquals(packages[2].name, 'test_migration_packages.raise_exception')
+        self.assertEquals(packages[3].name, 'test_migration_packages.z')
         # Assert that we logged the duplicate version exception and the version gap exception
         expected_log_calls = [call('There are two migration modules that share version 2 in '
                               'test_migration_packages.duplicate_versions.'),

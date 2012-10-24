@@ -86,12 +86,22 @@ def migrate_database(options):
                 'v': migration_package.latest_available_version}))
             continue
 
-        for migration in migration_package.unapplied_migrations:
-            print _('Applying %(p)s version %(v)s'%({
-                'p': migration_package.name, 'v': migration.version}))
-            migration_package.apply_migration(migration)
-            print _('Migration to %(p)s version %(v)s complete.'%({'p': migration_package.name,
-                                                        'v': migration_package.current_version}))
+        try:
+            for migration in migration_package.unapplied_migrations:
+                print _('Applying %(p)s version %(v)s'%({
+                    'p': migration_package.name, 'v': migration.version}))
+                migration_package.apply_migration(migration)
+                print _('Migration to %(p)s version %(v)s complete.'%(
+                    {'p': migration_package.name, 'v': migration_package.current_version}))
+        except Exception, e:
+            # If an Exception is raised while applying the migrations, we should log and print it,
+            # and then continue with the other packages.
+            error_message = _('Applying migration %(m)s failed.')%(
+                              {'m': migration.name})
+            print >> sys.stderr, str(error_message), _(' See log for details.')
+            _log.critical(error_message)
+            _log.critical(str(e))
+            _log.critical(''.join(traceback.format_exception(*sys.exc_info())))
 
 
 def main():
