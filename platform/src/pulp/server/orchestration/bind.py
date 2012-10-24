@@ -20,6 +20,28 @@ from pulp.server.managers import factory as managers
 _LOG = logging.getLogger(__name__)
 
 
+def bind_succeeded(call_request, call_report):
+    manager = managers.consumer_bind_manager()
+    manager.request_succeeded(
+        call_request.args[0],
+        call_request.args[1],
+        call_request.args[2],
+        call_report.task_id)
+
+def bind_failed(call_request, call_report):
+    manager = managers.consumer_bind_manager()
+    manager.request_failed(
+        call_request.args[0],
+        call_request.args[1],
+        call_request.args[2],
+        call_report.task_id)
+
+unbind_succeeded = bind_succeeded
+unbind_failed = bind_failed
+
+# -- itineraries -------------------------------------------------------------------------
+
+
 def bind_call_requests(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
@@ -40,12 +62,13 @@ def bind_call_requests(consumer_id, repo_id, distributor_id, options):
         distributor_id,
         ]
     manager = managers.consumer_bind_manager()
-    call_request = CallRequest(
+    bind_request = CallRequest(
         manager.bind,
         args,
         resources=resources,
         weight=0)
-    call_requests.append(call_request)
+
+    call_requests.append(bind_request)
 
     # notify agent
 
@@ -57,41 +80,23 @@ def bind_call_requests(consumer_id, repo_id, distributor_id, options):
     ]
 
     manager = managers.consumer_agent_manager()
-    call_request = CallRequest(
+    agent_request = CallRequest(
         manager.bind,
         args,
         weight=0,
         asynchronous=True,
         archive=True)
 
-    def on_succeeded(call_request, call_report):
-        manager = managers.consumer_bind_manager()
-        manager.request_succeeded(
-            consumer_id,
-            repo_id,
-            distributor_id,
-            call_report.task_id)
-
-    def on_failed(call_request, call_report):
-        manager = managers.consumer_bind_manager()
-        manager.request_failed(
-            consumer_id,
-            repo_id,
-            distributor_id,
-            call_report.task_id)
-
-    call_request.add_life_cycle_callback(
+    agent_request.add_life_cycle_callback(
         dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
-        on_succeeded)
+        bind_succeeded)
 
-    call_request.add_life_cycle_callback(
+    agent_request.add_life_cycle_callback(
         dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK,
-        on_failed)
+        bind_failed)
 
-    call_requests.append(call_request)
-
-    # set dependencies
-    call_requests[1].depends_on(call_requests[0])
+    call_requests.append(agent_request)
+    agent_request.depends_on(bind_request)
 
     return call_requests
 
@@ -122,12 +127,13 @@ def unbind_call_requests(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('unbind')
     ]
-    call_request = CallRequest(
+    unbind_request = CallRequest(
         manager.unbind,
         args=args,
         resources=resources,
         tags=tags)
-    call_requests.append(call_request)
+
+    call_requests.append(unbind_request)
 
     # notify agent
 
@@ -138,40 +144,53 @@ def unbind_call_requests(consumer_id, repo_id, distributor_id, options):
         options,
     ]
     manager = managers.consumer_agent_manager()
-    call_request = CallRequest(
+    agent_request = CallRequest(
         manager.unbind,
         args,
         weight=0,
         asynchronous=True,
         archive=True)
 
-    def on_succeeded(call_request, call_report):
-        manager = managers.consumer_bind_manager()
-        manager.request_succeeded(
-            consumer_id,
-            repo_id,
-            distributor_id,
-            call_report.task_id)
-
-    def on_failed(call_request, call_report):
-        manager = managers.consumer_bind_manager()
-        manager.request_failed(
-            consumer_id,
-            repo_id,
-            distributor_id,
-            call_report.task_id)
-
-    call_request.add_life_cycle_callback(
+    agent_request.add_life_cycle_callback(
         dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
-        on_succeeded)
+        unbind_succeeded)
 
-    call_request.add_life_cycle_callback(
+    agent_request.add_life_cycle_callback(
         dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK,
-        on_failed)
+        unbind_failed)
 
-    call_requests.append(call_request)
+    call_requests.append(agent_request)
+    agent_request.depends_on(unbind_request)
 
-    # set dependencies
-    call_requests[1].depends_on(call_requests[0])
+    # delete the bind
+
+    manager = managers.consumer_bind_manager()
+    resources = {
+        dispatch_constants.RESOURCE_CONSUMER_TYPE:
+            {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
+            {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
+            {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
+        }
+    args = [
+        consumer_id,
+        repo_id,
+        distributor_id
+    ]
+    tags = [
+        resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+        action_tag('delete')
+    ]
+    delete_request = CallRequest(
+        manager.delete,
+        args=args,
+        resources=resources,
+        tags=tags)
+
+    call_requests.append(delete_request)
+    delete_request.depends_on(agent_request)
 
     return call_requests

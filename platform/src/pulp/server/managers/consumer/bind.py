@@ -230,11 +230,12 @@ class BindManager(object):
         @type distributor_id: str
         """
         collection = Bind.get_collection()
-        bind_id = dict(
+        query = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
-        collection.update(bind_id, {'$set':{'deleted':True}}, safe=True)
+            distributor_id=distributor_id,
+            deleted=False)
+        collection.update(query, {'$set':{'deleted':True}}, safe=True)
 
     def delete(self, consumer_id, repo_id, distributor_id):
         """
@@ -250,11 +251,12 @@ class BindManager(object):
         pending = collection.find({'consumer_requests.status':'pending'})
         if len(list(pending)):
             raise Exception, 'Bind with outstanding consumer requests may not be deleted'
-        bind_id = dict(
+        query = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
-        collection.remove(bind_id, safe=True)
+            distributor_id=distributor_id,
+            deleted=True)
+        collection.remove(query, safe=True)
 
     def request_pending(self, consumer_id, repo_id, distributor_id, request_id):
         """
