@@ -21,6 +21,7 @@ import sys
 
 from logging import getLogger
 
+from pulp.server.dispatch import factory
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -71,6 +72,10 @@ class AgentManager(object):
         definitions = self.__definitions([binding])
         agent = PulpAgent(consumer)
         agent.consumer.bind(definitions, options)
+        # request tracking
+        manager = managers.consumer_bind_manager()
+        request_id = factory.context().task_id
+        manager.request_pending(consumer_id, repo_id, distributor_id, request_id)
 
     def rebind(self, consumer_id, bindings, options):
         """
@@ -88,12 +93,25 @@ class AgentManager(object):
         definitions = self.__definitions(bindings)
         agent = PulpAgent(consumer)
         agent.consumer.rebind(definitions, options)
+        # request tracking
+        for b in bindings:
+            manager = managers.consumer_bind_manager()
+            request_id = factory.context().task_id
+            manager.request_pending(
+                consumer_id,
+                b['repo_id'],
+                b['distributor_id'],
+                request_id)
 
-    def unbind(self, consumer_id, repo_id, options):
+    def unbind(self, consumer_id, repo_id, distributor_id, options):
         """
         Apply a unbind to the agent.
         @param consumer_id: The consumer ID.
         @type consumer_id: str
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        @param distributor_id: A distributor ID.
+        @type distributor_id: str
         @param options: The options are handler specific.
         @type options: dict
         """
@@ -101,6 +119,9 @@ class AgentManager(object):
         consumer = manager.get_consumer(consumer_id)
         agent = PulpAgent(consumer)
         agent.consumer.unbind(repo_id, options)
+        manager = managers.consumer_bind_manager()
+        request_id = factory.context().task_id
+        manager.request_pending(consumer_id, repo_id, distributor_id, request_id)
 
     def install_content(self, consumer_id, units, options):
         """

@@ -103,6 +103,12 @@ class AgentManagerTests(base.PulpServerTests):
                           json.dumps(definitions, default=json_util.default))
         self.assertEquals(json.dumps(args[1], default=json_util.default),
                           json.dumps(self.OPTIONS, default=json_util.default))
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['request_id'], None)
+        self.assertEqual(requests[0]['status'], 'pending')
 
     @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
            return_value=CONSUMER_PAYLOAD)
@@ -132,6 +138,12 @@ class AgentManagerTests(base.PulpServerTests):
                           json.dumps(definitions, default=json_util.default))
         self.assertEquals(json.dumps(args[1], default=json_util.default),
                           json.dumps(self.OPTIONS, default=json_util.default))
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['request_id'], None)
+        self.assertEqual(requests[0]['status'], 'pending')
 
     def test_unbind(self):
         # Setup
@@ -143,9 +155,15 @@ class AgentManagerTests(base.PulpServerTests):
             self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.OPTIONS)
+        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
         # verify
         mock_agent.Consumer.unbind.assert_called_once_with(self.REPO_ID, self.OPTIONS)
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['request_id'], None)
+        self.assertEqual(requests[0]['status'], 'pending')
 
     def test_content_install(self):
         # Setup

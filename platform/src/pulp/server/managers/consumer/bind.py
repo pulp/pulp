@@ -256,30 +256,44 @@ class BindManager(object):
             distributor_id=distributor_id)
         collection.remove(bind_id, safe=True)
 
-    def request_pending(self, bind_id, request_id):
+    def request_pending(self, consumer_id, repo_id, distributor_id, request_id):
         """
         Add (pending) request for tracking.
-        @param bind_id: A bind ID.
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @type bind_id: dict
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
         @param request_id: The ID of the request to begin tracking.
         @type request_id: str
         """
         collection = Bind.get_collection()
         entry = dict(request_id=request_id, status='pending')
         update = {'$push':{'consumer_requests':entry}}
+        bind_id = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id)
         collection.update(bind_id, update, safe=True)
 
-    def request_succeeded(self, bind_id, request_id):
+    def request_succeeded(self, consumer_id, repo_id, distributor_id, request_id):
         """
         A tracked consumer request has succeeded.
-        @param bind_id: A bind ID.
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @type bind_id: dict
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
         @param request_id: The ID of the request to begin tracking.
         @type request_id: str
         """
         collection = Bind.get_collection()
+        bind_id = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id)
         # delete the request
         update = {'$pull':{'consumer_requests':{'request_id':request_id}}}
         collection.update(bind_id, update, safe=True)
@@ -287,17 +301,23 @@ class BindManager(object):
         update = {'$pull':{'consumer_requests':{'status':'failed'}}}
         collection.update(bind_id, update, safe=True)
 
-    def request_failed(self, bind_id, request_id):
+    def request_failed(self, consumer_id, repo_id, distributor_id, request_id):
         """
         A tracked consumer request has failed.
-        @param bind_id: A bind ID.
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @type bind_id: dict
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
         @param request_id: The ID of the request to begin tracking.
         @type request_id: str
         """
         collection = Bind.get_collection()
-        query = dict(bind_id)
+        query = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id)
         query['consumer_requests.request_id'] = request_id
         update = {'$set':{'consumer_requests.$.status':'failed'}}
         collection.update(query, update, safe=True)

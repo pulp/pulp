@@ -455,14 +455,17 @@ class BindTest(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
+        base.TaskQueue.install()
 
     def tearDown(self):
+        base.TaskQueue.uninstall()
         base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         mock_plugins.reset()
+
 
     def populate(self):
         manager = factory.repo_manager()
@@ -535,8 +538,7 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
-    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.bind')
-    def test_bind(self, agent_bind):
+    def test_bind(self):
         # Setup
         self.populate()
         # Test
@@ -547,19 +549,18 @@ class BindTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
-        # wait for task to complete
-        for task in body:
-            self.wait_for_task(task)
+        self.coordinator.complete_call_success(body[1]['task_id'])
         # verify bind
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
         bind = binds[0]
-        bind['consumer_id'] == self.CONSUMER_ID
-        bind['repo_id'] = self.REPO_ID
-        bind['distributor_id'] = self.DISTRIBUTOR_ID
+        self.assertEqual(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(bind['repo_id'], self.REPO_ID)
+        self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEqual(len(bind['consumer_requests']), 0)
         # verify agent notified
-        self.assertTrue(agent_bind.called)
+        self.assertTrue(mock_agent.Consumer.bind.called)
 
     @mock.patch('pulp.server.managers.consumer.agent.AgentManager.unbind')
     def test_unbind(self, agent_unbind):
@@ -575,9 +576,8 @@ class BindTest(base.PulpWebserviceTests):
         status, body = self.delete(path)
         # Verify
         self.assertEquals(status, 202)
-        # wait for task to complete
-        for task in body:
-            call_report = self.wait_for_task(task)
+        self.coordinator.complete_call_success(body[1]['task_id'])
+        # verify unbind
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
         # verify agent notified
@@ -600,8 +600,6 @@ class BindTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
-        for task in body:
-            self.wait_for_task(task)
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
@@ -632,6 +630,7 @@ class ContentTest(base.PulpWebserviceTests):
 
     def setUp(self):
         base.PulpWebserviceTests.setUp(self)
+        base.TaskQueue.install()
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -641,12 +640,14 @@ class ContentTest(base.PulpWebserviceTests):
         mock_agent.install()
 
     def tearDown(self):
+        base.TaskQueue.uninstall()
         base.PulpWebserviceTests.tearDown(self)
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         mock_plugins.reset()
+
 
     def populate(self):
         config = {'key1' : 'value1', 'key2' : None}
@@ -671,13 +672,10 @@ class ContentTest(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/install/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        self.set_success()
+        body = dict(units=units, options=options)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
 
     def test_update(self):
         # Setup
@@ -688,13 +686,10 @@ class ContentTest(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/update/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        self.set_success()
+        body = dict(units=units, options=options)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
 
     def test_uninstall(self):
         # Setup
@@ -705,13 +700,10 @@ class ContentTest(base.PulpWebserviceTests):
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/uninstall/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        self.set_success()
+        body = dict(units=units, options=options)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
 
 
 class TestProfiles(base.PulpWebserviceTests):

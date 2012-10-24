@@ -212,35 +212,6 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         responses due to integration with the dispatch package.
         """
 
-        def _is_not_error(status):
-            return status in (httplib.OK, httplib.ACCEPTED)
-
-        def _is_task_response(body):
-            return body is not None and 'reasons' in body and 'state' in body
-
-        def _is_not_finished(body):
-            return body['state'] not in dispatch_constants.CALL_COMPLETE_STATES
-
-        def _poll_async_request(status, body):
-            if self.success_failure is not None and body['state'] == dispatch_constants.CALL_RUNNING_STATE:
-                task_id = body['_href'].split('/')[-2]
-                if self.success_failure == 'success':
-                    self.coordinator.complete_call_success(task_id, self.result)
-                else:
-                    self.coordinator.complete_call_failure(task_id, self.exception, self.traceback)
-                self._reset_success_failure()
-
-            while _is_not_error(status) and _is_task_response(body) and _is_not_finished(body):
-                uri = body['_href'][9:]
-                status, body = self.get(uri) # cool recursive call
-
-            if _is_task_response(body):
-                if body['state'] == dispatch_constants.CALL_ERROR_STATE:
-                    return status, body['exception']
-                if _is_not_error(status):
-                    return status, body['result']
-            return status, body
-
         # Use the default headers established at setup and override/add any
         headers = dict(PulpWebserviceTests.HEADERS)
         if additional_headers is not None:
@@ -264,48 +235,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         except ValueError:
             body = None
 
-        if _is_not_error(status) and _is_task_response(body):
-            return _poll_async_request(status, body)
         return status, body
-
-    def _reset_success_failure(self):
-        self.success_failure = None
-        self.result = None
-        self.exception = None
-        self.traceback = None
-
-    def set_success(self, result=None):
-        self.success_failure = 'success'
-        self.result = result
-
-    def set_failure(self, exception=None, traceback=None):
-        self.success_failure = 'failure'
-        self.exception = exception
-        self.traceback = traceback
-
-    def wait_for_task(self, task, timeout=3):
-        """
-        Wait for the specified task to finish.
-        @param task: A task to wait for.
-        @type task: Task
-        @param timeout: seconds to wait
-        @type timeout: int
-        @return The call report.
-        @raise Exception, when not found
-
-        """
-        n_polls = (timeout * 4)
-        task_id = task['task_id']
-        for i in range(0, n_polls):
-            found = self.coordinator.find_call_reports(task_id=task_id)
-            if not found:
-                break
-            if found[0].state in dispatch_constants.CALL_COMPLETE_STATES:
-                return found[0]
-            else:
-                time.sleep(.25)
-        raise Exception, 'task [%s], not found' % task_id
-
 
 
 class PulpClientTests(unittest.TestCase):
@@ -334,3 +264,42 @@ class PulpClientTests(unittest.TestCase):
 
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli
+
+
+class TaskQueue:
+
+    history = []
+
+    @classmethod
+    def install(cls):
+        cls.history.append(dispatch_factory._TASK_QUEUE)
+        queue = cls()
+        dispatch_factory._TASK_QUEUE = queue
+
+    @classmethod
+    def uninstall(cls):
+        queue = cls.history.pop()
+        dispatch_factory._TASK_QUEUE = queue
+
+    def __init__(self):
+        self.tasks = []
+
+    def start(self):
+        pass
+
+    def stop(self, *args, **kwargs):
+        pass
+
+    def enqueue(self, task):
+        task.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        self.tasks.append(task)
+        task._run()
+
+    def all_tasks(self):
+        return self.tasks
+
+    def lock(self):
+        pass
+
+    def unlock(self):
+        pass
