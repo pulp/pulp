@@ -76,6 +76,33 @@ class TestManageDB(MigrationTest):
         types_db.clean()
 
     @patch('sys.stderr')
+    @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
+    @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
+           test_migration_packages.platform)
+    @patch('sys.argv', ["pulp-manage-db",])
+    def test_current_version_too_high(self, mocked_stderr):
+        """
+        Set the current package version higher than latest available version, then sit back and eat
+        popcorn.
+        """
+        # Make sure we start out with a clean slate
+        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        # Make sure that our mock works. There are three valid packages.
+        self.assertEquals(len(utils.get_migration_packages()), 4)
+        # Set all versions to ridiculously high values
+        for package in utils.get_migration_packages():
+            package._migration_tracker.version = 9999999
+            package._migration_tracker.save()
+        error_code = manage.main()
+        self.assertEqual(error_code, os.EX_DATAERR)
+        # There should have been a print to stderr about the Exception
+        expected_stderr_calls = [
+            'The database for migration package test_migration_packages.platform is at version ' +\
+            '9999999, which is larger than the latest version available, 1.', '\n']
+        stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
+        self.assertEquals(stderr_calls, expected_stderr_calls)
+
+    @patch('sys.stderr')
     @patch.object(utils.MigrationPackage, 'apply_migration',
            side_effect=utils.MigrationPackage.apply_migration, autospec=True)
     @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
@@ -482,6 +509,15 @@ class TestMigrationTrackerManager(MigrationTest):
         mt_bson = mt._collection.find_one({'name': 'x^y=y^x'})
         self.assertEquals(mt_bson['name'], 'x^y=y^x')
         self.assertEquals(mt_bson['version'], 16)
+        # Let's use get_or_create without defaults
+        mt = self.mtm.get_or_create('None')
+        self.assertEquals(mt._collection.find({'name': 'None'}).count(), 1)
+        self.assertEquals(mt.name, 'None')
+        self.assertEquals(mt.version, None)
+        mt_bson = mt._collection.find_one({'name': 'None'})
+        self.assertEquals(mt_bson['name'], 'None')
+        self.assertEquals(mt_bson['version'], None)
+
 
 
 class TestMigrationUtils(MigrationTest):
