@@ -381,4 +381,4 @@ class Profile:
             details = report['details']
             http = bindings.profile.send(myid, typeid, details)
             log.debug('profile (%s), reported: %d', typeid, http.response_code)
-        return report
+        return report.dict()

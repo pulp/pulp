@@ -20,24 +20,28 @@ from pulp.server.managers import factory as managers
 _LOG = logging.getLogger(__name__)
 
 
+# -- task callbacks ----------------------------------------------------------------------
+
 def bind_succeeded(call_request, call_report):
     manager = managers.consumer_bind_manager()
-    manager.request_succeeded(
-        call_request.args[0],
-        call_request.args[1],
-        call_request.args[2],
-        call_report.task_id)
+    request_id = call_report.task_id
+    consumer_id, repo_id, distributor_id, options = call_request.args
+    dispatch_report = call_report.result
+    if dispatch_report['status']:
+        manager.request_succeeded(consumer_id, repo_id, distributor_id, request_id)
+    else:
+        manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
 
 def bind_failed(call_request, call_report):
     manager = managers.consumer_bind_manager()
-    manager.request_failed(
-        call_request.args[0],
-        call_request.args[1],
-        call_request.args[2],
-        call_report.task_id)
+    request_id = call_report.task_id
+    consumer_id, repo_id, distributor_id, options = call_request.args
+    manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
 
+# same for now
 unbind_succeeded = bind_succeeded
 unbind_failed = bind_failed
+
 
 # -- itineraries -------------------------------------------------------------------------
 
