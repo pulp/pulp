@@ -10,7 +10,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pymongo.objectid import ObjectId
+
 from pulp.server.upgrade.model import UpgradeStepReport
+
 
 # Since v1 was so tightly coupled to RPMs, there's no reason to have plugin
 # hooks for the upgrade. However, we have to account for the fact that the
@@ -18,6 +21,9 @@ from pulp.server.upgrade.model import UpgradeStepReport
 # in the platform makes sense given it's the only code that is specifically
 # handling the v1 approach.
 YUM_DISTRIBUTOR_ID = 'yum_distributor'
+
+# Same as above for the tight coupling
+RPM_TYPE = 'rpm'
 
 
 def upgrade(v1_database, v2_database):
@@ -68,8 +74,8 @@ def _consumers(v1_database, v2_database):
 
     # Idempotency: consumer_id is unique, so only process consumers whose ID is
     # not in v2 already
-    v2_ids = [x['id'] for x in list(v2_coll.find({}, {'id' : 1}))]
-    missing_v1_consumers = list(v1_coll.find({'id' : {'$nin' : v2_ids}}))
+    v2_ids = [x['id'] for x in v2_coll.find({}, {'id' : 1})]
+    missing_v1_consumers = v1_coll.find({'id' : {'$nin' : v2_ids}})
 
     for v1_consumer in missing_v1_consumers:
         v2_consumer = {
@@ -90,6 +96,11 @@ def _consumers(v1_database, v2_database):
 
         _consumer_bindings(v2_database, v1_consumer)
 
+        # This suffers from the same atomic issue, but is even less risky since
+        # the consumer will resend this eventually anyway, so if it gets lost
+        # it will be replaced.
+        _unit_profile(v2_database, v1_consumer)
+
 
 def _consumer_bindings(v2_database, v1_consumer):
     v2_coll = v2_database.consumer_bindings
@@ -97,7 +108,7 @@ def _consumer_bindings(v2_database, v1_consumer):
     repo_ids = v1_consumer['repoids']
 
     # Idempotency: Uniqueness is determined by the tuple of consumer and repo ID
-    bound_repo_ids = [x['repo_id'] for x in list(v2_coll.find({'consumer_id' : consumer_id}))]
+    bound_repo_ids = [x['repo_id'] for x in v2_coll.find({'consumer_id' : consumer_id})]
     unbound_repo_ids = set(repo_ids) - set(bound_repo_ids)
 
     new_bindings = []
@@ -111,3 +122,24 @@ def _consumer_bindings(v2_database, v1_consumer):
 
     if new_bindings:
         v2_coll.insert(new_bindings)
+
+
+def _unit_profile(v2_database, v1_consumer):
+    v2_coll = v2_database.consumer_unit_profiles
+    consumer_id = v1_consumer['id']
+
+    # Idempotency: There's only a single profile stored in v1, so this check
+    # is simply if there's a profile for the consumer
+    existing = v2_coll.find_one({'consumer_id' : consumer_id})
+    if existing:
+        return
+
+    id = ObjectId()
+    unit_profile = {
+        '_id' : id,
+        'id' : id,
+        'consumer_id' : consumer_id,
+        'content_type' : RPM_TYPE,
+        'profile' : v1_consumer['package_profile']
+    }
+    v2_coll.insert(unit_profile)

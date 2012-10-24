@@ -58,6 +58,15 @@ class ConsumersUpgradeTests(BaseDbUpgradeTests):
                 self.assertTrue(binding is not None)
                 self.assertEqual(binding['distributor_id'], consumers.YUM_DISTRIBUTOR_ID)
 
+        # - Unit Profile -
+        profile_coll = self.tmp_test_db.database.consumer_unit_profiles
+        for v1_consumer in v1_consumers:
+            if v1_consumer['package_profile']:
+                profile = profile_coll.find_one({'consumer_id' : v1_consumer['id']})
+                self.assertEqual(profile['consumer_id'], v1_consumer['id'])
+                self.assertEqual(profile['content_type'], consumers.RPM_TYPE)
+                self.assertEqual(profile['profile'], v1_consumer['package_profile'])
+
     def test_consumers_resumed(self):
         # Setup
         consumers.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
@@ -67,7 +76,8 @@ class ConsumersUpgradeTests(BaseDbUpgradeTests):
             'key_value_pairs' : {'a' : 'a'},
             'capabilities' : {},
             'certificate' : 'ABCDE',
-            'repoids' : ['repo-1', 'repo-2']
+            'repoids' : ['repo-1', 'repo-2'],
+            'package_profile' : ['some RPMs and stuff']
         }
         self.v1_test_db.database.consumers.insert(new_consumer)
 
@@ -103,6 +113,12 @@ class ConsumersUpgradeTests(BaseDbUpgradeTests):
                 self.assertTrue(binding is not None)
                 self.assertEqual(binding['distributor_id'], consumers.YUM_DISTRIBUTOR_ID)
 
+        profile_coll = self.tmp_test_db.database.consumer_unit_profiles
+        for v1_consumer in v1_consumers:
+            if v1_consumer['package_profile']:
+                profile = profile_coll.find_one({'consumer_id' : v1_consumer['id']})
+                self.assertTrue(profile is not None)
+
     def test_consumers_idempotency(self):
         # Setup
         consumers.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
@@ -129,3 +145,10 @@ class ConsumersUpgradeTests(BaseDbUpgradeTests):
                                                  'repo_id' : repo_id})
                 self.assertTrue(binding is not None)
                 self.assertEqual(binding['distributor_id'], consumers.YUM_DISTRIBUTOR_ID)
+
+        profile_coll = self.tmp_test_db.database.consumer_unit_profiles
+        for v1_consumer in v1_consumers:
+            if v1_consumer['package_profile']:
+                profile = profile_coll.find_one({'consumer_id' : v1_consumer['id']})
+                self.assertTrue(profile is not None)
+
