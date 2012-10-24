@@ -46,13 +46,14 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
+    @patch('sys.stderr')
     @patch.object(utils.MigrationPackage, 'apply_migration',
            side_effect=utils.MigrationPackage.apply_migration, autospec=True)
     @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
            test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
-    def test_migrate(self, mocked_apply_migration):
+    def test_migrate(self, mocked_apply_migration, mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
         in the correct order.
@@ -66,6 +67,12 @@ class TestManageDB(MigrationTest):
             package._migration_tracker.version = 0
             package._migration_tracker.save()
         manage.main()
+        # There should have been a print to stderr about the Exception
+        expected_stderr_calls = [
+            'Applying migration test_migration_packages.raise_exception.0002_oh_no failed.',
+            ' ', ' See log for details.', '\n']
+        stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
+        self.assertEquals(stderr_calls, expected_stderr_calls)
         migration_modules_called = [call[1][1].name for call in mocked_apply_migration.mock_calls]
         # Note that none of the migrations that don't meet our criteria show up in this list. Also,
         # Note that test_migration_packages.raise_exception.0003_shouldnt_run doesn't appear since
