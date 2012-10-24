@@ -23,12 +23,12 @@ import pulp.server.managers.factory as manager_factory
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.orchestration.repo import sync_call_requests
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -810,7 +810,7 @@ class RepoSync(JSONController):
         params = self.params()
         overrides = params.get('override_config', None)
 
-        call_requests = sync_call_requests(repo_id, overrides)
+        call_requests = sync_with_auto_publish_itinerary(repo_id, overrides)
 
         # this raises an exception that is handled by the middleware,
         # so no return is needed

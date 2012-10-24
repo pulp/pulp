@@ -17,13 +17,17 @@ from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.managers import factory as manager_factory
 
-def sync_call_requests(repo_id, overrides):
+
+def sync_with_auto_publish_itinerary(repo_id, overrides=None):
     """
     Create a call request list for the synchronization of a repository and the
     publishing of any distributors that are configured for auto publish.
     @param repo_id: id of the repository to create a sync call request list for
+    @type repo_id: str
     @param overrides: dictionary of configuration overrides for this sync
+    @type overrides: dict or None
     @return: list of call request instances
+    @rtype: list
     """
 
     repo_sync_manager = manager_factory.repo_sync_manager()
