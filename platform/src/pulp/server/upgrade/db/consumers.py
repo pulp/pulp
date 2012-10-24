@@ -113,7 +113,10 @@ def _consumer_bindings(v2_database, v1_consumer):
 
     new_bindings = []
     for repo_id in unbound_repo_ids:
+        id = ObjectId()
         binding = {
+            '_id' : id,
+            'id' : id,
             'consumer_id' : consumer_id,
             'repo_id' : repo_id,
             'distributor_id' : YUM_DISTRIBUTOR_ID,
