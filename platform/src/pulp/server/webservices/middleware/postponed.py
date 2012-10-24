@@ -13,7 +13,7 @@
 
 import logging
 
-from pulp.server.compat import json, http_responses
+from pulp.server.compat import json, json_util, http_responses
 from pulp.server.exceptions import MultipleOperationsPostponed, OperationPostponed
 from pulp.server.webservices import serialization
 
@@ -43,7 +43,7 @@ class PostponedOperationMiddleware(object):
             href_obj = serialization.dispatch.task_href(e.call_report)
             serialized_call_report.update(href_obj)
 
-            body = json.dumps(serialized_call_report)
+            body = json.dumps(serialized_call_report, default=json_util.default)
 
             self.headers['Content-Length'] = str(len(body))
             start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
@@ -60,7 +60,7 @@ class PostponedOperationMiddleware(object):
                 serialized_call_report.update(href_obj)
                 serialized_call_report_list.append(serialized_call_report)
 
-            body = json.dumps(serialized_call_report_list)
+            body = json.dumps(serialized_call_report_list, default=json_util.default)
 
             self.headers['Content-Length'] = str(len(body))
             start_str = '%d %s' % (e.http_status_code, http_responses[e.http_status_code])
