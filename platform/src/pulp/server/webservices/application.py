@@ -47,6 +47,7 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
 from pulp.server.managers import factory as manager_factory
+from pulp.server.db.migrate import utils as migrate_utils
 from pulp.server.webservices.controllers import (
     agent, consumer_groups, consumers, contents, dispatch, events, permissions,
     plugins, repo_groups, repositories, roles, root_actions, users)
@@ -92,7 +93,7 @@ def _initialize_pulp():
     _IS_INITIALIZED = True
 
     # check our db version and other support
-    check_version()
+    migrate_utils.check_package_versions()
 
     # pulp generic content initialization
     manager_factory.initialize()

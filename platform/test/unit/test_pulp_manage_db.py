@@ -18,6 +18,7 @@ from pulp.server.db import manage
 from pulp.server.db.migrate import utils
 from pulp.server.db.model.migration_tracker import MigrationTracker
 from pulp.server.managers.migration_tracker import DoesNotExist, MigrationTrackerManager
+from pulp.server.webservices.application import _initialize_pulp
 import base
 import pulp.plugins.types.database as types_db
 import test_migration_packages
@@ -39,6 +40,34 @@ class MigrationTest(base.PulpServerTests):
         super(MigrationTest, self).clean()
         # Make sure each test doesn't have any lingering MigrationTrackers
         MigrationTracker.get_collection().remove({})
+
+
+class ApplicationTest(MigrationTest):
+    @patch('pulp.server.db.migrate.utils.migrations', test_migration_packages)
+    @patch('pulp.server.db.migrate.utils.pulp.server.db.migrations.platform',
+           test_migration_packages.platform)
+    def test__initialize_pulp(self):
+        """
+        _initialize_pulp() should raise an Exception if any of the packages aren't at their latest
+        version.
+        """
+        # Make sure we start out with a clean slate
+        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        # Make sure that our mock works. There are three valid packages.
+        self.assertEquals(len(utils.get_migration_packages()), 4)
+        # Set all versions back to 0
+        for package in utils.get_migration_packages():
+            package._migration_tracker.version = 0
+            package._migration_tracker.save()
+        # Let's make sure we raise the exception
+        try:
+            _initialize_pulp()
+            self.fail('_initialize_pulp() should have raised an Exception, but did not.')
+        except Exception, e:
+            self.assertEqual(str(e), ('There are unapplied migrations. Please '
+                                      'run the database management utility to apply them.'))
+        # Now we should be able to call _initialize_pulp() without raising Exceptions
+        _initialize_pulp()
 
 
 class TestManageDB(MigrationTest):

@@ -8,6 +8,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from gettext import lgettext as _
 import logging
 import os
 import pkgutil
@@ -190,11 +191,11 @@ class MigrationPackage(object):
                 module_name = '%s.%s'%(self.name, module_name)
                 migration_modules.append(MigrationModule(module_name))
             except MigrationModule.MissingMigrate:
-                logger.debug(("The module %s doesn't have a migrate function. "
-                              "It will be ignored.")%module_name)
+                logger.debug(_("The module %(m)s doesn't have a migrate function. "
+                              "It will be ignored.")%{'m': module_name})
             except MigrationModule.MissingVersion:
-                logger.debug(("The module %s doesn't conform to the migration package naming "
-                              "conventions. It will be ignored.")%module_name)
+                logger.debug(_("The module %(m)s doesn't conform to the migration package naming "
+                               "conventions. It will be ignored.")%{'m': module_name})
         migration_modules.sort()
         # We should have migrations starting at version 1, which each module version being exactly
         # one larger than the migration preceeding it.
@@ -323,6 +324,25 @@ def delete_field(objectdb, field):
             continue
         del model[field]
         objectdb.save(model, safe=True)
+
+
+def check_package_versions():
+    """
+    Inspects each migration package returned by get_migration_packages(), and makes sure they have
+    each been migrated to the latest version. If they have not, it logs the issue and raises an
+    Exception.
+    """
+    errors = []
+    for package in get_migration_packages():
+        if package.current_version != package.latest_available_version:
+            error_message = _("%(p)s hasn't been updated to the latest available migration.")%(
+                              {'p': package.name})
+            logger.error(error_message)
+            errors.append(error_message)
+    if errors:
+        error_message = _("There are unapplied migrations. Please run the database management "
+                          "utility to apply them.")
+        raise Exception(error_message)
 
 
 def get_migration_packages():
