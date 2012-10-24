@@ -42,7 +42,7 @@ unbind_failed = bind_failed
 # -- itineraries -------------------------------------------------------------------------
 
 
-def bind_call_requests(consumer_id, repo_id, distributor_id, options):
+def bind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
 
@@ -101,7 +101,7 @@ def bind_call_requests(consumer_id, repo_id, distributor_id, options):
     return call_requests
 
 
-def unbind_call_requests(consumer_id, repo_id, distributor_id, options):
+def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
 
