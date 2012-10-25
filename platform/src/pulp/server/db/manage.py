@@ -18,7 +18,7 @@ import sys
 
 from pulp.plugins.loader.api import load_content_types
 from pulp.server.db import connection
-from pulp.server.db.migrate import utils
+from pulp.server.db.migrate import models
 
 connection.initialize()
 
@@ -62,7 +62,7 @@ def migrate_database(options):
 
     :param options: The command line parameters from the user
     """
-    migration_packages = utils.get_migration_packages()
+    migration_packages = models.get_migration_packages()
     for migration_package in migration_packages:
         if migration_package.current_version > migration_package.latest_available_version:
             raise DataError(_('The database for migration package %(p)s is at version %(v)s, ' +\
