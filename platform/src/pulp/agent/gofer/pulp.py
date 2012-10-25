@@ -375,10 +375,10 @@ class Profile:
         bindings = PulpBindings()
         report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
-        for typeid, report in report.details.items():
-            if not report['status']:
+        for typeid, profile_report in report.details.items():
+            if not profile_report['status']:
                 continue
-            details = report['details']
+            details = profile_report['details']
             http = bindings.profile.send(myid, typeid, details)
             log.debug('profile (%s), reported: %d', typeid, http.response_code)
         return report.dict()
