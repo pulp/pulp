@@ -150,7 +150,7 @@ class MigrationPackage(object):
         """
         Return a list of the migration versions that are available in this migration package.
 
-        :rtype: L{int}
+        :rtype: list
         """
         migrations = self.migrations
         versions = [migration.version for migration in migrations]
