@@ -61,12 +61,13 @@ class MigrationTrackerManager(object):
         return it. If it doesn't exist, create a new one with specified name, and with the version
         attribute specified in a dictionary passed to defaults with one key, 'version'.
 
-        :param name:    The name of the MigrationTracker to get or create
-        :type  name:    str
-        :param default: An optional dictionary with a single key, 'version'. This is used to set a
-                        version on a new MigrationTracker, in the event that this method creates one
-        :type  default: dict
-        :rtype:         pulp.server.db.model.migration_tracker.MigrationTracker
+        :param name:     The name of the MigrationTracker to get or create
+        :type  name:     str
+        :param defaults: An optional dictionary with a single key, 'version'. This is used to set a
+                         version on a new MigrationTracker, in the event that this method creates
+                         one
+        :type  defaults: dict
+        :rtype:          pulp.server.db.model.migration_tracker.MigrationTracker
         """
         try:
             migration_tracker = self.get(name)
