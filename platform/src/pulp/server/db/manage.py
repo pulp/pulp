@@ -9,7 +9,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from gettext import lgettext as _
+from gettext import gettext as _
 from optparse import OptionParser, SUPPRESS_HELP
 import logging
 import traceback
