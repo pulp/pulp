@@ -111,8 +111,7 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         query = dict(consumer_id=id)
-        for bind in collection.find(query):
-            self.delete(bind['consumer_id'], bind['repo_id'], bind['distributor_id'])
+        collection.remove(query)
 
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """

@@ -132,7 +132,7 @@ class Consumer(Capability):
             timeout=(10, 90),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.taskid)
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
         status, result = consumer.bind(definitions, options)
         if status != 202:
@@ -159,7 +159,7 @@ class Consumer(Capability):
             timeout=(10, 90),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.taskid)
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
         status, result = consumer.rebind(definitions, options)
         if status != 202:
@@ -182,7 +182,7 @@ class Consumer(Capability):
             timeout=(10, 90),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.taskid)
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
         status, result = consumer.unbind(repo_id, options)
         if status != 202:
@@ -212,7 +212,7 @@ class Content(Capability):
             timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         status, result = content.install(units, options)
         if status != 202:
@@ -236,7 +236,7 @@ class Content(Capability):
             timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         status, result = content.update(units, options)
         if status != 202:
@@ -260,7 +260,7 @@ class Content(Capability):
             timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         status, result = content.uninstall(units, options)
         if status != 202:
