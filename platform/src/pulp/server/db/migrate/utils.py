@@ -210,16 +210,16 @@ class MigrationPackage(object):
         last_version = 0
         for module in migration_modules:
             if module.version == 0:
-                error_message = '0 is a reserved migration version number, but the ' +\
-                                'module %s has been assigned that version.'%module.name
+                error_message = _('0 is a reserved migration version number, but the '
+                                  'module %(n)s has been assigned that version.')%{'n': module.name}
                 raise self.__class__.DuplicateVersions(error_message)
             if module.version == last_version:
-                error_message = 'There are two migration modules that share version 2 in ' +\
-                                '%s.'%self.name
+                error_message = _('There are two migration modules that share version %(v)s in '
+                                  '%(n)s.')%{'v': module.version, 'n': self.name}
                 raise self.__class__.DuplicateVersions(error_message)
             if module.version != last_version + 1:
-                raise self.__class__.MissingVersion(('Migration version %s is '
-                    'missing in %s.')%(last_version + 1, self.name))
+                raise self.__class__.MissingVersion(_('Migration version %(v)s is '
+                    'missing in %(n)s.')%({'v': last_version + 1, 'n': self.name}))
             last_version = module.version
         return migration_modules
 
