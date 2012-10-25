@@ -13,6 +13,7 @@ import unittest
 
 from mock import call, MagicMock, mock_open, patch
 
+from data import test_migration_packages
 from pulp.common.compat import json
 from pulp.server.db import manage
 from pulp.server.db.migrate import models
@@ -21,8 +22,7 @@ from pulp.server.managers.migration_tracker import DoesNotExist, MigrationTracke
 from pulp.server.webservices.application import _initialize_pulp
 import base
 import pulp.plugins.types.database as types_db
-import test_migration_packages
-import test_migration_packages.platform
+import data.test_migration_packages.platform
 
 
 # This is used for mocking
@@ -45,7 +45,7 @@ class MigrationTest(base.PulpServerTests):
 class ApplicationTest(MigrationTest):
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     def test__initialize_pulp(self):
         """
         _initialize_pulp() should raise an Exception if any of the packages aren't at their latest
@@ -78,7 +78,7 @@ class TestManageDB(MigrationTest):
     @patch('sys.stderr')
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
     def test_current_version_too_high(self, mocked_stderr):
         """
@@ -97,8 +97,8 @@ class TestManageDB(MigrationTest):
         self.assertEqual(error_code, os.EX_DATAERR)
         # There should have been a print to stderr about the Exception
         expected_stderr_calls = [
-            'The database for migration package test_migration_packages.platform is at version ' +\
-            '9999999, which is larger than the latest version available, 1.', '\n']
+            'The database for migration package data.test_migration_packages.platform is at ' +\
+            'version 9999999, which is larger than the latest version available, 1.', '\n']
         stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
 
@@ -107,7 +107,7 @@ class TestManageDB(MigrationTest):
            side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
     def test_migrate(self, mocked_apply_migration, mocked_stderr):
         """
@@ -125,25 +125,26 @@ class TestManageDB(MigrationTest):
         manage.main()
         # There should have been a print to stderr about the Exception
         expected_stderr_calls = [
-            'Applying migration test_migration_packages.raise_exception.0002_oh_no failed.',
+            'Applying migration data.test_migration_packages.raise_exception.0002_oh_no failed.',
             ' ', ' See log for details.', '\n']
         stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
         migration_modules_called = [call[1][1].name for call in mocked_apply_migration.mock_calls]
         # Note that none of the migrations that don't meet our criteria show up in this list. Also,
-        # Note that test_migration_packages.raise_exception.0003_shouldnt_run doesn't appear since
-        # test_migration_packages.raise_exception.0002_oh_no raised an Exception. Note also that
-        # even though the raise_exception package raised an Exception, we still run all the z
-        # migrations because we don't want one package to break another.
-        expected_migration_modules_called = ['test_migration_packages.platform.0001_stuff_and_junk',
-            'test_migration_packages.raise_exception.0001_works_fine',
-            'test_migration_packages.raise_exception.0002_oh_no',
-            'test_migration_packages.z.0001_test', 'test_migration_packages.z.0002_test',
-            'test_migration_packages.z.0003_test']
+        # Note that data.test_migration_packages.raise_exception.0003_shouldnt_run doesn't appear
+        # since data.test_migration_packages.raise_exception.0002_oh_no raised an Exception. Note
+        # also that even though the raise_exception package raised an Exception, we still run all
+        # the z migrations because we don't want one package to break another.
+        expected_migration_modules_called = [
+            'data.test_migration_packages.platform.0001_stuff_and_junk',
+            'data.test_migration_packages.raise_exception.0001_works_fine',
+            'data.test_migration_packages.raise_exception.0002_oh_no',
+            'data.test_migration_packages.z.0001_test', 'data.test_migration_packages.z.0002_test',
+            'data.test_migration_packages.z.0003_test']
         self.assertEquals(migration_modules_called, expected_migration_modules_called)
         # Assert that our precious versions have been updated correctly
         for package in models.get_migration_packages():
-            if package.name != 'test_migration_packages.raise_exception':
+            if package.name != 'data.test_migration_packages.raise_exception':
                 self.assertEqual(package.current_version, package.latest_available_version)
             else:
                 # The raised Exception should have prevented us from getting past version 1
@@ -152,7 +153,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.MigrationPackage.apply_migration')
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
     def test_migrate_with_new_packages(self, mocked_apply_migration):
         """
@@ -214,7 +215,7 @@ class TestManageDB(MigrationTest):
            side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--test"])
     def test_migrate_with_test_flag(self, mocked_apply_migration, mocked_stderr):
         """
@@ -233,21 +234,22 @@ class TestManageDB(MigrationTest):
         manage.main()
         # There should have been a print to stderr about the Exception
         expected_stderr_calls = [
-            'Applying migration test_migration_packages.raise_exception.0002_oh_no failed.',
+            'Applying migration data.test_migration_packages.raise_exception.0002_oh_no failed.',
             ' ', ' See log for details.', '\n']
         stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
         migration_modules_called = [call[1][1].name for call in mocked_apply_migration.mock_calls]
         # Note that none of the migrations that don't meet our criteria show up in this list. Also,
-        # Note that test_migration_packages.raise_exception.0003_shouldnt_run doesn't appear since
-        # test_migration_packages.raise_exception.0002_oh_no raised an Exception. Note also that
-        # even though the raise_exception package raised an Exception, we still run all the z
-        # migrations because we don't want one package to break another.
-        expected_migration_modules_called = ['test_migration_packages.platform.0001_stuff_and_junk',
-            'test_migration_packages.raise_exception.0001_works_fine',
-            'test_migration_packages.raise_exception.0002_oh_no',
-            'test_migration_packages.z.0001_test', 'test_migration_packages.z.0002_test',
-            'test_migration_packages.z.0003_test']
+        # Note that data.test_migration_packages.raise_exception.0003_shouldnt_run doesn't appear
+        # since data.test_migration_packages.raise_exception.0002_oh_no raised an Exception. Note
+        # also that even though the raise_exception package raised an Exception, we still run all
+        # the z migrations because we don't want one package to break another.
+        expected_migration_modules_called = [
+            'data.test_migration_packages.platform.0001_stuff_and_junk',
+            'data.test_migration_packages.raise_exception.0001_works_fine',
+            'data.test_migration_packages.raise_exception.0002_oh_no',
+            'data.test_migration_packages.z.0001_test', 'data.test_migration_packages.z.0002_test',
+            'data.test_migration_packages.z.0003_test']
         self.assertEquals(migration_modules_called, expected_migration_modules_called)
         # Assert that our precious versions have not been updated, since we have the --test flag
         for package in models.get_migration_packages():
@@ -256,36 +258,36 @@ class TestManageDB(MigrationTest):
 
 class TestMigrationModule(MigrationTest):
     def test___init__(self):
-        mm = models.MigrationModule('test_migration_packages.z.0002_test')
-        self.assertEquals(mm._module.__name__, 'test_migration_packages.z.0002_test')
+        mm = models.MigrationModule('data.test_migration_packages.z.0002_test')
+        self.assertEquals(mm._module.__name__, 'data.test_migration_packages.z.0002_test')
         self.assertEquals(mm.version, 2)
         # It should have a migrate attribute that is callable
         self.assertTrue(hasattr(mm.migrate, '__call__'))
 
     def test__get_version(self):
-        mm = models.MigrationModule('test_migration_packages.z.0003_test')
+        mm = models.MigrationModule('data.test_migration_packages.z.0003_test')
         self.assertEquals(mm._get_version(), 3)
 
     def test___cmp__(self):
-        mm_2 = models.MigrationModule('test_migration_packages.z.0002_test')
-        mm_3 = models.MigrationModule('test_migration_packages.z.0003_test')
+        mm_2 = models.MigrationModule('data.test_migration_packages.z.0002_test')
+        mm_3 = models.MigrationModule('data.test_migration_packages.z.0003_test')
         self.assertEquals(cmp(mm_2, mm_3), -1)
 
     def test_name(self):
-        mm = models.MigrationModule('test_migration_packages.z.0003_test')
-        self.assertEqual(mm.name, 'test_migration_packages.z.0003_test')
+        mm = models.MigrationModule('data.test_migration_packages.z.0003_test')
+        self.assertEqual(mm.name, 'data.test_migration_packages.z.0003_test')
 
 
 class TestMigrationPackage(MigrationTest):
     def test___init__(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
-        self.assertEquals(mp._package.__name__, 'test_migration_packages.z')
-        self.assertEquals(mp._migration_tracker.name, 'test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
+        self.assertEquals(mp._package.__name__, 'data.test_migration_packages.z')
+        self.assertEquals(mp._migration_tracker.name, 'data.test_migration_packages.z')
         # We auto update to the latest version since this is a new package
         self.assertEquals(mp._migration_tracker.version, 3)
 
     def test_apply_migration(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         # Let's fake the migration version being at 2 instead of 3
         mp._migration_tracker.version = 2
         mp._migration_tracker.save()
@@ -305,7 +307,7 @@ class TestMigrationPackage(MigrationTest):
         """
         We want to assert that apply_migration() only allows migrations of current_version + 1.
         """
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         # Let's fake the migration version being at 1 instead of 3
         mp._migration_tracker.version = 1
         mp._migration_tracker.save()
@@ -320,30 +322,31 @@ class TestMigrationPackage(MigrationTest):
             self.fail('Applying migration 3 should have raised an Exception, but it did not.')
         except Exception, e:
             self.assertEquals(str(e), 'Cannot apply migration ' +\
-                'test_migration_packages.z.0003_test, because the next migration version is 2.')
+                                      'data.test_migration_packages.z.0003_test, because the next '
+                                      'migration version is 2.')
         self.assertEquals(mm_v3.migrate.called, False)
         # The MP should still be at v1
         self.assertEqual(mp.current_version, 1)
 
     def test_available_versions(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         self.assertEquals(mp.available_versions, [1, 2, 3])
 
     def test_current_version(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         self.assertEqual(mp.current_version, 3)
         # Now let's change the version to 4 and see what happens
         mp._migration_tracker.version = 4
         mp._migration_tracker.save()
         # Now we should be able to reinstantiate this mammajamma and see that the version is right
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         self.assertEqual(mp.current_version, 4)
 
     def test_duplicate_versions(self):
         error_message = 'There are two migration modules that share version 2 in ' +\
-            'test_migration_packages.duplicate_versions.'
+            'data.test_migration_packages.duplicate_versions.'
         try:
-            mp = models.MigrationPackage('test_migration_packages.duplicate_versions')
+            mp = models.MigrationPackage('data.test_migration_packages.duplicate_versions')
             self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
                 'but was not raised.')
         except models.MigrationPackage.DuplicateVersions, e:
@@ -352,14 +355,14 @@ class TestMigrationPackage(MigrationTest):
     def test_latest_available_version(self):
         # This one has no migrations, so the latest is 0
         self.assertEqual(
-            models.MigrationPackage('test_migration_packages.a').latest_available_version, 0)
+            models.MigrationPackage('data.test_migration_packages.a').latest_available_version, 0)
+        self.assertEqual(models.MigrationPackage(
+                         'data.test_migration_packages.platform').latest_available_version, 1)
         self.assertEqual(
-            models.MigrationPackage('test_migration_packages.platform').latest_available_version, 1)
-        self.assertEqual(
-            models.MigrationPackage('test_migration_packages.z').latest_available_version, 3)
+            models.MigrationPackage('data.test_migration_packages.z').latest_available_version, 3)
 
     def test_migrations(self):
-        migration_package = models.MigrationPackage('test_migration_packages.z')
+        migration_package = models.MigrationPackage('data.test_migration_packages.z')
         migrations = migration_package.migrations
         self.assertEqual(len(migrations), 3)
         self.assertTrue(all([isinstance(migration, models.MigrationModule)
@@ -367,14 +370,14 @@ class TestMigrationPackage(MigrationTest):
         # Make sure their versions are set and sorted appropriately
         self.assertEqual([1, 2, 3], [migration.version for migration in migrations])
         # Check the names
-        self.assertEqual(['test_migration_packages.z.0001_test',
-                          'test_migration_packages.z.0002_test',
-                          'test_migration_packages.z.0003_test'],
+        self.assertEqual(['data.test_migration_packages.z.0001_test',
+                          'data.test_migration_packages.z.0002_test',
+                          'data.test_migration_packages.z.0003_test'],
                          [migration._module.__name__ for migration in migrations])
 
     def test_name(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
-        self.assertEqual(mp.name, 'test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
+        self.assertEqual(mp.name, 'data.test_migration_packages.z')
 
     @patch('pulp.server.db.migrate.models.logger.debug')
     def test_nonconforming_modules(self, log_mock):
@@ -384,7 +387,7 @@ class TestMigrationPackage(MigrationTest):
         # a migration module. The z package also has a module called 0004_doesnt_have_migrate.py.
         # Since it doesn't have a migrate function, it should just be logged and things should keep
         # going as usual.
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         migrations = mp.migrations
         self.assertEqual(len(migrations), 3)
         self.assertTrue(all([isinstance(migration, models.MigrationModule)
@@ -392,25 +395,27 @@ class TestMigrationPackage(MigrationTest):
         # Make sure their versions are set and sorted appropriately
         self.assertEqual([1, 2, 3], [migration.version for migration in migrations])
         # Check the names
-        self.assertEqual(['test_migration_packages.z.0001_test',
-                          'test_migration_packages.z.0002_test',
-                          'test_migration_packages.z.0003_test'],
+        self.assertEqual(['data.test_migration_packages.z.0001_test',
+                          'data.test_migration_packages.z.0002_test',
+                          'data.test_migration_packages.z.0003_test'],
                          [migration.name for migration in migrations])
         # Now let's assert that the non-conforming dealios were logged
         # They actually get logged twice each, once for when we initialized the MP, and the other
         # when we retrieved the migrations
         log_mock.assert_has_calls([
-            call('The module test_migration_packages.z.0004_doesnt_have_migrate doesn\'t have a '
-                 'migrate function. It will be ignored.'),
-            call('The module test_migration_packages.z.doesnt_conform_to_naming_convention doesn\'t'
-                 ' conform to the migration package naming conventions. It will be ignored.'),
-            call('The module test_migration_packages.z.0004_doesnt_have_migrate doesn\'t have a '
-                 'migrate function. It will be ignored.'),
-            call('The module test_migration_packages.z.doesnt_conform_to_naming_convention doesn\'t'
-                 ' conform to the migration package naming conventions. It will be ignored.'),])
+            call('The module data.test_migration_packages.z.0004_doesnt_have_migrate doesn\'t have '
+                 'a migrate function. It will be ignored.'),
+            call('The module data.test_migration_packages.z.doesnt_conform_to_naming_convention '
+                 'doesn\'t conform to the migration package naming conventions. It will be '
+                 'ignored.'),
+            call('The module data.test_migration_packages.z.0004_doesnt_have_migrate doesn\'t have '
+                 'a migrate function. It will be ignored.'),
+            call('The module data.test_migration_packages.z.doesnt_conform_to_naming_convention '
+                 'doesn\'t conform to the migration package naming conventions. It will be ignored.'
+                 ),])
 
     def test_unapplied_migrations(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
         # Drop the version to 1, which should make this method return two migrations
         mp._migration_tracker.version = 1
         mp._migration_tracker.save()
@@ -418,16 +423,17 @@ class TestMigrationPackage(MigrationTest):
         self.assertEqual(len(unapplied), 2)
         self.assertEqual([m.version for m in unapplied], [2, 3])
         self.assertEqual([m._module.__name__ for m in unapplied],
-            ['test_migration_packages.z.0002_test', 'test_migration_packages.z.0003_test'])
+            ['data.test_migration_packages.z.0002_test',
+             'data.test_migration_packages.z.0003_test'])
 
     def test_migration_version_gap(self):
         """
         Make sure that we require migration versions to be continuous, with no gaps.
         """
         error_message = 'Migration version 2 is missing in ' +\
-            'test_migration_packages.version_gap.'
+            'data.test_migration_packages.version_gap.'
         try:
-            mp = models.MigrationPackage('test_migration_packages.version_gap')
+            mp = models.MigrationPackage('data.test_migration_packages.version_gap')
             self.fail('The MigrationPackage.MissingVersion exception should have been raised, '
                 'but was not raised.')
         except models.MigrationPackage.MissingVersion, e:
@@ -438,20 +444,21 @@ class TestMigrationPackage(MigrationTest):
         Make sure that we reserve migration zero.
         """
         error_message = '0 is a reserved migration version number, but the module ' +\
-            'test_migration_packages.version_zero.0000_not_allowed has been assigned that version.'
+            'data.test_migration_packages.version_zero.0000_not_allowed has been assigned that ' +\
+            'version.'
         try:
-            mp = models.MigrationPackage('test_migration_packages.version_zero')
+            mp = models.MigrationPackage('data.test_migration_packages.version_zero')
             self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
                 'but was not raised.')
         except models.MigrationPackage.DuplicateVersions, e:
             self.assertEquals(str(e), error_message)
 
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     def test___cmp__(self):
-        mp_1 = models.MigrationPackage('test_migration_packages.a')
-        mp_2 = models.MigrationPackage('test_migration_packages.platform')
-        mp_3 = models.MigrationPackage('test_migration_packages.z')
+        mp_1 = models.MigrationPackage('data.test_migration_packages.a')
+        mp_2 = models.MigrationPackage('data.test_migration_packages.platform')
+        mp_3 = models.MigrationPackage('data.test_migration_packages.z')
         # platform should always sort first, and they should otherwise be alphabeticalness
         self.assertEqual(cmp(mp_1, mp_1), 0)
         self.assertEqual(cmp(mp_1, mp_2), 1)
@@ -464,12 +471,12 @@ class TestMigrationPackage(MigrationTest):
         self.assertEqual(cmp(mp_3, mp_3), 0)
 
     def test___str__(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
-        self.assertEqual(str(mp), 'test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
+        self.assertEqual(str(mp), 'data.test_migration_packages.z')
 
     def test___repr__(self):
-        mp = models.MigrationPackage('test_migration_packages.z')
-        self.assertEqual(repr(mp), 'test_migration_packages.z')
+        mp = models.MigrationPackage('data.test_migration_packages.z')
+        self.assertEqual(repr(mp), 'data.test_migration_packages.z')
 
 
 class TestMigrationTracker(MigrationTest):
@@ -567,7 +574,7 @@ class TestMigrationTrackerManager(MigrationTest):
 class TestMigrationUtils(MigrationTest):
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
-           test_migration_packages.platform)
+           data.test_migration_packages.platform)
     @patch('pulp.server.db.migrate.models.logger.error')
     def test_get_migration_packages(self, log_mock):
         """
@@ -578,20 +585,20 @@ class TestMigrationUtils(MigrationTest):
         self.assertTrue(
             all([isinstance(package, models.MigrationPackage) for package in packages]))
         # Make sure that the packages are sorted correctly, with platform first
-        self.assertEquals(packages[0].name, 'test_migration_packages.platform')
-        self.assertEquals(packages[1].name, 'test_migration_packages.a')
-        self.assertEquals(packages[2].name, 'test_migration_packages.raise_exception')
-        self.assertEquals(packages[3].name, 'test_migration_packages.z')
+        self.assertEquals(packages[0].name, 'data.test_migration_packages.platform')
+        self.assertEquals(packages[1].name, 'data.test_migration_packages.a')
+        self.assertEquals(packages[2].name, 'data.test_migration_packages.raise_exception')
+        self.assertEquals(packages[3].name, 'data.test_migration_packages.z')
         # Assert that we logged the duplicate version exception and the version gap exception
         expected_log_calls = [call('There are two migration modules that share version 2 in '
-                              'test_migration_packages.duplicate_versions.'),
+                              'data.test_migration_packages.duplicate_versions.'),
                               call('Migration version 2 is missing in '
-                              'test_migration_packages.version_gap.')]
+                              'data.test_migration_packages.version_gap.')]
         log_mock.assert_has_calls(expected_log_calls)
 
     def test__import_all_the_way(self):
         """
         Make sure that models._import_all_the_way() gives back the most specific module.
         """
-        module = models._import_all_the_way('test_migration_packages.z.0001_test')
-        self.assertEqual(module.__name__, 'test_migration_packages.z.0001_test')
+        module = models._import_all_the_way('data.test_migration_packages.z.0001_test')
+        self.assertEqual(module.__name__, 'data.test_migration_packages.z.0001_test')
