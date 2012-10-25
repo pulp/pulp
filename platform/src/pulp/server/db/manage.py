@@ -27,10 +27,6 @@ connection.initialize()
 
 _log = logging.getLogger('pulp')
 
-from pulp.server.db.migrate.versions import get_migration_modules
-from pulp.server.db.model.migration_tracker import MigrationTracker
-from pulp.server.managers import factory
-
 
 class DataError(Exception):
     """
