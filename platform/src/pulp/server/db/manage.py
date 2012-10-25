@@ -20,9 +20,6 @@ from pulp.plugins.loader.api import load_content_types
 from pulp.server.db import connection
 from pulp.server.db.migrate import utils
 
-# the db connection and auditing need to be initialied before any further
-# imports since the imports execute initialization code relying on the
-# db/auditing to be setup
 connection.initialize()
 
 _log = logging.getLogger('pulp')
