@@ -46,7 +46,7 @@ class MigrationModule(object):
         Initialize a MigrationModule to represent the module passed in by python_module_name.
 
         :param python_module_name: The full python module name in dotted notation.
-        :type  python_module_name: string
+        :type  python_module_name: str
         """
         self._module = _import_all_the_way(python_module_name)
         self.version = self._get_version()
@@ -115,7 +115,7 @@ class MigrationPackage(object):
 
         :param python_package_name: The name of the Python package this object should represent, in
                                     dotted notation.
-        :type  python_package_name: string
+        :type  python_package_name: str
         """
         self._package = _import_all_the_way(python_package_name)
         migration_tracker_manager = MigrationTrackerManager()
