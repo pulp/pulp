@@ -10,7 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-from optparse import OptionParser, SUPPRESS_HELP
+from optparse import OptionParser
 import logging
 import traceback
 import os
@@ -34,10 +34,6 @@ class DataError(Exception):
 
 def parse_args():
     parser = OptionParser()
-    parser.add_option('--force', action='store_true', dest='force',
-                      default=False, help=SUPPRESS_HELP)
-    parser.add_option('--from', dest='start', default=None,
-                      help=_('Run the migration starting at the version passed in'))
     parser.add_option('--test', action='store_true', dest='test',
                       default=False,
                       help=_('Run migration, but do not update version'))
@@ -124,15 +120,6 @@ def _auto_manage_db(options):
 
     :param options: The command line parameters from the user.
     """
-    if options.force:
-        print _('Clearing previous versions.')
-        clean_db()
-
-    if options.start is not None:
-        last = int(options.start) - 1
-        print _('Reverting db to version %(v)d.') % ({'v': last},)
-        revert_to_version(last)
-
     print _('Beginning database migrations.')
     migrate_database(options)
     print _('Database migrations complete.')
