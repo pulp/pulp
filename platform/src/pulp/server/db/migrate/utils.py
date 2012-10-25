@@ -186,9 +186,9 @@ class MigrationPackage(object):
     def migrations(self):
         """
         Finds all available migration modules for the MigrationPackage,
-        and then sorts by the version.
+        and then sorts by the version. Return a list of MigrationModules.
 
-        :rtype:         L{pulp.server.db.migrate.utils.MigrationModule}
+        :rtype: list
         """
         # Generate a list of the names of the modules found inside this package
         module_names = [name for module_loader, name, ispkg in
@@ -237,7 +237,7 @@ class MigrationPackage(object):
         """
         Return a list of MigrationModules in this package that have not been applied yet.
 
-        :rtype: L{pulp.server.db.migrate.utils.MigrationModule}
+        :rtype: list
         """
         return [migration for migration in self.migrations \
                 if migration.version > self.current_version]
@@ -357,9 +357,9 @@ def get_migration_packages():
     """
     This method finds and returns all Python packages in pulp.server.db.migrations. It sorts them
     alphabetically by name, except that pulp.server.db.platform unconditionally sorts to the front
-    of the list.
+    of the list. Returns a list of MigrationPackages.
 
-    :rtype: L{pulp.server.db.migrate.utils.MigrationPackage}
+    :rtype: list
     """
     migration_package_names = ['%s.%s'%(migrations.__name__, name) for
                                module_loader, name, ispkg in
