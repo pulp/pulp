@@ -83,7 +83,7 @@ def _repos(v1_database, v2_database):
         }
         new_repos.append(v2_repo)
 
-    v2_coll.insert(new_repos)
+    v2_coll.insert(new_repos, safe=True)
 
     return True
 
@@ -127,7 +127,6 @@ def _repo_importers(v1_database, v2_database, report):
 
         config = {
             'feed' : None, # set below
-            'skip' : None,
             'ssl_ca_cert' : v1_repo['feed_ca'],
             'ssl_client_cert' : v1_repo['feed_cert'],
         }
@@ -148,7 +147,7 @@ def _repo_importers(v1_database, v2_database, report):
         new_importers.append(new_importer)
 
     if new_importers:
-        v2_imp_coll.insert(new_importers)
+        v2_imp_coll.insert(new_importers, safe=True)
 
     return True
 
@@ -231,12 +230,55 @@ def _repo_distributors(v1_database, v2_database, report):
                     report.warning('Could not read GPG key at [%s] for '
                                    'repository [%s]' % (filename, v1_repo['id']))
 
+        new_distributor['config'] = config
         new_distributors.append(new_distributor)
 
-    v2_dist_coll.insert(new_distributors)
+    v2_dist_coll.insert(new_distributors, safe=True)
 
     return True
 
 
 def _repo_groups(v1_database, v2_database, report):
+    v1_coll = v1_database.repos
+    v2_coll = v2_database.repo_groups
+
+    # Idempotency: Two-fold. All group IDs will be collected and groups created
+    # from those IDs, using the ID to determine if it already exists. The second
+    # is the addition of repo IDs to the group, which will be handled by mongo.
+
+    # I should probably use a map reduce here, but frankly this is simpler and
+    # I'm not terribly worried about either the mongo performance or memory
+    # consumption from the approach below.
+    repo_and_group_ids = [(x['id'], x['groupid']) for x in v1_coll.find({}, {'id' : 1, 'groupid' : 1})]
+    repo_ids_by_group = {}
+    for repo_id, group_id_list in repo_and_group_ids:
+
+        # Yes, "groupid" in the repo is actually a list. Ugh.
+        for group_id in group_id_list:
+            l = repo_ids_by_group.setdefault(group_id, [])
+            l.append(repo_id)
+
+    v1_group_ids = repo_ids_by_group.keys()
+    existing_v2_group_ids = v2_coll.find({'id' : {'$nin' : v1_group_ids}})
+
+    missing_group_ids = set(v1_group_ids) - set(existing_v2_group_ids)
+
+    new_groups = []
+    for group_id in missing_group_ids:
+        new_group = {
+            '_id' : ObjectId(),
+            'id' : group_id,
+            'display_name' : None,
+            'description' : None,
+            'repo_ids' : [],
+            'notes' : {},
+        }
+        new_groups.append(new_group)
+
+    if new_groups:
+        v2_coll.insert(new_groups, safe=True)
+
+    for group_id, repo_ids in repo_ids_by_group.items():
+        v2_coll.update({'id' : group_id}, {'$addToSet' : {'repo_ids' : {'$each' : repo_ids}}})
+
     return True

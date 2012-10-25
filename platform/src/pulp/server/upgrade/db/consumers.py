@@ -65,7 +65,7 @@ def _consumer_history(v1_database, v2_database):
         v2_entries.append(v2_entry)
 
     if v2_entries:
-        v2_coll.insert(v2_entries)
+        v2_coll.insert(v2_entries, safe=True)
 
 
 def _consumers(v1_database, v2_database):
@@ -124,7 +124,7 @@ def _consumer_bindings(v2_database, v1_consumer):
         new_bindings.append(binding)
 
     if new_bindings:
-        v2_coll.insert(new_bindings)
+        v2_coll.insert(new_bindings, safe=True)
 
 
 def _unit_profile(v2_database, v1_consumer):
@@ -145,4 +145,4 @@ def _unit_profile(v2_database, v1_consumer):
         'content_type' : RPM_TYPE,
         'profile' : v1_consumer['package_profile']
     }
-    v2_coll.insert(unit_profile)
+    v2_coll.insert(unit_profile, safe=True)

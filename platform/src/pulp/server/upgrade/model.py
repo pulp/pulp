@@ -9,6 +9,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 class UpgradeStepReport(object):
     """
     Captures the success/failure of an upgrade step and any messages to
@@ -24,9 +25,11 @@ class UpgradeStepReport(object):
 
     def succeeded(self):
         self.success = True
+        return self
 
     def failed(self):
         self.success = False
+        return self
 
     def message(self, msg):
         self.messages.append(msg)

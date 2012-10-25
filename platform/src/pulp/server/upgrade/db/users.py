@@ -52,7 +52,7 @@ def _roles(v1_database, v2_database):
         v2_roles_to_add.append(v2_role)
 
     if v2_roles_to_add:
-        v2_roles_coll.insert(v2_roles_to_add)
+        v2_roles_coll.insert(v2_roles_to_add, safe=True)
 
 
 def _permissions(v1_database, v2_database):
@@ -75,7 +75,7 @@ def _permissions(v1_database, v2_database):
         v2_permissions_to_add.append(v2_permission)
 
     if v2_permissions_to_add:
-        v2_coll.insert(v2_permissions_to_add)
+        v2_coll.insert(v2_permissions_to_add, safe=True)
 
 
 def _users(v1_database, v2_database):
@@ -100,5 +100,5 @@ def _users(v1_database, v2_database):
         v2_users_to_add.append(v2_user)
 
     if v2_users_to_add:
-        v2_coll.insert(v2_users_to_add)
+        v2_coll.insert(v2_users_to_add, safe=True)
 
