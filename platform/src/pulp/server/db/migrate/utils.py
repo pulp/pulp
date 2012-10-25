@@ -177,7 +177,10 @@ class MigrationPackage(object):
         # This means that we need to require migration writers not to create versions that are less
         # than 1.
         available_versions = self.available_versions
-        return available_versions[-1] if available_versions else 0
+        if available_versions:
+            return available_versions[-1]
+        else:
+            return 0
 
     @property
     def migrations(self):
