@@ -21,7 +21,6 @@ import mock
 from pulp.client.extensions import loader
 from pulp.client.extensions.core import PulpCli, PulpPrompt, ClientContext
 from pulp.client.extensions import decorator
-from pulp.common import constants
 
 # -- test data ----------------------------------------------------------------
 
@@ -162,7 +161,7 @@ class ExtensionLoaderTests(unittest.TestCase):
 
         loader.load_extensions(EMPTY_SET, context)
 
-        mock_iter.assert_called_once_with(constants.ENTRY_POINT_EXTENSIONS)
+        mock_iter.assert_called_once_with('pulp.extensions')
         entry_point.load.assert_called_once_with()
         entry_point.load.return_value.assert_called_once_with(context)
 

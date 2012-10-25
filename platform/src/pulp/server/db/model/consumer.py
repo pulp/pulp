@@ -55,7 +55,6 @@ class Consumer(Model):
 
         self.capabilities = capabilities or {}
         self.certificate = certificate or None
-        self.unit_profile = []
 
 
 class Bind(Model):

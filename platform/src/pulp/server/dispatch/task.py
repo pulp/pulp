@@ -15,10 +15,8 @@ import copy
 import datetime
 import logging
 import sys
-import time
 import threading
 import types
-import uuid
 from gettext import gettext as _
 
 from pulp.common import dateutils
@@ -38,20 +36,19 @@ class Task(object):
     """
     Task class
     Execution wrapper for a single call request
-    @ivar id: unique uuid string
-    @type id: str
+
     @ivar call_request: call request object task was created for
-    @type call_request: CallRequest instance
+    @type call_request: L{call.CallRequest}
     @ivar call_report: call report for the execution of the call_request
-    @type call_report: CallReport instance
+    @type call_report: L{call.CallReport}
+    @ivar call_request_exit_state: exit state of the call request used for conditional dependencies
+    @type call_request_exit_state: None or str
     @ivar queued_call_id: db id for serialized queued call
     @type queued_call_id: str
     @ivar complete_callback: task queue callback called on completion
     @type complete_callback: callable or None
     @ivar progress_callback: call request progress callback called to report execution progress
     @type progress_callback: callable or None
-    @ivar blocking_tasks: set of task ids that block the execution of this task
-    @type blocking_tasks: set
     """
 
     def __init__(self, call_request, call_report=None):
@@ -59,28 +56,26 @@ class Task(object):
         assert isinstance(call_request, call.CallRequest)
         assert isinstance(call_report, (types.NoneType, call.CallReport))
 
-        self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
-
         self.call_request = call_request
-        self.queued_call_id = None
-
         self.call_report = call_report or call.CallReport()
-        self.call_report.call_request_id = self.call_request.id
-        self.call_report.state = dispatch_constants.CALL_WAITING_STATE
-        self.call_report.task_id = self.id
-        self.call_report.principal_login = self.call_report.principal_login or self.call_request.principal and self.call_request.principal['login']
-        self.call_report.tags.extend(self.call_request.tags)
 
+        self.call_request_exit_state = None
+        self.queued_call_id = None
         self.complete_callback = None
-        self.blocking_tasks = set()
+
+        self.call_report.call_request_id = self.call_request.id
+        self.call_report.call_request_group_id = self.call_request.group_id
+        self.call_report.call_request_tags = self.call_request.tags
+        self.call_report.principal_login = self.call_report.principal_login or self.call_request.principal and self.call_request.principal['login']
+        self.call_report.state = dispatch_constants.CALL_WAITING_STATE
 
     def __str__(self):
-        return 'Task %s: %s' % (self.id, str(self.call_request))
+        return 'Task %s: %s' % (self.call_request.id, str(self.call_request))
 
     def __eq__(self, other):
         if not isinstance(other, Task):
             raise TypeError('No comparison defined between task and %s' % type(other))
-        return self.id == other.id
+        return self.call_request.id == other.call_request.id
 
     # progress information -----------------------------------------------------
 
@@ -92,13 +87,11 @@ class Task(object):
 
     # task lifecycle -----------------------------------------------------------
 
-    def skip(self, reasons=None):
+    def skip(self):
         """
         Mark the task as skipped. Called *instead* of run.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
-        if reasons is not None:
-            self.call_report.reasons = reasons
         self._complete(dispatch_constants.CALL_SKIPPED_STATE)
 
     def run(self):
@@ -123,6 +116,7 @@ class Task(object):
         # used for calling _run directly during testing
         principal_manager = managers_factory.principal_manager()
         principal_manager.set_principal(self.call_request.principal)
+        # generally set in the wrapper, but not when called directly
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
             self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
@@ -151,7 +145,7 @@ class Task(object):
         """
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.result = result
-        _LOG.info(_('%s SUCCEEDED') % str(self))
+        _LOG.info(_('SUCCESS: %(t)s') % {'t': str(self)})
         self.call_life_cycle_callbacks(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_FINISHED_STATE)
 
@@ -166,7 +160,7 @@ class Task(object):
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
         self.call_report.exception = exception
         self.call_report.traceback = traceback
-        _LOG.info(_('%s FAILED') % str(self))
+        _LOG.info(_('FAILURE: %(t)s') % {'t': str(self)})
         self.call_life_cycle_callbacks(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_ERROR_STATE)
 
@@ -176,13 +170,9 @@ class Task(object):
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
-        # FIXME we'll need to pass the state along with the task into the
-        # complete callback for conditional blocking tasks (conditional on the
-        # complete state), however this causes a race condition between when the
-        # task is marked as complete (by setting its state) and when it's done
-        # with that task queue
+        self.call_request_exit_state = state
         self._call_complete_callback()
-        # don't set the state to complete until the task is actually complete
+        # don't set the state to complete in the report until the task is actually complete
         self.call_report.state = state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
         if not self.call_request.archive:
@@ -238,7 +228,7 @@ class Task(object):
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return None
         # to cancel a running task, the cancel control hook *must* be called
-        if self.call_report.state is dispatch_constants.CALL_RUNNING_STATE:
+        if self.call_report.state == dispatch_constants.CALL_RUNNING_STATE:
             try:
                 self._call_cancel_control_hook()
             except Exception, e:
@@ -279,6 +269,7 @@ class AsyncTask(Task):
         # used for calling _run directly during testing
         principal_manager = managers_factory.principal_manager()
         principal_manager.set_principal(self.call_request.principal)
+        # usually set in the wrapper, unless called directly
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
             self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())

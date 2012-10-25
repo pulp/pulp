@@ -190,7 +190,7 @@ class Content(Capability):
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.taskid)
+            any=self.context.callid)
         content = agent.Content()
         return content.install(units, options)
 
@@ -211,7 +211,7 @@ class Content(Capability):
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.taskid)
+            any=self.context.callid)
         content = agent.Content()
         return content.update(units, options)
 
@@ -232,7 +232,7 @@ class Content(Capability):
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.taskid)
+            any=self.context.callid)
         content = agent.Content()
         return content.uninstall(units, options)
 

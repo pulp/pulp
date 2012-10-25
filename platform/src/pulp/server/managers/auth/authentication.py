@@ -13,6 +13,7 @@ import logging
 
 import oauth2
 
+from pulp.server.db.model.consumer import Consumer
 from pulp.server.managers import factory
 from pulp.server.auth import ldap_connection
 from pulp.server.config import config
@@ -199,16 +200,17 @@ class AuthenticationManager(object):
         :rtype: str or None
         :return: user login corresponding to the credentials
         """
+        is_consumer = False
         headers = {'Authorization': auth}
         req = oauth2.Request.from_request(method, url, headers, query_string=query)
     
         if not req:
-            return None
+            return None, is_consumer
    
         if not (config.has_option('oauth', 'oauth_key') and 
                 config.has_option('oauth', 'oauth_secret')):
             _LOG.error("Attempting OAuth authentication and you do not have oauth_key and oauth_secret in pulp.conf")
-            return None
+            return None, is_consumer
 
         key = config.get('oauth', 'oauth_key')
         secret = config.get('oauth', 'oauth_secret')
@@ -222,9 +224,14 @@ class AuthenticationManager(object):
             server.verify_request(req, consumer, None)
         except oauth2.Error, e:
             _LOG.error('error verifying OAuth signature: %s' % e)
-            return None
+            return None, is_consumer
     
         user = self._check_username_password_local(username)
         if user is not None:
-            return user['login']
-        return None
+            return user['login'], is_consumer
+        consumer = Consumer.get_collection().find_one({'id':username})
+        if consumer is not None:
+            is_consumer = True
+            return consumer['id'], is_consumer
+
+        return None, is_consumer

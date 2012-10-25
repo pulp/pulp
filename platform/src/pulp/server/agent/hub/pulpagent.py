@@ -212,7 +212,7 @@ class Content(Capability):
             timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.taskid)
+            any=self.context.callid)
         content = agent.Content()
         status, result = content.install(units, options)
         if status != 202:
@@ -236,7 +236,7 @@ class Content(Capability):
             timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.taskid)
+            any=self.context.callid)
         content = agent.Content()
         status, result = content.update(units, options)
         if status != 202:
@@ -260,7 +260,7 @@ class Content(Capability):
             timeout=(10, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.taskid)
+            any=self.context.callid)
         content = agent.Content()
         status, result = content.uninstall(units, options)
         if status != 202:
