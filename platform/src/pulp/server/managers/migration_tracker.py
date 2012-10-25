@@ -11,9 +11,6 @@
 
 from pulp.server.db.model.migration_tracker import MigrationTracker
 
-# TODO: Use the standard exceptions from pulp.server.exceptions
-#       It was suggested to use MissingResource, but that exception seems to imply that maybe it is
-#       for use with HTTP. Check on that.
 class DoesNotExist(Exception):
     """
     This Exception is raised when the manager is asked to retrieve a MigrationTracker that is not
