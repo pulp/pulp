@@ -83,7 +83,10 @@ def migrate_database(options):
             for migration in migration_package.unapplied_migrations:
                 print _('Applying %(p)s version %(v)s'%({
                     'p': migration_package.name, 'v': migration.version}))
-                migration_package.apply_migration(migration)
+                # We pass in !options.test to stop the apply_migration method from updating the
+                # package's current version when the --test flag is set
+                migration_package.apply_migration(migration,
+                                                  update_current_version=not options.test)
                 print _('Migration to %(p)s version %(v)s complete.'%(
                     {'p': migration_package.name, 'v': migration_package.current_version}))
         except Exception, e:

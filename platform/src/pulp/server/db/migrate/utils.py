@@ -125,20 +125,25 @@ class MigrationPackage(object):
             name=self.name,
             defaults={'version': self.latest_available_version})
 
-    def apply_migration(self, migration):
+    def apply_migration(self, migration, update_current_version=True):
         """
         Apply the migration that is passed in, and update the DB to note the new version that this
         migration represents.
 
-        :param migration: The migration to apply
-        :type  migration: pulp.server.db.migrate.utils.MigrationModule
+        :param migration:              The migration to apply
+        :type  migration:              pulp.server.db.migrate.utils.MigrationModule
+        :param update_current_version: If True, update the package's current version after
+                                       successful application and enforce migration version order.
+                                       If False, don't enforce and don't update.
+        :type  update_current_version: bool
         """
-        if migration.version != self.current_version + 1:
+        if update_current_version and migration.version != self.current_version + 1:
             raise Exception(('Cannot apply migration %s, because the next migration version is '
                 '%s.')%(migration.name, self.current_version + 1))
         migration.migrate()
-        self._migration_tracker.version = migration.version
-        self._migration_tracker.save()
+        if update_current_version:
+            self._migration_tracker.version = migration.version
+            self._migration_tracker.save()
 
     @property
     def available_versions(self):
