@@ -119,7 +119,7 @@ class Consumer(Capability):
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.taskid)
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
         return consumer.bind(definitions, options)
 
@@ -143,7 +143,7 @@ class Consumer(Capability):
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.taskid)
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
         return consumer.rebind(definitions, options)
 
@@ -163,7 +163,7 @@ class Consumer(Capability):
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.taskid)
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
         return consumer.unbind(repo_id, options)
 

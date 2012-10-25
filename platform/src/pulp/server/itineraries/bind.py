@@ -24,7 +24,7 @@ _LOG = logging.getLogger(__name__)
 
 def bind_succeeded(call_request, call_report):
     manager = managers.consumer_bind_manager()
-    request_id = call_report.task_id
+    request_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
     dispatch_report = call_report.result
     if dispatch_report['status']:
@@ -34,7 +34,7 @@ def bind_succeeded(call_request, call_report):
 
 def bind_failed(call_request, call_report):
     manager = managers.consumer_bind_manager()
-    request_id = call_report.task_id
+    request_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
     manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
 
@@ -59,12 +59,14 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
             {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
         dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
             {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
+    }
+
     args = [
         consumer_id,
         repo_id,
         distributor_id,
-        ]
+    ]
+
     manager = managers.consumer_bind_manager()
     bind_request = CallRequest(
         manager.bind,
@@ -100,7 +102,8 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
         bind_failed)
 
     call_requests.append(agent_request)
-    agent_request.depends_on(bind_request)
+
+    agent_request.depends_on(bind_request.id)
 
     return call_requests
 
@@ -120,17 +123,20 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
             {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
         }
+
     args = [
         consumer_id,
         repo_id,
         distributor_id
-    ]
+        ]
+
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('unbind')
-    ]
+        ]
+
     unbind_request = CallRequest(
         manager.unbind,
         args=args,
@@ -146,7 +152,8 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         repo_id,
         distributor_id,
         options,
-    ]
+        ]
+
     manager = managers.consumer_agent_manager()
     agent_request = CallRequest(
         manager.unbind,
@@ -164,7 +171,8 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         unbind_failed)
 
     call_requests.append(agent_request)
-    agent_request.depends_on(unbind_request)
+
+    agent_request.depends_on(unbind_request.id)
 
     # delete the bind
 
@@ -177,17 +185,20 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
             {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
         }
+
     args = [
         consumer_id,
         repo_id,
         distributor_id
-    ]
+        ]
+
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('delete')
-    ]
+        ]
+
     delete_request = CallRequest(
         manager.delete,
         args=args,
@@ -195,6 +206,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         tags=tags)
 
     call_requests.append(delete_request)
-    delete_request.depends_on(agent_request)
+
+    delete_request.depends_on(agent_request.id)
 
     return call_requests

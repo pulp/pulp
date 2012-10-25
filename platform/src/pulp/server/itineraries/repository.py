@@ -30,7 +30,8 @@ def repo_delete_itinerary(repo_id):
     resources = {
         dispatch_constants.RESOURCE_REPOSITORY_TYPE:
             {repo_id: dispatch_constants.RESOURCE_DELETE_OPERATION}
-    }
+        }
+
     tags = [
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         action_tag('delete')
@@ -55,7 +56,7 @@ def repo_delete_itinerary(repo_id):
             bind['distributor_id'],
             options)
         if unbind_requests:
-            unbind_requests[0].depends_on(delete_request)
+            unbind_requests[0].depends_on(delete_request.id)
             call_requests.extend(unbind_requests)
 
     return call_requests
@@ -72,7 +73,8 @@ def distributor_delete_itinerary(repo_id, distributor_id):
             {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
         dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
             {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}
-    }
+        }
+
     tags = [
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
@@ -98,7 +100,7 @@ def distributor_delete_itinerary(repo_id, distributor_id):
             bind['distributor_id'],
             options)
         if unbind_requests:
-            unbind_requests[0].depends_on(delete_request)
+            unbind_requests[0].depends_on(delete_request.id)
             call_requests.extend(unbind_requests)
 
     return call_requests
