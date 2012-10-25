@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
+# Copyright (c) 2011-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -47,6 +45,7 @@ TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
 TYPE_DEPENDENCY             = 'dependencies-manager'
 TYPE_EVENT_FIRE             = 'event-fire-manager'
 TYPE_EVENT_LISTENER         = 'event-listener-manager'
+TYPE_MIGRATION_TRACKER      = 'migration-tracker-manager'
 TYPE_PASSWORD               = 'password-manager'
 TYPE_PERMISSION             = 'permission-manager'
 TYPE_PERMISSION_QUERY       = 'permission-query-manager'
@@ -222,6 +221,14 @@ def event_listener_manager():
     """
     return get_manager(TYPE_EVENT_LISTENER)
 
+
+def migration_tracker_manager():
+    """
+    @rtype: L{pulp.server.managers.migration_tracker.MigrationTrackerManager}
+    """
+    return get_manager(TYPE_MIGRATION_MANAGER)
+
+
 def password_manager():
     """
     @rtype: L{pulp.server.managers.auth.password.PasswordManager}
@@ -396,6 +403,7 @@ def initialize():
     from pulp.server.managers.event.crud import EventListenerManager
     from pulp.server.managers.event.fire import EventFireManager
     from pulp.server.managers.event.remote import TopicPublishManager
+    from pulp.server.managers.migration_tracker import MigrationTrackerManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.dependency import DependencyManager
@@ -435,6 +443,7 @@ def initialize():
         TYPE_DEPENDENCY: DependencyManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
+        TYPE_MIGRATION_TRACKER: MigrationTrackerManager,
         TYPE_PASSWORD: PasswordManager,
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
@@ -525,4 +534,3 @@ def reset():
     global _CLASSES
     _CLASSES = {}
     initialize()
-
