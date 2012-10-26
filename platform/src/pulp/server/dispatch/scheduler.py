@@ -82,8 +82,41 @@ class Scheduler(object):
 
     def _run_scheduled_calls(self):
         """
-        Find call requests that are currently scheduled to run
+        Run call requests that are currently scheduled to run
+
+        NOTE: the scheduler no longer schedules arbitrary call request, instead
+        it now only supports call request from the itineraries package
         """
+        coordinator = dispatch_factory.coordinator()
+
+        for call_group in self._get_scheduled_call_groups():
+
+            for call_request in call_group:
+                call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, scheduler_complete_callback)
+                #call_report = call.CallReport.from_call_request(call_request, schedule_id=str(scheduled_call['_id']))
+
+            # XXX (jconnor) this does not allow for setting the schedule_id on the call reports
+            if len(call_group) == 1:
+                call_report_list = [coordinator.execute_call_asynchronously(call_group[0])]
+            else:
+                call_report_list = coordinator.execute_multiple_calls(call_group)
+
+
+            for call_request, call_report in zip(call_group, call_report_list):
+                log_msg = _('Scheduled %(c)s: %(r)s [reasons: %(s)s]') % {'c': str(call_request),
+                                                                          'r': call_report.response,
+                                                                          's': pformat(call_report.reasons)}
+
+                if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
+                    _LOG.error(log_msg)
+                else:
+                    _LOG.info(log_msg)
+
+    def _get_scheduled_call_groups(self):
+        """
+        Get call requests, by call group, that are currently scheduled to run
+        """
+
         coordinator = dispatch_factory.coordinator()
 
         now = datetime.datetime.utcnow()
@@ -97,21 +130,10 @@ class Scheduler(object):
                 continue
 
             serialized_call_request = scheduled_call['serialized_call_request']
-
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, scheduler_complete_callback)
+            call_report = coordinator.execute_call_synchronously(call_request)
 
-            call_report = call.CallReport.from_call_request(call_request, schedule_id=str(scheduled_call['_id']))
-            call_report = coordinator.execute_call_asynchronously(call_request, call_report)
-
-            log_msg = _('Scheduled %(c)s: %(r)s [reasons: %(s)s]') % {'c': str(call_request),
-                                                                      'r': call_report.response,
-                                                                      's': pformat(call_report.reasons)}
-
-            if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
-                _LOG.error(log_msg)
-            else:
-                _LOG.info(log_msg)
+            yield call_report.result
 
     def start(self):
         """
