@@ -11,9 +11,9 @@
 from gettext import gettext as _
 import logging
 import os
-import pkgutil
 import re
 
+from pulp.common.compat import iter_modules
 from pulp.server.db import migrations
 from pulp.server.managers.migration_tracker import MigrationTrackerManager
 import pulp.server.db.migrations.platform
@@ -193,7 +193,7 @@ class MigrationPackage(object):
         """
         # Generate a list of the names of the modules found inside this package
         module_names = [name for module_loader, name, ispkg in
-                        pkgutil.iter_modules([os.path.dirname(self._package.__file__)])]
+                        iter_modules([os.path.dirname(self._package.__file__)])]
         migration_modules = []
         for module_name in module_names:
             try:
@@ -294,7 +294,7 @@ def get_migration_packages():
     """
     migration_package_names = ['%s.%s'%(migrations.__name__, name) for
                                module_loader, name, ispkg in
-                               pkgutil.iter_modules([os.path.dirname(migrations.__file__)])]
+                               iter_modules([os.path.dirname(migrations.__file__)])]
     migration_packages = []
     for name in migration_package_names:
         try:
