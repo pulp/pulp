@@ -247,7 +247,8 @@ class BindManager(object):
         @type distributor_id: str
         """
         collection = Bind.get_collection()
-        pending = collection.find({'consumer_requests.status':'pending'})
+        query = {'consumer_requests.status':{'$in':['pending', 'failed']}}
+        pending = collection.find(query)
         if len(list(pending)):
             raise Exception, 'Bind with outstanding consumer requests may not be deleted'
         query = dict(

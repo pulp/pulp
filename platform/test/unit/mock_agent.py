@@ -27,6 +27,7 @@ from pulp.server.compat import json
 
 
 def install():
+    reset()
     restagent.Rest = MockRest
     Services.heartbeat_listener = HeartbeatListener(None)
     mock.install()

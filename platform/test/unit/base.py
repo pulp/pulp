@@ -12,14 +12,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
-import httplib
 import logging
 import mock
 import okaara.prompt
 import os
 from paste.fixture import TestApp
 import sys
-import time
 import web
 import unittest
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
@@ -268,21 +266,30 @@ class PulpClientTests(unittest.TestCase):
 
 class TaskQueue:
 
-    history = []
-
     @classmethod
     def install(cls):
-        cls.history.append(dispatch_factory._TASK_QUEUE)
+        existing = dispatch_factory._task_queue()
+        if existing:
+            existing.stop()
         queue = cls()
         dispatch_factory._TASK_QUEUE = queue
+        return queue
+
+    @classmethod
+    def run_next(cls):
+        queue = dispatch_factory._task_queue()
+        if isinstance(queue, cls):
+            queue.__run_next()
+        else:
+            raise Exception, '%s not installed' % cls
 
     @classmethod
     def uninstall(cls):
-        queue = cls.history.pop()
-        dispatch_factory._TASK_QUEUE = queue
+        pass
 
     def __init__(self):
-        self.tasks = []
+        self.__next = 0
+        self.__queue = []
 
     def start(self):
         pass
@@ -291,12 +298,29 @@ class TaskQueue:
         pass
 
     def enqueue(self, task):
+        self.__queue.append(task)
+
+    def __run_next(self):
+        if self.__next < len(self.__queue):
+            task = self.__queue[self.__next]
+            self.__run(task)
+            self.__next += 1
+        else:
+            raise Exception, 'No tasks pending'
+
+    def __run(self, task):
+        finished = \
+            [t.call_request.id for t in self.__queue[:self.__next]
+                if t.call_report.state == dispatch_constants.CALL_FINISHED_STATE]
+        for request_id in task.call_request.dependencies.keys():
+            if request_id not in finished:
+                task.skip()
+                return
         task.call_report.state = dispatch_constants.CALL_RUNNING_STATE
-        self.tasks.append(task)
         task._run()
 
     def all_tasks(self):
-        return self.tasks
+        return list(self.__queue)
 
     def lock(self):
         pass

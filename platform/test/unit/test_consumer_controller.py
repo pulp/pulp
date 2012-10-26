@@ -23,6 +23,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
 from pulp.server.compat import ObjectId
 from pulp.server.managers import factory
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -467,7 +468,6 @@ class BindTest(base.PulpWebserviceTests):
         Bind.get_collection().remove()
         mock_plugins.reset()
 
-
     def populate(self):
         manager = factory.repo_manager()
         repo = manager.create_repo(self.REPO_ID)
@@ -551,20 +551,9 @@ class BindTest(base.PulpWebserviceTests):
         # Verify
         self.assertEquals(status, 202)
         self.assertEqual(len(body), 2)
-        task_id = body[1]['task_id']
-        # verify agent notified
-        self.assertTrue(mock_agent.Consumer.bind.called)
-        # verify bind
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 1)
-        bind = binds[0]
-        self.assertEqual(len(bind['consumer_requests']), 1)
-        self.assertEqual(bind['consumer_requests'][0], dict(request_id=task_id, status='pending'))
-        # simulated asynchronous task result
-        report = DispatchReport()
-        self.coordinator.complete_call_success(task_id, report.dict())
-        # verify bind (2)
+        # run task #1 (actual bind)
+        base.TaskQueue.run_next()
+        # verify bind created
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
@@ -572,7 +561,50 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(bind['repo_id'], self.REPO_ID)
         self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        # run task #2 (notify consumer)
+        base.TaskQueue.run_next()
+        # verify pending consumer request (pending)
+        task_id = body[1]['task_id']
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(
+            bind['consumer_requests'][0],
+            dict(request_id=task_id, status='pending'))
+        # verify agent notified
+        self.assertTrue(mock_agent.Consumer.bind.called)
+        # simulated asynchronous task result
+        report = DispatchReport()
+        self.coordinator.complete_call_success(task_id, report.dict())
+        # verify pending consumer request (confirmed)
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertEqual(len(bind['consumer_requests']), 0)
+
+    @mock.patch(
+        'pulp.server.managers.consumer.bind.BindManager.bind',
+        side_effect=Exception())
+    def test_bind_failed(self, mock_bind):
+        # Setup
+        self.populate()
+        # Test
+        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
+        body = dict(
+            repo_id=self.REPO_ID,
+            distributor_id=self.DISTRIBUTOR_ID,)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertEqual(len(body), 2)
+        task_id = body[1]['task_id']
+        # run task #1 (actual bind)
+        base.TaskQueue.run_next()
+        # run task #2 (notify consumer)
+        base.TaskQueue.run_next()
+        # verify task #2 was skipped
+        call_report = self.coordinator.find_call_reports(call_request_id=task_id)[0]
+        self.assertEqual(call_report.state, dispatch_constants.CALL_SKIPPED_STATE)
+        # verify agent NOT notified
+        self.assertFalse(mock_agent.Consumer.bind.called)
 
     def test_bind_failed_on_consumer(self):
         # Setup
@@ -584,23 +616,12 @@ class BindTest(base.PulpWebserviceTests):
             distributor_id=self.DISTRIBUTOR_ID,)
         status, body = self.post(path, body)
         # Verify
-        self.assertEqual(status, 202)
+        self.assertEquals(status, 202)
         self.assertEqual(len(body), 2)
         task_id = body[1]['task_id']
-        # verify agent notified
-        self.assertTrue(mock_agent.Consumer.bind.called)
-        # verify bind
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 1)
-        bind = binds[0]
-        self.assertEqual(len(bind['consumer_requests']), 1)
-        self.assertEqual(bind['consumer_requests'][0], dict(request_id=task_id, status='pending'))
-        # simulated asynchronous task result
-        report = DispatchReport()
-        report.status = False
-        self.coordinator.complete_call_success(task_id, report.dict())
-        # verify bind (2)
+        # run task #1 (actual bind)
+        base.TaskQueue.run_next()
+        # verify bind created
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
@@ -608,8 +629,27 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(bind['repo_id'], self.REPO_ID)
         self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        # run task #2 (notify consumer)
+        base.TaskQueue.run_next()
+        # verify pending consumer request (pending)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertEqual(len(bind['consumer_requests']), 1)
-        self.assertEqual(bind['consumer_requests'][0], dict(request_id=task_id, status='failed'))
+        self.assertEqual(
+            bind['consumer_requests'][0],
+            dict(request_id=task_id, status='pending'))
+        # verify agent notified
+        self.assertTrue(mock_agent.Consumer.bind.called)
+        # simulated asynchronous task result
+        report = DispatchReport()
+        report.status = False
+        self.coordinator.complete_call_success(task_id, report.dict())
+        # verify pending consumer request (failed)
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(
+            bind['consumer_requests'][0],
+            dict(request_id=task_id, status='failed'))
 
     def test_bind_missing_consumer(self):
         # Setup
@@ -660,26 +700,72 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertEqual(len(body), 3)
         task_id = body[1]['task_id']
+        # run task #1 (actual unbind)
+        base.TaskQueue.run_next()
+        # verify bind marked deleted
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind['deleted'])
+        # run task #2 (notify consumer)
+        base.TaskQueue.run_next()
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.unbind.called)
-        # verify bind updated
+        # verify consumer request (pending)
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        # verify consumer request
         self.assertEqual(len(bind['consumer_requests']), 1)
-        self.assertEqual(bind['consumer_requests'][0], dict(request_id=task_id, status='pending'))
-        self.assertTrue(bind['deleted'])
+        self.assertEqual(
+            bind['consumer_requests'][0],
+            dict(request_id=task_id, status='pending'))
         # simulated asynchronous task result
         report = DispatchReport()
         self.coordinator.complete_call_success(body[1]['task_id'], report.dict())
-        # verify not found (deleted)
+        # verify not found (marked deleted)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
+        # run task #3 (bind actually deleted)
+        base.TaskQueue.run_next()
         # verify bind actually deleted
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is None)
+
+    @mock.patch(
+        'pulp.server.managers.consumer.bind.BindManager.unbind',
+        side_effect=Exception())
+    def test_unbind_failed(self, mock_bind):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        path = '/v2/consumers/%s/bindings/%s/%s/' %\
+               (self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+        status, body = self.delete(path)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertEqual(len(body), 3)
+        task_id = body[1]['task_id']
+        # run task #1 (actual bind)
+        base.TaskQueue.run_next()
+        # run task #2 (notify consumer)
+        base.TaskQueue.run_next()
+        call_report = self.coordinator.find_call_reports(call_request_id=task_id)[0]
+        self.assertEqual(call_report.state, dispatch_constants.CALL_SKIPPED_STATE)
+        # verify agent NOT notified
+        self.assertFalse(mock_agent.Consumer.bind.called)
+        # run task #3 (delete bind)
+        base.TaskQueue.run_next()
+        # verify task #3 was skipped
+        task_id = body[2]['task_id']
+        call_report = self.coordinator.find_call_reports(call_request_id=task_id)[0]
+        self.assertEqual(call_report.state, dispatch_constants.CALL_SKIPPED_STATE)
+        # verify bind still exists
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertTrue(bind is not None)
 
     def test_unbind_failed_on_consumer(self):
         # Setup
@@ -696,30 +782,40 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertEqual(len(body), 3)
         task_id = body[1]['task_id']
+        # run task #1 (actual unbind)
+        base.TaskQueue.run_next()
+        # verify bind marked deleted
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind['deleted'])
+        # run task #2 (notify consumer)
+        base.TaskQueue.run_next()
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.unbind.called)
-        # verify bind updated
+        # verify consumer request (pending)
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        # verify consumer request
         self.assertEqual(len(bind['consumer_requests']), 1)
-        self.assertEqual(bind['consumer_requests'][0], dict(request_id=task_id, status='pending'))
-        self.assertTrue(bind['deleted'])
+        self.assertEqual(
+            bind['consumer_requests'][0],
+            dict(request_id=task_id, status='pending'))
         # simulated asynchronous task result
         report = DispatchReport()
         report.status = False
         self.coordinator.complete_call_success(body[1]['task_id'], report.dict())
-        # verify found (deleted)
+        # verify not found (marked deleted)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
-        # verify bind not actually deleted
+        # run task #3 (bind actually deleted)
+        base.TaskQueue.run_next()
+        # verify bind not deleted
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        # verify consumer status
-        self.assertEqual(len(bind['consumer_requests']), 1)
-        self.assertEqual(bind['consumer_requests'][0], dict(request_id=task_id, status='failed'))
+        self.assertEqual(
+            bind['consumer_requests'][0],
+            dict(request_id=task_id, status='failed'))
 
     def test_unbind_missing_consumer(self):
         # Setup
@@ -746,7 +842,6 @@ class ContentTest(base.PulpWebserviceTests):
 
     def setUp(self):
         base.PulpWebserviceTests.setUp(self)
-        base.TaskQueue.install()
         Consumer.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -754,6 +849,7 @@ class ContentTest(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
+        base.TaskQueue.install()
 
     def tearDown(self):
         base.TaskQueue.uninstall()
@@ -791,6 +887,10 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
+        # run task
+        base.TaskQueue.run_next()
+        # verify agent called
+        self.assertTrue(mock_agent.Content.install.called)
 
     def test_update(self):
         # Setup
@@ -805,6 +905,10 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
+        # run task
+        base.TaskQueue.run_next()
+        # verify agent called
+        self.assertTrue(mock_agent.Content.update.called)
 
     def test_uninstall(self):
         # Setup
@@ -819,6 +923,10 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
+        # run task
+        base.TaskQueue.run_next()
+        # verify agent called
+        self.assertTrue(mock_agent.Content.uninstall.called)
 
 
 class TestProfiles(base.PulpWebserviceTests):
