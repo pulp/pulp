@@ -8,10 +8,11 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from cStringIO import StringIO
 import os
 import unittest
 
-from mock import call, MagicMock, mock_open, patch
+from mock import call, inPy3k, MagicMock, patch
 
 from data import test_migration_packages
 from pulp.common.compat import json
@@ -33,6 +34,39 @@ _test_type_json = '''{"types": [{
     "unit_key" : ["attribute_1", "attribute_2", "attribute_3"],
     "search_indexes" : ["attribute_1", "attribute_3"]
 }]}'''
+
+
+# Mock 1.0.0 has a built in mock_open, and one day when we upgrade to 1.0.0 we can use that. In the
+# meantime, I've included the example for mock_open as listed in the Mock 0.8 docs, slightly
+# modified to allow read_data to just be a str.
+# http://www.voidspace.org.uk/python/mock/0.8/examples.html?highlight=open#mocking-open
+if inPy3k:
+    file_spec = ['_CHUNK_SIZE', '__enter__', '__eq__', '__exit__',
+        '__format__', '__ge__', '__gt__', '__hash__', '__iter__', '__le__',
+        '__lt__', '__ne__', '__next__', '__repr__', '__str__',
+        '_checkClosed', '_checkReadable', '_checkSeekable',
+        '_checkWritable', 'buffer', 'close', 'closed', 'detach',
+        'encoding', 'errors', 'fileno', 'flush', 'isatty',
+        'line_buffering', 'mode', 'name',
+        'newlines', 'peek', 'raw', 'read', 'read1', 'readable',
+        'readinto', 'readline', 'readlines', 'seek', 'seekable', 'tell',
+        'truncate', 'writable', 'write', 'writelines']
+else:
+    file_spec = file
+def mock_open(mock=None, read_data=None):
+    if mock is None:
+        mock = MagicMock(spec=file_spec)
+
+    handle = MagicMock(spec=file_spec)
+    handle.write.return_value = None
+    fake_file = StringIO(read_data)
+    if read_data is None:
+        handle.__enter__.return_value = handle
+    else:
+        handle.__enter__.return_value = fake_file
+        handle.read = fake_file.read
+    mock.return_value = handle
+    return mock
 
 
 class MigrationTest(base.PulpServerTests):
