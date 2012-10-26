@@ -264,6 +264,21 @@ class PulpClientTests(unittest.TestCase):
         self.context.cli = self.cli
 
 
+class PulpItineraryTests(PulpAsyncServerTests):
+
+    def setUp(self):
+        PulpAsyncServerTests.setUp(self)
+        TaskQueue.install()
+        self.coordinator = dispatch_factory.coordinator()
+
+    def tearDown(self):
+        TaskQueue.uninstall()
+        PulpAsyncServerTests.tearDown(self)
+
+    def run_next(self):
+        TaskQueue.run_next()
+
+
 class TaskQueue:
 
     @classmethod
@@ -276,16 +291,16 @@ class TaskQueue:
         return queue
 
     @classmethod
+    def uninstall(cls):
+        pass
+
+    @classmethod
     def run_next(cls):
         queue = dispatch_factory._task_queue()
         if isinstance(queue, cls):
             queue.__run_next()
         else:
             raise Exception, '%s not installed' % cls
-
-    @classmethod
-    def uninstall(cls):
-        pass
 
     def __init__(self):
         self.__next = 0
