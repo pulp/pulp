@@ -14,6 +14,8 @@
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.search import SearchAPI
 
+# Default for update APIs to differentiate between None and not updating the value
+UNSPECIFIED = object()
 
 class ConsumerAPI(PulpAPI):
     """
@@ -85,6 +87,128 @@ class ConsumerContentAPI(PulpAPI):
         return self.server.POST(path, data)
 
 
+class ConsumerContentSchedulesAPI(PulpAPI):
+    """
+    Connection class to access consumer calls related to scheduled content install/uninstall/update
+    """
+    def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
+        super(ConsumerContentSchedulesAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/consumers/%s/schedules/content/"
+
+    def list_install_schedules(self, consumer_id):
+        url = self.base_path % consumer_id + 'install/'
+        return self.server.GET(url)
+
+    def list_update_schedules(self, consumer_id):
+        url = self.base_path % consumer_id + 'update/'
+        return self.server.GET(url)
+
+    def list_uninstall_schedules(self, consumer_id):
+        url = self.base_path % consumer_id + 'uninstall/'
+        return self.server.GET(url)
+
+    def get_install_schedule(self, consumer_id, schedule_id):
+        url = self.base_path + 'install/%s/' % (consumer_id, schedule_id)
+        return self.server.GET(url)
+    
+    def get_update_schedule(self, consumer_id, schedule_id):
+        url = self.base_path + 'update/%s/' % (consumer_id, schedule_id)
+        return self.server.GET(url)
+    
+    def get_uninstall_schedule(self, consumer_id, schedule_id):
+        url = self.base_path + 'uninstall/%s/' % (consumer_id, schedule_id)
+        return self.server.GET(url)
+
+    def add_install_schedule(self, consumer_id, units, options, schedule, failure_threshold, enabled):
+        url = self.base_path + 'install/' % consumer_id
+        body = {
+            'units': units,
+            'options': options,
+            'schedule' : schedule,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        return self.server.POST(url, body)
+
+    def add_update_schedule(self, consumer_id, units, options, schedule, failure_threshold, enabled):
+        url = self.base_path + 'update/' % consumer_id
+        body = {
+            'units': units,
+            'options': options,
+            'schedule' : schedule,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        return self.server.POST(url, body)
+    
+    def add_uninstall_schedule(self, consumer_id, units, options, schedule, failure_threshold, enabled):
+        url = self.base_path + 'uninstall/' % consumer_id
+        body = {
+            'units': units,
+            'options': options,
+            'schedule' : schedule,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        return self.server.POST(url, body)
+   
+    def delete_install_schedule(self, consumer_id, schedule_id):
+        url = self.base_path + 'install/%s/' % (consumer_id, schedule_id)
+        return self.server.DELETE(url)
+
+    def delete_update_schedule(self, consumer_id, schedule_id):
+        url = self.base_path + 'update/%s/' % (consumer_id, schedule_id)
+        return self.server.DELETE(url)
+
+    def delete_uninstall_schedule(self, consumer_id, schedule_id):
+        url = self.base_path + 'uninstall/%s/' % (consumer_id, schedule_id)
+        return self.server.DELETE(url)
+
+    def update_install_schedule(self, consumer_id, schedule_id, units, options=UNSPECIFIED, schedule=UNSPECIFIED, 
+                                failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
+        url = self.base_path + 'install/%s/' % (consumer_id, schedule_id)
+        body = {
+            'units': units,
+            'options': options,
+            'schedule' : schedule,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        # Strip out anything that wasn't specified by the caller
+        body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
+        self.server.PUT(url, body)
+
+    def update_update_schedule(self, consumer_id, schedule_id, units, options=UNSPECIFIED, schedule=UNSPECIFIED,
+                               failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
+        url = self.base_path + 'update/%s/' % (consumer_id, schedule_id)
+        body = {
+            'units': units,
+            'options': options,
+            'schedule' : schedule,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        # Strip out anything that wasn't specified by the caller
+        body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
+        self.server.PUT(url, body)
+
+    def update_uninstall_schedule(self, consumer_id, schedule_id, units, options=UNSPECIFIED, schedule=UNSPECIFIED,
+                                  failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
+        url = self.base_path + 'uninstall/%s/' % (consumer_id, schedule_id)
+        body = {
+            'units': units,
+            'options': options,
+            'schedule' : schedule,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            }
+        # Strip out anything that wasn't specified by the caller
+        body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
+        self.server.PUT(url, body)
+
 
 class BindingsAPI(PulpAPI):
 
@@ -147,3 +271,5 @@ class ConsumerHistoryAPI(PulpAPI):
         if end_date:
             queries['end_date'] = end_date
         return self.server.GET(path, queries)
+
+
