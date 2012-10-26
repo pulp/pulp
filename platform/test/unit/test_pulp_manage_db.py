@@ -20,7 +20,6 @@ from pulp.server.db import manage
 from pulp.server.db.migrate import models
 from pulp.server.db.model.migration_tracker import MigrationTracker
 from pulp.server.managers.migration_tracker import DoesNotExist, MigrationTrackerManager
-from pulp.server.webservices.application import _initialize_pulp
 import base
 import pulp.plugins.types.database as types_db
 import data.test_migration_packages.platform
@@ -85,6 +84,11 @@ class ApplicationTest(MigrationTest):
         _initialize_pulp() should raise an Exception if any of the packages aren't at their latest
         version.
         """
+        # It is unusual to put an import in the middle of a test, but unfortunately this import will
+        # call start_logging() before our test super class can override the logging settings, and
+        # thus all the logging will be done to /var/log instead of to /tmp. Moving the import here
+        # from the top of the file solves the problem, though not elegantly.
+        from pulp.server.webservices.application import _initialize_pulp
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
         # Make sure that our mock works. There are three valid packages.
@@ -113,7 +117,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
            data.test_migration_packages.platform)
-    @patch('sys.argv', ["pulp-manage-db",])
+    @patch('sys.argv', ["pulp-manage-db", "--log-file=/dev/null"])
     def test_current_version_too_high(self, mocked_stderr):
         """
         Set the current package version higher than latest available version, then sit back and eat
@@ -142,7 +146,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
            data.test_migration_packages.platform)
-    @patch('sys.argv', ["pulp-manage-db",])
+    @patch('sys.argv', ["pulp-manage-db", "--log-file=/dev/null"])
     def test_migrate(self, mocked_apply_migration, mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
@@ -188,7 +192,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
            data.test_migration_packages.platform)
-    @patch('sys.argv', ["pulp-manage-db",])
+    @patch('sys.argv', ["pulp-manage-db", "--log-file=/dev/null"])
     def test_migrate_with_new_packages(self, mocked_apply_migration):
         """
         Adding new packages to a system that doesn't have any trackers should automatically advance
@@ -213,7 +217,7 @@ class TestManageDB(MigrationTest):
 
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
-    @patch('sys.argv', ["pulp-manage-db",])
+    @patch('sys.argv', ["pulp-manage-db", "--log-file=/dev/null"])
     def test_pulp_manage_db_loads_types(self, listdir_mock):
         """
         Test calling pulp-manage-db imports types on a clean types database.
@@ -250,7 +254,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.migrations', test_migration_packages)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations.platform',
            data.test_migration_packages.platform)
-    @patch('sys.argv', ["pulp-manage-db", "--test"])
+    @patch('sys.argv', ["pulp-manage-db", "--test", "--log-file=/dev/null"])
     def test_migrate_with_test_flag(self, mocked_apply_migration, mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
