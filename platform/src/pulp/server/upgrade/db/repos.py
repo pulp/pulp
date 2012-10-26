@@ -27,7 +27,8 @@ YUM_DISTRIBUTOR_TYPE_ID = YUM_DISTRIBUTOR_ID
 # Can be set by unit tests running against a database export (without a full
 # installation) to prevent the script from blowing up when it can't find the
 # local files to read.
-SKIP_LOCAL_FILES = False
+SKIP_SERVER_CONF = False
+SKIP_GPG_KEYS = False
 
 # Location to load when looking for static server.conf configuration, should
 # only be changed by unit tests not running on a full installation.
@@ -67,7 +68,13 @@ def _repos(v1_database, v2_database):
 
     # Idempotency: Nice and easy, repo_id is the test
     v2_repo_ids = [x['id'] for x in v2_coll.find({}, {'id' : 1})]
-    missing_v1_repos = v1_coll.find({'id' : {'$nin' : v2_repo_ids}})
+    spec = {
+        '$and' : [
+            {'id' : {'$nin' : v2_repo_ids}},
+            {'content_types' : 'yum'},
+        ]
+    }
+    missing_v1_repos = v1_coll.find(spec)
 
     new_repos = []
     for v1_repo in missing_v1_repos:
@@ -83,7 +90,8 @@ def _repos(v1_database, v2_database):
         }
         new_repos.append(v2_repo)
 
-    v2_coll.insert(new_repos, safe=True)
+    if new_repos:
+        v2_coll.insert(new_repos, safe=True)
 
     return True
 
@@ -96,7 +104,13 @@ def _repo_importers(v1_database, v2_database, report):
     # Idempotency: There is a single importer per repo, so we can simply check
     # for an importer with the given repo ID
     v2_importer_repo_ids = [x['repo_id'] for x in v2_imp_coll.find({}, {'repo_id' : 1})]
-    missing_v1_repos = v1_coll.find({'id' : {'$nin' : v2_importer_repo_ids}})
+    spec = {
+        '$and' : [
+            {'id' : {'$nin' : v2_importer_repo_ids}},
+            {'content_types' : 'yum'},
+        ]
+    }
+    missing_v1_repos = v1_coll.find(spec)
 
     new_importers = []
     for v1_repo in missing_v1_repos:
@@ -135,7 +149,7 @@ def _repo_importers(v1_database, v2_database, report):
             config['feed'] = v1_repo['source']['url']
 
         # Load values from the static server.conf file
-        if not SKIP_LOCAL_FILES:
+        if not SKIP_SERVER_CONF:
             parser = SafeConfigParser()
             parser.read(V1_SERVER_CONF)
 
@@ -164,7 +178,13 @@ def _repo_distributors(v1_database, v2_database, report):
     # Idempotency: There is a single importer per repo, so we can simply check
     # for an importer with the given repo ID
     v2_distributor_repo_ids = [x['repo_id'] for x in v2_dist_coll.find({}, {'repo_id' : 1})]
-    missing_v1_repos = v1_coll.find({'id' : {'$nin' : v2_distributor_repo_ids}})
+    spec = {
+        '$and' : [
+            {'id' : {'$nin' : v2_distributor_repo_ids}},
+            {'content_types' : 'yum'},
+        ]
+    }
+    missing_v1_repos = v1_coll.find(spec)
 
     new_distributors = []
     for v1_repo in missing_v1_repos:
@@ -195,7 +215,7 @@ def _repo_distributors(v1_database, v2_database, report):
         }
 
         # Load values from the static server.conf file
-        if not SKIP_LOCAL_FILES:
+        if not SKIP_SERVER_CONF:
             parser = SafeConfigParser()
             parser.read(V1_SERVER_CONF)
 
@@ -215,7 +235,7 @@ def _repo_distributors(v1_database, v2_database, report):
                                    'repository [%s]' % (ca_filename, v1_repo['id']))
 
         # Load the GPG keys from disk if present
-        if not SKIP_LOCAL_FILES:
+        if not SKIP_GPG_KEYS:
             repo_key_dir = os.path.join(GPG_KEY_ROOT, v1_repo['relative_path'])
             key_filenames = os.listdir(repo_key_dir)
             if len(key_filenames) > 0:
@@ -233,7 +253,8 @@ def _repo_distributors(v1_database, v2_database, report):
         new_distributor['config'] = config
         new_distributors.append(new_distributor)
 
-    v2_dist_coll.insert(new_distributors, safe=True)
+    if new_distributors:
+        v2_dist_coll.insert(new_distributors, safe=True)
 
     return True
 
@@ -249,7 +270,8 @@ def _repo_groups(v1_database, v2_database, report):
     # I should probably use a map reduce here, but frankly this is simpler and
     # I'm not terribly worried about either the mongo performance or memory
     # consumption from the approach below.
-    repo_and_group_ids = [(x['id'], x['groupid']) for x in v1_coll.find({}, {'id' : 1, 'groupid' : 1})]
+    spec = {'content_types' : 'yum'}
+    repo_and_group_ids = [(x['id'], x['groupid']) for x in v1_coll.find(spec, {'id' : 1, 'groupid' : 1, 'content_types' : 1})]
     repo_ids_by_group = {}
     for repo_id, group_id_list in repo_and_group_ids:
 
