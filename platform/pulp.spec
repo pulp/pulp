@@ -298,7 +298,6 @@ Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
 Requires: %{name}-builtins-admin-extensions = %{version}
-Obsoletes: pulp-client
 Obsoletes: pulp-admin
 
 %description admin-client
