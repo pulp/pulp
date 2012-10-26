@@ -60,9 +60,11 @@ def mock_open(mock=None, read_data=None):
     handle.write.return_value = None
     fake_file = StringIO(read_data)
     if read_data is None:
-        handle.__enter__.return_value = handle
+        if hasattr(handle, '__enter__'):
+            handle.__enter__.return_value = handle
     else:
-        handle.__enter__.return_value = fake_file
+        if hasattr(handle, '__enter__'):
+            handle.__enter__.return_value = fake_file
         handle.read = fake_file.read
     mock.return_value = handle
     return mock
