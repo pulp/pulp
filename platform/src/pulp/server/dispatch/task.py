@@ -57,17 +57,12 @@ class Task(object):
         assert isinstance(call_report, (types.NoneType, call.CallReport))
 
         self.call_request = call_request
-        self.call_report = call_report or call.CallReport()
+        self.call_report = call_report or call.CallReport.from_call_request(call_request)
+        self.call_report.state = dispatch_constants.CALL_WAITING_STATE
 
         self.call_request_exit_state = None
         self.queued_call_id = None
         self.complete_callback = None
-
-        self.call_report.call_request_id = self.call_request.id
-        self.call_report.call_request_group_id = self.call_request.group_id
-        self.call_report.call_request_tags = self.call_request.tags
-        self.call_report.principal_login = self.call_report.principal_login or self.call_request.principal and self.call_request.principal['login']
-        self.call_report.state = dispatch_constants.CALL_WAITING_STATE
 
     def __str__(self):
         return 'Task %s: %s' % (self.call_request.id, str(self.call_request))

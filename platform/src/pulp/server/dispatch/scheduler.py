@@ -93,9 +93,7 @@ class Scheduler(object):
 
             for call_request in call_group:
                 call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, scheduler_complete_callback)
-                #call_report = call.CallReport.from_call_request(call_request, schedule_id=str(scheduled_call['_id']))
 
-            # XXX (jconnor) this does not allow for setting the schedule_id on the call reports
             if len(call_group) == 1:
                 call_report_list = [coordinator.execute_call_asynchronously(call_group[0])]
             else:
@@ -129,11 +127,15 @@ class Scheduler(object):
                 self.update_next_run(scheduled_call)
                 continue
 
+            # get the itinerary call request and execute
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
             call_report = coordinator.execute_call_synchronously(call_request)
 
-            yield call_report.result
+            # call request group is the return of an itinerary function
+            call_request_group = call_report.result
+            map(lambda r: setattr(r, 'schedule_id', str(scheduled_call['_id'])), call_request_group)
+            yield  call_request_group
 
     def start(self):
         """

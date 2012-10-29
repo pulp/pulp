@@ -93,6 +93,7 @@ class CallRequest(object):
 
         self.id = str(uuid.uuid4())
         self.group_id = None
+        self.schedule_id = None
 
         self.call = call
         self.args = args or []
@@ -182,7 +183,7 @@ class CallRequest(object):
 
     # call request serialization/deserialization -------------------------------
 
-    copied_fields = ('id', 'group_id', 'tags', 'resources', 'weight', 'asynchronous', 'archive')
+    copied_fields = ('id', 'group_id', 'schedule_id', 'tags', 'resources', 'weight', 'asynchronous', 'archive')
     pickled_fields = ('call', 'args', 'kwargs', 'principal', 'execution_hooks', 'control_hooks')
     all_fields = itertools.chain(copied_fields, pickled_fields)
 
@@ -298,7 +299,7 @@ class CallReport(object):
     """
 
     @classmethod
-    def from_call_request(cls, call_request, schedule_id=None):
+    def from_call_request(cls, call_request):
         """
         Factory method that leverages an existing call request.
 
@@ -306,8 +307,6 @@ class CallReport(object):
         @type cls: type
         @param call_request: call request to leverage
         @type call_request: L{CallRequest}
-        @param schedule_id: optional schedule id
-        @type schedule_id: None or str
         @return: CallReport instance
         @rtype: L{CallReport}
         """
@@ -315,7 +314,7 @@ class CallReport(object):
                           call_request.group_id,
                           call_request.tags,
                           call_request.principal['login'],
-                          schedule_id)
+                          call_request.schedule_id)
         return call_report
 
     def __init__(self,
