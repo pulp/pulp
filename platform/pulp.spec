@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.333
+Version: 0.0.334
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -415,6 +415,11 @@ exit 0
 %endif
 
 %changelog
+* Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
+- 866931 - turned off utf8 encoding for uploads (jason.connor@gmail.com)
+- changed obfuscate flag to blacklist, note: only works on kwargs now
+  (jason.connor@gmail.com)
+
 * Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
 - 865527 - removed unused unit_profile from consumer model
   (skarmark@redhat.com)
