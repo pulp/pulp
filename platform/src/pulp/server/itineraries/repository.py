@@ -22,6 +22,15 @@ _LOG = logging.getLogger(__name__)
 
 
 def repo_delete_itinerary(repo_id):
+    """
+    Get the itinerary for deleting a repository.
+      1. Delete the repository on the sever.
+      2. Unbind any bound consumers.
+    @param repo_id: A repository ID.
+    @type repo_id: str
+    @return: A list of call_requests known as an itinerary.
+    @rtype list
+    """
 
     call_requests = []
 
@@ -63,6 +72,15 @@ def repo_delete_itinerary(repo_id):
 
 
 def distributor_delete_itinerary(repo_id, distributor_id):
+    """
+    Get the itinerary for deleting a repository distributor.
+      1. Delete the distributor on the sever.
+      2. Unbind any bound consumers.
+    @param repo_id: A repository ID.
+    @type repo_id: str
+    @return: A list of call_requests known as an itinerary.
+    @rtype list
+    """
 
     call_requests = []
 

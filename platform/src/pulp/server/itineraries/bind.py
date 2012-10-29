@@ -23,6 +23,12 @@ _LOG = logging.getLogger(__name__)
 # -- task callbacks ----------------------------------------------------------------------
 
 def bind_succeeded(call_request, call_report):
+    """
+    The task succeeded callback.
+    Updates the consumer request tracking on the binding.
+    @param call_request:
+    @param call_report:
+    """
     manager = managers.consumer_bind_manager()
     request_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
@@ -33,12 +39,19 @@ def bind_succeeded(call_request, call_report):
         manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
 
 def bind_failed(call_request, call_report):
+    """
+    The task failed callback.
+    Updates the consumer request tracking on the binding.
+    @param call_request:
+    @param call_report:
+    """
     manager = managers.consumer_bind_manager()
     request_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
     manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
 
-# same for now
+# just mapped to bind functions because the behavior is the same
+# but want to use these names in the unbind itinerary for clarity.
 unbind_succeeded = bind_succeeded
 unbind_failed = bind_failed
 
@@ -47,6 +60,21 @@ unbind_failed = bind_failed
 
 
 def bind_itinerary(consumer_id, repo_id, distributor_id, options):
+    """
+    Get the bind itinerary:
+      1. Create the binding on the server.
+      2. Request that the consumer (agent) perform the bind.
+    @param consumer_id: A consumer ID.
+    @type consumer_id: str
+    @param repo_id: A repository ID.
+    @type repo_id: str
+    @param distributor_id: A distributor ID.
+    @type distributor_id: str
+    @param options: Bind options passed to the agent handler.
+    @type options: dict
+    @return: A list of call_requests known as an itinerary.
+    @rtype list
+    """
 
     call_requests = []
 
@@ -109,6 +137,22 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
 
 
 def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
+    """
+    Get the unbind itinerary:
+      1. Mark the binding as (deleted) on the server.
+      2. Request that the consumer (agent) perform the unbind.
+      3. Delete the binding on the server.
+    @param consumer_id: A consumer ID.
+    @type consumer_id: str
+    @param repo_id: A repository ID.
+    @type repo_id: str
+    @param distributor_id: A distributor ID.
+    @type distributor_id: str
+    @param options: Unbind options passed to the agent handler.
+    @type options: dict
+    @return: A list of call_requests known as an itinerary.
+    @rtype list
+    """
 
     call_requests = []
 
