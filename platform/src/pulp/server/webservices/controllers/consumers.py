@@ -27,6 +27,9 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.itineraries.consumer import (
+    consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
+    consumer_content_update_itinerary)
 from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
@@ -367,23 +370,7 @@ class Content(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            id,
-            units,
-            options,
-        ]
-        manager = managers.consumer_agent_manager()
-        call_request = CallRequest(
-            manager.install_content,
-            args,
-            resources=resources,
-            weight=pulp_config.config.getint('tasks', 'consumer_content_weight'),
-            asynchronous=True,
-            archive=True,)
+        call_request = consumer_content_install_itinerary(id, units, options)[0]
         result = execution.execute_async(self, call_request)
         return result
 
@@ -401,23 +388,7 @@ class Content(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            id,
-            units,
-            options,
-        ]
-        manager = managers.consumer_agent_manager()
-        call_request = CallRequest(
-            manager.update_content,
-            args,
-            resources=resources,
-            weight=pulp_config.config.getint('tasks', 'consumer_content_weight'),
-            asynchronous=True,
-            archive=True,)
+        call_request = consumer_content_update_itinerary(id, units, options)[0]
         result = execution.execute_async(self, call_request)
         return result
 
@@ -435,23 +406,7 @@ class Content(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            id,
-            units,
-            options,
-        ]
-        manager = managers.consumer_agent_manager()
-        call_request = CallRequest(
-            manager.uninstall_content,
-            args,
-            resources=resources,
-            weight=pulp_config.config.getint('tasks', 'consumer_content_weight'),
-            asynchronous=True,
-            archive=True,)
+        call_request = consumer_content_uninstall_itinerary(id, units, options)[0]
         result = execution.execute_async(self, call_request)
         return result
 
