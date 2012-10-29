@@ -35,6 +35,7 @@ def repo_delete_itinerary(repo_id):
     call_requests = []
 
     # delete repository
+
     manager = managers.repo_manager()
     resources = {
         dispatch_constants.RESOURCE_REPOSITORY_TYPE:
@@ -55,7 +56,8 @@ def repo_delete_itinerary(repo_id):
 
     call_requests.append(delete_request)
 
-    # unbind
+    # append unbind itineraries foreach bound consumer
+
     options = {}
     manager = managers.consumer_bind_manager()
     for bind in manager.find_by_repo(repo_id):
@@ -85,6 +87,7 @@ def distributor_delete_itinerary(repo_id, distributor_id):
     call_requests = []
 
     # delete distributor
+
     manager = managers.repo_distributor_manager()
     resources = {
         dispatch_constants.RESOURCE_REPOSITORY_TYPE:
@@ -108,7 +111,8 @@ def distributor_delete_itinerary(repo_id, distributor_id):
 
     call_requests.append(delete_request)
 
-    # unbind
+    # append unbind itineraries foreach bound consumer
+
     options = {}
     manager = managers.consumer_bind_manager()
     for bind in manager.find_by_distributor(repo_id, distributor_id):
