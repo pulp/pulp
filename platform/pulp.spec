@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright (c) 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.332
-Release: 2%{?dist}
+Version: 0.0.334
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -202,7 +202,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%{_bindir}/pulp-migrate
+%{_bindir}/pulp-manage-db
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
@@ -298,7 +298,6 @@ Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
 Requires: %{name}-builtins-admin-extensions = %{version}
-Obsoletes: pulp-client
 Obsoletes: pulp-admin
 
 %description admin-client
@@ -416,6 +415,15 @@ exit 0
 %endif
 
 %changelog
+* Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
+- 866931 - turned off utf8 encoding for uploads (jason.connor@gmail.com)
+- changed obfuscate flag to blacklist, note: only works on kwargs now
+  (jason.connor@gmail.com)
+
+* Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
+- 865527 - removed unused unit_profile from consumer model
+  (skarmark@redhat.com)
+
 * Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-2
 - Revert fix for 856713. (jortel@redhat.com)
 

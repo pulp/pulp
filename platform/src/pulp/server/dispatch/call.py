@@ -57,8 +57,8 @@ class CallRequest(object):
     @type asynchronous: bool
     @ivar archive: toggle archival of call request on completion
     @type archive: bool
-    @ivar obfuscate_args: toggle obfuscation of arguments when cast to a string
-    @type obfuscate_args: bool
+    @ivar kwarg_blacklist: list of kwargs to obfuscate in the __str__
+    @type kwarg_blacklist: tuple or list
     @ivar execution_hooks: callbacks to be executed during lifecycle of callable
     @type execution_hooks: dict
     @ivar control_hooks: callbacks used to control the lifecycle of the callable
@@ -76,7 +76,7 @@ class CallRequest(object):
                  weight=1,
                  asynchronous=False,
                  archive=False,
-                 obfuscate_args=False):
+                 kwarg_blacklist=()):
 
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
@@ -89,7 +89,7 @@ class CallRequest(object):
         assert weight > -1
         assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
-        assert isinstance(obfuscate_args, bool)
+        assert isinstance(kwarg_blacklist, (list, tuple))
 
         self.id = str(uuid.uuid4())
         self.group_id = None
@@ -107,7 +107,7 @@ class CallRequest(object):
 
         self.asynchronous = asynchronous
         self.archive = archive
-        self.obfuscate_args = obfuscate_args
+        self.kwarg_blacklist = kwarg_blacklist
 
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
@@ -123,14 +123,12 @@ class CallRequest(object):
         return '.'.join((class_name, name))
 
     def callable_args_reprs(self):
-        if self.obfuscate_args:
-            return ['**OBFUSCATED**' for a in self.args]
         return [repr(a) for a in self.args]
 
     def callable_kwargs_reprs(self):
-        if self.obfuscate_args:
-            return dict([(k, '**OBFUSCATED**') for k in self.kwargs])
-        return dict([(k, repr(v)) for k, v in self.kwargs.items()])
+        kwarg_reprs = dict((k, repr(v)) for k, v in self.kwargs.items() if k not in self.kwarg_blacklist)
+        kwarg_reprs.update((k, '****') for k in self.kwargs if k in self.kwarg_blacklist)
+        return kwarg_reprs
 
     def __str__(self):
         args = ', '.join(self.callable_args_reprs())
@@ -386,6 +384,7 @@ class CallReport(object):
 
         data['task_id'] = self.call_request_id
         data['task_group_id'] = self.call_request_group_id
+        data['tags'] = self.call_request_tags
 
         # format the exception and traceback, if they exist
 

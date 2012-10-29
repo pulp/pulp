@@ -84,6 +84,14 @@ class CallRequestTests(base.PulpServerTests):
         call_request_str = str(call_request)
         self.assertTrue(call_request_str == expected, '"%s" != "%s"' % (call_request_str, expected))
 
+    def test_call_request_str_blacklist(self):
+        expected = "CallRequest: function('fee', 'fie', 'foe', 'foo', three='baz', two=****, one='foo')"
+        args = ['fee', 'fie', 'foe', 'foo']
+        kwargs = {'one': 'foo', 'two': 'bar', 'three': 'baz'}
+        call_request = CallRequest(function, args, kwargs, kwarg_blacklist=['two'])
+        call_request_str = str(call_request)
+        self.assertTrue(call_request_str == expected, '"%s" != "%s"' % (call_request_str, expected))
+
     def test_control_hooks(self):
         call_request = CallRequest(function)
         for key in dispatch_constants.CALL_CONTROL_HOOKS:
