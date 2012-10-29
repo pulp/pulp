@@ -62,5 +62,6 @@ def get_package_xml(pkg_path):
                 }
     return metadata
 
+
 def migrate():
     _migrate_rpm_unit_repodata()
