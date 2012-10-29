@@ -43,12 +43,12 @@ class UsersCollection(JSONController):
     # Scope: Collection
     # GET:   Retrieves all users
     # POST:  Adds a user
-    
+
     @staticmethod
     def _process_users(users):
         """
         Apply standard processing to a collection of users being returned
-        to a client.  Adds the object link and removes user password. 
+        to a client.  Adds the object link and removes user password.
 
         @param users: collection of users
         @type  users: list, tuple
@@ -85,24 +85,27 @@ class UsersCollection(JSONController):
         # Creation
         manager = managers.user_manager()
         resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [login, password, name]
+        args = [login]
+        kwargs = {'password': password,
+                  'name': name}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('create')]
         call_request = CallRequest(manager.create_user,
                                    args,
+                                   kwargs,
                                    resources=resources,
                                    weight=weight,
                                    tags=tags,
-                                   obfuscate_args=True)
+                                   kwarg_blacklist=['password'])
         user = execution.execute_sync(call_request)
         user_link = serialization.link.child_link_obj(login)
         user.update(user_link)
-        
+
         # Grant permissions
         permission_manager = managers.permission_manager()
         permission_manager.grant_automatic_permissions_for_resource(user_link['_href'])
-        
+
         return self.created(login, user)
 
 
@@ -119,7 +122,7 @@ class UserResource(JSONController):
         user = managers.user_query_manager().find_by_login(login)
         if user is None:
             raise exceptions.MissingResource(login)
-        
+
         user.update(serialization.link.current_link_obj())
 
         return self.ok(user)
@@ -161,7 +164,7 @@ class UserResource(JSONController):
                                    resources=resources,
                                    tags=tags)
         return execution.execute_ok(self, call_request)
-    
+
 
 class UserSearch(SearchController):
     def __init__(self):

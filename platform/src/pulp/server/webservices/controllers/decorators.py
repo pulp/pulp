@@ -194,7 +194,7 @@ def auth_required(operation=None, super_user_only=False):
                         userid, is_consumer = authenticate_user()
                     else:
                         userid = authenticate_user()
-                except AuthenticationFailed as ex:
+                except AuthenticationFailed, ex:
                     return self.unauthorized(ex.msg)
 
                 if userid is not None:

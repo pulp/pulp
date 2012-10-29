@@ -13,7 +13,7 @@
 # ---- Pulp (plus) RPM Product---------------------------------------------------------
 
 Name: pulp-rpm-product
-Version: 0.0.333
+Version: 0.0.334
 Release: 1%{?dist}
 License: GPLv2
 Summary: Pulp (plus) RPM product metapackage
@@ -103,6 +103,9 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
+- version alignment
+
 * Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
 - version alignment
 

@@ -27,7 +27,7 @@ class UploadAPI(PulpAPI):
 
     def upload_segment(self, upload_id, offset, data):
         url = '/v2/content/uploads/%s/%s/' % (upload_id, offset)
-        return self.server.PUT(url, data)
+        return self.server.PUT(url, data, ensure_encoding=False)
 
     def list_all_uploads(self):
         url = '/v2/content/uploads/'
