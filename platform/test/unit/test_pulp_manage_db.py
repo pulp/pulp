@@ -15,7 +15,7 @@ import unittest
 from mock import call, inPy3k, MagicMock, patch
 
 from data import test_migration_packages
-from pulp.common.compat import json
+from pulp.common.compat import all, json
 from pulp.server.db import manage
 from pulp.server.db.migrate import models
 from pulp.server.db.model.migration_tracker import MigrationTracker

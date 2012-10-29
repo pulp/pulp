@@ -17,6 +17,26 @@ import mock
 from pulp.common import compat
 
 
+class TestAll(unittest.TestCase):
+    def test_empty(self):
+        # all() returns True on the empty list
+        ret = compat.all([])
+        self.assertTrue(ret)
+
+    def test_false(self):
+        ret = compat.all([0, False, None])
+        self.assertFalse(ret)
+        ret = compat.all([0, False, True])
+        self.assertFalse(ret)
+
+    def test_true(self):
+        ret = compat.all([1, 'True', True])
+        self.assertTrue(ret)
+
+    def test_not_iterable(self):
+        self.assertRaises(TypeError, compat.all, 3)
+
+
 class TestAny(unittest.TestCase):
     def test_empty(self):
         ret = compat.any([])

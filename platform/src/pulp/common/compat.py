@@ -48,6 +48,21 @@ except ImportError:
 
 
 ################################################
+# This provides the builtin, all.
+################################################
+@check_builtin(__builtin__)
+def all(iterable):
+    """
+    This should behave like the builtin function "all()", which was new
+    in python 2.5.
+    """
+    for x in iterable:
+        if not x:
+            return False
+    return True
+
+
+################################################
 # This provides the builtin, any.
 ################################################
 @check_builtin(__builtin__)
