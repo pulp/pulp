@@ -68,13 +68,6 @@ class TestAgent(base.PulpServerTests):
         result = agent.consumer.bind(DEFINITIONS, OPTIONS)
         # Verify
         mock_agent.Consumer.bind.assert_called_once_with(DEFINITIONS, OPTIONS)
-
-    def test_rebind(self):
-        # Test
-        agent = DirectAgent(CONSUMER)
-        result = agent.consumer.rebind(DEFINITIONS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.rebind.assert_called_once_with(DEFINITIONS, OPTIONS)
         
     def test_unbind(self):
         # Test
@@ -138,13 +131,6 @@ class TestRestAgent(base.PulpServerTests):
         result = agent.consumer.bind(DEFINITIONS, OPTIONS)
         # Verify
         mock_agent.Consumer.bind.assert_called_once_with(DEFINITIONS, OPTIONS)
-
-    def test_rebind(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.consumer.rebind(DEFINITIONS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.rebind.assert_called_once_with(DEFINITIONS, OPTIONS)
 
     def test_unbind(self):
         # Test

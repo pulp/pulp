@@ -24,6 +24,10 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
+DAY = 86400  # in seconds
+HOUR = 3600  # in seconds
+
+
 #
 # Agent
 #
@@ -129,7 +133,7 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10 * DAY, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)
@@ -137,33 +141,6 @@ class Consumer(Capability):
         status, result = consumer.bind(definitions, options)
         if status != 202:
             raise Exception('Bind Failed')
-        return (status, result)
-
-    def rebind(self, definitions, options):
-        """
-        Rebind a consumer to the specified repository.
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Bind options.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
-        """
-        agent = Agent(
-            self.context.uuid,
-            rest=Rest(),
-            timeout=(10, 90),
-            secret=self.context.secret,
-            replyto=self.context.replyto,
-            any=self.context.call_request_id)
-        consumer = agent.Consumer()
-        status, result = consumer.rebind(definitions, options)
-        if status != 202:
-            raise Exception('Rebind Failed')
         return (status, result)
 
     def unbind(self, repo_id, options):
@@ -179,7 +156,7 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=(10 * DAY, 600),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)

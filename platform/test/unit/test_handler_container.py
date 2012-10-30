@@ -200,18 +200,6 @@ class TestDispatcher(unittest.TestCase):
         self.assertTrue(report.status)
         self.assertEquals(report.chgcnt, 1)
 
-    def test_rebind(self):
-        # Setup
-        dispatcher = Dispatcher(self.container())
-        # Test
-        conduit = Conduit()
-        definition = dict(type_id='yum', repository={}, details={})
-        options = {}
-        report = dispatcher.rebind(conduit, [definition,], options)
-        pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
-
     def test_unbind(self):
         # Setup
         dispatcher = Dispatcher(self.container())

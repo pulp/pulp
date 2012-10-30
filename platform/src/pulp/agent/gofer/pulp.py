@@ -264,25 +264,6 @@ class Consumer:
         return report.dict()
 
     @remote(secret=secret)
-    def rebind(self, definitions, options):
-        """
-        Rebind to all repositories.
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Rebind options.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: DispatchReport
-        """
-        conduit = Conduit()
-        report = dispatcher.rebind(conduit, definitions, options)
-        return report.dict()
-
-    @remote(secret=secret)
     def unbind(self, repo_id, options):
         """
         Unbind to the specified repository ID.

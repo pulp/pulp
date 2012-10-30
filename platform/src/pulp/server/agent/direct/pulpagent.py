@@ -23,6 +23,11 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
+
+DAY = 86400  # in seconds
+HOUR = 3600  # in seconds
+
+
 #
 # Agent
 #
@@ -115,37 +120,13 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 90),
+            timeout=(10 * DAY, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
             any=self.context.call_request_id)
         consumer = agent.Consumer()
         return consumer.bind(definitions, options)
-
-    def rebind(self, definitions, options):
-        """
-        Rebind a consumer to the specified repository.
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Rebind options.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
-        """
-        agent = Agent(
-            self.context.uuid,
-            timeout=(10, 90),
-            secret=self.context.secret,
-            ctag=self.context.ctag,
-            watchdog=self.context.watchdog,
-            any=self.context.call_request_id)
-        consumer = agent.Consumer()
-        return consumer.rebind(definitions, options)
 
     def unbind(self, repo_id, options):
         """
@@ -159,7 +140,7 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 90),
+            timeout=(10 * DAY, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,

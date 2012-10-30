@@ -105,12 +105,10 @@ class Consumer(object):
     @classmethod
     def reset(cls):
         cls.bind.reset_mock()
-        cls.rebind.reset_mock()
         cls.unbind.reset_mock()
         cls.unregistered.reset_mock()
 
     bind = Mock(side_effect=dispatch)
-    rebind = Mock(side_effect=dispatch)
     unbind = Mock(side_effect=dispatch)
     unregistered = Mock()
 

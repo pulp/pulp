@@ -110,41 +110,6 @@ class AgentManagerTests(base.PulpServerTests):
         self.assertEqual(requests[0]['request_id'], None)
         self.assertEqual(requests[0]['status'], 'pending')
 
-    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
-           return_value=CONSUMER_PAYLOAD)
-    def test_rebind(self, unused):
-        # Setup
-        self.populate()
-        manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        # Test
-        binding = dict(
-            consumer_id=self.CONSUMER_ID,
-            repo_id=self.REPO_ID,
-            distributor_id=self.DISTRIBUTOR_ID
-        )
-        manager = factory.consumer_agent_manager()
-        manager.rebind(self.CONSUMER_ID, [binding], self.OPTIONS)
-        # verify
-        manager = factory.repo_query_manager()
-        repo = manager.get_repository(self.REPO_ID)
-        definitions = [
-            dict(type_id=self.DISTRIBUTOR_ID,
-                 repository=repo,
-                 details=CONSUMER_PAYLOAD)
-        ]
-        args = mock_agent.Consumer.rebind.call_args[0]
-        self.assertEquals(json.dumps(args[0], default=json_util.default),
-                          json.dumps(definitions, default=json_util.default))
-        self.assertEquals(json.dumps(args[1], default=json_util.default),
-                          json.dumps(self.OPTIONS, default=json_util.default))
-        manager = factory.consumer_bind_manager()
-        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 1)
-        self.assertEqual(requests[0]['request_id'], None)
-        self.assertEqual(requests[0]['status'], 'pending')
-
     def test_unbind(self):
         # Setup
         self.populate()

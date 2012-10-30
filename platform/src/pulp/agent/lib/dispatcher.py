@@ -236,38 +236,6 @@ class Dispatcher:
                 report.update(r)
         return report
 
-    def rebind(self, conduit, definitions, options):
-        """
-        (Re)bind a repository.
-        @param conduit: A handler conduit.
-        @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param definitions: The list of bind definitions.
-        Each definition is:
-          {type_id:<str>, repository:<repository>, details:<dict>}
-            The <repository> is a pulp repository object.
-            The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Rebind options.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: L{DispatchReport}
-        """
-        report = DispatchReport()
-        collated = Binds(definitions)
-        for typeid, definition in collated.items():
-            try:
-                handler = self.__handler(typeid, BIND)
-                r = handler.rebind(conduit, definition, options)
-                r.typeid = typeid
-                report.update(r)
-            except Exception:
-                log.exception('handler failed')
-                r = BindReport()
-                r.typeid = typeid
-                r.failed(LastExceptionDetails())
-                report.update(r)
-        return report
-
     def unbind(self, conduit, repo_id, options):
         """
         Unbind a repository.

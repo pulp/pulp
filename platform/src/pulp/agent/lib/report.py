@@ -102,14 +102,23 @@ class ProfileReport(HandlerReport):
 
 class BindReport(HandlerReport):
     """
-    The profile report is returned by handler methods
+    The bind report is returned by handler methods
     implementing repository bind operations.
     """
     pass
 
+
+class UnbindReport(HandlerReport):
+    """
+    The unbind report is returned by handler methods
+    implementing repository bind operations.
+    """
+    pass
+
+
 class CleanReport(HandlerReport):
     """
-    The profile report is returned by handler methods
+    The clean report is returned by handler methods
     implementing clean operations.
     """
     pass
@@ -117,7 +126,7 @@ class CleanReport(HandlerReport):
 
 class RebootReport(HandlerReport):
     """
-    The profile report is returned by handler methods
+    The reboot report is returned by handler methods
     implementing reboot operations.  A chgcnt > 0 indicates
     the reboot was scheduled.
     """

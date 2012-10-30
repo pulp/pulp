@@ -77,32 +77,6 @@ class AgentManager(object):
         request_id = factory.context().call_request_id
         manager.request_pending(consumer_id, repo_id, distributor_id, request_id)
 
-    def rebind(self, consumer_id, bindings, options):
-        """
-        Apply a rebind to the agent.
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
-        @param bindings: A list of bindings.
-          Each binding is: {repo_id:<str>, distributor_id:<str>}
-        @type bindings: list
-        @param options: The options are handler specific.
-        @type options: dict
-        """
-        manager = managers.consumer_manager()
-        consumer = manager.get_consumer(consumer_id)
-        definitions = self.__definitions(bindings)
-        agent = PulpAgent(consumer)
-        agent.consumer.rebind(definitions, options)
-        # request tracking
-        for b in bindings:
-            manager = managers.consumer_bind_manager()
-            request_id = factory.context().call_request_id
-            manager.request_pending(
-                consumer_id,
-                b['repo_id'],
-                b['distributor_id'],
-                request_id)
-
     def unbind(self, consumer_id, repo_id, distributor_id, options):
         """
         Apply a unbind to the agent.

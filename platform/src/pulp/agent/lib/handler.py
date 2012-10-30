@@ -151,24 +151,6 @@ class BindHandler(Handler):
         """
         raise NotImplementedError()
 
-    def rebind(self, conduit, definitions, options):
-        """
-        Rebind a repository.
-        @param conduit: A handler conduit.
-        @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param definitions: A list of bind definitions.
-            Each definition is:
-                {'repository':<repository>, 'details':<details>}
-            The <repository> is a pulp repository object.
-            The content of <details> is at the discretion of the distributor.
-        @type definitions: list
-        @param options: Rebind options.
-        @type options: dict
-        @return: An rebind report.
-        @rtype: L{pulp.agent.lib.report.BindReport}
-        """
-        raise NotImplementedError()
-
     def unbind(self, conduit, repo_id, options):
         """
         Unbind a repository.
