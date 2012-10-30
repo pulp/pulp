@@ -27,6 +27,7 @@ from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.dispatch import constants as dispatch_constants
 
 
 class ConsumerTest(base.PulpWebserviceTests):
@@ -551,6 +552,8 @@ class BindTest(base.PulpWebserviceTests):
         # Verify
         self.assertEquals(status, 202)
         self.assertEqual(len(body), 2)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # verify itinerary called
         mock_bind_itinerary.assert_called_with(
@@ -611,6 +614,8 @@ class BindTest(base.PulpWebserviceTests):
         # Verify
         self.assertEquals(status, 202)
         self.assertEqual(len(body), 3)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # verify itinerary called
         mock_unbind_itinerary.assert_called_with(

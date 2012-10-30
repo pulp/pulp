@@ -88,6 +88,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 2)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual bind)
         self.run_next()
@@ -139,6 +141,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 2)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual bind)
         self.run_next()
@@ -169,6 +173,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 2)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual bind)
         self.run_next()
@@ -226,6 +232,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 3)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual unbind)
         self.run_next()
@@ -286,6 +294,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 3)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual bind)
         self.run_next()
@@ -330,6 +340,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 3)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual unbind)
         self.run_next()

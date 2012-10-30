@@ -17,7 +17,6 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.itineraries.bind import unbind_itinerary
 from pulp.server.itineraries.repository import *
 
 
@@ -74,6 +73,8 @@ class TestDeletes(PulpItineraryTests):
         # Verify
 
         self.assertEqual(len(call_reports), 4)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1: repo delete
         self.run_next()
@@ -95,6 +96,8 @@ class TestDeletes(PulpItineraryTests):
         # Verify
 
         self.assertEqual(len(call_reports), 4)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1: distributor delete
         self.run_next()
@@ -117,6 +120,8 @@ class TestDeletes(PulpItineraryTests):
         # Verify
 
         self.assertEqual(len(call_reports), 3)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1: distributor update
         self.run_next()

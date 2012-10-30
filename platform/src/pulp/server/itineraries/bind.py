@@ -162,10 +162,6 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     resources = {
         dispatch_constants.RESOURCE_CONSUMER_TYPE:
             {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-            {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-            {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
         }
 
     args = [
@@ -224,10 +220,6 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     resources = {
         dispatch_constants.RESOURCE_CONSUMER_TYPE:
             {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-            {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-            {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
         }
 
     args = [

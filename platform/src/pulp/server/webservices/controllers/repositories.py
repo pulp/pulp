@@ -260,6 +260,7 @@ class RepoResource(JSONController):
         manager_factory.repo_query_manager().get_repository(id)
         # delete
         call_requests = repo_delete_itinerary(id)
+        _LOG.info('Itinerary: %s', [r.id for r in call_requests])
         execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)

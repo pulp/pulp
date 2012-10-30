@@ -37,11 +37,12 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 from pulp.server.webservices.controllers import repositories
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.itineraries.repository import (
     repo_delete_itinerary,
     distributor_delete_itinerary,
     distributor_update_itinerary,
-    unbind_itinerary,
+    bind_itinerary,
     unbind_itinerary,
 )
 
@@ -444,6 +445,8 @@ class RepoResourceTests(RepoControllersTests):
         # Verify
         self.assertEqual(202, status)
         self.assertEqual(len(body), 4)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # verify itineraries called
         mock_delete_itinerary.assert_called_with(repo_id)
@@ -946,6 +949,8 @@ class RepoDistributorTests(RepoPluginsTests):
         # Verify
         self.assertEqual(202, status)
         self.assertEqual(len(body), 4)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # verify itineraries called
         mock_delete_itinerary.assert_called_with(repo_id, distributor_id)
@@ -966,7 +971,7 @@ class RepoDistributorTests(RepoPluginsTests):
         self.assertEqual(404, status)
 
     @mock.patch('pulp.server.webservices.controllers.repositories.distributor_update_itinerary', wraps=distributor_update_itinerary)
-    @mock.patch('pulp.server.itineraries.repository.bind_itinerary', wraps=unbind_itinerary)
+    @mock.patch('pulp.server.itineraries.repository.bind_itinerary', wraps=bind_itinerary)
     @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_distributor')
     def test_update(self, mock_find, mock_bind_itinerary, mock_update_itinerary):
         """
@@ -1001,7 +1006,9 @@ class RepoDistributorTests(RepoPluginsTests):
 
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(len(body), 7)
+        self.assertEqual(len(body), 5)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # verify itineraries called
         mock_update_itinerary.assert_called_with(repo_id, distributor_id, new_config)
