@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.333
+Version: 0.0.334
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -94,6 +94,9 @@ client capabilities.
 
 
 %changelog
+* Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
+- version alignment
+
 * Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
 - version alignment
 

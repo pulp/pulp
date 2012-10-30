@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Copyright © 2010 Red Hat, Inc.
+# Copyright (c) 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -10,6 +8,9 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def add_field_with_default_value(objectdb, field, default=None):
@@ -46,7 +47,6 @@ def change_field_type_with_default_value(objectdb, field, new_type, default_valu
             if not isinstance(model[field], new_type):
                 model[field] = default_value
                 objectdb.save(model, safe=True)
-
 
 
 def add_field_with_calculated_value(objectdb, field, callback=lambda m: None):
