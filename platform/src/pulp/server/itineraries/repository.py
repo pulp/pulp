@@ -15,7 +15,7 @@ from pulp.server.dispatch.call import CallRequest
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers
-from pulp.server.itineraries.bind import unbind_itinerary
+from pulp.server.itineraries.bind import unbind_itinerary, bind_itinerary
 
 
 _LOG = logging.getLogger(__name__)
@@ -124,5 +124,60 @@ def distributor_delete_itinerary(repo_id, distributor_id):
         if unbind_requests:
             unbind_requests[0].depends_on(delete_request.id)
             call_requests.extend(unbind_requests)
+
+    return call_requests
+
+
+def distributor_update_itinerary(repo_id, distributor_id, config):
+    """
+    Get the itinerary for updating a repository distributor.
+      1. Update the distributor on the sever.
+      2. (re)bind any bound consumers.
+    @param repo_id: A repository ID.
+    @type repo_id: str
+    @return: A list of call_requests known as an itinerary.
+    @rtype list
+    """
+
+    call_requests = []
+
+    # update the distributor
+
+    manager = managers.repo_distributor_manager()
+    resources = {
+        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
+            {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
+        dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
+            {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}
+        }
+
+    tags = [
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+        action_tag('update_distributor')
+        ]
+
+    update_request = CallRequest(
+        manager.update_distributor_config,
+        [repo_id, distributor_id, config],
+        resources=resources,
+        tags=tags,
+        archive=True)
+
+    call_requests.append(update_request)
+
+    # append unbind itineraries foreach bound consumer
+
+    options = {}
+    manager = managers.consumer_bind_manager()
+    for bind in manager.find_by_distributor(repo_id, distributor_id):
+        bind_requests = bind_itinerary(
+            bind['consumer_id'],
+            bind['repo_id'],
+            bind['distributor_id'],
+            options)
+        if bind_requests:
+            bind_requests[0].depends_on(update_request.id)
+            call_requests.extend(bind_requests)
 
     return call_requests

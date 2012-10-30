@@ -231,10 +231,13 @@ class Bindings(JSONController):
         be raised by manager.
         @param consumer_id: The consumer to bind.
         @type consumer_id: str
-        @return: The created bind model object:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @rtype: dict
+        @return: The list of call_reports
+        @rtype: list
         """
+        # validate resources
+        manager = managers.consumer_manager()
+        manager.get_consumer(consumer_id)
+        # bind
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
@@ -284,12 +287,18 @@ class Binding(JSONController):
         @type repo_id: str
         @param distributor_id: A distributor ID.
         @type distributor_id: str
-        @return: The deleted bind model object:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-            Or, None if bind does not exist.
-        @rtype: dict
+        @return: The list of call_reports
+        @rtype: list
         """
-        call_requests = unbind_itinerary(consumer_id, repo_id, distributor_id, {})
+        body = self.params()
+        # validate resources
+        manager = managers.consumer_manager()
+        manager.get_consumer(consumer_id)
+        manager = managers.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        # delete (unbind)
+        options = body.get('options', {})
+        call_requests = unbind_itinerary(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
 

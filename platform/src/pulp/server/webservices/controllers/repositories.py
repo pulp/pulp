@@ -21,7 +21,9 @@ import web
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 from pulp.server.itineraries.repository import (
-    distributor_delete_itinerary, repo_delete_itinerary
+    repo_delete_itinerary,
+    distributor_delete_itinerary,
+    distributor_update_itinerary,
 )
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
@@ -254,8 +256,11 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
+        # validate
+        manager_factory.repo_query_manager().get_repository(id)
+        # delete
         call_requests = repo_delete_itinerary(id)
-        return execution.execute_multiple(call_requests)
+        execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -573,32 +578,29 @@ class RepoDistributor(JSONController):
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
+        # validate resources
+        manager = manager_factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        # delete
         call_requests = distributor_delete_itinerary(repo_id, distributor_id)
-        return execution.execute_multiple(call_requests)
+        execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
-
-        # Params (validation will occur in the manager)
         params = self.params()
-        distributor_config = params.get('distributor_config', None)
-
-        if distributor_config is None:
-            _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
+        # validate
+        manager = manager_factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        config = params.get('distributor_config')
+        if config is None:
+            _LOG.exception(
+                'Missing configuration when updating distributor [%s] on repository [%s]',
+                distributor_id,
+                repo_id)
             raise exceptions.MissingValue(['distributor_config'])
-
-        distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('update_distributor')]
-        call_request = CallRequest(distributor_manager.update_distributor_config,
-                                   [repo_id, distributor_id, distributor_config],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # update
+        call_requests = distributor_update_itinerary(repo_id, distributor_id, config)
+        execution.execute_multiple(call_requests)
 
 
 class PublishScheduleCollection(JSONController):

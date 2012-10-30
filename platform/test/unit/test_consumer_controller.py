@@ -23,11 +23,11 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
 from pulp.server.compat import ObjectId
 from pulp.server.managers import factory
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.agent.lib.report import DispatchReport
+from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+
 
 class ConsumerTest(base.PulpWebserviceTests):
 
@@ -537,7 +537,7 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
-    @mock.patch('pulp.server.itineraries.bind.bind_itinerary')
+    @mock.patch('pulp.server.webservices.controllers.consumers.bind_itinerary', wraps=bind_itinerary)
     def test_bind(self, mock_bind_itinerary):
 
         # Setup
@@ -550,9 +550,14 @@ class BindTest(base.PulpWebserviceTests):
 
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue(
-            mock_bind_itinerary.called_with(
-                self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, {}))
+        self.assertEqual(len(body), 2)
+
+        # verify itinerary called
+        mock_bind_itinerary.assert_called_with(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                {})
 
     def test_bind_missing_consumer(self):
         # Setup
@@ -566,7 +571,7 @@ class BindTest(base.PulpWebserviceTests):
             distributor_id=self.DISTRIBUTOR_ID,)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 202)
+        self.assertEquals(status, 404)
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
@@ -588,8 +593,8 @@ class BindTest(base.PulpWebserviceTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
-    @mock.patch('pulp.server.itineraries.bind.unbind_itinerary')
-    def test_unbind(self, mock_unbind_ininerary):
+    @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
+    def test_unbind(self, mock_unbind_itinerary):
 
         # Setup
         self.populate()
@@ -605,9 +610,14 @@ class BindTest(base.PulpWebserviceTests):
 
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue(
-            mock_unbind_ininerary.called_with(
-                self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, {}))
+        self.assertEqual(len(body), 3)
+
+        # verify itinerary called
+        mock_unbind_itinerary.assert_called_with(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            {})
 
     def test_unbind_missing_consumer(self):
         # Setup
@@ -621,7 +631,7 @@ class BindTest(base.PulpWebserviceTests):
                 self.DISTRIBUTOR_ID)
         status, body = self.delete(path)
         # Verify
-        self.assertEquals(status, 202)
+        self.assertEquals(status, 404)
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
