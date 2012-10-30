@@ -106,8 +106,8 @@ class ConsumerContentSchedulesAPI(PulpAPI):
         url = self.base_path + action + '/%s/' % (consumer_id, schedule_id)
         return self.server.GET(url)
     
-    def add_schedule(self, action, consumer_id, units, options, schedule, failure_threshold, enabled):
-        url = self.base_path + action + '/' % consumer_id
+    def add_schedule(self, action, consumer_id, schedule, failure_threshold, enabled, options, units):
+        url = self.base_path % consumer_id + action + '/'
         body = {
             'units': units,
             'options': options,
@@ -118,12 +118,12 @@ class ConsumerContentSchedulesAPI(PulpAPI):
         return self.server.POST(url, body)
  
     def delete_schedule(self, action, consumer_id, schedule_id):
-        url = self.base_path + action + '/%s/' % (consumer_id, schedule_id)
+        url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         return self.server.DELETE(url)
 
     def update_schedule(self, action, consumer_id, schedule_id, units, options=UNSPECIFIED, schedule=UNSPECIFIED, 
                                 failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
-        url = self.base_path + action + '/%s/' % (consumer_id, schedule_id)
+        url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         body = {
             'units': units,
             'options': options,
