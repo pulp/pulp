@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.334
+Version: 0.0.335
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -415,6 +415,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
+- 
+
 * Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
 - 866931 - turned off utf8 encoding for uploads (jason.connor@gmail.com)
 - changed obfuscate flag to blacklist, note: only works on kwargs now
