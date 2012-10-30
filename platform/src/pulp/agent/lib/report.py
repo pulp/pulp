@@ -111,7 +111,7 @@ class BindReport(HandlerReport):
 class UnbindReport(HandlerReport):
     """
     The unbind report is returned by handler methods
-    implementing repository bind operations.
+    implementing repository unbind operations.
     """
     pass
 

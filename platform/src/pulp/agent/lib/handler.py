@@ -161,7 +161,7 @@ class BindHandler(Handler):
         @param options: Unbind options.
         @type options: dict
         @return: An unbind report.
-        @rtype: L{pulp.agent.lib.report.BindReport}
+        @rtype: L{pulp.agent.lib.report.UnbindReport}
         """
         raise NotImplementedError()
 
