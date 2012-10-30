@@ -240,6 +240,7 @@ class CallRequest(object):
 
         id = constructor_kwargs.pop('id')
         group_id = constructor_kwargs.pop('group_id')
+        schedule_id = constructor_kwargs.pop('schedule_id')
         execution_hooks = constructor_kwargs.pop('execution_hooks')
         control_hooks = constructor_kwargs.pop('control_hooks')
 
@@ -247,6 +248,7 @@ class CallRequest(object):
 
         instance.id = id
         instance.group_id = group_id
+        instance.schedule_id = schedule_id
 
         for key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS:
             if not execution_hooks[key]:
