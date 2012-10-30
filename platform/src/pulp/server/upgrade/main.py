@@ -23,7 +23,8 @@ from okaara.progress import ThreadedSpinner
 from pymongo import Connection
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
-from pulp.server.upgrade.db import (cds, consumers, events, repos, tasks, users)
+from pulp.server.upgrade.db import (cds, consumers, events, repos, tasks,
+                                    units, users)
 
 
 # Indicates which Pulp stream (v1, v2, etc.) is installed
@@ -38,6 +39,7 @@ DB_UPGRADE_CALLS = (
     (users.upgrade, _('Users, Permissions, and Roles')),
     (tasks.upgrade, _('Tasks')),
     (repos.upgrade, _('Repositories, Content')),
+    (units.upgrade, _('Packages, Errata, and Distributions')),
 )
 
 # Name of the production Pulp database
