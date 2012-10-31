@@ -13,12 +13,16 @@ import logging
 import os
 import re
 
+import pkg_resources
+
 from pulp.common.compat import iter_modules
-from pulp.server.db import migrations
 from pulp.server.managers.migration_tracker import MigrationTrackerManager
-import pulp.server.db.migrations.platform
+import pulp.server.db.migrations
 
 logger = logging.getLogger(__name__)
+
+
+MIGRATIONS_ENTRY_POINT = 'pulp.server.db.migrations'
 
 
 class MigrationModule(object):
@@ -110,15 +114,14 @@ class MigrationPackage(object):
         """
         pass
 
-    def __init__(self, python_package_name):
+    def __init__(self, python_package):
         """
         Initialize the MigrationPackage to represent the Python migration package passed in.
 
-        :param python_package_name: The name of the Python package this object should represent, in
-                                    dotted notation.
-        :type  python_package_name: str
+        :param python_package: The Python package this object should represent
+        :type  python_package: package
         """
-        self._package = _import_all_the_way(python_package_name)
+        self._package = python_package
         migration_tracker_manager = MigrationTrackerManager()
         # This is an object representation of the DB object that keeps track of the migration
         # version that has been applied
@@ -246,15 +249,15 @@ class MigrationPackage(object):
     def __cmp__(self, other_package):
         """
         This method returns a negative value if self.name < other_package.name, 0 if they are
-        equal, and a positive value if self.name > other_package.name. There is an exception to
-        this sorting rule, in that if self._package is pulp.server.db.migrations.platform, this
-        method will always return -1, and if other_package is platform, it will always return 1.
+        equal, and a positive value if self.name > other_package.name. There is an exception to this
+        sorting rule, in that if self._package is pulp.server.db.migrations, this method will always
+        return -1, and if other_package is pulp.server.db.migrations, it will always return 1.
 
         :rtype: int
         """
-        if self._package is pulp.server.db.migrations.platform:
+        if self._package is pulp.server.db.migrations:
             return -1
-        if other_package._package is pulp.server.db.migrations.platform:
+        if other_package._package is pulp.server.db.migrations:
             return 1
         return cmp(self.name, other_package.name)
 
@@ -286,19 +289,19 @@ def check_package_versions():
 
 def get_migration_packages():
     """
-    This method finds and returns all Python packages in pulp.server.db.migrations. It sorts them
-    alphabetically by name, except that pulp.server.db.platform unconditionally sorts to the front
+    This method finds and returns a list of MigrationPackages. The MigrationPackages are found by
+    using pkg_resources to find Python packages that use the pulp.server.db.migrations entry point.
+    The official Pulp platform migrations are also included in the list. It sorts them
+    alphabetically by name, except that pulp.server.db.migrations unconditionally sorts to the front
     of the list. Returns a list of MigrationPackages.
 
     :rtype: list
     """
-    migration_package_names = ['%s.%s'%(migrations.__name__, name) for
-                               module_loader, name, ispkg in
-                               iter_modules([os.path.dirname(migrations.__file__)])]
-    migration_packages = []
-    for name in migration_package_names:
+    migration_packages = [MigrationPackage(pulp.server.db.migrations)]
+    for entry_point in pkg_resources.iter_entry_points(MIGRATIONS_ENTRY_POINT):
         try:
-            migration_packages.append(MigrationPackage(name))
+            migration_package_module = entry_point.load()
+            migration_packages.append(MigrationPackage(migration_package_module))
         except (MigrationPackage.DuplicateVersions, MigrationPackage.MissingVersion), e:
             logger.error(str(e))
     migration_packages.sort()
