@@ -267,8 +267,7 @@ class Consumer:
         Unbind to the specified repository ID.
         Delegated to content handlers.
         @param bindings: A list of bindings to be removed.
-          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
-            The 'details' are at the discretion of the distributor.
+          Each binding is: {type_id:<str>, repo_id:<str>}
         @type bindings: list
         @param options: Unbind options.
         @type options: dict

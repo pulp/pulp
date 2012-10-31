@@ -1,11 +1,19 @@
 Repository Binding
 ==================
 
+.. _bind:
+
 Bind a Consumer to a Repository
 -------------------------------
 
 Bind a :term:`consumer` to a :term:`repository's <repository>` :term:`distributor`
-for the purpose of consuming published content.
+for the purpose of consuming published content.  Binding the consumer is performed
+in the following steps:
+
+ 1. Bind the consumer on the server.
+ 2. Perform the bind on the consumer.
+
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/bindings/`
@@ -14,14 +22,15 @@ for the purpose of consuming published content.
 
 * :param:`repo_id,string,unique identifier for the repository`
 * :param:`distributor_id,string,identifier for the distributor`
+* :param:`?options,object,options passed to the handler on the consumer`
 
 | :response_list:`_`
 
-* :response_code:`201,if the bind was successfully created`
+* :response_code:`202,if the bind request was accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 
-| :return:`database representation of the created bind`
+| :return:`A` :ref:`call_report_list`
 
 :sample_request:`_` ::
 
@@ -29,23 +38,21 @@ for the purpose of consuming published content.
    "repo_id": "test-repo",
    "distributor_id": "dist-1"
  }
- 
-:sample_response:`200` ::
 
- {
-   "repo_id": "test-repo",
-   "consumer_id": "test-consumer",
-   "_ns": "consumer_bindings",
-   "_id": {"$oid": "50085f91e138236f9f00000b"},
-   "distributor_id": "dist-1",
-   "id": "50085f91e138236f9f00000b"
- }
-
+.. _unbind:
 
 Unbind a Consumer
 -----------------
 
 Remove a binding between a :term:`consumer` and a :term:`repository's <repository>` :term:`distributor`.
+
+Unbinding the consumer is performed in the following steps:
+
+ 1. Unbind the consumer on the server.
+ 2. Perform the unbind on the consumer.
+ 3. Delete the binding.
+
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 
 | :method:`delete`
 | :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>`
@@ -53,25 +60,16 @@ Remove a binding between a :term:`consumer` and a :term:`repository's <repositor
 | :param_list:`delete` The consumer ID, repository ID and distributor ID are included
   in the URL itself.
 
+* :param:`?options,object,options passed to the handler on the consumer`
+
 | :response_list:`_`
 
-* :response_code:`200,the bind was successfully created`
+* :response_code:`202,the unbind request was accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the binding does not exist`
 
-| :return:`database representation of the deleted bind`
+| :return:`A` :ref:`call_report_list`
 
- 
-:sample_response:`200` ::
-
- {
-   "repo_id": "test-repo",
-   "consumer_id": "test-consumer",
-   "_ns": "consumer_bindings",
-   "_id": {"$oid": "5008604be13823703800003e"},
-   "distributor_id": "dist-1",
-   "id": "5008604be13823703800003e"
- }
 
 
 Retrieve a Single Binding

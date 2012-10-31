@@ -1,5 +1,5 @@
-Creation, Delete, and Configuration
-===================================
+Creation, Deletion, and Configuration
+=====================================
 
 Create a Repository
 -------------------
@@ -250,12 +250,22 @@ working directory is deleted. The content within the repository, however,
 is not deleted. Deleting content is handled through the
 :doc:`orphaned unit <../content/orphan>` process.
 
+Deleting a repository is performed in the following major steps:
+
+ 1. Delete the repository.
+ 2. Unbind all *bound* consumers.
+
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
+call_requests depends on how may consumer are bound to the repository.
+
+
 | :method:`delete`
 | :path:`/v2/repositories/<repo_id>/`
 | :permission:`delete`
 | :response_list:`_`
 
-* :response_code:`200,if the update was executed and successful`
+* :response_code:`202,if the update was executed and successful`
 * :response_code:`202,if the request was accepted by the server to delete when the repository is available`
 
-| :return:`call report representing the current state of the delete`
+| :return:`A call report list`
