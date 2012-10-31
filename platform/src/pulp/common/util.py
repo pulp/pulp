@@ -34,7 +34,7 @@ def ensure_utf_8(s):
     """
     Ensure any string passed in is properly encoded to utf-8
     Simply returns the parameter if it is not an instance of basestring,
-    otherwise it attempts to decode the string from latin-1, if it's not already
+    otherwise it attempts to decode the string from latin-1, if it's already
     an instance of unicode, and then encode it to utf-8.
 
     @param s: string to ensure utf-8 encoding on
