@@ -256,7 +256,7 @@ The Pulp REST API bindings for python.
 Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: python-%{name}-common = %{version}
-Requires: python-okaara >= 1.0.24
+Requires: python-okaara >= 1.0.26
 Obsoletes: pulp-client-lib
 
 %description -n python-pulp-client-lib
