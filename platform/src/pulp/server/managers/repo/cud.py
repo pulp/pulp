@@ -158,14 +158,22 @@ class RepoManager(object):
         # error block. That call will take care of all of the cleanup.
         distributor_manager = manager_factory.repo_distributor_manager()
 
+        if not isinstance(distributor_list, (list, tuple)):
+            self.delete_repo(repo_id)
+            raise InvalidValue(['distributor_list'])
+
         for distributor in distributor_list or []:
-            # Don't bother with any validation here, the manager will run it
-            type_id = distributor.get('distributor_type')
-            plugin_config = distributor.get('distributor_config')
-            auto_publish = distributor.get('auto_publish', False)
-            distributor_id = distributor.get('distributor_id')
+            if not isinstance(distributor, dict):
+                self.delete_repo(repo_id)
+                raise InvalidValue(['distributor_list'])
 
             try:
+                # Don't bother with any validation here, the manager will run it
+                type_id = distributor.get('distributor_type')
+                plugin_config = distributor.get('distributor_config')
+                auto_publish = distributor.get('auto_publish', False)
+                distributor_id = distributor.get('distributor_id')
+
                 distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
             except Exception, e:
                 _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
