@@ -123,25 +123,6 @@ class SchedulerCallControlTests(SchedulerTests):
         scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['enabled'])
 
-# dispatch control flow tests --------------------------------------------------
-
-class SchedulerDispatchControlFlowTests(SchedulerTests):
-
-    # XXX I'll have to figure out a different way to test this as the
-    # coordinator instance is now transient instead of a part of the scheduler's
-    # state
-
-    def test_run_scheduled_calls(self):
-        self.scheduler.add(CallRequest(itinerary_call), DISPATCH_SCHEDULE)
-        self.scheduler._run_scheduled_calls()
-        #self.assertTrue(self.scheduler.coordinator.execute_call_asynchronously.call_count == 1)
-
-    def test_run_scheduled_calls_multiple_calls(self):
-        self.scheduler.add(CallRequest(itinerary_call), DISPATCH_SCHEDULE)
-        self.scheduler.add(CallRequest(itinerary_call), DISPATCH_FUTURE_SCHEDULE)
-        self.scheduler._run_scheduled_calls()
-        #self.assertTrue(self.scheduler.coordinator.execute_call_asynchronously.call_count == 1)
-
 # scheduling tests -------------------------------------------------------------
 
 class SchedulerSchedulingTests(SchedulerTests):
