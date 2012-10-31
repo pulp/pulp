@@ -263,7 +263,7 @@ class Dispatcher:
                         r.update(report)
             except Exception:
                 log.exception('handler failed')
-                r = UnbindReport(repo_id)
+                r = BindReport(repo_id)
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
                 r.update(report)
@@ -289,7 +289,7 @@ class Dispatcher:
                 reports.append(r)
             except Exception:
                 log.exception('handler failed')
-                r = UnbindReport(repo_id)
+                r = BindReport(repo_id)
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
                 reports.append(r)

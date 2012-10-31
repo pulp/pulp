@@ -145,7 +145,7 @@ class ProfileReport(HandlerReport):
 class BindReport(HandlerReport):
     """
     The bind report is returned by handler methods
-    implementing repository bind operations.
+    implementing repository bind/unbind operations.
     @ivar repo_id: A repository ID.
     @type repo_id: str
     """
@@ -166,14 +166,6 @@ class BindReport(HandlerReport):
         """
         bind_details = report.details.setdefault(self.typeid, {})
         bind_details[self.repo_id] = self.details
-
-
-class UnbindReport(BindReport):
-    """
-    The unbind report is returned by handler methods
-    implementing repository unbind operations.
-    """
-    pass
 
 
 class CleanReport(HandlerReport):

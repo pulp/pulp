@@ -102,7 +102,7 @@ class YumHandler(BindHandler):
     assert(isinstance(conduit, Conduit))
     assert(isinstance(repo_id, str))
     assert(isinstance(options, dict))
-    report = UnbindReport(repo_id)
+    report = BindReport(repo_id)
     report.succeeded({}, 1)
     return report
 
