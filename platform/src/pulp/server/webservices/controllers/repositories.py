@@ -809,6 +809,9 @@ class RepoSync(JSONController):
         params = self.params()
         overrides = params.get('override_config', None)
 
+        # Check for repo existence and let the missing resource bubble up
+        manager_factory.repo_query_manager().get_repository(repo_id)
+
         # Execute the sync asynchronously
         repo_sync_manager = manager_factory.repo_sync_manager()
 
