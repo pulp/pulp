@@ -28,8 +28,11 @@ from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import Consumer as ProfiledConsumer
-from pulp.server.exceptions import PulpExecutionException, PulpDataException
-from pulp.server.compat import json, json_util
+from pulp.server.exceptions import (
+    MissingResource,
+    PulpExecutionException,
+    PulpDataException
+)
 from pulp.server.agent import PulpAgent
 
 
@@ -56,7 +59,7 @@ class AgentManager(object):
 
     def bind(self, consumer_id, repo_id, distributor_id, options):
         """
-        Apply a bind to the agent.
+        Request the agent to perform the specified bind.
         @param consumer_id: The consumer ID.
         @type consumer_id: str
         @param repo_id: A repository ID.
@@ -66,12 +69,13 @@ class AgentManager(object):
         @param options: The options are handler specific.
         @type options: dict
         """
+        # agent request
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
         binding = dict(repo_id=repo_id, distributor_id=distributor_id)
-        definitions = self.__definitions([binding])
+        bindings = self.__bindings([binding])
         agent = PulpAgent(consumer)
-        agent.consumer.bind(definitions, options)
+        agent.consumer.bind(bindings, options)
         # request tracking
         manager = managers.consumer_bind_manager()
         request_id = factory.context().call_request_id
@@ -79,7 +83,7 @@ class AgentManager(object):
 
     def unbind(self, consumer_id, repo_id, distributor_id, options):
         """
-        Apply a unbind to the agent.
+        Request the agent to perform the specified unbind.
         @param consumer_id: The consumer ID.
         @type consumer_id: str
         @param repo_id: A repository ID.
@@ -89,10 +93,14 @@ class AgentManager(object):
         @param options: The options are handler specific.
         @type options: dict
         """
+        # agent request
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
+        binding = dict(repo_id=repo_id, distributor_id=distributor_id)
+        bindings = self.__unbindings([binding])
         agent = PulpAgent(consumer)
-        agent.consumer.unbind(repo_id, options)
+        agent.consumer.unbind(bindings, options)
+        # request tracking
         manager = managers.consumer_bind_manager()
         request_id = factory.context().call_request_id
         manager.request_pending(consumer_id, repo_id, distributor_id, request_id)
@@ -235,20 +243,20 @@ class AgentManager(object):
             profiles[typeid] = profile
         return ProfiledConsumer(consumer_id, profiles)
 
-    def __definitions(self, bindings):
+    def __bindings(self, bindings):
         """
-        Build the bind definitions needed by the agent.
-        @param bindings: A list of bindings.
+        Build the bindings needed by the agent.
+        @param bindings: A list of binding IDs.
           Each binding is:
             {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
         @type bindings: list
-        @return A list of bind definitions.
+        @return A list of agent bindings.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
         @rtype: list
         """
-        definitions = []
+        agent_bindings = []
         for binding in bindings:
-            manager = managers.repo_query_manager()
-            repository = manager.get_repository(binding['repo_id'])
+            repo_id = binding['repo_id']
             manager = managers.repo_distributor_manager()
             distributor = manager.get_distributor(
                 binding['repo_id'],
@@ -256,13 +264,36 @@ class AgentManager(object):
             details = manager.create_bind_payload(
                 binding['repo_id'],
                 binding['distributor_id'])
-            definition = dict(
-                type_id=distributor['distributor_type_id'],
-                repository=repository,
-                details=details)
-            definitions.append(definition)
-        definitions = json.loads(json.dumps(definitions, default=json_util.default))
-        return definitions
+            type_id = distributor['distributor_type_id']
+            agent_binding = dict(type_id=type_id, repo_id=repo_id, details=details)
+            agent_bindings.append(agent_binding)
+        return agent_bindings
+
+    def __unbindings(self, bindings):
+        """
+        Build the (un)bindings needed by the agent.
+        @param bindings: A list of binding IDs.
+          Each binding is:
+            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
+        @type bindings: list
+        @return A list of agent bindings.
+          Each unbinding is: {type_id:<str>, repo_id:<str>}
+        @rtype: list
+        """
+        agent_bindings = []
+        for binding in bindings:
+            manager = managers.repo_distributor_manager()
+            try:
+                distributor = manager.get_distributor(
+                    binding['repo_id'],
+                    binding['distributor_id'])
+                type_id = distributor['distributor_type_id']
+            except MissingResource:
+                # may have been deleted
+                type_id = None
+            agent_binding = dict(type_id=type_id, repo_id=binding['repo_id'])
+            agent_bindings.append(agent_binding)
+        return agent_bindings
 
 
 class Units(dict):

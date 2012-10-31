@@ -189,27 +189,48 @@ class TestDispatcher(unittest.TestCase):
         self.assertEquals(report.chgcnt, 0)
 
     def test_bind(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
-        definition = dict(type_id='yum', repository={}, details={})
+        binding = dict(type_id=type_id, repo_id=repo_id, details={})
         options = {}
-        report = dispatcher.bind(conduit, [definition,], options)
+        report = dispatcher.bind(conduit, [binding,], options)
         pprint(report.dict())
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertEqual(report.chgcnt, 1)
+        self.assertEqual(report.details[type_id][repo_id], {})
 
     def test_unbind(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
+        binding = dict(type_id=type_id, repo_id=repo_id)
         options = {}
-        report = dispatcher.unbind(conduit, 'repo-1', options)
+        report = dispatcher.unbind(conduit, [binding,], options)
         pprint(report.dict())
         self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertEqual(report.chgcnt, 1)
+        self.assertEqual(report.details[type_id][repo_id], {})
+
+    def test_unbind_all(self):
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=None, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertTrue(report.status)
+        self.assertEqual(report.chgcnt, 1)
+        self.assertEqual(report.details['yum'][repo_id], {})
 
     def test_clean(self):
         # Setup

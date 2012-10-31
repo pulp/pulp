@@ -104,15 +104,13 @@ class Consumer(Capability):
         consumer = agent.Consumer()
         return consumer.unregistered()
 
-    def bind(self, definitions, options):
+    def bind(self, bindings, options):
         """
         Bind a consumer to the specified repository.
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
+        @param bindings: A list of bindings to add/update.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
         @param options: Bind options.
         @type options: dict
         @return: The RMI request serial number.
@@ -126,13 +124,14 @@ class Consumer(Capability):
             watchdog=self.context.watchdog,
             any=self.context.call_request_id)
         consumer = agent.Consumer()
-        return consumer.bind(definitions, options)
+        return consumer.bind(bindings, options)
 
-    def unbind(self, repo_id, options):
+    def unbind(self, bindings, options):
         """
         Unbind a consumer from the specified repository.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param bindings: A list of bindings to be removed.
+          Each binding is: {type_id:<str>, repo_id:<str>}
+        @type bindings: list
         @param options: Unbind options.
         @type options: dict
         @return: The RMI request serial number.
@@ -146,7 +145,7 @@ class Consumer(Capability):
             watchdog=self.context.watchdog,
             any=self.context.call_request_id)
         consumer = agent.Consumer()
-        return consumer.unbind(repo_id, options)
+        return consumer.unbind(bindings, options)
 
 
 class Content(Capability):

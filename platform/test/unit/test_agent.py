@@ -23,11 +23,10 @@ from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
 
 
 REPO_ID = 'repo_1'
-REPOSITORY = {'id':REPO_ID}
 DETAILS = {}
-DEFINITIONS = [
+BINDINGS = [
     {'type_id':'yum',
-     'repository':REPOSITORY,
+     'repo_id':REPO_ID,
      'details':DETAILS,}
 ]
 CONSUMER = {
@@ -65,16 +64,16 @@ class TestAgent(base.PulpServerTests):
     def test_bind(self):
         # Test
         agent = DirectAgent(CONSUMER)
-        result = agent.consumer.bind(DEFINITIONS, OPTIONS)
+        result = agent.consumer.bind(BINDINGS, OPTIONS)
         # Verify
-        mock_agent.Consumer.bind.assert_called_once_with(DEFINITIONS, OPTIONS)
+        mock_agent.Consumer.bind.assert_called_once_with(BINDINGS, OPTIONS)
         
     def test_unbind(self):
         # Test
         agent = DirectAgent(CONSUMER)
-        result = agent.consumer.unbind(REPO_ID, OPTIONS)
+        result = agent.consumer.unbind(BINDINGS, OPTIONS)
         # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID, OPTIONS)
+        mock_agent.Consumer.unbind.assert_called_once_with(BINDINGS, OPTIONS)
         
     def test_install_content(self):
         # Test
@@ -128,16 +127,16 @@ class TestRestAgent(base.PulpServerTests):
     def test_bind(self):
         # Test
         agent = RestAgent(CONSUMER)
-        result = agent.consumer.bind(DEFINITIONS, OPTIONS)
+        result = agent.consumer.bind(BINDINGS, OPTIONS)
         # Verify
-        mock_agent.Consumer.bind.assert_called_once_with(DEFINITIONS, OPTIONS)
+        mock_agent.Consumer.bind.assert_called_once_with(BINDINGS, OPTIONS)
 
     def test_unbind(self):
         # Test
         agent = RestAgent(CONSUMER)
-        result = agent.consumer.unbind(REPO_ID, OPTIONS)
+        result = agent.consumer.unbind(BINDINGS, OPTIONS)
         # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(REPO_ID, OPTIONS)
+        mock_agent.Consumer.unbind.assert_called_once_with(BINDINGS, OPTIONS)
 
     def test_install_content(self):
         # Test

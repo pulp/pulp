@@ -133,17 +133,18 @@ class BindHandler(Handler):
     to implement BIND management requests.
     """
 
-    def bind(self, conduit, definitions, options):
+    def bind(self, conduit, binding, options):
         """
         Bind a repository.
+        Bind operations are expected to be idempotent and be
+        implemented as add/update depending on whether the bind already
+        exists on the consumer.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param definitions: A list of bind definitions.
-            Each definition is:
-                {'repository':<repository>, 'details':<details>}
-            The <repository> is a pulp repository object.
-            The content of <details> is at the discretion of the distributor.
-        @type definitions: list
+        @param binding: A binding to add/update.
+          Each binding is: {repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type binding: dict
         @param options: Bind options.
         @type options: dict
         @return: An bind report.
@@ -154,9 +155,13 @@ class BindHandler(Handler):
     def unbind(self, conduit, repo_id, options):
         """
         Unbind a repository.
+        Unbind operations are expected to be idempotent.  It is expected
+        that the specified bind be removed if it exists.  Otherwise the
+        handler should report that the action succeeded but no changes
+        were necessary.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param repo_id: The repo ID.
+        @param repo_id: The repository ID.
         @type repo_id: str
         @param options: Unbind options.
         @type options: dict

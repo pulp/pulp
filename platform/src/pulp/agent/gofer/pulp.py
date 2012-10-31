@@ -244,39 +244,39 @@ class Consumer:
         return report.dict()
 
     @remote(secret=secret)
-    def bind(self, definitions, options):
+    def bind(self, bindings, options):
         """
         Bind to the specified repository ID.
         Delegated to content handlers.
-        @param definitions: A list of bind definitions.
-        Each definition is:
-            {type_id:<str>, repository:<repository>, details:<dict>}
-              The <repository> is a pulp repository object.
-              The content of <details> is at the discretion of the distributor.
-        @type definitions: list
+        @param bindings: A list of bindings to add/update.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
         @param options: Bind options.
         @type options: dict
         @return: A dispatch report.
         @rtype: DispatchReport
         """
         conduit = Conduit()
-        report = dispatcher.bind(conduit, definitions, options)
+        report = dispatcher.bind(conduit, bindings, options)
         return report.dict()
 
     @remote(secret=secret)
-    def unbind(self, repo_id, options):
+    def unbind(self, bindings, options):
         """
         Unbind to the specified repository ID.
         Delegated to content handlers.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param bindings: A list of bindings to be removed.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
         @param options: Unbind options.
         @type options: dict
         @return: A dispatch report.
         @rtype: DispatchReport
         """
         conduit = Conduit()
-        report = dispatcher.unbind(conduit, repo_id, options)
+        report = dispatcher.unbind(conduit, bindings, options)
         return report.dict()
 
 

@@ -91,18 +91,14 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_agent_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
         # verify
-        manager = factory.repo_query_manager()
-        repo = manager.get_repository(self.REPO_ID)
-        definitions = [
+        bindings = [
             dict(type_id=self.DISTRIBUTOR_ID,
-                 repository=repo,
+                 repo_id=self.REPO_ID,
                  details=CONSUMER_PAYLOAD)
         ]
         args = mock_agent.Consumer.bind.call_args[0]
-        self.assertEquals(json.dumps(args[0], default=json_util.default),
-                          json.dumps(definitions, default=json_util.default))
-        self.assertEquals(json.dumps(args[1], default=json_util.default),
-                          json.dumps(self.OPTIONS, default=json_util.default))
+        self.assertEquals(args[0], bindings)
+        self.assertEquals(args[1], self.OPTIONS)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         requests = bind['consumer_requests']
@@ -110,19 +106,23 @@ class AgentManagerTests(base.PulpServerTests):
         self.assertEqual(requests[0]['request_id'], None)
         self.assertEqual(requests[0]['status'], 'pending')
 
-    def test_unbind(self):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
+           return_value=CONSUMER_PAYLOAD)
+    def test_unbind(self, unused):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
         manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
         # verify
-        mock_agent.Consumer.unbind.assert_called_once_with(self.REPO_ID, self.OPTIONS)
+        bindings = [
+            dict(type_id=self.DISTRIBUTOR_ID, repo_id=self.REPO_ID)
+        ]
+        args = mock_agent.Consumer.unbind.call_args[0]
+        self.assertEquals(args[0], bindings)
+        self.assertEquals(args[1], self.OPTIONS)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         requests = bind['consumer_requests']

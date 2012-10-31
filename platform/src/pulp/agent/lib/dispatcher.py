@@ -74,16 +74,16 @@ class Dispatcher:
                 handler = self.__handler(typeid, CONTENT)
                 r = handler.install(conduit, units, dict(options))
                 r.typeid = typeid
-                report.update(r)
+                r.update(report)
             except Exception:
                 log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
-                report.update(r)
+                r.update(report)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
-        report.update(rr)
+        rr.update(report)
         return report
 
     def update(self, conduit, units, options):
@@ -106,16 +106,16 @@ class Dispatcher:
                 handler = self.__handler(typeid, CONTENT)
                 r = handler.update(conduit, units, dict(options))
                 r.typeid = typeid
-                report.update(r)
+                r.update(report)
             except Exception:
                 log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
-                report.update(r)
+                r.update(report)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
-        report.update(rr)
+        rr.update(report)
         return report
 
     def uninstall(self, conduit, units, options):
@@ -138,16 +138,16 @@ class Dispatcher:
                 handler = self.__handler(typeid, CONTENT)
                 r = handler.uninstall(conduit, units, dict(options))
                 r.typeid = typeid
-                report.update(r)
+                r.update(report)
             except Exception:
                 log.exception('handler failed')
                 r = HandlerReport()
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
-                report.update(r)
+                r.update(report)
         mgr = RebootManager(conduit, self, options)
         rr = mgr.reboot(report.chgcnt)
-        report.update(rr)
+        rr.update(report)
         return report
 
     def profile(self, conduit):
@@ -168,7 +168,7 @@ class Dispatcher:
             try:
                 r = method(conduit)
                 r.typeid = typeid
-                report.update(r)
+                r.update(report)
             except NotImplementedError:
                 # optional
                 pass
@@ -176,7 +176,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = ProfileReport()
                 r.failed(LastExceptionDetails())
-                report.update(r)
+                r.update(report)
         return report
 
     def reboot(self, conduit, options):
@@ -196,72 +196,104 @@ class Dispatcher:
             handler = self.__handler(typeid, SYSTEM)
             r = handler.reboot(conduit, options)
             r.typeid = typeid
-            report.update(r)
+            r.update(report)
         except Exception:
             log.exception('handler failed')
             r = RebootReport()
             r.failed(LastExceptionDetails())
-            report.update(r)
+            r.update(report)
         return report
 
-    def bind(self, conduit, definitions, options):
+    def bind(self, conduit, bindings, options):
         """
         Bind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param definitions: The list of bind definitions.
-        Each definition is:
-          {type_id:<str>, repository:<repository>, details:<dict>}
-            The <repository> is a pulp repository object.
-            The content of <details> is at the discretion of the distributor.
-        @type definitions: list
+        @param bindings: A list of bindings to add/update.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
         @param options: Bind options.
         @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
         report = DispatchReport()
-        collated = Binds(definitions)
-        for typeid, definition in collated.items():
+        for binding in bindings:
+            typeid = binding.pop('type_id')
             try:
                 handler = self.__handler(typeid, BIND)
-                r = handler.bind(conduit, definition, options)
+                r = handler.bind(conduit, binding, options)
                 r.typeid = typeid
-                report.update(r)
+                r.update(report)
             except Exception:
                 log.exception('handler failed')
-                r = BindReport()
+                r = BindReport(binding['repo_id'])
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
-                report.update(r)
+                r.update(report)
         return report
 
-    def unbind(self, conduit, repo_id, options):
+    def unbind(self, conduit, bindings, options):
         """
         Unbind a repository.
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        Dispatch unbind() to all BIND handlers.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param bindings: A list of bindings to be removed.
+          Each binding is: {type_id:<str>, repo_id:<str>}
+        @type bindings: list
         @param options: Unbind options.
         @type options: dict
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
         report = DispatchReport()
+        for binding in bindings:
+            repo_id = binding['repo_id']
+            typeid = binding.pop('type_id', None)
+            try:
+                if typeid:
+                    handler = self.__handler(typeid, BIND)
+                    r = handler.unbind(conduit, repo_id, options)
+                    r.typeid = typeid
+                    r.update(report)
+                else:
+                    reports = self.unbind_all(conduit, repo_id, options)
+                    for r in reports:
+                        r.update(report)
+            except Exception:
+                log.exception('handler failed')
+                r = UnbindReport(repo_id)
+                r.typeid = typeid
+                r.failed(LastExceptionDetails())
+                r.update(report)
+        return report
+
+    def unbind_all(self, conduit, repo_id, options):
+        """
+        Unbind a repository on all handlers.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        @param options: Unbind options.
+        @type options: dict
+        @return: A list of UnbindReports
+        @rtype: list
+        """
+        reports = []
         for typeid, handler in self.container.all(BIND):
             try:
                 r = handler.unbind(conduit, repo_id, options)
                 r.typeid = typeid
-                report.update(r)
+                reports.append(r)
             except Exception:
                 log.exception('handler failed')
-                r = BindReport()
+                r = UnbindReport(repo_id)
                 r.typeid = typeid
                 r.failed(LastExceptionDetails())
-                report.update(r)
-        return report
+                reports.append(r)
+        return reports
 
     def clean(self, conduit):
         """
@@ -281,7 +313,7 @@ class Dispatcher:
             try:
                 r = method(conduit)
                 r.typeid = typeid
-                report.update(r)
+                r.update(report)
             except NotImplementedError:
                 # optional
                 pass
@@ -289,7 +321,7 @@ class Dispatcher:
                 log.exception('handler failed')
                 r = CleanReport()
                 r.failed(LastExceptionDetails())
-                report.update(r)
+                r.update(report)
         return report
 
     def __handler(self, typeid, role):
@@ -370,21 +402,3 @@ class Units(dict):
                 self[typeid] = lst
             lst.append(unit['unit_key'])
 
-
-class Binds(dict):
-    """
-    Collated bind definitions
-    """
-
-    def __init__(self, definitions):
-        """
-        @param definitions: A list of bind definitions.
-        @type definitions: list
-        """
-        for definition in definitions:
-            typeid = definition.pop('type_id')
-            lst = self.get(typeid)
-            if lst is None:
-                lst = []
-                self[typeid] = lst
-            lst.append(definition)

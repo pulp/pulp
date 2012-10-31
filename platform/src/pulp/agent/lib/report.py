@@ -55,7 +55,13 @@ class Report(object):
 class HandlerReport(Report):
     """
     Generic handler report.
+    @ivar typeid: A type ID.
+    @type typeid: str
     """
+
+    def __init__(self):
+        Report.__init__(self)
+        self.typeid = None
 
     def succeeded(self, details=None, chgcnt=0):
         """
@@ -83,6 +89,42 @@ class HandlerReport(Report):
         self.status = False
         self.details = (details or {})
 
+    def update(self, report):
+        """
+        Update the specified report.
+        @param report: An aggregation report.
+        @type report: DispatchReport
+        """
+        self._update_status(report)
+        self._update_chgcnt(report)
+        self._update_details(report)
+
+    def _update_status(self, report):
+        """
+        Update the (status) in the specified report.
+        @param report: An aggregation report.
+        @type report: DispatchReport
+        """
+        if not self.status:
+            report.status = self.status
+
+    def _update_chgcnt(self, report):
+        """
+        Update the (chgcnt) in the specified report.
+        @param report: An aggregation report.
+        @type report: DispatchReport
+        """
+        if self.status:
+            report.chgcnt += self.chgcnt
+
+    def _update_details(self, report):
+        """
+        Update the (details) in the specified report.
+        @param report: An aggregation report.
+        @type report: DispatchReport
+        """
+        report.details[self.typeid] = dict(status=self.status, details=self.details)
+
 
 class ContentReport(HandlerReport):
     """
@@ -104,11 +146,29 @@ class BindReport(HandlerReport):
     """
     The bind report is returned by handler methods
     implementing repository bind operations.
+    @ivar repo_id: A repository ID.
+    @type repo_id: str
     """
-    pass
+
+    def __init__(self, repo_id):
+        """
+        @param repo_id: A repository ID.
+        @type repo_id: str
+        """
+        self.repo_id = repo_id
+
+    def _update_details(self, report):
+        """
+        Update the (details) in the specified report.
+        Details are keyed by repo_id.
+        @param report: An aggregation report.
+        @type report: Report
+        """
+        bind_details = report.details.setdefault(self.typeid, {})
+        bind_details[self.repo_id] = self.details
 
 
-class UnbindReport(HandlerReport):
+class UnbindReport(BindReport):
     """
     The unbind report is returned by handler methods
     implementing repository unbind operations.
@@ -140,6 +200,9 @@ class RebootReport(HandlerReport):
         @type details: dict
         """
         HandlerReport.succeeded(self, details, chgcnt=1)
+
+    def _update_details(self, report):
+        report.reboot = dict(scheduled=(self.chgcnt > 0), details=self.details)
 
 
 class LastExceptionDetails(dict):
@@ -200,28 +263,3 @@ class DispatchReport(Report):
     def __init__(self):
         Report.__init__(self)
         self.reboot = dict(scheduled=False, details={})
-
-    def update(self, report):
-        """
-        Update using the specified handler report.
-        @param report: A handler report.
-        @type report: L{Report}
-        @return: self
-        @rtype: L{DispatchReport}
-        """
-        if isinstance(report, Report):
-            if report.status:
-                self.chgcnt += report.chgcnt
-            else:
-                self.status = False
-        # continue updating
-        if isinstance(report, RebootReport):
-            scheduled = (report.chgcnt > 0)
-            self.reboot = dict(scheduled=scheduled, details=report.details)
-            return
-        if isinstance(report, HandlerReport):
-            self.details[report.typeid] = \
-                dict(status=report.status, details=report.details)
-            return
-        log.info('report: %s, ignored' % report)
-        return self
