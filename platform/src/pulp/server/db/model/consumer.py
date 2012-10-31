@@ -75,7 +75,7 @@ class Bind(Model):
 
     collection_name = 'consumer_bindings'
     unique_indices = (
-        ('repo_id', 'distributor_id', 'consumer_id', 'deleted'),
+        ('repo_id', 'distributor_id', 'consumer_id'),
     )
     search_indices = (
         ('consumer_id',),

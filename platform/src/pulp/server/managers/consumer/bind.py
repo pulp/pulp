@@ -57,18 +57,36 @@ class BindManager(object):
         manager = factory.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
         # perform the bind
-        bind = Bind(consumer_id, repo_id, distributor_id)
         collection = Bind.get_collection()
         try:
+            bind = Bind(consumer_id, repo_id, distributor_id)
             collection.save(bind, safe=True)
-            bind = self.get_bind(consumer_id, repo_id, distributor_id)
         except DuplicateKeyError:
-            # idempotent
-            pass
+            self.__reset_bind(consumer_id, repo_id, distributor_id)
+        # fetch the inserted/updated bind
+        bind = self.get_bind(consumer_id, repo_id, distributor_id)
+        # update history
         details = {'repo_id':repo_id, 'distributor_id':distributor_id}
         manager = factory.consumer_history_manager()
         manager.record_event(consumer_id, 'repo_bound', details)
         return bind
+
+    def __reset_bind(self, consumer_id, repo_id, distributor_id):
+        """
+        Rest the bind.
+        This means resetting the (deleted) flag and consumer requests.
+        @param consumer_id:
+        @param repo_id:
+        @param distributor_id:
+        """
+        collection = Bind.get_collection()
+        query = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id
+        )
+        update = {'$set':{'deleted':False, 'consumer_requests':[]}}
+        collection.update(query, update, safe=True)
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
