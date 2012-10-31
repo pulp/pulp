@@ -40,6 +40,22 @@ from pulp.server.webservices import serialization
 _LOG = logging.getLogger(__name__)
 
 
+def decorated_binding(binding):
+    """
+    Decorate the binding (repo_id)
+    @param binding:
+    @return:
+    """
+    outstanding = 0
+    for request in binding['consumer_requests']:
+        if request['status'] in ('pending', 'failed'):
+            outstanding += 1
+    if not outstanding:
+        repo_id = binding['repo_id']
+    else:
+        repo_id = '%s{%d}' % (binding['repo_id'], outstanding)
+    return repo_id
+
 def expand_consumers(options, consumers):
     """
     Expand a list of users based on flags specified in the
@@ -65,7 +81,7 @@ def expand_consumers(options, consumers):
         for consumer in consumers:
             id = consumer['id']
             consumer['bindings'] = \
-                [b['repo_id'] for b in bindings.get(id, [])]
+                [decorated_binding(b) for b in bindings.get(id, [])]
     return consumers
 
 
