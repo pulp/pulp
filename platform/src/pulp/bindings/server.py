@@ -86,15 +86,15 @@ class PulpConnection(object):
     def HEAD(self, path):
         return self._request('HEAD', path)
 
-    def POST(self, path, body=None):
-        return self._request('POST', path, body=body)
+    def POST(self, path, body=None, ensure_encoding=True):
+        return self._request('POST', path, body=body, ensure_encoding=ensure_encoding)
 
-    def PUT(self, path, body):
-        return self._request('PUT', path, body=body)
+    def PUT(self, path, body, ensure_encoding=True):
+        return self._request('PUT', path, body=body, ensure_encoding=ensure_encoding)
 
     # protected request utilities ---------------------------------------------
 
-    def _request(self, method, path, queries=(), body=None):
+    def _request(self, method, path, queries=(), body=None, ensure_encoding=True):
         """
         make a HTTP request to the pulp server and return the response
 
@@ -114,6 +114,9 @@ class PulpConnection(object):
                         the request's body.
         :type  body:    Anything that is JSON-serializable.
 
+        :param ensure_encoding: toggle proper string encoding for the body
+        :type ensure_encoding: bool
+
         :return:    Response object
         :rtype:     pulp.bindings.responses.Response
 
@@ -122,7 +125,8 @@ class PulpConnection(object):
                     request
         """
         url = self._build_url(path, queries)
-        body = self._process_body(body)
+        if ensure_encoding:
+            body = self._process_body(body)
         if not isinstance(body, (NoneType, basestring)):
             body = json.dumps(body)
         self.log.debug('sending %s request to %s' % (method, url))
