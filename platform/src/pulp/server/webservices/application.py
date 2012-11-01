@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2012 Red Hat, Inc.
+# Copyright (c) 2010-2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -45,11 +43,11 @@ db_connection.initialize()
 from pulp.server.agent.direct.services import Services as AgentServices
 
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
 from pulp.server.managers import factory as manager_factory
+from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
     agent, consumer_groups, consumers, contents, dispatch, events, permissions,
     plugins, repo_groups, repositories, roles, root_actions, users)
@@ -95,7 +93,7 @@ def _initialize_pulp():
     _IS_INITIALIZED = True
 
     # check our db version and other support
-    check_version()
+    migration_models.check_package_versions()
 
     # pulp generic content initialization
     manager_factory.initialize()
