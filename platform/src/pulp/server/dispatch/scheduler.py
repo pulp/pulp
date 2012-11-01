@@ -92,7 +92,8 @@ class Scheduler(object):
         for call_group in self._get_scheduled_call_groups():
 
             for call_request in call_group:
-                call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK, scheduler_complete_callback)
+                call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
+                                                     scheduler_complete_callback)
 
             if len(call_group) == 1:
                 call_report_list = [coordinator.execute_call_asynchronously(call_group[0])]
