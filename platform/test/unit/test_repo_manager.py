@@ -98,7 +98,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         #   Assert the display name is defaulted to the id
         self.assertEqual('repo_1', repos[0]['display_name'])
 
-    def _test_create_invalid_id(self):
+    def test_create_invalid_id(self):
         """
         Tests creating a repo with an invalid ID raises the correct error.
         """
@@ -108,7 +108,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
             self.manager.create_repo('bad id')
             self.fail('Invalid ID did not raise an exception')
         except exceptions.InvalidValue, e:
-            self.assertTrue('bad id' in e)
+            self.assertTrue(e.property_names[0], 'repo_id')
             print(e) # for coverage
 
     def test_create_duplicate_id(self):
