@@ -210,6 +210,39 @@ def _errata(v1_database, v2_database, report):
 
 
 def _distributions(v1_database, v2_database, report):
+
+    # Idempotency: Like RPMs/SRPMs, this is ugly due to the complex key that
+    # makes up unique distributions. It's complicated by the fact that in v1,
+    # there is no uniqueness contraint on the collection, so it's possible
+    # (however unlikely) that we'll run into data integrity issues.
+
+    v1_coll = v1_database.distribution
+    v2_coll = v2_database.units_distribution
+
+    all_v1_distros = v1_coll.find()
+    for v1_distro in all_v1_distros:
+        new_distro = {
+            '_id' : ObjectId(),
+            '_content_type_id' : 'distribution',
+            'id' : v1_distro['id'],
+            'arch' : v1_distro['arch'],
+            'version' : v1_distro['version'],
+            'variant' : v1_distro['variant'],
+            'family' : v1_distro['family'],
+            'files' : v1_distro['files'],
+        }
+
+        # Storage path
+        distro_path = os.path.join(DIR_DISTRIBUTION, new_distro['id'])
+        new_distro['_storage_path'] = distro_path
+
+        try:
+            v2_coll.insert(new_distro, safe=True)
+        except DuplicateKeyError:
+            # Same pattern as for RPMs, try to insert and rely on the uniqueness
+            # check in the DB to enforce idempotency.
+            pass
+
     return True
 
 # -- really private -----------------------------------------------------------

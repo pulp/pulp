@@ -149,9 +149,9 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
         for v1_rpm, v2_rpm in zip(v1_packages, v2_rpms):
             self.assertTrue(isinstance(v2_rpm['_id'], ObjectId))
             self.assertEqual(v2_rpm['_content_type_id'], 'rpm')
-            expected_path = '/var/lib/pulp/content/rpm/%s/%s/%s/%s/%s/%s' % (v2_rpm['name'],
-                                                                             v2_rpm['version'], v2_rpm['release'], v2_rpm['arch'], v2_rpm['checksum'],
-                                                                             v2_rpm['filename'])
+            expected_path = '/var/lib/pulp/content/rpm/%s/%s/%s/%s/%s/%s' % \
+                            (v2_rpm['name'], v2_rpm['version'], v2_rpm['release'],
+                             v2_rpm['arch'], v2_rpm['checksum'], v2_rpm['filename'])
             self.assertEqual(v2_rpm['_storage_path'], expected_path)
 
             self.assertEqual(v1_rpm['name'], v2_rpm['name'])
@@ -172,3 +172,49 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
 
             self.assertTrue('relativepath' not in v2_rpm) # not set in this script
 
+
+class DistributionUpgradeTests(BaseDbUpgradeTests):
+
+    def setUp(self):
+        super(DistributionUpgradeTests, self).setUp()
+
+        # The unique keys need to be set for these tests
+        units._initialize_content_types(self.tmp_test_db.database)
+
+    def test_upgrade(self):
+        # Test
+        report = UpgradeStepReport()
+        result = units._distributions(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_distros = self.v1_test_db.database.distribution.find().sort('id')
+        v2_distros = self.tmp_test_db.database.units_distribution.find().sort('id')
+        self.assertEqual(v1_distros.count(), v2_distros.count())
+
+        for v1_distro, v2_distro in zip(v1_distros, v2_distros):
+            self.assertTrue(isinstance(v2_distro['_id'], ObjectId))
+            self.assertEqual(v2_distro['_content_type_id'], 'distribution')
+            expected_path = '/var/lib/pulp/content/distribution/%s' % v2_distro['id']
+            self.assertEqual(v2_distro['_storage_path'], expected_path)
+
+            self.assertEqual(v1_distro['id'], v2_distro['id'])
+            self.assertEqual(v1_distro['arch'], v2_distro['arch'])
+            self.assertEqual(v1_distro['version'], v2_distro['version'])
+            self.assertEqual(v1_distro['variant'], v2_distro['variant'])
+            self.assertEqual(v1_distro['family'], v2_distro['family'])
+            self.assertEqual(v1_distro['files'], v2_distro['files'])
+
+    def test_upgrade_idempotency(self):
+        # Test
+        report = UpgradeStepReport()
+        units._distributions(self.v1_test_db.database, self.tmp_test_db.database, report)
+        result = units._distributions(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_distros = self.v1_test_db.database.distribution.find()
+        v2_distros = self.tmp_test_db.database.units_distribution.find()
+        self.assertEqual(v1_distros.count(), v2_distros.count())
