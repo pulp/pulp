@@ -18,7 +18,7 @@ Module for binding serialization.
 from pulp.server.managers import factory as manager_factory
 import link
 
-def serialize(bind):
+def serialize(bind, include_details=True):
     """
     Construct a REST object to be returned.
     Add _href and augments information used by the caller
@@ -44,11 +44,6 @@ def serialize(bind):
         bind['distributor_id'])
     serialized.update(href)
 
-    # repository
-    repo_query_manager = manager_factory.repo_query_manager()
-    repo = repo_query_manager.get_repository(bind['repo_id'])
-    serialized['repository'] = dict(repo)
-
     # type_id
     repo_distributor_manager = manager_factory.repo_distributor_manager()
     distributor = repo_distributor_manager.get_distributor(
@@ -57,9 +52,10 @@ def serialize(bind):
     serialized['type_id'] = distributor['distributor_type_id']
 
     # details
-    details = repo_distributor_manager.create_bind_payload(
-        bind['repo_id'],
-        bind['distributor_id'])
-    serialized['details'] = details
+    if include_details:
+        details = repo_distributor_manager.create_bind_payload(
+            bind['repo_id'],
+            bind['distributor_id'])
+        serialized['details'] = details
 
     return serialized

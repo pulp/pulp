@@ -72,7 +72,6 @@ class Bind(Model):
     @ivar deleted: Indicates the bind has been deleted.
     @type deleted: bool
     """
-
     collection_name = 'consumer_bindings'
     unique_indices = (
         ('repo_id', 'distributor_id', 'consumer_id'),
@@ -80,6 +79,15 @@ class Bind(Model):
     search_indices = (
         ('consumer_id',),
     )
+
+    class Action:
+        BIND = 'bind'
+        UNBIND = 'unbind'
+
+    class Status:
+        PENDING = 'pending'
+        SUCCEEDED = 'succeeded'
+        FAILED = 'failed'
 
     def __init__(self, consumer_id, repo_id, distributor_id):
         """

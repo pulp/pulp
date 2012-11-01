@@ -142,7 +142,7 @@ class BindHandler(Handler):
         @param conduit: A handler conduit.
         @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param binding: A binding to add/update.
-          Each binding is: {repo_id:<str>, details:<dict>}
+          A binding is: {repo_id:<str>, details:<dict>}
             The 'details' are at the discretion of the distributor.
         @type binding: dict
         @param options: Bind options.

@@ -265,7 +265,10 @@ class BindManager(object):
         @type distributor_id: str
         """
         collection = Bind.get_collection()
-        query = {'consumer_requests.status':{'$in':['pending', 'failed']}}
+        query = {
+            'consumer_requests.status':{
+                '$in':[Bind.Status.PENDING, Bind.Status.FAILED]}
+        }
         pending = collection.find(query)
         if len(list(pending)):
             raise Exception, 'Bind with outstanding consumer requests may not be deleted'
@@ -276,7 +279,7 @@ class BindManager(object):
             deleted=True)
         collection.remove(query, safe=True)
 
-    def request_pending(self, consumer_id, repo_id, distributor_id, request_id):
+    def request_pending(self, consumer_id, repo_id, distributor_id, action, request_id):
         """
         Add (pending) request for tracking.
         @param consumer_id: uniquely identifies the consumer.
@@ -289,12 +292,16 @@ class BindManager(object):
         @type request_id: str
         """
         collection = Bind.get_collection()
-        entry = dict(request_id=request_id, status='pending')
-        update = {'$push':{'consumer_requests':entry}}
+        assert action in (Bind.Action.BIND, Bind.Action.UNBIND)
         bind_id = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
             distributor_id=distributor_id)
+        entry = dict(
+            request_id=request_id,
+            action=action,
+            status=Bind.Status.PENDING)
+        update = {'$push':{'consumer_requests':entry}}
         collection.update(bind_id, update, safe=True)
 
     def request_succeeded(self, consumer_id, repo_id, distributor_id, request_id):
@@ -318,7 +325,7 @@ class BindManager(object):
         update = {'$pull':{'consumer_requests':{'request_id':request_id}}}
         collection.update(bind_id, update, safe=True)
         # purge all failed requests
-        update = {'$pull':{'consumer_requests':{'status':'failed'}}}
+        update = {'$pull':{'consumer_requests':{'status':Bind.Status.FAILED}}}
         collection.update(bind_id, update, safe=True)
 
     def request_failed(self, consumer_id, repo_id, distributor_id, request_id):
@@ -339,5 +346,5 @@ class BindManager(object):
             repo_id=repo_id,
             distributor_id=distributor_id)
         query['consumer_requests.request_id'] = request_id
-        update = {'$set':{'consumer_requests.$.status':'failed'}}
+        update = {'$set':{'consumer_requests.$.status':Bind.Status.FAILED}}
         collection.update(query, update, safe=True)

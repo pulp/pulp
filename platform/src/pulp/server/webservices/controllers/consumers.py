@@ -24,6 +24,7 @@ from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.consumer import Bind
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -39,22 +40,6 @@ from pulp.server.webservices import serialization
 
 _LOG = logging.getLogger(__name__)
 
-
-def decorated_binding(binding):
-    """
-    Decorate the binding (repo_id)
-    @param binding:
-    @return:
-    """
-    outstanding = 0
-    for request in binding['consumer_requests']:
-        if request['status'] in ('pending', 'failed'):
-            outstanding += 1
-    if not outstanding:
-        repo_id = binding['repo_id']
-    else:
-        repo_id = '%s{%d}' % (binding['repo_id'], outstanding)
-    return repo_id
 
 def expand_consumers(options, consumers):
     """
@@ -79,9 +64,9 @@ def expand_consumers(options, consumers):
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer_list(ids)
         for consumer in consumers:
-            id = consumer['id']
             consumer['bindings'] = \
-                [decorated_binding(b) for b in bindings.get(id, [])]
+                [serialization.binding.serialize(b, False)
+                    for b in bindings.get(consumer['id'], [])]
     return consumers
 
 

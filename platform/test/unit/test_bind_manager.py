@@ -34,6 +34,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         repo_id=REPO_ID,
         distributor_id=DISTRIBUTOR_ID,
         )
+    REQUEST_IDS = (29, 33, 90)
 
     def setUp(self):
         super(BindManagerTests, self).setUp()
@@ -82,7 +83,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_unbind(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_bind_manager()
         binding = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
@@ -99,8 +103,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_get_bind(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
         manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         bind = manager.get_bind(
             self.CONSUMER_ID,
@@ -114,8 +120,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_find_all(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
         manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         binds = manager.find_all()
         # Verify
@@ -127,8 +135,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_find_by_consumer(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
         manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         # Verify
@@ -159,8 +169,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_find_by_repo(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
         manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         binds = manager.find_by_repo(self.REPO_ID)
         # Verify
@@ -172,8 +184,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_find_by_distributor(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
         manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
         # Verify
@@ -185,8 +199,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_consumer_deleted(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
         manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
         # Test
@@ -197,7 +213,10 @@ class BindManagerTests(base.PulpAsyncServerTests):
 
     def test_consumer_unregister_cleanup(self):
         # Setup
-        self.test_bind()
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 1)
@@ -209,35 +228,135 @@ class BindManagerTests(base.PulpAsyncServerTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
-    def ___test_remove_repo_cleanup(self):
-        # TODO: Reimplement after moved to controller
+    def test_request_pending(self):
         # Setup
-        self.test_bind()
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_repo(self.REPO_ID)
-        self.assertEquals(len(binds), 1)
+        self.populate()
         # Test
-        manager = factory.repo_manager()
-        manager.delete_repo(self.REPO_ID)
-        # Verify
         manager = factory.consumer_bind_manager()
-        binds = manager.find_by_repo(self.REPO_ID)
-        self.assertEquals(len(binds), 0)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertEqual(bind['consumer_requests'], [])
+        manager.request_pending(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            Bind.Action.BIND,
+            self.REQUEST_IDS[0])
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['request_id'], self.REQUEST_IDS[0])
+        self.assertEqual(requests[0]['action'], Bind.Action.BIND)
+        self.assertEqual(requests[0]['status'], Bind.Status.PENDING)
 
-    def ___test_remove_distributor_cleanup(self):
-        # TODO: Reimplement after moved to controller
+    def test_bind_request_succeeded(self):
         # Setup
-        self.test_bind()
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEquals(len(binds), 1)
+        self.populate()
         # Test
-        manager = factory.repo_distributor_manager()
-        manager.remove_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        # Verify
         manager = factory.consumer_bind_manager()
-        binds = manager.find_by_distributor(self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEquals(len(binds), 0)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertEqual(bind['consumer_requests'], [])
+        for request_id in self.REQUEST_IDS:
+            manager.request_pending(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                Bind.Action.BIND,
+                request_id)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        for i in range(0, len(self.REQUEST_IDS)):
+            self.assertEqual(requests[i]['request_id'], self.REQUEST_IDS[i])
+            self.assertEqual(requests[i]['action'], Bind.Action.BIND)
+            self.assertEqual(requests[i]['status'], Bind.Status.PENDING)
+            manager.request_succeeded(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                self.REQUEST_IDS[0])
+            manager.request_failed(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                self.REQUEST_IDS[1])
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0]['request_id'], self.REQUEST_IDS[2])
+        self.assertEqual(requests[0]['action'], Bind.Action.BIND)
+        self.assertEqual(requests[0]['status'], Bind.Status.PENDING)
+        manager.request_succeeded(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            self.REQUEST_IDS[2])
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 0)
+
+    def test_bind_request_failed(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertEqual(bind['consumer_requests'], [])
+        for request_id in self.REQUEST_IDS:
+            manager.request_pending(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                Bind.Action.BIND,
+                request_id)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        for i in range(0, len(self.REQUEST_IDS)):
+            self.assertEqual(requests[i]['request_id'], self.REQUEST_IDS[i])
+            self.assertEqual(requests[i]['action'], Bind.Action.BIND)
+            self.assertEqual(requests[i]['status'], Bind.Status.PENDING)
+            manager.request_failed(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                self.REQUEST_IDS[0])
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 3)
+        self.assertEqual(requests[0]['request_id'], self.REQUEST_IDS[0])
+        self.assertEqual(requests[0]['action'], Bind.Action.BIND)
+        self.assertEqual(requests[0]['status'], Bind.Status.FAILED)
+        manager.request_succeeded(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            self.REQUEST_IDS[2])
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        requests = bind['consumer_requests']
+        self.assertEqual(len(requests), 1)
+
+    def test_mark_deleted(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertFalse(bind['deleted'])
+        manager.mark_deleted(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertRaises(
+            MissingResource,
+            manager.get_bind,
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID)
+        collection = Bind.get_collection()
+        query = dict(
+            consumer_id=self.CONSUMER_ID,
+            repo_id=self.REPO_ID,
+            distributor_id=self.DISTRIBUTOR_ID)
+        bind = collection.find_one(query)
+        self.assertTrue(bind['deleted'])
 
     #
     # Error Cases

@@ -23,6 +23,7 @@ from logging import getLogger
 
 from pulp.server.dispatch import factory
 from pulp.server.managers import factory as managers
+from pulp.server.db.model.consumer import Bind
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
@@ -77,9 +78,14 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.bind(bindings, options)
         # request tracking
-        manager = managers.consumer_bind_manager()
         request_id = factory.context().call_request_id
-        manager.request_pending(consumer_id, repo_id, distributor_id, request_id)
+        manager = managers.consumer_bind_manager()
+        manager.request_pending(
+            consumer_id,
+            repo_id,
+            distributor_id,
+            Bind.Action.BIND,
+            request_id)
 
     def unbind(self, consumer_id, repo_id, distributor_id, options):
         """
@@ -101,9 +107,14 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.unbind(bindings, options)
         # request tracking
-        manager = managers.consumer_bind_manager()
         request_id = factory.context().call_request_id
-        manager.request_pending(consumer_id, repo_id, distributor_id, request_id)
+        manager = managers.consumer_bind_manager()
+        manager.request_pending(
+            consumer_id,
+            repo_id,
+            distributor_id,
+            Bind.Action.UNBIND,
+            request_id)
 
     def install_content(self, consumer_id, units, options):
         """
