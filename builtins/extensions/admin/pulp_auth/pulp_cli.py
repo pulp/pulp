@@ -41,7 +41,7 @@ class AuthSection(PulpCliSection):
 
     def __init__(self, context):
         """
-        @param context:
+        @param context: pre-populated context that is given to the extensions by loader
         @type  context: pulp.client.extensions.core.ClientContext
         """
         PulpCliSection.__init__(self, 'auth', _('user, role and permission commands'))
@@ -52,7 +52,7 @@ class AuthSection(PulpCliSection):
         # Subsections
         self.add_subsection(UserSection(context))
         role_section = RoleSection(context)
-        role_section.add_subsection(UserSection(context))
+        role_section.add_subsection(RoleUserSection(context))
         self.add_subsection(role_section)
         self.add_subsection(PermissionSection(context))
 
