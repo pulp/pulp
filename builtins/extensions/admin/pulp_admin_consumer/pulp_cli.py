@@ -233,11 +233,11 @@ class AdminConsumerSection(PulpCliSection):
                     'unbinds':unbinds,
                 }
             }
-            for actions in binding['consumer_actions']:
-                status = actions['status']
+            for action in binding['consumer_actions']:
+                status = action['status']
                 if status == 'succeeded':
                     continue
-                if actions['action'] == 'bind':
+                if action['action'] == 'bind':
                     lst = binds
                 else:
                     lst = unbinds

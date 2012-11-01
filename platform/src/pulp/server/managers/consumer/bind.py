@@ -83,7 +83,8 @@ class BindManager(object):
         query = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id
+            distributor_id=distributor_id,
+            deleted=True
         )
         update = {'$set':{'deleted':False, 'consumer_actions':[]}}
         collection.update(query, update, safe=True)
@@ -278,6 +279,8 @@ class BindManager(object):
             distributor_id=distributor_id,
             deleted=True)
         collection.remove(query, safe=True)
+
+# --- consumer actions -------------------------------------------------------------------
 
     def action_pending(self, consumer_id, repo_id, distributor_id, action, action_id):
         """
