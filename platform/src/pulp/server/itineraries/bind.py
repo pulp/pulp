@@ -30,13 +30,13 @@ def bind_succeeded(call_request, call_report):
     @param call_report:
     """
     manager = managers.consumer_bind_manager()
-    request_id = call_request.id
+    action_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
     dispatch_report = call_report.result
     if dispatch_report['status']:
-        manager.request_succeeded(consumer_id, repo_id, distributor_id, request_id)
+        manager.action_succeeded(consumer_id, repo_id, distributor_id, action_id)
     else:
-        manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
+        manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
 
 def bind_failed(call_request, call_report):
     """
@@ -46,9 +46,9 @@ def bind_failed(call_request, call_report):
     @param call_report:
     """
     manager = managers.consumer_bind_manager()
-    request_id = call_request.id
+    action_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
-    manager.request_failed(consumer_id, repo_id, distributor_id, request_id)
+    manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
 
 # just mapped to bind functions because the behavior is the same
 # but want to use these names in the unbind itinerary for clarity.

@@ -34,7 +34,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         repo_id=REPO_ID,
         distributor_id=DISTRIBUTOR_ID,
         )
-    REQUEST_IDS = (29, 33, 90)
+    ACTION_IDS = (29, 33, 90)
 
     def setUp(self):
         super(BindManagerTests, self).setUp()
@@ -235,19 +235,19 @@ class BindManagerTests(base.PulpAsyncServerTests):
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(bind['consumer_requests'], [])
-        manager.request_pending(
+        self.assertEqual(bind['consumer_actions'], [])
+        manager.action_pending(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
             Bind.Action.BIND,
-            self.REQUEST_IDS[0])
+            self.ACTION_IDS[0])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 1)
-        self.assertEqual(requests[0]['request_id'], self.REQUEST_IDS[0])
-        self.assertEqual(requests[0]['action'], Bind.Action.BIND)
-        self.assertEqual(requests[0]['status'], Bind.Status.PENDING)
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], self.ACTION_IDS[0])
+        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
 
     def test_bind_request_succeeded(self):
         # Setup
@@ -256,85 +256,85 @@ class BindManagerTests(base.PulpAsyncServerTests):
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(bind['consumer_requests'], [])
-        for request_id in self.REQUEST_IDS:
-            manager.request_pending(
+        self.assertEqual(bind['consumer_actions'], [])
+        for action_id in self.ACTION_IDS:
+            manager.action_pending(
                 self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID,
                 Bind.Action.BIND,
-                request_id)
+                action_id)
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        for i in range(0, len(self.REQUEST_IDS)):
-            self.assertEqual(requests[i]['request_id'], self.REQUEST_IDS[i])
-            self.assertEqual(requests[i]['action'], Bind.Action.BIND)
-            self.assertEqual(requests[i]['status'], Bind.Status.PENDING)
-            manager.request_succeeded(
+        actions = bind['consumer_actions']
+        for i in range(0, len(self.ACTION_IDS)):
+            self.assertEqual(actions[i]['id'], self.ACTION_IDS[i])
+            self.assertEqual(actions[i]['action'], Bind.Action.BIND)
+            self.assertEqual(actions[i]['status'], Bind.Status.PENDING)
+            manager.action_succeeded(
                 self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID,
-                self.REQUEST_IDS[0])
-            manager.request_failed(
+                self.ACTION_IDS[0])
+            manager.action_failed(
                 self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID,
-                self.REQUEST_IDS[1])
+                self.ACTION_IDS[1])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 1)
-        self.assertEqual(requests[0]['request_id'], self.REQUEST_IDS[2])
-        self.assertEqual(requests[0]['action'], Bind.Action.BIND)
-        self.assertEqual(requests[0]['status'], Bind.Status.PENDING)
-        manager.request_succeeded(
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], self.ACTION_IDS[2])
+        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
+        manager.action_succeeded(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            self.REQUEST_IDS[2])
+            self.ACTION_IDS[2])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 0)
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 0)
 
-    def test_bind_request_failed(self):
+    def test_bind_action_failed(self):
         # Setup
         self.populate()
         # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(bind['consumer_requests'], [])
-        for request_id in self.REQUEST_IDS:
-            manager.request_pending(
+        self.assertEqual(bind['consumer_actions'], [])
+        for action_id in self.ACTION_IDS:
+            manager.action_pending(
                 self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID,
                 Bind.Action.BIND,
-                request_id)
+                action_id)
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        for i in range(0, len(self.REQUEST_IDS)):
-            self.assertEqual(requests[i]['request_id'], self.REQUEST_IDS[i])
-            self.assertEqual(requests[i]['action'], Bind.Action.BIND)
-            self.assertEqual(requests[i]['status'], Bind.Status.PENDING)
-            manager.request_failed(
+        actions = bind['consumer_actions']
+        for i in range(0, len(self.ACTION_IDS)):
+            self.assertEqual(actions[i]['id'], self.ACTION_IDS[i])
+            self.assertEqual(actions[i]['action'], Bind.Action.BIND)
+            self.assertEqual(actions[i]['status'], Bind.Status.PENDING)
+            manager.action_failed(
                 self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID,
-                self.REQUEST_IDS[0])
+                self.ACTION_IDS[0])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 3)
-        self.assertEqual(requests[0]['request_id'], self.REQUEST_IDS[0])
-        self.assertEqual(requests[0]['action'], Bind.Action.BIND)
-        self.assertEqual(requests[0]['status'], Bind.Status.FAILED)
-        manager.request_succeeded(
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 3)
+        self.assertEqual(actions[0]['id'], self.ACTION_IDS[0])
+        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.FAILED)
+        manager.action_succeeded(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            self.REQUEST_IDS[2])
+            self.ACTION_IDS[2])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 1)
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
 
     def test_mark_deleted(self):
         # Setup

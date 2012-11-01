@@ -233,15 +233,15 @@ class AdminConsumerSection(PulpCliSection):
                     'unbinds':unbinds,
                 }
             }
-            for request in binding['consumer_requests']:
-                status = request['status']
+            for actions in binding['consumer_actions']:
+                status = actions['status']
                 if status == 'succeeded':
                     continue
-                if request['action'] == 'bind':
+                if actions['action'] == 'bind':
                     lst = binds
                 else:
                     lst = unbinds
-                entry = dict(request_id=request['request_id'], status=status)
+                entry = dict(request_id=action['id'], status=status)
                 lst.append(entry)
             formatted.append(fb)
         consumer['bindings'] = formatted

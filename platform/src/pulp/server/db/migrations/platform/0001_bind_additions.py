@@ -15,11 +15,11 @@ from pulp.server.db.model.consumer import Bind
 
 def migrate(*args, **kwargs):
     """
-    Add new fields needed for consumer request tracking.
+    Add new fields needed for consumer action(s) tracking.
     """
     additions = (
         ('deleted', False),
-        ('consumer_requests', []),
+        ('consumer_actions', []),
     )
     collection = Bind.get_collection()
     for bind in collection.find({}):

@@ -78,14 +78,14 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.bind(bindings, options)
         # request tracking
-        request_id = factory.context().call_request_id
+        action_id = factory.context().call_request_id
         manager = managers.consumer_bind_manager()
-        manager.request_pending(
+        manager.action_pending(
             consumer_id,
             repo_id,
             distributor_id,
             Bind.Action.BIND,
-            request_id)
+            action_id)
 
     def unbind(self, consumer_id, repo_id, distributor_id, options):
         """
@@ -107,14 +107,14 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.unbind(bindings, options)
         # request tracking
-        request_id = factory.context().call_request_id
+        action_id = factory.context().call_request_id
         manager = managers.consumer_bind_manager()
-        manager.request_pending(
+        manager.action_pending(
             consumer_id,
             repo_id,
             distributor_id,
             Bind.Action.UNBIND,
-            request_id)
+            action_id)
 
     def install_content(self, consumer_id, units, options):
         """

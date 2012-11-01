@@ -104,7 +104,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertEquals(len(bindings), 1)
         self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
         self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
-        self.assertEquals(bindings[0]['consumer_requests'], [])
+        self.assertEquals(bindings[0]['consumer_actions'], [])
 
     def test_get_with_details(self):
         """
@@ -138,7 +138,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertEquals(len(bindings), 1)
         self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
         self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
-        self.assertEquals(bindings[0]['consumer_requests'], [])
+        self.assertEquals(bindings[0]['consumer_actions'], [])
 
     def test_get_missing_consumer(self):
         """
@@ -274,7 +274,7 @@ class ConsumersTest(base.PulpWebserviceTests):
                 self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
                 self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
                 self.assertEquals(bindings[0]['deleted'], False)
-                self.assertEquals(bindings[0]['consumer_requests'], [])
+                self.assertEquals(bindings[0]['consumer_actions'], [])
 
         else:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))

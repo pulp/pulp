@@ -109,10 +109,10 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (pending)
         request_id = call_reports[1].call_request_id
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(len(bind['consumer_actions']), 1)
         self.assertEqual(
-            bind['consumer_requests'][0],
-            dict(request_id=request_id, status='pending'))
+            bind['consumer_actions'][0],
+            dict(id=request_id, action=Bind.Action.BIND, status='pending'))
 
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.bind.called)
@@ -123,7 +123,7 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (confirmed)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_requests']), 0)
+        self.assertEqual(len(bind['consumer_actions']), 0)
 
     @patch('pulp.server.managers.consumer.bind.BindManager.bind', side_effect=Exception())
     def test_bind_failed(self, mock_bind):
@@ -194,10 +194,10 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (pending)
         request_id = call_reports[1].call_request_id
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(len(bind['consumer_actions']), 1)
         self.assertEqual(
-            bind['consumer_requests'][0],
-            dict(request_id=request_id, status='pending'))
+            bind['consumer_actions'][0],
+            dict(id=request_id, action=Bind.Action.BIND, status='pending'))
 
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.bind.called)
@@ -210,10 +210,10 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (failed)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(len(bind['consumer_actions']), 1)
         self.assertEqual(
-            bind['consumer_requests'][0],
-            dict(request_id=request_id, status='failed'))
+            bind['consumer_actions'][0],
+            dict(id=request_id, action=Bind.Action.BIND, status='failed'))
 
     def test_unbind(self):
 
@@ -254,10 +254,10 @@ class TestBind(PulpItineraryTests):
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(len(bind['consumer_actions']), 1)
         self.assertEqual(
-            bind['consumer_requests'][0],
-            dict(request_id=request_id, status='pending'))
+            bind['consumer_actions'][0],
+            dict(id=request_id, action=Bind.Action.UNBIND, status='pending'))
 
         # simulated asynchronous task result
         report = DispatchReport()
@@ -362,10 +362,10 @@ class TestBind(PulpItineraryTests):
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        self.assertEqual(len(bind['consumer_requests']), 1)
+        self.assertEqual(len(bind['consumer_actions']), 1)
         self.assertEqual(
-            bind['consumer_requests'][0],
-            dict(request_id=request_id, status='pending'))
+            bind['consumer_actions'][0],
+            dict(id=request_id, action=Bind.Action.UNBIND, status='pending'))
 
         # simulated asynchronous task result
         report = DispatchReport()
@@ -384,6 +384,6 @@ class TestBind(PulpItineraryTests):
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
         self.assertEqual(
-            bind['consumer_requests'][0],
-            dict(request_id=request_id, status='failed'))
+            bind['consumer_actions'][0],
+            dict(id=request_id, action=Bind.Action.UNBIND, status='failed'))
 

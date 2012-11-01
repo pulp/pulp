@@ -101,10 +101,10 @@ class AgentManagerTests(base.PulpServerTests):
         self.assertEquals(args[1], self.OPTIONS)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 1)
-        self.assertEqual(requests[0]['request_id'], None)
-        self.assertEqual(requests[0]['status'], 'pending')
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], None)
+        self.assertEqual(actions[0]['status'], 'pending')
 
     @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
            return_value=CONSUMER_PAYLOAD)
@@ -125,10 +125,10 @@ class AgentManagerTests(base.PulpServerTests):
         self.assertEquals(args[1], self.OPTIONS)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        requests = bind['consumer_requests']
-        self.assertEqual(len(requests), 1)
-        self.assertEqual(requests[0]['request_id'], None)
-        self.assertEqual(requests[0]['status'], 'pending')
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], None)
+        self.assertEqual(actions[0]['status'], 'pending')
 
     def test_content_install(self):
         # Setup
