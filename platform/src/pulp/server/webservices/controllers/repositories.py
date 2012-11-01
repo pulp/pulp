@@ -28,6 +28,8 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.itineraries.repo import (
+    sync_with_auto_publish_itinerary, publish_itinerary)
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -848,6 +850,7 @@ class RepoSync(JSONController):
             publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
 
             call_requests.append(publish_call_request)
+        call_requests = sync_with_auto_publish_itinerary(repo_id, overrides)
 
         # this raises an exception that is handled by the middleware,
         # so no return is needed
@@ -867,20 +870,8 @@ class RepoPublish(JSONController):
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
 
-        # Execute the publish asynchronously
-        repo_publish_manager = manager_factory.repo_publish_manager()
-        weight = pulp_config.config.getint('tasks', 'publish_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('publish')]
-        call_request = CallRequest(repo_publish_manager.publish,
-                                   [repo_id, distributor_id],
-                                   {'publish_config_override': overrides},
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                             repo_publish_manager.prep_publish)
+        call_request = publish_itinerary(repo_id, distributor_id, overrides)[0]
+
         return execution.execute_async(self, call_request)
 
 
