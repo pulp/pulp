@@ -126,20 +126,30 @@ def _initialize_content_types(v2_database):
 
 
 def _rpms(v1_database, v2_database, report):
+    rpm_coll = v2_database.units_rpm
+    all_rpms = v1_database.packages.find({'arch' : {'$ne' : 'src'}})
+    return __packages(rpm_coll, all_rpms, report)
+
+
+def _srpms(v1_database, v2_database, report):
+    srpm_coll = v2_database.units_srpm
+    all_srpms = v1_database.packages.find({'arch' : 'src'})
+    return __packages(srpm_coll, all_srpms, report)
+
+
+def __packages(package_coll, all_v1_packages, report):
 
     # In v1, both RPMs and SRPMs are stored in the packages collection.
     # The differentiating factor is the arch which will be 'src' for SRPMs and,
-    # well, not src for normal RPMs.
+    # well, not src for normal RPMs. This call handles both cases, with the
+    # differentiator being done by the parameters.
 
     # Idempotency: This one is ugly. The unique key for an RPM/SRPM in v2
     # is NEVRA, checksumtype, and checksum. It's less efficient but way simpler
     # to iterate over each package in v1 and attempt to insert it, letting
     # mongo's uniqueness check prevent a duplicate.
 
-    package_coll = v2_database.units_rpm
-
-    all_rpms = v1_database.packages.find({'arch' : {'$ne' : 'src'}})
-    for v1_rpm in all_rpms:
+    for v1_rpm in all_v1_packages:
         v2_rpm = {
             'name' : v1_rpm['name'],
             'epoch' : v1_rpm['epoch'],
@@ -187,14 +197,6 @@ def _rpms(v1_database, v2_database, report):
             # I really dislike this pattern, but it's easiest. This is the
             # idempotency check and isn't a problem that needs to be handled.
             pass
-
-    return True
-
-
-def _srpms(v1_database, v2_database, report):
-
-    # See comment in _rpms for differentiation between RPMs and SRPMs in the
-    # packages collection.
 
     return True
 

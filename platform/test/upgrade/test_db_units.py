@@ -9,13 +9,12 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-import pymongo
-from pulp.server.upgrade.model import UpgradeStepReport
 
 from pymongo.objectid import ObjectId
 
 from base_db_upgrade import BaseDbUpgradeTests
 from pulp.server.upgrade.db import units
+from pulp.server.upgrade.model import UpgradeStepReport
 
 
 class InitializeContentTypesTests(BaseDbUpgradeTests):
@@ -74,18 +73,27 @@ class InitializeContentTypesTests(BaseDbUpgradeTests):
             self.assertEqual(found_tracker['version'], 0)
 
     def test_initialize_content_types_idempotency(self):
-        pass
+        # Test
+        units._initialize_content_types(self.tmp_test_db.database)
+        result = units._initialize_content_types(self.tmp_test_db.database)
+
+        # Verify
+        self.assertTrue(result)
+
+        types_coll = self.tmp_test_db.database.content_types
+        all_types = types_coll.find()
+        self.assertEqual(all_types.count(), len(units.TYPE_DEFS))
 
 
-class RpmsUpgradeTests(BaseDbUpgradeTests):
+class PackagesUpgradeTests(BaseDbUpgradeTests):
 
     def setUp(self):
-        super(RpmsUpgradeTests, self).setUp()
+        super(PackagesUpgradeTests, self).setUp()
 
         # The unique keys need to be set for these tests
         units._initialize_content_types(self.tmp_test_db.database)
 
-    def test_upgrade(self):
+    def test_rpms(self):
         # Test
         report = UpgradeStepReport()
         result = units._rpms(self.v1_test_db.database, self.tmp_test_db.database, report)
@@ -94,15 +102,56 @@ class RpmsUpgradeTests(BaseDbUpgradeTests):
         self.assertTrue(result)
 
         v1_rpms = self.v1_test_db.database.packages.find({'arch' : {'$ne' : 'src'}}).sort('filename')
-        v2_rpms = self.tmp_test_db.database.units_rpm.find().sort('filename')
+        self._assert_upgrade(v1_rpms)
+
+    def test_rpms_idempotency(self):
+        # Test
+        report = UpgradeStepReport()
+        units._rpms(self.v1_test_db.database, self.tmp_test_db.database, report)
+        result = units._rpms(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_rpms = self.v1_test_db.database.packages.find({'arch' : {'$ne' : 'src'}})
+        v2_rpms = self.tmp_test_db.database.units_rpm.find()
         self.assertEqual(v1_rpms.count(), v2_rpms.count())
 
-        for v1_rpm, v2_rpm in zip(v1_rpms, v2_rpms):
+    def test_srpms(self):
+        # Test
+        report = UpgradeStepReport()
+        result = units._srpms(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_srpms = self.v1_test_db.database.packages.find({'arch' : 'src'}).sort('filename')
+        self._assert_upgrade(v1_srpms)
+
+    def test_srpms_idempotency(self):
+        # Test
+        report = UpgradeStepReport()
+        units._srpms(self.v1_test_db.database, self.tmp_test_db.database, report)
+        result = units._srpms(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_rpms = self.v1_test_db.database.packages.find({'arch' : 'src'})
+        v2_rpms = self.tmp_test_db.database.units_rpm.find()
+        self.assertEqual(v1_rpms.count(), v2_rpms.count())
+
+    def _assert_upgrade(self, v1_packages):
+
+        v2_rpms = self.tmp_test_db.database.units_rpm.find().sort('filename')
+        self.assertEqual(v1_packages.count(), v2_rpms.count())
+
+        for v1_rpm, v2_rpm in zip(v1_packages, v2_rpms):
             self.assertTrue(isinstance(v2_rpm['_id'], ObjectId))
             self.assertEqual(v2_rpm['_content_type_id'], 'rpm')
             expected_path = '/var/lib/pulp/content/rpm/%s/%s/%s/%s/%s/%s' % (v2_rpm['name'],
-                v2_rpm['version'], v2_rpm['release'], v2_rpm['arch'], v2_rpm['checksum'],
-                v2_rpm['filename'])
+                                                                             v2_rpm['version'], v2_rpm['release'], v2_rpm['arch'], v2_rpm['checksum'],
+                                                                             v2_rpm['filename'])
             self.assertEqual(v2_rpm['_storage_path'], expected_path)
 
             self.assertEqual(v1_rpm['name'], v2_rpm['name'])
@@ -122,19 +171,4 @@ class RpmsUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_rpm['checksum'].values()[0], v2_rpm['checksum'])
 
             self.assertTrue('relativepath' not in v2_rpm) # not set in this script
-
-    def test_upgrade_idempotency(self):
-        # Test
-        report = UpgradeStepReport()
-        units._rpms(self.v1_test_db.database, self.tmp_test_db.database, report)
-        result = units._rpms(self.v1_test_db.database, self.tmp_test_db.database, report)
-
-        # Verify
-        self.assertTrue(result)
-
-        v1_rpms = self.v1_test_db.database.packages.find({'arch' : {'$ne' : 'src'}}).sort('filename')
-        v2_rpms = self.tmp_test_db.database.units_rpm.find().sort('filename')
-        self.assertEqual(v1_rpms.count(), v2_rpms.count())
-
-
 
