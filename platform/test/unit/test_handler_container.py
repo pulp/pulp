@@ -33,7 +33,7 @@ class TestHandlerContainer(unittest.TestCase):
         self.deployer.clean()
         
     def container(self):
-        return Container(MockDeployer.ROOT, MockDeployer.PATH)
+        return Container(MockDeployer.CONF_D, [MockDeployer.PATH])
 
     def test_loading(self):
         # Setup
@@ -46,9 +46,10 @@ class TestHandlerContainer(unittest.TestCase):
         handler = container.find('puppet')
         self.assertTrue(handler is None)
         errors = container.errors()
-        self.assertEquals(len(errors), 2)
-        self.assertTrue(isinstance(errors[0], PropertyNotFound))
-        self.assertTrue(isinstance(errors[1], SectionNotFound))
+        self.assertEquals(len(errors), 3)
+        self.assertTrue(isinstance(errors[0], ImportError))
+        self.assertTrue(isinstance(errors[1], PropertyNotFound))
+        self.assertTrue(isinstance(errors[2], SectionNotFound))
 
     def test_find(self):
         # Setup
