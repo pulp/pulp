@@ -75,6 +75,7 @@ class BindManager(object):
         """
         Rest the bind.
         This means resetting the (deleted) flag and consumer requests.
+        Only (deleted) bindings will be reset.
         @param consumer_id:
         @param repo_id:
         @param distributor_id:
@@ -134,7 +135,8 @@ class BindManager(object):
 
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """
-        Find a specific bind.
+        Get a specific bind.
+        This method ignores the deleted flag.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.
@@ -149,8 +151,7 @@ class BindManager(object):
         query = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id,
-            deleted=False)
+            distributor_id=distributor_id)
         bind = collection.find_one(query)
         if bind is None:
             key = '.'.join((consumer_id, repo_id, distributor_id))

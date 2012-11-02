@@ -241,7 +241,7 @@ class AdminConsumerSection(PulpCliSection):
                     lst = binds
                 else:
                     lst = unbinds
-                entry = dict(request_id=action['id'], status=status)
+                entry = dict(id=action['id'], status=status)
                 lst.append(entry)
             formatted.append(fb)
         consumer['bindings'] = formatted
