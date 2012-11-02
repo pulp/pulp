@@ -37,6 +37,7 @@ class Bindings(object):
         self.profile = ProfilesAPI(pulp_connection)
         self.consumer = ConsumerAPI(pulp_connection)
         self.consumer_content = ConsumerContentAPI(pulp_connection)
+        self.consumer_content_schedules = ConsumerContentSchedulesAPI(pulp_connection)
         self.consumer_group = ConsumerGroupAPI(pulp_connection)
         self.consumer_group_search = ConsumerGroupSearchAPI(pulp_connection)
         self.consumer_group_actions = ConsumerGroupActionAPI(pulp_connection)
