@@ -136,7 +136,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
     return call_requests
 
 
-def unbind_itinerary(consumer_id, repo_id, distributor_id, options, hard):
+def unbind_itinerary(consumer_id, repo_id, distributor_id, options, hard=False):
     """
     Get the unbind itinerary:
       1. Mark the binding as (deleted) on the server.
