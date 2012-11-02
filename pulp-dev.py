@@ -86,14 +86,12 @@ LINKS = (
     # Builtin Admin Extensions
     ('builtins/extensions/admin/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
     ('builtins/extensions/admin/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
+    ('builtins/extensions/admin/pulp_auth', DIR_ADMIN_EXTENSIONS + 'pulp_auth'),
     ('builtins/extensions/admin/pulp_event', DIR_ADMIN_EXTENSIONS + 'pulp_event'),
     ('builtins/extensions/admin/pulp_orphan', DIR_ADMIN_EXTENSIONS + 'pulp_orphan'),
-    ('builtins/extensions/admin/pulp_permission', DIR_ADMIN_EXTENSIONS + 'pulp_permission'),
     ('builtins/extensions/admin/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
-    ('builtins/extensions/admin/pulp_role', DIR_ADMIN_EXTENSIONS + 'pulp_role'),
     ('builtins/extensions/admin/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
     ('builtins/extensions/admin/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
-    ('builtins/extensions/admin/pulp_user', DIR_ADMIN_EXTENSIONS + 'pulp_user'),
 
     # Builtin Consumer Extensions
     ('builtins/extensions/consumer/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
