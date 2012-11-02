@@ -19,6 +19,7 @@ import mock_plugins
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
 
@@ -104,7 +105,6 @@ class BindManagerTests(base.PulpAsyncServerTests):
     def test_get_bind(self):
         # Setup
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
@@ -121,7 +121,6 @@ class BindManagerTests(base.PulpAsyncServerTests):
     def test_find_all(self):
         # Setup
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
@@ -136,7 +135,6 @@ class BindManagerTests(base.PulpAsyncServerTests):
     def test_find_by_consumer(self):
         # Setup
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
@@ -147,6 +145,29 @@ class BindManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    def test_find_by_criteria(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        criteria = Criteria({'consumer_id':self.CONSUMER_ID})
+        bindings = manager.find_by_criteria(criteria)
+        bind = bindings[0]
+        self.assertEqual(len(bindings), 1)
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        # Test ($in)
+        criteria = Criteria({'consumer_id':{'$in':[self.CONSUMER_ID]}})
+        bindings = manager.find_by_criteria(criteria)
+        bind = bindings[0]
+        self.assertEqual(len(bindings), 1)
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
 
     @mock.patch.object(Bind, 'get_collection')
     def test_find_by_consumer_list(self, mock_get_collection):

@@ -226,8 +226,11 @@ class AdminConsumerSection(PulpCliSection):
         for binding in bindings:
             binds = []
             unbinds = []
+            repo_id = binding['repo_id']
+            if binding['deleted']:
+                repo_id += ' [DELETED]'
             fb = {
-                'repo_id':binding['repo_id'],
+                'repo_id':repo_id,
                 'consumer_actions':{
                     'binds':binds,
                     'unbinds':unbinds,

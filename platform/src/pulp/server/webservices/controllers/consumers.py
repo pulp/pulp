@@ -65,11 +65,16 @@ def expand_consumers(options, consumers):
     if options.get('bindings', False):
         ids = [c['id'] for c in consumers]
         manager = managers.consumer_bind_manager()
-        bindings = manager.find_by_consumer_list(ids)
+        criteria = Criteria({'consumer_id':{'$in':ids}})
+        bindings = manager.find_by_criteria(criteria)
+        collated = {}
+        for b in bindings:
+            lst = collated.setdefault(b['consumer_id'], [])
+            lst.append(b)
         for consumer in consumers:
             consumer['bindings'] = \
                 [serialization.binding.serialize(b, False)
-                    for b in bindings.get(consumer['id'], [])]
+                    for b in collated.get(consumer['id'], [])]
     return consumers
 
 

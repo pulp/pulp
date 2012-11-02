@@ -133,6 +133,8 @@ class BindManager(object):
         query = dict(consumer_id=id)
         collection.remove(query)
 
+# --- finders ----------------------------------------------------------------------------
+
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """
         Get a specific bind.
@@ -237,6 +239,20 @@ class BindManager(object):
             deleted=False)
         cursor = collection.find(query)
         return list(cursor)
+
+    def find_by_criteria(self, criteria):
+        """
+        Find bindings that match criteria.
+        @param criteria: A Criteria object representing a search you want to perform
+        @type  criteria: pulp.server.db.model.criteria.Criteria
+        @return: list of Bind objects
+        @rtype: list
+        """
+        collection = Bind.get_collection()
+        bindings = collection.query(criteria)
+        return list(bindings)
+
+# --- delete management ------------------------------------------------------------------
 
     def mark_deleted(self, consumer_id, repo_id, distributor_id):
         """
