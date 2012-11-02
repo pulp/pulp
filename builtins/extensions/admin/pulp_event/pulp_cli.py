@@ -225,7 +225,7 @@ class AMQPSection(GenericSection):
         super(AMQPSection, self).__init__(context, 'amqp',
             _('manage amqp listeners'))
 
-        m = _('optional name of an exchange that overrides the setting from'
+        m = _('optional name of an exchange that overrides the setting from '
               'server.conf')
         self.exchange_option = PulpCliOption('--exchange', m, required=False)
 
