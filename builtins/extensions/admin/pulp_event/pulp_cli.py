@@ -102,7 +102,7 @@ class EventSection(PulpCliSection):
         @param context:
         @type  context: pulp.client.extensions.core.ClientContext
         """
-        super(EventSection, self).__init__('event', _('manage server-side events'))
+        super(EventSection, self).__init__('event', _('subscribe to event notifications'))
         self.add_subsection(ListenerSection(context))
 
 
