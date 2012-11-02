@@ -10,11 +10,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from ConfigParser import SafeConfigParser
 import os
+from ConfigParser import SafeConfigParser
+from datetime import datetime
 
-from pymongo.objectid import ObjectId
-
+from pulp.common import dateutils
+from pulp.common.tags import resource_tag
+from pulp.server.compat import ObjectId
+from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch.call import CallRequest
+from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
@@ -56,9 +62,11 @@ def upgrade(v1_database, v2_database):
     importer_success = _repo_importers(v1_database, v2_database, report)
     distributor_success = _repo_distributors(v1_database, v2_database, report)
     group_success = _repo_groups(v1_database, v2_database, report)
+    sync_schedule_success = _sync_schedules(v1_database, v2_database, report)
 
     report.success = (repo_success and importer_success and
-                      distributor_success and group_success)
+                      distributor_success and group_success and
+                      sync_schedule_success)
     return report
 
 
@@ -302,5 +310,73 @@ def _repo_groups(v1_database, v2_database, report):
 
     for group_id, repo_ids in repo_ids_by_group.items():
         v2_coll.update({'id' : group_id}, {'$addToSet' : {'repo_ids' : {'$each' : repo_ids}}})
+
+    return True
+
+
+def _sync_schedules(v1_database, v2_database, report):
+    v1_repo_collection = v1_database.repos
+    v2_repo_importer_collection = v2_database.repo_importers
+    v2_scheduled_call_collection = v2_database.scheduled_calls
+
+    # ugly hack to find out which repos have already been scheduled
+    # necessary because $size is not a meta-query and doesn't support $gt, etc
+    repos_without_schedules = v2_repo_importer_collection.find(
+        {'importer_type_id': YUM_IMPORTER_TYPE_ID, 'scheduled_syncs': {'$size': 0}},
+        fields=['repo_id'])
+
+    repo_ids_without_schedules = [r['repo_id'] for r in repos_without_schedules]
+
+    repos_with_schedules = v2_repo_importer_collection.find(
+        {'repo_id': {'$nin': repo_ids_without_schedules}, 'importer_type_id': YUM_IMPORTER_TYPE_ID},
+        fields=['repo_id'])
+
+    repos_to_schedule = v1_repo_collection.find(
+        {'id': {'$nin': [r['repo_id'] for r in repos_with_schedules]}, 'sync_schedule': {'$ne': None}},
+        fields=['id', 'sync_schedule', 'sync_options', 'last_sync'])
+
+    for repo in repos_to_schedule:
+
+        if repo['id'] not in repo_ids_without_schedules:
+            report.error('Repository [%s] not found in the v2 database.'
+                         'sync scheduling being canceled.' % repo['id'])
+            return False
+
+        args = [repo['id']]
+        kwargs = {'overrides': {}}
+        call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs)
+
+        scheduled_call_document = {
+            '_id': ObjectId(),
+            'id': None,
+            'serialized_call_request': None,
+            'schedule': repo['sync_schedule'],
+            'failure_threshold': None,
+            'consecutive_failures': 0,
+            'first_run': None,
+            'last_run': repo['last_sync'],
+            'next_run': None,
+            'remaining_runs': None,
+            'enabled': True}
+
+        scheduled_call_document['id'] = str(scheduled_call_document['_id'])
+
+        schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, scheduled_call_document['id'])
+        call_request.tags.append(schedule_tag)
+        scheduled_call_document['serialized_call_request'] = call_request.serialize()
+
+        if isinstance(repo['sync_options'], dict):
+            scheduled_call_document['failure_threshold'] = repo['sync_options'].get('failure_threshold', None)
+
+        interval, start, recurrences = dateutils.parse_iso8601_interval(scheduled_call_document['schedule'])
+        scheduled_call_document['first_run'] = start or datetime.utcnow()
+        scheduled_call_document['remaining_runs'] = recurrences
+
+        scheduled_call_document['next_run'] = dispatch_factory.scheduler().calculate_next_run(scheduled_call_document)
+
+        v2_scheduled_call_collection.insert(scheduled_call_document, safe=True)
+        v2_repo_importer_collection.update({'repo_id': repo['id'], 'importer_type_id': YUM_IMPORTER_TYPE_ID},
+                                           {'$push': {'scheduled_syncs': scheduled_call_document['id']}},
+                                           safe=True)
 
     return True
