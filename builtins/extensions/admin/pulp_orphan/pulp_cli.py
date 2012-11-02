@@ -29,7 +29,7 @@ class OrphanSection(PulpCliSection):
         """
         :type  context: pulp.client.extensions.core.ClientContext
         """
-        m = _('manage orphaned content units')
+        m = _('find and remove orphaned content units')
         super(OrphanSection, self).__init__('orphan', m)
 
         self.context = context
