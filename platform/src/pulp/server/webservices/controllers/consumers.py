@@ -317,6 +317,14 @@ class Binding(JSONController):
         execution.execute_multiple(call_requests)
 
 
+class BindingSearch(SearchController):
+    """
+    Bind search.
+    """
+    def __init__(self):
+        SearchController.__init__(self, managers.consumer_bind_manager().find_by_criteria)
+
+
 class Content(JSONController):
     """
     Represents a specific bind object.
@@ -981,6 +989,7 @@ class UnitUninstallScheduleResource(JSONController):
 urls = (
     '/$', Consumers,
     '/search/$', ConsumerSearch,
+    '/binding/search/$', BindingSearch,
     '/actions/content/applicability/$', ContentApplicability,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,

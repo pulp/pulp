@@ -14,7 +14,7 @@
 """
 Contains bind management classes
 """
-
+from time import time
 from logging import getLogger
 
 from pymongo.errors import DuplicateKeyError
@@ -312,10 +312,10 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
-        # delete the request
+        # delete the action
         update = {'$pull':{'consumer_actions':{'id':action_id}}}
         collection.update(bind_id, update, safe=True)
-        # purge all failed requests
+        # purge all failed actions
         update = {'$pull':{'consumer_actions':{'status':Bind.Status.FAILED}}}
         collection.update(bind_id, update, safe=True)
 

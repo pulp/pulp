@@ -681,6 +681,31 @@ class BindTest(base.PulpWebserviceTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
+    def test_search(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.action_pending(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            Bind.Action.BIND,
+            0)
+
+        # Test
+        criteria = {'filters':
+            {'consumer_actions.status':{'$in':['pending', 'failed']}}
+        }
+        path = '/v2/consumers/binding/search/'
+        body = dict(criteria=criteria)
+        status, body = self.post(path, body)
+
+        # Verify
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body), 1)
+
+
 
 class ContentTest(base.PulpWebserviceTests):
 
