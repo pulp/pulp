@@ -306,8 +306,14 @@ class Binding(JSONController):
         manager = managers.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
         # delete (unbind)
+        hard = body.get('hard', False)
         options = body.get('options', {})
-        call_requests = unbind_itinerary(consumer_id, repo_id, distributor_id, options)
+        call_requests = unbind_itinerary(
+            consumer_id,
+            repo_id,
+            distributor_id,
+            options,
+            hard)
         execution.execute_multiple(call_requests)
 
 

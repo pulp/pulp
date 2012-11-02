@@ -136,7 +136,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
     return call_requests
 
 
-def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
+def unbind_itinerary(consumer_id, repo_id, distributor_id, options, hard):
     """
     Get the unbind itinerary:
       1. Mark the binding as (deleted) on the server.
@@ -150,6 +150,8 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     @type distributor_id: str
     @param options: Unbind options passed to the agent handler.
     @type options: dict
+    @param hard: Indicates a hard unbind.
+    @type hard: bool
     @return: A list of call_requests known as an itinerary.
     @rtype list
     """
@@ -162,26 +164,39 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     resources = {
         dispatch_constants.RESOURCE_CONSUMER_TYPE:
             {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-
-    args = [
-        consumer_id,
-        repo_id,
-        distributor_id
-        ]
+    }
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('unbind')
-        ]
+    ]
 
-    unbind_request = CallRequest(
-        manager.unbind,
-        args=args,
-        resources=resources,
-        tags=tags)
+    args = [
+        consumer_id,
+        repo_id,
+        distributor_id,
+    ]
+
+    # A (hard) rebind immediately deletes the binding instead
+    # of marking it deleted and going through that lifecycle.
+    # It is intended to be used to clean up orphaned bindings
+    # caused by failed/unconfirmed unbind actions on the consumer.
+
+    if hard:
+        args.append(True)
+        unbind_request = CallRequest(
+            manager.delete,
+            args=args,
+            resources=resources,
+            tags=tags)
+    else:
+        unbind_request = CallRequest(
+            manager.unbind,
+            args=args,
+            resources=resources,
+            tags=tags)
 
     call_requests.append(unbind_request)
 
@@ -192,7 +207,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         repo_id,
         distributor_id,
         options,
-        ]
+    ]
 
     manager = managers.consumer_agent_manager()
     agent_request = CallRequest(
@@ -220,20 +235,20 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     resources = {
         dispatch_constants.RESOURCE_CONSUMER_TYPE:
             {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
+    }
 
     args = [
         consumer_id,
         repo_id,
         distributor_id
-        ]
+    ]
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('delete')
-        ]
+    ]
 
     delete_request = CallRequest(
         manager.delete,

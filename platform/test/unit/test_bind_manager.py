@@ -108,15 +108,20 @@ class BindManagerTests(base.PulpAsyncServerTests):
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
-        bind = manager.get_bind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Verify
         self.assertTrue(bind is not None)
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
+    def test_get_bind_not_found(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        self.assertRaises(MissingResource, manager.get_bind, 'A', 'B', 'C')
 
     def test_find_all(self):
         # Setup
@@ -167,26 +172,6 @@ class BindManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
-
-
-    @mock.patch.object(Bind, 'get_collection')
-    def test_find_by_consumer_list(self, mock_get_collection):
-        manager = factory.consumer_bind_manager()
-        CONSUMER_IDS = ['consumer1', 'consumer2']
-        mock_collection = mock_get_collection.return_value
-        # return a fake binding list
-        mock_collection.find.return_value = [
-            {'id' : 'binding1', 'consumer_id' : 'consumer1'}
-        ]
-
-        ret = manager.find_by_consumer_list(CONSUMER_IDS)
-
-        mock_collection.find.assert_called_once_with(
-            {'consumer_id': {'$in': CONSUMER_IDS}, 'deleted':False})
-
-        self.assertTrue(isinstance(ret, dict))
-        self.assertTrue('consumer1' in ret)
-        self.assertEqual(ret['consumer1'][0]['id'], 'binding1')
 
     def test_find_by_repo(self):
         # Setup
@@ -360,24 +345,61 @@ class BindManagerTests(base.PulpAsyncServerTests):
     def test_mark_deleted(self):
         # Setup
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertFalse(bind['deleted'])
+        # Test
         manager.mark_deleted(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Validate
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertTrue(bind['deleted'])
+
+    def test_delete(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+    def test_delete_with_actions(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.action_pending(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            Bind.Action.BIND,
+            '0')
         self.assertRaises(
-            MissingResource,
-            manager.get_bind,
+            Exception,
+            manager.delete,
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID)
+
+    def test_hard_delete(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Test
+        manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.action_pending(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            Bind.Action.BIND,
+            '0')
+        manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, True)
         collection = Bind.get_collection()
-        query = dict(
-            consumer_id=self.CONSUMER_ID,
-            repo_id=self.REPO_ID,
-            distributor_id=self.DISTRIBUTOR_ID)
-        bind = collection.find_one(query)
-        self.assertTrue(bind['deleted'])
+        bind_id = manager.bind_id(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        bind = collection.find_one(bind_id)
+        self.assertTrue(bind is None)
 
     #
     # Error Cases

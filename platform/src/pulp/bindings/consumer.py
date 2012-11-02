@@ -91,15 +91,6 @@ class BindingsAPI(PulpAPI):
     BASE_PATH = '/v2/consumers/%s/bindings/'
 
     def find_by_id(self, id, repoid=None):
-        """
-        Find bindings by consumer ID.
-        @param id: A consumer ID.
-        @type id: str
-        @param repoid: An (optional) repository ID.
-        @type repoid: str
-        @return: A list of bindings.
-        @rtype: list
-        """
         path = self.BASE_PATH % id
         if repoid:
             path += '%s/' % repoid
@@ -110,9 +101,10 @@ class BindingsAPI(PulpAPI):
         data = {'repo_id' : repo_id, 'distributor_id' : distributor_id}
         return self.server.POST(path, data)
     
-    def unbind(self, id, repo_id, distributor_id):
+    def unbind(self, id, repo_id, distributor_id, hard=False):
         path = self.BASE_PATH % id + "%s/" % repo_id + "%s/" % distributor_id
-        return self.server.DELETE(path)
+        body = dict(hard=hard)
+        return self.server.DELETE(path, body)
 
 
 class ProfilesAPI(PulpAPI):

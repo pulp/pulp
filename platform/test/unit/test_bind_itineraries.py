@@ -83,7 +83,8 @@ class TestBind(PulpItineraryTests):
         itinerary = bind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
-            self.DISTRIBUTOR_ID, options)
+            self.DISTRIBUTOR_ID,
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify
@@ -136,7 +137,8 @@ class TestBind(PulpItineraryTests):
         itinerary = bind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
-            self.DISTRIBUTOR_ID, options)
+            self.DISTRIBUTOR_ID,
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify
@@ -168,7 +170,8 @@ class TestBind(PulpItineraryTests):
         itinerary = bind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
-            self.DISTRIBUTOR_ID, options)
+            self.DISTRIBUTOR_ID,
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify
@@ -227,7 +230,8 @@ class TestBind(PulpItineraryTests):
         itinerary = unbind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
-            self.DISTRIBUTOR_ID, options)
+            self.DISTRIBUTOR_ID,
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify
@@ -275,6 +279,42 @@ class TestBind(PulpItineraryTests):
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is None)
 
+    def test_hard_unbind(self):
+
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+        # Test
+        options = {}
+        itinerary = unbind_itinerary(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            options,
+            True)
+        call_reports = self.coordinator.execute_multiple_calls(itinerary)
+
+        # Verify
+        self.assertEqual(len(call_reports), 3)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # run task #1 (actual delete)
+        self.run_next()
+
+        # verify bind marked deleted
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind is None)
+
+        # run task #2 (notify consumer)
+        self.run_next()
+
+        # verify agent notified
+        self.assertTrue(mock_agent.Consumer.unbind.called)
+
     @patch('pulp.server.managers.consumer.bind.BindManager.unbind', side_effect=Exception())
     def test_unbind_failed(self, mock_bind):
 
@@ -289,7 +329,8 @@ class TestBind(PulpItineraryTests):
         itinerary = unbind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
-            self.DISTRIBUTOR_ID, options)
+            self.DISTRIBUTOR_ID,
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify
@@ -335,7 +376,8 @@ class TestBind(PulpItineraryTests):
         itinerary = unbind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
-            self.DISTRIBUTOR_ID, options)
+            self.DISTRIBUTOR_ID,
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify

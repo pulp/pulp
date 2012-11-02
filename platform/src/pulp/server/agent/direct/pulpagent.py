@@ -118,7 +118,7 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10 * DAY, 600),
+            timeout=(30 * DAY, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -139,7 +139,7 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10 * DAY, 600),
+            timeout=(30 * DAY, 600),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,

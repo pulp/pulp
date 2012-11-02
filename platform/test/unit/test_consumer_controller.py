@@ -633,6 +633,36 @@ class BindTest(base.PulpWebserviceTests):
             self.DISTRIBUTOR_ID,
             {})
 
+    @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
+    def test_hard_unbind(self, mock_unbind_itinerary):
+
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+        # Test
+        path = '/v2/consumers/%s/bindings/%s/%s/' %\
+               (self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+        body = {'hard':True}
+        status, body = self.delete(path, body)
+
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertEqual(len(body), 3)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # verify itinerary called
+        mock_unbind_itinerary.assert_called_with(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            {},
+            True)
+
     def test_unbind_missing_consumer(self):
         # Setup
         self.populate()
