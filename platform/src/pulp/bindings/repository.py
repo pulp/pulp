@@ -375,10 +375,15 @@ class RepositoryUnitAPI(PulpAPI):
 
         :return:    server response
         """
+        override_config = {}
+        if kwargs['recursive']:
+            override_config['recursive'] = kwargs['recursive']
+
         criteria = self._generate_search_criteria(**kwargs)
         data = {
             'source_repo_id' : source_repo_id,
-            'criteria' : criteria
+            'criteria' : criteria,
+            'override_config' : override_config,
         }
         path = self.COPY_PATH % destination_repo_id
         return self.server.POST(path, data)
