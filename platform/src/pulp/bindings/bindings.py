@@ -34,6 +34,7 @@ class Bindings(object):
         # Please keep the following in alphabetical order to ease reading
         self.actions = ActionsAPI(pulp_connection)
         self.bind = BindingsAPI(pulp_connection)
+        self.bindings = BindingSearchAPI(pulp_connection)
         self.profile = ProfilesAPI(pulp_connection)
         self.consumer = ConsumerAPI(pulp_connection)
         self.consumer_content = ConsumerContentAPI(pulp_connection)

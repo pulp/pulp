@@ -107,6 +107,10 @@ class BindingsAPI(PulpAPI):
         return self.server.DELETE(path, body)
 
 
+class BindingSearchAPI(SearchAPI):
+    PATH = "/v2/consumers/binding/search/"
+
+
 class ProfilesAPI(PulpAPI):
 
     BASE_PATH = '/v2/consumers/%s/profiles/'

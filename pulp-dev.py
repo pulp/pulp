@@ -92,6 +92,7 @@ LINKS = (
     ('builtins/extensions/admin/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
     ('builtins/extensions/admin/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
     ('builtins/extensions/admin/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
+    ('builtins/extensions/admin/pulp_binding', DIR_ADMIN_EXTENSIONS + 'pulp_binding'),
 
     # Builtin Consumer Extensions
     ('builtins/extensions/consumer/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
