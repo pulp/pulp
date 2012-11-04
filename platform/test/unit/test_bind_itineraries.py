@@ -110,10 +110,12 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (pending)
         request_id = call_reports[1].call_request_id
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_actions']), 1)
-        self.assertEqual(
-            bind['consumer_actions'][0],
-            dict(id=request_id, action=Bind.Action.BIND, status='pending'))
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], request_id)
+        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
+        self.assertTrue(isinstance(actions[0]['timestamp'], float))
 
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.bind.called)
@@ -197,10 +199,12 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (pending)
         request_id = call_reports[1].call_request_id
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_actions']), 1)
-        self.assertEqual(
-            bind['consumer_actions'][0],
-            dict(id=request_id, action=Bind.Action.BIND, status='pending'))
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], request_id)
+        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
+        self.assertTrue(isinstance(actions[0]['timestamp'], float))
 
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.bind.called)
@@ -213,10 +217,12 @@ class TestBind(PulpItineraryTests):
         # verify pending consumer request (failed)
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        self.assertEqual(len(bind['consumer_actions']), 1)
-        self.assertEqual(
-            bind['consumer_actions'][0],
-            dict(id=request_id, action=Bind.Action.BIND, status='failed'))
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], request_id)
+        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.FAILED)
+        self.assertTrue(isinstance(actions[0]['timestamp'], float))
 
     def test_unbind(self):
 
@@ -258,10 +264,12 @@ class TestBind(PulpItineraryTests):
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        self.assertEqual(len(bind['consumer_actions']), 1)
-        self.assertEqual(
-            bind['consumer_actions'][0],
-            dict(id=request_id, action=Bind.Action.UNBIND, status='pending'))
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], request_id)
+        self.assertEqual(actions[0]['action'], Bind.Action.UNBIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
+        self.assertTrue(isinstance(actions[0]['timestamp'], float))
 
         # simulated asynchronous task result
         report = DispatchReport()
@@ -404,10 +412,12 @@ class TestBind(PulpItineraryTests):
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        self.assertEqual(len(bind['consumer_actions']), 1)
-        self.assertEqual(
-            bind['consumer_actions'][0],
-            dict(id=request_id, action=Bind.Action.UNBIND, status='pending'))
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], request_id)
+        self.assertEqual(actions[0]['action'], Bind.Action.UNBIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
+        self.assertTrue(isinstance(actions[0]['timestamp'], float))
 
         # simulated asynchronous task result
         report = DispatchReport()
@@ -425,7 +435,10 @@ class TestBind(PulpItineraryTests):
         collection = Bind.get_collection()
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is not None)
-        self.assertEqual(
-            bind['consumer_actions'][0],
-            dict(id=request_id, action=Bind.Action.UNBIND, status='failed'))
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], request_id)
+        self.assertEqual(actions[0]['action'], Bind.Action.UNBIND)
+        self.assertEqual(actions[0]['status'], Bind.Status.FAILED)
+        self.assertTrue(isinstance(actions[0]['timestamp'], float))
 
