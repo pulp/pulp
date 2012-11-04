@@ -290,17 +290,24 @@ class BindManager(object):
         @type action: str
         @param action_id: The ID of the action to begin tracking.
         @type action_id: str
+        @see Bind.Action
         """
         collection = Bind.get_collection()
         assert action in (Bind.Action.BIND, Bind.Action.UNBIND)
         bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
-        entry = dict(id=action_id, action=action, status=Bind.Status.PENDING)
+        entry = dict(
+            id=action_id,
+            timestamp=time(),
+            action=action,
+            status=Bind.Status.PENDING)
         update = {'$push':{'consumer_actions':entry}}
         collection.update(bind_id, update, safe=True)
 
     def action_succeeded(self, consumer_id, repo_id, distributor_id, action_id):
         """
         A tracked consumer action has succeeded.
+        Since consumer actions are queue to the agent and performed
+        in the order, previous actions are considered irrelevant and thus purged.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.
@@ -312,11 +319,17 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
+        action = self.find_action(action_id)
+        if action is None:
+            _LOG.warn('action %s not found', action_id)
+            return
         # delete the action
         update = {'$pull':{'consumer_actions':{'id':action_id}}}
         collection.update(bind_id, update, safe=True)
-        # purge all failed actions
-        update = {'$pull':{'consumer_actions':{'status':Bind.Status.FAILED}}}
+        # purge all previous actions
+        update = {'$pull':
+            {'consumer_actions':{'timestamp':{'$lt':action['timestamp']}}}
+        }
         collection.update(bind_id, update, safe=True)
 
     def action_failed(self, consumer_id, repo_id, distributor_id, action_id):
@@ -336,3 +349,19 @@ class BindManager(object):
         query['consumer_actions.id'] = action_id
         update = {'$set':{'consumer_actions.$.status':Bind.Status.FAILED}}
         collection.update(query, update, safe=True)
+
+    def find_action(self, action_id):
+        """
+        Find a consumer action by ID.
+        @param action_id: An action ID.
+        @type action_id: str
+        @return: The action if found, else None
+        """
+        collection = Bind.get_collection()
+        query = {'consumer_actions.id':action_id}
+        binding = collection.find_one(query)
+        if binding is None:
+            return
+        for action in binding['consumer_actions']:
+            if action['id'] == action_id:
+                return action

@@ -35,7 +35,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         repo_id=REPO_ID,
         distributor_id=DISTRIBUTOR_ID,
         )
-    ACTION_IDS = (29, 33, 90)
+    ACTION_IDS = (1,2,3,4,5,6,7,8,9)
 
     def setUp(self):
         super(BindManagerTests, self).setUp()
@@ -276,30 +276,15 @@ class BindManagerTests(base.PulpAsyncServerTests):
             self.assertEqual(actions[i]['id'], self.ACTION_IDS[i])
             self.assertEqual(actions[i]['action'], Bind.Action.BIND)
             self.assertEqual(actions[i]['status'], Bind.Status.PENDING)
-            manager.action_succeeded(
-                self.CONSUMER_ID,
-                self.REPO_ID,
-                self.DISTRIBUTOR_ID,
-                self.ACTION_IDS[0])
-            manager.action_failed(
-                self.CONSUMER_ID,
-                self.REPO_ID,
-                self.DISTRIBUTOR_ID,
-                self.ACTION_IDS[1])
-        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 1)
-        self.assertEqual(actions[0]['id'], self.ACTION_IDS[2])
-        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
-        self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
         manager.action_succeeded(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            self.ACTION_IDS[2])
+            self.ACTION_IDS[4])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 0)
+        self.assertEqual(len(actions), 4)
+
 
     def test_bind_action_failed(self):
         # Setup
@@ -322,25 +307,30 @@ class BindManagerTests(base.PulpAsyncServerTests):
             self.assertEqual(actions[i]['id'], self.ACTION_IDS[i])
             self.assertEqual(actions[i]['action'], Bind.Action.BIND)
             self.assertEqual(actions[i]['status'], Bind.Status.PENDING)
-            manager.action_failed(
-                self.CONSUMER_ID,
-                self.REPO_ID,
-                self.DISTRIBUTOR_ID,
-                self.ACTION_IDS[0])
+        manager.action_failed(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            self.ACTION_IDS[5])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 3)
-        self.assertEqual(actions[0]['id'], self.ACTION_IDS[0])
-        self.assertEqual(actions[0]['action'], Bind.Action.BIND)
-        self.assertEqual(actions[0]['status'], Bind.Status.FAILED)
+        self.assertEqual(len(actions), 9)
+        for i in range(0, len(self.ACTION_IDS)):
+            if i == 5:
+                status = Bind.Status.FAILED
+            else:
+                status = Bind.Status.PENDING
+            self.assertEqual(actions[i]['id'], self.ACTION_IDS[i])
+            self.assertEqual(actions[i]['action'], Bind.Action.BIND)
+            self.assertEqual(actions[i]['status'], status)
         manager.action_succeeded(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            self.ACTION_IDS[2])
+            self.ACTION_IDS[6])
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 1)
+        self.assertEqual(len(actions), 2)
 
     def test_mark_deleted(self):
         # Setup
