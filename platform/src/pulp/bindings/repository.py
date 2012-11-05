@@ -376,7 +376,7 @@ class RepositoryUnitAPI(PulpAPI):
         :return:    server response
         """
         override_config = {}
-        if kwargs['recursive']:
+        if 'resursive' in kwargs and kwargs['recursive']:
             override_config['recursive'] = kwargs['recursive']
 
         criteria = self._generate_search_criteria(**kwargs)
