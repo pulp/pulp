@@ -18,7 +18,6 @@ from pulp.common import dateutils
 from pulp.common.tags import resource_tag
 from pulp.server.compat import ObjectId
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
 from pulp.server.upgrade.model import UpgradeStepReport
@@ -372,7 +371,7 @@ def _sync_schedules(v1_database, v2_database, report):
         scheduled_call_document['first_run'] = start or datetime.utcnow()
         scheduled_call_document['remaining_runs'] = recurrences
 
-        scheduled_call_document['next_run'] = dispatch_factory.scheduler().calculate_next_run(scheduled_call_document)
+        scheduled_call_document['next_run'] = _calculate_next_run(scheduled_call_document)
 
         v2_scheduled_call_collection.insert(scheduled_call_document, safe=True)
         v2_repo_importer_collection.update({'repo_id': repo['id'], 'importer_type_id': YUM_IMPORTER_TYPE_ID},
@@ -380,3 +379,18 @@ def _sync_schedules(v1_database, v2_database, report):
                                            safe=True)
 
     return True
+
+
+def _calculate_next_run(scheduled_call):
+    # rip-off from scheduler module
+    if scheduled_call['remaining_runs'] == 0:
+        return None
+    last_run = scheduled_call['last_run']
+    if last_run is None:
+        return scheduled_call['first_run']
+    now = datetime.datetime.utcnow()
+    interval = dateutils.parse_iso8601_interval(scheduled_call['schedule'])[0]
+    next_run = last_run
+    while next_run < now:
+        next_run = dateutils.add_interval_to_datetime(interval, next_run)
+    return next_run
