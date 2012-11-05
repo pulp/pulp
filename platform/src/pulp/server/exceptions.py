@@ -301,3 +301,19 @@ class DuplicateResource(PulpDataException):
     def data_dict(self):
         return {'resource_id': self.resource_id}
 
+
+class InputEncodingError(PulpDataException):
+    """
+    Error raised when input strings are not encoded in utf-8
+    """
+
+    def __init__(self, value):
+        PulpDataException.__init__(self, value)
+        self.value = value
+
+    def __str__(self):
+        return _('Pulp only accepts input encoded in UTF-8: %(v)s') % {'v': self.value}
+
+    def data_dict(self):
+        return {'value': self.value}
+
