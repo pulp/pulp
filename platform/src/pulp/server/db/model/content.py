@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
+# Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -52,7 +50,7 @@ class ContentType(Model):
 
         self.display_name = display_name
         self.description = description
-        
+
         self.unit_key = unit_key
         self.search_indexes = search_indexes
 

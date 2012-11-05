@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand
 from pulp.bindings.exceptions import RequestException
 
@@ -19,7 +21,7 @@ def initialize(context):
 
 class ServerPluginsSection(PulpCliSection):
     def __init__(self, context):
-        PulpCliSection.__init__(self, 'server', 'displays information about plugins and types installed on the server')
+        PulpCliSection.__init__(self, 'server', _('display info about the server'))
         self.context = context
 
         self.add_command(PulpCliCommand('types', 'lists content types installed on the server', self.types))

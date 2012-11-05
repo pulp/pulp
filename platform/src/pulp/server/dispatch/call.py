@@ -57,8 +57,8 @@ class CallRequest(object):
     @type asynchronous: bool
     @ivar archive: toggle archival of call request on completion
     @type archive: bool
-    @ivar obfuscate_args: toggle obfuscation of arguments when cast to a string
-    @type obfuscate_args: bool
+    @ivar kwarg_blacklist: list of kwargs to obfuscate in the __str__
+    @type kwarg_blacklist: tuple or list
     @ivar execution_hooks: callbacks to be executed during lifecycle of callable
     @type execution_hooks: dict
     @ivar control_hooks: callbacks used to control the lifecycle of the callable
@@ -76,7 +76,7 @@ class CallRequest(object):
                  weight=1,
                  asynchronous=False,
                  archive=False,
-                 obfuscate_args=False):
+                 kwarg_blacklist=()):
 
         assert callable(call)
         assert isinstance(args, (NoneType, tuple, list))
@@ -89,10 +89,11 @@ class CallRequest(object):
         assert weight > -1
         assert isinstance(asynchronous, bool)
         assert isinstance(archive, bool)
-        assert isinstance(obfuscate_args, bool)
+        assert isinstance(kwarg_blacklist, (list, tuple))
 
         self.id = str(uuid.uuid4())
         self.group_id = None
+        self.schedule_id = None
 
         self.call = call
         self.args = args or []
@@ -107,7 +108,7 @@ class CallRequest(object):
 
         self.asynchronous = asynchronous
         self.archive = archive
-        self.obfuscate_args = obfuscate_args
+        self.kwarg_blacklist = kwarg_blacklist
 
         self.execution_hooks = [[] for i in range(len(dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS))]
         self.control_hooks = [None for i in range(len(dispatch_constants.CALL_CONTROL_HOOKS))]
@@ -123,14 +124,12 @@ class CallRequest(object):
         return '.'.join((class_name, name))
 
     def callable_args_reprs(self):
-        if self.obfuscate_args:
-            return ['**OBFUSCATED**' for a in self.args]
         return [repr(a) for a in self.args]
 
     def callable_kwargs_reprs(self):
-        if self.obfuscate_args:
-            return dict([(k, '**OBFUSCATED**') for k in self.kwargs])
-        return dict([(k, repr(v)) for k, v in self.kwargs.items()])
+        kwarg_reprs = dict((k, repr(v)) for k, v in self.kwargs.items() if k not in self.kwarg_blacklist)
+        kwarg_reprs.update((k, '****') for k in self.kwargs if k in self.kwarg_blacklist)
+        return kwarg_reprs
 
     def __str__(self):
         args = ', '.join(self.callable_args_reprs())
@@ -184,7 +183,7 @@ class CallRequest(object):
 
     # call request serialization/deserialization -------------------------------
 
-    copied_fields = ('id', 'group_id', 'tags', 'resources', 'weight', 'asynchronous', 'archive')
+    copied_fields = ('id', 'group_id', 'schedule_id', 'tags', 'resources', 'weight', 'asynchronous', 'archive')
     pickled_fields = ('call', 'args', 'kwargs', 'principal', 'execution_hooks', 'control_hooks')
     all_fields = itertools.chain(copied_fields, pickled_fields)
 
@@ -241,6 +240,7 @@ class CallRequest(object):
 
         id = constructor_kwargs.pop('id')
         group_id = constructor_kwargs.pop('group_id')
+        schedule_id = constructor_kwargs.pop('schedule_id')
         execution_hooks = constructor_kwargs.pop('execution_hooks')
         control_hooks = constructor_kwargs.pop('control_hooks')
 
@@ -248,6 +248,7 @@ class CallRequest(object):
 
         instance.id = id
         instance.group_id = group_id
+        instance.schedule_id = schedule_id
 
         for key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS:
             if not execution_hooks[key]:
@@ -300,7 +301,7 @@ class CallReport(object):
     """
 
     @classmethod
-    def from_call_request(cls, call_request, schedule_id=None):
+    def from_call_request(cls, call_request):
         """
         Factory method that leverages an existing call request.
 
@@ -308,8 +309,6 @@ class CallReport(object):
         @type cls: type
         @param call_request: call request to leverage
         @type call_request: L{CallRequest}
-        @param schedule_id: optional schedule id
-        @type schedule_id: None or str
         @return: CallReport instance
         @rtype: L{CallReport}
         """
@@ -317,7 +316,7 @@ class CallReport(object):
                           call_request.group_id,
                           call_request.tags,
                           call_request.principal['login'],
-                          schedule_id)
+                          call_request.schedule_id)
         return call_report
 
     def __init__(self,
@@ -386,6 +385,7 @@ class CallReport(object):
 
         data['task_id'] = self.call_request_id
         data['task_group_id'] = self.call_request_group_id
+        data['tags'] = self.call_request_tags
 
         # format the exception and traceback, if they exist
 

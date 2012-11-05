@@ -13,7 +13,7 @@
 # ---- Pulp (plus) RPM Product---------------------------------------------------------
 
 Name: pulp-rpm-product
-Version: 0.0.332
+Version: 0.0.335
 Release: 1%{?dist}
 License: GPLv2
 Summary: Pulp (plus) RPM product metapackage
@@ -103,6 +103,15 @@ to provide the Pulp agent (plus) RPM handlers.
 
 
 %changelog
+* Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
+- 
+
+* Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
+- version alignment
+
+* Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
+- version alignment
+
 * Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-1
 - Fix tito.props. (jortel@redhat.com)
 * Fri Oct 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.331-1

@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.332
+Version: 0.0.335
 Release: 1%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -63,13 +63,11 @@ client capabilites.
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
+%{_usr}/lib/pulp/admin/extensions/pulp_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_event/
 %{_usr}/lib/pulp/admin/extensions/pulp_orphan/
-%{_usr}/lib/pulp/admin/extensions/pulp_permission/
-%{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
-%{_usr}/lib/pulp/admin/extensions/pulp_user/
 %{_usr}/lib/pulp/admin/extensions/pulp_server_info/
 %doc
 
@@ -94,6 +92,15 @@ client capabilities.
 
 
 %changelog
+* Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
+- 
+
+* Mon Oct 29 2012 Jeff Ortel <jortel@redhat.com> 0.0.334-1
+- version alignment
+
+* Mon Oct 22 2012 Jeff Ortel <jortel@redhat.com> 0.0.333-1
+- version alignment
+
 * Wed Oct 17 2012 Jeff Ortel <jortel@redhat.com> 0.0.332-1
 - Version alignment.
 

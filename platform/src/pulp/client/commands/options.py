@@ -53,5 +53,6 @@ OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False,
 # IDs
 OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True)
 OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True)
+OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID, required=True)
 
 FLAG_ALL = PulpCliFlag('--all', DESC_ALL)

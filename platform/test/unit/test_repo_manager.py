@@ -98,7 +98,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         #   Assert the display name is defaulted to the id
         self.assertEqual('repo_1', repos[0]['display_name'])
 
-    def _test_create_invalid_id(self):
+    def test_create_invalid_id(self):
         """
         Tests creating a repo with an invalid ID raises the correct error.
         """
@@ -108,7 +108,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
             self.manager.create_repo('bad id')
             self.fail('Invalid ID did not raise an exception')
         except exceptions.InvalidValue, e:
-            self.assertTrue('bad id' in e)
+            self.assertTrue(e.property_names[0], 'repo_id')
             print(e) # for coverage
 
     def test_create_duplicate_id(self):
@@ -227,6 +227,44 @@ class RepoManagerTests(base.PulpAsyncServerTests):
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
+
+    def test_create_and_configure_non_list_distributor_list(self):
+        """
+        Tests cleanup is successful if the distributor list is malformed.
+        """
+
+        # Test
+        distributors = 'bad data'
+
+        # Verify
+        try:
+            self.manager.create_and_configure_repo('repo-1', distributor_list=distributors)
+            self.fail()
+        except exceptions.InvalidValue, e:
+            self.assertEqual(e.property_names[0], 'distributor_list')
+
+        # Verify the repo was deleted
+        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        self.assertTrue(repo is None)
+
+    def test_create_and_configure_bad_distributor_in_list(self):
+        """
+        Tests cleanup is successful if the distributor list is malformed.
+        """
+
+        # Test
+        distributors = ['bad-data']
+
+        # Verify
+        try:
+            self.manager.create_and_configure_repo('repo-1', distributor_list=distributors)
+            self.fail()
+        except exceptions.InvalidValue, e:
+            self.assertEqual(e.property_names[0], 'distributor_list')
+
+        # Verify the repo was deleted
+        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        self.assertTrue(repo is None)
 
     def test_create_i18n(self):
         # Setup

@@ -43,7 +43,7 @@ class InvalidConfig(Exception):
 class AdminConsumerSection(PulpCliSection):
 
     def __init__(self, context):
-        PulpCliSection.__init__(self, 'consumer', 'consumer lifecycle (list, update, etc.) commands')
+        PulpCliSection.__init__(self, 'consumer', _('register, bind, and interact with consumers'))
 
         self.context = context
         self.prompt = context.prompt # for easier access

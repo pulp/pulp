@@ -28,7 +28,7 @@ TASK_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time
 def initialize(context):
 
     # Add root level section for all tasks in Pulp
-    all_tasks_section = AllTasksSection(context, 'tasks', _('list and cancel tasks running in the Pulp server'))
+    all_tasks_section = AllTasksSection(context, 'tasks', _('list and cancel server-side tasks'))
     context.cli.add_section(all_tasks_section)
 
     # Add repo level section for only repo tasks
