@@ -19,27 +19,11 @@ import web
 
 from pulp.common.util import decode_unicode, encode_unicode
 from pulp.server.compat import json, json_util
-from pulp.server.exceptions import PulpDataException
+from pulp.server.exceptions import InputEncodingError
 from pulp.server.webservices import http, serialization
 
 
 _log = logging.getLogger(__name__)
-
-
-class InputEncodingError(PulpDataException):
-    """
-    Error raised when input strings are not encoded in utf-8
-    """
-
-    def __init__(self, value):
-        PulpDataException.__init__(self, value)
-        self.value = value
-
-    def __str__(self):
-        return _('Pulp only accepts input encoded in UTF-8: %(v)s') % {'v': self.value}
-
-    def data_dict(self):
-        return {'value': self.value}
 
 
 class JSONController(object):
