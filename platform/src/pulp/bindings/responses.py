@@ -66,9 +66,9 @@ class Task(object):
 
     TASK_TEMPLATE = {
         "exception": None,
-        "task_group_id": 'default-group',
-        "task_id": 'default-id',
-        "tags": [],
+        "call_request_group_id": 'default-group',
+        "call_request_id": 'default-id',
+        "call_request_tags": [],
         "reasons": [],
         "start_time": None,
         "traceback": None,
@@ -89,9 +89,9 @@ class Task(object):
         else:
             self.href = None
 
-        self.task_id = response_body['task_id']
-        self.task_group_id = response_body['task_group_id']
-        self.tags = response_body['tags']
+        self.task_id = response_body['call_request_id']
+        self.task_group_id = response_body['call_request_group_id']
+        self.tags = response_body['call_request_tags']
 
         self.start_time = response_body['start_time']
         self.finish_time = response_body['finish_time']
