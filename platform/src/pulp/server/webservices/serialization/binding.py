@@ -15,8 +15,11 @@
 Module for binding serialization.
 """
 
-from pulp.server.managers import factory as manager_factory
 import link
+
+from pulp.server.managers import factory as manager_factory
+from pulp.server.exceptions import MissingResource
+
 
 def serialize(bind, include_details=True):
     """
@@ -45,11 +48,15 @@ def serialize(bind, include_details=True):
     serialized.update(href)
 
     # type_id
-    repo_distributor_manager = manager_factory.repo_distributor_manager()
-    distributor = repo_distributor_manager.get_distributor(
-        bind['repo_id'],
-        bind['distributor_id'])
-    serialized['type_id'] = distributor['distributor_type_id']
+    try:
+        repo_distributor_manager = manager_factory.repo_distributor_manager()
+        distributor = repo_distributor_manager.get_distributor(
+            bind['repo_id'],
+            bind['distributor_id'])
+        serialized['type_id'] = distributor['distributor_type_id']
+    except MissingResource:
+        if include_details:
+            raise
 
     # details
     if include_details:

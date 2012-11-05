@@ -301,10 +301,16 @@ class Binding(JSONController):
         """
         body = self.params()
         # validate resources
-        manager = managers.consumer_manager()
-        manager.get_consumer(consumer_id)
-        manager = managers.repo_distributor_manager()
-        manager.get_distributor(repo_id, distributor_id)
+        manager = managers.consumer_bind_manager()
+        filters = dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id
+        )
+        criteria = Criteria(filters)
+        bindings = manager.find_by_criteria(criteria)
+        if not bindings:
+            raise MissingResource(criteria)
         # delete (unbind)
         hard = body.get('hard', False)
         options = body.get('options', {})
