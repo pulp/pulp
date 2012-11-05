@@ -14,6 +14,8 @@
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.search import SearchAPI
 
+# Default for update APIs to differentiate between None and not updating the value
+UNSPECIFIED = object()
 
 class ConsumerAPI(PulpAPI):
     """
@@ -85,6 +87,61 @@ class ConsumerContentAPI(PulpAPI):
         return self.server.POST(path, data)
 
 
+class ConsumerContentSchedulesAPI(PulpAPI):
+    """
+    Connection class to access consumer calls related to scheduled content install/uninstall/update
+    Each function inside the class accepts an additional 'action' parameter. This is to specify a particular
+    schedule action. Possible values are 'install', 'update' and 'uninstall'.
+    """
+    def __init__(self, pulp_connection):
+        """
+        @type:   pulp_connection: pulp.bindings.server.PulpConnection
+        """
+        super(ConsumerContentSchedulesAPI, self).__init__(pulp_connection)
+        self.base_path = "/v2/consumers/%s/schedules/content/"
+
+    def list_schedules(self, action, consumer_id):
+        url = self.base_path % consumer_id + action + '/'
+        return self.server.GET(url)
+
+    def get_schedule(self, action, consumer_id, schedule_id):
+        url = self.base_path % consumer_id + action + '/%s/' % schedule_id
+        return self.server.GET(url)
+    
+    def add_schedule(self, action, consumer_id, schedule, units, failure_threshold=UNSPECIFIED,
+                     enabled=UNSPECIFIED, options=UNSPECIFIED):
+        url = self.base_path % consumer_id + action + '/'
+        body = {
+            'schedule' : schedule,
+            'units': units,
+            'failure_threshold' : failure_threshold,
+            'enabled' : enabled,
+            'options': options,
+            }
+        # Strip out anything that wasn't specified by the caller
+        body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
+        return self.server.POST(url, body)
+ 
+    def delete_schedule(self, action, consumer_id, schedule_id):
+        url = self.base_path % consumer_id + action + '/%s/' % schedule_id
+        return self.server.DELETE(url)
+
+    def update_schedule(self, action, consumer_id, schedule_id, schedule=UNSPECIFIED, units=UNSPECIFIED,
+                        failure_threshold=UNSPECIFIED, remaining_runs=UNSPECIFIED, enabled=UNSPECIFIED,
+                        options=UNSPECIFIED):
+        url = self.base_path % consumer_id + action + '/%s/' % schedule_id
+        body = {
+            'schedule' : schedule,
+            'units': units,
+            'failure_threshold' : failure_threshold,
+            'remaining_runs' : remaining_runs,
+            'enabled' : enabled,
+            'options': options,
+            }
+        # Strip out anything that wasn't specified by the caller
+        body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
+        self.server.PUT(url, body)
+
 
 class BindingsAPI(PulpAPI):
 
@@ -147,3 +204,5 @@ class ConsumerHistoryAPI(PulpAPI):
         if end_date:
             queries['end_date'] = end_date
         return self.server.GET(path, queries)
+
+
