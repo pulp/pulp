@@ -73,6 +73,12 @@ class ConsumerGroupCUDTests(ConsumerGroupTests):
                           self.manager.create_consumer_group,
                           group_id)
 
+    def test_create_invalid_id(self):
+        group_id = '**invalid/id**'
+        self.assertRaises(pulp_exceptions.InvalidValue,
+                          self.manager.create_consumer_group,
+                          group_id)
+
     def test_update_display_name(self):
         group_id = 'update_me'
         original_display_name = 'Update Me'
