@@ -8,6 +8,7 @@ APIs
    :maxdepth: 2
 
    consumer/index
+   consumer/group/index
    repo/index
    repo/groups/index
    content/index

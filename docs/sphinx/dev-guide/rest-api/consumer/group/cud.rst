@@ -9,7 +9,7 @@ Create a Consumer Group
 Creates a new consumer group. Group IDs must be unique across all consumer
 groups defined on the server. A group can be initialized with a list of
 consumers by passing their IDs to the create call. Consumers can be added or
-removed at anytime using the :doc:`membership calls<consumer_members>`.
+removed at anytime using the :doc:`membership calls<membership>`.
 
 | :method:`post`
 | :path:`/v2/consumer_groups/`
