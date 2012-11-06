@@ -12,17 +12,19 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import logging
-import os
-import shutil
+import re
 import sys
 
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
+from pulp.server.exceptions import InvalidValue
 from pulp.server.managers import factory as manager_factory
 
+# -- constants ----------------------------------------------------------------
 
+_CONSUMER_GROUP_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 _LOG = logging.getLogger(__name__)
 
 
@@ -45,6 +47,9 @@ class ConsumerGroupManager(object):
         @return: SON representation of the consumer group
         @rtype:  L{bson.SON}
         """
+        if group_id is None or _CONSUMER_GROUP_ID_REGEX.match(group_id) is None:
+            raise InvalidValue(['group_id'])
+
         collection = ConsumerGroup.get_collection()
         consumer_group = ConsumerGroup(group_id, display_name, description, consumer_ids, notes)
         try:
@@ -290,3 +295,4 @@ def validate_existing_consumer_group(group_id):
     if consumer_group is not None:
         return collection
     raise pulp_exceptions.MissingResource(consumer_group=group_id)
+
