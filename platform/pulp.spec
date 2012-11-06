@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.335
-Release: 1%{?dist}
+Version: 0.0.336
+Release: 1
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -415,6 +415,16 @@ exit 0
 %endif
 
 %changelog
+* Mon Nov 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.336-1
+- 871643 - return a list of matched consumer IDs. (jortel@redhat.com)
+- 871175 - updating call request fields according to latest changes in pulp's
+  dispatch system (skarmark@redhat.com)
+- 871952 - Hardened the distributor code so the clean up occurs
+  (jason.dobies@redhat.com)
+- 869757 - Added call to retrieve the repo to check for a 404
+  (jason.dobies@redhat.com)
+- 871592 - Fixed okaara required version (jason.dobies@redhat.com)
+
 * Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
 - 
 
