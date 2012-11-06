@@ -66,4 +66,3 @@ class TestId(unittest.TestCase):
         self.assertRaises(ValueError, validators.id_validator, 'invalid-@')
         self.assertRaises(ValueError, validators.id_validator, '-_-_- ')
 
-

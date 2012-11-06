@@ -63,12 +63,12 @@ def interval_iso6801_validator(x):
 
 def id_validator(x):
     """
-    Validates that the input is a non-negative integer. This call will raise
-    an exception to be passed to the CLI framework if it is invalid; there is
+    Validates that the id only contains letters, numbers, underscores and hyphens.
+    This call will raise an exception to be passed to the CLI framework if it is invalid; there is
     no return otherwise.
 
     :param x: input value to be validated
-    :type  x: int
+    :type  x: str
     """
     ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
     if ID_REGEX.match(x) is None:
