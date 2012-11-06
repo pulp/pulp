@@ -7,8 +7,9 @@ at any time using the following REST API.
 Associate a Consumer with a Group
 ---------------------------------
 
-Associated the consumers specified by the :ref:`search_criteria` with
-a consumer group.
+Associate the consumers specified by the :ref:`search_criteria` with
+a consumer group.  Consumers that are already associated with the group are
+ignored but included in the returned list of matched consumer IDs.
 
 | :method:`post`
 | :path:`/v2/consumer_groups/<consumer_group_id>/actions/associate/`
@@ -30,24 +31,28 @@ a consumer group.
  {
   "criteria": {
     "filters": {
-      "id": "lab1"
+      "id": {
+        "$in": [
+          "lab1",
+          "lab2"
+        ]
+      }
     }
   }
  }
 
 :sample_response:`` ::
 
- [
-  "lab1"
- ]
+ ["lab1", "lab2"]
 
 
 
 Unassociate a Consumer from a Group
 -----------------------------------
 
-Unassociated the consumers specified by the :ref:`search_criteria` from
-a consumer group.
+Unassociate the consumers specified by the :ref:`search_criteria` from
+a consumer group.  Consumers that are not associated with the group are
+ignored but included in the returned list of matched consumer IDs.
 
 | :method:`post`
 | :path:`/v2/consumer_groups/<consumer_group_id>/actions/unassociate/`
@@ -69,14 +74,17 @@ a consumer group.
  {
   "criteria": {
     "filters": {
-      "id": "lab1"
+      "id": {
+        "$in": [
+          "lab1",
+          "lab2"
+        ]
+      }
     }
   }
  }
 
 :sample_response:`` ::
 
- [
-  "lab1"
- ]
+ ["lab1", "lab2"]
 
