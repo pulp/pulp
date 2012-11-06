@@ -14,7 +14,7 @@
 import time
 from gettext import gettext as _
 
-from pulp.client import arg_utils
+from pulp.client import arg_utils, validators
 from pulp.client.extensions.extensions import (PulpCliSection, PulpCliCommand,
     PulpCliOption, PulpCliFlag)
 from pulp.bindings.exceptions import NotFoundException
@@ -49,7 +49,8 @@ class AdminConsumerSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
+        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed',
+                                           required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', 'user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', 'user-readable description for the consumer', required=False)
 
@@ -82,21 +83,21 @@ class AdminConsumerSection(PulpCliSection):
 
         # Bind Command
         bind_command = PulpCliCommand('bind', 'binds a consumer to a repository distributor for consuming published content', self.bind)
-        bind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
-        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+        bind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True, validate_func=validators.id_validator))
+        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True, validate_func=validators.id_validator))
         bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(bind_command)
 
         # Unbind Command
         unbind_command = PulpCliCommand('unbind', 'unbinds a consumer from a repository distributor', self.unbind)
-        unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
-        unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+        unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True, validate_func=validators.id_validator))
+        unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True, validate_func=validators.id_validator))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(unbind_command)
         
         # History Retrieval Command
         history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
-        history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
+        history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True, validate_func=validators.id_validator))
         d = 'limits displayed history entries to the given type;'
         d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
         d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
@@ -559,7 +560,7 @@ class ConsumerGroupMemberSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt
 
-        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True)
+        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True, validate_func=validators.id_validator)
 
         list_command = PulpCliCommand('list', _('list of consumers in a particular group'), self.list)
         list_command.add_option(id_option)
@@ -616,7 +617,8 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_subsection(ConsumerGroupMemberSection(context))
 
         # Common Options
-        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), required=True)
+        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), 
+                                  required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', _('user-readable display name for the consumer group'), required=False)
         description_option = PulpCliOption('--description', _('user-readable description for the consumer group'), required=False)
 
@@ -662,7 +664,7 @@ class ConsumerGroupSection(PulpCliSection):
               'distributor for consuming published content'),
             self.bind)
         bind_command.add_option(id_option)
-        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
+        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True, validate_func=validators.id_validator))
         bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(bind_command)
 

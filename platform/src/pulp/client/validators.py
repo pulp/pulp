@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import re
 from gettext import gettext as _
 
 from pulp.common import dateutils
@@ -58,3 +59,18 @@ def interval_iso6801_validator(x):
         dateutils.parse_iso8601_interval(x)
     except Exception:
         raise ValueError(_('value must be a valid iso8601 string with an interval'))
+
+
+def id_validator(x):
+    """
+    Validates that the input is a non-negative integer. This call will raise
+    an exception to be passed to the CLI framework if it is invalid; there is
+    no return otherwise.
+
+    :param x: input value to be validated
+    :type  x: int
+    """
+    ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
+    if ID_REGEX.match(x) is None:
+        raise ValueError(_('value must contain only letters, numbers, underscore and hyphen'))
+
