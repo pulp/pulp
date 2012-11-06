@@ -168,9 +168,10 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
 
         consumer = self._create_consumer('test_consumer')
         criteria = Criteria(filters={'id': consumer['id']}, fields=['id'])
-        self.manager.associate(group_id, criteria)
+        matched = self.manager.associate(group_id, criteria)
 
         group = self.collection.find_one({'id': group_id})
+        self.assertEqual(matched, ['test_consumer'])
         self.assertTrue(consumer['id'] in group['consumer_ids'])
 
     def test_remove_single(self):
@@ -182,9 +183,10 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
         self.assertTrue(consumer['id'] in group['consumer_ids'])
 
         criteria = Criteria(filters={'id': consumer['id']}, fields=['id'])
-        self.manager.unassociate(group_id, criteria)
+        matched = self.manager.unassociate(group_id, criteria)
 
         group = self.collection.find_one({'id': group_id})
+        self.assertEqual(matched, ['test_consumer'])
         self.assertFalse(consumer['id'] in group['consumer_ids'])
 
     def test_unregister(self):
@@ -208,9 +210,10 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
         consumer_1 = self._create_consumer('consumer_1')
         consumer_2 = self._create_consumer('consumer_2')
         criteria = Criteria(filters={'id': {'$regex': 'consumer_[12]'}})
-        self.manager.associate(group_id, criteria)
+        matched = self.manager.associate(group_id, criteria)
 
         group = self.collection.find_one({'id': group_id})
+        self.assertEqual(sorted(matched), sorted(['consumer_1', 'consumer_2']))
         self.assertTrue(consumer_1['id'] in group['consumer_ids'])
         self.assertTrue(consumer_2['id'] in group['consumer_ids'])
 
