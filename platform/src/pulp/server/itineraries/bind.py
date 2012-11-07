@@ -26,8 +26,6 @@ def bind_succeeded(call_request, call_report):
     """
     The task succeeded callback.
     Updates the consumer request tracking on the binding.
-    @param call_request:
-    @param call_report:
     """
     manager = managers.consumer_bind_manager()
     action_id = call_request.id
@@ -42,8 +40,6 @@ def bind_failed(call_request, call_report):
     """
     The task failed callback.
     Updates the consumer request tracking on the binding.
-    @param call_request:
-    @param call_report:
     """
     manager = managers.consumer_bind_manager()
     action_id = call_request.id

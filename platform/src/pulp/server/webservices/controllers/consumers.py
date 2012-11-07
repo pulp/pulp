@@ -302,16 +302,7 @@ class Binding(JSONController):
         body = self.params()
         # validate resources
         manager = managers.consumer_bind_manager()
-        filters = dict(
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id
-        )
-        criteria = Criteria(filters)
-        bindings = manager.find_by_criteria(criteria)
-        if not bindings:
-            key = '.'.join((consumer_id, repo_id, distributor_id))
-            raise MissingResource(key)
+        manager.get_bind(consumer_id, repo_id, distributor_id)
         # delete (unbind)
         hard = body.get('hard', False)
         options = body.get('options', {})
