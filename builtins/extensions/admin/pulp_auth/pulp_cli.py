@@ -17,6 +17,7 @@ from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, \
     PulpCliOption, PulpCliFlag
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client import validators
 from pulp.client.commands.criteria import CriteriaCommand
 
 # -- framework hook -----------------------------------------------------------
@@ -67,7 +68,7 @@ class UserSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        login_option = PulpCliOption('--login', 'uniquely identifies the user; only alphanumeric, -, and _ allowed', required=True)
+        login_option = PulpCliOption('--login', 'uniquely identifies the user; only alphanumeric, -, and _ allowed', required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--name', 'user-readable full name of the user', required=False)
 
         # Create command
@@ -189,7 +190,7 @@ class RoleSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        id_option = PulpCliOption('--role-id', 'uniquely identifies the role; only alphanumeric, -, and _ allowed', required=True)
+        id_option = PulpCliOption('--role-id', 'uniquely identifies the role; only alphanumeric, -, and _ allowed', required=True, validate_func=validators.id_validator)
 
         # Create command
         create_command = PulpCliCommand('create', 'creates a role', self.create)

@@ -83,21 +83,21 @@ class AdminConsumerSection(PulpCliSection):
 
         # Bind Command
         bind_command = PulpCliCommand('bind', 'binds a consumer to a repository distributor for consuming published content', self.bind)
-        bind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True, validate_func=validators.id_validator))
-        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True, validate_func=validators.id_validator))
+        bind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
+        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(bind_command)
 
         # Unbind Command
         unbind_command = PulpCliCommand('unbind', 'unbinds a consumer from a repository distributor', self.unbind)
-        unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True, validate_func=validators.id_validator))
-        unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True, validate_func=validators.id_validator))
+        unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
+        unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(unbind_command)
         
         # History Retrieval Command
         history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
-        history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True, validate_func=validators.id_validator))
+        history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         d = 'limits displayed history entries to the given type;'
         d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
         d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
@@ -664,7 +664,7 @@ class ConsumerGroupSection(PulpCliSection):
               'distributor for consuming published content'),
             self.bind)
         bind_command.add_option(id_option)
-        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True, validate_func=validators.id_validator))
+        bind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         bind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(bind_command)
 
