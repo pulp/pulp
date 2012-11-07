@@ -33,7 +33,7 @@ def bind_succeeded(call_request, call_report):
     action_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
     dispatch_report = call_report.result
-    if dispatch_report['status']:
+    if dispatch_report['succeeded']:
         manager.action_succeeded(consumer_id, repo_id, distributor_id, action_id)
     else:
         manager.action_failed(consumer_id, repo_id, distributor_id, action_id)

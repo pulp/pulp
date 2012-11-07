@@ -211,7 +211,7 @@ class TestBind(PulpItineraryTests):
 
         # simulated asynchronous task result
         report = DispatchReport()
-        report.status = False
+        report.succeeded = False
         self.coordinator.complete_call_success(request_id, report.dict())
 
         # verify pending consumer request (failed)
@@ -421,7 +421,7 @@ class TestBind(PulpItineraryTests):
 
         # simulated asynchronous task result
         report = DispatchReport()
-        report.status = False
+        report.succeeded = False
         self.coordinator.complete_call_success(request_id, report.dict())
 
         # verify not found (marked deleted)
