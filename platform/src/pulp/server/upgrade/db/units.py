@@ -220,6 +220,7 @@ def _errata(v1_database, v2_database, report):
     for v1_erratum in missing_v1_errata:
         new_erratum = {
             '_id' : ObjectId(),
+            '_storage_path' : None,
             'description' : v1_erratum['description'],
             'from_str' : v1_erratum['from_str'],
             'id' : v1_erratum['id'],
@@ -279,6 +280,72 @@ def _distributions(v1_database, v2_database, report):
             # Same pattern as for RPMs, try to insert and rely on the uniqueness
             # check in the DB to enforce idempotency.
             pass
+
+    return True
+
+
+def _package_groups(v1_database, v2_database, report):
+
+    #In v2, the unique identifier for a package group is the
+    # pairing of the group ID and the repository it's in. In v1, the package
+    # group is embedded in the repo document itself, which is where we get
+    # that information from.
+
+    # In v1 the repository owns the relationship to a package group. Don't look
+    # at the model class itself, it wasn't added there, but the code will still
+    # stuff it in under the key "packagegroups". The value at that key is a dict
+    # of group ID to a PackageGroup instance (v1 model).
+
+    # Idempotency: The simplest way to handle this is to pre-load the set of
+    # repo ID/group ID tuples into memory and verify each group found in each
+    # v1 repo against that to determine if it has successfully been added or not.
+
+    v2_coll = v2_database.units_package_group
+
+    # Tuple of repo ID and group ID
+    already_added_tuples = [ (x['repo_id'], x['id']) for x in
+                             v2_coll.find({}, {'repo_id' : 1, 'id' : 1}) ]
+
+    v1_repos = v1_database.repos.find({}, {'id' : 1, 'packagegroups' : 1})
+    for v1_repo in v1_repos:
+
+        new_groups = [] # add the groups to the DB on a per repo basis
+        for group_id in v1_repo.get('packagegroups', {}).keys():
+
+            # Idempotency check
+            if (v1_repo['id'], group_id) in already_added_tuples:
+                continue
+
+            v1_group = v1_repo['packagegroups'][group_id]
+            new_group = {
+                '_id' : ObjectId(),
+                '_storage_path' : None,
+                '_content_type_id' : 'package_group',
+                'conditional_package_names' : v1_group['conditional_package_names'],
+                'default' : v1_group['default'],
+                'default_package_names' : v1_group['default_package_names'],
+                'description' : v1_group['description'],
+                'display_order' : v1_group['display_order'],
+                'id' : v1_group['id'],
+                'langonly' : v1_group['langonly'],
+                'name' : v1_group['name'],
+                'optional_package_names' : v1_group['optional_package_names'],
+                'repo_id' : v1_repo['id'],
+            }
+
+            # Not sure why these fields aren't always in the v1 documents (they
+            # look like they should be from the model), but tests against a
+            # live database were showing them as missing. Defaults taken from
+            # the v1 PackageGroup object.
+            new_group['mandatory_package_names'] = v1_group.get('mandatory_package_names', [])
+            new_group['translated_description'] = v1_group.get('translated_description', {})
+            new_group['translated_name'] = v1_group.get('translated_name', {})
+            new_group['user_visible'] = v1_group.get('user_visible', True)
+
+            new_groups.append(new_group)
+
+        if new_groups:
+            v2_coll.insert(new_groups)
 
     return True
 

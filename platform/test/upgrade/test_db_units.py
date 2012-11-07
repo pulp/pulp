@@ -236,6 +236,8 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
 
         for v1_erratum, v2_erratum in zip(v1_errata, v2_errata):
             self.assertTrue(isinstance(v2_erratum['_id'], ObjectId))
+            self.assertEqual(v2_erratum['_storage_path'], None)
+
             for k in ('description', 'from_str', 'id', 'issued', 'pushcount',
                       'reboot_suggested', 'references', 'release', 'rights',
                       'severity', 'solution', 'status', 'summary', 'title',
@@ -254,3 +256,66 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
         v1_errata = self.v1_test_db.database.errata.find()
         v2_errata = self.tmp_test_db.database.units_erratum.find()
         self.assertEqual(v1_errata.count(), v2_errata.count())
+
+
+class PackageGroupUpgradeTests(BaseDbUpgradeTests):
+
+    def test_groups(self):
+        # Test
+        report = UpgradeStepReport()
+        result = units._package_groups(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_repo_group_tuples = []
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroups' : 1}):
+            for group_id in v1_repo['packagegroups'].keys():
+                v1_repo_group_tuples.append( (v1_repo['id'], group_id) )
+
+        v2_repo_group_tuples = [ (x['repo_id'], x['id']) for x in
+                                 self.tmp_test_db.database.units_package_group.find({}, {'repo_id': 1, 'id' : 1}) ]
+
+        v1_repo_group_tuples.sort()
+        v2_repo_group_tuples.sort()
+        self.assertEqual(v1_repo_group_tuples, v2_repo_group_tuples)
+
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroups' : 1}):
+            for group_id in v1_repo.get('packagegroups', {}).keys():
+                v1_group = v1_repo['packagegroups'][group_id]
+                v2_group = self.tmp_test_db.database.units_package_group.find_one({'repo_id' : v1_repo['id'], 'id' : group_id})
+                self.assertTrue(v2_group is not None)
+
+                self.assertTrue(isinstance(v2_group['_id'], ObjectId))
+                self.assertEqual(v2_group['_storage_path'], None)
+                self.assertEqual(v2_group['_content_type_id'], 'package_group')
+
+                for k in ('conditional_package_names', 'default', 'default_package_names',
+                    'description', 'display_order', 'id', 'langonly', 'name',
+                    'optional_package_names'):
+                    self.assertEqual(v1_group[k], v2_group[k], msg='Incorrect key: %s' % k)
+
+                # Special testing for wonky sometimes missing attributes
+                self.assertEqual(v2_group['mandatory_package_names'], v1_group.get('mandatory_package_names', []))
+                self.assertEqual(v2_group['translated_description'], v1_group.get('translated_description', {}))
+                self.assertEqual(v2_group['translated_name'], v1_group.get('translated_name', {}))
+                self.assertEqual(v2_group['user_visible'], v1_group.get('user_visible', True))
+
+    def test_groups_idempotency(self):
+        # Test
+        report = UpgradeStepReport()
+        units._package_groups(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        result = units._package_groups(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        # Simple count test to make sure they weren't duplicated
+        v1_count = 0
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroups' : 1}):
+            v1_count += len(v1_repo['packagegroups'].keys())
+
+        v2_count = self.tmp_test_db.database.units_package_group.find().count()
+
+        self.assertEqual(v1_count, v2_count)
