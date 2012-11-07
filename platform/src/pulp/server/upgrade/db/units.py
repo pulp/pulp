@@ -206,6 +206,43 @@ def _drpms(v1_database, v2_database, report):
 
 
 def _errata(v1_database, v2_database, report):
+
+    v1_coll = v1_database.errata
+    v2_coll = v2_database.units_erratum
+
+    # Idempotency: We're lucky here, the uniqueness is just by ID, so we can
+    # do a pre-fetch and determine what needs to be added.
+
+    v2_errata_ids = [x['id'] for x in v2_coll.find({}, {'id' : 1})]
+    missing_v1_errata = v1_coll.find({'id' : {'$nin' : v2_errata_ids}})
+
+    new_errata = []
+    for v1_erratum in missing_v1_errata:
+        new_erratum = {
+            '_id' : ObjectId(),
+            'description' : v1_erratum['description'],
+            'from_str' : v1_erratum['from_str'],
+            'id' : v1_erratum['id'],
+            'issued' : v1_erratum['issued'],
+            'pushcount' : v1_erratum['pushcount'],
+            'reboot_suggested' : v1_erratum['reboot_suggested'],
+            'references' : v1_erratum['references'],
+            'release' : v1_erratum['release'],
+            'rights' : v1_erratum['rights'],
+            'severity' : v1_erratum['severity'],
+            'solution' : v1_erratum['solution'],
+            'status' : v1_erratum['status'],
+            'summary' : v1_erratum['summary'],
+            'title' : v1_erratum['title'],
+            'type' : v1_erratum['type'],
+            'updated' : v1_erratum['updated'],
+            'version' : v1_erratum['version'],
+        }
+        new_errata.append(new_erratum)
+
+    if new_errata:
+        v2_coll.insert(new_errata)
+
     return True
 
 

@@ -218,3 +218,39 @@ class DistributionUpgradeTests(BaseDbUpgradeTests):
         v1_distros = self.v1_test_db.database.distribution.find()
         v2_distros = self.tmp_test_db.database.units_distribution.find()
         self.assertEqual(v1_distros.count(), v2_distros.count())
+
+
+class ErrataUpgradeTests(BaseDbUpgradeTests):
+
+    def test_errata(self):
+        # Test
+        report = UpgradeStepReport()
+        result = units._errata(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_errata = self.v1_test_db.database.errata.find().sort('id')
+        v2_errata = self.tmp_test_db.database.units_erratum.find().sort('id')
+        self.assertEqual(v1_errata.count(), v2_errata.count())
+
+        for v1_erratum, v2_erratum in zip(v1_errata, v2_errata):
+            self.assertTrue(isinstance(v2_erratum['_id'], ObjectId))
+            for k in ('description', 'from_str', 'id', 'issued', 'pushcount',
+                      'reboot_suggested', 'references', 'release', 'rights',
+                      'severity', 'solution', 'status', 'summary', 'title',
+                      'type', 'updated', 'version'):
+                self.assertEqual(v2_erratum[k], v1_erratum[k], msg='Unequal key: %s' % k)
+
+    def test_errata_idempotency(self):
+        # Test
+        report = UpgradeStepReport()
+        units._errata(self.v1_test_db.database, self.tmp_test_db.database, report)
+        result = units._errata(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_errata = self.v1_test_db.database.errata.find()
+        v2_errata = self.tmp_test_db.database.units_erratum.find()
+        self.assertEqual(v1_errata.count(), v2_errata.count())
