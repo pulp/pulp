@@ -242,7 +242,7 @@ def _errata(v1_database, v2_database, report):
         new_errata.append(new_erratum)
 
     if new_errata:
-        v2_coll.insert(new_errata)
+        v2_coll.insert(new_errata, safe=True)
 
     return True
 
@@ -286,7 +286,7 @@ def _distributions(v1_database, v2_database, report):
 
 def _package_groups(v1_database, v2_database, report):
 
-    #In v2, the unique identifier for a package group is the
+    # In v2, the unique identifier for a package group is the
     # pairing of the group ID and the repository it's in. In v1, the package
     # group is embedded in the repo document itself, which is where we get
     # that information from.
@@ -298,7 +298,9 @@ def _package_groups(v1_database, v2_database, report):
 
     # Idempotency: The simplest way to handle this is to pre-load the set of
     # repo ID/group ID tuples into memory and verify each group found in each
-    # v1 repo against that to determine if it has successfully been added or not.
+    # v1 repo against that to determine if it has successfully been added or
+    # not. The nice part about this over letting the uniqueness checks in mongo
+    # itself is that we can batch the group inserts.
 
     v2_coll = v2_database.units_package_group
 
@@ -328,24 +330,68 @@ def _package_groups(v1_database, v2_database, report):
                 'display_order' : v1_group['display_order'],
                 'id' : v1_group['id'],
                 'langonly' : v1_group['langonly'],
+                'mandatory_package_names' : v1_group['mandatory_package_names'],
                 'name' : v1_group['name'],
                 'optional_package_names' : v1_group['optional_package_names'],
                 'repo_id' : v1_repo['id'],
+                'translated_description' : v1_group['translated_description'],
+                'translated_name' : v1_group['translated_name'],
+                'user_visible' : v1_group['user_visible'],
             }
-
-            # Not sure why these fields aren't always in the v1 documents (they
-            # look like they should be from the model), but tests against a
-            # live database were showing them as missing. Defaults taken from
-            # the v1 PackageGroup object.
-            new_group['mandatory_package_names'] = v1_group.get('mandatory_package_names', [])
-            new_group['translated_description'] = v1_group.get('translated_description', {})
-            new_group['translated_name'] = v1_group.get('translated_name', {})
-            new_group['user_visible'] = v1_group.get('user_visible', True)
-
             new_groups.append(new_group)
 
         if new_groups:
-            v2_coll.insert(new_groups)
+            v2_coll.insert(new_groups, safe=True)
+
+    return True
+
+
+def _package_group_categories(v1_database, v2_database, report):
+
+    # These act nearly identically to groups, so see the comments in there
+    # for more information.
+
+    # Idempotency: As with groups, pre-load the tuples of repo ID to category
+    # ID into memory and use that to check for the category's existed before
+    # inserting.
+
+    v2_coll = v2_database.units_package_category
+
+    # Tuple of repo ID and group ID
+    already_added_tuples = [ (x['repo_id'], x['id']) for x in
+                             v2_coll.find({}, {'repo_id' : 1, 'id' : 1}) ]
+
+    v1_repos = v1_database.repos.find({}, {'id' : 1, 'packagegroupcategories' : 1})
+    for v1_repo in v1_repos:
+
+        new_categories = [] # add the categories to the DB on a per repo basis
+        for category_id in v1_repo.get('packagegroupcategories', {}).keys():
+
+            # Idempotency check
+            if (v1_repo['id'], category_id) in already_added_tuples:
+                continue
+
+            v1_category = v1_repo['packagegroupcategories'][category_id]
+            new_category = {
+                '_id' : ObjectId(),
+                '_storage_path' : None,
+                '_content_type_id' : 'package_category',
+                'description' : v1_category['description'],
+                'display_order' : v1_category['display_order'],
+                'id' : v1_category['id'],
+                'name' : v1_category['name'],
+                'packagegroupids' : v1_category['packagegroupids'],
+                'repo_id' : v1_repo['id'],
+                'translated_description' : v1_category['translated_description'],
+                'translated_name' : v1_category['translated_name'],
+            }
+
+            # As with groups, the database doesn't reflect the model.
+
+            new_categories.append(new_category)
+
+        if new_categories:
+            v2_coll.insert(new_categories, safe=True)
 
     return True
 

@@ -291,15 +291,10 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
                 self.assertEqual(v2_group['_content_type_id'], 'package_group')
 
                 for k in ('conditional_package_names', 'default', 'default_package_names',
-                    'description', 'display_order', 'id', 'langonly', 'name',
-                    'optional_package_names'):
+                    'description', 'display_order', 'id', 'langonly', 'mandatory_package_names',
+                    'name', 'optional_package_names', 'translated_description',
+                    'translated_name', 'user_visible'):
                     self.assertEqual(v1_group[k], v2_group[k], msg='Incorrect key: %s' % k)
-
-                # Special testing for wonky sometimes missing attributes
-                self.assertEqual(v2_group['mandatory_package_names'], v1_group.get('mandatory_package_names', []))
-                self.assertEqual(v2_group['translated_description'], v1_group.get('translated_description', {}))
-                self.assertEqual(v2_group['translated_name'], v1_group.get('translated_name', {}))
-                self.assertEqual(v2_group['user_visible'], v1_group.get('user_visible', True))
 
     def test_groups_idempotency(self):
         # Test
@@ -317,5 +312,60 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
             v1_count += len(v1_repo['packagegroups'].keys())
 
         v2_count = self.tmp_test_db.database.units_package_group.find().count()
+
+        self.assertEqual(v1_count, v2_count)
+
+
+class PackageCategoryUpgradeTests(BaseDbUpgradeTests):
+
+    def test_categories(self):
+        # Test
+        report = UpgradeStepReport()
+        result = units._package_group_categories(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_repo_category_tuples = []
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroupcategories' : 1}):
+            for categoryid in v1_repo['packagegroupcategories'].keys():
+                v1_repo_category_tuples.append( (v1_repo['id'], categoryid) )
+
+        v2_repo_category_tuples = [ (x['repo_id'], x['id']) for x in
+                                 self.tmp_test_db.database.units_package_category.find({}, {'repo_id': 1, 'id' : 1}) ]
+
+        v1_repo_category_tuples.sort()
+        v2_repo_category_tuples.sort()
+        self.assertEqual(v1_repo_category_tuples, v2_repo_category_tuples)
+
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroupcategories' : 1}):
+            for category_id in v1_repo.get('packagegroupcategories', {}).keys():
+                v1_category = v1_repo['packagegroupcategories'][category_id]
+                v2_category = self.tmp_test_db.database.units_package_category.find_one({'repo_id' : v1_repo['id'], 'id' : category_id})
+                self.assertTrue(v2_category is not None)
+
+                self.assertTrue(isinstance(v2_category['_id'], ObjectId))
+                self.assertEqual(v2_category['_storage_path'], None)
+                self.assertEqual(v2_category['_content_type_id'], 'package_category')
+
+                for k in ('description', 'display_order', 'id', 'name',
+                          'packagegroupids', 'translated_description',
+                          'translated_name'):
+                    self.assertEqual(v2_category[k], v1_category[k])
+
+    def test_categories_idempotency(self):
+        # Test
+        report = UpgradeStepReport()
+        units._package_group_categories(self.v1_test_db.database, self.tmp_test_db.database, report)
+        result = units._package_group_categories(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+
+        v1_count = 0
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroupcategories' : 1}):
+            v1_count += len(v1_repo['packagegroupcategories'].keys())
+
+        v2_count = self.tmp_test_db.database.units_package_category.find().count()
 
         self.assertEqual(v1_count, v2_count)
