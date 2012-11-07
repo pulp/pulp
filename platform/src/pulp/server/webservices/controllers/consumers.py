@@ -310,7 +310,8 @@ class Binding(JSONController):
         criteria = Criteria(filters)
         bindings = manager.find_by_criteria(criteria)
         if not bindings:
-            raise MissingResource(criteria)
+            key = '.'.join((consumer_id, repo_id, distributor_id))
+            raise MissingResource(key)
         # delete (unbind)
         hard = body.get('hard', False)
         options = body.get('options', {})
