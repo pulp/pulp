@@ -10,14 +10,21 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import mock
+import datetime
 import os
-from pymongo.objectid import ObjectId
 import shutil
 
-from base_db_upgrade import BaseDbUpgradeTests
+import mock
+
+from pulp.common import dateutils
+from pulp.server.compat import ObjectId
+from pulp.server.dispatch.call import CallRequest
+from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
+from pulp.server.managers.auth.principal import PrincipalManager, SystemUser
 from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.db import repos
+
+from base_db_upgrade import BaseDbUpgradeTests
 
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
@@ -157,6 +164,12 @@ class ReposUpgradeNoFilesTests(BaseDbUpgradeTests):
 
         # Verify
         self.assertTrue(not report.success)
+
+    @mock.patch('pulp.server.upgrade.db.repos._sync_schedules')
+    def test_repos_failed_sync_schedules_step(self, mock_sync_schedules_call):
+        mock_sync_schedules_call.return_value = False
+        report = repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        self.assertFalse(report.success)
 
 
 class RepoUpgradeWithProxyTests(BaseDbUpgradeTests):
@@ -353,4 +366,75 @@ class RepoUpgradeGroupsTests(BaseDbUpgradeTests):
             self.assertEqual(group['description'], None)
             self.assertEqual(group['notes'], {})
             self.assertEqual(group['repo_ids'], repo_ids)
+
+
+class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+
+        repos.SKIP_SERVER_CONF = True
+        repos.SKIP_GPG_KEYS = True
+
+        self.v1_repo_1_id = 'errata-repo'
+        self.v1_repo_1_schedule = 'PT30M'
+
+        self.v1_repo_2_id = 'pulp-v1-17-64'
+        self.v1_repo_2_schedule = 'R6/2012-01-01T00:00:00Z/P21DT'
+
+        repositories = (self.v1_repo_1_id, self.v1_repo_2_id)
+        schedules = (self.v1_repo_1_schedule, self.v1_repo_2_schedule)
+        for repo, schedule in zip(repositories, schedules):
+            self._insert_scheduled_v1_repo(repo, schedule)
+
+    def tearDown(self):
+        super(self.__class__, self).tearDown()
+
+        repos.SKIP_SERVER_CONF = False
+        repos.SKIP_GPG_KEYS = False
+
+    def _insert_scheduled_v1_repo(self, repo_id, schedule):
+        doc = {'sync_schedule': schedule,
+               'sync_options': None,
+               'last_sync': None}
+        self.v1_test_db.database.repos.update({'_id': repo_id}, {'$set': doc}, safe=True)
+
+    def _insert_scheduled_v2_repo(self, repo_id, schedule):
+        importer_id = ObjectId()
+        schedule_id = ObjectId()
+
+        importer_doc = {'repo_id': repo_id,
+                        'importer_id': importer_id,
+                        'importer_type_id': repos.YUM_IMPORTER_TYPE_ID,
+                        'scheduled_syncs': [str(schedule_id)]}
+        self.tmp_test_db.database.repo_importers.insert(importer_doc, safe=True)
+
+        call_request = CallRequest(sync_with_auto_publish_itinerary, [repo_id], {'overrides': {}})
+        interval, start, recurrences = dateutils.parse_iso8601_interval(schedule)
+        scheduled_call_doc = {'_id': schedule_id,
+                              'id': str(schedule_id),
+                              'serialized_call_request': call_request.serialize(),
+                              'schedule': schedule,
+                              'failure_threshold': None,
+                              'consecutive_failures': 0,
+                              'first_run': start or datetime.datetime.utcnow(),
+                              'next_run': None,
+                              'last_run': None,
+                              'remaining_runs': recurrences,
+                              'enabled': True}
+        scheduled_call_doc['next_run'] = repos._calculate_next_run(scheduled_call_doc)
+        self.tmp_test_db.database.scheduled_calls.insert(scheduled_call_doc, safe=True)
+
+    @mock.patch('pulp.server.managers.auth.principal.PrincipalManager.get_principal', SystemUser)
+    @mock.patch('pulp.server.managers.factory.principal_manager', PrincipalManager)
+    def test_schedule_upgrade(self):
+        report = repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        self.assertTrue(report.success)
+
+    @mock.patch('pulp.server.managers.auth.principal.PrincipalManager.get_principal', SystemUser)
+    @mock.patch('pulp.server.managers.factory.principal_manager', PrincipalManager)
+    def test_schedule_upgrade_idempotency(self):
+        self._insert_scheduled_v2_repo(self.v1_repo_1_id, self.v1_repo_1_schedule)
+        report = repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        self.assertTrue(report.success)
 

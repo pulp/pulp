@@ -145,7 +145,7 @@ class ScheduledSyncTests(ScheduleTests):
         scheduler = dispatch_factory.scheduler()
         schedule_report = scheduler.get(schedule_id)
         self.assertTrue(schedule_id == schedule_report['_id'])
-        self.assertTrue(sync_options['override_config'] == schedule_report['call_request'].kwargs['sync_config_override'])
+        self.assertTrue(sync_options['override_config'] == schedule_report['call_request'].kwargs['overrides'])
         self.assertTrue(schedule_data['schedule'] == schedule_report['schedule'])
 
         new_sync_options = {'override_config': {'option_1': 'new_option'}}
@@ -157,7 +157,7 @@ class ScheduledSyncTests(ScheduleTests):
                                                    new_schedule_data)
         schedule_report = scheduler.get(schedule_id)
         self.assertTrue(schedule_id == schedule_report['_id'])
-        self.assertTrue(new_sync_options['override_config'] == schedule_report['call_request'].kwargs['sync_config_override'])
+        self.assertTrue(new_sync_options['override_config'] == schedule_report['call_request'].kwargs['overrides'])
         self.assertTrue(new_schedule_data['schedule'] == schedule_report['schedule'])
         self.assertTrue(new_schedule_data['failure_threshold'] == schedule_report['failure_threshold'])
 
@@ -212,7 +212,7 @@ class ScheduledPublishTests(ScheduleTests):
         scheduler = dispatch_factory.scheduler()
         schedule_report = scheduler.get(schedule_id)
         self.assertTrue(schedule_id == schedule_report['_id'])
-        self.assertTrue(publish_options['override_config'] == schedule_report['call_request'].kwargs['publish_config_override'])
+        self.assertTrue(publish_options['override_config'] == schedule_report['call_request'].kwargs['overrides'])
         self.assertTrue(schedule_data['schedule'] == schedule_report['schedule'])
 
         new_publish_options = {'override_config': {'option_1': 'new_option'}}
@@ -224,7 +224,7 @@ class ScheduledPublishTests(ScheduleTests):
                                                       new_schedule_data)
         schedule_report = scheduler.get(schedule_id)
         self.assertTrue(schedule_id == schedule_report['_id'])
-        self.assertTrue(new_publish_options['override_config'] == schedule_report['call_request'].kwargs['publish_config_override'])
+        self.assertTrue(new_publish_options['override_config'] == schedule_report['call_request'].kwargs['overrides'])
         self.assertTrue(new_schedule_data['schedule'] == schedule_report['schedule'])
         self.assertTrue(new_schedule_data['failure_threshold'] == schedule_report['failure_threshold'])
 

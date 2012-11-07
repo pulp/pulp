@@ -20,6 +20,8 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.itineraries.repo import (
+    sync_with_auto_publish_itinerary, publish_itinerary)
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils as schedule_utils
 
@@ -47,16 +49,9 @@ class RepoSyncScheduleManager(object):
             raise pulp_exceptions.MissingValue(['schedule'])
 
         # build the sync call request
-        sync_manager = managers_factory.repo_sync_manager()
         args = [repo_id]
-        kwargs = {'sync_config_override': sync_options['override_config']}
-        weight = pulp_config.config.getint('tasks', 'sync_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)]
-        call_request = CallRequest(sync_manager.sync, args, kwargs, weight=weight, tags=tags, archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, sync_manager.prep_sync)
+        kwargs = {'overrides': sync_options['override_config']}
+        call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs, weight=0)
 
         # schedule the sync
         scheduler = dispatch_factory.scheduler()
@@ -86,7 +81,7 @@ class RepoSyncScheduleManager(object):
             report = scheduler.get(schedule_id)
             call_request = report['call_request']
             if 'override_config' in sync_options:
-                call_request.kwargs = {'sync_config_override': sync_options['override_config']}
+                call_request.kwargs = {'overrides': sync_options['override_config']}
             schedule_updates['call_request'] = call_request
 
         # update the scheduled sync
@@ -143,16 +138,9 @@ class RepoPublishScheduleManager(object):
             raise pulp_exceptions.MissingValue(['schedule'])
 
         # build the publish call
-        publish_manager = managers_factory.repo_publish_manager()
         args = [repo_id, distributor_id]
-        kwargs = {'publish_config_override': publish_options['override_config']}
-        weight = pulp_config.config.getint('tasks', 'publish_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)]
-        call_request = CallRequest(publish_manager.publish, args, kwargs, weight=weight, tags=tags, archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, publish_manager.prep_publish)
+        kwargs = {'overrides': publish_options['override_config']}
+        call_request = CallRequest(publish_itinerary, args, kwargs, weight=0)
 
         # schedule the publish
         scheduler = dispatch_factory.scheduler()
@@ -182,7 +170,7 @@ class RepoPublishScheduleManager(object):
             report = scheduler.get(schedule_id)
             call_request = report['call_request']
             if 'override_config' in publish_options:
-                call_request.kwargs = {'publish_config_override': publish_options['override_config']}
+                call_request.kwargs = {'overrides': publish_options['override_config']}
             schedule_updates['call_request'] = call_request
 
         # update the scheduled publish

@@ -51,13 +51,13 @@ def scheduled_call_obj(scheduled_call):
 
 def scheduled_sync_obj(scheduled_call):
     obj = scheduled_call_obj(scheduled_call)
-    obj['override_config'] = scheduled_call['call_request'].kwargs['sync_config_override']
+    obj['override_config'] = scheduled_call['call_request'].kwargs['overrides']
     return obj
 
 
 def scheduled_publish_obj(scheduled_call):
     obj = scheduled_call_obj(scheduled_call)
-    obj['override_config'] = scheduled_call['call_request'].kwargs['publish_config_override']
+    obj['override_config'] = scheduled_call['call_request'].kwargs['overrides']
     return obj
 
 

@@ -295,7 +295,8 @@ def _current_task_state():
     tasks = coordinator._find_tasks(call_request_id=context.call_request_id)
     if not tasks:
         return None
-    return tasks[0].state
+    task = tasks[0]
+    return task.call_request_exit_state or task.call_report.state
 
 
 def _map_task_state_to_sync_result_code(task_state, default=RepoSyncResult.RESULT_ERROR):
