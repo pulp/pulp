@@ -298,6 +298,7 @@ def _errata(v1_database, v2_database, report):
 
     v1_coll = v1_database.errata
     v2_coll = v2_database.units_erratum
+    v2_ass_coll = v2_database.repo_content_units
 
     # Idempotency: We're lucky here, the uniqueness is just by ID, so we can
     # do a pre-fetch and determine what needs to be added.
@@ -305,10 +306,10 @@ def _errata(v1_database, v2_database, report):
     v2_errata_ids = [x['id'] for x in v2_coll.find({}, {'id' : 1})]
     missing_v1_errata = v1_coll.find({'id' : {'$nin' : v2_errata_ids}})
 
-    new_errata = []
     for v1_erratum in missing_v1_errata:
+        erratum_id = ObjectId()
         new_erratum = {
-            '_id' : ObjectId(),
+            '_id' : erratum_id,
             '_storage_path' : None,
             'description' : v1_erratum['description'],
             'from_str' : v1_erratum['from_str'],
@@ -328,10 +329,30 @@ def _errata(v1_database, v2_database, report):
             'updated' : v1_erratum['updated'],
             'version' : v1_erratum['version'],
         }
-        new_errata.append(new_erratum)
+        v2_coll.insert(new_erratum, safe=True)
 
-    if new_errata:
-        v2_coll.insert(new_errata, safe=True)
+        # Throughout most of the upgrade scripts, they can be cancelled and
+        # resumed at any point and it will do the right thing. In this case,
+        # it's a nightmare to cross-reference the v1 erratum against the v2
+        # _id field. So adding the association here isn't 100% safe in the event
+        # the user ctrl+c's the upgrade (which they shouldn't do anyway) but
+        # it's close enough.
+        new_associations = []
+        for repo_id in v1_erratum['repoids']:
+            new_association = {
+                '_id' : ObjectId(),
+                'repo_id' : repo_id,
+                'unit_id' : erratum_id,
+                'unit_type_id' : 'erratum',
+                'owner_type' : DEFAULT_OWNER_TYPE,
+                'owner_id' : DEFAULT_OWNER_ID,
+                'created' : DEFAULT_CREATED,
+                'updated' : DEFAULT_UPDATED,
+            }
+            new_associations.append(new_association)
+
+        if new_associations:
+            v2_ass_coll.insert(new_associations, safe=True)
 
     return True
 

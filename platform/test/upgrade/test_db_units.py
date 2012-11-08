@@ -283,6 +283,7 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
         # Verify
         self.assertTrue(result)
 
+        #   Units
         v1_errata = self.v1_test_db.database.errata.find().sort('id')
         v2_errata = self.tmp_test_db.database.units_erratum.find().sort('id')
         self.assertEqual(v1_errata.count(), v2_errata.count())
@@ -297,18 +298,47 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
                       'type', 'updated', 'version'):
                 self.assertEqual(v2_erratum[k], v1_erratum[k], msg='Unequal key: %s' % k)
 
+        #   Associations
+        v1_errata = self.v1_test_db.database.errata.find().sort('id')
+        for v1_erratum in v1_errata:
+            expected_repo_ids = v1_erratum['repoids']
+            v2_erratum = self.tmp_test_db.database.units_erratum.find_one({'id' : v1_erratum['id']}, {'_id' : 1})
+            ass_query = {'unit_id' : v2_erratum['_id'], 'repo_id' : {'$in' : expected_repo_ids}}
+            associations = self.tmp_test_db.database.repo_content_units.find(ass_query)
+            self.assertEqual(len(expected_repo_ids), associations.count())
+
+            for association in associations:
+                self.assertTrue(isinstance(association['_id'], ObjectId))
+                self.assertTrue(association['repo_id'] in expected_repo_ids)
+                self.assertEqual(association['unit_id'], v2_erratum['_id'])
+                self.assertEqual(association['unit_type_id'], 'erratum')
+                self.assertEqual(association['owner_type'], units.DEFAULT_OWNER_TYPE)
+                self.assertEqual(association['owner_id'], units.DEFAULT_OWNER_ID)
+                self.assertEqual(association['created'], units.DEFAULT_CREATED)
+                self.assertEqual(association['updated'], units.DEFAULT_UPDATED)
+
     def test_errata_idempotency(self):
         # Test
         report = UpgradeStepReport()
         units._errata(self.v1_test_db.database, self.tmp_test_db.database, report)
         result = units._errata(self.v1_test_db.database, self.tmp_test_db.database, report)
 
-        # Verify
+        # Verify - Simple Count Tests
         self.assertTrue(result)
 
+        #   Units
         v1_errata = self.v1_test_db.database.errata.find()
         v2_errata = self.tmp_test_db.database.units_erratum.find()
         self.assertEqual(v1_errata.count(), v2_errata.count())
+
+        #   Associations
+        for v1_erratum in v1_errata:
+            expected_repo_ids = v1_erratum['repoids']
+            v2_erratum = self.tmp_test_db.database.units_erratum.find_one({'id' : v1_erratum['id']}, {'_id' : 1})
+            ass_query = {'unit_id' : v2_erratum['_id'], 'repo_id' : {'$in' : expected_repo_ids}}
+            associations = self.tmp_test_db.database.repo_content_units.find(ass_query)
+            self.assertEqual(len(expected_repo_ids), associations.count())
+
 
 
 class PackageGroupUpgradeTests(BaseDbUpgradeTests):
