@@ -366,6 +366,7 @@ def _distributions(v1_database, v2_database, report):
 
     v1_coll = v1_database.distribution
     v2_coll = v2_database.units_distribution
+    v2_ass_coll = v2_database.repo_content_units
 
     all_v1_distros = v1_coll.find()
     for v1_distro in all_v1_distros:
@@ -386,12 +387,36 @@ def _distributions(v1_database, v2_database, report):
 
         try:
             v2_coll.insert(new_distro, safe=True)
+            _associate_distribution(v1_distro, new_distro, v2_ass_coll)
         except DuplicateKeyError:
             # Same pattern as for RPMs, try to insert and rely on the uniqueness
             # check in the DB to enforce idempotency.
             pass
 
     return True
+
+
+def _associate_distribution(v1_distribution, v2_distribution, v2_ass_coll):
+
+    # This functions just like errata associations so check _errata for comments
+    # on this approach.
+
+    new_associations = []
+    for repo_id in v1_distribution['repoids']:
+        new_association = {
+            '_id' : ObjectId(),
+            'repo_id' : repo_id,
+            'unit_id' : v2_distribution['_id'],
+            'unit_type_id' : 'distribution',
+            'owner_type' : DEFAULT_OWNER_TYPE,
+            'owner_id' : DEFAULT_OWNER_ID,
+            'created' : DEFAULT_CREATED,
+            'updated' : DEFAULT_UPDATED,
+            }
+        new_associations.append(new_association)
+
+    if new_associations:
+        v2_ass_coll.insert(new_associations, safe=True)
 
 
 def _package_groups(v1_database, v2_database, report):

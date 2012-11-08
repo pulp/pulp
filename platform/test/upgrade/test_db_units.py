@@ -242,6 +242,7 @@ class DistributionUpgradeTests(BaseDbUpgradeTests):
         # Verify
         self.assertTrue(result)
 
+        #   Units
         v1_distros = self.v1_test_db.database.distribution.find().sort('id')
         v2_distros = self.tmp_test_db.database.units_distribution.find().sort('id')
         self.assertEqual(v1_distros.count(), v2_distros.count())
@@ -259,18 +260,47 @@ class DistributionUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_distro['family'], v2_distro['family'])
             self.assertEqual(v1_distro['files'], v2_distro['files'])
 
+        #   Associations
+        v1_distros = self.v1_test_db.database.distribution.find()
+        for v1_distro in v1_distros:
+            expected_repo_ids = v1_distro['repoids']
+            v2_distro = self.tmp_test_db.database.units_distribution.find_one({'id' : v1_distro['id']}, {'_id' : 1})
+            ass_query = {'unit_id' : v2_distro['_id'], 'repo_id' : {'$in' : expected_repo_ids}}
+            associations = self.tmp_test_db.database.repo_content_units.find(ass_query)
+            self.assertEqual(len(expected_repo_ids), associations.count())
+
+            for association in associations:
+                self.assertTrue(isinstance(association['_id'], ObjectId))
+                self.assertTrue(association['repo_id'] in expected_repo_ids)
+                self.assertEqual(association['unit_id'], v2_distro['_id'])
+                self.assertEqual(association['unit_type_id'], 'distribution')
+                self.assertEqual(association['owner_type'], units.DEFAULT_OWNER_TYPE)
+                self.assertEqual(association['owner_id'], units.DEFAULT_OWNER_ID)
+                self.assertEqual(association['created'], units.DEFAULT_CREATED)
+                self.assertEqual(association['updated'], units.DEFAULT_UPDATED)
+
     def test_upgrade_idempotency(self):
         # Test
         report = UpgradeStepReport()
         units._distributions(self.v1_test_db.database, self.tmp_test_db.database, report)
         result = units._distributions(self.v1_test_db.database, self.tmp_test_db.database, report)
 
-        # Verify
+        # Verify - Simple Count Check
         self.assertTrue(result)
 
+        #   Units
         v1_distros = self.v1_test_db.database.distribution.find()
         v2_distros = self.tmp_test_db.database.units_distribution.find()
         self.assertEqual(v1_distros.count(), v2_distros.count())
+
+        #   Associations
+        v1_distros = self.v1_test_db.database.distribution.find()
+        for v1_distro in v1_distros:
+            expected_repo_ids = v1_distro['repoids']
+            v2_distro = self.tmp_test_db.database.units_distribution.find_one({'id' : v1_distro['id']}, {'_id' : 1})
+            ass_query = {'unit_id' : v2_distro['_id'], 'repo_id' : {'$in' : expected_repo_ids}}
+            associations = self.tmp_test_db.database.repo_content_units.find(ass_query)
+            self.assertEqual(len(expected_repo_ids), associations.count())
 
 
 class ErrataUpgradeTests(BaseDbUpgradeTests):
