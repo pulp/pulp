@@ -176,7 +176,6 @@ Requires: python-uuid
 Requires: python-ssl
 Requires: python-ctypes
 Requires: python-hashlib
-Requires: createrepo = 0.9.8-3
 Requires: mkisofs
 # RHEL6 & FEDORA
 %else
