@@ -15,17 +15,14 @@
 Contains (proxy) classes that represent the pulp agent.
 """
 
+from logging import getLogger
+
 from pulp.server.agent.hub.rest import Rest
 from pulp.server.agent.hub.client import Agent
 from pulp.server.agent.context import Context, Capability
-from logging import getLogger
 
 
 log = getLogger(__name__)
-
-
-DAY = 86400  # in seconds
-HOUR = 3600  # in seconds
 
 
 #
@@ -131,7 +128,7 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10 * DAY, 600),
+            timeout=self.context.get_timeout('bind_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)
@@ -155,7 +152,7 @@ class Consumer(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10 * DAY, 600),
+            timeout=self.context.get_timeout('unbind_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)
@@ -185,7 +182,7 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 600),
+            timeout=self.context.get_timeout('install_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)
@@ -209,7 +206,7 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 600),
+            timeout=self.context.get_timeout('update_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)
@@ -233,7 +230,7 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 600),
+            timeout=self.context.get_timeout('uninstall_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
             any=self.context.call_request_id)
