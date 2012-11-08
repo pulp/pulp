@@ -356,7 +356,7 @@ class Profile:
         report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
         for typeid, profile_report in report.details.items():
-            if not profile_report['status']:
+            if not profile_report['succeeded']:
                 continue
             details = profile_report['details']
             http = bindings.profile.send(myid, typeid, details)
