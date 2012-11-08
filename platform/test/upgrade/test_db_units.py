@@ -92,6 +92,7 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
 
         # The unique keys need to be set for these tests
         units._initialize_content_types(self.tmp_test_db.database)
+        units._initialize_association_collection(self.tmp_test_db.database)
 
     def test_rpms(self):
         # Test
@@ -103,6 +104,7 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
 
         v1_rpms = self.v1_test_db.database.packages.find({'arch' : {'$ne' : 'src'}}).sort('filename')
         self._assert_upgrade(v1_rpms)
+        self._assert_associations(self.tmp_test_db.database.units_rpm, 'rpm', {'arch' : {'$ne' : 'src'}})
 
     def test_rpms_idempotency(self):
         # Test
@@ -117,6 +119,8 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
         v2_rpms = self.tmp_test_db.database.units_rpm.find()
         self.assertEqual(v1_rpms.count(), v2_rpms.count())
 
+        self._assert_associations(self.tmp_test_db.database.units_rpm, 'rpm', {'arch' : {'$ne' : 'src'}})
+
     def test_srpms(self):
         # Test
         report = UpgradeStepReport()
@@ -127,6 +131,7 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
 
         v1_srpms = self.v1_test_db.database.packages.find({'arch' : 'src'}).sort('filename')
         self._assert_upgrade(v1_srpms)
+        self._assert_associations(self.tmp_test_db.database.units_srpm, 'srpm', {'arch' : 'src'})
 
     def test_srpms_idempotency(self):
         # Test
@@ -140,6 +145,8 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
         v1_rpms = self.v1_test_db.database.packages.find({'arch' : 'src'})
         v2_rpms = self.tmp_test_db.database.units_rpm.find()
         self.assertEqual(v1_rpms.count(), v2_rpms.count())
+
+        self._assert_associations(self.tmp_test_db.database.units_srpm, 'srpm', {'arch' : 'src'})
 
     def _assert_upgrade(self, v1_packages):
 
@@ -171,6 +178,52 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_rpm['checksum'].values()[0], v2_rpm['checksum'])
 
             self.assertTrue('relativepath' not in v2_rpm) # not set in this script
+
+    def _assert_associations(self, v2_package_coll, package_type_id, v1_query_addition):
+
+        v1_package_coll = self.v1_test_db.database.packages
+        v2_ass_coll = self.tmp_test_db.database.repo_content_units
+
+        v1_repos = self.v1_test_db.database.repos.find()
+        for v1_repo in v1_repos:
+            repo_id = v1_repo['id']
+            repo_package_ids = v1_repo['packages']
+            query = {'_id' : {'$in' : repo_package_ids}}
+            if v1_query_addition:
+                query.update(v1_query_addition)
+            v1_packages = v1_package_coll.find(query)
+
+            # Load up the IDs of all packages in v2 that should be referenced
+            v2_package_ids = []
+            for v1_package in v1_packages:
+                unit_key_fields = ('name', 'epoch', 'version', 'release', 'arch',)
+                query = dict([ (k, v1_package[k]) for k in unit_key_fields ])
+                query['checksumtype'] = v1_package['checksum'].keys()[0]
+                query['checksum'] = v1_package['checksum'].values()[0]
+                v2_package = v2_package_coll.find_one(query, {'_id' : 1})
+                self.assertTrue(v2_package is not None)
+                v2_package_ids.append(v2_package['_id'])
+
+            # Make sure there are associations for each
+            query = {
+                'repo_id' : repo_id,
+                'unit_id' : {'$in' : v2_package_ids},
+                'unit_type_id' : package_type_id,
+            }
+            associations = v2_ass_coll.find(query)
+
+            # Sanity check that the right number were found
+            self.assertEqual(v1_packages.count(), associations.count())
+
+            for ass in associations:
+                self.assertTrue(isinstance(ass['_id'], ObjectId))
+                self.assertEqual(ass['repo_id'], repo_id)
+                self.assertTrue(ass['unit_id'] in v2_package_ids)
+                self.assertEqual(ass['unit_type_id'], package_type_id)
+                self.assertEqual(ass['owner_type'], units.DEFAULT_OWNER_TYPE)
+                self.assertEqual(ass['owner_id'], units.DEFAULT_OWNER_ID)
+                self.assertEqual(ass['created'], units.DEFAULT_CREATED)
+                self.assertEqual(ass['updated'], units.DEFAULT_UPDATED)
 
 
 class DistributionUpgradeTests(BaseDbUpgradeTests):

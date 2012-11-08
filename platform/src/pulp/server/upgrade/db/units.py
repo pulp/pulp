@@ -33,10 +33,12 @@ written) to the latest.
 
 from gettext import gettext as _
 import os
+import datetime
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from pymongo.objectid import ObjectId
 
+from pulp.common import dateutils
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
@@ -60,13 +62,36 @@ DIR_DISTRIBUTION = os.path.join(DIR_STORAGE_ROOT, 'distribution')
 
 PACKAGE_PATH_TEMPLATE = '%(name)s/%(version)s/%(release)s/%(arch)s/%(checksum)s/%(filename)s'
 
+# We don't track this distinction in v1, but the majority of the units in a
+# v1 install will have come from a sync, so this is a reasonable default. What
+# is lost here is the knowledge of which units were uploaded, where "lost" is
+# a misleading term since we never actually had it in v1 in the first place.
+DEFAULT_OWNER_TYPE = 'importer'
+DEFAULT_OWNER_ID = 'yum_importer'
+
+# More information we don't have in v1. Set the association creation and last
+# confirmed time to the time the upgrade is run. Also, this is one of the few
+# places I call into our code from the upgrade process; my hope is that we'll
+# never change how UTC is generated, which is probably a safe bet.
+DEFAULT_CREATED = dateutils.format_iso8601_datetime(dateutils.to_utc_datetime(datetime.datetime.utcnow()))
+DEFAULT_UPDATED = DEFAULT_CREATED
+
+
 # Type definition constants located at the end of this file for readability
 
 
 def upgrade(v1_database, v2_database):
     report = UpgradeStepReport()
 
-    init_success = _initialize_content_types(v2_database)
+    # I expected the return value from these calls to be more meaningful.
+    # As it turned out, nearly all of them simply return True. I didn't rip
+    # out the result flags yet in case testing shows that they'll be useful,
+    # but don't be surprised when this looks kinda pointless after looking at
+    # the individual upgrade methods.
+    # jdob, Nov 8, 2012
+
+    init_types_success = _initialize_content_types(v2_database)
+    init_associations_success = _initialize_association_collection(v2_database)
 
     rpms_success = _rpms(v1_database, v2_database, report)
     srpms_success = _srpms(v1_database, v2_database, report)
@@ -74,7 +99,7 @@ def upgrade(v1_database, v2_database):
     errata_success = _errata(v1_database, v2_database, report)
     distributions_success = _distributions(v1_database, v2_database, report)
 
-    report.success = (init_success and
+    report.success = (init_types_success and init_associations_success and
                       rpms_success and srpms_success and drpms_success and
                       errata_success and distributions_success)
     return report
@@ -125,19 +150,46 @@ def _initialize_content_types(v2_database):
     return True
 
 
+def _initialize_association_collection(v2_database):
+
+    # Setting the uniqueness constraints to simplify the unit association
+    # idempotency checks and simply let the database handle it. Also setting
+    # the search indexes so we don't eat that cost at first server start.
+
+    unique_indexes = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
+    search_indexes = ( ('repo_id', 'unit_type_id', 'owner_type'),
+                       ('unit_type_id', 'created')
+                     )
+
+    # Copied from Model at the time of writing the upgrade
+    def _ensure_indexes(collection, indices, unique):
+        for index in indices:
+            if isinstance(index, basestring):
+                index = (index,)
+            collection.ensure_index([(i, DESCENDING) for i in index],
+                                    unique=unique, background=True)
+
+    ass_coll = v2_database.repo_content_units
+    _ensure_indexes(ass_coll, unique_indexes, True)
+    _ensure_indexes(ass_coll, search_indexes, False)
+
+    return True
+
+
 def _rpms(v1_database, v2_database, report):
     rpm_coll = v2_database.units_rpm
     all_rpms = v1_database.packages.find({'arch' : {'$ne' : 'src'}})
-    return __packages(rpm_coll, all_rpms, report)
+    return _packages(v1_database, v2_database, rpm_coll, all_rpms, 'rpm', report)
 
 
 def _srpms(v1_database, v2_database, report):
     srpm_coll = v2_database.units_srpm
     all_srpms = v1_database.packages.find({'arch' : 'src'})
-    return __packages(srpm_coll, all_srpms, report)
+    return _packages(v1_database, v2_database, srpm_coll, all_srpms, 'srpm', report)
 
 
-def __packages(package_coll, all_v1_packages, report):
+def _packages(v1_database, v2_database, package_coll, all_v1_packages,
+              unit_type_id, report):
 
     # In v1, both RPMs and SRPMs are stored in the packages collection.
     # The differentiating factor is the arch which will be 'src' for SRPMs and,
@@ -150,6 +202,7 @@ def __packages(package_coll, all_v1_packages, report):
     # mongo's uniqueness check prevent a duplicate.
 
     for v1_rpm in all_v1_packages:
+        new_rpm_id = ObjectId()
         v2_rpm = {
             'name' : v1_rpm['name'],
             'epoch' : v1_rpm['epoch'],
@@ -164,7 +217,7 @@ def __packages(package_coll, all_v1_packages, report):
             'buildhost' : v1_rpm['buildhost'],
             'license' : v1_rpm['license'],
 
-            '_id' : ObjectId(),
+            '_id' : new_rpm_id,
             '_content_type_id' : 'rpm'
         }
 
@@ -196,9 +249,45 @@ def __packages(package_coll, all_v1_packages, report):
         except DuplicateKeyError:
             # I really dislike this pattern, but it's easiest. This is the
             # idempotency check and isn't a problem that needs to be handled.
-            pass
+
+            # Still should try to do the association in the event the unit
+            # was added but the association failed.
+            unit_key_fields = ('name', 'epoch', 'version', 'release', 'arch',
+                               'checksumtype', 'checksum')
+            query = dict([ (k, v2_rpm[k]) for k in unit_key_fields ])
+            existing = package_coll.find_one(query, {'_id' : 1})
+            new_rpm_id = existing['_id']
+
+        _associate_package(v1_database, v2_database, v1_rpm['_id'], new_rpm_id, unit_type_id)
 
     return True
+
+
+def _associate_package(v1_database, v2_database, v1_id, v2_id, unit_type):
+
+    v1_coll = v1_database.repos
+    v2_coll = v2_database.repo_content_units
+
+    # Idempotency: Easiest to let mongo handle it on insert
+
+    repos_with_package = v1_coll.find({'packages' : v1_id}, {'id' : 1})
+
+    for repo in repos_with_package:
+        new_association = {
+            '_id' : ObjectId(),
+            'repo_id' : repo['id'],
+            'unit_id' : v2_id,
+            'unit_type_id' : unit_type,
+            'owner_type' : DEFAULT_OWNER_TYPE,
+            'owner_id' : DEFAULT_OWNER_ID,
+            'created' : DEFAULT_CREATED,
+            'updated' : DEFAULT_UPDATED,
+        }
+        try:
+            v2_coll.insert(new_association, safe=True)
+        except DuplicateKeyError:
+            # Still hate this model, still the simplest
+            pass
 
 
 def _drpms(v1_database, v2_database, report):
