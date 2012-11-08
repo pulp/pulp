@@ -204,7 +204,6 @@ class AdminConsumerSection(PulpCliSection):
         for history in history_list:
             self.prompt.render_document(history, filters=filters, order=order)
 
-
     def install(self, **kwargs):
         consumer_id = kwargs['consumer-id']
         units = []
@@ -220,38 +219,19 @@ class AdminConsumerSection(PulpCliSection):
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
-
     def _format_bindings(self, consumer):
         bindings = consumer.get('bindings')
         if not bindings:
             return
-        formatted = []
+        confirmed = []
+        unconfirmed = []
         for binding in bindings:
-            binds = []
-            unbinds = []
             repo_id = binding['repo_id']
-            if binding['deleted']:
-                repo_id += ' [DELETED]'
-            fb = {
-                'repo_id':repo_id,
-                'consumer_actions':{
-                    'binds':binds,
-                    'unbinds':unbinds,
-                }
-            }
-            for action in binding['consumer_actions']:
-                status = action['status']
-                if status == 'succeeded':
-                    continue
-                if action['action'] == 'bind':
-                    lst = binds
-                else:
-                    lst = unbinds
-                entry = dict(id=action['id'], status=status)
-                lst.append(entry)
-            formatted.append(fb)
-        consumer['bindings'] = formatted
-
+            if (binding['deleted'] or len(binding['consumer_actions'])):
+                unconfirmed.append(repo_id)
+            else:
+                confirmed.append(repo_id)
+        consumer['bindings'] = dict(confirmed=confirmed, unconfirmed=unconfirmed)
 
     def _parse_notes(self, notes_list):
         """
