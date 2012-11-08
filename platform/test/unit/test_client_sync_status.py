@@ -23,9 +23,9 @@ from pulp.client.commands.repo.status import status
 
 TASK_TEMPLATE = {
     "exception": None,
-    "task_group_id": 'default-group',
-    "task_id": 'default-id',
-    "tags": ['pulp:action:sync'],
+    "call_request_group_id": 'default-group',
+    "call_request_id": 'default-id',
+    "call_request_tags": ['pulp:action:sync'],
     "reasons": [],
     "start_time": None,
     "traceback": None,

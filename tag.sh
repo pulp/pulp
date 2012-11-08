@@ -17,20 +17,19 @@ PACKAGES="
   pulp_rpm/
   pulp_puppet/"
 
-FIND_VERSION_SCRIPT=\
+NEXT_VR_SCRIPT=\
 $(cat << END
-from tito import common as tito
-tag = tito.get_latest_tagged_version('pulp')
-version = tag.split('-')[0]
-next_version = tito.increase_version(version)
-print next_version
+import sys
+sys.path.insert(0, 'rel-eng/lib')
+import tools
+print tools.next()
 END
 )
 
 set_version()
 {
   pushd pulp
-  VERSION=`python -c "$FIND_VERSION_SCRIPT"`
+  VERSION=`python -c "$NEXT_VR_SCRIPT"`
   popd
 }
 
@@ -110,8 +109,8 @@ then
 fi
 
 # used by tagger
-TITO_FORCED_VERSION=$VERSION
-export TITO_FORCED_VERSION
+PULP_VERSION_AND_RELEASE=$VERSION
+export PULP_VERSION_AND_RELEASE
 
 BUILD_TAG="build-$VERSION"
 

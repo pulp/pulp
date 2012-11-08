@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.335
-Release: 1%{?dist}
+Version: 0.0.336
+Release: 1
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -147,7 +147,7 @@ rm -rf %{buildroot}
 %package server
 Summary: The pulp platform server
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-common = %{version}-%{release}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
@@ -255,8 +255,8 @@ The Pulp REST API bindings for python.
 %package -n python-pulp-client-lib
 Summary: Pulp client extensions framework
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
-Requires: python-okaara >= 1.0.24
+Requires: python-%{name}-common = %{version}-%{release}
+Requires: python-okaara >= 1.0.26
 Obsoletes: pulp-client-lib
 
 %description -n python-pulp-client-lib
@@ -273,7 +273,7 @@ A framework for loading Pulp client extensions.
 %package -n python-pulp-agent-lib
 Summary: Pulp agent handler framework
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-common = %{version}-%{release}
 
 %description -n python-pulp-agent-lib
 A framework for loading agent handlers that provide support
@@ -294,10 +294,10 @@ for content, bind and system specific operations.
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
-Requires: python-%{name}-bindings = %{version}
-Requires: python-%{name}-client-lib = %{version}
-Requires: %{name}-builtins-admin-extensions = %{version}
+Requires: python-%{name}-common = %{version}-%{release}
+Requires: python-%{name}-bindings = %{version}-%{release}
+Requires: python-%{name}-client-lib = %{version}-%{release}
+Requires: %{name}-builtins-admin-extensions = %{version}-%{release}
 Obsoletes: pulp-admin
 
 %description admin-client
@@ -319,10 +319,10 @@ synching, and to kick off remote actions on consumers.
 %package consumer-client
 Summary: Consumer tool to administer the pulp consumer.
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
-Requires: python-%{name}-bindings = %{version}
-Requires: python-%{name}-client-lib = %{version}
-Requires: %{name}-builtins-consumer-extensions = %{version}
+Requires: python-%{name}-common = %{version}-%{release}
+Requires: python-%{name}-bindings = %{version}-%{release}
+Requires: python-%{name}-client-lib = %{version}-%{release}
+Requires: %{name}-builtins-consumer-extensions = %{version}-%{release}
 Obsoletes: pulp-consumer
 
 %description consumer-client
@@ -344,8 +344,8 @@ A tool used to administer a pulp consumer.
 %package agent
 Summary: The Pulp agent
 Group: Development/Languages
-Requires: python-%{name}-bindings = %{version}
-Requires: python-%{name}-agent-lib = %{version}
+Requires: python-%{name}-bindings = %{version}-%{release}
+Requires: python-%{name}-agent-lib = %{version}-%{release}
 Requires: gofer >= 0.74
 
 %description agent
@@ -415,6 +415,16 @@ exit 0
 %endif
 
 %changelog
+* Mon Nov 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.336-1
+- 871643 - return a list of matched consumer IDs. (jortel@redhat.com)
+- 871175 - updating call request fields according to latest changes in pulp's
+  dispatch system (skarmark@redhat.com)
+- 871952 - Hardened the distributor code so the clean up occurs
+  (jason.dobies@redhat.com)
+- 869757 - Added call to retrieve the repo to check for a 404
+  (jason.dobies@redhat.com)
+- 871592 - Fixed okaara required version (jason.dobies@redhat.com)
+
 * Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
 - 
 

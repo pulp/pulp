@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.335
-Release: 1%{?dist}
+Version: 0.0.336
+Release: 1
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -92,6 +92,9 @@ client capabilities.
 
 
 %changelog
+* Mon Nov 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.336-1
+- 868022 - updating CLI section descriptions (mhrivnak@redhat.com)
+
 * Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
 - 
 

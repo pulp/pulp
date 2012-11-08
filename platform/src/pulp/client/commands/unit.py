@@ -30,6 +30,9 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand):
         m = 'destination repository to copy units into'
         self.create_option('--to-repo-id', _(m), ['-t'], required=True)
 
+        m = 'resolve recursive dependencies and copy them to the destination repository'
+        self.create_flag('--recursive', _(m), ['-r'])
+
 
 class UnitRemoveCommand(UnitAssociationCriteriaCommand):
     def __init__(self, *args, **kwargs):

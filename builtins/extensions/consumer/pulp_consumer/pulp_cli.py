@@ -18,6 +18,7 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client import validators
 
 # -- framework hook -----------------------------------------------------------
 
@@ -25,7 +26,7 @@ def initialize(context):
 
     # Common Options
     d = 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed'
-    id_option = PulpCliOption('--consumer-id', _(d), required=True)
+    id_option = PulpCliOption('--consumer-id', _(d), required=True, validate_func=validators.id_validator)
 
     d = 'user-readable display name for the consumer'
     name_option = PulpCliOption('--display-name', _(d), required=False)
