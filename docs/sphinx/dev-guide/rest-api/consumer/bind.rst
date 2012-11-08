@@ -10,8 +10,8 @@ Bind a :term:`consumer` to a :term:`repository's <repository>` :term:`distributo
 for the purpose of consuming published content.  Binding the consumer is performed
 in the following steps:
 
- 1. Bind the consumer on the server.
- 2. Perform the bind on the consumer.
+ 1. Create the :term:`binding` on server.
+ 2. Send a request to the consumer to create the binding.
 
 Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 
@@ -48,9 +48,10 @@ Remove a binding between a :term:`consumer` and a :term:`repository's <repositor
 
 Unbinding the consumer is performed in the following steps:
 
- 1. Unbind the consumer on the server.
- 2. Perform the unbind on the consumer.
- 3. Delete the binding.
+ 1. Mark the :term:`binding` as deleted on the server.
+ 2. Send a request to the consumer to remove the binding.
+ 3. Once the consumer has confirmed that the binding has been removed, it is permanently
+    deleted on the server.
 
 Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 
