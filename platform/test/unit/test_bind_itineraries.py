@@ -287,7 +287,7 @@ class TestBind(PulpItineraryTests):
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is None)
 
-    def test_hard_unbind(self):
+    def test_forced_unbind(self):
 
         # Setup
         self.populate()

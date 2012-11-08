@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliSection
 from pulp.client.commands.criteria import CriteriaCommand
 
 
@@ -35,10 +35,10 @@ class BindingSection(PulpCliSection):
         # search
         self.add_command(Search(context))
         # outstanding
-        outstanding = PulpCliSection('outstanding', _('find outstanding bindings'))
-        outstanding.add_command(Outstanding(context))
-        outstanding.add_command(OutstandingBindActions(context))
-        outstanding.add_command(OutstandingUnbindActions(context))
+        outstanding = PulpCliSection('unconfirmed', _('find unconfirmed bindings'))
+        outstanding.add_command(Unconfirmed(context))
+        outstanding.add_command(UnconfirmedBindActions(context))
+        outstanding.add_command(UnconfirmedUnbindActions(context))
         self.add_subsection(outstanding)
 
 
@@ -53,12 +53,12 @@ class Search(CriteriaCommand):
             self.context.prompt.render_document(binding)
 
 
-class Outstanding(CriteriaCommand):
+class Unconfirmed(CriteriaCommand):
 
     FILTER = {'consumer_actions.status':{'$in':['pending', 'failed']}}
 
     def __init__(self, context):
-        m = _('find bindings with outstanding actions')
+        m = _('find bindings with unconfirmed consumer actions')
         CriteriaCommand.__init__(self, self.run, 'all', m, filtering=False)
         self.context = context
 
@@ -67,17 +67,17 @@ class Outstanding(CriteriaCommand):
         for binding in self.context.server.bindings.search(**options):
             self.context.prompt.render_document(binding)
 
-class OutstandingBindActions(CriteriaCommand):
+class UnconfirmedBindActions(CriteriaCommand):
 
     def __init__(self, context):
-        m = _('list bindings with outstanding BIND actions')
+        m = _('list bindings with unconfirmed bind consumer actions')
         CriteriaCommand.__init__(self, self.run, 'binds', m, filtering=False)
         self.context = context
 
     def run(self, **options):
         filter = {
             '$and':[
-                Outstanding.FILTER,
+                Unconfirmed.FILTER,
                 {'consumer_actions.action':'bind'},
             ]
         }
@@ -86,17 +86,17 @@ class OutstandingBindActions(CriteriaCommand):
             self.context.prompt.render_document(binding)
 
 
-class OutstandingUnbindActions(CriteriaCommand):
+class UnconfirmedUnbindActions(CriteriaCommand):
 
     def __init__(self, context):
-        m = _('list bindings with outstanding UNBIND actions')
+        m = _('list bindings with unconfirmed bind consumer actions')
         CriteriaCommand.__init__(self, self.run, 'unbinds', m, filtering=False)
         self.context = context
 
     def run(self, **options):
         filter = {
             '$and':[
-                Outstanding.FILTER,
+                Unconfirmed.FILTER,
                 {'consumer_actions.action':'unbind'},
             ]
         }

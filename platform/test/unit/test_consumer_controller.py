@@ -635,7 +635,7 @@ class BindTest(base.PulpWebserviceTests):
             False)
 
     @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
-    def test_hard_unbind(self, mock_unbind_itinerary):
+    def test_forced_unbind(self, mock_unbind_itinerary):
 
         # Setup
         self.populate()
@@ -647,7 +647,7 @@ class BindTest(base.PulpWebserviceTests):
                (self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID)
-        body = {'hard':True}
+        body = {'force':True}
         status, body = self.delete(path, body)
 
         # Verify
