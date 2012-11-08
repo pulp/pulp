@@ -81,9 +81,15 @@ class PulpAgent:
         @return: {}
         """
         rest = Rest()
-        path = '/agenthub/agent/%s/' % uuids[0]
-        reply = rest.get(path)
-        return reply[1]
+        result = {}
+        for uuid in uuids:
+            path = '/agenthub/agent/%s/' % uuid
+            status, body = rest.get(path)
+            if status == 200:
+                result[uuid] = body
+            else:
+                raise Exception('Status Failed')
+        return result
 
 #
 # Agent Capability(s)
