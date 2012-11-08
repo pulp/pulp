@@ -36,8 +36,7 @@ def consumer_content_install_itinerary(consumer_id, units, options):
     """
     manager = managers_factory.consumer_agent_manager()
     args = [consumer_id]
-    kwargs = {'units': units,
-              'options': options.get('options', {})}
+    kwargs = {'units': units, 'options': options}
     weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
     tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag('unit_install')]
@@ -60,8 +59,7 @@ def consumer_content_update_itinerary(consumer_id, units, options):
     """
     manager = managers_factory.consumer_agent_manager()
     args = [consumer_id]
-    kwargs = {'units': units,
-              'options': options.get('options', {})}
+    kwargs = {'units': units, 'options': options}
     weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
     tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag('unit_update')]
@@ -84,8 +82,7 @@ def consumer_content_uninstall_itinerary(consumer_id, units, options):
     """
     manager = managers_factory.consumer_agent_manager()
     args = [consumer_id]
-    kwargs = {'units': units,
-              'options': options.get('options', {})}
+    kwargs = {'units': units, 'options': options}
     weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
     tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag('unit_uninstall')]
