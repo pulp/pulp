@@ -13,29 +13,11 @@
 
 import threading
 
-from pulp.server.db.model.auth import User
-from pulp.server.util import Singleton
+from pulp.server.managers.auth.user import system
 
 # thread-local principal storage -----------------------------------------------
 
 _PRINCIPAL_STORAGE = threading.local()
-
-# default system principal -----------------------------------------------------
-
-_SYSTEM_ID = '00000000-0000-0000-0000-000000000000'
-_SYSTEM_LOGIN = u'SYSTEM'
-
-
-class SystemUser(User):
-    """
-    Singleton user class that represents the "system" user (i.e. no user).
-    """
-
-    __metaclass__ = Singleton
-
-    def __init__(self):
-        super(SystemUser, self).__init__(_SYSTEM_LOGIN, None)
-        self._id = self.id = _SYSTEM_ID
 
 # principal manager ------------------------------------------------------------
 
@@ -45,8 +27,8 @@ class PrincipalManager(object):
     """
 
     # reference system attributes here for convenience
-    system_id = _SYSTEM_ID
-    system_login = _SYSTEM_LOGIN
+    system_id = system.SYSTEM_ID
+    system_login = system.SYSTEM_LOGIN
 
     def get_principal(self):
         """
@@ -55,7 +37,7 @@ class PrincipalManager(object):
         @return: current user of the system
         @rtype: User or dict
         """
-        return getattr(_PRINCIPAL_STORAGE, 'principal', SystemUser())
+        return getattr(_PRINCIPAL_STORAGE, 'principal', system.SystemUser())
 
     def set_principal(self, principal=None):
         """
@@ -64,13 +46,13 @@ class PrincipalManager(object):
         @param principal: current user
         @type principal: User or None
         """
-        _PRINCIPAL_STORAGE.principal = principal or SystemUser()
+        _PRINCIPAL_STORAGE.principal = principal or system.SystemUser()
 
     def clear_principal(self):
         """
         Clear the current user of the system.
         """
-        _PRINCIPAL_STORAGE.principal = SystemUser()
+        _PRINCIPAL_STORAGE.principal = system.SystemUser()
 
     def is_system_principal(self):
         """
@@ -78,4 +60,4 @@ class PrincipalManager(object):
         @return: true if the current user is the system user, false otherwise
         @rtype: bool
         """
-        return self.get_principal() is SystemUser()
+        return self.get_principal() is system.SystemUser()
