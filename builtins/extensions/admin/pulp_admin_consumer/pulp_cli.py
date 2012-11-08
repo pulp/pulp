@@ -14,7 +14,7 @@
 import time
 from gettext import gettext as _
 
-from pulp.client import arg_utils
+from pulp.client import arg_utils, validators
 from pulp.client.extensions.extensions import (PulpCliSection, PulpCliCommand,
     PulpCliOption, PulpCliFlag)
 from pulp.bindings.exceptions import NotFoundException
@@ -43,13 +43,14 @@ class InvalidConfig(Exception):
 class AdminConsumerSection(PulpCliSection):
 
     def __init__(self, context):
-        PulpCliSection.__init__(self, 'consumer', 'consumer lifecycle (list, update, etc.) commands')
+        PulpCliSection.__init__(self, 'consumer', _('register, bind, and interact with consumers'))
 
         self.context = context
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
+        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed',
+                                           required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', 'user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', 'user-readable description for the consumer', required=False)
 
@@ -594,7 +595,7 @@ class ConsumerGroupMemberSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt
 
-        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True)
+        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True, validate_func=validators.id_validator)
 
         list_command = PulpCliCommand('list', _('list of consumers in a particular group'), self.list)
         list_command.add_option(id_option)
@@ -651,7 +652,8 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_subsection(ConsumerGroupMemberSection(context))
 
         # Common Options
-        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), required=True)
+        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), 
+                                  required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', _('user-readable display name for the consumer group'), required=False)
         description_option = PulpCliOption('--description', _('user-readable description for the consumer group'), required=False)
 

@@ -228,6 +228,44 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
+    def test_create_and_configure_non_list_distributor_list(self):
+        """
+        Tests cleanup is successful if the distributor list is malformed.
+        """
+
+        # Test
+        distributors = 'bad data'
+
+        # Verify
+        try:
+            self.manager.create_and_configure_repo('repo-1', distributor_list=distributors)
+            self.fail()
+        except exceptions.InvalidValue, e:
+            self.assertEqual(e.property_names[0], 'distributor_list')
+
+        # Verify the repo was deleted
+        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        self.assertTrue(repo is None)
+
+    def test_create_and_configure_bad_distributor_in_list(self):
+        """
+        Tests cleanup is successful if the distributor list is malformed.
+        """
+
+        # Test
+        distributors = ['bad-data']
+
+        # Verify
+        try:
+            self.manager.create_and_configure_repo('repo-1', distributor_list=distributors)
+            self.fail()
+        except exceptions.InvalidValue, e:
+            self.assertEqual(e.property_names[0], 'distributor_list')
+
+        # Verify the repo was deleted
+        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        self.assertTrue(repo is None)
+
     def test_create_i18n(self):
         # Setup
         i18n_text = 'Brasília'

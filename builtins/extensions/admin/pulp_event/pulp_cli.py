@@ -102,7 +102,7 @@ class EventSection(PulpCliSection):
         @param context:
         @type  context: pulp.client.extensions.core.ClientContext
         """
-        super(EventSection, self).__init__('event', _('manage server-side events'))
+        super(EventSection, self).__init__('event', _('subscribe to event notifications'))
         self.add_subsection(ListenerSection(context))
 
 
@@ -225,7 +225,7 @@ class AMQPSection(GenericSection):
         super(AMQPSection, self).__init__(context, 'amqp',
             _('manage amqp listeners'))
 
-        m = _('optional name of an exchange that overrides the setting from'
+        m = _('optional name of an exchange that overrides the setting from '
               'server.conf')
         self.exchange_option = PulpCliOption('--exchange', m, required=False)
 

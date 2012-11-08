@@ -20,7 +20,6 @@ from paste.fixture import TestApp
 import sys
 import web
 import unittest
-from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
 try:
     import json
@@ -39,7 +38,6 @@ from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
 
 from pulp.server import config
-from pulp.server.auth import authorization
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
