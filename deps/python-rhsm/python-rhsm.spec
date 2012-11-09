@@ -63,6 +63,9 @@ rm -rf %{buildroot}
 %attr(640,root,root) %{_sysconfdir}/rhsm/ca/*.pem
 
 %changelog
+* Fri Nov 09 2012 Michael Hrivnak <mhrivnak@redhat.com> 1.1.4-0.pulp
+- updating the python-rhsm dep (mhrivnak@redhat.com)
+
 * Wed Oct 10 2012 Adrian Likins <alikins@redhat.com> 1.1.3-1
 - 863961: add test case for id cert default version (alikins@redhat.com)
 - 857426: Do not pass None when body is empty collection (mstead@redhat.com)
