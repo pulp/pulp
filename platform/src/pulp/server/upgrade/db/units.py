@@ -501,6 +501,7 @@ def _package_group_categories(v1_database, v2_database, report):
     # inserting.
 
     v2_coll = v2_database.units_package_category
+    v2_ass_coll = v2_database.repo_content_units
 
     # Tuple of repo ID and group ID
     already_added_tuples = [ (x['repo_id'], x['id']) for x in
@@ -509,7 +510,6 @@ def _package_group_categories(v1_database, v2_database, report):
     v1_repos = v1_database.repos.find({}, {'id' : 1, 'packagegroupcategories' : 1})
     for v1_repo in v1_repos:
 
-        new_categories = [] # add the categories to the DB on a per repo basis
         for category_id in v1_repo.get('packagegroupcategories', {}).keys():
 
             # Idempotency check
@@ -517,8 +517,9 @@ def _package_group_categories(v1_database, v2_database, report):
                 continue
 
             v1_category = v1_repo['packagegroupcategories'][category_id]
+            category_id = ObjectId()
             new_category = {
-                '_id' : ObjectId(),
+                '_id' : category_id,
                 '_storage_path' : None,
                 '_content_type_id' : 'package_category',
                 'description' : v1_category['description'],
@@ -530,13 +531,19 @@ def _package_group_categories(v1_database, v2_database, report):
                 'translated_description' : v1_category['translated_description'],
                 'translated_name' : v1_category['translated_name'],
             }
+            v2_coll.insert(new_category, safe=True)
 
-            # As with groups, the database doesn't reflect the model.
-
-            new_categories.append(new_category)
-
-        if new_categories:
-            v2_coll.insert(new_categories, safe=True)
+            new_association = {
+                '_id' : ObjectId(),
+                'repo_id' : v1_repo['id'],
+                'unit_id' : category_id,
+                'unit_type_id' : 'package_category',
+                'owner_type' : DEFAULT_OWNER_TYPE,
+                'owner_id' : DEFAULT_OWNER_ID,
+                'created' : DEFAULT_CREATED,
+                'updated' : DEFAULT_UPDATED,
+            }
+            v2_ass_coll.insert(new_association, safe=True)
 
     return True
 
