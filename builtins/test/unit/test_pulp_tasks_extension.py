@@ -47,7 +47,10 @@ EXAMPLE_CALL_REPORT = {
     "schedule_id": None,
     "result": None,
     "progress": {},
-    "response": "postponed"
+    "response": "postponed",
+    "call_request_group_id": 'default-group',
+    "call_request_id": 'default-id',
+    "call_request_tags": []
 }
 
 
