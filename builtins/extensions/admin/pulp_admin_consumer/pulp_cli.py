@@ -23,11 +23,14 @@ from pulp.client.commands.criteria import CriteriaCommand
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    consumer_section = AdminConsumerSection(context)
-    consumer_section.add_subsection(ContentSection(context))
-    consumer_section.add_subsection(ConsumerGroupSection(context))
-    context.cli.add_section(consumer_section)
-    
+    # XXX (jconnor 2012-11-08) temporarily disabled as only functional
+    # implementations have been moved under the 'rpm' section
+    pass
+    #consumer_section = AdminConsumerSection(context)
+    #consumer_section.add_subsection(ContentSection(context))
+    #consumer_section.add_subsection(ConsumerGroupSection(context))
+    #context.cli.add_section(consumer_section)
+
 # -- common exceptions --------------------------------------------------------
 
 class InvalidConfig(Exception):
@@ -94,7 +97,7 @@ class AdminConsumerSection(PulpCliSection):
         unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
         self.add_command(unbind_command)
-        
+
         # History Retrieval Command
         history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
         history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
@@ -583,7 +586,7 @@ class ConsumerGroupMemberSection(PulpCliSection):
         consumer_group_list = self.context.server.consumer_group_search.search(**criteria)
         if len(consumer_group_list) != 1:
             self.prompt.write(
-                'Consumer group [%s] does not exist on the server' % 
+                'Consumer group [%s] does not exist on the server' %
                 consumer_group_id, tag='not-found')
         else:
             consumer_ids = consumer_group_list[0].get('consumer_ids')
@@ -617,7 +620,7 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_subsection(ConsumerGroupMemberSection(context))
 
         # Common Options
-        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), 
+        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'),
                                   required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', _('user-readable display name for the consumer group'), required=False)
         description_option = PulpCliOption('--description', _('user-readable description for the consumer group'), required=False)
@@ -659,7 +662,7 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_command(CriteriaCommand(self.search, include_search=True))
 
         # Bind Command
-        bind_command = PulpCliCommand('bind', 
+        bind_command = PulpCliCommand('bind',
             _('binds each consumer in a consumer group to a repository '
               'distributor for consuming published content'),
             self.bind)
