@@ -373,6 +373,11 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
 
 class PackageGroupUpgradeTests(BaseDbUpgradeTests):
 
+    def setUp(self):
+        super(PackageGroupUpgradeTests, self).setUp()
+
+        units._initialize_association_collection(self.tmp_test_db.database)
+
     def test_groups(self):
         # Test
         report = UpgradeStepReport()
@@ -395,6 +400,7 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
 
         for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroups' : 1}):
             for group_id in v1_repo.get('packagegroups', {}).keys():
+                # Verify the group itself
                 v1_group = v1_repo['packagegroups'][group_id]
                 v2_group = self.tmp_test_db.database.units_package_group.find_one({'repo_id' : v1_repo['id'], 'id' : group_id})
                 self.assertTrue(v2_group is not None)
@@ -409,6 +415,17 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
                     'translated_name', 'user_visible'):
                     self.assertEqual(v1_group[k], v2_group[k], msg='Incorrect key: %s' % k)
 
+                # Make sure an association exists
+                ass_query = {'repo_id' : v1_repo['id'],
+                             'unit_id' : v2_group['_id'],
+                             'unit_type_id' : 'package_group'}
+                association = self.tmp_test_db.database.repo_content_units.find_one(ass_query)
+                self.assertTrue(association is not None)
+                self.assertEqual(association['owner_type'], units.DEFAULT_OWNER_TYPE)
+                self.assertEqual(association['owner_id'], units.DEFAULT_OWNER_ID)
+                self.assertEqual(association['created'], units.DEFAULT_CREATED)
+                self.assertEqual(association['updated'], units.DEFAULT_UPDATED)
+
     def test_groups_idempotency(self):
         # Test
         report = UpgradeStepReport()
@@ -416,10 +433,10 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
 
         result = units._package_groups(self.v1_test_db.database, self.tmp_test_db.database, report)
 
-        # Verify
+        # Verify - Simple Count Tests
         self.assertTrue(result)
 
-        # Simple count test to make sure they weren't duplicated
+        # Make sure the groups weren't duplicated
         v1_count = 0
         for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroups' : 1}):
             v1_count += len(v1_repo['packagegroups'].keys())
@@ -427,6 +444,12 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
         v2_count = self.tmp_test_db.database.units_package_group.find().count()
 
         self.assertEqual(v1_count, v2_count)
+
+        # Make sure the associations weren't duplicated
+        for v1_repo in self.v1_test_db.database.repos.find({}, {'id' : 1, 'packagegroups' : 1}):
+            expected_group_count = len(v1_repo['packagegroups'])
+            associations = self.tmp_test_db.database.repo_content_units.find({'repo_id' : v1_repo['id']})
+            self.assertEqual(expected_group_count, associations.count())
 
 
 class PackageCategoryUpgradeTests(BaseDbUpgradeTests):

@@ -412,7 +412,7 @@ def _associate_distribution(v1_distribution, v2_distribution, v2_ass_coll):
             'owner_id' : DEFAULT_OWNER_ID,
             'created' : DEFAULT_CREATED,
             'updated' : DEFAULT_UPDATED,
-            }
+        }
         new_associations.append(new_association)
 
     if new_associations:
@@ -438,6 +438,7 @@ def _package_groups(v1_database, v2_database, report):
     # itself is that we can batch the group inserts.
 
     v2_coll = v2_database.units_package_group
+    v2_ass_coll = v2_database.repo_content_units
 
     # Tuple of repo ID and group ID
     already_added_tuples = [ (x['repo_id'], x['id']) for x in
@@ -446,7 +447,6 @@ def _package_groups(v1_database, v2_database, report):
     v1_repos = v1_database.repos.find({}, {'id' : 1, 'packagegroups' : 1})
     for v1_repo in v1_repos:
 
-        new_groups = [] # add the groups to the DB on a per repo basis
         for group_id in v1_repo.get('packagegroups', {}).keys():
 
             # Idempotency check
@@ -454,8 +454,9 @@ def _package_groups(v1_database, v2_database, report):
                 continue
 
             v1_group = v1_repo['packagegroups'][group_id]
+            v2_group_id = ObjectId()
             new_group = {
-                '_id' : ObjectId(),
+                '_id' : v2_group_id,
                 '_storage_path' : None,
                 '_content_type_id' : 'package_group',
                 'conditional_package_names' : v1_group['conditional_package_names'],
@@ -473,10 +474,19 @@ def _package_groups(v1_database, v2_database, report):
                 'translated_name' : v1_group['translated_name'],
                 'user_visible' : v1_group['user_visible'],
             }
-            new_groups.append(new_group)
+            v2_coll.insert(new_group, safe=True)
 
-        if new_groups:
-            v2_coll.insert(new_groups, safe=True)
+            new_association = {
+                '_id' : ObjectId(),
+                'repo_id' : v1_repo['id'],
+                'unit_id' : v2_group_id,
+                'unit_type_id' : 'package_group',
+                'owner_type' : DEFAULT_OWNER_TYPE,
+                'owner_id' : DEFAULT_OWNER_ID,
+                'created' : DEFAULT_CREATED,
+                'updated' : DEFAULT_UPDATED,
+            }
+            v2_ass_coll.insert(new_association, safe=True)
 
     return True
 
