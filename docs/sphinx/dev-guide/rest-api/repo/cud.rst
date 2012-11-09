@@ -253,11 +253,11 @@ is not deleted. Deleting content is handled through the
 Deleting a repository is performed in the following major steps:
 
  1. Delete the repository.
- 2. Unbind all *bound* consumers.
+ 2. Unbind all bound consumers.
 
 Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
-call_requests depends on how may consumer are bound to the repository.
+call_requests depends on how many consumers are bound to the repository.
 
 
 | :method:`delete`

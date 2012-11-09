@@ -26,14 +26,12 @@ def bind_succeeded(call_request, call_report):
     """
     The task succeeded callback.
     Updates the consumer request tracking on the binding.
-    @param call_request:
-    @param call_report:
     """
     manager = managers.consumer_bind_manager()
     action_id = call_request.id
     consumer_id, repo_id, distributor_id, options = call_request.args
     dispatch_report = call_report.result
-    if dispatch_report['status']:
+    if dispatch_report['succeeded']:
         manager.action_succeeded(consumer_id, repo_id, distributor_id, action_id)
     else:
         manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
@@ -42,8 +40,6 @@ def bind_failed(call_request, call_report):
     """
     The task failed callback.
     Updates the consumer request tracking on the binding.
-    @param call_request:
-    @param call_report:
     """
     manager = managers.consumer_bind_manager()
     action_id = call_request.id
@@ -136,7 +132,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
     return call_requests
 
 
-def unbind_itinerary(consumer_id, repo_id, distributor_id, options, hard=False):
+def unbind_itinerary(consumer_id, repo_id, distributor_id, options, force=False):
     """
     Get the unbind itinerary:
       1. Mark the binding as (deleted) on the server.
@@ -150,8 +146,8 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options, hard=False):
     @type distributor_id: str
     @param options: Unbind options passed to the agent handler.
     @type options: dict
-    @param hard: Indicates a hard unbind.
-    @type hard: bool
+    @param force: Indicates a forced unbind.
+    @type force: bool
     @return: A list of call_requests known as an itinerary.
     @rtype list
     """
@@ -179,12 +175,12 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options, hard=False):
         distributor_id,
     ]
 
-    # A (hard) rebind immediately deletes the binding instead
+    # A forced unbind immediately deletes the binding instead
     # of marking it deleted and going through that lifecycle.
     # It is intended to be used to clean up orphaned bindings
     # caused by failed/unconfirmed unbind actions on the consumer.
 
-    if hard:
+    if force:
         args.append(True)
         unbind_request = CallRequest(
             manager.delete,

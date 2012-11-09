@@ -23,24 +23,24 @@ log = getLogger(__name__)
 class Report(object):
     """
     The base report.
-    @ivar status: The overall status (succeeded|failed).
-    @type status: bool
-    @ivar details: operation details.
+    @ivar succeeded: Indicates whether or not a handler operation succeeded.
+    @type succeeded: bool
+    @ivar details: Operation result details.
     @type details: dict
-    @ivar chgcnt: The number of changes made during the operation.
+    @ivar num_changes: The number of changes made during the operation.
         The granularity is up to the discretion of the handler.
-    @type chgcnt: int
+    @type num_changes: int
     """
 
     def __init__(self):
-        self.status = True
+        self.succeeded = True
         self.details = {}
-        self.chgcnt = 0
+        self.num_changes = 0
 
     def dict(self):
         """
-        Dictionary representation.
-        @return: A dict.
+        Dictionary representation of the report.
+        @return: A dict representation of self.
         @rtype: dict
         """
         return self.__dict__
@@ -49,44 +49,41 @@ class Report(object):
         return str(self.dict())
 
     def __len__(self):
-        return self.chgcnt
+        return self.num_changes
 
 
 class HandlerReport(Report):
     """
-    Generic handler report.
-    @ivar typeid: A type ID.
-    @type typeid: str
+    The base handler report.
+    @ivar aggregation_key: The key used to aggregate details when
+        updating another report.
+    @type aggregation_key: str
     """
 
     def __init__(self):
         Report.__init__(self)
-        self.typeid = None
+        self.aggregation_key = None
 
-    def succeeded(self, details=None, chgcnt=0):
+    def set_succeeded(self, details=None, num_changes=0):
         """
-        Called (by handler) on operation succeeded.
-        @param typeid: The content type ID.
-        @type typeid: str
-        @param details: The details of the operation.
+        Called to indicate an operation succeeded.
+        @param details: The details of the operation result.
         @type details: dict
-        @param chgcnt: The number of changes made during the operation.
+        @param num_changes: The number of changes made during the operation.
             The granularity is up to the discretion of the handler.
-        @type chgcnt: int
+        @type num_changes: int
         """
-        self.status = True
+        self.succeeded = True
         self.details = (details or {})
-        self.chgcnt = chgcnt
+        self.num_changes = num_changes
 
-    def failed(self, details=None):
+    def set_failed(self, details=None):
         """
-        Called (by handler) on operation failed.
-        @param typeid: The content type ID.
-        @type typeid: str
-        @param details: The details of the operation.
+        Called to indicate an operation failed.
+        @param details: The details of the failure.
         @type details: dict
         """
-        self.status = False
+        self.succeeded = False
         self.details = (details or {})
 
     def update(self, report):
@@ -95,35 +92,38 @@ class HandlerReport(Report):
         @param report: An aggregation report.
         @type report: DispatchReport
         """
-        self._update_status(report)
-        self._update_chgcnt(report)
+        self._update_succeeded(report)
+        self._update_num_changes(report)
         self._update_details(report)
 
-    def _update_status(self, report):
+    def _update_succeeded(self, report):
         """
-        Update the (status) in the specified report.
+        Update the succeeded flag in the specified report.
         @param report: An aggregation report.
         @type report: DispatchReport
         """
-        if not self.status:
-            report.status = self.status
+        if not self.succeeded:
+            report.succeeded = self.succeeded
 
-    def _update_chgcnt(self, report):
+    def _update_num_changes(self, report):
         """
-        Update the (chgcnt) in the specified report.
+        Update the num_changes in the specified report.
         @param report: An aggregation report.
         @type report: DispatchReport
         """
-        if self.status:
-            report.chgcnt += self.chgcnt
+        if self.succeeded:
+            report.num_changes += self.num_changes
 
     def _update_details(self, report):
         """
-        Update the (details) in the specified report.
+        Update the details in the specified report.
+        The details are aggregated in the specified report using
+        the aggregation key.
         @param report: An aggregation report.
         @type report: DispatchReport
         """
-        report.details[self.typeid] = dict(status=self.status, details=self.details)
+        report.details[self.aggregation_key] = \
+            dict(succeeded=self.succeeded, details=self.details)
 
 
 class ContentReport(HandlerReport):
@@ -164,8 +164,9 @@ class BindReport(HandlerReport):
         @param report: An aggregation report.
         @type report: Report
         """
-        bind_details = report.details.setdefault(self.typeid, {})
-        bind_details[self.repo_id] = self.details
+        bind_details = report.details.setdefault(self.aggregation_key, {})
+        bind_details[self.repo_id] = \
+            dict(succeeded=self.succeeded, details=self.details)
 
 
 class CleanReport(HandlerReport):
@@ -179,22 +180,23 @@ class CleanReport(HandlerReport):
 class RebootReport(HandlerReport):
     """
     The reboot report is returned by handler methods
-    implementing reboot operations.  A chgcnt > 0 indicates
-    the reboot was scheduled.
+    implementing reboot operations.
     """
 
-    def reboot_scheduled(self, details=None):
+    def __init__(self):
+        HandlerReport.__init__(self)
+        self.reboot_scheduled = False
+
+    def set_succeeded(self, details=None, num_changes=0):
         """
-        Indicates that the reboot operation succeeded and that
-        a reboot was scheduled.  Same as calling succeeded() and
-        setting the chgcnt = 1.
         @param details: The details of the reboot.
         @type details: dict
         """
-        HandlerReport.succeeded(self, details, chgcnt=1)
+        HandlerReport.set_succeeded(self, details, num_changes)
+        self.reboot_scheduled = True
 
     def _update_details(self, report):
-        report.reboot = dict(scheduled=(self.chgcnt > 0), details=self.details)
+        report.reboot = dict(scheduled=self.reboot_scheduled, details=self.details)
 
 
 class LastExceptionDetails(dict):
@@ -218,38 +220,38 @@ class DispatchReport(Report):
     The (internal) dispatch report is returned for all handler methods
     dispatched to handlers.  It represents an aggregation of handler reports.
     The handler (class) reports are collated by type_id (content, distributor, system).
-    The overall status is True (succeeded) only if all of the handler reports have
-    a status of True (succeeded).
+    The overall succeeded is True (succeeded) only if all of the handler reports have
+    a succeeded of True (succeeded).
     Succeeded Example:
-      { 'status' : True,
-        'chgcnt' : 10,
+      { 'succeeded' : True,
+        'num_changes' : 10,
         'reboot' : { 'scheduled' : False, details : {} },
         'details' : {
-          'type_A' : { 'status' : True, 'details' : {} },
-          'type_B' : { 'status' : True, 'details' : {} },
-          'type_C' : { 'status' : True, 'details' : {} },
+          'type_A' : { 'succeeded' : True, 'details' : {} },
+          'type_B' : { 'succeeded' : True, 'details' : {} },
+          'type_C' : { 'succeeded' : True, 'details' : {} },
         }
       }
     Failed Example:
-      { 'status' : False,
-        'chgcnt' : 6,
+      { 'succeeded' : False,
+        'num_changes' : 6,
         'reboot' : { 'scheduled' : False, details : {} },
         'details' : {
-          'type_A' : { 'status' : True, 'details' : {} },
-          'type_B' : { 'status' : True, 'details' : {} },
-          'type_C' : { 'status' : False,
+          'type_A' : { 'succeeded' : True, 'details' : {} },
+          'type_B' : { 'succeeded' : True, 'details' : {} },
+          'type_C' : { 'succeeded' : False,
                        'details' : { 'message' : <message>, 'trace'=<trace> } },
         }
       }
-    @ivar status: The overall status (succeeded|failed).
-    @type status: bool
-    @ivar details: operation details keyed by type_id.
+    @ivar succeeded: The overall succeeded (succeeded|failed).
+    @type succeeded: bool
+    @ivar details: operation details keyed by aggregation_key.
       Each value is:
-        { 'status' : True, details : {} }
+        { 'succeeded' : True, details : {} }
     @type details: dict
-    @ivar chgcnt: The number of changes made during the operation.
+    @ivar num_changes: The number of changes made during the operation.
         The granularity is up to the discretion of the handlers.
-    @type chgcnt: int
+    @type num_changes: int
     """
 
     def __init__(self):

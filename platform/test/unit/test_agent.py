@@ -12,14 +12,16 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import sys
-import os
-
 import base
 import mock_agent
+
+from mock import patch, Mock
+
+from gofer.messaging import Envelope
+
 from pulp.server.agent.hub.pulpagent import PulpAgent as RestAgent
 from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
+from pulp.server.agent.direct.services import HeartbeatListener
 
 
 REPO_ID = 'repo_1'
@@ -45,6 +47,12 @@ OPTIONS = {
 }
 
 TASKID = 'TASK-123'
+
+def mock_get(path):
+    if path[-2] == 'A':
+        return (200, (True, '2012-11-08T14:12:19.843772+00:00', {}))
+    else:
+        return (200, (False, None, {}))
 
 
 class TestAgent(base.PulpServerTests):
@@ -104,10 +112,24 @@ class TestAgent(base.PulpServerTests):
         mock_agent.Profile.send.assert_called_once_with()
 
     def test_status(self):
+        # Setup
+        listener = HeartbeatListener('queue')
+        envelope = Envelope(heartbeat=dict(uuid='A', next=10))
+        listener.dispatch(envelope)
         # Test
-        print RestAgent.status(['A','B'])
+        result = DirectAgent.status(['A','B'])
         # Verify
-        # TODO: verify
+        self.assertEqual(len(result), 2)
+        # A
+        alive, next_heartbeat, details = result['A']
+        self.assertTrue(alive)
+        self.assertTrue(isinstance(next_heartbeat, basestring))
+        self.assertTrue(isinstance(details, dict))
+        # B
+        alive, last_heartbeat, details = result['B']
+        self.assertFalse(alive)
+        self.assertTrue(last_heartbeat is None)
+        self.assertTrue(isinstance(details, dict))
 
 
 class TestRestAgent(base.PulpServerTests):
@@ -166,8 +188,19 @@ class TestRestAgent(base.PulpServerTests):
         # Verify
         mock_agent.Profile.send.assert_called_once_with()
 
-    def test_status(self):
+    @patch('mock_agent.MockRest.get', side_effect=mock_get)
+    def test_status(self, mock_rest):
         # Test
-        print RestAgent.status(['A','B'])
+        result = RestAgent.status(['A', 'B'])
         # Verify
-        # TODO: verify
+        self.assertEqual(len(result), 2)
+        # A
+        alive, next_heartbeat, details = result['A']
+        self.assertTrue(alive)
+        self.assertTrue(isinstance(next_heartbeat, basestring))
+        self.assertTrue(isinstance(details, dict))
+        # B
+        alive, last_heartbeat, details = result['B']
+        self.assertFalse(alive)
+        self.assertTrue(last_heartbeat is None)
+        self.assertTrue(isinstance(details, dict))

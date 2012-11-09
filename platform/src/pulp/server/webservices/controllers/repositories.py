@@ -310,7 +310,7 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_type is None:
-            _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
+            _LOG.error('Missing importer type adding importer to repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_type'])
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
@@ -373,7 +373,7 @@ class RepoImporter(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_config is None:
-            _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
+            _LOG.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -596,7 +596,7 @@ class RepoDistributor(JSONController):
         manager.get_distributor(repo_id, distributor_id)
         config = params.get('distributor_config')
         if config is None:
-            _LOG.exception(
+            _LOG.error(
                 'Missing configuration when updating distributor [%s] on repository [%s]',
                 distributor_id,
                 repo_id)
@@ -752,7 +752,7 @@ class RepoSyncHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.exception('Invalid limit specified [%s]' % limit)
+                _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
 
         sync_manager = manager_factory.repo_sync_manager()
@@ -775,7 +775,7 @@ class RepoPublishHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.exception('Invalid limit specified [%s]' % limit)
+                _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
 
         publish_manager = manager_factory.repo_publish_manager()
@@ -849,7 +849,7 @@ class RepoAssociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.exception('Error parsing association criteria [%s]' % criteria)
+                _LOG.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -882,7 +882,7 @@ class RepoUnassociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.exception('Error parsing unassociation criteria [%s]' % criteria)
+                _LOG.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -938,7 +938,7 @@ class RepoResolveDependencies(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.exception('Error parsing association criteria [%s]' % query)
+            _LOG.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         try:
@@ -980,7 +980,7 @@ class RepoUnitAdvancedSearch(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.exception('Error parsing association criteria [%s]' % query)
+            _LOG.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # Data lookup

@@ -93,7 +93,7 @@ class AdminConsumerSection(PulpCliSection):
         unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
-        unbind_command.add_option(PulpCliFlag('--hard', 'perform a hard unbind'))
+        unbind_command.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
         self.add_command(unbind_command)
         
         # History Retrieval Command
@@ -187,9 +187,9 @@ class AdminConsumerSection(PulpCliSection):
         consumer_id = kwargs['consumer-id']
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
-        hard = kwargs['hard']
+        force = kwargs['force']
         try:
-            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, hard)
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
             self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
@@ -203,7 +203,6 @@ class AdminConsumerSection(PulpCliSection):
         order = filters
         for history in history_list:
             self.prompt.render_document(history, filters=filters, order=order)
-
 
     def install(self, **kwargs):
         consumer_id = kwargs['consumer-id']
@@ -220,38 +219,19 @@ class AdminConsumerSection(PulpCliSection):
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
-
     def _format_bindings(self, consumer):
         bindings = consumer.get('bindings')
         if not bindings:
             return
-        formatted = []
+        confirmed = []
+        unconfirmed = []
         for binding in bindings:
-            binds = []
-            unbinds = []
             repo_id = binding['repo_id']
-            if binding['deleted']:
-                repo_id += ' [DELETED]'
-            fb = {
-                'repo_id':repo_id,
-                'consumer_actions':{
-                    'binds':binds,
-                    'unbinds':unbinds,
-                }
-            }
-            for action in binding['consumer_actions']:
-                status = action['status']
-                if status == 'succeeded':
-                    continue
-                if action['action'] == 'bind':
-                    lst = binds
-                else:
-                    lst = unbinds
-                entry = dict(id=action['id'], status=status)
-                lst.append(entry)
-            formatted.append(fb)
-        consumer['bindings'] = formatted
-
+            if (binding['deleted'] or len(binding['consumer_actions'])):
+                unconfirmed.append(repo_id)
+            else:
+                confirmed.append(repo_id)
+        consumer['bindings'] = dict(confirmed=confirmed, unconfirmed=unconfirmed)
 
     def _parse_notes(self, notes_list):
         """

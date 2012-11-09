@@ -24,7 +24,6 @@ from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.consumer import Bind
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -302,24 +301,16 @@ class Binding(JSONController):
         body = self.params()
         # validate resources
         manager = managers.consumer_bind_manager()
-        filters = dict(
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id
-        )
-        criteria = Criteria(filters)
-        bindings = manager.find_by_criteria(criteria)
-        if not bindings:
-            raise MissingResource(criteria)
+        manager.get_bind(consumer_id, repo_id, distributor_id)
         # delete (unbind)
-        hard = body.get('hard', False)
+        force = body.get('force', False)
         options = body.get('options', {})
         call_requests = unbind_itinerary(
             consumer_id,
             repo_id,
             distributor_id,
             options,
-            hard)
+            force)
         execution.execute_multiple(call_requests)
 
 
