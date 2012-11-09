@@ -158,7 +158,7 @@ class RepoManager(object):
         # error block. That call will take care of all of the cleanup.
         distributor_manager = manager_factory.repo_distributor_manager()
 
-        if distributor_list and distributor_list is not isinstance(distributor_list, (list, tuple)):
+        if distributor_list is not None and not isinstance(distributor_list, (list, tuple)):
             self.delete_repo(repo_id)
             raise InvalidValue(['distributor_list'])
 
