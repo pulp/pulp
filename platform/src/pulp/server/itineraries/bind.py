@@ -175,7 +175,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options, force=False)
         distributor_id,
     ]
 
-    # A forced bind immediately deletes the binding instead
+    # A forced unbind immediately deletes the binding instead
     # of marking it deleted and going through that lifecycle.
     # It is intended to be used to clean up orphaned bindings
     # caused by failed/unconfirmed unbind actions on the consumer.

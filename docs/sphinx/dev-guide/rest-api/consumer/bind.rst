@@ -53,6 +53,12 @@ Unbinding the consumer is performed in the following steps:
  3. Once the consumer has confirmed that the binding has been removed, it is permanently
     deleted on the server.
 
+The steps for a forced unbind are as follows:
+
+ 1. The :term:`binding` is deleted on the server.
+ 2. Send a request to the consumer to remove the binding.  The result of the consumer
+    request discarded.
+
 Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 
 | :method:`delete`
@@ -61,6 +67,7 @@ Each step is represented by a :ref:`call_report` in the returned :ref:`call_repo
 | :param_list:`delete` The consumer ID, repository ID and distributor ID are included
   in the URL itself.
 
+* :param:`?force,bool,delete the binding immediately and discontinue tracking consumer actions`
 * :param:`?options,object,options passed to the handler on the consumer`
 
 | :response_list:`_`

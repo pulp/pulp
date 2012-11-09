@@ -56,8 +56,8 @@ class SearchUnconfirmed(CriteriaCommand):
     def __init__(self, context):
         m = _('list bindings with consumer actions with a status of pending or failed')
         CriteriaCommand.__init__(self, self.run, 'unconfirmed', m, filtering=False)
-        self.add_flag(PulpCliFlag('--bind', 'limit search to bindings with unconfirmed bind actions'))
-        self.add_flag(PulpCliFlag('--unbind', 'limit search to bindings with unconfirmed unbind actions'))
+        self.add_flag(PulpCliFlag('--bind', _('limit search to bindings with unconfirmed bind actions')))
+        self.add_flag(PulpCliFlag('--unbind', _('limit search to bindings with unconfirmed unbind actions')))
         self.context = context
 
     def run(self, **options):

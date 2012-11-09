@@ -93,7 +93,7 @@ class AdminConsumerSection(PulpCliSection):
         unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
-        unbind_command.add_option(PulpCliFlag('--force', 'delete the binding immediately and discontinue tracking consumer actions'))
+        unbind_command.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
         self.add_command(unbind_command)
         
         # History Retrieval Command

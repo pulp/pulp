@@ -237,7 +237,7 @@ class UnbindCommand(PulpCliCommand):
 
         self.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         self.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
-        self.add_option(PulpCliFlag('--force', 'delete the binding immediately and discontinue tracking consumer actions'))
+        self.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
 
 
     def unbind(self, **kwargs):
