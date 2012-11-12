@@ -16,7 +16,9 @@ import threading
 from datetime import datetime
 
 from pulp.common import dateutils
+from pulp.server import config as pulp_config
 from pulp.server.compat import ObjectId
+from pulp.server.db.model import dispatch
 
 
 _REAPER = None
@@ -155,6 +157,10 @@ def initialize():
 
     # NOTE add collections to reap here:
 
+    # dispatch archived calls
+    archive_call_collection = dispatch.ArchivedCall.get_collection()
+    archived_call_lifetime = pulp_config.config.getint('tasks', 'archived_call_lifetime')
+    _REAPER.add_collection(archive_call_collection, hours=archived_call_lifetime)
 
 def finalize():
     """
