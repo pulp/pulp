@@ -21,6 +21,14 @@ class Conduit:
     into the handler framework.
     """
 
+    def get_consumer_config(self):
+        """
+        Get the consumer configuration.
+        @return: The consumer configuration object.
+        @rtype: L{pulp.common.config.Config}
+        """
+        raise NotImplementedError()
+
     def update_progress(self, report):
         """
         Report a progress update.

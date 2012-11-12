@@ -15,12 +15,18 @@ import base
 import mock_plugins
 import mock_agent
 
+from mock import patch
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.profiler import InvalidUnitsRequested
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import PulpDataException
-import pulp.server.managers.factory as factory
+from pulp.server.managers import factory
+from pulp.server.compat import json, json_util
+
+
+CONSUMER_PAYLOAD = dict(A=1, B=2, C=3)
+
 
 # -- test cases ---------------------------------------------------------------
 
@@ -28,7 +34,10 @@ class AgentManagerTests(base.PulpServerTests):
 
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'test-distributor'
+    DISTRIBUTOR_ID = 'mock-distributor'
+    REPOSITORY = {'id':REPO_ID}
+    DETAILS = {}
+    OPTIONS = { 'xxx' : 123 }
 
     def setUp(self):
         base.PulpServerTests.setUp(self)
@@ -69,35 +78,57 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_agent_manager()
         manager.unregistered(self.CONSUMER_ID)
         # verify
-        # TODO: verify
+        mock_agent.Consumer.unregistered.assert_called_once_with()
 
-    def test_bind(self):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
+           return_value=CONSUMER_PAYLOAD)
+    def test_bind(self, unused):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
         # verify
-        # TODO: verify
+        bindings = [
+            dict(type_id=self.DISTRIBUTOR_ID,
+                 repo_id=self.REPO_ID,
+                 details=CONSUMER_PAYLOAD)
+        ]
+        args = mock_agent.Consumer.bind.call_args[0]
+        self.assertEquals(args[0], bindings)
+        self.assertEquals(args[1], self.OPTIONS)
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], None)
+        self.assertEqual(actions[0]['status'], 'pending')
 
-    def test_unbind(self):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
+           return_value=CONSUMER_PAYLOAD)
+    def test_unbind(self, unused):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Test
         manager = factory.consumer_agent_manager()
-        manager.unbind(self.CONSUMER_ID, self.REPO_ID)
+        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
         # verify
-        # TODO: verify
+        bindings = [
+            dict(type_id=self.DISTRIBUTOR_ID, repo_id=self.REPO_ID)
+        ]
+        args = mock_agent.Consumer.unbind.call_args[0]
+        self.assertEquals(args[0], bindings)
+        self.assertEquals(args[1], self.OPTIONS)
+        manager = factory.consumer_bind_manager()
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        actions = bind['consumer_actions']
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]['id'], None)
+        self.assertEqual(actions[0]['status'], 'pending')
 
     def test_content_install(self):
         # Setup
@@ -119,6 +150,11 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_agent_manager()
         manager.install_content(self.CONSUMER_ID, units, options)
         # Verify
+        # agent call
+        params = mock_agent.Content.install.call_args[0]
+        self.assertEqual(sorted(params[0]), sorted(units))
+        self.assertEqual(params[1], options)
+        # profiler call
         profiler = plugin_api.get_profiler_by_type('rpm')[0]
         pargs = profiler.install_units.call_args[0]
         self.assertEquals(pargs[0].id, self.CONSUMER_ID)
@@ -138,8 +174,8 @@ class AgentManagerTests(base.PulpServerTests):
 
         invalid_units = [{'type_id' : 'mock-type', 'unit_key' : 'key'}]
         message = 'cannot install this'
-        mock_plugins.MOCK_PROFILER.install_units.side_effect = InvalidUnitsRequested(invalid_units, message)
-
+        mock_plugins.MOCK_PROFILER.install_units.side_effect = \
+            InvalidUnitsRequested(invalid_units, message)
         # Test
         try:
             manager = factory.consumer_agent_manager()
@@ -159,7 +195,12 @@ class AgentManagerTests(base.PulpServerTests):
         options = {}
         manager = factory.consumer_agent_manager()
         manager.update_content(self.CONSUMER_ID, units, options)
-        # verify
+        # Verify
+        # # agent call
+        params = mock_agent.Content.update.call_args[0]
+        self.assertEqual(params[0], units)
+        self.assertEqual(params[1], options)
+        # profiler call
         profiler = plugin_api.get_profiler_by_type('rpm')[0]
         pargs = profiler.update_units.call_args[0]
         self.assertEquals(pargs[0].id, self.CONSUMER_ID)
@@ -173,8 +214,8 @@ class AgentManagerTests(base.PulpServerTests):
 
         invalid_units = [{'type_id' : 'mock-type', 'unit_key' : 'key'}]
         message = 'cannot install this'
-        mock_plugins.MOCK_PROFILER.update_units.side_effect = InvalidUnitsRequested(invalid_units, message)
-
+        mock_plugins.MOCK_PROFILER.update_units.side_effect = \
+            InvalidUnitsRequested(invalid_units, message)
         # Test
         try:
             manager = factory.consumer_agent_manager()
@@ -194,7 +235,12 @@ class AgentManagerTests(base.PulpServerTests):
         units = [unit,]
         options = {}
         manager.uninstall_content(self.CONSUMER_ID, units, options)
-        # verify
+        # Verify
+        # agent call
+        params = mock_agent.Content.uninstall.call_args[0]
+        self.assertEqual(params[0], units)
+        self.assertEqual(params[1], options)
+        # profiler call
         profiler = plugin_api.get_profiler_by_type('rpm')[0]
         pargs = profiler.uninstall_units.call_args[0]
         self.assertEquals(pargs[0].id, self.CONSUMER_ID)
@@ -209,8 +255,8 @@ class AgentManagerTests(base.PulpServerTests):
 
         invalid_units = [{'type_id' : 'mock-type', 'unit_key' : 'key'}]
         message = 'cannot install this'
-        mock_plugins.MOCK_PROFILER.uninstall_units.side_effect = InvalidUnitsRequested(invalid_units, message)
-
+        mock_plugins.MOCK_PROFILER.uninstall_units.side_effect = \
+            InvalidUnitsRequested(invalid_units, message)
         # Test
         try:
             manager = factory.consumer_agent_manager()

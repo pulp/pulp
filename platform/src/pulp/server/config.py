@@ -68,6 +68,11 @@ _default_values = {
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
         'topic_exchange': 'amq.topic',
+        'install_timeout': '10:600',
+        'update_timeout': '10:600',
+        'uninstall_timeout': '10:600',
+        'bind_timeout': '2592000:600',
+        'unbind_timeout': '2592000:600',
     },
     'scheduler': {
         'dispatch_interval': '30',

@@ -15,10 +15,11 @@
 Contains (proxy) classes that represent the pulp agent.
 """
 
+from logging import getLogger
+
 from pulp.server.agent.hub.rest import Rest
 from pulp.server.agent.hub.client import Agent
 from pulp.server.agent.context import Context, Capability
-from logging import getLogger
 
 
 log = getLogger(__name__)
@@ -80,9 +81,15 @@ class PulpAgent:
         @return: {}
         """
         rest = Rest()
-        path = '/agenthub/agent/%s/' % uuids[0]
-        reply = rest.get(path)
-        return reply[1]
+        result = {}
+        for uuid in uuids:
+            path = '/agenthub/agent/%s/' % uuid
+            status, body = rest.get(path)
+            if status == 200:
+                result[uuid] = body
+            else:
+                raise Exception('Status Failed')
+        return result
 
 #
 # Agent Capability(s)
@@ -112,40 +119,51 @@ class Consumer(Capability):
             raise Exception('Unregistered Failed')
         return (status, result)
 
-    def bind(self, repo_id):
+    def bind(self, bindings, options):
         """
         Bind a consumer to the specified repository.
-        @param repo_id: A repository ID.
-        @type repo_id: str
-        @return: Tuple (<httpcode>, None); 202 expected.
-        @rtype: tuple
+        @param bindings: A list of bindings to add/update.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
+        @param options: Bind options.
+        @type options: dict
+        @return: The RMI request serial number.
+        @rtype: str
         """
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
+            timeout=self.context.get_timeout('bind_timeout'),
             secret=self.context.secret,
-            async=True)
+            replyto=self.context.replyto,
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
-        status, result = consumer.bind(repo_id)
+        status, result = consumer.bind(bindings, options)
         if status != 202:
             raise Exception('Bind Failed')
         return (status, result)
 
-    def unbind(self, repo_id):
+    def unbind(self, bindings, options):
         """
         Unbind a consumer from the specified repository.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param bindings: A list of bindings to be removed.
+          Each binding is: {type_id:<str>, repo_id:<str>}
+        @type bindings: list
+        @param options: Unbind options.
+        @type options: dict
         @return: Tuple (<httpcode>, None); 202 expected.
         @rtype: tuple
         """
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
+            timeout=self.context.get_timeout('unbind_timeout'),
             secret=self.context.secret,
-            async=True)
+            replyto=self.context.replyto,
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
-        status, result = consumer.unbind(repo_id)
+        status, result = consumer.unbind(bindings, options)
         if status != 202:
             raise Exception('Unbind Failed')
         return (status, result)
@@ -170,10 +188,10 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=self.context.get_timeout('install_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         status, result = content.install(units, options)
         if status != 202:
@@ -194,10 +212,10 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=self.context.get_timeout('update_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         status, result = content.update(units, options)
         if status != 202:
@@ -218,15 +236,16 @@ class Content(Capability):
         agent = Agent(
             self.context.uuid,
             rest=Rest(),
-            timeout=(10, 90),
+            timeout=self.context.get_timeout('uninstall_timeout'),
             secret=self.context.secret,
             replyto=self.context.replyto,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         status, result = content.uninstall(units, options)
         if status != 202:
             raise Exception('Uninstall Failed')
         return (status, result)
+
 
 class Profile(Capability):
     """
