@@ -27,6 +27,10 @@ from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.itineraries.consumer import (
+    consumer_content_install_itinerary,
+    consumer_content_update_itinerary,
+    consumer_content_uninstall_itinerary)
 from pulp.server.dispatch import constants as dispatch_constants
 
 
@@ -635,7 +639,7 @@ class BindTest(base.PulpWebserviceTests):
             False)
 
     @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
-    def test_hard_unbind(self, mock_unbind_itinerary):
+    def test_forced_unbind(self, mock_unbind_itinerary):
 
         # Setup
         self.populate()
@@ -647,7 +651,7 @@ class BindTest(base.PulpWebserviceTests):
                (self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID)
-        body = {'hard':True}
+        body = {'force':True}
         status, body = self.delete(path, body)
 
         # Verify
@@ -706,50 +710,12 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(len(body), 1)
 
 
-
 class ContentTest(base.PulpWebserviceTests):
 
     CONSUMER_ID = 'test-consumer'
-    REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'test-distributor'
 
-    def setUp(self):
-        base.PulpWebserviceTests.setUp(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        plugin_api._create_manager()
-        mock_plugins.install()
-        mock_agent.install()
-        base.TaskQueue.install()
-
-    def tearDown(self):
-        base.TaskQueue.uninstall()
-        base.PulpWebserviceTests.tearDown(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        mock_plugins.reset()
-
-    def populate(self):
-        config = {'key1' : 'value1', 'key2' : None}
-        manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
-        manager = factory.repo_distributor_manager()
-        manager.add_distributor(
-            self.REPO_ID,
-            'mock-distributor',
-            config,
-            True,
-            distributor_id=self.DISTRIBUTOR_ID)
-        manager = factory.consumer_manager()
-        manager.register(self.CONSUMER_ID)
-
-    def test_install(self):
-        # Setup
-        self.populate()
+    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_install_itinerary', wraps=consumer_content_install_itinerary)
+    def test_install(self, mock_itinerary):
         # Test
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
@@ -760,16 +726,12 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
-        # run task
-        base.TaskQueue.run_next()
-        # verify agent called
-        self.assertTrue(mock_agent.Content.install.called)
+        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
-    def test_update(self):
-        # Setup
-        self.populate()
+    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_update_itinerary', wraps=consumer_content_update_itinerary)
+    def test_update(self, mock_itinerary):
         # Test
-        unit_key = dict(name='gofer', version='0.66')
+        unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
@@ -778,14 +740,10 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
-        # run task
-        base.TaskQueue.run_next()
-        # verify agent called
-        self.assertTrue(mock_agent.Content.update.called)
+        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
-    def test_uninstall(self):
-        # Setup
-        self.populate()
+    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_uninstall_itinerary', wraps=consumer_content_uninstall_itinerary)
+    def test_uninstall(self, mock_itinerary):
         # Test
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
@@ -796,10 +754,7 @@ class ContentTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         self.assertEquals(status, 202)
-        # run task
-        base.TaskQueue.run_next()
-        # verify agent called
-        self.assertTrue(mock_agent.Content.uninstall.called)
+        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
 
 class TestProfiles(base.PulpWebserviceTests):

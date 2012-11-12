@@ -15,17 +15,16 @@
 Contains (proxy) classes that represent the pulp agent.
 """
 
+from logging import getLogger
+
 from gofer.proxy import Agent
+
 from pulp.server.agent.context import Context, Capability
 from pulp.server.agent.direct.services import Services
-from logging import getLogger
+
 
 
 log = getLogger(__name__)
-
-
-DAY = 86400  # in seconds
-HOUR = 3600  # in seconds
 
 
 #
@@ -99,6 +98,7 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
+            url=self.context.url,
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
@@ -118,7 +118,8 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(30 * DAY, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('bind_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -139,7 +140,8 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(30 * DAY, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('unbind_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -166,7 +168,8 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('install_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -187,7 +190,8 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('update_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
@@ -208,7 +212,8 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('uninstall_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,

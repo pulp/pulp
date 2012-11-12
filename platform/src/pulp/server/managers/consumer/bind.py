@@ -36,8 +36,8 @@ class BindManager(object):
     initiated efforts to ensure accurate reflection of binds.
     """
 
-    @classmethod
-    def bind_id(cls, consumer_id, repo_id, distributor_id):
+    @staticmethod
+    def bind_id(consumer_id, repo_id, distributor_id):
         return dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
@@ -81,12 +81,15 @@ class BindManager(object):
 
     def __reset_bind(self, consumer_id, repo_id, distributor_id):
         """
-        Rest the bind.
-        This means resetting the (deleted) flag and consumer requests.
+        Reset the bind.
+        This means resetting the deleted flag and consumer requests.
         Only (deleted) bindings will be reset.
-        @param consumer_id:
-        @param repo_id:
-        @param distributor_id:
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
         """
         collection = Bind.get_collection()
         query = self.bind_id(consumer_id, repo_id, distributor_id)
@@ -96,7 +99,7 @@ class BindManager(object):
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
-        Unbind consumer to a specific distributor associated with
+        Unbind a consumer from a specific distributor associated with
         a repository.  This call is idempotent.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
@@ -123,15 +126,14 @@ class BindManager(object):
         manager.record_event(consumer_id, 'repo_unbound', details)
         return bind
 
-    def consumer_deleted(self, id):
+    def consumer_deleted(self, consumer_id):
         """
-        Notification that a consumer has been deleted.
-        Associated binds are removed.
-        @param id: A consumer ID.
-        @type id: str
+        Removes all bindings associated with the specified consumer.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
         """
         collection = Bind.get_collection()
-        query = dict(consumer_id=id)
+        query = dict(consumer_id=consumer_id)
         collection.remove(query)
 
 # --- finders ----------------------------------------------------------------------------
@@ -160,8 +162,8 @@ class BindManager(object):
 
     def find_all(self):
         """
-        Find all binds
-        @return: A list of all bind
+        Find all binds where deleted is False.
+        @return: A list of all non-deleted bindings
         @rtype: list
         """
         collection = Bind.get_collection()
@@ -171,7 +173,7 @@ class BindManager(object):
 
     def find_by_consumer(self, id, repo_id=None):
         """
-        Find all binds by Consumer ID.
+        Find all non-deleted bindings by Consumer ID.
         @param id: A consumer ID.
         @type id: str
         @param repo_id: An (optional) repository ID.
@@ -189,7 +191,7 @@ class BindManager(object):
 
     def find_by_repo(self, id):
         """
-        Find all binds by Repo ID.
+        Find all non-deleted bindings by Repo ID.
         @param id: A Repo ID.
         @type id: str
         @return: A list of Bind.
@@ -202,7 +204,7 @@ class BindManager(object):
 
     def find_by_distributor(self, repo_id, distributor_id):
         """
-        Find all binds by Distributor ID.
+        Find all non-deleted binds by Distributor ID.
         @param repo_id: A Repo ID.
         @type repo_id: str
         @param distributor_id: A Distributor ID.
@@ -279,7 +281,7 @@ class BindManager(object):
 
     def action_pending(self, consumer_id, repo_id, distributor_id, action, action_id):
         """
-        Add (pending) action for tracking.
+        Add pending action for tracking.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.
