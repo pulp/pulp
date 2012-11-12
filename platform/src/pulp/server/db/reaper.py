@@ -79,7 +79,7 @@ class CollectionsReaper(object):
         return expired_object_id
 
     def _remove_expired_entries(self, collection, expired_object_id):
-        collection.remove({'_id': {'$lte': expired_object_id}}, safe=True)
+        collection.remove({'_id': {'$lte': expired_object_id}})
 
     def start(self):
         """
