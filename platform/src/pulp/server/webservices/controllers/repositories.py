@@ -20,6 +20,11 @@ import web
 
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
+from pulp.server.itineraries.repository import (
+    repo_delete_itinerary,
+    distributor_delete_itinerary,
+    distributor_update_itinerary,
+)
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
@@ -253,17 +258,12 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-        repo_manager = manager_factory.repo_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
-                action_tag('delete')]
-
-        call_request = CallRequest(repo_manager.delete_repo,
-                                   [id],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # validate
+        manager_factory.repo_query_manager().get_repository(id)
+        # delete
+        call_requests = repo_delete_itinerary(id)
+        _LOG.info('Itinerary: %s', [r.id for r in call_requests])
+        execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -310,7 +310,7 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_type is None:
-            _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
+            _LOG.error('Missing importer type adding importer to repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_type'])
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
@@ -373,7 +373,7 @@ class RepoImporter(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_config is None:
-            _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
+            _LOG.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -581,42 +581,29 @@ class RepoDistributor(JSONController):
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('remove_distributor')]
-        call_request = CallRequest(distributor_manager.remove_distributor,
-                                   [repo_id, distributor_id],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # validate resources
+        manager = manager_factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        # delete
+        call_requests = distributor_delete_itinerary(repo_id, distributor_id)
+        execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
-
-        # Params (validation will occur in the manager)
         params = self.params()
-        distributor_config = params.get('distributor_config', None)
-
-        if distributor_config is None:
-            _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
+        # validate
+        manager = manager_factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        config = params.get('distributor_config')
+        if config is None:
+            _LOG.error(
+                'Missing configuration when updating distributor [%s] on repository [%s]',
+                distributor_id,
+                repo_id)
             raise exceptions.MissingValue(['distributor_config'])
-
-        distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('update_distributor')]
-        call_request = CallRequest(distributor_manager.update_distributor_config,
-                                   [repo_id, distributor_id, distributor_config],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # update
+        call_requests = distributor_update_itinerary(repo_id, distributor_id, config)
+        execution.execute_multiple(call_requests)
 
 
 class PublishScheduleCollection(JSONController):
@@ -765,7 +752,7 @@ class RepoSyncHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.exception('Invalid limit specified [%s]' % limit)
+                _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
 
         sync_manager = manager_factory.repo_sync_manager()
@@ -788,7 +775,7 @@ class RepoPublishHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.exception('Invalid limit specified [%s]' % limit)
+                _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
 
         publish_manager = manager_factory.repo_publish_manager()
@@ -862,7 +849,7 @@ class RepoAssociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.exception('Error parsing association criteria [%s]' % criteria)
+                _LOG.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -895,7 +882,7 @@ class RepoUnassociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.exception('Error parsing unassociation criteria [%s]' % criteria)
+                _LOG.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -951,7 +938,7 @@ class RepoResolveDependencies(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.exception('Error parsing association criteria [%s]' % query)
+            _LOG.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         try:
@@ -993,7 +980,7 @@ class RepoUnitAdvancedSearch(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.exception('Error parsing association criteria [%s]' % query)
+            _LOG.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # Data lookup

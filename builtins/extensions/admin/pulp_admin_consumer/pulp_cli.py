@@ -96,6 +96,7 @@ class AdminConsumerSection(PulpCliSection):
         unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        unbind_command.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
         self.add_command(unbind_command)
 
         # History Retrieval Command
@@ -167,6 +168,7 @@ class AdminConsumerSection(PulpCliSection):
         # render
         self.prompt.render_title('Consumers')
         for c in response.response_body:
+            self._format_bindings(c)
             self.prompt.render_document(c, filters=filters, order=order)
 
     def search(self, **kwargs):
@@ -188,8 +190,9 @@ class AdminConsumerSection(PulpCliSection):
         consumer_id = kwargs['consumer-id']
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
+        force = kwargs['force']
         try:
-            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id)
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
             self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
@@ -203,7 +206,6 @@ class AdminConsumerSection(PulpCliSection):
         order = filters
         for history in history_list:
             self.prompt.render_document(history, filters=filters, order=order)
-
 
     def install(self, **kwargs):
         consumer_id = kwargs['consumer-id']
@@ -220,6 +222,19 @@ class AdminConsumerSection(PulpCliSection):
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
+    def _format_bindings(self, consumer):
+        bindings = consumer.get('bindings')
+        if not bindings:
+            return
+        confirmed = []
+        unconfirmed = []
+        for binding in bindings:
+            repo_id = binding['repo_id']
+            if (binding['deleted'] or len(binding['consumer_actions'])):
+                unconfirmed.append(repo_id)
+            else:
+                confirmed.append(repo_id)
+        consumer['bindings'] = dict(confirmed=confirmed, unconfirmed=unconfirmed)
 
     def _parse_notes(self, notes_list):
         """
