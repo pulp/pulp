@@ -24,23 +24,37 @@ _LOG = logging.getLogger(__name__)
 
 
 class CollectionsReaper(object):
+    """
+    Reaper class that will remove old documents from database collections that
+    have been configured for it.
 
-    def __init__(self, dispatch_interval):
-        self.dispatch_interval = dispatch_interval
+    This class uses the timestamp in the ObjectId that is assigned to the _id
+    field of documents to determine which documents to reap from the collection.
+    If any documents in a collection have a custom _id field, this reaper will
+    not work with that collection.
+
+    @ivar reap_interval: time, in seconds, between checks for old documents
+    @type reap_interval: int or float
+    @ivar collections: dictionary of collections and the time delta which constitutes an old document
+    @type collections: dict
+    """
+
+    def __init__(self, reap_interval):
+        self.reap_interval = reap_interval
         self.collections = {}
 
         self.__exit = False
         self.__lock = threading.RLock()
         self.__condition = threading.Condition(self.__lock)
-        self.__dispatcher = None
+        self.__reaper = None
 
-    # dispatch management ------------------------------------------------------
+    # reap management ------------------------------------------------------
 
-    def __dispatch(self):
+    def __reap(self):
         self.__lock.acquire()
 
         while True:
-            self.__condition.wait(timeout=self.dispatch_interval)
+            self.__condition.wait(timeout=self.reap_interval)
             if self.__exit:
                 if self.__lock is not None:
                     self.__lock.release()
@@ -48,7 +62,7 @@ class CollectionsReaper(object):
             try:
                 self._reap_expired_collection_entries()
             except Exception, e:
-                _LOG.critical('Unhandled exception in collections reaper dispatch: %s' % repr(e))
+                _LOG.critical('Unhandled exception in collections reaper reap: %s' % repr(e))
                 _LOG.exception(e)
 
     def _reap_expired_collection_entries(self):
@@ -66,28 +80,48 @@ class CollectionsReaper(object):
         collection.remove({'_id': {'$lte': expired_object_id}}, safe=True)
 
     def start(self):
-        assert self.__dispatcher is None
+        """
+        Start the reaper thread.
+        """
+        assert self.__reaper is None
         self.__lock.acquire()
         self.__exit = False # needed for re-starts
         try:
-            self.__dispatcher = threading.Thread(target=self.__dispatch)
-            self.__dispatcher.setDaemon(True)
-            self.__dispatcher.start()
+            self.__reaper = threading.Thread(target=self.__reap)
+            self.__reaper.setDaemon(True)
+            self.__reaper.start()
         finally:
             self.__lock.release()
 
     def stop(self):
-        assert self.__dispatcher is not None
+        """
+        Stop the reaper thread and wait for it to exit.
+        """
+        assert self.__reaper is not None
         self.__lock.acquire()
         self.__exit = True
         self.__condition.notify()
         self.__lock.release()
-        self.__dispatcher.join()
-        self.__dispatcher = None
+        self.__reaper.join()
+        self.__reaper = None
 
     # collection management ----------------------------------------------------
 
     def add_collection(self, collection, **delta_kwargs):
+        """
+        Add a collection to be reaped on the specified intervals.
+        Valid intervals and values for delta_kwargs are:
+         * years
+         * months
+         * weeks
+         * days
+         * hours
+         * minutes
+         * seconds
+        @param collection: database collection to reap documents from
+        @type collection: pymongo.collection.Collection
+        @param delta_kwargs: key word arguments for time intervals
+        """
         self.__lock.acquire()
         try:
             expiration_delta = dateutils.delta_from_key_value_pairs(delta_kwargs)
@@ -96,6 +130,11 @@ class CollectionsReaper(object):
             self.__lock.release()
 
     def remove_collection(self, collection):
+        """
+        Remove a database collection from the reaper.
+        @param collection: database collection to no longer be reaped
+        @type collection: pymongo.collection.Collection
+        """
         self.__lock.acquire()
         try:
             self.collections.pop(collection, None)
@@ -105,15 +144,23 @@ class CollectionsReaper(object):
 # public api -------------------------------------------------------------------
 
 def initialize():
+    """
+    Instantiate the global reaper, start it, and add the appropriate collections
+    to be reaped from it.
+    """
     global _REAPER
     assert _REAPER is None
-    _REAPER = CollectionsReaper(1) # need configurable dispatch interval
+    _REAPER = CollectionsReaper(1) # need configurable reap interval
     _REAPER.start()
 
     # NOTE add collections to reap here:
 
 
 def finalize():
+    """
+    Delete the global reaper and wait for it's thread to exit.
+    NOTE: not used by the server but useful for testing.
+    """
     global _REAPER
     assert _REAPER is not None
     _REAPER.stop()
