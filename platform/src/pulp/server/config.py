@@ -34,6 +34,7 @@ _default_values = {
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
         'operation_retries': '2',
+        'reaper_interval': '60',
     },
     'email': {
         'host': 'localhost',
