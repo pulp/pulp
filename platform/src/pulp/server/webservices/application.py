@@ -43,6 +43,7 @@ db_connection.initialize()
 from pulp.server.agent.direct.services import Services as AgentServices
 
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.db import reaper
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
@@ -108,6 +109,9 @@ def _initialize_pulp():
     role_manager.ensure_super_user_role()
     user_manager = manager_factory.user_manager()
     user_manager.ensure_admin()
+
+    # database document reaper
+    reaper.initialize()
 
     # agent services
     AgentServices.start()
