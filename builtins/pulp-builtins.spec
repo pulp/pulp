@@ -13,7 +13,7 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.337
+Version: 0.0.338
 Release: 1
 Summary: Pulp builtin extensions
 Group: Development/Languages
@@ -92,6 +92,9 @@ client capabilities.
 
 
 %changelog
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.338-1
+- 
+
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.337-1
 - 873913 - added id_validator similar to the one used in consumer group
   creation to other entities to keep consistency (skarmark@redhat.com)
