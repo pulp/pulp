@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.336
+Version: 0.0.337
 Release: 1
 Summary: An application for managing software content
 Group: Development/Languages
@@ -414,6 +414,17 @@ exit 0
 %endif
 
 %changelog
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.337-1
+- 874244 - added checks for the system in grant and revoke permissions
+  (jason.connor@gmail.com)
+- 873913 - added id_validator similar to the one used in consumer group
+  creation to other entities to keep consistency (skarmark@redhat.com)
+- 873739 - extension loading via entry points now differentiates between
+  consumer and admin extensions. (mhrivnak@redhat.com)
+- 870160 - adding id_validator in client and using it to verify consumer and
+  group ids and adding id regex check in server to support apis
+  (skarmark@redhat.com)
+
 * Mon Nov 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.336-1
 - 871643 - return a list of matched consumer IDs. (jortel@redhat.com)
 - 871175 - updating call request fields according to latest changes in pulp's
