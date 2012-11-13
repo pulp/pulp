@@ -13,6 +13,6 @@ PACKAGES="$PACKAGES,pulp_server_info"
 PACKAGES="$PACKAGES,pulp_tasks"
 
 # Test Directories
-TESTS="platform/test/unit builtins/test/unit "
+TESTS="platform/test/unit platform/test/upgrade builtins/test/unit "
 
 nosetests --with-coverage --cover-html --cover-erase --cover-package $PACKAGES $TESTS

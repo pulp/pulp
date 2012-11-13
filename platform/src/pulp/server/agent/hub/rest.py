@@ -14,7 +14,7 @@
 import base64
 import httplib
 
-from pulp.server.compat import json
+from pulp.server.compat import json, json_util
 
 
 HOST = 'localhost'
@@ -47,7 +47,7 @@ class Rest:
 
     def request(self, method, path, body=None):
         try:
-            body = json.dumps(body)
+            body = json.dumps(body, default=json_util.default)
         except:
             pass
         self.http.request(

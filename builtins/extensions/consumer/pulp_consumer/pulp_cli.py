@@ -17,7 +17,8 @@ from gettext import gettext as _
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.client import validators
 
 # -- framework hook -----------------------------------------------------------
 
@@ -25,7 +26,7 @@ def initialize(context):
 
     # Common Options
     d = 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed'
-    id_option = PulpCliOption('--consumer-id', _(d), required=True)
+    id_option = PulpCliOption('--consumer-id', _(d), required=True, validate_func=validators.id_validator)
 
     d = 'user-readable display name for the consumer'
     name_option = PulpCliOption('--display-name', _(d), required=False)
@@ -236,6 +237,7 @@ class UnbindCommand(PulpCliCommand):
 
         self.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         self.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        self.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
 
 
     def unbind(self, **kwargs):
@@ -245,8 +247,9 @@ class UnbindCommand(PulpCliCommand):
             return
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
+        force = kwargs['force']
         try:
-            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id)
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
             self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')

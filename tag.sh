@@ -8,6 +8,7 @@ BUILD_TAG=
 GIT="git"
 TITO="tito"
 TITO_TAG_FLAGS=
+BRANCH=
 
 GIT_ROOTS="pulp pulp_rpm pulp_puppet"
 PACKAGES="
@@ -17,20 +18,20 @@ PACKAGES="
   pulp_rpm/
   pulp_puppet/"
 
-FIND_VERSION_SCRIPT=\
+NEXT_VR_SCRIPT=\
 $(cat << END
-from tito import common as tito
-tag = tito.get_latest_tagged_version('pulp')
-version = tag.split('-')[0]
-next_version = tito.increase_version(version)
-print next_version
+import sys
+sys.path.insert(0, 'rel-eng/lib')
+import tools
+print tools.next()
 END
 )
 
 set_version()
 {
   pushd pulp
-  VERSION=`python -c "$FIND_VERSION_SCRIPT"`
+  VERSION=`python -c "$NEXT_VR_SCRIPT"`
+  exit_on_failed
   popd
 }
 
@@ -38,9 +39,7 @@ tito_tag()
 {
   pushd $1
   $TITO tag $TITO_TAG_FLAGS && $GIT push && $GIT push --tags
-  if [ $? != 0 ]; then
-    exit
-  fi
+  exit_on_failed
   popd
 }
 
@@ -48,10 +47,32 @@ git_tag()
 {
   pushd $1
   $GIT tag -m "Build Tag" $BUILD_TAG && $GIT push --tags
-  if [ $? != 0 ]; then
-    exit
-  fi
+  exit_on_failed
   popd
+}
+
+git_prep()
+{
+  for DIR in $GIT_ROOTS
+  do
+    pushd $DIR
+    echo "Preparing git in repository: $DIR using: $1"
+    $GIT fetch --tags && git checkout $1
+    exit_on_failed
+    $GIT tag -l | grep $1
+    if [ $? != 0 ]; then
+      git pull
+    fi
+    exit_on_failed
+    popd
+  done
+}
+
+exit_on_failed()
+{
+  if [ $? != 0 ]; then
+    exit 1
+  fi
 }
 
 usage()
@@ -63,12 +84,13 @@ This script tags all pulp projects
 
 OPTIONS:
    -h      Show this message
-   -v      The pulp version (eg: 0.0.332)
+   -v      The pulp version and release. Eg: 2.0.6-1
    -a      Auto accept the changelog
+   -b      Checkout the specified branch/tag
 EOF
 }
 
-while getopts "hav:" OPTION
+while getopts "hav:b:" OPTION
 do
   case $OPTION in
     h)
@@ -80,6 +102,9 @@ do
       ;;
     a)
       TITO_TAG_FLAGS="$TITO_TAG_FLAGS --accept-auto-changelog"
+      ;;
+    b)
+      BRANCH=$OPTARG
       ;;
     ?)
       usage
@@ -93,9 +118,6 @@ done
 if [[ -z $VERSION ]]
 then
   set_version
-  if [ $? != 0 ]; then
-    exit
-  fi
 fi
 
 # confirmation
@@ -103,15 +125,27 @@ echo "Using:"
 echo "  version [$VERSION]"
 echo "  tito options: $TITO_TAG_FLAGS"
 echo ""
+if [[ -n $BRANCH ]]; then
+  echo "Prepare git repositories using: [$BRANCH]"
+else
+  echo "<warning> not preparing git repostories"
+fi
+echo ""
 read -p "Continue [y|n]: " ANS
 if [ $ANS != "y" ]
 then
   exit 0
 fi
 
+# git preparation
+if [[ -n $BRANCH ]]
+then
+  git_prep $BRANCH
+fi
+
 # used by tagger
-TITO_FORCED_VERSION=$VERSION
-export TITO_FORCED_VERSION
+PULP_VERSION_AND_RELEASE=$VERSION
+export PULP_VERSION_AND_RELEASE
 
 BUILD_TAG="build-$VERSION"
 

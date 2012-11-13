@@ -16,12 +16,12 @@ Contains users query classes
 """
 
 from gettext import gettext as _
-
-from pulp.server.db.model.auth import User, Permission, Role
-from pulp.server.managers import factory
 from logging import getLogger
 
+from pulp.server.db.model.auth import User, Permission, Role
 from pulp.server.exceptions import PulpDataException, MissingResource
+from pulp.server.managers import factory
+
 
 # -- constants ----------------------------------------------------------------
 
@@ -31,7 +31,7 @@ _LOG = getLogger(__name__)
 
 
 class UserQueryManager(object):
-    
+
     """
     Manager used to process queries on users. Users returned from
     these calls are user SON objects from the database.
@@ -78,22 +78,22 @@ class UserQueryManager(object):
         for user in users:
             user.pop('password')
         return users
-    
-    
+
+
     def find_users_belonging_to_role(self, role_id):
         """
         Get a list of users belonging to the given role
-        
+
         @type role_id: str
         @param role_id: id of the role to get members of
-        
+
         @rtype: list of L{pulp.server.db.model.auth.User} instances
         @return: list of users that are members of the given role
         """
         role = Role.get_collection().find_one({'id' : role_id})
         if role is None:
             raise MissingResource(role_id)
-        
+
         users = []
         for user in self.find_all():
             if role_id in user['roles']:
@@ -104,17 +104,17 @@ class UserQueryManager(object):
     def is_superuser(self, login):
         """
         Return True if the user with given login is a super user
-        
+
         @type user: str
         @param user: login of user to check
-        
+
         @rtype: bool
         @return: True if the user is a super user, False otherwise
         """
         user = User.get_collection().find_one({'login' : login})
         if user is None:
             raise MissingResource(login)
-        
+
         role_manager = factory.role_manager()
         return role_manager.super_user_role in user['roles']
 
@@ -122,16 +122,16 @@ class UserQueryManager(object):
     def is_authorized(self, resource, login, operation):
         """
         Check to see if a user is authorized to perform an operation on a resource
-        
+
         @type resource: str
         @param resource: pulp resource path
-    
+
         @type login: str
         @param login: login of user to check permissions for
-    
+
         @type operation: int
         @param operation: operation to be performed on resource
-    
+
         @rtype: bool
         @return: True if the user is authorized for the operation on the resource,
                  False otherwise
@@ -149,22 +149,22 @@ class UserQueryManager(object):
                 if operation in permission['users'].get(login, []):
                     return True
             parts = parts[:-1]
-        
+
         permission = Permission.get_collection().find_one({'resource' : '/'})
         return (permission is not None and
                 operation in permission['users'].get(login, []))
-        
-        
+
+
     def is_last_super_user(self, login):
         """
         Check to see if a user is the last super user
-        
+
         @type user: str
         @param user: login of user to check
-        
+
         @rtype: bool
         @return: True if the user is the last super user, False otherwise
-        
+
         @raise PulpDataException: if no super users are found
         """
         user = User.get_collection().find_one({'login' : login})
@@ -175,10 +175,10 @@ class UserQueryManager(object):
         users = self.find_users_belonging_to_role(role_manager.super_user_role)
         if not users:
             raise PulpDataException(_('no super users defined'))
-        
+
         if len(users) >= 2:
             return False
-        
+
         return users[0]['_id'] == user['_id'] # this should be True
 
 

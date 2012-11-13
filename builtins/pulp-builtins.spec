@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.335
-Release: 1%{?dist}
+Version: 0.0.338
+Release: 1
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -63,13 +63,11 @@ client capabilites.
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
+%{_usr}/lib/pulp/admin/extensions/pulp_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_event/
 %{_usr}/lib/pulp/admin/extensions/pulp_orphan/
-%{_usr}/lib/pulp/admin/extensions/pulp_permission/
-%{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
-%{_usr}/lib/pulp/admin/extensions/pulp_user/
 %{_usr}/lib/pulp/admin/extensions/pulp_server_info/
 %doc
 
@@ -94,6 +92,19 @@ client capabilities.
 
 
 %changelog
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.338-1
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.337-1
+- 873913 - added id_validator similar to the one used in consumer group
+  creation to other entities to keep consistency (skarmark@redhat.com)
+- 870160 - adding id_validator in client and using it to verify consumer and
+  group ids and adding id regex check in server to support apis
+  (skarmark@redhat.com)
+
+* Mon Nov 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.336-1
+- 868022 - updating CLI section descriptions (mhrivnak@redhat.com)
+
 * Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
 - 
 

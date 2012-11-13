@@ -12,17 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base64
-import httplib
 import logging
 import mock
 import okaara.prompt
 import os
 from paste.fixture import TestApp
 import sys
-import time
 import web
 import unittest
-from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
 try:
     import json
@@ -41,7 +38,6 @@ from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
 
 from pulp.server import config
-from pulp.server.auth import authorization
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
@@ -212,35 +208,6 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         responses due to integration with the dispatch package.
         """
 
-        def _is_not_error(status):
-            return status in (httplib.OK, httplib.ACCEPTED)
-
-        def _is_task_response(body):
-            return body is not None and 'reasons' in body and 'state' in body
-
-        def _is_not_finished(body):
-            return body['state'] not in dispatch_constants.CALL_COMPLETE_STATES
-
-        def _poll_async_request(status, body):
-            if self.success_failure is not None and body['state'] == dispatch_constants.CALL_RUNNING_STATE:
-                task_id = body['_href'].split('/')[-2]
-                if self.success_failure == 'success':
-                    self.coordinator.complete_call_success(task_id, self.result)
-                else:
-                    self.coordinator.complete_call_failure(task_id, self.exception, self.traceback)
-                self._reset_success_failure()
-
-            while _is_not_error(status) and _is_task_response(body) and _is_not_finished(body):
-                uri = body['_href'][9:]
-                status, body = self.get(uri) # cool recursive call
-
-            if _is_task_response(body):
-                if body['state'] == dispatch_constants.CALL_ERROR_STATE:
-                    return status, body['exception']
-                if _is_not_error(status):
-                    return status, body['result']
-            return status, body
-
         # Use the default headers established at setup and override/add any
         headers = dict(PulpWebserviceTests.HEADERS)
         if additional_headers is not None:
@@ -264,24 +231,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         except ValueError:
             body = None
 
-        if _is_not_error(status) and _is_task_response(body):
-            return _poll_async_request(status, body)
         return status, body
-
-    def _reset_success_failure(self):
-        self.success_failure = None
-        self.result = None
-        self.exception = None
-        self.traceback = None
-
-    def set_success(self, result=None):
-        self.success_failure = 'success'
-        self.result = result
-
-    def set_failure(self, exception=None, traceback=None):
-        self.success_failure = 'failure'
-        self.exception = exception
-        self.traceback = traceback
 
 
 class PulpClientTests(unittest.TestCase):
@@ -310,3 +260,83 @@ class PulpClientTests(unittest.TestCase):
 
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli
+
+
+class PulpItineraryTests(PulpAsyncServerTests):
+
+    def setUp(self):
+        PulpAsyncServerTests.setUp(self)
+        TaskQueue.install()
+        self.coordinator = dispatch_factory.coordinator()
+
+    def tearDown(self):
+        TaskQueue.uninstall()
+        PulpAsyncServerTests.tearDown(self)
+
+    def run_next(self):
+        TaskQueue.run_next()
+
+
+class TaskQueue:
+
+    @classmethod
+    def install(cls):
+        existing = dispatch_factory._task_queue()
+        if existing:
+            existing.stop()
+        queue = cls()
+        dispatch_factory._TASK_QUEUE = queue
+        return queue
+
+    @classmethod
+    def uninstall(cls):
+        pass
+
+    @classmethod
+    def run_next(cls):
+        queue = dispatch_factory._task_queue()
+        if isinstance(queue, cls):
+            queue.__run_next()
+        else:
+            raise Exception, '%s not installed' % cls
+
+    def __init__(self):
+        self.__next = 0
+        self.__queue = []
+
+    def start(self):
+        pass
+
+    def stop(self, *args, **kwargs):
+        pass
+
+    def enqueue(self, task):
+        self.__queue.append(task)
+
+    def __run_next(self):
+        if self.__next < len(self.__queue):
+            task = self.__queue[self.__next]
+            self.__run(task)
+            self.__next += 1
+        else:
+            raise Exception, 'No tasks pending'
+
+    def __run(self, task):
+        finished = \
+            [t.call_request.id for t in self.__queue[:self.__next]
+                if t.call_report.state == dispatch_constants.CALL_FINISHED_STATE]
+        for request_id in task.call_request.dependencies.keys():
+            if request_id not in finished:
+                task.skip()
+                return
+        task.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+        task._run()
+
+    def all_tasks(self):
+        return list(self.__queue)
+
+    def lock(self):
+        pass
+
+    def unlock(self):
+        pass

@@ -67,7 +67,7 @@ class RpmHandler(ContentHandler):
     assert(isinstance(units, list))
     assert(isinstance(options, dict))
     report = HandlerReport()
-    report.succeeded({}, len(units))
+    report.set_succeeded({}, len(units))
     return report
 
   def update(self, conduit, units, options):
@@ -75,7 +75,7 @@ class RpmHandler(ContentHandler):
     assert(isinstance(units, list))
     assert(isinstance(options, dict))
     report = HandlerReport()
-    report.succeeded({}, len(units))
+    report.set_succeeded({}, len(units))
     return report
 
   def uninstall(self, conduit, units, options):
@@ -83,7 +83,7 @@ class RpmHandler(ContentHandler):
     assert(isinstance(units, list))
     assert(isinstance(options, dict))
     report = HandlerReport()
-    report.succeeded({}, len(units))
+    report.set_succeeded({}, len(units))
     return report
 
   def profile(self, conduit):
@@ -92,31 +92,28 @@ class RpmHandler(ContentHandler):
 
 class YumHandler(BindHandler):
 
-  def bind(self, conduit, definitions):
+  def bind(self, conduit, binding, options):
     assert(isinstance(conduit, Conduit))
-    assert(isinstance(definitions, list))
-    report = BindReport()
-    report.succeeded({}, 1)
+    assert(isinstance(binding, dict))
+    assert(isinstance(options, dict))
+    assert('repo_id' in binding)
+    assert('details' in binding)
+    report = BindReport(binding['repo_id'])
+    report.set_succeeded({}, 1)
     return report
 
-  def rebind(self, conduit, definitions):
+  def unbind(self, conduit, repo_id, options):
     assert(isinstance(conduit, Conduit))
-    assert(isinstance(definitions, list))
-    report = BindReport()
-    report.succeeded({}, 1)
-    return report
-
-  def unbind(self, conduit, repo_id):
-    assert(isinstance(conduit, Conduit))
-    assert(isinstance(repo_id, (int,str)))
-    report = BindReport()
-    report.succeeded({}, 1)
+    assert(isinstance(repo_id, str))
+    assert(isinstance(options, dict))
+    report = BindReport(repo_id)
+    report.set_succeeded({}, 1)
     return report
 
   def clean(self, conduit):
     assert(isinstance(conduit, Conduit))
     report = CleanReport()
-    report.succeeded({}, 1)
+    report.set_succeeded({}, 1)
     return report
 
 class LinuxHandler(SystemHandler):
@@ -125,7 +122,7 @@ class LinuxHandler(SystemHandler):
     assert(isinstance(conduit, Conduit))
     assert(isinstance(options, dict))
     report = RebootReport()
-    report.succeeded()
+    report.set_succeeded()
     return report
 """)
 

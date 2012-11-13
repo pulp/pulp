@@ -14,6 +14,7 @@
 """
 Contains bind management classes
 """
+from time import time
 from logging import getLogger
 
 from pymongo.errors import DuplicateKeyError
@@ -34,6 +35,14 @@ class BindManager(object):
     combination of notifications originated here and agent
     initiated efforts to ensure accurate reflection of binds.
     """
+
+    @staticmethod
+    def bind_id(consumer_id, repo_id, distributor_id):
+        return dict(
+            consumer_id=consumer_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id,
+        )
 
     def bind(self, consumer_id, repo_id, distributor_id):
         """
@@ -56,23 +65,41 @@ class BindManager(object):
         manager = factory.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
         # perform the bind
-        bind = Bind(consumer_id, repo_id, distributor_id)
         collection = Bind.get_collection()
         try:
+            bind = Bind(consumer_id, repo_id, distributor_id)
             collection.save(bind, safe=True)
-            bind = self.get_bind(consumer_id, repo_id, distributor_id)
         except DuplicateKeyError:
-            # idempotent
-            pass
-        manager = factory.consumer_agent_manager()
-        manager.bind(consumer_id, repo_id)
-        consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
-        factory.consumer_history_manager().record_event(consumer_id, 'repo_bound', consumer_event_details)
+            self.__reset_bind(consumer_id, repo_id, distributor_id)
+        # fetch the inserted/updated bind
+        bind = self.get_bind(consumer_id, repo_id, distributor_id)
+        # update history
+        details = {'repo_id':repo_id, 'distributor_id':distributor_id}
+        manager = factory.consumer_history_manager()
+        manager.record_event(consumer_id, 'repo_bound', details)
         return bind
+
+    def __reset_bind(self, consumer_id, repo_id, distributor_id):
+        """
+        Reset the bind.
+        This means resetting the deleted flag and consumer requests.
+        Only (deleted) bindings will be reset.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        """
+        collection = Bind.get_collection()
+        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query['deleted'] = True
+        update = {'$set':{'deleted':False, 'consumer_actions':[]}}
+        collection.update(query, update, safe=True)
 
     def unbind(self, consumer_id, repo_id, distributor_id):
         """
-        Unbind consumer to a specifiec distirbutor associated with
+        Unbind a consumer from a specific distributor associated with
         a repository.  This call is idempotent.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
@@ -83,69 +110,38 @@ class BindManager(object):
         @return: The Bind object
         @rtype: SON
         """
-        query = dict(
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id)
         collection = Bind.get_collection()
+        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query['deleted'] = False
         bind = collection.find_one(query)
         if bind is None:
             # idempotent
             return
-        collection.remove(bind, safe=True)
-        manager = factory.consumer_agent_manager()
-        manager.unbind(consumer_id, repo_id)
-        consumer_event_details = {'repo_id':repo_id, 'distributor_id':distributor_id}
-        factory.consumer_history_manager().record_event(consumer_id, 'repo_unbound', consumer_event_details)
+        self.mark_deleted(consumer_id, repo_id, distributor_id)
+        details = {
+            'repo_id':repo_id,
+            'distributor_id':distributor_id
+        }
+        manager = factory.consumer_history_manager()
+        manager.record_event(consumer_id, 'repo_unbound', details)
         return bind
 
-    def consumer_deleted(self, id):
+    def consumer_deleted(self, consumer_id):
         """
-        Notification that a consumer has been deleted.
-        Associated binds are removed.
-        @param id: A consumer ID.
-        @type id: str
+        Removes all bindings associated with the specified consumer.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
         """
         collection = Bind.get_collection()
-        agent_manager = factory.consumer_agent_manager()
-        for bind in self.find_by_consumer(id):
-            collection.remove(bind, safe=True)
-            repo_id = bind['repo_id']
-            agent_manager.unbind(id, repo_id)
+        query = dict(consumer_id=consumer_id)
+        collection.remove(query)
 
-    def repo_deleted(self, repo_id):
-        """
-        Notification that a repository has been deleted.
-        Associated binds are removed.
-        @param repo_id: A repo ID.
-        @type repo_id: str
-        """
-        collection = Bind.get_collection()
-        agent_manager = factory.consumer_agent_manager()
-        for bind in self.find_by_repo(repo_id):
-            collection.remove(bind, safe=True)
-            consumer_id = bind['consumer_id']
-            agent_manager.unbind(consumer_id, repo_id)
-
-    def distributor_deleted(self, repo_id, distributor_id):
-        """
-        Notification that a distributor has been deleted.
-        Associated binds are removed.
-        @param repo_id: A Repo ID.
-        @type repo_id: str
-        @param distributor_id: A Distributor ID.
-        @type distributor_id: str
-        """
-        collection = Bind.get_collection()
-        agent_manager = factory.consumer_agent_manager()
-        for bind in self.find_by_distributor(repo_id, distributor_id):
-            collection.remove(bind, safe=True)
-            consumer_id = bind['consumer_id']
-            agent_manager.unbind(consumer_id, repo_id)
+# --- finders ----------------------------------------------------------------------------
 
     def get_bind(self, consumer_id, repo_id, distributor_id):
         """
-        Find a specific bind.
+        Get a specific bind.
+        This method ignores the deleted flag.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.
@@ -157,11 +153,8 @@ class BindManager(object):
         @raise MissingResource: When not found
         """
         collection = Bind.get_collection()
-        query = dict(
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id)
-        bind = collection.find_one(query)
+        bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
+        bind = collection.find_one(bind_id)
         if bind is None:
             key = '.'.join((consumer_id, repo_id, distributor_id))
             raise MissingResource(key)
@@ -169,17 +162,18 @@ class BindManager(object):
 
     def find_all(self):
         """
-        Find all binds
-        @return: A list of all bind
+        Find all binds where deleted is False.
+        @return: A list of all non-deleted bindings
         @rtype: list
         """
         collection = Bind.get_collection()
-        cursor = collection.find({})
+        query = dict(deleted=False)
+        cursor = collection.find(query)
         return list(cursor)
 
     def find_by_consumer(self, id, repo_id=None):
         """
-        Find all binds by Consumer ID.
+        Find all non-deleted bindings by Consumer ID.
         @param id: A consumer ID.
         @type id: str
         @param repo_id: An (optional) repository ID.
@@ -189,47 +183,28 @@ class BindManager(object):
         """
         collection = Bind.get_collection()
         if repo_id:
-            query = dict(consumer_id=id, repo_id=repo_id)
+            query = dict(consumer_id=id, repo_id=repo_id, deleted=False)
         else:
-            query = dict(consumer_id=id)
+            query = dict(consumer_id=id, deleted=False)
         cursor = collection.find(query)
         return list(cursor)
 
-    def find_by_consumer_list(self, consumer_ids):
-        """
-        Given a list of consumer ids, return a dictionary whose keys are the
-        consumer ids, and whose values are each a list of bindings for the
-        given consumer.
-        @param consumer_ids: list of consumer ids
-        @type  consumer_ids: list
-        @return: a dictionary whose keys are the consumer ids, and whose
-            values are each a list of bindings for the given consumer.
-        @rtype: dict
-        """
-        collection = Bind.get_collection()
-        result = dict([(consumer_id, []) for consumer_id in consumer_ids])
-        cursor = collection.find({'consumer_id': {'$in': consumer_ids}})
-        for binding in cursor:
-            consumer_id = binding['consumer_id']
-            result[consumer_id].append(binding)
-        return result
-
     def find_by_repo(self, id):
         """
-        Find all binds by Repo ID.
+        Find all non-deleted bindings by Repo ID.
         @param id: A Repo ID.
         @type id: str
         @return: A list of Bind.
         @rtype: list
         """
         collection = Bind.get_collection()
-        query = dict(repo_id=id)
+        query = dict(repo_id=id, deleted=False)
         cursor = collection.find(query)
         return list(cursor)
 
     def find_by_distributor(self, repo_id, distributor_id):
         """
-        Find all binds by Distributor ID.
+        Find all non-deleted binds by Distributor ID.
         @param repo_id: A Repo ID.
         @type repo_id: str
         @param distributor_id: A Distributor ID.
@@ -240,6 +215,155 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = dict(
             repo_id=repo_id,
-            distributor_id=distributor_id)
+            distributor_id=distributor_id,
+            deleted=False)
         cursor = collection.find(query)
         return list(cursor)
+
+    def find_by_criteria(self, criteria):
+        """
+        Find bindings that match criteria.
+        @param criteria: A Criteria object representing a search you want to perform
+        @type  criteria: pulp.server.db.model.criteria.Criteria
+        @return: list of Bind objects
+        @rtype: list
+        """
+        collection = Bind.get_collection()
+        bindings = collection.query(criteria)
+        return list(bindings)
+
+# --- delete management ------------------------------------------------------------------
+
+    def mark_deleted(self, consumer_id, repo_id, distributor_id):
+        """
+        Mark the bind as deleted.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        """
+        # validate
+        self.get_bind(consumer_id, repo_id, distributor_id)
+        # update document
+        collection = Bind.get_collection()
+        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        collection.update(query, {'$set':{'deleted':True}}, safe=True)
+
+    def delete(self, consumer_id, repo_id, distributor_id, force=False):
+        """
+        Delete the bind.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        @param force: Delete without validation.
+        @type force: bool
+        """
+        collection = Bind.get_collection()
+        if not force:
+            query = {
+                'consumer_actions.status':{
+                    '$in':[Bind.Status.PENDING, Bind.Status.FAILED]}
+            }
+            pending = collection.find(query)
+            if len(list(pending)):
+                raise Exception, 'outstanding actions, not deleted'
+        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        if not force:
+            query['deleted'] = True
+        collection.remove(query, safe=True)
+
+# --- consumer actions -------------------------------------------------------------------
+
+    def action_pending(self, consumer_id, repo_id, distributor_id, action, action_id):
+        """
+        Add pending action for tracking.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        @param action: The action (bind|unbind).
+        @type action: str
+        @param action_id: The ID of the action to begin tracking.
+        @type action_id: str
+        @see Bind.Action
+        """
+        collection = Bind.get_collection()
+        assert action in (Bind.Action.BIND, Bind.Action.UNBIND)
+        bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
+        entry = dict(
+            id=action_id,
+            timestamp=time(),
+            action=action,
+            status=Bind.Status.PENDING)
+        update = {'$push':{'consumer_actions':entry}}
+        collection.update(bind_id, update, safe=True)
+
+    def action_succeeded(self, consumer_id, repo_id, distributor_id, action_id):
+        """
+        A tracked consumer action has succeeded.
+        Since consumer actions are queue to the agent and performed
+        in the order, previous actions are considered irrelevant and thus purged.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        @param action_id: The ID of the action to begin tracking.
+        @type action_id: str
+        """
+        collection = Bind.get_collection()
+        bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
+        action = self.find_action(action_id)
+        if action is None:
+            _LOG.warn('action %s not found', action_id)
+            return
+        # delete the action
+        update = {'$pull':{'consumer_actions':{'id':action_id}}}
+        collection.update(bind_id, update, safe=True)
+        # purge all previous actions
+        update = {'$pull':
+            {'consumer_actions':{'timestamp':{'$lt':action['timestamp']}}}
+        }
+        collection.update(bind_id, update, safe=True)
+
+    def action_failed(self, consumer_id, repo_id, distributor_id, action_id):
+        """
+        A tracked consumer action has failed.
+        @param consumer_id: uniquely identifies the consumer.
+        @type consumer_id: str
+        @param repo_id: uniquely identifies the repository.
+        @type repo_id: str
+        @param distributor_id: uniquely identifies a distributor.
+        @type distributor_id: str
+        @param action_id: The ID of the request to begin tracking.
+        @type action_id: str
+        """
+        collection = Bind.get_collection()
+        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query['consumer_actions.id'] = action_id
+        update = {'$set':{'consumer_actions.$.status':Bind.Status.FAILED}}
+        collection.update(query, update, safe=True)
+
+    def find_action(self, action_id):
+        """
+        Find a consumer action by ID.
+        @param action_id: An action ID.
+        @type action_id: str
+        @return: The action if found, else None
+        """
+        collection = Bind.get_collection()
+        query = {'consumer_actions.id':action_id}
+        binding = collection.find_one(query)
+        if binding is None:
+            return
+        for action in binding['consumer_actions']:
+            if action['id'] == action_id:
+                return action

@@ -25,7 +25,7 @@ manipulated with the desired changes.
 from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag
-from pulp.client import parsers
+from pulp.client import parsers, validators
 
 # -- option descriptions ------------------------------------------------------
 
@@ -51,7 +51,8 @@ OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False,
                              allow_multiple=True, parse_func=parsers.parse_notes)
 
 # IDs
-OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True)
-OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True)
+OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True, validate_func=validators.id_validator)
+OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True, validate_func=validators.id_validator)
+OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID, required=True, validate_func=validators.id_validator)
 
 FLAG_ALL = PulpCliFlag('--all', DESC_ALL)

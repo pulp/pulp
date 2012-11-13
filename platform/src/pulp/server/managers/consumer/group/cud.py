@@ -12,17 +12,19 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import logging
-import os
-import shutil
+import re
 import sys
 
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
+from pulp.server.exceptions import InvalidValue
 from pulp.server.managers import factory as manager_factory
 
+# -- constants ----------------------------------------------------------------
 
+_CONSUMER_GROUP_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 _LOG = logging.getLogger(__name__)
 
 
@@ -45,6 +47,9 @@ class ConsumerGroupManager(object):
         @return: SON representation of the consumer group
         @rtype:  L{bson.SON}
         """
+        if group_id is None or _CONSUMER_GROUP_ID_REGEX.match(group_id) is None:
+            raise InvalidValue(['group_id'])
+
         collection = ConsumerGroup.get_collection()
         consumer_group = ConsumerGroup(group_id, display_name, description, consumer_ids, notes)
         try:
@@ -136,36 +141,40 @@ class ConsumerGroupManager(object):
         @type  group_id: str
         @param criteria: Criteria instance representing the set of consumers to associate
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
+        @return: The list of consumer IDs matching the criteria.
+        @rtype: list
         """
         group_collection = validate_existing_consumer_group(group_id)
         consumer_collection = Consumer.get_collection()
         cursor = consumer_collection.query(criteria)
         consumer_ids = [r['id'] for r in cursor]
-        if not consumer_ids:
-            return
-        group_collection.update({'id': group_id},
-                                {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}},
-                                safe=True)
+        if consumer_ids:
+            group_collection.update(
+                {'id': group_id},
+                {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}},
+                safe=True)
+        return consumer_ids
 
     def unassociate(self, group_id, criteria):
         """
         Unassociate a set of consumers, that match the passed in criteria, from a consumer group.
         @param group_id: unique id of the group to unassociate consumers from
         @type  group_id: str
-        @param criteria: Criteria instance representing the set of consumers to unassociate
+        @param criteria: Criteria specifying the set of consumers to unassociate
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
+        @return: The list of consumer IDs matching the criteria.
+        @rtype: list
         """
         group_collection = validate_existing_consumer_group(group_id)
         consumer_collection = Consumer.get_collection()
         cursor = consumer_collection.query(criteria)
         consumer_ids = [r['id'] for r in cursor]
-        if not consumer_ids:
-            return
-        group_collection.update({'id': group_id},
-                                # for some reason, pymongo 1.9 doesn't like this
-                                #{'$pull': {'consumer_ids': {'$in': consumer_ids}}},
-                                {'$pullAll': {'consumer_ids': consumer_ids}},
-                                safe=True)
+        if consumer_ids:
+            group_collection.update(
+                {'id': group_id},
+                {'$pullAll': {'consumer_ids': consumer_ids}},
+                safe=True)
+        return consumer_ids
 
     # notes --------------------------------------------------------------------
 
@@ -286,3 +295,4 @@ def validate_existing_consumer_group(group_id):
     if consumer_group is not None:
         return collection
     raise pulp_exceptions.MissingResource(consumer_group=group_id)
+
