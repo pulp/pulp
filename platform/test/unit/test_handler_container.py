@@ -15,12 +15,24 @@
 
 import unittest
 
+from mock import Mock
 from pprint import pprint
 from mock_handlers import MockDeployer
 from pulp.agent.lib.container import *
 from pulp.agent.lib.dispatcher import *
 from pulp.agent.lib.conduit import Conduit
 from pulp.common.config import PropertyNotFound, SectionNotFound
+
+
+class TestConduit(Conduit):
+
+    class Test:
+        def __init__(self):
+            self.succeeded = True
+            self.exception = None
+
+    def __init__(self):
+        self.test = self.Test()
 
 
 class TestHandlerContainer(unittest.TestCase):
@@ -89,9 +101,62 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.install(conduit, units, options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 2)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 2)
         self.assertFalse(report.reboot['scheduled'])
+
+    def test_install_failed(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
+        handler = dispatcher.container.find('rpm')
+        report = ContentReport()
+        report.set_failed({'a':1})
+        handler.install = Mock(return_value=report)
+        # Test
+        options = {}
+        conduit = Conduit()
+        report = dispatcher.install(conduit, units, options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertEqual(report.details['rpm']['details'], {'a':1})
+
+    def test_install_raised(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
+        handler = dispatcher.container.find('rpm')
+        handler.install = Mock(side_effect=ValueError())
+        # Test
+        options = {}
+        conduit = Conduit()
+        report = dispatcher.install(conduit, units, options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertTrue(report.details['rpm']['details'].has_key('message'))
+        self.assertTrue(report.details['rpm']['details'].has_key('trace'))
 
     def test_install_reboot(self):
         # Setup
@@ -104,8 +169,8 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.install(conduit, [unit], options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 2)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 2)
         self.assertTrue(report.reboot['scheduled'])
 
     def test_install_failed_no_handler(self):
@@ -125,14 +190,14 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.install(conduit, units, options)
         pprint(report.dict())
-        self.assertFalse(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 1)
         # RPM passed
         rpm = report.details['rpm']
-        self.assertTrue(rpm['status'])
+        self.assertTrue(rpm['succeeded'])
         # XXX failed
         xxx = report.details['xxx']
-        self.assertFalse(xxx['status'])
+        self.assertFalse(xxx['succeeded'])
 
     def test_update(self):
         # Setup
@@ -151,8 +216,61 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.update(conduit, units, options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 2)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 2)
+
+    def test_update_failed(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
+        handler = dispatcher.container.find('rpm')
+        report = ContentReport()
+        report.set_failed({'a':1})
+        handler.update = Mock(return_value=report)
+        # Test
+        options = {}
+        conduit = Conduit()
+        report = dispatcher.update(conduit, units, options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertEqual(report.details['rpm']['details'], {'a':1})
+
+    def test_update_raised(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
+        handler = dispatcher.container.find('rpm')
+        handler.update = Mock(side_effect=ValueError())
+        # Test
+        options = {}
+        conduit = Conduit()
+        report = dispatcher.update(conduit, units, options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertTrue(report.details['rpm']['details'].has_key('message'))
+        self.assertTrue(report.details['rpm']['details'].has_key('trace'))
 
     def test_uninstall(self):
         # Setup
@@ -165,8 +283,61 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.uninstall(conduit, [unit], options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 1)
+
+    def test_uninstall_failed(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
+        handler = dispatcher.container.find('rpm')
+        report = ContentReport()
+        report.set_failed({'a':1})
+        handler.uninstall = Mock(return_value=report)
+        # Test
+        options = {}
+        conduit = Conduit()
+        report = dispatcher.uninstall(conduit, units, options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertEqual(report.details['rpm']['details'], {'a':1})
+
+    def test_uninstall_raised(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        units = []
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='zsh'))
+        units.append(unit)
+        unit = dict(
+            type_id='rpm',
+            unit_key=dict(name='ksh'))
+        units.append(unit)
+        handler = dispatcher.container.find('rpm')
+        handler.uninstall = Mock(side_effect=ValueError())
+        # Test
+        options = {}
+        conduit = Conduit()
+        report = dispatcher.uninstall(conduit, units, options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.reboot['scheduled'])
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertTrue(report.details['rpm']['details'].has_key('message'))
+        self.assertTrue(report.details['rpm']['details'].has_key('trace'))
 
     def test_profile(self):
         # Setup
@@ -175,8 +346,39 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.profile(conduit)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 0)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+
+    def test_profile_failed(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find('rpm')
+        report = ProfileReport()
+        report.set_failed({'a':1})
+        handler.profile = Mock(return_value=report)
+        # Test
+        conduit = Conduit()
+        report = dispatcher.profile(conduit)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertEqual(report.details['rpm']['details'], {'a':1})
+
+    def test_profile_raised(self):
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find('rpm')
+        handler.profile = Mock(side_effect=ValueError())
+        # Test
+        conduit = Conduit()
+        report = dispatcher.profile(conduit)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertFalse(report.details['rpm']['succeeded'])
+        self.assertTrue(report.details['rpm']['details'].has_key('message'))
+        self.assertTrue(report.details['rpm']['details'].has_key('trace'))
 
     def test_reboot(self):
         # Setup
@@ -185,47 +387,210 @@ class TestDispatcher(unittest.TestCase):
         conduit = Conduit()
         report = dispatcher.reboot(conduit, {})
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 0)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
 
     def test_bind(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
-        definition = dict(type_id='yum', repo={})
-        report = dispatcher.bind(conduit, [definition,])
+        binding = dict(type_id=type_id, repo_id=repo_id, details={})
+        options = {}
+        report = dispatcher.bind(conduit, [binding,], options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertTrue(report.succeeded)
+        self.assertEqual(report.num_changes, 1)
+        self.assertTrue(report.details[type_id][repo_id]['succeeded'])
+        self.assertEqual(report.details[type_id][repo_id]['details'], {})
 
-    def test_rebind(self):
+    def test_bind_failed(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
         # Setup
         dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        report = BindReport(repo_id)
+        report.set_failed({'a':1})
+        handler.bind = Mock(return_value=report)
         # Test
         conduit = Conduit()
-        definition = dict(type_id='yum', repo={})
-        report = dispatcher.rebind(conduit, [definition,])
+        binding = dict(type_id=type_id, repo_id=repo_id, details={})
+        options = {}
+        report = dispatcher.bind(conduit, [binding,], options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertFalse(report.succeeded)
+        self.assertEqual(report.num_changes, 0)
+        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
+        self.assertEqual(report.details[type_id][repo_id]['details'], {'a':1})
+
+    def test_bind_raised(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        handler.bind = Mock(side_effect=ValueError())
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=type_id, repo_id=repo_id, details={})
+        options = {}
+        report = dispatcher.bind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEqual(report.num_changes, 0)
+        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('message'))
+        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('trace'))
 
     def test_unbind(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
-        report = dispatcher.unbind(conduit, 'repo-1')
+        binding = dict(type_id=type_id, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertTrue(report.succeeded)
+        self.assertEqual(report.num_changes, 1)
+        self.assertEqual(report.details[type_id][repo_id]['details'], {})
+
+    def test_unbind_failed(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        report = BindReport(repo_id)
+        report.set_failed({'a':1})
+        handler.unbind = Mock(return_value=report)
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=type_id, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEqual(report.num_changes, 0)
+        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
+        self.assertEqual(report.details[type_id][repo_id]['details'], {'a':1})
+
+    def test_unbind_raised(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        handler.unbind = Mock(side_effect=ValueError)
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=type_id, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEqual(report.num_changes, 0)
+        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
+        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('message'))
+        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('trace'))
+
+    def test_unbind_all(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=None, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertTrue(report.succeeded)
+        self.assertEqual(report.num_changes, 1)
+        self.assertEqual(report.details[type_id][repo_id]['details'], {})
+
+    def test_unbind_all_failed(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        report = BindReport(repo_id)
+        report.set_failed({'a':1})
+        handler.unbind = Mock(return_value=report)
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=type_id, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEqual(report.num_changes, 0)
+        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
+        self.assertEqual(report.details[type_id][repo_id]['details'], {'a':1})
+
+    def test_unbind_all_raised(self):
+        type_id = 'yum'
+        repo_id = 'repo-1'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        handler.unbind = Mock(side_effect=ValueError)
+        # Test
+        conduit = Conduit()
+        binding = dict(type_id=type_id, repo_id=repo_id)
+        options = {}
+        report = dispatcher.unbind(conduit, [binding,], options)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEqual(report.num_changes, 0)
+        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
+        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('message'))
+        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('trace'))
 
     def test_clean(self):
+        type_id = 'yum'
         # Setup
         dispatcher = Dispatcher(self.container())
         # Test
         conduit = Conduit()
         report = dispatcher.clean(conduit)
         pprint(report.dict())
-        self.assertTrue(report.status)
-        self.assertEquals(report.chgcnt, 1)
+        self.assertTrue(report.succeeded)
+        self.assertEquals(report.num_changes, 1)
+        self.assertEqual(report.details[type_id]['details'], {})
+
+    def test_clean_failed(self):
+        type_id = 'yum'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        report = CleanReport()
+        report.set_failed({'a':1})
+        handler.clean = Mock(return_value=report)
+        # Test
+        conduit = Conduit()
+        report = dispatcher.clean(conduit)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertEqual(report.details[type_id]['details'], {'a':1})
+
+    def test_clean_raised(self):
+        type_id = 'yum'
+        # Setup
+        dispatcher = Dispatcher(self.container())
+        handler = dispatcher.container.find(type_id, BIND)
+        handler.clean = Mock(side_effect=ValueError)
+        # Test
+        conduit = Conduit()
+        report = dispatcher.clean(conduit)
+        pprint(report.dict())
+        self.assertFalse(report.succeeded)
+        self.assertEquals(report.num_changes, 0)
+        self.assertTrue(report.details[type_id]['details'].has_key('message'))
+        self.assertTrue(report.details[type_id]['details'].has_key('trace'))

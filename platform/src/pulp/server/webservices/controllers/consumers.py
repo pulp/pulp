@@ -31,6 +31,7 @@ from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
 from pulp.server.exceptions import MissingResource, MissingValue
+from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -63,11 +64,16 @@ def expand_consumers(options, consumers):
     if options.get('bindings', False):
         ids = [c['id'] for c in consumers]
         manager = managers.consumer_bind_manager()
-        bindings = manager.find_by_consumer_list(ids)
+        criteria = Criteria({'consumer_id':{'$in':ids}})
+        bindings = manager.find_by_criteria(criteria)
+        collated = {}
+        for b in bindings:
+            lst = collated.setdefault(b['consumer_id'], [])
+            lst.append(b)
         for consumer in consumers:
-            id = consumer['id']
             consumer['bindings'] = \
-                [b['repo_id'] for b in bindings.get(id, [])]
+                [serialization.binding.serialize(b, False)
+                    for b in collated.get(consumer['id'], [])]
     return consumers
 
 
@@ -233,38 +239,19 @@ class Bindings(JSONController):
         be raised by manager.
         @param consumer_id: The consumer to bind.
         @type consumer_id: str
-        @return: The created bind model object:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @rtype: dict
+        @return: The list of call_reports
+        @rtype: list
         """
+        # validate resources
+        manager = managers.consumer_manager()
+        manager.get_consumer(consumer_id)
+        # bind
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_id,
-            repo_id,
-            distributor_id,
-        ]
-        manager = managers.consumer_bind_manager()
-        call_request = CallRequest(
-            manager.bind,
-            args,
-            resources=resources,
-            weight=0)
-        link = serialization.link.child_link_obj(
-            consumer_id,
-            repo_id,
-            distributor_id)
-        result = execution.execute_sync_created(self, call_request, link)
-        return result
+        options = body.get('options', {})
+        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, options)
+        execution.execute_multiple(call_requests)
 
 
 class Binding(JSONController):
@@ -308,36 +295,31 @@ class Binding(JSONController):
         @type repo_id: str
         @param distributor_id: A distributor ID.
         @type distributor_id: str
-        @return: The deleted bind model object:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-            Or, None if bind does not exist.
-        @rtype: dict
+        @return: The list of call_reports
+        @rtype: list
         """
+        body = self.params()
+        # validate resources
         manager = managers.consumer_bind_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
+        manager.get_bind(consumer_id, repo_id, distributor_id)
+        # delete (unbind)
+        force = body.get('force', False)
+        options = body.get('options', {})
+        call_requests = unbind_itinerary(
             consumer_id,
             repo_id,
             distributor_id,
-        ]
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('unbind')
-        ]
-        call_request = CallRequest(manager.unbind,
-                                   args=args,
-                                   resources=resources,
-                                   tags=tags)
-        return self.ok(execution.execute(call_request))
+            options,
+            force)
+        execution.execute_multiple(call_requests)
+
+
+class BindingSearch(SearchController):
+    """
+    Bind search.
+    """
+    def __init__(self):
+        SearchController.__init__(self, managers.consumer_bind_manager().find_by_criteria)
 
 
 class Content(JSONController):
@@ -1004,6 +986,7 @@ class UnitUninstallScheduleResource(JSONController):
 urls = (
     '/$', Consumers,
     '/search/$', ConsumerSearch,
+    '/binding/search/$', BindingSearch,
     '/actions/content/applicability/$', ContentApplicability,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,

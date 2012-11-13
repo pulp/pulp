@@ -16,6 +16,8 @@ Pulp (gofer) plugin.
 Contains recurring actions and remote classes.
 """
 
+import os
+
 from hashlib import sha256
 from logging import getLogger
 
@@ -27,6 +29,7 @@ from gofer.pmon import PathMonitor
 from gofer.agent.rmi import Context
 
 from pulp.common.bundle import Bundle as BundleImpl
+from pulp.common.config import Config
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
@@ -86,6 +89,19 @@ class Conduit(HandlerConduit):
     Provides integration between the gofer progress reporting
     and agent handler frameworks.
     """
+
+    def get_consumer_config(self):
+        """
+        Get the consumer configuration.
+        @return: The consumer configuration object.
+        @rtype: L{pulp.common.config.Config}
+        """
+        paths = ['/etc/pulp/consumer/consumer.conf']
+        overrides = os.path.expanduser('~/.pulp/consumer.conf')
+        if os.path.exists(overrides):
+            paths.append(overrides)
+        cfg = Config(*paths)
+        return cfg
 
     def update_progress(self, report):
         """
@@ -184,17 +200,6 @@ class Synchronization:
     """
     Misc actions used to synchronize with the server.
     """
-
-    @action(days=0x8E94)
-    def rebind(self):
-        """
-        (Re)bind on agent statup.
-        """
-        if self.registered():
-            consumer = Consumer()
-            consumer.rebind()
-        else:
-            log.info('not registered, rebind skipped')
             
     @action(minutes=cfg.profile.minutes)
     def profile(self):
@@ -239,59 +244,38 @@ class Consumer:
         return report.dict()
 
     @remote(secret=secret)
-    def bind(self, repoid):
+    def bind(self, bindings, options):
         """
         Bind to the specified repository ID.
         Delegated to content handlers.
-        @param repoid: A repository ID.
-        @type repoid: str
-        @return: A dispatch report.
-        @rtype: DispatchReport
-        """
-        bundle = Bundle()
-        myid = bundle.cn()
-        bindings = PulpBindings()
-        http = bindings.bind.find_by_id(myid, repoid)
-        if http.response_code == 200:
-            conduit = Conduit()
-            definitions = http.response_body
-            report = dispatcher.bind(conduit, definitions)
-            return report.dict()
-        else:
-            raise Exception('bind failed, http:%d', http.response_code)
-
-    @remote(secret=secret)
-    def rebind(self):
-        """
-        (Re)bind to all repositories.
-        Runs at plugin initialization and delegated to content handlers.
-        @return: A dispatch report.
-        @rtype: DispatchReport
-        """
-        bundle = Bundle()
-        myid = bundle.cn()
-        bindings = PulpBindings()
-        http = bindings.bind.find_by_id(myid)
-        if http.response_code == 200:
-            conduit = Conduit()
-            definitions = http.response_body
-            report = dispatcher.rebind(conduit, definitions)
-            return report.dict()
-        else:
-            raise Exception('rebind failed, http:%d', http.response_code)
-
-    @remote(secret=secret)
-    def unbind(self, repoid):
-        """
-        Unbind to the specified repository ID.
-        Delegated to content handlers.
-        @param repoid: A repository ID.
-        @type repoid: str
+        @param bindings: A list of bindings to add/update.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
+        @param options: Bind options.
+        @type options: dict
         @return: A dispatch report.
         @rtype: DispatchReport
         """
         conduit = Conduit()
-        report = dispatcher.unbind(conduit, repoid)
+        report = dispatcher.bind(conduit, bindings, options)
+        return report.dict()
+
+    @remote(secret=secret)
+    def unbind(self, bindings, options):
+        """
+        Unbind to the specified repository ID.
+        Delegated to content handlers.
+        @param bindings: A list of bindings to be removed.
+          Each binding is: {type_id:<str>, repo_id:<str>}
+        @type bindings: list
+        @param options: Unbind options.
+        @type options: dict
+        @return: A dispatch report.
+        @rtype: DispatchReport
+        """
+        conduit = Conduit()
+        report = dispatcher.unbind(conduit, bindings, options)
         return report.dict()
 
 
@@ -371,10 +355,10 @@ class Profile:
         bindings = PulpBindings()
         report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
-        for typeid, report in report.details.items():
-            if not report['status']:
+        for typeid, profile_report in report.details.items():
+            if not profile_report['succeeded']:
                 continue
-            details = report['details']
+            details = profile_report['details']
             http = bindings.profile.send(myid, typeid, details)
             log.debug('profile (%s), reported: %d', typeid, http.response_code)
-        return report
+        return report.dict()

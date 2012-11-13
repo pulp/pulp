@@ -21,12 +21,17 @@ import mock_agent
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
-from pulp.plugins.loader import api as plugin_api
 from pulp.server.compat import ObjectId
 from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.itineraries.consumer import (
+    consumer_content_install_itinerary,
+    consumer_content_update_itinerary,
+    consumer_content_uninstall_itinerary)
+from pulp.server.dispatch import constants as dispatch_constants
 
 
 class ConsumerTest(base.PulpWebserviceTests):
@@ -101,7 +106,9 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertTrue('bindings' in body)
         bindings = body['bindings']
         self.assertEquals(len(bindings), 1)
-        self.assertEquals(bindings[0], self.REPO_ID)
+        self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+        self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEquals(bindings[0]['consumer_actions'], [])
 
     def test_get_with_details(self):
         """
@@ -133,7 +140,9 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertTrue('bindings' in body)
         bindings = body['bindings']
         self.assertEquals(len(bindings), 1)
-        self.assertEquals(bindings[0], self.REPO_ID)
+        self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+        self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEquals(bindings[0]['consumer_actions'], [])
 
     def test_get_missing_consumer(self):
         """
@@ -265,7 +274,12 @@ class ConsumersTest(base.PulpWebserviceTests):
                 self.assertTrue('bindings' in consumer)
                 bindings = consumer['bindings']
                 self.assertEquals(len(bindings), 1)
-                self.assertEquals(bindings[0], self.REPO_ID)
+                self.assertEquals(bindings[0]['consumer_id'], id)
+                self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
+                self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
+                self.assertEquals(bindings[0]['deleted'], False)
+                self.assertEquals(bindings[0]['consumer_actions'], [])
+
         else:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
             fetched = dict([(c['id'],c) for c in body])
@@ -537,43 +551,29 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
-    def test_bind(self):
+    @mock.patch('pulp.server.webservices.controllers.consumers.bind_itinerary', wraps=bind_itinerary)
+    def test_bind(self, mock_bind_itinerary):
+
         # Setup
         self.populate()
+
         # Test
         path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
-        body = dict(
-            repo_id=self.REPO_ID,
-            distributor_id=self.DISTRIBUTOR_ID,)
+        body = dict(repo_id=self.REPO_ID, distributor_id=self.DISTRIBUTOR_ID,)
         status, body = self.post(path, body)
-        # Verify
-        manager = factory.consumer_bind_manager()
-        self.assertEquals(status, 201)
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 1)
-        bind = binds[0]
-        for k in ('consumer_id', 'repo_id', 'distributor_id'):
-            self.assertEquals(bind[k], body[k])
 
-    def test_unbind(self):
-        # Setup
-        self.populate()
-        manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        # Test
-        path = '/v2/consumers/%s/bindings/%s/%s/' % \
-            (self.CONSUMER_ID,
-             self.REPO_ID,
-             self.DISTRIBUTOR_ID)
-        status, body = self.delete(path)
         # Verify
-        self.assertEquals(status, 200)
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 0)
+        self.assertEquals(status, 202)
+        self.assertEqual(len(body), 2)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    #
-    # Failure Cases
-    #
+        # verify itinerary called
+        mock_bind_itinerary.assert_called_with(
+                self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID,
+                {})
 
     def test_bind_missing_consumer(self):
         # Setup
@@ -587,8 +587,8 @@ class BindTest(base.PulpWebserviceTests):
             distributor_id=self.DISTRIBUTOR_ID,)
         status, body = self.post(path, body)
         # Verify
-        manager = factory.consumer_bind_manager()
         self.assertEquals(status, 404)
+        manager = factory.consumer_bind_manager()
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
 
@@ -605,99 +605,156 @@ class BindTest(base.PulpWebserviceTests):
         status, body = self.post(path, body)
         # Verify
         manager = factory.consumer_bind_manager()
-        self.assertEquals(status, 404)
+        self.assertEquals(status, 202)
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEquals(len(binds), 0)
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
+    def test_unbind(self, mock_unbind_itinerary):
+
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+        # Test
+        path = '/v2/consumers/%s/bindings/%s/%s/' % \
+            (self.CONSUMER_ID,
+             self.REPO_ID,
+             self.DISTRIBUTOR_ID)
+        status, body = self.delete(path)
+
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertEqual(len(body), 3)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # verify itinerary called
+        mock_unbind_itinerary.assert_called_with(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            {},
+            False)
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
+    def test_forced_unbind(self, mock_unbind_itinerary):
+
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+        # Test
+        path = '/v2/consumers/%s/bindings/%s/%s/' %\
+               (self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+        body = {'force':True}
+        status, body = self.delete(path, body)
+
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertEqual(len(body), 3)
+        for call in body:
+            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # verify itinerary called
+        mock_unbind_itinerary.assert_called_with(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            {},
+            True)
+
+    def test_unbind_missing_consumer(self):
+        # Setup
+        self.populate()
+        collection = Consumer.get_collection()
+        collection.remove({})
+        # Test
+        path = '/v2/consumers/%s/bindings/%s/%s/' %\
+               (self.CONSUMER_ID,
+                self.REPO_ID,
+                self.DISTRIBUTOR_ID)
+        status, body = self.delete(path)
+        # Verify
+        self.assertEquals(status, 404)
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        self.assertEquals(len(binds), 0)
+
+    def test_search(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.action_pending(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            Bind.Action.BIND,
+            0)
+
+        # Test
+        criteria = {'filters':
+            {'consumer_actions.status':{'$in':['pending', 'failed']}}
+        }
+        path = '/v2/consumers/binding/search/'
+        body = dict(criteria=criteria)
+        status, body = self.post(path, body)
+
+        # Verify
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body), 1)
 
 
 class ContentTest(base.PulpWebserviceTests):
 
     CONSUMER_ID = 'test-consumer'
-    REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'test-distributor'
 
-    def setUp(self):
-        base.PulpWebserviceTests.setUp(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        plugin_api._create_manager()
-        mock_plugins.install()
-        mock_agent.install()
-
-    def tearDown(self):
-        base.PulpWebserviceTests.tearDown(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        mock_plugins.reset()
-
-    def populate(self):
-        config = {'key1' : 'value1', 'key2' : None}
-        manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
-        manager = factory.repo_distributor_manager()
-        manager.add_distributor(
-            self.REPO_ID,
-            'mock-distributor',
-            config,
-            True,
-            distributor_id=self.DISTRIBUTOR_ID)
-        manager = factory.consumer_manager()
-        manager.register(self.CONSUMER_ID)
-
-    def test_install(self):
-        # Setup
-        self.populate()
+    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_install_itinerary', wraps=consumer_content_install_itinerary)
+    def test_install(self, mock_itinerary):
         # Test
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/install/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        self.set_success()
+        body = dict(units=units, options=options)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
+        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
-    def test_update(self):
-        # Setup
-        self.populate()
+    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_update_itinerary', wraps=consumer_content_update_itinerary)
+    def test_update(self, mock_itinerary):
         # Test
-        unit_key = dict(name='gofer', version='0.66')
+        unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/update/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        self.set_success()
+        body = dict(units=units, options=options)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
+        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
-    def test_uninstall(self):
-        # Setup
-        self.populate()
+    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_uninstall_itinerary', wraps=consumer_content_uninstall_itinerary)
+    def test_uninstall(self, mock_itinerary):
         # Test
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
         units = [unit,]
         options = dict(importkeys=True)
         path = '/v2/consumers/%s/actions/content/uninstall/' % self.CONSUMER_ID
-        body = dict(
-            units=units,
-            options=options,)
-        self.set_success()
+        body = dict(units=units, options=options)
         status, body = self.post(path, body)
         # Verify
-        self.assertEquals(status, 200)
+        self.assertEquals(status, 202)
+        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
 
 class TestProfiles(base.PulpWebserviceTests):
