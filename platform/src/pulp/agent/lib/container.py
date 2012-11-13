@@ -347,7 +347,7 @@ class Container:
         @return: The path to the module (or None).
         @rtype: str
         """
-        extensions = ('pyc', 'py')
+        extensions = ('pyo', 'pyc', 'py')
         for extension in extensions:
             file = '.'.join((name, extension))
             for dir in self.path:
