@@ -37,12 +37,14 @@ import datetime
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from pymongo.objectid import ObjectId
+import yum
 
 from pulp.common import dateutils
 from pulp.server.upgrade.model import UpgradeStepReport
-
+from pulp.server.upgrade.utils import PrestoParser
 
 # Passed to mongo to scope the returned results to only the RPM unit key
+
 V2_RPM_KEYS_FIELDS = {
     'name' : 1,
     'epoch' : 1,
@@ -291,8 +293,81 @@ def _associate_package(v1_database, v2_database, v1_id, v2_id, unit_type):
 
 
 def _drpms(v1_database, v2_database, report):
+    v2_coll = v2_database.units_drpm
+    v1_coll = v1_database.repos
+    v2_ass_coll = v2_database.repo_content_units
+    repos = v1_coll.find()
+    for repo in repos:
+        deltarpms = _get_deltas(repo)
+        new_associations = []
+        for nevra, dpkg in deltarpms.items():
+            for drpm in dpkg.deltas.values():
+                drpm_id = ObjectId()
+                new_drpm = {
+                    "_id" : drpm_id,
+                    "_storage_path" : os.path.join(DIR_DRPM, drpm.filename),
+                    "checksumtype" : drpm.checksum_type,
+                    "sequence" : drpm.sequence,
+                    "checksum" : drpm.checksum,
+                    "filename" : drpm.filename,
+                    "new_package" : nevra,
+                    "epoch" : drpm.epoch,
+                    "version" : drpm.version,
+                    "release" : drpm.release,
+                    "size" : drpm.size,
+                    }
+                try:
+                    v2_coll.insert(new_drpm, safe=True)
+                except DuplicateKeyError:
+                    # Still hate this model, still the simplest
+                    pass
+                new_association = {
+                    '_id' : ObjectId(),
+                    'repo_id' : repo['id'],
+                    'unit_id' : drpm_id,
+                    'unit_type_id' : 'drpm',
+                    'owner_type' : DEFAULT_OWNER_TYPE,
+                    'owner_id' : DEFAULT_OWNER_ID,
+                    'created' : DEFAULT_CREATED,
+                    'updated' : DEFAULT_UPDATED,
+                }
+                new_associations.append(new_association)
+        if new_associations:
+            try:
+                v2_ass_coll.insert(new_associations, safe=True)
+            except DuplicateKeyError, e:
+                pass
     return True
 
+def _get_deltas(repo):
+    """
+    A helper call to lookup repomd.xml for prestodelta info,
+    parse the presto delta using PrestoParser and extract
+    the deltarpm data.
+    """
+    repomd_xml_path = repo["repomd_xml_path"]
+    if not os.path.exists(repomd_xml_path):
+        return {}
+    prestodelta_rel_path = __get_repomd_filetype_path(repomd_xml_path, "prestodelta")
+    prestodelta_path = repomd_xml_path.split("repodata/repomd.xml")[0] + '/' + prestodelta_rel_path
+    if prestodelta_path is None:
+        # No presto info, no drpms to process
+        return {}
+    deltas = PrestoParser.PrestoParser(prestodelta_path).getDeltas()
+    return deltas
+
+def __get_repomd_filetype_path(path, filetype):
+    """
+    Lookup the metadata file type's path
+    """
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", path)
+    if rmd:
+        try:
+            data = rmd.getData(filetype)
+            return data.location[1]
+        except:
+            return None
+    return None
 
 def _errata(v1_database, v2_database, report):
 
