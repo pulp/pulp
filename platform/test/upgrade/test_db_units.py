@@ -9,6 +9,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import os
 
 from pymongo.objectid import ObjectId
 
@@ -16,6 +17,9 @@ from base_db_upgrade import BaseDbUpgradeTests
 from pulp.server.upgrade.db import units
 from pulp.server.upgrade.model import UpgradeStepReport
 
+DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+V1_TEST_FILESYSTEM=os.path.join(DATA_DIR, 'filesystem/v1')
+V1_REPOS_DIR = os.path.join(V1_TEST_FILESYSTEM, "var/lib/pulp/repos")
 
 class InitializeContentTypesTests(BaseDbUpgradeTests):
 
@@ -225,6 +229,76 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
                 self.assertEqual(ass['created'], units.DEFAULT_CREATED)
                 self.assertEqual(ass['updated'], units.DEFAULT_UPDATED)
 
+class DRPMUpgradeTests(BaseDbUpgradeTests):
+
+    def setUp(self):
+        super(DRPMUpgradeTests, self).setUp()
+        new_repo = {
+                'id' : 'test_drpm_repo',
+                'content_types' : 'yum',
+                'repomd_xml_path' : os.path.join(V1_REPOS_DIR,
+                    'repos/pulp/pulp/demo_repos/test_drpm_repo/repodata/repomd.xml'),
+                'relative_path' : 'repos/pulp/pulp/demo_repos/test_drpm_repo/',
+            }
+        if self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}):
+            self.v1_test_db.database.repos.remove({'id' : 'test_drpm_repo'})
+        self.v1_test_db.database.repos.insert(new_repo, safe=True)
+
+        # The unique keys need to be set for these tests
+        units._initialize_content_types(self.tmp_test_db.database)
+
+    def test_drpms(self):
+        # Test
+        report = UpgradeStepReport()
+        result = units._drpms(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(result)
+        v1_drpms = []
+        print self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'})
+        deltarpms = units._get_deltas(self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}))
+        print deltarpms
+        for nevra, dpkg in deltarpms.items():
+            for drpm in dpkg.deltas.values():
+                v1_drpms.append(drpm)
+        self._assert_upgrade(v1_drpms)
+        self._assert_associations()
+
+    def _assert_upgrade(self, v1_drpms):
+        v2_drpms = self.tmp_test_db.database.units_drpm.find().sort('filename')
+        self.assertEqual(len(v1_drpms), v2_drpms.count())
+        for drpm in v1_drpms:
+            v2_drpm = self.tmp_test_db.database.units_drpm.find_one({'filename' : drpm.filename})
+            self.assertEqual(v2_drpm["checksumtype"],  drpm.checksum_type)
+            self.assertEqual(v2_drpm["sequence"], drpm.sequence)
+            self.assertEqual(v2_drpm["checksum"], drpm.checksum)
+            self.assertEqual(v2_drpm["filename"], drpm.filename)
+            self.assertEqual(v2_drpm["epoch"], drpm.epoch)
+            self.assertEqual(v2_drpm["version"], drpm.version)
+            self.assertEqual(v2_drpm["release"], drpm.release)
+            self.assertEqual(v2_drpm["size"], drpm.size)
+
+    def _assert_associations(self):
+        v2_ass_coll = self.tmp_test_db.database.repo_content_units
+        v2_drpm_ids = [drpm['_id'] for drpm in self.tmp_test_db.database.units_drpm.find({},{'_id' : 1})]
+        # Make sure there are associations for each
+        query = {
+            'repo_id' : 'test_drpm_repo',
+            'unit_id' : {'$in' : v2_drpm_ids},
+            'unit_type_id' : 'drpm',
+        }
+        associations = v2_ass_coll.find(query)
+        # Sanity check that the right number were found
+        self.assertEqual(len(v2_drpm_ids), associations.count())
+        for ass in associations:
+            self.assertTrue(isinstance(ass['_id'], ObjectId))
+            self.assertEqual(ass['repo_id'], 'test_drpm_repo')
+            self.assertTrue(ass['unit_id'] in v2_drpm_ids)
+            self.assertEqual(ass['unit_type_id'],'drpm')
+            self.assertEqual(ass['owner_type'], units.DEFAULT_OWNER_TYPE)
+            self.assertEqual(ass['owner_id'], units.DEFAULT_OWNER_ID)
+            self.assertEqual(ass['created'], units.DEFAULT_CREATED)
+            self.assertEqual(ass['updated'], units.DEFAULT_UPDATED)
 
 class DistributionUpgradeTests(BaseDbUpgradeTests):
 
