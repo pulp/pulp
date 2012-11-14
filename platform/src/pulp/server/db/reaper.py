@@ -18,7 +18,7 @@ from datetime import datetime
 from pulp.common import dateutils
 from pulp.server import config as pulp_config
 from pulp.server.compat import ObjectId
-from pulp.server.db.model import dispatch
+from pulp.server.db.model import consumer, dispatch, repo_group, repository
 
 
 _REAPER = None
@@ -161,6 +161,27 @@ def initialize():
     archive_call_collection = dispatch.ArchivedCall.get_collection()
     archived_call_lifetime = pulp_config.config.getint('tasks', 'archived_call_lifetime')
     _REAPER.add_collection(archive_call_collection, hours=archived_call_lifetime)
+
+    # consumer event history
+    consumer_event_collection = consumer.ConsumerHistoryEvent.get_collection()
+    consumer_history_lifetime = pulp_config.config.getint('consumers', 'history_lifetime')
+    _REAPER.add_collection(consumer_event_collection, days=consumer_history_lifetime)
+
+    # repo sync history
+    repo_sync_result_collection = repository.RepoSyncResult.get_collection()
+    repo_sync_history_lifetime = pulp_config.config.getint('repositories', 'sync_history_lifetime')
+    _REAPER.add_collection(repo_sync_result_collection, days=repo_sync_history_lifetime)
+
+    # repo publish history
+    repo_publish_result_collection = repository.RepoPublishResult.get_collection()
+    repo_publish_history_lifetime = pulp_config.config.getint('repositories', 'publish_history_lifetime')
+    _REAPER.add_collection(repo_publish_result_collection, days=repo_publish_history_lifetime)
+
+    # repo group publish history
+    repo_group_publish_result_collection = repo_group.RepoGroupPublishResult.get_collection()
+    repo_group_publish_history_lifetime = pulp_config.config.getint('repository_groups', 'publish_history_lifetime')
+    _REAPER.add_collection(repo_group_publish_result_collection, days=repo_group_publish_history_lifetime)
+
 
 def finalize():
     """
