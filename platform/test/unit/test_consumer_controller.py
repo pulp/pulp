@@ -26,7 +26,8 @@ from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.itineraries.bind import (
+    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary,
     consumer_content_update_itinerary,
@@ -635,10 +636,9 @@ class BindTest(base.PulpWebserviceTests):
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            {},
-            False)
+            {})
 
-    @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
+    @mock.patch('pulp.server.webservices.controllers.consumers.forced_unbind_itinerary', wraps=forced_unbind_itinerary)
     def test_forced_unbind(self, mock_unbind_itinerary):
 
         # Setup
@@ -656,7 +656,7 @@ class BindTest(base.PulpWebserviceTests):
 
         # Verify
         self.assertEquals(status, 202)
-        self.assertEqual(len(body), 3)
+        self.assertEqual(len(body), 2)
         for call in body:
             self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
@@ -665,8 +665,7 @@ class BindTest(base.PulpWebserviceTests):
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            {},
-            True)
+            {})
 
     def test_unbind_missing_consumer(self):
         # Setup

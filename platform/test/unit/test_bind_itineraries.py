@@ -19,7 +19,8 @@ from pulp.server.managers import factory
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.itineraries.bind import (
+    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.agent.lib.report import DispatchReport
 
 class TestBind(PulpItineraryTests):
@@ -40,6 +41,41 @@ class TestBind(PulpItineraryTests):
         gpg_keys=['key1',],
         ca_cert='MY-CA',
         client_cert='MY-CLIENT-CERT')
+
+    BIND_TAGS = [
+        'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
+        'pulp:action:bind'
+    ]
+
+    AGENT_BIND_TAGS = [
+        'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
+        'pulp:action:agent_bind'
+    ]
+
+    UNBIND_TAGS = [
+        'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
+        'pulp:action:unbind'
+    ]
+
+    AGENT_UNBIND_TAGS = [
+        'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
+        'pulp:action:agent_unbind'
+    ]
+
+    DELETE_BINDING_TAGS = [
+        'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
+        'pulp:action:delete_binding'
+    ]
 
     def setUp(self):
         PulpItineraryTests.setUp(self)
@@ -89,6 +125,8 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 2)
+        self.assertEqual(call_reports[0].call_request_tags, self.BIND_TAGS)
+        self.assertEqual(call_reports[1].call_request_tags, self.AGENT_BIND_TAGS)
         for call in call_reports:
             self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
@@ -242,6 +280,9 @@ class TestBind(PulpItineraryTests):
 
         # Verify
         self.assertEqual(len(call_reports), 3)
+        self.assertEqual(call_reports[0].call_request_tags, self.UNBIND_TAGS)
+        self.assertEqual(call_reports[1].call_request_tags, self.AGENT_UNBIND_TAGS)
+        self.assertEqual(call_reports[2].call_request_tags[1], self.DELETE_BINDING_TAGS[1])
         for call in call_reports:
             self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
@@ -296,16 +337,17 @@ class TestBind(PulpItineraryTests):
 
         # Test
         options = {}
-        itinerary = unbind_itinerary(
+        itinerary = forced_unbind_itinerary(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
-            options,
-            True)
+            options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
         # Verify
-        self.assertEqual(len(call_reports), 3)
+        self.assertEqual(len(call_reports), 2)
+        self.assertEqual(call_reports[0].call_request_tags, self.UNBIND_TAGS)
+        self.assertEqual(call_reports[1].call_request_tags, self.AGENT_UNBIND_TAGS)
         for call in call_reports:
             self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 

@@ -420,7 +420,8 @@ class RepoResourceTests(RepoControllersTests):
     @mock.patch('pulp.server.webservices.controllers.repositories.repo_delete_itinerary', wraps=repo_delete_itinerary)
     @mock.patch('pulp.server.itineraries.repository.unbind_itinerary', wraps=unbind_itinerary)
     @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_repo')
-    def test_delete(self, mock_find, mock_unbind_itinerary, mock_delete_itinerary):
+    @mock.patch('pulp.server.managers.consumer.bind.BindManager.get_bind')
+    def test_delete(self, mock_get, mock_find, mock_unbind_itinerary, mock_delete_itinerary):
         """
         Tests deleting an existing repository.
         """
@@ -430,10 +431,12 @@ class RepoResourceTests(RepoControllersTests):
         distributor_id='yyy'
 
         bind = dict(
+            _id='bind_1',
             consumer_id=consumer_id,
             repo_id=repo_id,
             distributor_id=distributor_id)
 
+        mock_get.return_value = bind
         mock_find.return_value = [bind]
 
         # Setup
@@ -917,7 +920,8 @@ class RepoDistributorTests(RepoPluginsTests):
     @mock.patch('pulp.server.webservices.controllers.repositories.distributor_delete_itinerary', wraps=distributor_delete_itinerary)
     @mock.patch('pulp.server.itineraries.repository.unbind_itinerary', wraps=unbind_itinerary)
     @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_distributor')
-    def test_delete(self, mock_find, mock_unbind_itinerary, mock_delete_itinerary):
+    @mock.patch('pulp.server.managers.consumer.bind.BindManager.get_bind')
+    def test_delete(self, mock_get, mock_find, mock_unbind_itinerary, mock_delete_itinerary):
         """
         Tests unassociating a distributor from a repo.
         """
@@ -927,11 +931,13 @@ class RepoDistributorTests(RepoPluginsTests):
         distributor_id='yyy'
 
         bind = dict(
+            _id='bind_1',
             consumer_id=consumer_id,
             repo_id=repo_id,
             distributor_id=distributor_id)
 
         mock_find.return_value = [bind]
+        mock_get.return_value = bind
 
         # Setup
         self.repo_manager.create_repo(repo_id)
