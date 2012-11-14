@@ -115,7 +115,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent.bind')
+        action_tag('agent_bind')
     ]
 
     args = [
@@ -205,7 +205,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent.unbind')
+        action_tag('agent_unbind')
     ]
 
     args = [
@@ -237,17 +237,16 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     # delete the binding
 
-    binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
-    bind_id = str(binding['_id'])
-
     resources = {
         dispatch_constants.RESOURCE_CONSUMER_TYPE:
             {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
     }
 
     tags = [
-        resource_tag(dispatch_constants.RESOURCE_CONSUMER_BINDING_TYPE, bind_id),
-        action_tag('delete')
+        resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+        action_tag('delete_binding')
     ]
 
     args = [
@@ -330,7 +329,7 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent.unbind')
+        action_tag('agent_unbind')
     ]
 
     args = [

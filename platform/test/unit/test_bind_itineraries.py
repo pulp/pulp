@@ -53,7 +53,7 @@ class TestBind(PulpItineraryTests):
         'pulp:consumer:test-consumer',
         'pulp:repository:test-repo',
         'pulp:repository_distributor:dist-1',
-        'pulp:action:agent.bind'
+        'pulp:action:agent_bind'
     ]
 
     UNBIND_TAGS = [
@@ -67,12 +67,14 @@ class TestBind(PulpItineraryTests):
         'pulp:consumer:test-consumer',
         'pulp:repository:test-repo',
         'pulp:repository_distributor:dist-1',
-        'pulp:action:agent.unbind'
+        'pulp:action:agent_unbind'
     ]
 
     DELETE_BINDING_TAGS = [
-        'pulp:consumer_binding:%s',
-        'pulp:action:delete'
+        'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
+        'pulp:action:delete_binding'
     ]
 
     def setUp(self):
