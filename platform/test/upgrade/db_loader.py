@@ -48,7 +48,7 @@ class PulpTestDatabase(object):
         tgz.extractall(path=tmp_dir)
 
         # Load into mongo
-        cmd = '/usr/bin/mongorestore -d %s %s/pulp_database' % (self.db_name, tmp_dir)
+        cmd = '/usr/bin/mongorestore -d %s %s/pulp_database > /dev/null 2> /dev/null' % (self.db_name, tmp_dir)
         os.system(cmd)
 
         # Delete the extracted dump
