@@ -68,7 +68,7 @@ class CollectionsReaper(object):
                 _LOG.exception(e)
 
     def _reap_expired_collection_entries(self):
-        for collection, delta in self.collections:
+        for collection, delta in self.collections.items():
             expired_object_id = self._create_expired_object_id(delta)
             self._remove_expired_entries(collection, expired_object_id)
 
