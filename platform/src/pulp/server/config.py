@@ -26,6 +26,9 @@ _default_values = {
     'consumer_history': {
         'lifetime': '180', # in days
     },
+    'consumers': {
+        'history_lifetime': '14',
+        },
     'coordinator': {
         'task_state_poll_interval': '0.1',
     },
@@ -74,6 +77,13 @@ _default_values = {
         'uninstall_timeout': '10:600',
         'bind_timeout': '2592000:600',
         'unbind_timeout': '2592000:600',
+    },
+    'repositories': {
+        'publish_history_lifetime': '14',
+        'sync_history_lifetime': '14',
+    },
+    'repository_groups': {
+        'publish_history_lifetime': '14',
     },
     'scheduler': {
         'dispatch_interval': '30',
