@@ -113,6 +113,8 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('agent.bind')
     ]
 
@@ -201,6 +203,8 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('agent.unbind')
     ]
 
@@ -324,6 +328,8 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
         action_tag('agent.unbind')
     ]
 

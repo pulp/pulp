@@ -51,6 +51,8 @@ class TestBind(PulpItineraryTests):
 
     AGENT_BIND_TAGS = [
         'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
         'pulp:action:agent.bind'
     ]
 
@@ -63,6 +65,8 @@ class TestBind(PulpItineraryTests):
 
     AGENT_UNBIND_TAGS = [
         'pulp:consumer:test-consumer',
+        'pulp:repository:test-repo',
+        'pulp:repository_distributor:dist-1',
         'pulp:action:agent.unbind'
     ]
 
