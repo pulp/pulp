@@ -69,6 +69,7 @@ client capabilites.
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
 %{_usr}/lib/pulp/admin/extensions/pulp_server_info/
+%{_usr}/lib/pulp/admin/extensions/pulp_binding/
 %doc
 
 
