@@ -31,7 +31,8 @@ from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
 from pulp.server.exceptions import MissingResource, MissingValue
-from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.itineraries.bind import (
+    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -303,14 +304,20 @@ class Binding(JSONController):
         manager = managers.consumer_bind_manager()
         manager.get_bind(consumer_id, repo_id, distributor_id)
         # delete (unbind)
-        force = body.get('force', False)
+        forced = body.get('force', False)
         options = body.get('options', {})
-        call_requests = unbind_itinerary(
-            consumer_id,
-            repo_id,
-            distributor_id,
-            options,
-            force)
+        if forced:
+            call_requests = forced_unbind_itinerary(
+                consumer_id,
+                repo_id,
+                distributor_id,
+                options)
+        else:
+            call_requests = unbind_itinerary(
+                consumer_id,
+                repo_id,
+                distributor_id,
+                options)
         execution.execute_multiple(call_requests)
 
 
