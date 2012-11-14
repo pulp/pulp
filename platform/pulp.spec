@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.338
+Version: 0.0.339
 Release: 1
 Summary: An application for managing software content
 Group: Development/Languages
@@ -414,6 +414,9 @@ exit 0
 %endif
 
 %changelog
+* Wed Nov 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.339-1
+- 
+
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.338-1
 - 
 
