@@ -28,6 +28,7 @@ react to it in the extension itself.
 from gettext import gettext as _
 import logging
 from M2Crypto import X509
+from M2Crypto.SSL.Checker import WrongHost
 import os
 
 from pulp.bindings.exceptions import *
@@ -43,6 +44,7 @@ CODE_CONNECTION_EXCEPTION = os.EX_IOERR
 CODE_PERMISSIONS_EXCEPTION = os.EX_NOPERM
 CODE_UNEXPECTED = os.EX_SOFTWARE
 CODE_INVALID_CONFIG = os.EX_DATAERR
+CODE_WRONG_HOST = os.EX_DATAERR
 
 LOG = logging.getLogger(__name__)
 
@@ -78,6 +80,7 @@ class ExceptionHandler:
             (ConnectionException,  self.handle_connection_error),
             (PermissionsException, self.handle_permission),
             (InvalidConfig,        self.handle_invalid_config),
+            (WrongHost,            self.handle_wrong_host),
         )
 
         handle_func = self.handle_unexpected
@@ -273,6 +276,32 @@ class ExceptionHandler:
 
         self.prompt.render_failure_message(e[0])
         return CODE_INVALID_CONFIG
+
+    def handle_wrong_host(self, e):
+        """
+        Handles the client connection failing because of an SSL host name
+        resolution error.
+
+        @return: appropriate exit code for this error
+        """
+
+        self._log_client_exception(e)
+
+        msg = _('The server hostname configured on the client did not match the '
+                'name found in the server\'s SSL certificate. The client attempted '
+                'to connect to [%(expected)s] but the server returned [%(actual)s] '
+                'as its hostname. The expected hostname can be changed in the '
+                'client configuration file.')
+
+        data = {
+            'expected' : e.expectedHost,
+            'actual' : e.actualHost,
+        }
+
+        msg = msg % data
+
+        self.prompt.render_failure_message(msg)
+        return CODE_WRONG_HOST
 
     def handle_unexpected(self, e):
         """
