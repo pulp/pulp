@@ -105,19 +105,19 @@ class ExceptionHandler:
         # missing_property_names - required properties that were not specified
 
         if 'property_names' in e.extra_data:
-            msg = 'The values for the following properties were invalid: %(p)s'
-            msg = _(msg) % {'p' : ', '.join(e.extra_data['property_names'])}
+            msg = _('The values for the following properties were invalid: %(p)s')
+            msg = msg % {'p' : ', '.join(e.extra_data['property_names'])}
         elif 'missing_property_names' in e.extra_data:
-            msg = 'The following properties are required but were not provided: %(p)s'
-            msg = _(msg) % {'p' : ', '.join(e.extra_data['missing_property_names'])}
+            msg = _('The following properties are required but were not provided: %(p)s')
+            msg = msg % {'p' : ', '.join(e.extra_data['missing_property_names'])}
         else:
-            msg = 'The server indicated one or more values were incorrect. The server ' \
-                  'provided the following error message:'
-            self.prompt.render_failure_message(_(msg))
+            msg = _('The server indicated one or more values were incorrect. The server '
+                  'provided the following error message:')
+            self.prompt.render_failure_message(msg)
 
             self.prompt.render_failure_message('   %s' % e.error_message)
-            msg = 'More information can be found in the client log file %(l)s.'
-            msg = _(msg) % {'l' : self._log_filename()}
+            msg = _('More information can be found in the client log file %(l)s.')
+            msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_BAD_REQUEST
@@ -160,23 +160,23 @@ class ExceptionHandler:
         # reasons - conflicting operation
 
         if 'resource_id' in e.extra_data:
-            msg = 'A resource with the ID "%(i)s" already exists.'
-            msg = _(msg) % {'i' : e.extra_data['resource_id']}
+            msg = _('A resource with the ID "%(i)s" already exists.')
+            msg = msg % {'i' : e.extra_data['resource_id']}
         elif 'reasons' in e.extra_data:
-            msg = 'The requested operation conflicts with one or more operations ' \
-                  'already queued for the resource. The following operations on the ' \
-                  'specified resources caused the request to be rejected:\n\n'
-            msg = _(msg)
+            msg = _('The requested operation conflicts with one or more operations '
+                  'already queued for the resource. The following operations on the '
+                  'specified resources caused the request to be rejected:\n\n')
+            msg = msg
 
             for r in e.extra_data['reasons']:
                 msg += _('Resource:  %(t)s - %(i)s\n') % {'t' : r['resource_type'],
                                                        'i' : r['resource_id']}
                 msg += _('Operation: %(o)s') % {'o' : r['operation']}
         else:
-            msg = 'The requested operation could not execute due to an unexpected ' \
-                  'conflict on the server. More information can be found in the ' \
-                  'client log file %(l)s.'
-            msg = _(msg) % {'l' : self._log_filename()}
+            msg = _('The requested operation could not execute due to an unexpected '
+                  'conflict on the server. More information can be found in the '
+                  'client log file %(l)s.')
+            msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_CONFLICT
@@ -193,9 +193,9 @@ class ExceptionHandler:
         # This is a very vague error condition; the best we can do is rely on
         # the exception dump to the log file
 
-        msg = 'An internal error occurred on the Pulp server. More information ' \
-              'can be found in the client log file %(l)s.'
-        msg = _(msg) % {'l' : self._log_filename()}
+        msg = _('An internal error occurred on the Pulp server. More information '
+              'can be found in the client log file %(l)s.')
+        msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_PULP_SERVER_EXCEPTION
@@ -209,9 +209,9 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = 'An error occurred attempting to contact the server. More information ' \
-              'can be found in the client log file %(l)s.'
-        msg = _(msg) % {'l' : self._log_filename()}
+        msg = _('An error occurred attempting to contact the server. More information '
+              'can be found in the client log file %(l)s.')
+        msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_CONNECTION_EXCEPTION
@@ -225,7 +225,7 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = 'Authentication failed.'
+        msg = _('Authentication Failed')
 
         # If the certificate exists, parse the expiration date
         id_cert_dir = self.config['filesystem']['id_cert_dir']
@@ -247,17 +247,17 @@ class ExceptionHandler:
             pass
 
         if expiration_date:
-            desc = 'The session certificate expired on %(e)s. Use the login ' \
-            'command to begin a new session.'
-            desc = _(desc) % {'e' : expiration_date}
+            desc = _('The session certificate expired on %(e)s. Use the login '
+                     'command to begin a new session.')
+            desc = desc % {'e' : expiration_date}
         else:
-            desc = 'Use the login command to authenticate with the server and ' \
-            'download a session certificate for use in future calls to this script. ' \
-            'If credentials were specified, please double check the username and ' \
-            'password and attempt the request again.'
-            desc = _(desc)
+            desc = _('Use the login command to authenticate with the server and '
+                     'download a session certificate for use in future calls to this script. '
+                     'If credentials were specified, please double check the username and '
+                     'password and attempt the request again.')
+            desc = desc
 
-        self.prompt.render_failure_message(_(msg))
+        self.prompt.render_failure_message(msg)
         self.prompt.render_paragraph(desc)
 
         return CODE_PERMISSIONS_EXCEPTION
@@ -284,9 +284,9 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = 'An unexpected error has occurred. More information '\
-              'can be found in the client log file %(l)s.'
-        msg = _(msg) % {'l' : self._log_filename()}
+        msg = _('An unexpected error has occurred. More information '
+              'can be found in the client log file %(l)s.')
+        msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_UNEXPECTED
