@@ -49,7 +49,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.populate()
         # Test
         manager = factory.consumer_profile_manager()
-        manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         # Verify
         collection = UnitProfile.get_collection()
         cursor = collection.find({'consumer_id':self.CONSUMER_ID})
@@ -59,15 +59,56 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
 
+    def test_get_profiles(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
+        profiles = manager.get_profiles(self.CONSUMER_ID)
+        self.assertEqual(len(profiles), 2)
+        # Verify
+        profiles = sorted(profiles)
+        self.assertEquals(len(profiles), 2)
+        self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
+        self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
+        self.assertEquals(profiles[1]['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(profiles[1]['content_type'], self.TYPE_2)
+        self.assertEquals(profiles[1]['profile'], self.PROFILE_2)
+
+    def test_get_profiles_none(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_profile_manager()
+        profiles = manager.get_profiles(self.CONSUMER_ID)
+        self.assertEquals(len(profiles), 0)
+
+    def test_get_profile(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
+        profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_1)
+        self.assertTrue(profile is not None)
+
+    def test_get_profile_not_found(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
+        # Verify
+        self.assertRaises(MissingResource, manager.get_profile, self.CONSUMER_ID, self.TYPE_1)
+
     def test_missing_consumer(self):
         # Test
         manager = factory.consumer_profile_manager()
-        self.assertRaises(
-            MissingResource,
-            manager.update,
-            self.CONSUMER_ID,
-            self.TYPE_1,
-            self.PROFILE_1)
+        self.assertRaises(MissingResource, manager.update, self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
 
     def test_update(self):
         # Setup
