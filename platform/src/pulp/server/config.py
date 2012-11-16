@@ -26,18 +26,22 @@ _default_values = {
     'consumer_history': {
         'lifetime': '180', # in days
     },
-    'consumers': {
-        'history_lifetime': '14',
-        },
     'coordinator': {
         'task_state_poll_interval': '0.1',
+    },
+    'data_reaping': {
+        'reaper_interval': '0.25',
+        'archived_calls': '0.5',
+        'consumer_history': '60',
+        'repo_sync_history': '60',
+        'repo_publish_history': '60',
+        'repo_group_publish_history': '60',
     },
     'database': {
         'auto_migrate': 'false',
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
         'operation_retries': '2',
-        'reaper_interval': '60',
     },
     'email': {
         'host': 'localhost',
@@ -77,13 +81,6 @@ _default_values = {
         'uninstall_timeout': '10:600',
         'bind_timeout': '2592000:600',
         'unbind_timeout': '2592000:600',
-    },
-    'repositories': {
-        'publish_history_lifetime': '14',
-        'sync_history_lifetime': '14',
-    },
-    'repository_groups': {
-        'publish_history_lifetime': '14',
     },
     'scheduler': {
         'dispatch_interval': '30',
