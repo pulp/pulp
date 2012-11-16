@@ -152,34 +152,35 @@ def initialize():
     """
     global _REAPER
     assert _REAPER is None
-    _REAPER = CollectionsReaper(1) # need configurable reap interval
+    reaper_interval = pulp_config.config.getfloat('data_reaping', 'reaper_interval')
+    _REAPER = CollectionsReaper(int(reaper_interval * dateutils.SECONDS_IN_A_DAY))
     _REAPER.start()
 
     # NOTE add collections to reap here:
 
     # dispatch archived calls
     archive_call_collection = dispatch.ArchivedCall.get_collection()
-    archived_call_lifetime = pulp_config.config.getint('tasks', 'archived_call_lifetime')
-    _REAPER.add_collection(archive_call_collection, hours=archived_call_lifetime)
+    archived_call_lifetime = pulp_config.config.getfloat('data_reaping', 'archived_calls')
+    _REAPER.add_collection(archive_call_collection, days=archived_call_lifetime)
 
     # consumer event history
     consumer_event_collection = consumer.ConsumerHistoryEvent.get_collection()
-    consumer_history_lifetime = pulp_config.config.getint('consumers', 'history_lifetime')
+    consumer_history_lifetime = pulp_config.config.getfloat('data_reaping', 'consumer_history')
     _REAPER.add_collection(consumer_event_collection, days=consumer_history_lifetime)
 
     # repo sync history
     repo_sync_result_collection = repository.RepoSyncResult.get_collection()
-    repo_sync_history_lifetime = pulp_config.config.getint('repositories', 'sync_history_lifetime')
+    repo_sync_history_lifetime = pulp_config.config.getfloat('data_reaping', 'repo_sync_history')
     _REAPER.add_collection(repo_sync_result_collection, days=repo_sync_history_lifetime)
 
     # repo publish history
     repo_publish_result_collection = repository.RepoPublishResult.get_collection()
-    repo_publish_history_lifetime = pulp_config.config.getint('repositories', 'publish_history_lifetime')
+    repo_publish_history_lifetime = pulp_config.config.getfloat('data_reaping', 'repo_publish_history')
     _REAPER.add_collection(repo_publish_result_collection, days=repo_publish_history_lifetime)
 
     # repo group publish history
     repo_group_publish_result_collection = repo_group.RepoGroupPublishResult.get_collection()
-    repo_group_publish_history_lifetime = pulp_config.config.getint('repository_groups', 'publish_history_lifetime')
+    repo_group_publish_history_lifetime = pulp_config.config.getfloat('data_reaping', 'repo_group_publish_history')
     _REAPER.add_collection(repo_group_publish_result_collection, days=repo_group_publish_history_lifetime)
 
 

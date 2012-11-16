@@ -31,6 +31,8 @@ _iso8601_recurrences = re.compile(r'^R(?P<num>\d+)$')
 
 _VALID_DELTA_KEYS = ('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')
 
+SECONDS_IN_A_DAY = 86400
+
 # timezone functions -----------------------------------------------------------
 
 def local_tz():
