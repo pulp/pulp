@@ -234,7 +234,7 @@ class UploadSegmentResourceTests(BaseUploadTest):
     def test_put(self):
 
         # Setup
-        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + '/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
+        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + '/../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
         self.assertTrue(os.path.exists(test_rpm_filename))
 
         # Test
