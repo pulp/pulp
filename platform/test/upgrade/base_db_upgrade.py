@@ -16,14 +16,18 @@ import unittest
 from db_loader import DB_DIR, PulpTestDatabase
 
 
+# Full path to the DB that will be loaded for the test run
+DB_FILE_PATH = os.path.join(DB_DIR, 'unit_test.tar.gz')
+#DB_FILE_PATH = '/home/jdob/code/pulp/pulp-dbs/large.tar.gz'
+
 class BaseDbUpgradeTests(unittest.TestCase):
 
     def setUp(self):
         super(BaseDbUpgradeTests, self).setUp()
 
-        db_file = os.path.join(DB_DIR, 'unit_test.tar.gz')
         self.v1_db_name = 'pulp_upgrade_unit'
         self.tmp_db_name = 'pulp_upgrade_unit_tmp'
+        db_file = DB_FILE_PATH
 
         self.v1_test_db = PulpTestDatabase(self.v1_db_name)
         self.v1_test_db.load_from_file(db_file)

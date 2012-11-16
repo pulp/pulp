@@ -140,6 +140,12 @@ def _initialize_content_types(v2_database):
             unit_index = [(k, ASCENDING) for k in type_def['unit_key']]
             units_coll.ensure_index(unit_index, unique=True)
 
+            # These are less important to the actual execution of the upgrade,
+            # but I'd rather have these created now than after the data is
+            # inserted
+            for search_index in type_def['search_indexes']:
+                units_coll.ensure_index(search_index, unique=False)
+
         existing = migrations_coll.find_one({'name' : type_def['display_name']})
         if not existing:
             new_migration = {

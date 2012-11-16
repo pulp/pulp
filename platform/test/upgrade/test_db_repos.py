@@ -197,12 +197,14 @@ class RepoUpgradeWithProxyTests(BaseDbUpgradeTests):
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
+        v1_repos = self.v1_test_db.database.repos.find({'content_types' : 'yum'})
+
         self.assertTrue(self.v1_test_db.database.repos.count() > 0)
-        v1_repos = self.v1_test_db.database.repos.find()
         for v1_repo in v1_repos:
             repo_id = v1_repo['id']
 
             v2_importer = self.tmp_test_db.database.repo_importers.find_one({'repo_id' : repo_id})
+            self.assertTrue(v2_importer is not None, msg='Missing importer for repo: %s' % repo_id)
             config = v2_importer['config']
 
             # Values taken from the with-proxy.conf file
@@ -262,7 +264,15 @@ class RepoUpgradeWithSslCaCertificateTests(BaseDbUpgradeTests):
 
 class RepoGpgKeyTests(BaseDbUpgradeTests):
 
+    # These are unsafe to run with non-unit test databases due to the reliance
+    # on the filesystem. The following flag should be used in those cases to
+    # prevent them from running.
+    ENABLED = True
+
     def setUp(self):
+        if not self.ENABLED:
+            return
+
         super(RepoGpgKeyTests, self).setUp()
 
         self.gpg_root_orig = repos.GPG_KEY_ROOT
@@ -278,11 +288,17 @@ class RepoGpgKeyTests(BaseDbUpgradeTests):
             self.v1_test_db.database.repos.save(v1_repo, safe=True)
 
     def tearDown(self):
+        if not self.ENABLED:
+            return
+
         super(RepoGpgKeyTests, self).tearDown()
         repos.SKIP_GPG_KEYS = False
         repos.SKIP_SERVER_CONF = False
 
     def test_upgrade(self):
+        if not self.ENABLED:
+            return
+
         # Test
         report = repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
 
