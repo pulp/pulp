@@ -23,7 +23,7 @@ from gofer.rmi import mock as mock
 from pulp.server.agent.direct.services import Services, HeartbeatListener
 from pulp.server.agent.hub import pulpagent as restagent
 from pulp.agent.lib.report import DispatchReport
-from pulp.server.compat import json
+from pulp.common.compat import json
 
 
 def install():
