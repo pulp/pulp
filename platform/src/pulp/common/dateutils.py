@@ -366,7 +366,7 @@ def delta_from_key_value_pairs(key_value_pairs):
     for k in key_value_pairs:
         if k in _VALID_DELTA_KEYS:
             continue
-        raise TypeError('Cannot create delta using key: %s' % k)
+        raise ValueError('Cannot create delta using key: %s' % k)
 
     if 'years' in key_value_pairs or 'months' in key_value_pairs:
         delta_class = isodate.Duration
