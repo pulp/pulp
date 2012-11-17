@@ -35,10 +35,10 @@ class CollectionsReaper(object):
     If any documents in a collection have a custom _id field, this reaper will
     not work with that collection.
 
-    @ivar reap_interval: time, in seconds, between checks for old documents
-    @type reap_interval: int or float
-    @ivar collections: dictionary of collections and the time delta which constitutes an old document
-    @type collections: dict
+    :ivar reap_interval: time, in seconds, between checks for old documents
+    :type reap_interval: int or float
+    :ivar collections: dictionary of collections and the time delta which constitutes an old document
+    :type collections: dict
     """
 
     def __init__(self, reap_interval):
@@ -120,9 +120,9 @@ class CollectionsReaper(object):
          * hours
          * minutes
          * seconds
-        @param collection: database collection to reap documents from
-        @type collection: pymongo.collection.Collection
-        @param delta_kwargs: key word arguments for time intervals
+        :param collection: database collection to reap documents from
+        :type collection: pymongo.collection.Collection
+        :param delta_kwargs: key word arguments for time intervals
         """
         self.__lock.acquire()
         try:
@@ -134,8 +134,8 @@ class CollectionsReaper(object):
     def remove_collection(self, collection):
         """
         Remove a database collection from the reaper.
-        @param collection: database collection to no longer be reaped
-        @type collection: pymongo.collection.Collection
+        :param collection: database collection to no longer be reaped
+        :type collection: pymongo.collection.Collection
         """
         self.__lock.acquire()
         try:
