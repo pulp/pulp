@@ -25,6 +25,7 @@ from pulp.server.managers.event.remote import TopicPublishManager
 class TestTopicPublishManager(unittest.TestCase):
     def setUp(self):
         self.manager = TopicPublishManager()
+        self.manager._connection = None
 
     def tearDown(self):
         TopicPublishManager._logged_disabled = False
@@ -55,7 +56,7 @@ class TestTopicPublishManager(unittest.TestCase):
         self.assertEqual(mock_error.call_count, 1)
 
     @mock.patch.object(TopicPublishManager.logger, 'debug')
-    @mock.patch('pulp.server.config.config.get', return_value='')
+    @mock.patch.object(config, 'get', return_value='')
     def test_no_address_configured(self, mock_config_get, mock_debug):
         connection = self.manager.connection()
         self.assertTrue(connection is None)
@@ -63,7 +64,7 @@ class TestTopicPublishManager(unittest.TestCase):
         self.assertEqual(mock_debug.call_count, 1)
 
     @mock.patch.object(TopicPublishManager.logger, 'debug')
-    @mock.patch('pulp.server.config.config.get', return_value='')
+    @mock.patch.object(config, 'get', return_value='')
     def test_no_address_configured_single_log(self, mock_config_get, mock_debug):
         # make sure the error is only logged once
         self.manager.connection()
