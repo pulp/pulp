@@ -29,7 +29,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 0.0.339
+Version: 0.0.340
 Release: 1
 Summary: An application for managing software content
 Group: Development/Languages
@@ -414,6 +414,10 @@ exit 0
 %endif
 
 %changelog
+* Mon Nov 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.340-1
+- added database collection reaper system that will wake up periodically and
+  remove old documents from configured collections (jason.connor@gmail.com)
+
 * Wed Nov 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.339-1
 - 
 
