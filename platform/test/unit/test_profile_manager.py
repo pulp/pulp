@@ -67,7 +67,6 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         manager.create(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
         profiles = manager.get_profiles(self.CONSUMER_ID)
-        self.assertEqual(len(profiles), 2)
         # Verify
         profiles = sorted(profiles)
         self.assertEquals(len(profiles), 2)
