@@ -274,8 +274,8 @@ class SearchRepositoryGroupsCommandTests(base.PulpClientTests):
         url = self.server_mock.request.call_args[0][1]
         self.assertTrue(url.endswith('/repo_groups/search/'))
 
-        self.assertEqual(2, len(self.prompt.get_write_tags()))
-        self.assertEqual(self.prompt.get_write_tags(), [TAG_DOCUMENT, TAG_DOCUMENT])
+        self.assertEqual(3, len(self.prompt.get_write_tags()))
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, TAG_DOCUMENT, TAG_DOCUMENT])
 
 
 class ListRepositoryGroupMembersCommandTests(base.PulpClientTests):
