@@ -837,7 +837,9 @@ class TestProfiles(base.PulpWebserviceTests):
         # Test
         path = '/v2/consumers/%s/profiles/%s/' % (self.CONSUMER_ID, self.TYPE_1)
         status, body = self.delete(path)
+        self.assertEqual(status, 200)
         profiles = manager.get_profiles(self.CONSUMER_ID)
+        # Verify
         self.assertEquals(len(profiles), 1)
         profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_2)
         self.assertTrue(profile is not None)
@@ -875,6 +877,22 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(body['content_type'], self.TYPE_1)
         self.assertEqual(body['profile'], self.PROFILE_1)
+
+    def test_get_by_type_not_found(self):
+        # Setup
+        manager = factory.consumer_profile_manager()
+        # Test
+        path = '/v2/consumers/%s/profiles/unknown/' % self.CONSUMER_ID
+        status, body = self.get(path)
+        self.assertEqual(status, 404)
+
+    def test_delete_not_found(self):
+        # Setup
+        manager = factory.consumer_profile_manager()
+        # Test
+        path = '/v2/consumers/%s/profiles/unknown/' % self.CONSUMER_ID
+        status, body = self.delete(path)
+        self.assertEqual(status, 404)
 
 
 class TestApplicability(base.PulpWebserviceTests):
