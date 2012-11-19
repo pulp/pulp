@@ -113,6 +113,17 @@ do
   esac
 done
 
+# git preparation
+if [[ -n $BRANCH ]]
+then
+  echo "Prepare git repositories using: [$BRANCH]"
+  read -p "Continue [y|n]: " ANS
+  if [ $ANS = "y" ]
+  then
+    git_prep $BRANCH
+  fi
+fi
+
 # version based on main pulp project
 # unless specified using -v
 if [[ -z $VERSION ]]
@@ -125,22 +136,10 @@ echo "Using:"
 echo "  version [$VERSION]"
 echo "  tito options: $TITO_TAG_FLAGS"
 echo ""
-if [[ -n $BRANCH ]]; then
-  echo "Prepare git repositories using: [$BRANCH]"
-else
-  echo "<warning> not preparing git repostories"
-fi
-echo ""
 read -p "Continue [y|n]: " ANS
 if [ $ANS != "y" ]
 then
   exit 0
-fi
-
-# git preparation
-if [[ -n $BRANCH ]]
-then
-  git_prep $BRANCH
 fi
 
 # used by tagger
