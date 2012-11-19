@@ -1,7 +1,7 @@
 <comps>
   <group>
-    <id>Pulp</id>
-    <name>Pulp</name>
+    <id>pulp-server</id>
+    <name>Pulp Server</name>
     <description>Pulp server including all plugins.</description>
     <uservisible>true</uservisible>
     <packagelist>
@@ -11,7 +11,7 @@
     </packagelist>
   </group>
   <group>
-    <id>PulpAdmin</id>
+    <id>pulp-admin</id>
     <name>Pulp Admin</name>
     <description>Pulp admin client including all extensions.</description>
     <uservisible>true</uservisible>
@@ -22,7 +22,7 @@
     </packagelist>
   </group>
   <group>
-    <id>PulpConsumer</id>
+    <id>pulp-consumer</id>
     <name>Pulp Consumer</name>
     <description>
       Pulp consumer client and agent including all extensions and handlers.
