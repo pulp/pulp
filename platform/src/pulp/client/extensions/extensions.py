@@ -223,12 +223,25 @@ class PulpCliCommand(Command):
 
         return self.method(*arg_list, **clean_kwargs)
 
+    def print_validation_error(self, prompt, option, exception):
+        msg = _('Validation failed for argument [%(name)s]') % {'name' : option.name}
+        try:
+            msg += (': %s' % exception.args[0])
+        except (AttributeError, IndexError):
+            # Python 2.4 and older does not have an 'args' attribute on Exception.
+            # There is also no guarantee that 'args' (an iterable) will have a member.
+            pass
+
+        prompt.render_failure_message(msg)
+
 
 class PulpCliOption(Option):
     pass
 
+
 class PulpCliFlag(Flag):
     pass
+
 
 class PulpCliOptionGroup(OptionGroup):
     pass

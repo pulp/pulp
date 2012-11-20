@@ -291,7 +291,7 @@ class RepositoryGroupMembersCommand(CriteriaCommand):
         group_id = kwargs.pop(OPTION_GROUP_ID.keyword)
         if not compat.any(kwargs.values()):
             self.prompt.render_failure_message(
-                _('at least one matching option must be provided.'))
+                _('At least one matching option must be provided.'))
             return
         del kwargs[FLAG_ALL.keyword]
         repo_ids = kwargs.pop(OPTION_REPO_ID.keyword)
