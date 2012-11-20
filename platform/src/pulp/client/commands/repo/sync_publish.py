@@ -155,7 +155,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
         :param override_config_options: Additional publish options to be accepted from user. These options will override 
             respective options from the default publish config. Each entry should be
-            either a PulpCliOption and PulpCliFlag instance
+            either a PulpCliOption or PulpCliFlag instance
         :type override_config_options: list
         """
         if method is None:
