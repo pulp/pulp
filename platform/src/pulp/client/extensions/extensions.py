@@ -227,9 +227,9 @@ class PulpCliCommand(Command):
         msg = _('Validation failed for argument [%(name)s]') % {'name' : option.name}
         try:
             msg += (': %s' % exception.args[0])
+        except (AttributeError, IndexError):
             # Python 2.4 and older does not have an 'args' attribute on Exception.
             # There is also no guarantee that 'args' (an iterable) will have a member.
-        except (AttributeError, IndexError):
             pass
 
         prompt.render_failure_message(msg)
