@@ -6,8 +6,8 @@
     <uservisible>true</uservisible>
     <packagelist>
       <packagereq type="mandatory">pulp-server</packagereq>
-      <packagereq type="mandatory">pulp-rpm-plugins</packagereq>
-      <packagereq type="mandatory">pulp-puppet-plugins</packagereq>
+      <packagereq type="default">pulp-rpm-plugins</packagereq>
+      <packagereq type="default">pulp-puppet-plugins</packagereq>
     </packagelist>
   </group>
   <group>
@@ -17,8 +17,8 @@
     <uservisible>true</uservisible>
     <packagelist>
       <packagereq type="mandatory">pulp-admin-client</packagereq>
-      <packagereq type="mandatory">pulp-rpm-admin-extensions</packagereq>
-      <packagereq type="mandatory">pulp-puppet-admin-extensions</packagereq>
+      <packagereq type="default">pulp-rpm-admin-extensions</packagereq>
+      <packagereq type="default">pulp-puppet-admin-extensions</packagereq>
     </packagelist>
   </group>
   <group>
@@ -30,11 +30,11 @@
     <uservisible>true</uservisible>
     <packagelist>
       <packagereq type="mandatory">pulp-consumer-client</packagereq>
-      <packagereq type="mandatory">pulp-rpm-consumer-extensions</packagereq>
-      <packagereq type="mandatory">pulp-puppet-consumer-extensions</packagereq>
-      <packagereq type="mandatory">pulp-agent</packagereq>
-      <packagereq type="mandatory">pulp-rpm-handlers</packagereq>
-      <packagereq type="mandatory">pulp-puppet-handlers</packagereq>
+      <packagereq type="default">pulp-rpm-consumer-extensions</packagereq>
+      <packagereq type="default">pulp-puppet-consumer-extensions</packagereq>
+      <packagereq type="default">pulp-agent</packagereq>
+      <packagereq type="default">pulp-rpm-handlers</packagereq>
+      <packagereq type="default">pulp-puppet-handlers</packagereq>
     </packagelist>
   </group>
 </comps>
