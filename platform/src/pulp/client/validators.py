@@ -16,6 +16,10 @@ from gettext import gettext as _
 
 from pulp.common import dateutils
 
+
+ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
+
+
 def positive_int_validator(x):
     """
     Validates that the input is a positive integer. This call will raise
@@ -63,14 +67,20 @@ def interval_iso6801_validator(x):
 
 def id_validator(x):
     """
-    Validates that the id only contains letters, numbers, underscores and hyphens.
-    This call will raise an exception to be passed to the CLI framework if it is invalid; there is
-    no return otherwise.
+    Validates that the input is a valid Pulp ID. This validator can be used on
+    either a single ID or a list of IDs, the latter occuring in the event that
+    allow_multiple is set to True for the option.
+
+    This call will raise an exception to be passed to the CLI framework if it is
+    invalid; there is no return otherwise.
 
     :param x: input value to be validated
-    :type  x: str
+    :type  x: str or list
     """
-    ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
-    if ID_REGEX.match(x) is None:
-        raise ValueError(_('value must contain only letters, numbers, underscore and hyphen'))
+    if not isinstance(x, (list, tuple)):
+        x = [x]
+
+    for input in x:
+        if ID_REGEX.match(input) is None:
+            raise ValueError(_('value must contain only letters, numbers, underscores, and hyphens'))
 
