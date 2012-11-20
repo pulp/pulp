@@ -116,23 +116,33 @@ class SyncStatusCommand(PulpCliCommand):
         self.add_option(options.OPTION_REPO_ID)
 
     def run(self, **kwargs):
-        pass
+        repo_id = kwargs[options.OPTION_REPO_ID.keyword]
+        self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
 
+        # Load the relevant task group
+        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
+        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
+
+        if task_group_id is None:
+            msg = _('The repository is not performing any operations')
+            self.prompt.render_paragraph(msg, tag='no-tasks')
+        else:
+            status.display_group_status(self.context, self.renderer, task_group_id)
 
 
 class RunPublishRepositoryCommand(PulpCliCommand):
     """
     Base class for repo publish operation. 
     
-    Requests an immediate publish for a repository. Specified distributor_id is used 
-    for publishing. If the publish begins (it is not postponed or rejected), 
+    Requests an immediate publish for a repository. Specified distributor_id is used
+    for publishing. If the publish begins (it is not postponed or rejected),
     the provided renderer will be used to track its progress. The user has the option 
     to exit the progress polling or skip it entirely through a flag on the run command.
     List of additional configuration override options can be passed in override_config_options.
     """
 
     def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN, 
-                 method=None, override_config_options=[]):
+                 method=None, override_config_options=()):
         """
         :param context: Pulp client context
         :type context: See okaara
@@ -144,8 +154,9 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         :type distributor_id: str
 
         :param override_config_options: Additional publish options to be accepted from user. These options will override 
-                                        respective options from the default publish config.
-        :type override_config_options: List of PulpCliOption and PulpCliFlag instances 
+            respective options from the default publish config. Each entry should be
+            either a PulpCliOption and PulpCliFlag instance
+        :type override_config_options: list
         """
         if method is None:
             method = self.run
@@ -244,6 +255,16 @@ class PublishStatusCommand(PulpCliCommand):
 
         self.add_option(options.OPTION_REPO_ID)
 
-
     def run(self, **kwargs):
-        pass
+        repo_id = kwargs[options.OPTION_REPO_ID.keyword]
+        self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
+
+        # Load the relevant task group
+        existing_sync_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
+        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
+
+        if task_group_id is None:
+            msg = _('The repository is not performing any operations')
+            self.prompt.render_paragraph(msg, tag='no-tasks')
+        else:
+            status.display_group_status(self.context, self.renderer, task_group_id)
