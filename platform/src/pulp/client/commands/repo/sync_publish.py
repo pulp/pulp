@@ -58,6 +58,9 @@ class RunSyncRepositoryCommand(PulpCliCommand):
     """
 
     def __init__(self, context, renderer, name='run', description=DESC_SYNC_RUN, method=None):
+        """
+        :type renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
+        """
 
         if method is None:
             method = self.run
