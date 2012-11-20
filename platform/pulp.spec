@@ -151,11 +151,11 @@ Requires: python-%{name}-common = %{version}-%{release}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-simplejson >= 2.0.9
 Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
-Requires: python-isodate >= 0.4.4-3.pulp
+Requires: python-isodate = 0.4.4-3.pulp
 Requires: python-BeautifulSoup
+Requires: python-qpid
 Requires: grinder >= 0.1.6-1
 Requires: httpd
 Requires: mod_ssl
@@ -168,24 +168,10 @@ Requires: mod_wsgi >= 3.3-3.pulp
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
-# RHEL5
-%if 0%{?rhel} == 5
-Group: Development/Languages
-Requires: m2crypto
-Requires: python-uuid
-Requires: python-ssl
-Requires: python-ctypes
-Requires: python-hashlib
-Requires: mkisofs
-# RHEL6 & FEDORA
-%else
 Requires: m2crypto >= 0.21.1.pulp-7
 Requires: genisoimage
-%endif
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
-Requires: python-ctypes
-Requires: python-hashlib
 Requires: nss >= 3.12.9
 Requires: curl => 7.19.7
 %endif
@@ -222,6 +208,7 @@ Pulp provides replication, access, and accounting for software repositories.
 Summary: Pulp common python packages
 Group: Development/Languages
 Obsoletes: pulp-common
+Requires: python-isodate = 0.4.4-3.pulp
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -239,6 +226,8 @@ A collection of components that are common between the pulp server and client.
 %package -n python-pulp-bindings
 Summary: Pulp REST bindings for python
 Group: Development/Languages
+Requires: python-%{name}-common = %{version}-%{release}
+Requires: m2crypto
 
 %description -n python-pulp-bindings
 The Pulp REST API bindings for python.
@@ -254,8 +243,11 @@ The Pulp REST API bindings for python.
 %package -n python-pulp-client-lib
 Summary: Pulp client extensions framework
 Group: Development/Languages
+Requires: m2crypto
 Requires: python-%{name}-common = %{version}-%{release}
 Requires: python-okaara >= 1.0.26
+Requires: python-isodate = 0.4.4-3.pulp
+Requires: python-setuptools
 Obsoletes: pulp-client-lib
 
 %description -n python-pulp-client-lib
@@ -293,6 +285,7 @@ for content, bind and system specific operations.
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
+Requires: python-okaara >= 1.0.26
 Requires: python-%{name}-common = %{version}-%{release}
 Requires: python-%{name}-bindings = %{version}-%{release}
 Requires: python-%{name}-client-lib = %{version}-%{release}
