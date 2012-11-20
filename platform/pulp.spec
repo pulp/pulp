@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.2.beta
+Release: 0.3.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -407,6 +407,24 @@ exit 0
 %endif
 
 %changelog
+* Tue Nov 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.3.beta
+- 871858 - Implemented sync and publish status commands
+  (jason.dobies@redhat.com)
+- 873421 - changed a wait-time message to be more appropriate, and added a bit
+  of function parameter documentation. (mhrivnak@redhat.com)
+- 877170 - Added ability to ID validator to handle multiple inputs
+  (jason.dobies@redhat.com)
+- 877435 - Pulled the filters/order to constants and use in search
+  (jason.dobies@redhat.com)
+- 875606 - Added isodate and python-setuptools deps. Rolled into a quick audit
+  of all the requirements and changed quite a few. There were several missing
+  and several no longer applicaple. Also removed a stray import of okaara from
+  within the bindings package. (mhrivnak@redhat.com)
+- 874243 - return 404 when profile does not exist. (jortel@redhat.com)
+- 876662 - Added pretty error message when the incorrect server hostname is
+  used (jason.dobies@redhat.com)
+- 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
+
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.2.beta
 - 
 
