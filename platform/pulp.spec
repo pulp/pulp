@@ -153,7 +153,7 @@ Requires: python-setuptools
 Requires: python-webpy
 Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
-Requires: python-isodate = 0.5.0-1.pulp
+Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
 Requires: grinder >= 0.1.6-1
@@ -208,7 +208,7 @@ Pulp provides replication, access, and accounting for software repositories.
 Summary: Pulp common python packages
 Group: Development/Languages
 Obsoletes: pulp-common
-Requires: python-isodate = 0.5.0-1.pulp
+Requires: python-isodate >= 0.5.0-1.pulp
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -246,7 +246,7 @@ Group: Development/Languages
 Requires: m2crypto
 Requires: python-%{name}-common = %{version}-%{release}
 Requires: python-okaara >= 1.0.26
-Requires: python-isodate = 0.5.0-1.pulp
+Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
 
