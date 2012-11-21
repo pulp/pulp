@@ -2,8 +2,8 @@
 %define pkgname isodate
 
 Name:           python-isodate
-Version:        0.4.4
-Release:        5.pulp%{?dist}
+Version:        0.5.0
+Release:        1.pulp%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
