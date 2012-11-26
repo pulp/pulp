@@ -296,8 +296,9 @@ class StatusCommand(PulpCliCommand):
         consumer_id = load_consumer_id(self.context)
 
         if consumer_id:
-            m = 'This consumer is registered with the ID [%(i)s].'
-            self.prompt.render_success_message(_(m) % {'i' : consumer_id})
+            server = self.context.config['server']['host']
+            m = 'This consumer is registered to the server [%(s)s] with the ID [%(i)s].'
+            self.prompt.render_success_message(_(m) % {'s': server, 'i' : consumer_id})
         else:
             m = 'This consumer is not currently registered.'
             self.prompt.render_paragraph(_(m))
