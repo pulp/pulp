@@ -57,7 +57,7 @@ git_prep()
   do
     pushd $DIR
     echo "Preparing git in repository: $DIR using: $1"
-    git checkout $1 && git pull
+    $GIT checkout $1 && $GIT pull --rebase
     exit_on_failed
     popd
   done
