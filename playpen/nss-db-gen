@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright (c) 2012 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -17,10 +17,11 @@ DIR="/tmp/tmp$RANDOM"
 HOST=`hostname`
 PWDFILE="password"
 SEEDFILE="seed"
-INST_DIR='/tmp/redhat/qpid'
-DB_PASSWORD=""
+INST_DIR='/tmp/redhat/pulp/qpid'
+DB_PASSWORD=$RANDOM
 VALID="12"
 CA_PATH=""
+CA_KEY_PATH=""
 
 echo ""
 echo "Working in: $DIR"
@@ -41,15 +42,20 @@ then
 fi
 echo $INST_DIR
 
-# prompt user for install directory
-while [ "${#DB_PASSWORD}" -eq 0 ]; do
-  echo ""
-  read -sp "Enter NSS database password:" DB_PASSWORD
-done
+# prompt user for the DB password
 echo ""
+echo "Please enter a password for the NSS database.  Generated if not specified."
+echo ""
+read -sp "Enter a password:" ans
+if [ "${#ans}" -gt 0 ]
+then
+  DB_PASSWORD=$ans
+fi
+echo ""
+echo "Using password: [$DB_PASSWORD]"
 
 # prompt user for existing CA.
-# must contain both key & certificate
+# may contain both key & certificate
 echo ""
 echo "Please specify a CA.  Generated if not specified."
 echo ""
@@ -58,6 +64,13 @@ if [ "${#ans}" -gt 0 ]
 then
   CA_PATH=$ans
   echo "Using CA: $CA_PATH"
+  echo ""
+  echo "Please specify the CA key"
+  while [ "${#CA_KEY_PATH}" -eq 0 ]; do
+    read -p "Enter a path: " ans
+    CA_KEY_PATH=$ans
+  done
+  echo "Using CA key: $CA_KEY_PATH"
 fi
 
 # create temporary db directory
@@ -100,21 +113,20 @@ echo "Database created."
 
 # create/import the CA cert
 echo ""
-if [ "$CA_PATH" = "" ]
+if [ "${#CA_PATH}" -eq 0 ]
 then
   echo "Creating CA certificate:"
   SUBJECT="CN=redhat,O=pulp,ST=Alabama,C=US"
   certutil -S -d . -n "ca" -s $SUBJECT -t "TC,," -f $PWDFILE -z $SEEDFILE -x -v $VALID
+  echo "CA created"
 else
-  openssl pkcs12 -export -in $CA_PATH -out ca.p12 -name "ca"
-  pk12util -d . -n "ca" -i ca.p12
-  certutil -M -d . -n "ca" -t "TCu,Cu,Tuw"
+  openssl pkcs12 -export -in $CA_PATH -inkey $CA_KEY_PATH -out ca.p12 -name "ca" -passout file:$PWDFILE
+  pk12util -d . -n "ca" -i ca.p12 -w $PWDFILE -k $PWDFILE
+  certutil -d . -n "ca" -M -t "TCu,Cu,Tuw" -f $PWDFILE
   echo "CA certificate: $CA_PATH, imported"
 fi
 certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
 
-
-echo "CA created"
 
 #
 # =========== BROKER =============
@@ -156,10 +168,10 @@ certutil -A -d client -n "client" -t ",," -a -i client.crt
 echo "Client certificate created."
 
 # export client p12 bundle
-pk12util -d client -n "client" -o client.p12
+pk12util -d client -n "client" -o client.p12 -w $PWDFILE -W $DB_PASSWORD -k $PWDFILE -K $DB_PASSWORD
 
 # using openssl, generate a key & cert using the p12.
-openssl pkcs12 -in client.p12 -nodes -out client.crt
+openssl pkcs12 -in client.p12 -nodes -out client.crt -password file:$PWDFILE
 
 echo "Client key & certificate exported"
 
@@ -188,37 +200,45 @@ echo "Artifacts copied to: $INST_DIR."
 echo ""
 
 #
-# =========== POST =============
-#
-
-echo "Please update /etc/qpidd.conf as follows:"
-echo "
-....
-auth=no
-....
-# SSL
-require-encryption=yes
-ssl-require-client-authentication=yes
-ssl-cert-db=$INST_DIR/nss
-ssl-cert-password-file=$INST_DIR/nss/password
-ssl-cert-name=broker
-ssl-port=5674
-...
-"
-echo ""
-echo "Please configure gofer as follows:"
-echo "
-...
-[messaging]
-url=ssl://<host>:5674
-cacert=$INST_DIR/ca.crt
-clientcert=$INST_DIR/client.crt
-"
-
-#
 # =========== CLEANUP =============
 #
 
 cd /tmp
 rm -rf $DIR
 
+#
+# =========== POST =============
+#
+
+echo "Recommended properties in /etc/qpidd.conf:"
+echo "
+auth=no
+# SSL
+require-encryption=yes
+ssl-require-client-authentication=yes
+ssl-cert-db=$INST_DIR/nss
+ssl-cert-password-file=$INST_DIR/nss/password
+ssl-cert-name=broker
+ssl-port=5671
+...
+"
+echo ""
+echo "Recommended properties in /etc/pulp/server.conf:"
+echo "
+...
+[messaging]
+url=ssl://<host>:5671
+cacert=$INST_DIR/ca.crt
+clientcert=$INST_DIR/client.crt
+"
+
+echo ""
+echo "Recommended properties in /etc/pulp/consumer/consumer.conf:"
+echo "
+...
+[messaging]
+scheme=ssl
+port=5671
+cacert=$INST_DIR/ca.crt
+clientcert=$INST_DIR/client.crt
+"
