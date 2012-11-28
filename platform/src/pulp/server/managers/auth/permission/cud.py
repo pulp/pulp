@@ -117,8 +117,6 @@ class PermissionManager(object):
         if found is None:
             raise MissingResource(resource_uri)
 
-        # To do: Remove respective roles from users
-
         Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
 
     def grant(self, resource, login, operations):
@@ -178,7 +176,7 @@ class PermissionManager(object):
 
         user = User.get_collection().find_one({'login' : login})
         if user is None:
-            raise MissingResource(user=user)
+            raise MissingResource(user=login)
 
         permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:

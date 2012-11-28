@@ -18,6 +18,7 @@ import string
 
 from pulp.server.auth import authorization
 from pulp.server.managers import factory as manager_factory
+import pulp.server.exceptions as exceptions
 
 from pulp.server.db.model.auth import Role
 
@@ -137,6 +138,16 @@ class RoleManagerTests(base.PulpServerTests):
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
         self.permission_manager.revoke(r, u['login'], [o])
         self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+
+    def test_non_existing_user_permission_revoke(self):
+        login = 'non-existing-user-login'
+        r = self._create_resource()
+        o = authorization.READ
+        try:
+            self.permission_manager.revoke(r, login, [o])
+            self.fail('Non-existing user permission revoke did not raise an exception')
+        except exceptions.MissingResource, e:
+            self.assertTrue(login in str(e))
 
     def test_parent_permissions(self):
         u = self._create_user()
