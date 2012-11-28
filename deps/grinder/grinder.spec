@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Nov 28 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.7-1
+- updating grinder (pkilambi@redhat.com)
+
+* Wed Nov 28 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.7-1
 - 858048 - Fix the distro sync to look for stage2 section for mainimage
   (pkilambi@redhat.com)
 
