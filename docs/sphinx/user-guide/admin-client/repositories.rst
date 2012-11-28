@@ -2,12 +2,7 @@ Repositories
 ============
 
 .. explain generic repo section vs. type-specific repo section, such as "pulp-admin rpm repo"
-
-
-Importers / Distributors
-------------------------
-
-.. explain what the deal is with this, how it works, and why it is the way it is
+.. make it clear that this guide covers only generic concepts, maybe with a sphinx warning box or similar
 
 
 Groups

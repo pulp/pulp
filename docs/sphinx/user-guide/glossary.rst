@@ -6,7 +6,7 @@ Glossary
 .. glossary::
 
   agent
-    A daemon (service) running on a consumer.  The agent provides a command
+    A daemon running on a consumer.  The agent provides a command
     & control API which is used by the Pulp server to initiate content changes
     on the consumer.  It also sends scheduled reports concerning consumer
     status and installed content profiles to the Pulp server.
@@ -60,12 +60,3 @@ Glossary
     A list of :term:`content unit` installed on a :term:`consumer`.  The
     structure and content of each item in the profile varies based on the
     unit type.
-    
-  yum
-    The Yellowdog Updater, Modified (YUM) is an rpm based, package manager.
-    It can automatically perform system updates, including dependency analysis
-    and obsolete processing based on "repository" metadata. It can also 
-    perform installation of new packages, removal of old packages and perform
-    queries on the installed and/or available packages among many other 
-    commands/services. yum is similar to other high level package
-    managers like apt-get and smart.

@@ -8,6 +8,7 @@ Contents:
 
    introduction
    installation
+   server
    admin-client/index
    consumer-client/index
    general-reference
@@ -19,4 +20,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`search`
-

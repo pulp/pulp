@@ -2,12 +2,12 @@ Authentication
 ==============
 
 
-Users
------
-
-
 Login / Logout
 --------------
+
+
+Users
+-----
 
 
 Permissions
