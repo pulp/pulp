@@ -1335,56 +1335,26 @@ class RepoAssociateTests(RepoControllersTests):
         super(RepoAssociateTests, self).clean()
         manager_factory.reset()
 
-    def _test_post_no_criteria(self):
-
-        # Test
-        params = {'source_repo_id' : 'source-repo-1'}
-        status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
-
-        # Verify
-        self.assertEqual(200, status)
-
-        #args, kwargs = self.association_manager_mock.associate_from_repo.call_args
-        args = self.association_manager_dummy.args
-        kwargs = self.association_manager_dummy.kwargs
-        self.assertEqual(2, len(args))
-        self.assertEqual(1, len(kwargs))
-        self.assertEqual('source-repo-1', args[0])
-        self.assertEqual('dest-repo-1', args[1])
-        self.assertEqual(None, kwargs['criteria'])
-
-    def _test_post_with_criteria(self):
-
-        # Test
-        overrides = { 'abc':'123' }
-        criteria = {'filters' : {'unit' : {'key-1' : 'fus'}}}
-        params = {'source_repo_id' : 'source-repo-1',
-                  'criteria' : criteria,
-                  'config_overrides' : overrides}
-
-        status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
-
-        # Verify
-        self.assertEqual(200, status)
-
-        #args, kwargs = self.association_manager_mock.associate_from_repo.call_args
-        args = self.association_manager_dummy.args
-        kwargs = self.association_manager_dummy.kwargs
-        self.assertEqual(2, len(args))
-        self.assertEqual(2, len(kwargs))
-        self.assertEqual('source-repo-1', args[0])
-        self.assertEqual('dest-repo-1', args[1])
-        self.assertEqual({'key-1' : 'fus'}, kwargs['criteria'].unit_filters)
-        for k,v in overrides.items():
-            self.assertEqual(kwargs['import_config_override'][k], v)
-
-    def test_post_missing_source_repo(self):
-
-        # Test
+    def test_post_missing_source_repo_id(self):
         status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/')
 
-        # Verify
         self.assertEqual(400, status)
+
+    def test_post_invalid_dest_repo(self):
+        params = {'source_repo_id' : 'source-repo-1',
+                  'criteria' : {},}
+
+        status, body = self.post('/v2/repositories/fake/actions/associate/', params=params)
+
+        self.assertEqual(404, status)
+
+    def test_post_invalid_source_repo(self):
+        params = {'source_repo_id' : 'fake',
+                  'criteria' : {},}
+
+        status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
+
+        self.assertEqual(404, status)
 
     def test_post_unparsable_criteria(self):
 

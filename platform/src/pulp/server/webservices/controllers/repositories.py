@@ -844,6 +844,12 @@ class RepoAssociate(JSONController):
         if source_repo_id is None:
             raise exceptions.MissingValue(['source_repo_id'])
 
+        # Make sure both repositories exist before triggering the task, causing
+        # a 404 instead of letting the task fail
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo_query_manager.get_repository(dest_repo_id)
+        repo_query_manager.get_repository(source_repo_id)
+
         criteria = params.get('criteria', None)
         if criteria is not None:
             try:
