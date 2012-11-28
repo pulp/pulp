@@ -181,9 +181,11 @@ class TaskGroupResource(JSONController):
         link = serialization.link.link_obj('/pulp/api/v2/task_groups/%s/' % call_request_group_id)
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(call_request_group_id=call_request_group_id)
+        found_call_request_ids = set(c.call_request_id for c in call_reports)
         serialized_call_reports = [c.serialize() for c in call_reports]
-        archived_calls = dispatch_history.find_archived_calls(task_group_id=call_request_group_id)
-        serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
+        archived_calls = dispatch_history.find_archived_calls(call_request_group_id=call_request_group_id)
+        serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls
+                                       if c['serialized_call_report']['call_request_id'] not in found_call_request_ids)
         if not serialized_call_reports:
             raise TaskGroupNotFound(call_request_group_id)
         map(lambda r: r.update(link), serialized_call_reports)
