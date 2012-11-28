@@ -17,7 +17,7 @@ import base
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
-from pulp.server.db.model.auth import User
+from pulp.server.db.model.auth import User, Role
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.exceptions as exceptions
 
@@ -36,6 +36,7 @@ class UserManagerTests(base.PulpServerTests):
 
         self.user_manager = manager_factory.user_manager()
         self.user_query_manager = manager_factory.user_query_manager()
+        self.role_manager = manager_factory.role_manager()
         self.cert_generation_manager = manager_factory.cert_generation_manager()
 
 
@@ -48,6 +49,7 @@ class UserManagerTests(base.PulpServerTests):
         base.PulpServerTests.clean(self)
 
         User.get_collection().remove()
+        Role.get_collection().remove()
 
     def _test_generate_user_certificate(self):
 
@@ -109,7 +111,7 @@ class UserManagerTests(base.PulpServerTests):
         users = self.user_query_manager.find_all()
 
         # Verify
-        assert(len(users) == 1)
+        self.assertTrue(len(users) == 1)
 
 
     def test_delete(self):
@@ -123,7 +125,26 @@ class UserManagerTests(base.PulpServerTests):
 
         # Verify
         user = self.user_query_manager.find_by_login(login)
-        assert(user is None)
+        self.assertTrue(user is None)
+        
+    def test_delete_last_superuser(self):
+        # Setup
+        login = 'admin'
+        password = 'admin'
+
+        # test
+        self.role_manager.create_role(role_id=self.role_manager.super_user_role)
+        self.user_manager.create_user(login, password, roles = [self.role_manager.super_user_role])
+        try:
+            self.user_manager.delete_user(login)
+            self.fail('Last superuser delete did not raise an exception')
+        except exceptions.PulpDataException, e:
+            self.assertTrue("last superuser" in str(e))
+            self.assertTrue(login in str(e))
+
+        # Verify
+        user = self.user_query_manager.find_by_login(login)
+        self.assertTrue(user is not None)
 
     def test_update_password(self):
         # Setup
