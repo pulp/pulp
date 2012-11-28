@@ -65,23 +65,3 @@ class ArchivedCallCreateTests(ArchivedCallTests):
         archived_calls = history.find_archived_calls(task_group_id='456')
         self.assertEqual(archived_calls.count(), 1)
 
-
-class ArchivedCallReaperTests(ArchivedCallTests):
-
-    def setUp(self):
-        super(ArchivedCallReaperTests, self).setUp()
-        self.original_lifetime = config.config.get('tasks', 'archived_call_lifetime')
-        config.config.set('tasks', 'archived_call_lifetime', '0')
-
-    def tearDown(self):
-        super(ArchivedCallReaperTests,self).tearDown()
-        config.config.set('tasks', 'archived_call_lifetime', self.original_lifetime)
-
-    def test_reaper(self):
-        call_request, call_report = self._generate_request_and_report()
-        history.archive_call(call_report, call_request)
-        self.assertEqual(self.archived_call_collection.find().count(), 1)
-
-        history.purge_archived_tasks()
-        self.assertEqual(self.archived_call_collection.find().count(), 0)
-

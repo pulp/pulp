@@ -8,9 +8,9 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 from cStringIO import StringIO
 import os
-import unittest
 
 from mock import call, inPy3k, MagicMock, patch
 
@@ -102,39 +102,6 @@ class MigrationTest(base.PulpServerTests):
         super(MigrationTest, self).clean()
         # Make sure each test doesn't have any lingering MigrationTrackers
         MigrationTracker.get_collection().remove({})
-
-
-class ApplicationTest(MigrationTest):
-    @patch('pkg_resources.iter_entry_points', iter_entry_points)
-    @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
-           data.test_migration_packages.platform)
-    def test__initialize_pulp(self):
-        """
-        _initialize_pulp() should raise an Exception if any of the packages aren't at their latest
-        version.
-        """
-        # It is unusual to put an import in the middle of a test, but unfortunately this import will
-        # call start_logging() before our test super class can override the logging settings, and
-        # thus all the logging will be done to /var/log instead of to /tmp. Moving the import here
-        # from the top of the file solves the problem, though not elegantly.
-        from pulp.server.webservices.application import _initialize_pulp
-        # Make sure we start out with a clean slate
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
-        # Make sure that our mock works. There are three valid packages.
-        self.assertEquals(len(models.get_migration_packages()), 4)
-        # Set all versions back to 0
-        for package in models.get_migration_packages():
-            package._migration_tracker.version = 0
-            package._migration_tracker.save()
-        # Let's make sure we raise the exception
-        try:
-            _initialize_pulp()
-            self.fail('_initialize_pulp() should have raised an Exception, but did not.')
-        except Exception, e:
-            self.assertEqual(str(e), ('There are unapplied migrations. Please '
-                                      'run the database management utility to apply them.'))
-        # Now we should be able to call _initialize_pulp() without raising Exceptions
-        _initialize_pulp()
 
 
 class TestManageDB(MigrationTest):

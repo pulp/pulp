@@ -37,7 +37,7 @@ set_version()
 tito_tag()
 {
   pushd $1
-  $TITO tag $TITO_TAG_FLAGS && $GIT push && $GIT push --tags
+  $TITO tag $TITO_TAG_FLAGS && $GIT push origin HEAD && $GIT push --tags
   exit_on_failed
   popd
 }
@@ -52,17 +52,28 @@ git_tag()
 
 git_prep()
 {
+  verify_branch $1
   for DIR in $GIT_ROOTS
   do
     pushd $DIR
     echo "Preparing git in repository: $DIR using: $1"
-    $GIT fetch --tags && git checkout $1
+    $GIT checkout $1 && $GIT pull --rebase
     exit_on_failed
-    $GIT tag -l | grep $1
-    if [ $? != 0 ]; then
-      git pull
+    popd
+  done
+}
+
+verify_branch()
+{
+  for DIR in $GIT_ROOTS
+  do
+    pushd $DIR
+    $GIT fetch --tags
+    $GIT tag -l $1 | grep $1 >& /dev/null
+    if [ $? = 0 ]; then
+      echo "[$1] must be a branch."
+      exit 1
     fi
-    exit_on_failed
     popd
   done
 }
@@ -85,7 +96,7 @@ OPTIONS:
    -h      Show this message
    -v      The pulp version and release. Eg: 2.0.6-1
    -a      Auto accept the changelog
-   -b      Checkout the specified branch/tag
+   -b      Checkout the specified branch
 EOF
 }
 
@@ -120,6 +131,8 @@ then
   if [ $ANS = "y" ]
   then
     git_prep $BRANCH
+    echo ""
+    echo ""
   fi
 fi
 
@@ -131,6 +144,8 @@ then
 fi
 
 # confirmation
+echo ""
+echo ""
 echo "Using:"
 echo "  version [$VERSION]"
 echo "  tito options: $TITO_TAG_FLAGS"
