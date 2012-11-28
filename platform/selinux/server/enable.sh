@@ -27,8 +27,12 @@ if /usr/sbin/selinuxenabled ; then
             boolean -m --on httpd_tmp_exec
 _EOF
 done
-semanage port -l | grep amqp_port_t | grep tcp | grep 5674 > /dev/null || \
-    /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5674
-semanage port -l | grep amqp_port_t | grep udp | grep 5674 > /dev/null || \
-    /usr/sbin/semanage port -a -t amqp_port_t -p udp 5674
+semanage port -l | grep amqp_port_t | grep tcp | grep 5672 > /dev/null || \
+    /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5672
+semanage port -l | grep amqp_port_t | grep udp | grep 5672 > /dev/null || \
+    /usr/sbin/semanage port -a -t amqp_port_t -p udp 5672
+semanage port -l | grep amqp_port_t | grep tcp | grep 5671 > /dev/null || \
+    /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5671
+semanage port -l | grep amqp_port_t | grep udp | grep 5671 > /dev/null || \
+    /usr/sbin/semanage port -a -t amqp_port_t -p udp 5671
 fi
