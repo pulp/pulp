@@ -1354,7 +1354,7 @@ class RepoAssociateTests(RepoControllersTests):
 
         status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
 
-        self.assertEqual(404, status)
+        self.assertEqual(400, status)
 
     def test_post_unparsable_criteria(self):
 
