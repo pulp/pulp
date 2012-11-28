@@ -147,7 +147,7 @@ class RoleManagerTests(base.PulpServerTests):
             self.permission_manager.revoke(r, login, [o])
             self.fail('Non-existing user permission revoke did not raise an exception')
         except exceptions.MissingResource, e:
-            assert(login in str(e))
+            self.assertTrue(login in str(e))
 
     def test_parent_permissions(self):
         u = self._create_user()
