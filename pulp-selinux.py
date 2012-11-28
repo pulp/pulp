@@ -19,7 +19,7 @@ import sys
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 PLATFORM_DIR = os.path.join(BASE_DIR, "platform")
 SELINUX_DIR = os.path.join(PLATFORM_DIR, "selinux", "server")
-RPM_BASE_DIR = os.path.join(BASE_DIR, '../../pulp_rpm')
+RPM_BASE_DIR = os.path.join(BASE_DIR, '..', '..', 'pulp_rpm')
 RPM_SUPPORT_DIR = os.path.join(RPM_BASE_DIR, "pulp_rpm")
 
 LABELS = {
