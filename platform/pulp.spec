@@ -156,7 +156,6 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: grinder >= 0.1.6-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
