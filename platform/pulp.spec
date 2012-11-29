@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.9.beta
+Release: 0.10.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -407,6 +407,34 @@ exit 0
 %endif
 
 %changelog
+* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
+- 862290 - Added documentation for the new ListRepositoriesCommand methods
+  (jason.dobies@redhat.com)
+- 881639 - more programmatic. (jortel@redhat.com)
+- 881389 - fixed rpm consumer bind to raise an error on non existing repos
+  (skarmark@redhat.com)
+- 827620 - updated repo, repo_group, consumer and user apis to use execute
+  instead of execute_ok (skarmark@redhat.com)
+- 878620 - fixed task group resource to return only tasks in the group instead
+  of all tasks ever run... :P (jason.connor@gmail.com)
+- 866491 - Change the source repo ID validation to be a 400, not 404
+  (jason.dobies@redhat.com)
+- 866491 - Check for repo existence and raise a 404 if not found instead of
+  leaving the task to do it (jason.dobies@redhat.com)
+- 881120 - strip the private key from returned consumer object.
+  (jortel@redhat.com)
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+- 877914 - updating old file links from selinux installation and un-
+  installation (skarmark@redhat.com)
+- 873786 - updating enable.sh for correct amqp ports (skarmark@redhat.com)
+- 878654 - fixed error message when revoking permission from a non-existing
+  user and added unit tests (skarmark@redhat.com)
+- added database collection reaper system that will wake up periodically and
+  remove old documents from configured collections (jason.connor@gmail.com)
+- 876662 - Added middleware exception handling for when the client cannot
+  resolve the server hostname (jason.dobies@redhat.com)
+
 * Mon Nov 26 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.9.beta
 - 
 
