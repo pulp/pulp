@@ -62,7 +62,7 @@ Server
 
 ::
 
-  $ sudo yum install pulp-server
+  $ sudo yum group install pulp-server
 
 2. Update ``/etc/pulp/server.conf`` to reflect the hostname of the server.
 
@@ -73,9 +73,6 @@ Server
    ...
    [server]
    server_name: localhost
-
-.. warning::
- SELinux needs to be disabled or set to permissive for RHEL-5.
 
 3. Configure the server in /etc/pulp/server.conf. Most defaults will work, but
 these are sections you might consider looking at before proceeding. Each section
@@ -129,7 +126,7 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 ::
 
-  $ sudo yum install pulp-admin
+  $ sudo yum group install pulp-admin
 
 2. Update the admin client configuration to point to the Pulp server. Keep in mind
    that because of the SSL verification, this should be the fully qualified name of the server,
@@ -161,7 +158,7 @@ repositories.
 
 ::
 
-  $ sudo yum install pulp-consumer
+  $ sudo yum group install pulp-consumer
 
 2. Update the consumer client configuration to point to the Pulp server. Keep in mind
    that because of the SSL verification, this should be the fully qualified name of the server,
