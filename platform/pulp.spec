@@ -187,7 +187,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_bindir}/pulp-manage-db
-%{_bindir}/pulp-nss-db-gen
+%{_bindir}/pulp-qpid-ssl-cfg
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
