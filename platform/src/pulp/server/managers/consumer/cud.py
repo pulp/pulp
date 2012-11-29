@@ -89,7 +89,6 @@ class ConsumerManager(object):
         Consumer.get_collection().save(create_me, safe=True)
 
         factory.consumer_history_manager().record_event(id, 'consumer_registered')
-        create_me.certificate = Bundle.join(key, crt)
         return create_me
 
 
