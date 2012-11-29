@@ -53,7 +53,6 @@ Repositories
 4. QPID RPMs are not available in the default CentOS repositories. Instructions
    on building those RPMs can be found at :ref:`centos-build-qpid-rpms`.
 
-
 Server
 ------
 .. configure qpid with SSL (jortel knows about this, might have a wiki page about it)
@@ -63,7 +62,7 @@ Server
 
 ::
 
-  $ sudo yum install pulp-rpm-server
+  $ sudo yum install pulp-server
 
 2. Update ``/etc/pulp/server.conf`` to reflect the hostname of the server.
 
@@ -130,7 +129,7 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 ::
 
-  $ sudo yum install pulp-rpm-admin-client
+  $ sudo yum install pulp-admin
 
 2. Update the admin client configuration to point to the Pulp server. Keep in mind
    that because of the SSL verification, this should be the fully qualified name of the server,
@@ -162,7 +161,7 @@ repositories.
 
 ::
 
-  $ sudo yum install pulp-rpm-consumer-client pulp-rpm-agent
+  $ sudo yum install pulp-consumer
 
 2. Update the consumer client configuration to point to the Pulp server. Keep in mind
    that because of the SSL verification, this should be the fully qualified name of the server,
