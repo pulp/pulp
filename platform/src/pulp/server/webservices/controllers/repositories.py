@@ -363,7 +363,8 @@ class RepoImporter(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -387,7 +388,8 @@ class RepoImporter(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class SyncScheduleCollection(JSONController):
@@ -475,7 +477,8 @@ class SyncScheduleResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, importer_id, schedule_id):
@@ -687,7 +690,8 @@ class PublishScheduleResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, distributor_id, schedule_id):
@@ -932,7 +936,9 @@ class RepoImportUpload(JSONController):
             [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
             resources=resources, tags=tags, archive=True)
 
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        result.update(serialization.link.current_link_obj())
+        return self.ok(result)
 
 class RepoResolveDependencies(JSONController):
 

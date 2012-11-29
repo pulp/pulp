@@ -167,7 +167,9 @@ class UserResource(JSONController):
                                    [login, delta],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        result.update(serialization.link.current_link_obj())
+        return self.ok(result)
 
 
 class UserSearch(SearchController):
