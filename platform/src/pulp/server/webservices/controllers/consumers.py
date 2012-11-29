@@ -243,14 +243,20 @@ class Bindings(JSONController):
         @return: The list of call_reports
         @rtype: list
         """
-        # validate resources
-        manager = managers.consumer_manager()
-        manager.get_consumer(consumer_id)
-        # bind
+        # validate consumer
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        # get other options and validate them
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
         options = body.get('options', {})
+
+        managers.repo_query_manager().get_repository(repo_id)
+        managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
+
+        # bind
         call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
