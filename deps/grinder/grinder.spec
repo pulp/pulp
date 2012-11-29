@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Nov 29 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.8-1
+- updating grinder to 0.1.8 (pkilambi@redhat.com)
+
+* Thu Nov 29 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.8-1
 - fixing distro syncs to not bail if stage2 is not in treeinfo
   (pkilambi@redhat.com)
 
