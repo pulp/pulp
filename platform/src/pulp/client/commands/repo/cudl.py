@@ -213,6 +213,11 @@ class ListRepositoriesCommand(PulpCliCommand):
             self.display_other_repositories(**kwargs)
 
     def display_repositories(self, **kwargs):
+        """
+        Default formatting for displaying the repositories returned from the
+        get_repositories method. This call may be overridden to customize
+        the repository list appearance.
+        """
         self.prompt.render_title(self.repos_title)
 
         # Default flags to render_document_list
@@ -235,6 +240,11 @@ class ListRepositoriesCommand(PulpCliCommand):
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
 
     def display_other_repositories(self, **kwargs):
+        """
+        Default formatting for displaying the repositories returned from the
+        get_other_repositories method. This call may be overridden to customize
+        the repository list appearance.
+        """
         self.prompt.render_title(self.other_repos_title)
 
         repo_list = self.get_other_repositories(None, **kwargs)
@@ -244,8 +254,73 @@ class ListRepositoriesCommand(PulpCliCommand):
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
 
     def get_repositories(self, query_params, **kwargs):
+        """
+        Subclasses will want to override this to return a subset of repositories
+        based on the goals of the subclass. For instance, a subclass whose
+        responsibility is to display puppet repositories will only return
+        the list of puppet repositories from this call.
+
+        If not overridden, all repositories will be returned by default.
+
+        The query_params parameter is a dictionary of tweaks to what data should
+        be included for each repository. For example, this will contain the
+        flags necessary to control whether or not to include importer and
+        distributor information. In most cases, the overridden method will
+        want to pass these directly to the bindings which will format them
+        appropriately for the server-side call to apply them.
+
+        @param query_params: see above
+        @type  query_params: dict
+        @param kwargs: all keyword args passed from the CLI framework into this
+               command, including any that were added by a subclass
+        @type  kwargs: dict
+
+        @return: list of repositories to display as the first-class repositories
+                 in this list command; the format should be the same as what is
+                 returned from the server
+        @rtype: list
+        """
         repo_list = self.context.server.repo.repositories(query_params).response_body
         return repo_list
 
     def get_other_repositories(self, query_params, **kwargs):
+        """
+        Subclasses may want to override this to display all other repositories
+        that do not match what the subclass goals are. For example, a subclass
+        of this command that wants to display puppet repositories will return
+        all non-puppet repositories from this call. These repositories will
+        be displayed separately for the user so the user has the ability to see
+        the full repository list from this command if so desired.
+
+        While not strongly required, the expectation is that this call will be
+        the inverse of what is returned from get_repositories. Put another way,
+        the union of these results and get_repositories should be the full list
+        of repositories in the Pulp server, while their intersection should be
+        empty.
+
+        This call will only be made if the user requests all repositories. If
+        that flag is not specified, this call is skipped entirely.
+
+        If not overridden, an empty list will be returned to indicate there
+        were no extra repositories.
+
+        The query_params parameter is a dictionary of tweaks to what data should
+        be included for each repository. For example, this will contain the
+        flags necessary to control whether or not to include importer and
+        distributor information. In most cases, the overridden method will
+        want to pass these directly to the bindings which will format them
+        appropriately for the server-side call to apply them.
+
+        @param query_params: see above
+        @type  query_params: dict
+        @param kwargs: all keyword args passed from the CLI framework into this
+               command, including any that were added by a subclass
+        @type  kwargs: dict
+
+        @return: list of repositories to display as non-matching repositories
+                 in this list command; the format should be the same as what is
+                 returned from the server, the display method will take care
+                 of choosing which data to display to the user.
+        @rtype: list
+        """
         return []
