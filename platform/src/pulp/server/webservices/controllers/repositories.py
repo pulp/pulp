@@ -926,6 +926,7 @@ class RepoImportUpload(JSONController):
             resources=resources, tags=tags, archive=True)
 
         result = execution.execute(call_request)
+        result.update(serialization.link.current_link_obj())
         return self.ok(result)
 
 class RepoResolveDependencies(JSONController):

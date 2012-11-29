@@ -168,6 +168,7 @@ class UserResource(JSONController):
                                    resources=resources,
                                    tags=tags)
         result = execution.execute(call_request)
+        result.update(serialization.link.current_link_obj())
         return self.ok(result)
 
 
