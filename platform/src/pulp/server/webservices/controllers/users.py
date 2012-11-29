@@ -167,7 +167,8 @@ class UserResource(JSONController):
                                    [login, delta],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class UserSearch(SearchController):
