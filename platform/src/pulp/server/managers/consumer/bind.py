@@ -156,8 +156,7 @@ class BindManager(object):
         bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
         bind = collection.find_one(bind_id)
         if bind is None:
-            key = '.'.join((consumer_id, repo_id, distributor_id))
-            raise MissingResource(key)
+            raise MissingResource(bind_id)
         return bind
 
     def find_all(self):
