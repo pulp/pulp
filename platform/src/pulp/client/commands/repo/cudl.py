@@ -146,29 +146,86 @@ class UpdateRepositoryCommand(PulpCliCommand):
 class ListRepositoriesCommand(PulpCliCommand):
     """
     Lists all repositories in the Pulp server.
+
+    This command is set up to make a distinction between different "types" of
+    repositories. The intention is to display details on repositories related
+    to a particular support bundle, but also a brief indicator to the fact that
+    other repositories exist in Pulp that are not related to the bundle. This
+    second batch of repositories is referred to as, for lack of a better term,
+    "other repositories".
+
+    With this distinction, there are two methods to override that will return
+    the two lists of repositories. If there is no desire to support the
+    other repositories, the get_other_repositories method need not be overridden.
+    That call will only be made if the --all flag is specified.
+
+    Since the term "other repositories" is wonky, the header title for both
+    the matching repositories and other repositories can be customized at
+    instantiation time. For instance, the puppet support bundle may elect to
+    set the title to "Puppet Repositories".
+
+    :ivar repos_title: header to use when displaying the details of the first
+          class repositories (returned from get_repositories)
+    :type repos_title: str
+
+    :ivar other_repos_title: header to use when displaying the list of other
+          repositories
+    :type other_repos_title: str
+
+    :ivar include_all_flag: if true, the --all flag will be included to support
+          displaying other repositories
+    :type include_all_flag: bool
     """
 
-    def __init__(self, context, name='list', description=DESC_LIST, method=None):
+    def __init__(self, context, name='list', description=DESC_LIST, method=None,
+                 repos_title=None, other_repos_title=None, include_all_flag=True):
         self.context = context
         self.prompt = context.prompt
 
         if method is None:
             method = self.run
 
+        self.repos_title = repos_title
+        if self.repos_title is None:
+            self.repos_title = _('Repositories')
+
+        self.other_repos_title = other_repos_title
+        if self.other_repos_title is None:
+            self.other_repos_title = _('Other Pulp Repositories')
+
         super(ListRepositoriesCommand, self).__init__(name, description, method)
 
-        self.add_option(PulpCliFlag('--details', _('if specified, detailed configuration information is displayed for each repository')))
-        self.add_option(PulpCliOption('--fields', _('comma-separated list of repository fields; if specified, only the given fields will displayed'), required=False))
+        d = _('if specified, detailed configuration information is displayed for each repository')
+        self.add_option(PulpCliFlag('--details', d))
+
+        d = _('comma-separated list of repository fields; if specified, only the given fields will displayed')
+        self.add_option(PulpCliOption('--fields', d, required=False))
+
+        self.supports_all = include_all_flag
+        if self.supports_all:
+            d = _('if specified, information on all Pulp repositories, regardless of type, will be displayed')
+            self.add_option(PulpCliFlag('--all', d, aliases=['-a']))
 
     def run(self, **kwargs):
-        self.prompt.render_title(_('Repositories'))
+        self.display_repositories(**kwargs)
+
+        if kwargs.get('all', False):
+            self.display_other_repositories(**kwargs)
+
+    def display_repositories(self, **kwargs):
+        """
+        Default formatting for displaying the repositories returned from the
+        get_repositories method. This call may be overridden to customize
+        the repository list appearance.
+        """
+        self.prompt.render_title(self.repos_title)
 
         # Default flags to render_document_list
         filters = ['id', 'display_name', 'description', 'content_unit_count']
         order = filters
 
         query_params = {}
-        if kwargs['details'] == True:
+        if kwargs['details']:
             filters.append('notes')
             for p in ('importers', 'distributors'):
                 query_params[p] = True
@@ -182,6 +239,88 @@ class ListRepositoriesCommand(PulpCliCommand):
         repo_list = self.get_repositories(query_params, **kwargs)
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
 
+    def display_other_repositories(self, **kwargs):
+        """
+        Default formatting for displaying the repositories returned from the
+        get_other_repositories method. This call may be overridden to customize
+        the repository list appearance.
+        """
+        self.prompt.render_title(self.other_repos_title)
+
+        repo_list = self.get_other_repositories(None, **kwargs)
+
+        filters = ['id', 'display_name']
+        order = filters
+        self.prompt.render_document_list(repo_list, filters=filters, order=order)
+
     def get_repositories(self, query_params, **kwargs):
+        """
+        Subclasses will want to override this to return a subset of repositories
+        based on the goals of the subclass. For instance, a subclass whose
+        responsibility is to display puppet repositories will only return
+        the list of puppet repositories from this call.
+
+        If not overridden, all repositories will be returned by default.
+
+        The query_params parameter is a dictionary of tweaks to what data should
+        be included for each repository. For example, this will contain the
+        flags necessary to control whether or not to include importer and
+        distributor information. In most cases, the overridden method will
+        want to pass these directly to the bindings which will format them
+        appropriately for the server-side call to apply them.
+
+        @param query_params: see above
+        @type  query_params: dict
+        @param kwargs: all keyword args passed from the CLI framework into this
+               command, including any that were added by a subclass
+        @type  kwargs: dict
+
+        @return: list of repositories to display as the first-class repositories
+                 in this list command; the format should be the same as what is
+                 returned from the server
+        @rtype: list
+        """
         repo_list = self.context.server.repo.repositories(query_params).response_body
         return repo_list
+
+    def get_other_repositories(self, query_params, **kwargs):
+        """
+        Subclasses may want to override this to display all other repositories
+        that do not match what the subclass goals are. For example, a subclass
+        of this command that wants to display puppet repositories will return
+        all non-puppet repositories from this call. These repositories will
+        be displayed separately for the user so the user has the ability to see
+        the full repository list from this command if so desired.
+
+        While not strongly required, the expectation is that this call will be
+        the inverse of what is returned from get_repositories. Put another way,
+        the union of these results and get_repositories should be the full list
+        of repositories in the Pulp server, while their intersection should be
+        empty.
+
+        This call will only be made if the user requests all repositories. If
+        that flag is not specified, this call is skipped entirely.
+
+        If not overridden, an empty list will be returned to indicate there
+        were no extra repositories.
+
+        The query_params parameter is a dictionary of tweaks to what data should
+        be included for each repository. For example, this will contain the
+        flags necessary to control whether or not to include importer and
+        distributor information. In most cases, the overridden method will
+        want to pass these directly to the bindings which will format them
+        appropriately for the server-side call to apply them.
+
+        @param query_params: see above
+        @type  query_params: dict
+        @param kwargs: all keyword args passed from the CLI framework into this
+               command, including any that were added by a subclass
+        @type  kwargs: dict
+
+        @return: list of repositories to display as non-matching repositories
+                 in this list command; the format should be the same as what is
+                 returned from the server, the display method will take care
+                 of choosing which data to display to the user.
+        @rtype: list
+        """
+        return []
