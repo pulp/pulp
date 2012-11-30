@@ -37,7 +37,7 @@ class RepoSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt # for easier access
 
-        self.add_command(repo_commands.ListRepositoriesCommand(context))
+        self.add_command(repo_commands.ListRepositoriesCommand(context, include_all_flag=False))
 
         # Subsections
         self.add_subsection(RepoGroupSection(context))

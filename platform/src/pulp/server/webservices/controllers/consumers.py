@@ -243,14 +243,20 @@ class Bindings(JSONController):
         @return: The list of call_reports
         @rtype: list
         """
-        # validate resources
-        manager = managers.consumer_manager()
-        manager.get_consumer(consumer_id)
-        # bind
+        # validate consumer
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        # get other options and validate them
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
         options = body.get('options', {})
+
+        managers.repo_query_manager().get_repository(repo_id)
+        managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
+
+        # bind
         call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
@@ -732,7 +738,8 @@ class UnitInstallScheduleResource(JSONController):
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
 
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class UnitUpdateScheduleCollection(JSONController):
@@ -858,8 +865,8 @@ class UnitUpdateScheduleResource(JSONController):
                                    archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class UnitUninstallScheduleCollection(JSONController):
@@ -986,7 +993,8 @@ class UnitUninstallScheduleResource(JSONController):
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
 
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 # -- web.py application -------------------------------------------------------
 
