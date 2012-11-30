@@ -363,7 +363,8 @@ class RepoImporter(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -387,7 +388,8 @@ class RepoImporter(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class SyncScheduleCollection(JSONController):
@@ -475,7 +477,8 @@ class SyncScheduleResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, importer_id, schedule_id):
@@ -687,7 +690,8 @@ class PublishScheduleResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, distributor_id, schedule_id):
@@ -844,6 +848,17 @@ class RepoAssociate(JSONController):
         if source_repo_id is None:
             raise exceptions.MissingValue(['source_repo_id'])
 
+        # A 404 only applies to things in the URL, so the destination repo
+        # check allows the MissingResource to bubble up, but if the source
+        # repo doesn't exist, it's considered bad data.
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo_query_manager.get_repository(dest_repo_id)
+
+        try:
+            repo_query_manager.get_repository(source_repo_id)
+        except exceptions.MissingResource:
+            raise exceptions.InvalidValue(['source_repo_id'])
+
         criteria = params.get('criteria', None)
         if criteria is not None:
             try:
@@ -921,7 +936,9 @@ class RepoImportUpload(JSONController):
             [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
             resources=resources, tags=tags, archive=True)
 
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        result.update(serialization.link.current_link_obj())
+        return self.ok(result)
 
 class RepoResolveDependencies(JSONController):
 

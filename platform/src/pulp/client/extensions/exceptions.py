@@ -25,6 +25,7 @@ to catch and display an exception using the consistent formatting but still
 react to it in the extension itself.
 """
 
+from _socket import gaierror
 from gettext import gettext as _
 import logging
 from M2Crypto import X509
@@ -45,6 +46,7 @@ CODE_PERMISSIONS_EXCEPTION = os.EX_NOPERM
 CODE_UNEXPECTED = os.EX_SOFTWARE
 CODE_INVALID_CONFIG = os.EX_DATAERR
 CODE_WRONG_HOST = os.EX_DATAERR
+CODE_UNKNOWN_HOST = os.EX_CONFIG
 
 LOG = logging.getLogger(__name__)
 
@@ -81,6 +83,7 @@ class ExceptionHandler:
             (PermissionsException, self.handle_permission),
             (InvalidConfig,        self.handle_invalid_config),
             (WrongHost,            self.handle_wrong_host),
+            (gaierror,             self.handle_unknown_host),
         )
 
         handle_func = self.handle_unexpected
@@ -167,8 +170,8 @@ class ExceptionHandler:
             msg = msg % {'i' : e.extra_data['resource_id']}
         elif 'reasons' in e.extra_data:
             msg = _('The requested operation conflicts with one or more operations '
-                  'already queued for the resource. The following operations on the '
-                  'specified resources caused the request to be rejected:\n\n')
+                    'already queued for the resource. The following operations on the '
+                    'specified resources caused the request to be rejected:\n\n')
             msg = msg
 
             for r in e.extra_data['reasons']:
@@ -177,8 +180,8 @@ class ExceptionHandler:
                 msg += _('Operation: %(o)s') % {'o' : r['operation']}
         else:
             msg = _('The requested operation could not execute due to an unexpected '
-                  'conflict on the server. More information can be found in the '
-                  'client log file %(l)s.')
+                    'conflict on the server. More information can be found in the '
+                    'client log file %(l)s.')
             msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
@@ -197,7 +200,7 @@ class ExceptionHandler:
         # the exception dump to the log file
 
         msg = _('An internal error occurred on the Pulp server. More information '
-              'can be found in the client log file %(l)s.')
+                'can be found in the client log file %(l)s.')
         msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
@@ -213,7 +216,7 @@ class ExceptionHandler:
         self._log_client_exception(e)
 
         msg = _('An error occurred attempting to contact the server. More information '
-              'can be found in the client log file %(l)s.')
+                'can be found in the client log file %(l)s.')
         msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)
@@ -279,8 +282,9 @@ class ExceptionHandler:
 
     def handle_wrong_host(self, e):
         """
-        Handles the client connection failing because of an SSL host name
-        resolution error.
+        Handles the client connection failing because the server reported a
+        different hostname in its SSL certificate than the client used to
+        contact the server.
 
         @return: appropriate exit code for this error
         """
@@ -303,6 +307,24 @@ class ExceptionHandler:
         self.prompt.render_failure_message(msg)
         return CODE_WRONG_HOST
 
+    def handle_unknown_host(self, e):
+        """
+        Handles the client not being able to resolve the configured hostname
+        for the server.
+
+        @return: appropriate exit code for this error
+        """
+
+        self._log_client_exception(e)
+
+        msg = _('Unable to find host [%(server)s]. Check the client '
+                'configuration to ensure the server hostname is correct.')
+        data = {'server' : self.config['server']['host']}
+        msg = msg % data
+
+        self.prompt.render_failure_message(msg)
+        return CODE_UNKNOWN_HOST
+
     def handle_unexpected(self, e):
         """
         Catch-all to handle any exception that wasn't explicitly handled by
@@ -314,7 +336,7 @@ class ExceptionHandler:
         self._log_client_exception(e)
 
         msg = _('An unexpected error has occurred. More information '
-              'can be found in the client log file %(l)s.')
+                'can be found in the client log file %(l)s.')
         msg = msg % {'l' : self._log_filename()}
 
         self.prompt.render_failure_message(msg)

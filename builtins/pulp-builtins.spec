@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 2.0.6
-Release: 0.9.beta
+Release: 0.10.beta
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -93,6 +93,10 @@ client capabilities.
 
 
 %changelog
+* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+
 * Mon Nov 26 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.9.beta
 - 878107 - consumer status now mentions which pulp server the consumer is
   registered to as well (skarmark@redhat.com)
