@@ -65,6 +65,9 @@ rm -rf %{buildroot}
 %attr(640,root,root) %{_sysconfdir}/rhsm/ca/*.pem
 
 %changelog
+* Mon Dec 03 2012 Michael Hrivnak <mhrivnak@redhat.com> 1.8.0-1.pulp
+- updating to latest and greatest python-rhsm (mhrivnak@redhat.com)
+
 * Tue Nov 20 2012 Devan Goodwin <dgoodwin@rm-rf.ca> 1.8.0-1
 - Reversioning to 1.8.x stream.
 
