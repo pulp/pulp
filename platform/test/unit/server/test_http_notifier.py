@@ -14,18 +14,17 @@
 import httplib
 import mock
 import time
-import unittest
 from pulp.server.compat import json
 
-from pulp.server.event import rest_api
+from pulp.server.event import http
 from pulp.server.event.data import Event
 
 import base
 
 
-class RestApiNotifierTests(base.PulpAsyncServerTests):
+class TestHTTPNotifierTests(base.PulpAsyncServerTests):
 
-    @mock.patch('pulp.server.event.rest_api._create_connection')
+    @mock.patch('pulp.server.event.http._create_connection')
     def test_handle_event(self, mock_create):
         # Setup
         notifier_config = {
@@ -45,7 +44,7 @@ class RestApiNotifierTests(base.PulpAsyncServerTests):
         mock_create.return_value = mock_connection
 
         # Test
-        rest_api.handle_event(notifier_config, event)
+        http.handle_event(notifier_config, event)
         time.sleep(.5) # handle works in a thread so give it a bit to finish
 
         # Verify
@@ -67,7 +66,7 @@ class RestApiNotifierTests(base.PulpAsyncServerTests):
         headers = request_kwargs['headers']
         self.assertTrue('Authorization' in headers)
 
-    @mock.patch('pulp.server.event.rest_api._create_connection')
+    @mock.patch('pulp.server.event.http._create_connection')
     def test_handle_event_with_error(self, mock_create):
         # Setup
         notifier_config = {'url' : 'https://localhost/api/'}
@@ -83,34 +82,34 @@ class RestApiNotifierTests(base.PulpAsyncServerTests):
         mock_create.return_value = mock_connection
 
         # Test
-        rest_api.handle_event(notifier_config, event) # should not error
+        http.handle_event(notifier_config, event) # should not error
         time.sleep(.5)
 
         # Verify
         self.assertEqual(1, mock_create.call_count)
         self.assertEqual(1, mock_connection.request.call_count)
 
-    @mock.patch('pulp.server.event.rest_api._create_connection')
+    @mock.patch('pulp.server.event.http._create_connection')
     def test_handle_event_missing_url(self, mock_create):
         # Test
-        rest_api.handle_event({}, Event('type-1', {})) # should not error
+        http.handle_event({}, Event('type-1', {})) # should not error
 
         # Verify
         self.assertEqual(0, mock_create.call_count)
 
-    @mock.patch('pulp.server.event.rest_api._create_connection')
+    @mock.patch('pulp.server.event.http._create_connection')
     def test_handle_event_unparsable_url(self, mock_create):
         # Test
-        rest_api.handle_event({'url' : '!@#$%'}, Event('type-1', {})) # should not error
+        http.handle_event({'url' : '!@#$%'}, Event('type-1', {})) # should not error
 
         # Verify
         self.assertEqual(0, mock_create.call_count)
 
     def test_create_configuration(self):
         # Test HTTPS
-        conn = rest_api._create_connection('https', 'foo')
+        conn = http._create_connection('https', 'foo')
         self.assertTrue(isinstance(conn, httplib.HTTPSConnection))
 
         # Test HTTP
-        conn = rest_api._create_connection('http', 'foo')
+        conn = http._create_connection('http', 'foo')
         self.assertTrue(isinstance(conn, httplib.HTTPConnection))

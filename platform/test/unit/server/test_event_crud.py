@@ -16,7 +16,7 @@ import mock
 from pulp.server.db.model.event import EventListener
 from pulp.server.dispatch.call import CallReport
 from pulp.server.event import data as event_data
-from pulp.server.event import rest_api
+from pulp.server.event import http
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.event import crud
@@ -38,10 +38,10 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_create(self):
         # Test
-        created = self.manager.create(rest_api.TYPE_ID, None, [event_data.TYPE_REPO_SYNC_STARTED])
+        created = self.manager.create(http.TYPE_ID, None, [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Verify
-        self.assertEqual(created['notifier_type_id'], rest_api.TYPE_ID)
+        self.assertEqual(created['notifier_type_id'], http.TYPE_ID)
         self.assertEqual(created['notifier_config'], {})
         self.assertEqual(created['event_types'], [event_data.TYPE_REPO_SYNC_STARTED])
 
@@ -51,7 +51,7 @@ class EventListenerManagerTests(base.PulpServerTests):
     def test_create_invalid_event_type(self):
         # Test
         try:
-            self.manager.create(rest_api.TYPE_ID, {}, ['foo'])
+            self.manager.create(http.TYPE_ID, {}, ['foo'])
             self.fail()
         except InvalidValue, e:
             self.assertEqual(e.property_names, ['event_types'])
@@ -59,7 +59,7 @@ class EventListenerManagerTests(base.PulpServerTests):
     def test_create_no_event_types(self):
         # Test
         try:
-            self.manager.create(rest_api.TYPE_ID, {}, None)
+            self.manager.create(http.TYPE_ID, {}, None)
             self.fail()
         except InvalidValue, e:
             self.assertEqual(e.property_names, ['event_types'])
@@ -74,7 +74,7 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_delete(self):
         # Setup
-        created = self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+        created = self.manager.create(http.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Test
         self.manager.delete(created['_id'])
@@ -93,13 +93,13 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_get(self):
         # Setup
-        created = self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+        created = self.manager.create(http.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Test
         gotten = self.manager.get(created['_id'])
 
         # Verify
-        self.assertEqual(gotten['notifier_type_id'], rest_api.TYPE_ID)
+        self.assertEqual(gotten['notifier_type_id'], http.TYPE_ID)
 
     def test_get_missing_listener(self):
         # Test
@@ -112,7 +112,7 @@ class EventListenerManagerTests(base.PulpServerTests):
     def test_update(self):
         # Setup
         orig_config = {'k1' : 'v1', 'k2' : 'v2', 'k3' : 'v3'}
-        created = self.manager.create(rest_api.TYPE_ID, orig_config, [event_data.TYPE_REPO_SYNC_STARTED])
+        created = self.manager.create(http.TYPE_ID, orig_config, [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Test
         updated = self.manager.update(created['_id'], {'k1' : 'vX', 'k2' : None}, [event_data.TYPE_REPO_SYNC_FINISHED])
@@ -132,7 +132,7 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_update_invalid_types(self):
         # Setup
-        created = self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+        created = self.manager.create(http.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Test
         try:
@@ -143,8 +143,8 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_list(self):
         # Setup
-        self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
-        self.manager.create(rest_api.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_FINISHED])
+        self.manager.create(http.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_STARTED])
+        self.manager.create(http.TYPE_ID, {}, [event_data.TYPE_REPO_SYNC_FINISHED])
 
         # Test
         listeners = self.manager.list()
