@@ -8,7 +8,7 @@ Server
   This is the main application server that stores data and distributes content.
 
 Agent
-  This component runs on consumers and communicates with the server to handle distributed content.
+  This component runs on consumers and communicates with the server to provide remote content management.
 
 Client
   This is a command line component that comes as two pieces: admin-client,
