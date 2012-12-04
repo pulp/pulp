@@ -18,7 +18,7 @@ import mock
 from pulp.server.db.migrate.models import MigrationModule
 
 
-class TestMigration0001(unittest.TestCase):
+class TestMigration0002(unittest.TestCase):
     @mock.patch('pulp.server.db.model.event.EventListener.get_collection')
     def test_update_called(self, mock_get_collection):
         module = MigrationModule('pulp.server.db.migrations.0002_rename_http_notifier')._module
