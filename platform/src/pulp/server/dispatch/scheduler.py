@@ -20,7 +20,6 @@ from pprint import pformat
 import isodate
 
 from pulp.common import dateutils
-from pulp.common.tags import resource_tag
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -131,7 +130,9 @@ class Scheduler(object):
             # get the itinerary call request and execute
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            call_report = coordinator.execute_call_synchronously(call_request)
+            call_report = call.CallReport.from_call_request(call_request)
+            call_report.serialize_result = False
+            call_report = coordinator.execute_call_synchronously(call_request, call_report)
 
             # call request group is the return of an itinerary function
             call_request_group = call_report.result
