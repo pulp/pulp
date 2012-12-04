@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import sys
 
 from gettext import gettext as _
 
@@ -126,7 +125,7 @@ class RegisterCommand(PulpCliCommand):
         if not os.access(id_cert_dir, os.W_OK):
             msg = _("Write permission is required for %(d)s to perform this operation.")
             self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
-            sys.exit(1)
+            return os.EX_NOPERM
 
         # Call the server
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
@@ -195,7 +194,7 @@ class UnregisterCommand(PulpCliCommand):
         if not os.access(id_cert_dir, os.W_OK):
             msg = _("Write permission is required for %(d)s to perform this operation.")
             self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
-            sys.exit(1)
+            return os.EX_NOPERM
 
         try:
             self.context.server.consumer.unregister(consumer_id)
