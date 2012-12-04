@@ -28,6 +28,8 @@ from pulp.server.managers import factory as managers_factory
 
 _LOG = logging.getLogger(__name__)
 
+OBFUSCATED_VALUE = '****'
+
 # call request class -----------------------------------------------------------
 
 class CallRequest(object):
@@ -128,7 +130,7 @@ class CallRequest(object):
 
     def callable_kwargs_reprs(self):
         kwarg_reprs = dict((k, repr(v)) for k, v in self.kwargs.items() if k not in self.kwarg_blacklist)
-        kwarg_reprs.update((k, '****') for k in self.kwargs if k in self.kwarg_blacklist)
+        kwarg_reprs.update((k, OBFUSCATED_VALUE) for k in self.kwargs if k in self.kwarg_blacklist)
         return kwarg_reprs
 
     def __str__(self):
@@ -396,9 +398,11 @@ class CallReport(object):
         data['tags'] = self.call_request_tags
 
         # report the result, if configured to
-        data['result'] = None
+
         if self.serialize_result:
             data['result'] = self.result
+        else:
+            data['result'] = OBFUSCATED_VALUE
 
         # format the exception and traceback, if they exist
 
