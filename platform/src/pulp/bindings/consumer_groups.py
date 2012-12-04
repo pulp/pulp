@@ -125,9 +125,9 @@ class ConsumerGroupActionAPI(SearchAPI):
         :return: Response body
         :rtype: basestring
         """
-        path = self.PATH % (consumer_group_id) + 'associate/'
+        path = self.PATH % consumer_group_id + 'associate/'
 
-        filters = self._compose_filters(**kwargs)
+        filters = self.compose_filters(**kwargs)
         if filters:
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
@@ -149,9 +149,9 @@ class ConsumerGroupActionAPI(SearchAPI):
         :return: Response body
         :rtype: basestring
         """
-        path = self.PATH % (consumer_group_id) + 'unassociate/'
+        path = self.PATH % consumer_group_id + 'unassociate/'
 
-        filters = self._compose_filters(**kwargs)
+        filters = self.compose_filters(**kwargs)
         if filters:
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
