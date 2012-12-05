@@ -283,29 +283,27 @@ class UploadSegmentResourceTests(BaseUploadTest):
         # Verify
         self.assertEqual(404, status)
 
-# Need to touch base with jconnor about coordinator serialization issues with
-# the dummy plugins.
-#
-#class ImportUnitTests(BaseUploadTest):
-#
-#    def test_post(self):
-#        # Setup
-#        upload_id = self.upload_manager.initialize_upload()
-#        self.upload_manager.save_data(upload_id, 0, 'string data')
-#
-#        repo_manager = manager_factory.repo_manager()
-#        repo_manager.create_repo('repo-upload')
-#        importer_manager = manager_factory.repo_importer_manager()
-#        importer_manager.set_importer('repo-upload', 'dummy-importer', {})
-#
-#        # Test
-#        body = {
-#            'upload_id' : upload_id,
-#            'unit_type_id' : 'dummy-type',
-#            'unit_key' : {'name' : 'foo'},
-#            'unit_metadata' : {'stuff' : 'bar'},
-#        }
-#        status, body = self.post('/v2/repositories/repo-upload/actions/import_upload/', body)
-#
-#        # Verify
-#        self.assertEqual(200, status)
+
+class ImportUnitTests(BaseUploadTest):
+
+    def test_post(self):
+        # Setup
+        upload_id = self.upload_manager.initialize_upload()
+        self.upload_manager.save_data(upload_id, 0, 'string data')
+
+        repo_manager = manager_factory.repo_manager()
+        repo_manager.create_repo('repo-upload')
+        importer_manager = manager_factory.repo_importer_manager()
+        importer_manager.set_importer('repo-upload', 'dummy-importer', {})
+
+        # Test
+        body = {
+            'upload_id' : upload_id,
+            'unit_type_id' : 'dummy-type',
+            'unit_key' : {'name' : 'foo'},
+            'unit_metadata' : {'stuff' : 'bar'},
+        }
+        status, body = self.post('/v2/repositories/repo-upload/actions/import_upload/', body)
+
+        # Verify
+        self.assertEqual(200, status)
