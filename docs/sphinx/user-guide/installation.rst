@@ -4,19 +4,37 @@ Installation
 Pulp operates with three main components that get installed potentially on different
 machines.
 
-* Server: This is the main application server that stores data and distributes content.
-* Agent: This component runs on consumers and communicates with the server to handle distributed content.
-* Client: This is a command line component that comes as two pieces: admin-client,
-    which manages the server; and consumer-client, which manages a consumer's relationship
-    to the server. admin-client can be run from any machine that can access the server's
-    REST API, but the consumer-client must be run on a consumer.
+Server
+  This is the main application server that stores data and distributes content.
+
+Agent
+  This component runs on consumers and communicates with the server to provide remote content management.
+
+Client
+  This is a command line component that comes as two pieces: admin-client,
+  which manages the server; and consumer-client, which manages a consumer's relationship
+  to the server. admin-client can be run from any machine that can access the server's
+  REST API, but the consumer-client must be run on a consumer.
+
+Supported Operating Systems
+---------------------------
+Server
+
+* RHEL 6
+* Fedora 16 & 17
+* CentOS 6
+
+Consumer
+
+* RHEL 5 & 6
+* Fedora 16 & 17
+* CentOS 6
 
 Prerequisites
 -------------
 
 * On RHEL 5, Pulp does not currently work with SELinux. SELinux must be
   set to Permissive or Disabled.
-* Pulp Server does not run on RHEL 5.
 * The following ports must be open into the server:
 
  * 80 for consumers to access repositories served over HTTP
@@ -42,7 +60,7 @@ Repositories
   to disable the v1 repositories and enable one of the v2 repository definitions
   in the above files.
 
-2. For RHEL systems, the EPEL repositories are required. More information can
+2. For RHEL and CentOS systems, the EPEL repositories are required. More information can
    be found at: `<http://fedoraproject.org/wiki/EPEL/FAQ#howtouse>`_
 
 3. For RHEL 5 systems, subscribe to the following RHN channels:
@@ -50,12 +68,14 @@ Repositories
  * MRG Messaging v. 1
  * MRG Messaging Base v. 1
 
-4. QPID RPMs are not available in the default CentOS repositories. Instructions
-   on building those RPMs can be found at :ref:`centos-build-qpid-rpms`.
+4. QPID RPMs are not available in the default CentOS repositories for CentOS
+    releases 6.2 and earlier. Instructions on building those RPMs can be found
+    at :ref:`centos-build-qpid-rpms`.
 
 Server
 ------
 .. configure qpid with SSL (jortel knows about this, might have a wiki page about it)
+.. when this happens, add a note to install qpid-cpp-server-ssl
 
 
 1. Install the Pulp server and its dependencies.
@@ -74,18 +94,17 @@ Server
    [server]
    server_name: localhost
 
-3. Configure the server in /etc/pulp/server.conf. Most defaults will work, but
-these are sections you might consider looking at before proceeding. Each section
-is documented in-line.
+3. Configure the server in /etc/pulp/server.conf. Most defaults will work, but these are sections you might consider looking at before proceeding. Each section is documented in-line.
 
-* **email** if you intend to have the server send email (off by default)
-* **database** if you want to use non-default database settings
-* **messaging** if your qpid server is on a different host or if you want to use SSL
-* **security** to provide your own SSL CA certificates, which is a good idea if
-    you intend to use Pulp in production
-* **server** if you want to change the server's URL components or default credentials
+  * **email** if you intend to have the server send email (off by default)
+  * **database** if you want to use non-default database settings
+  * **messaging** if your qpid server is on a different host or if you want to use SSL
+  * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use Pulp in production
+  * **server** if you want to change the server's URL components or default credentials
 
-4. Start each service and set them to start at boot.
+4. Configure qpid server in /etc/qpidd.conf and either add or change the auth setting to be off by having ``auth=no`` on its own line.
+
+5. Start Mongo and Qpid, and set them to start at boot.
 
 ::
 
@@ -93,8 +112,6 @@ is documented in-line.
   $ sudo chkconfig mongod on
   $ sudo service qpidd start
   $ sudo chkconfig qpidd on
-  $ sudo service httpd start
-  $ sudo chkconfig httpd on
 
 
 .. warning::
@@ -103,11 +120,36 @@ is documented in-line.
   the connection failing. If this occurs, give MongoDB a few minutes to finish
   initializing and attempt this call again.
 
-5. Initialize Pulp's database.
+6. Initialize Pulp's database. It's important to do this before starting Apache. If Apache is already running, just restart it in step 7.
 
 ::
 
-  $ pulp-manage-db
+  $ sudo pulp-manage-db
+
+
+7. Start Apache and set it to start on boot.
+
+::
+
+  $ sudo service httpd start
+  $ sudo chkconfig httpd on
+
+
+.. move the below note into a dedicated SSL config guide.
+
+.. note::
+  In some distributions, such as RHEL 6.3 and Fedora 17, the default SSL certificate
+  used by Apache is created with its Common Name set to the hostname of the machine.
+  This can cause Pulp to return an error similar to ``The server hostname configured
+  on the client did not match the name found in the server's SSL certificate.``
+
+  If you want to connect to localhost, you need to regenerate this certificate,
+  which is stored in /etc/pki/tls/certs/localhost.crt. For testing purposes, delete
+  it, then run ``make testcert``. Be sure to answer "localhost" for the
+  "Common Name". Other responses do not matter.
+
+  For production installations of Pulp, it is up to the installer to provide
+  appropriate SSL certificates.
 
 
 Admin Client
