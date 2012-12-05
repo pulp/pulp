@@ -111,8 +111,11 @@ class TaskResource(JSONController):
             raise MissingResource(call_request_id)
         if result is False:
             raise TaskCancelNotImplemented(call_request_id)
-        link = serialization.link.current_link_obj()
-        return self.accepted(link)
+        # if we've gotten here, the call request *should* exist
+        call_report = coordinator.find_call_reports(call_request_id=call_request_id)[0]
+        serialized_call_report = call_report.serialize()
+        serialized_call_report.update(serialization.link.current_link_obj())
+        return self.accepted(serialized_call_report)
 
 # queued call controllers ------------------------------------------------------
 
@@ -200,7 +203,13 @@ class TaskGroupResource(JSONController):
             raise TaskGroupNotFound(call_request_group_id)
         if None in results.values():
             raise TaskGroupCancelNotImplemented(call_request_group_id)
-        return self.accepted(results)
+        # if we've gotten this far, the call requests exist and have been cancelled
+        call_reports = coordinator.find_call_reports(call_request_group_id=call_request_group_id)
+        serialized_call_reports = [c.serialize() for c in call_reports]
+        link = serialization.link.current_link_obj()
+        for s in serialized_call_reports:
+            s.update(link)
+        return self.accepted(serialized_call_reports)
 
 # web.py applications ----------------------------------------------------------
 
