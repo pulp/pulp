@@ -35,11 +35,10 @@ type of notifier appear below.
 Email
 -----
 
-Event reports can be sent directly to an email address. The messages are currently
-quite spartan, consisting of a JSON-serialized representation of the actual
-event body. This meets a basic use case for having email notification with all of
-the available event data, but we fully intend to improve the presentation of this
-data in the future.
+Event reports can be sent directly to an email address. The messages currently
+consists of a JSON-serialized representation of the actual event body. This meets
+a basic use case for having email notification with all of the available event
+data, but we intend to make the output more human-friendly in the future.
 
 .. note::
   Before attempting to setup email notifications, be sure to configure the "[email]"
@@ -65,14 +64,14 @@ what the email subject should be, and who should receive the emails.
 
 ::
 
-  $ pulp-admin event listener email create --event-type="repo.sync.start" --subject="pulp notification" --addresses=someone@redhat.com
+  $ pulp-admin event listener email create --event-type="repo.sync.start" --subject="pulp notification" --addresses=someone@redhat.com,another@redhat.com
   Event listener successfully created
 
   $ pulp-admin event listener list
   Event Types:       repo.sync.start
   Id:                5081a42ce19a00ea4300000e
   Notifier Config:
-    Addresses: someone@redhat.com
+    Addresses: someone@redhat.com, another@redhat.com
     Subject:   pulp notification
   Notifier Type Id:  email
 
@@ -153,7 +152,7 @@ can be used in place of Qpid.
 
 .. note::
   Before using an AMQP notifier, be sure to look in Pulp's server config file
-  (/etc/pulp/server.conf) in the "[messaging]" section to configure your settings.
+  (``/etc/pulp/server.conf``) in the "[messaging]" section to configure your settings.
 
 ::
 
@@ -170,7 +169,7 @@ can be used in place of Qpid.
                    server.conf
 
 Here you can also specify an exchange name. If you don’t specify one, it will
-default to the value pulled from /etc/pulp/server.conf in the "[messaging]"
+default to the value pulled from ``/etc/pulp/server.conf`` in the "[messaging]"
 section. If you don’t set one there either, Pulp will default to "amq.topic",
 which is an exchange guaranteed to be available on any broker. Regardless of
 what name you choose (we suggest "pulp" as a reasonable choice), you do not need
@@ -201,14 +200,40 @@ This is an example of creating an AMQP event listener.
 Event Types
 -----------
 
+These are the types of events that can be associated with listeners, and each
+description includes a partial list of the types of data that gets reported.
+
 repo.publish.start
   Fires when any repository starts a publish operation.
+    * start time
+    * repo_id
+    * user who initiated the sync
+    * task ID
 
 repo.publish.finish
   Fires when any repository finishes a publish operation.
+    * start time
+    * end time
+    * repo_id
+    * task ID
+    * success/failure
+    * number of items published
+    * errors
 
 repo.sync.start
   Fires when any repository starts a sync operation.
+    * start time
+    * repo_id
+    * user who initiated the sync
+    * task ID
 
 repo.sync.finish
   Fires when any repository finishes a sync operation.
+    * start time
+    * end time
+    * repo_id
+    * task ID
+    * success/failure
+    * number of items imported
+    * errors
+
