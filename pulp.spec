@@ -18,7 +18,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        1.1.14
+Version:        1.1.15
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -502,6 +502,12 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Dec 05 2012 Jeff Ortel <jortel@redhat.com> 1.1.15-1
+- 882406 - Can't create 2 repos with similar substring in relative path
+  (jmatthews@redhat.com)
+- 867647 - switch to unicode-escape encoding so we always work with ascii
+  (mmccune@redhat.com)
+
 * Tue Oct 16 2012 Jeff Ortel <jortel@redhat.com> 1.1.14-1
 - 865003 - fixing race condition where a package object is accessed for update
   before mongo persists it (pkilambi@redhat.com)
