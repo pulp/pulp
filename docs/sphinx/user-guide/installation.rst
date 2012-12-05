@@ -16,8 +16,8 @@ Client
   to the server. admin-client can be run from any machine that can access the server's
   REST API, but the consumer-client must be run on a consumer.
 
-Supported OS's
---------------
+Supported Operating Systems
+---------------------------
 Server
 
 * RHEL 6
@@ -75,6 +75,7 @@ Repositories
 Server
 ------
 .. configure qpid with SSL (jortel knows about this, might have a wiki page about it)
+.. when this happens, add a note to install qpid-cpp-server-ssl
 
 
 1. Install the Pulp server and its dependencies.
@@ -82,9 +83,6 @@ Server
 ::
 
   $ sudo yum groupinstall pulp-server
-
-.. note::
-    If you want to use SSL with qpid, install package ``qpid-cpp-server-ssl``
 
 2. Update ``/etc/pulp/server.conf`` to reflect the hostname of the server.
 
@@ -104,7 +102,7 @@ Server
   * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use Pulp in production
   * **server** if you want to change the server's URL components or default credentials
 
-4. On RHEL 6 and CentOS 6, configure qpid server in /etc/qpidd.conf and set ``auth=no``.
+4. Configure qpid server in /etc/qpidd.conf and either add or change the auth setting to be off by having ``auth=no`` on its own line.
 
 5. Start Mongo and Qpid, and set them to start at boot.
 
@@ -136,6 +134,8 @@ Server
   $ sudo service httpd start
   $ sudo chkconfig httpd on
 
+
+.. move the below note into a dedicated SSL config guide.
 
 .. note::
   In some distributions, such as RHEL 6.3 and Fedora 17, the default SSL certificate
