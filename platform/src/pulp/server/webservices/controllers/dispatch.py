@@ -201,7 +201,8 @@ class TaskGroupResource(JSONController):
         results = coordinator.cancel_multiple_calls(call_request_group_id)
         if not results:
             raise TaskGroupNotFound(call_request_group_id)
-        if None in results.values():
+        if reduce(lambda p, v: p and (v is None), results.values(), True):
+            # in other words, all results values are None
             raise TaskGroupCancelNotImplemented(call_request_group_id)
         # if we've gotten this far, the call requests exist and have been cancelled
         call_reports = coordinator.find_call_reports(call_request_group_id=call_request_group_id)
