@@ -13,14 +13,14 @@
 
 import unittest
 
-from pulp.server.event import mail, notifiers, rest_api
+from pulp.server.event import mail, notifiers, http
 
 
 class TestNotifiers(unittest.TestCase):
-    def test_rest_type_present(self):
-        ret = notifiers.get_notifier_function(rest_api.TYPE_ID)
+    def test_http_type_present(self):
+        ret = notifiers.get_notifier_function(http.TYPE_ID)
         self.assertTrue(callable(ret))
-        self.assertEqual(ret, rest_api.handle_event)
+        self.assertEqual(ret, http.handle_event)
 
     def test_mail_type_present(self):
         ret = notifiers.get_notifier_function(mail.TYPE_ID)
@@ -29,7 +29,7 @@ class TestNotifiers(unittest.TestCase):
 
     def test_validator(self):
         self.assertTrue(notifiers.is_valid_notifier_type_id(mail.TYPE_ID))
-        self.assertTrue(notifiers.is_valid_notifier_type_id(rest_api.TYPE_ID))
+        self.assertTrue(notifiers.is_valid_notifier_type_id(http.TYPE_ID))
         self.assertFalse(notifiers.is_valid_notifier_type_id(''))
         self.assertFalse(notifiers.is_valid_notifier_type_id(123))
         self.assertFalse(notifiers.is_valid_notifier_type_id('lhferlihfd'))
