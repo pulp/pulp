@@ -21,7 +21,7 @@ from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, Pul
 class UnitCopyCommand(UnitAssociationCriteriaCommand):
     def __init__(self, method, *args, **kwargs):
         kwargs['include_search'] = False
-        super(UnitCopyCommand, self).__init__(method, *args, **kwargs)
+        super(UnitCopyCommand, self).__init__(method, with_details=False, *args, **kwargs)
         self.options = [opt for opt in self.options if opt.name != '--repo-id']
 
         m = 'source repository from which units will be copied'

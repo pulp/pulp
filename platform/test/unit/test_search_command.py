@@ -130,6 +130,16 @@ class TestUnitAssociationCriteriaCommand(unittest.TestCase):
         self.assertTrue('--after' in options_present)
         self.assertTrue('--before' in options_present)
         self.assertTrue('--repo-id' in options_present)
+        self.assertTrue('--details' in options_present)
+
+    def test_command_presence_without_details(self):
+        self.command = UnitAssociationCriteriaCommand(mock.MagicMock(), with_details=False)
+
+        options_present = set([option.name for option in self.command.options])
+        self.assertTrue('--after' in options_present)
+        self.assertTrue('--before' in options_present)
+        self.assertTrue('--repo-id' in options_present)
+        self.assertTrue('--details' not in options_present)
 
     def test_inherits_search(self):
         # make sure this inherits features that were tested elsewhere.

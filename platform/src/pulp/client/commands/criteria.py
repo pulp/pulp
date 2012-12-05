@@ -247,10 +247,20 @@ class CriteriaCommand(PulpCliCommand):
 
 
 class UnitAssociationCriteriaCommand(CriteriaCommand):
+
     ASSOCIATION_FLAG = PulpCliFlag(
         '--details', _('show association details'), aliases=['-d'])
 
-    def __init__(self, method, *args, **kwargs):
+    def __init__(self, method, with_details=True, *args, **kwargs):
+        """
+
+        @param method: method that should be invoked when the command is executed
+        @type  method: callable
+        @param with_details: if true, a standard flag for indicating to display
+               details about the associations is displayed; this would be set
+               to false for commands that are not search related
+        @type  with_details: bool
+        """
         super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
 
         self.add_option(PulpCliOption('--repo-id',
@@ -266,7 +276,8 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
         self.create_option('--before', m, ['-b'], required=False,
             allow_multiple=False, parse_func=parsers.iso8601)
 
-        self.add_flag(self.ASSOCIATION_FLAG)
+        if with_details:
+            self.add_flag(self.ASSOCIATION_FLAG)
 
 
 class UntypedUnitAssociationCriteriaCommand(UnitAssociationCriteriaCommand):
