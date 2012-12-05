@@ -16,10 +16,11 @@ Pulp is completely free and open-source, and we invite you to join us on GitHub_
 What Pulp Can Do
 ----------------
 
-* Pull in content from existing repositories to the Pulp server. Do it manually one-time-only or on a recurring schedule.
+* Pull in content from existing repositories to the Pulp server. Do it manually or on a recurring schedule.
 * Upload new content to the Pulp server.
 * Mix and match uploaded and imported content to create new repositories, then publish and host them with Pulp.
 * Publish your content as a web-based repository, to a series of ISOs, or in any other way that meets your needs.
+* Push content out to consumer machines, and track what each consumer has installed.
 
 Plugins
 -------
@@ -36,16 +37,14 @@ More importantly, Pulp makes it easy for third-party plugins to be written and
 deployed separately from the Pulp Platform. When new plugins are installed, Pulp
 detects and activates them automatically.
 
-Goal of This Guide
+Goal of this Guide
 ------------------
 
 Pulp can manage many types of content, but it is not tied to any one of them. As
 such, this guide will help you install and configure Pulp, and learn how to use
 Pulp's core features in a non-type-specific way. Once you are familiar with what
 Pulp can offer, visit the user guide that is specific to the content type in which
-you are interested. You can find all of our documentation at Docs_.
-
-.. _Docs: http://www.pulpproject.org/docs
+you are interested. You can find all of our documentation at `our docs page <http://www.pulpproject.org/docs>`_.
 
 Many examples require the use of a type, and for those we will use "rpm". However,
 examples in this guide will only cover features that are common across content types.
