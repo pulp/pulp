@@ -107,7 +107,7 @@ class UploadCommand(PulpCliCommand):
         self.add_flag(FLAG_VERBOSE)
 
     def run(self, **kwargs):
-        self.prompt.render_title(_('Puppet Module Upload'))
+        self.prompt.render_title(_('Module Upload'))
 
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         specified_files = kwargs.get(OPTION_FILE.keyword) or []
@@ -149,7 +149,7 @@ class UploadCommand(PulpCliCommand):
         file_bundles = [ [f, None, {}, {}] for f in all_filenames]
 
         # Determine the metadata for each file
-        self.prompt.write(_('Extracting necessary metdata for each request...'))
+        self.prompt.write(_('Extracting necessary metadata for each request...'))
         bar = self.prompt.create_progress_bar()
 
         # If not a file-based upload, make a single request with the values
@@ -503,7 +503,7 @@ def perform_upload(context, upload_manager, upload_ids):
     :type  upload_ids: list
     """
 
-    d = _('Starting upload of selected packages. If this process is stopped through '
+    d = _('Starting upload of selected modules. If this process is stopped through '
          'ctrl+c, the uploads will be paused and may be resumed later using the '
          'resume command or cancelled entirely using the cancel command.')
     context.prompt.render_paragraph(d)
