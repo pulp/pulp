@@ -1,15 +1,17 @@
 Repositories
 ============
 
-This guide covers the generic, core features of the Pulp Platform. For more detail
-about how to work with repositories of a specific content type, please visit the
-user guide for that type. Examples will use "rpm" as the demo type when necessary,
-but they will be limited to generic features.
+This guide covers core features for managing repositories in the Pulp Platform.
+For more detail about how to work with repositories of a specific content type,
+please visit the user guide for that type. Examples will use "rpm" as the demo
+type when necessary, but they will be limited to generic features.
 
 Layout
 ------
 
-A few generic features are found under the CLI's ``repo`` section:
+The root level ``repo`` section contains the following features. These features
+apply across all repositories, regardless of the specific types of content they
+will support.
 
 ::
 
@@ -24,8 +26,8 @@ A few generic features are found under the CLI's ``repo`` section:
   Available Commands:
     list - lists repositories on the Pulp server
 
-Many other features are implemented under a root-level section named for a content
-type. For example, the RPM repo section looks like this:
+By comparison, many other features are implemented under a root-level section
+named for a content type. For example, the RPM repo section looks like this:
 
 ::
 
@@ -59,8 +61,7 @@ Groups
 
 Repository Groups allow you to associate any number of repositories, even of
 varying content types, with a named group. Features that make use of repository
-groups are forthcoming in future releases of Pulp. For now, they are only useful
-to third-party software that has a use case for them.
+groups are forthcoming in future releases of Pulp.
 
 Here is an example of creating a repo group and adding members to it:
 
@@ -71,6 +72,8 @@ Here is an example of creating a repo group and adding members to it:
 
   $ pulp-admin repo group members add --group-id=group1 --str-eq='id=repo1'
   Successfully added members to repository group [group1]
+
+.. TODO link this to a section explaining criteria-based search
 
 The ``members add`` command takes advantage of Pulp's generic search feature, so
 you can add many repositories at once. In this case, we provided a specific
@@ -96,7 +99,7 @@ Notice that "repo1" shows up in the "Repo Ids" field.
 Tasks
 -----
 
-Some operations on repositories, such as ``sync`` and ``publish``, may operate
+Some operations on repositories, such as ``sync``, ``publish``, and ``delete``, may operate
 asynchronously. When you execute these operations, Pulp will give you a "task ID".
 You can use that task ID to check the status of the operation. From this section
 of the CLI, you can ``cancel``, ``list``, and get ``details`` about repository tasks.
