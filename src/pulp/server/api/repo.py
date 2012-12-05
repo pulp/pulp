@@ -2599,6 +2599,16 @@ def validate_relative_path(new_path, existing_path):
     # Easy out clause: if they are the same, they are invalid
     existing_path = decode_unicode(existing_path)
     new_path = decode_unicode(new_path)
+    #
+    # BZ:882406 
+    # Intentionally putting '/' at end of both paths
+    # Allows distinguishing "os/" versus "ose-foo/"
+    # Previously "os" was found inside of "ose-foo" and a conflict was raised incorrectly.
+    # 
+    if existing_path[-1] != "/":
+        existing_path+="/"
+    if new_path[-1] != "/":
+        new_path+="/"
 
     if new_path == existing_path:
         return False

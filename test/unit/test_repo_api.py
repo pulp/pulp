@@ -1559,6 +1559,14 @@ class TestRepoApi(testutil.PulpAsyncTest):
         self.assertTrue(repo.validate_relative_path('foo', 'bar'))
         self.assertFalse(repo.validate_relative_path('foo', 'foo/bar'))
         self.assertFalse(repo.validate_relative_path('foo/bar', 'foo'))
+        self.assertTrue(repo.validate_relative_path(
+            'RHIC/Library/content/beta/rhel/server/6/6Server/x86_64/os', 
+            'RHIC/Library/content/beta/rhel/server/6/6Server/x86_64/ose-infra/1/source/SRPMS')
+        )
+        self.assertTrue(repo.validate_relative_path(
+            'RHIC/Library/content/beta/rhel/server/6/6Server/x86_64/ose-infra/1/source/SRPMS',
+            'RHIC/Library/content/beta/rhel/server/6/6Server/x86_64/os') 
+        )
 
     def test_repo_publish_on_create(self):
         repo = self.repo_api.create('repo_publish_true', 'some name',
