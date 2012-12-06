@@ -83,9 +83,7 @@ class CreateRepositoryGroupCommand(PulpCliCommand):
             name = kwargs[OPTION_NAME.keyword]
         description = kwargs[OPTION_DESCRIPTION.keyword]
 
-        notes = None
-        if kwargs[OPTION_NOTES.keyword] is not None:
-            notes = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+        notes = kwargs.get(OPTION_NOTES.keyword, None)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)
@@ -150,7 +148,7 @@ class UpdateRepositoryGroupCommand(PulpCliCommand):
             delta['display_name'] = delta.pop(OPTION_NAME.keyword)
 
         if delta.pop(OPTION_NOTES.keyword, None) is not None:
-            delta['notes'] = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+            delta['notes'] = kwargs[OPTION_NOTES.keyword]
 
         try:
             self.context.server.repo_group.update(kwargs[OPTION_GROUP_ID.keyword], delta)

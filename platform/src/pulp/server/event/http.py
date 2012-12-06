@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Forwards events to a REST API call. The configuration used by this notifier
+Forwards events to a HTTP call. The configuration used by this notifier
 is as follows:
 
 url
@@ -31,7 +31,7 @@ from pulp.server.compat import json
 
 # -- constants ----------------------------------------------------------------
 
-TYPE_ID = 'rest-api'
+TYPE_ID = 'http'
 
 LOG = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ def _send_post(notifier_config, body):
 
     # Parse the URL for the pieces we need
     if 'url' not in notifier_config or not notifier_config['url']:
-        LOG.warn('REST API notifier configured without a URL; cannot fire event')
+        LOG.warn('HTTP notifier configured without a URL; cannot fire event')
         return
 
     url = notifier_config['url']
@@ -84,7 +84,7 @@ def _send_post(notifier_config, body):
     response = connection.getresponse()
     if response.status != httplib.OK:
         error_msg = response.read()
-        LOG.warn('Error response from REST API notifier: %(e)s' % {'e': error_msg})
+        LOG.warn('Error response from HTTP notifier: %(e)s' % {'e': error_msg})
     connection.close()
 
 def _create_connection(scheme, server):
