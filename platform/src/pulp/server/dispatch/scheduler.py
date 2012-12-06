@@ -91,9 +91,12 @@ class Scheduler(object):
 
         for call_group in self._get_scheduled_call_groups():
 
-            for call_request in call_group:
-                call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
-                                                     scheduler_complete_callback)
+            # this is a bit of hack and presumes that the first call in the call
+            # group is the most important, need to re-think this and implement
+            # something more general (counter-based?)
+            # but for right now, the presumption is correct
+            call_group[0].add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
+                                                  scheduler_complete_callback)
 
             if len(call_group) == 1:
                 call_report_list = [coordinator.execute_call_asynchronously(call_group[0])]
@@ -197,7 +200,7 @@ class Scheduler(object):
                 msg = _('Scheduled task [%s] disabled after %d consecutive failures')
                 _LOG.error(msg % (schedule_id, consecutive_failures))
 
-        else:
+        elif state == dispatch_constants.CALL_FINISHED_STATE:
             delta = update.setdefault('$set', {})
             delta['consecutive_failures'] = 0
 
