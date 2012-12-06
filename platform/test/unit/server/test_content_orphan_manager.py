@@ -53,6 +53,19 @@ def gen_content_unit(content_type_id, content_root, name=None):
     return unit
 
 
+def gen_content_unit_with_directory(content_type_id, content_root, name=None):
+    name = name or ''.join(random.sample(string.ascii_letters, 5))
+    path = os.path.join(content_root, name)
+    os.mkdir(path)
+    unit = {'name': name,
+            '_content_type_id': content_type_id,
+            '_storage_path': path}
+    content_manager = manager_factory.content_manager()
+    unit_id = content_manager.add_content_unit(content_type_id, None, unit)
+    unit['_id'] = unit_id
+    return unit
+
+
 def associate_content_unit_with_repo(content_unit):
     repo_content_unit = RepoContentUnit(PHONY_REPO_ID,
                                         content_unit['_id'],
@@ -162,6 +175,13 @@ class OrphanManagerTests(base.PulpServerTests):
 
     def test_delete_one_orphan(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        self.orphan_manager.delete_all_orphans()
+        orphans = self.orphan_manager.list_all_orphans()
+        self.assertTrue(len(orphans) == 0)
+        self.assertTrue(self.number_of_files_in_content_root() == 0)
+
+    def test_delete_one_orphan_with_directory(self):
+        unit = gen_content_unit_with_directory(PHONY_TYPE_1.id, self.content_root)
         self.orphan_manager.delete_all_orphans()
         orphans = self.orphan_manager.list_all_orphans()
         self.assertTrue(len(orphans) == 0)

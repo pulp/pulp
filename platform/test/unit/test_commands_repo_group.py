@@ -43,7 +43,7 @@ class CreateRepositoryGroupCommandTests(base.PulpClientTests):
             OPTION_GROUP_ID.keyword : 'test-group',
             OPTION_NAME.keyword : 'Group',
             OPTION_DESCRIPTION.keyword : 'Description',
-            OPTION_NOTES.keyword : ['a=a', 'b=b'],
+            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
         }
 
         self.server_mock.request.return_value = 201, {}
@@ -146,7 +146,7 @@ class UpdateRepositoryGroupCommandTests(base.PulpClientTests):
             OPTION_GROUP_ID.keyword : 'test-group',
             OPTION_NAME.keyword : 'Group',
             OPTION_DESCRIPTION.keyword : 'Description',
-            OPTION_NOTES.keyword : ['a=a', 'b=b'],
+            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
         }
 
         self.server_mock.request.return_value = 200, {}

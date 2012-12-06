@@ -242,3 +242,8 @@ port=5671
 cacert=$INST_DIR/ca.crt
 clientcert=$INST_DIR/client.crt
 "
+
+echo "
+NOTE: The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
+need to be manually copied to each consumer.
+"

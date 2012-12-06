@@ -15,6 +15,7 @@ from gettext import gettext as _
 from okaara.cli import CommandUsage
 
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand
+from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 
 
@@ -35,9 +36,42 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand):
 
 
 class UnitRemoveCommand(UnitAssociationCriteriaCommand):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, context, type_id, *args, **kwargs):
+        self.context = context
+        self.type_id = type_id
         kwargs['include_search'] = False
+        if not kwargs.get('method'):
+            kwargs['method'] = self.remove
+
         super(UnitRemoveCommand, self).__init__(*args, **kwargs)
+
+    def remove(self, **kwargs):
+        """
+        Handles the remove operation for units of the given type.
+
+        :param type_id: type of unit being removed
+        :type  type_id: str
+        :param kwargs: CLI options as input by the user and parsed by the framework
+        :type  kwargs: dict
+        """
+        super(UnitRemoveCommand, self).ensure_criteria(kwargs)
+
+        repo_id = kwargs.pop(OPTION_REPO_ID.keyword)
+        kwargs['type_ids'] = [self.type_id] # so it will be added to the criteria
+
+        response = self.context.server.repo_unit.remove(repo_id, **kwargs)
+
+        progress_msg = _('Progress on this task can be viewed using the '
+                         'commands under "repo tasks".')
+
+        if response.response_body.is_postponed():
+            d = _('Unit removal postponed due to another operation on the destination '
+                  'repository. ')
+            d += progress_msg
+            self.context.prompt.render_paragraph(d)
+            self.context.prompt.render_reasons(response.response_body.reasons)
+        else:
+            self.context.prompt.render_paragraph(progress_msg)
 
 
 type_option = PulpCliOption('--type',
