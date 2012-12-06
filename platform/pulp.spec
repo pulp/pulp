@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.11.beta
+Release: 0.12.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -407,6 +407,41 @@ exit 0
 %endif
 
 %changelog
+* Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
+- 867464 - Renaming modules to units and a fixing a few minor output errors
+  (skarmark@redhat.com)
+- 882421 - moving unit remove command into the platform from RPM extensions so
+  it can be used by other extension families (mhrivnak@redhat.com)
+- 877147 - added check for path type when removing orphans
+  (jason.connor@gmail.com)
+- 882423 - fix upload in repo controller. (jortel@redhat.com)
+- 883568 - Reworded portion about recurrences (jason.dobies@redhat.com)
+- 883754 - The notes option was changed to have a parser, but some code using
+  it was continuing to manually parse it again, which would tank.
+  (jason.dobies@redhat.com)
+- 866996 - Added ability to hide the details link on association commands when
+  it isn't a search. (jason.dobies@redhat.com)
+- 877797 - successful call of canceling a task now returns a call report
+  through the rest api (jason.connor@gmail.com)
+- 867464 - updating general module upload command output (skarmark@redhat.com)
+- 882424 - only have 1 task, presumedly the "main" one, in a task group update
+  the last_run field (jason.connor@gmail.com)
+- 883059 - update server.conf to make server_name optional
+  (skarmark@redhat.com)
+- 883059 - updating default server config to lookup server hostname
+  (skarmark@redhat.com)
+- 862187 /var/log/pulp/db.log now includes timestamps. (rbarlow@redhat.com)
+- 883025 - Display note to copy qpid certificates to each consumer.
+  (jortel@redhat.com)
+- 880441 - Fixed call to a method that was renamed (jason.dobies@redhat.com)
+- 881120 - utilized new serialize_result call report flag to hide consumer key
+  when reporting the task information (jason.connor@gmail.com)
+- 882428 - utilizing new call report serialize_result flag to prevent the call
+  reports from being serialized and reported over the rest api
+  (jason.connor@gmail.com)
+- 882401 - added skipped as a recognized state to the cli parser
+  (jason.connor@gmail.com)
+
 * Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
 - 
 
