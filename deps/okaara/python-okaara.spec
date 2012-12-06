@@ -3,7 +3,7 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.26
+Version:        1.0.27
 Release:        1%{?dist}
 Summary:        Python command line utilities
 
@@ -72,8 +72,15 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.26-1
-- Upgraded okaara to 1.0.26 (jason.dobies@redhat.com)
+* Thu Dec 06 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.27-1
+- The full path to the section isn't known, so the usage was misleading since
+  it was missing the parent sections. The change for now is to simply not
+  include the path to the section and just inform the user of the
+  section/command relationship. (jason.dobies@redhat.com)
+- Fix to find closest match in the event a nested command is not found to make
+  sure the cloest matching subsection is returned (jason.dobies@redhat.com)
+- Reorganized code for pip standards (jason.dobies@redhat.com)
+- Clean up for handling of argument - prefixes (jason.dobies@redhat.com)
 
 * Fri Aug 24 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.26-1
 - Added syntactic sugar methods to the CLI (jason.dobies@redhat.com)
