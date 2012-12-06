@@ -200,12 +200,13 @@ class UnregisterCommand(PulpCliCommand):
             self.context.server.consumer.unregister(consumer_id)
             self._delete_cert()
             self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
-        except Exception:
+        except NotFoundException:
             if kwargs['force']:
                 self._delete_cert()
                 self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
             else:
-                raise
+                msg = _('This consumer does not exist on the server.  Please retry using the --force option.')
+                self.prompt.render_failure_message(msg)
 
     def _delete_cert(self):
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
