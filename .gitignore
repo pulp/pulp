@@ -17,3 +17,5 @@ cover
 .DS_Store
 *,cover
 
+# Ninja IDE
+*.nja

@@ -5,8 +5,8 @@
 
 
 Name: python-rhsm
-Version: 1.1.4
-Release: 0.pulp%{?dist}
+Version: 1.8.0
+Release: 1.pulp%{?dist}
 
 Summary: A Python library to communicate with a Red Hat Unified Entitlement Platform
 Group: Development/Libraries
@@ -17,6 +17,7 @@ License: GPLv2
 # cd client/python-rhsm
 # tito build --tag python-rhsm-$VERSION-$RELEASE --tgz
 Source0: %{name}-%{version}.tar.gz
+Patch0:  ignore-warnings.patch
 URL: http://fedorahosted.org/candlepin
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -37,6 +38,7 @@ entitlements, certificates, and access to content.
 
 %prep
 %setup -q -n python-rhsm-%{version}
+%patch0 -p1
 
 %build
 %{__python} setup.py build
@@ -63,8 +65,26 @@ rm -rf %{buildroot}
 %attr(640,root,root) %{_sysconfdir}/rhsm/ca/*.pem
 
 %changelog
-* Fri Nov 09 2012 Michael Hrivnak <mhrivnak@redhat.com> 1.1.4-0.pulp
-- updating the python-rhsm dep (mhrivnak@redhat.com)
+* Mon Dec 03 2012 Michael Hrivnak <mhrivnak@redhat.com> 1.8.0-1.pulp
+- updating to latest and greatest python-rhsm (mhrivnak@redhat.com)
+
+* Tue Nov 20 2012 Devan Goodwin <dgoodwin@rm-rf.ca> 1.8.0-1
+- Reversioning to 1.8.x stream.
+
+* Mon Nov 19 2012 Adrian Likins <alikins@redhat.com> 1.1.6-1
+- Making product and order info optional for a v3 EntitlementCertificate, since
+  the server side will never have that data. (mhrivnak@redhat.com)
+- Adding path authorization checking for both v1 and v3 entitlement
+  certificates (mhrivnak@redhat.com)
+
+* Fri Nov 16 2012 Adrian Likins <alikins@redhat.com> 1.1.5-1
+- Added ram_limit to certificate Order (mstead@redhat.com)
+
+* Thu Nov 01 2012 Adrian Likins <alikins@redhat.com> 1.1.4-1
+- fixing a bug where certificates with carriage returns could not be parsed.
+  (mhrivnak@redhat.com)
+- 790481: Send up headers with the subscription-manager and python-rhsm version
+  info. (bkearney@redhat.com)
 
 * Wed Oct 10 2012 Adrian Likins <alikins@redhat.com> 1.1.3-1
 - 863961: add test case for id cert default version (alikins@redhat.com)

@@ -16,6 +16,9 @@ Glossary
     :term:`distributor` for the purpose of installing :term:`content units <content unit>`
     on the specified consumer.
 
+  CLI
+    Command Line Interface
+
   consumer
     A managed system that is the consumer of content.  Consumption refers
     to the installation of software contained within a :term:`repository` and

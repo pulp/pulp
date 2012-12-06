@@ -1,0 +1,13 @@
+diff --git python-rhsm-1.8.0/src/rhsm/certificate.py python-rhsm-1.8.0/src/rhsm/certificate.py
+index dc3a2e4..ae6c6b7 100644
+--- python-rhsm-1.8.0/src/rhsm/certificate.py
++++ python-rhsm-1.8.0/src/rhsm/certificate.py
+@@ -39,6 +39,8 @@ import logging
+ import warnings
+ 
+ log = logging.getLogger(__name__)
++# ignore the DeprecationWarning
++warnings.simplefilter('ignore')
+ 
+ 
+ # Regex used to scan for OIDs:

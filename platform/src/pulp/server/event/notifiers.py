@@ -20,9 +20,7 @@ Eventually this will likely change to dynamically load notifiers (yet another
 plugin point for Pulp) but for current (Jun 21, 2012) needs this is fine.
 """
 
-from pulp.server.event import mail
-import pulp.server.event.rest_api as rest_api
-from pulp.server.event import amqp
+from pulp.server.event import amqp, http, mail
 
 # -- constants ----------------------------------------------------------------
 
@@ -66,7 +64,7 @@ def reset():
     """
     global NOTIFIER_FUNCTIONS
     NOTIFIER_FUNCTIONS = {
-        rest_api.TYPE_ID : rest_api.handle_event,
+        http.TYPE_ID : http.handle_event,
         mail.TYPE_ID : mail.handle_event,
         amqp.TYPE_ID : amqp.handle_event,
     }
