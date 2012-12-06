@@ -329,7 +329,8 @@ class PermissionSection(PulpCliSection):
         self.add_command(list_command)
         
         # Grant Command
-        grant_command = PulpCliCommand('grant', 'grants resource permissions to given user or given role', self.grant)
+        usage_description = 'you can specify either login or role-id in this command; both cannot be specified at the same time'
+        grant_command = PulpCliCommand('grant', 'grants resource permissions to given user or given role', self.grant, usage_description=usage_description)
         grant_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
         grant_command.add_option(PulpCliOption('--login', 'login of the user to which access to given resource is being granted', required=False))
         grant_command.add_option(PulpCliOption('--role-id', 'id of the role to which access to given resource is being granted', required=False))
@@ -337,7 +338,7 @@ class PermissionSection(PulpCliSection):
         self.add_command(grant_command)
         
         # Revoke Command
-        revoke_command = PulpCliCommand('revoke', 'revokes resource permissions from given user or given role', self.revoke)
+        revoke_command = PulpCliCommand('revoke', 'revokes resource permissions from given user or given role', self.revoke, usage_description=usage_description)
         revoke_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
         revoke_command.add_option(PulpCliOption('--login', 'login of the user from which access to given resource is being revoked', required=False))
         revoke_command.add_option(PulpCliOption('--role-id', 'id of the role from which access to given resource is being revoked', required=False))
