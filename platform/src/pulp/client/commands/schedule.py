@@ -59,8 +59,9 @@ DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs', 'conse
 DESC_SCHEDULE_ID = _('identifies an existing schedule')
 OPT_SCHEDULE_ID = PulpCliOption('--schedule-id', DESC_SCHEDULE_ID, required=True)
 
-DESC_SCHEDULE = _('time to execute (with optional recurrence) in iso8601 format '
-                  '(yyyy-mm-ddThh:mm:ssZ/PiuT)')
+DESC_SCHEDULE = _('time to execute in iso8601 format '
+                  '(yyyy-mm-ddThh:mm:ssZ/PiuT); the number of recurrences may '
+                  'be specified in this value')
 OPT_SCHEDULE = PulpCliOption('--schedule', DESC_SCHEDULE, aliases=['-s'], required=True, validate_func=interval_iso6801_validator)
 
 DESC_FAILURE_THRESHOLD = _('number of failures before the schedule is automatically '
