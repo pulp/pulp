@@ -26,7 +26,7 @@ COLOR_RUNNING = COLOR_GREEN
 COLOR_PAUSED = COLOR_YELLOW
 
 # Command Default Descriptions
-DESC_UPLOAD = _('uploads one or more puppet modules into a repository')
+DESC_UPLOAD = _('uploads one or more units into a repository')
 DESC_RESUME = _('resume a paused upload request')
 DESC_LIST = _('lists in-progress and paused uploads')
 DESC_CANCEL = _('cancels an outstanding upload request')
@@ -38,7 +38,7 @@ DESC_FORCE = _('removes the client-side tracking file for the upload regardless 
     'has been removed')
 FLAG_FORCE = PulpCliFlag('--force', DESC_FORCE)
 
-DESC_FILE = _('full path to file to upload; may be specified multiple times '
+DESC_FILE = _('full path to a file to upload; may be specified multiple times '
               'for multiple files')
 OPTION_FILE = PulpCliOption('--file', DESC_FILE, aliases=['-f'], allow_multiple=True, required=False)
 
@@ -107,7 +107,7 @@ class UploadCommand(PulpCliCommand):
         self.add_flag(FLAG_VERBOSE)
 
     def run(self, **kwargs):
-        self.prompt.render_title(_('Module Upload'))
+        self.prompt.render_title(_('Unit Upload'))
 
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         specified_files = kwargs.get(OPTION_FILE.keyword) or []
@@ -503,7 +503,7 @@ def perform_upload(context, upload_manager, upload_ids):
     :type  upload_ids: list
     """
 
-    d = _('Starting upload of selected modules. If this process is stopped through '
+    d = _('Starting upload of selected units. If this process is stopped through '
          'ctrl+c, the uploads will be paused and may be resumed later using the '
          'resume command or cancelled entirely using the cancel command.')
     context.prompt.render_paragraph(d)
