@@ -247,19 +247,19 @@ class CriteriaCommand(PulpCliCommand):
 
 
 class UnitAssociationCriteriaCommand(CriteriaCommand):
+    """
+    Provides the full suite of criteria flags plus those relevant only when
+    specifying unit associations. This command should be used in cases where
+    the command is trying to capture a set of unit associations to act on.
+    By comparison, if the command is looking to display unit associations to
+    the user, the DisplayUnitAssociationsCommand is preferred as it adds
+    display-specific flags to these.
+    """
 
-    ASSOCIATION_FLAG = PulpCliFlag(
-        '--details', _('show association details'), aliases=['-d'])
-
-    def __init__(self, method, with_details=True, *args, **kwargs):
+    def __init__(self, method, *args, **kwargs):
         """
-
         @param method: method that should be invoked when the command is executed
         @type  method: callable
-        @param with_details: if true, a standard flag for indicating to display
-               details about the associations is displayed; this would be set
-               to false for commands that are not search related
-        @type  with_details: bool
         """
         super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
 
@@ -276,13 +276,25 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
         self.create_option('--before', m, ['-b'], required=False,
             allow_multiple=False, parse_func=parsers.iso8601)
 
-        if with_details:
-            self.add_flag(self.ASSOCIATION_FLAG)
 
+class DisplayUnitAssociationsCommand(UnitAssociationCriteriaCommand):
+    """
+    Provides the full suite of unit association criteria flags along with
+    extra flags to control the output of what will be displayed about the
+    associations. The typical usage of this command is when searching or
+    displaying unit associations to the user.
+    """
 
-class UntypedUnitAssociationCriteriaCommand(UnitAssociationCriteriaCommand):
-    def __init__(self, *args, **kwargs):
-        kwargs['filtering'] = False
-        super(UntypedUnitAssociationCriteriaCommand, self).__init__(*args, **kwargs)
-        OPTIONS_TO_REMOVE = set(['--sort', '--fields'])
-        self.options = [opt for opt in self.options if opt.name not in OPTIONS_TO_REMOVE]
+    ASSOCIATION_FLAG = PulpCliFlag(
+        '--details', _('show association details'), aliases=['-d'])
+
+    def __init__(self, method, *args, **kwargs):
+        super(DisplayUnitAssociationsCommand, self).__init__(
+            method, *args, **kwargs
+        )
+
+        # If we support more than just the details flag in the future, those
+        # options will be added here
+
+        self.add_flag(self.ASSOCIATION_FLAG)
+
