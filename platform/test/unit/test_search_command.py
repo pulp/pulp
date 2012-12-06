@@ -16,7 +16,9 @@ import unittest
 import mock
 from okaara.cli import CommandUsage
 
-from pulp.client.commands.criteria import CriteriaCommand, UnitAssociationCriteriaCommand, UntypedUnitAssociationCriteriaCommand
+from pulp.client.commands.criteria import (CriteriaCommand,
+                                           DisplayUnitAssociationsCommand,
+                                           UnitAssociationCriteriaCommand)
 
 class TestCriteriaCommand(unittest.TestCase):
     OPTION_NAMES = set(('--limit', '--skip', '--filters', '--fields',
@@ -136,15 +138,18 @@ class TestUnitAssociationCriteriaCommand(unittest.TestCase):
         self.assertTrue(isinstance(self.command, CriteriaCommand))
 
 
-class TestUnitSearchAllCommand(unittest.TestCase):
+class TestDisplayUnitAssociationsCommand(unittest.TestCase):
     def setUp(self):
-        self.command = UntypedUnitAssociationCriteriaCommand(mock.MagicMock())
+        self.command = DisplayUnitAssociationsCommand(mock.MagicMock())
 
     def test_command_presence(self):
         options_present = set([option.name for option in self.command.options])
-        self.assertTrue('--sort' not in options_present)
-        self.assertTrue('--fields' not in options_present)
+        self.assertTrue('--after' in options_present)
+        self.assertTrue('--before' in options_present)
+        self.assertTrue('--repo-id' in options_present)
+        self.assertTrue('--details' in options_present)
 
     def test_inherits_search(self):
         # make sure this inherits features that were tested elsewhere.
-        self.assertTrue(isinstance(self.command, UnitAssociationCriteriaCommand))
+        self.assertTrue(isinstance(self.command, CriteriaCommand))
+
