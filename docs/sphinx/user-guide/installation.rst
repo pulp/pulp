@@ -90,9 +90,6 @@ Server
 
    [messaging]
    url: tcp://localhost:5672
-   ...
-   [server]
-   server_name: localhost
 
 3. Configure the server in /etc/pulp/server.conf. Most defaults will work, but these are sections you might consider looking at before proceeding. Each section is documented in-line.
 

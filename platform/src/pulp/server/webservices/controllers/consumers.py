@@ -26,7 +26,7 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest
+from pulp.server.dispatch.call import CallRequest, CallReport
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
@@ -99,25 +99,25 @@ class Consumers(JSONController):
         display_name = body.get('display_name')
         description = body.get('description')
         notes = body.get('notes')
+
         manager = managers.consumer_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id: dispatch_constants.RESOURCE_CREATE_OPERATION}
-        }
         args = [id, display_name, description, notes]
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-            action_tag('create'),
-        ]
-        call_request = CallRequest(
-            manager.register,
-            args,
-            resources=resources,
-            weight=weight,
-            tags=tags)
-        return execution.execute_sync_created(self, call_request, id)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+                action_tag('create')]
 
+        call_request = CallRequest(manager.register,
+                                   args,
+                                   weight=weight,
+                                   tags=tags)
+        call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
+
+        call_report = CallReport.from_call_request(call_request)
+        call_report.serialize_result = False
+
+        consumer = execution.execute_sync(call_request, call_report)
+        consumer.update({'_href': serialization.link.child_link_obj(consumer['id'])})
+        return self.created(consumer['_href'], consumer)
 
 class Consumer(JSONController):
 
