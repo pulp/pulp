@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 2.0.6
-Release: 0.11.beta
+Release: 0.12.beta
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -93,6 +93,14 @@ client capabilities.
 
 
 %changelog
+* Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
+- 861383 - more descriptive message on unregister when server does not exist on
+  the server. (jortel@redhat.com)
+- 883049 - check we have write permissions to cert dir before
+  register/unregister. (jortel@redhat.com)
+- 878632 - adding usage to permission grant and revoke commands to mention that
+  both role-id and login cannot be used at the same time (skarmark@redhat.com)
+
 * Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
 - 
 
