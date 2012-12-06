@@ -14,6 +14,7 @@
 import logging
 import os
 import re
+import shutil
 from gettext import gettext as _
 
 from pulp.server import config as pulp_config
@@ -161,7 +162,10 @@ class OrphanManager(object):
             _LOG.warn(_('Cannot delete orphaned file: %(p)s, Insufficient permissions') % {'p': path})
             return
 
-        os.unlink(path)
+        if os.path.isfile(path) or os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
         # delete parent directories on the path as long as they fall empty
         storage_dir = pulp_config.config.get('server', 'storage_dir')
