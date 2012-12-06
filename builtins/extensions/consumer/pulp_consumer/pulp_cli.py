@@ -182,7 +182,6 @@ class UnregisterCommand(PulpCliCommand):
             'removed even if the server cannot be contacted'
         self.create_flag('--force', _(d))
 
-
     def unregister(self, **kwargs):
         consumer_id = load_consumer_id(self.context)
         if not consumer_id:
@@ -205,7 +204,7 @@ class UnregisterCommand(PulpCliCommand):
                 self._delete_cert()
                 self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
             else:
-                msg = _('This consumer does not exist on the server.  Please retry using the --force option.')
+                msg = _('This consumer does not exist on the server. Please retry using the --force option.')
                 self.prompt.render_failure_message(msg)
 
     def _delete_cert(self):
