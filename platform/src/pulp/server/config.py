@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import socket
 from ConfigParser import SafeConfigParser
 
 # global configuration --------------------------------------------------------
@@ -94,7 +95,7 @@ _default_values = {
         'serial_number_path': '/var/lib/pulp/sn.dat',
     },
     'server': {
-        'server_name': 'localhost',
+        'server_name': socket.gethostname(),
         'relative_url': '/pulp/repos',
         'key_url': '/pulp/gpg',
         'ks_url' : '/pulp/ks',
