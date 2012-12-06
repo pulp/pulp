@@ -60,6 +60,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Dec 06 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.9-1
+- updating grinder (pkilambi@redhat.com)
+
+* Thu Dec 06 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.9-1
 - check whether download url we got back from yum is a url or a relativepath
   and set appropriately (pkilambi@redhat.com)
 
