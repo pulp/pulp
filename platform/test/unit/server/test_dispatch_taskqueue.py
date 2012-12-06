@@ -23,7 +23,7 @@ import base
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import pickling
-from pulp.server.dispatch.call import CallRequest
+from pulp.server.dispatch.call import CallRequest, OBFUSCATED_VALUE
 from pulp.server.dispatch.task import AsyncTask, Task
 from pulp.server.dispatch.taskqueue import TaskQueue
 
@@ -34,6 +34,11 @@ class NamedMock(mock.Mock):
 
 def call(*args, **kwargs):
     pass
+
+CALL_RESULT = 'result'
+
+def call_with_result(*args, **kwargs):
+    return CALL_RESULT
 
 def error(*args, **kwargs):
     raise Exception()
@@ -224,6 +229,23 @@ class TaskQueueControlFlowTests(TaskQueueTests):
         self.wait_for_task_to_start(task)
         self.assertFalse(task in self.queue.waiting_tasks())
         self.assertTrue(task in self.queue.running_tasks())
+
+    def test_run_ready_task_with_result(self):
+        task = self.gen_task(call_with_result)
+        self.queue.enqueue(task)
+        self.queue._run_ready_task(task)
+        self.wait_for_task_to_complete(task)
+        self.assertEqual(CALL_RESULT, task.call_report.result)
+        self.assertEqual(CALL_RESULT, task.call_report.serialize()['result'])
+
+    def test_run_ready_task_with_obfuscated_result(self):
+        task = self.gen_task(call_with_result)
+        task.call_report.serialize_result = False
+        self.queue.enqueue(task)
+        self.queue._run_ready_task(task)
+        self.wait_for_task_to_complete(task)
+        self.assertEqual(CALL_RESULT, task.call_report.result)
+        self.assertEqual(OBFUSCATED_VALUE, task.call_report.serialize()['result'])
 
     def test_run_ready_task_complete(self):
         task = self.gen_async_task()
