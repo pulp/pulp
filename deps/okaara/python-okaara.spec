@@ -73,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Dec 06 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.27-1
+- Upgrading okaara to 1.0.27 (jason.dobies@redhat.com)
+
+* Thu Dec 06 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.27-1
 - The full path to the section isn't known, so the usage was misleading since
   it was missing the parent sections. The change for now is to simply not
   include the path to the section and just inform the user of the
