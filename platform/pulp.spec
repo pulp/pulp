@@ -159,6 +159,7 @@ Requires: python-qpid
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
+Requires: nss-tools
 Requires: python-ldap
 Requires: python-gofer >= 0.74
 Requires: crontabs
