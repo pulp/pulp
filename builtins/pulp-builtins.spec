@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 2.0.6
-Release: 0.12.beta
+Release: 0.13.beta
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -93,6 +93,9 @@ client capabilities.
 
 
 %changelog
+* Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
+- 
+
 * Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
 - 861383 - more descriptive message on unregister when server does not exist on
   the server. (jortel@redhat.com)
