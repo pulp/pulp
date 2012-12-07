@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.12.beta
+Release: 0.13.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -407,6 +407,13 @@ exit 0
 %endif
 
 %changelog
+* Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
+- 885098 - Use a separate logging config for pulp-manage-db.
+  (rbarlow@redhat.com)
+- 885134 - Added check to not parse an apache error as if it has the Pulp
+  structure and handling in the exception middleware for it
+  (jason.dobies@redhat.com)
+
 * Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
 - 867464 - Renaming modules to units and a fixing a few minor output errors
   (skarmark@redhat.com)
