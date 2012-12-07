@@ -8,6 +8,7 @@ Contents:
 
    introduction
    installation
+   qpid
    server
    admin-client/index
    consumer-client/index
