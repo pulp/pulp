@@ -19,7 +19,7 @@ import sys
 from pulp.plugins.loader.api import load_content_types
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
-from pulp.server import logs
+from pulp.server import config, logs
 
 
 connection.initialize()
@@ -102,14 +102,14 @@ def main():
         _start_logging()
         _auto_manage_db(options)
     except DataError, e:
+        print >> sys.stderr, str(e)
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
-        print >> sys.stderr, str(e)
         return os.EX_DATAERR
     except Exception, e:
+        print >> sys.stderr, str(e)
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
-        print >> sys.stderr, str(e)
         return os.EX_SOFTWARE
 
 
@@ -143,5 +143,8 @@ def _start_logging():
     Call into Pulp to get the logging started, and set up the logger to be used in this module.
     """
     global logger
-    logs.start_logging()
+    log_config_filename = config.config.get('logs', 'db_config')
+    if not os.access(log_config_filename, os.R_OK):
+        raise RuntimeError("Unable to read log configuration file: %s" % (log_config_filename))
+    logging.config.fileConfig(log_config_filename)
     logger = logging.getLogger('db')
