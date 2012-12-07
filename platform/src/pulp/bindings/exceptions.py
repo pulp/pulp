@@ -59,6 +59,28 @@ class ConflictException(RequestException): pass
 # Response code >= 500
 class PulpServerException(RequestException): pass
 
+# Response code >= 500 and not a Pulp formatted error
+class ApacheServerException(Exception):
+    """
+    If Apache raises the error, it won't be in the standard Pulp format.
+    Therefore this class does not subclass RequestException and simply
+    stores the string returned from Apache.
+
+    We store the response body given to us with the error, but it's an HTML
+    page that basically says stuff broke, so it's not terribly useful. The
+    user will still likely need to go to the server to figure out what went
+    wrong.
+    """
+
+    def __init__(self, message):
+        """
+        @param message: the response body apache returns with the error
+        @type  message: str
+        """
+        Exception.__init__(self)
+
+        self.message = message
+
 
 class ConnectionException(Exception):
     """
