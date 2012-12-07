@@ -13,6 +13,7 @@ Contents:
    consumer-client/index
    general-reference
    glossary
+   troubleshooting
 
 
 Indices and tables

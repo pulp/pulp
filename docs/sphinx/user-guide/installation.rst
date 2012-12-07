@@ -46,6 +46,24 @@ Prerequisites
 * The mod_python Apache module must be uninstalled or not loaded. Pulp uses
   mod_wsgi which conflicts with mod_python and will cause the server to fail.
 
+.. warning::
+  MongoDB is known to have
+  `serious limitations <http://docs.mongodb.org/manual/faq/fundamentals/#what-are-the-32-bit-limitations>`_
+  on 32-bit architectures. It is strongly advised that you run MongoDB on a 64-bit architecture.
+
+Storage Requirements
+--------------------
+
+The MongoDB database can easily grow to 10GB or more in size, which vastly
+exceeds the amount of data actually stored in the database. This is normal
+(but admittedly surprising) behavior for MongoDB. As such, make sure you
+**allocate plenty of storage within** ``/var/lib/mongodb``.
+
+To host Pulp's content units on an **NFS share**, please mount that share at
+``/var/lib/pulp/content``, and NOT at ``/var/lib/pulp``. Because parts of Pulp
+use transient sqlite databases, and sqlite is known to have problems working over
+NFS, it is important to mount an NFS share only in the ``content`` directory.
+
 Repositories
 ------------
 
@@ -130,24 +148,6 @@ Server
 
   $ sudo service httpd start
   $ sudo chkconfig httpd on
-
-
-.. move the below note into a dedicated SSL config guide.
-
-.. note::
-  In some distributions, such as RHEL 6.3 and Fedora 17, the default SSL certificate
-  used by Apache is created with its Common Name set to the hostname of the machine.
-  This can cause Pulp to return an error similar to ``The server hostname configured
-  on the client did not match the name found in the server's SSL certificate.``
-
-  If you want to connect to localhost, you need to regenerate this certificate,
-  which is stored in /etc/pki/tls/certs/localhost.crt. For testing purposes, delete
-  it, then run ``make testcert``. Be sure to answer "localhost" for the
-  "Common Name". Other responses do not matter.
-
-  For production installations of Pulp, it is up to the installer to provide
-  appropriate SSL certificates.
-
 
 Admin Client
 ------------
