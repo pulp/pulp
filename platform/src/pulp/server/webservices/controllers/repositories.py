@@ -169,16 +169,23 @@ class RepoCollection(JSONController):
         # Creation
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [id, display_name, description, notes, importer_type_id, importer_repo_plugin_config, distributors]
+        args = [id, display_name, description, notes]
+        kwargs = {'importer_type_id': importer_type_id,
+                  'importer_repo_plugin_config': importer_repo_plugin_config,
+                  'distributor_list': distributors}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
                 action_tag('create')]
 
         call_request = CallRequest(repo_manager.create_and_configure_repo,
                                    args,
+                                   kwargs,
                                    resources=resources,
                                    weight=weight,
-                                   tags=tags)
+                                   tags=tags,
+                                   kwarg_blacklist=['importer_repo_plugin_config',
+                                                    'distributor_list'])
+
         repo = execution.execute_sync(call_request)
         repo.update(serialization.link.child_link_obj(id))
         return self.created(id, repo)
