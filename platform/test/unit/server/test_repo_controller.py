@@ -25,7 +25,7 @@ import mock
 import base
 import dummy_plugins
 
-from pulp.common import dateutils
+from pulp.common import dateutils, tags
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
@@ -33,11 +33,13 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
+from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch.call import OBFUSCATED_VALUE
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 from pulp.server.webservices.controllers import repositories
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.itineraries.repository import (
     repo_delete_itinerary,
     distributor_delete_itinerary,
@@ -306,6 +308,17 @@ class RepoCollectionTests(RepoControllersTests):
 
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
         self.assertTrue(repo is not None)
+
+        # test that the create call request has some black listed keyword arguments
+
+        repo_tag = tags.resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'repo-1')
+        create_tag = tags.action_tag('create')
+        coordinator = dispatch_factory.coordinator()
+        task = coordinator._find_tasks(tags=[repo_tag, create_tag])[0]
+        kwargs_reprs = task.call_request.callable_kwargs_reprs()
+
+        self.assertEqual(kwargs_reprs['importer_repo_plugin_config'], OBFUSCATED_VALUE)
+        self.assertEqual(kwargs_reprs['distributor_list'], OBFUSCATED_VALUE)
 
     def test_post_bad_data(self):
         """
