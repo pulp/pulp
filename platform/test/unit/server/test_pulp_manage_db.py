@@ -113,8 +113,9 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
-    @patch('pulp.server.db.manage.logs.start_logging')
-    def test_current_version_too_high(self, mocked_start_logging, mocked_stderr):
+    @patch('pulp.server.db.manage.logger')
+    @patch('pulp.server.db.manage._start_logging')
+    def test_current_version_too_high(self, mocked_start_logging, mocked_logger, mocked_stderr):
         """
         Set the current package version higher than latest available version, then sit back and eat
         popcorn.
@@ -143,8 +144,9 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
-    @patch('pulp.server.db.manage.logs.start_logging')
-    def test_migrate(self, start_logging_mock, mocked_apply_migration, mocked_stderr):
+    @patch('pulp.server.db.manage.logger')
+    @patch('pulp.server.db.manage._start_logging')
+    def test_migrate(self, start_logging_mock, logger_mock, mocked_apply_migration, mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
         in the correct order.
@@ -190,8 +192,9 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db",])
-    @patch('pulp.server.db.manage.logs.start_logging')
-    def test_migrate_with_new_packages(self, start_logging_mock, mocked_apply_migration):
+    @patch('pulp.server.db.manage.logger')
+    @patch('pulp.server.db.manage._start_logging')
+    def test_migrate_with_new_packages(self, start_logging_mock, logger_mock, mocked_apply_migration):
         """
         Adding new packages to a system that doesn't have any trackers should automatically advance
         each package to the latest available version without calling any migrate() functions.
@@ -216,8 +219,8 @@ class TestManageDB(MigrationTest):
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db",])
-    @patch('pulp.server.db.manage.logs.start_logging')
-    def test_pulp_manage_db_loads_types(self, start_loggin_mock, listdir_mock):
+    @patch('pulp.server.db.manage._start_logging')
+    def test_pulp_manage_db_loads_types(self, start_logging_mock, listdir_mock):
         """
         Test calling pulp-manage-db imports types on a clean types database.
         """
@@ -260,7 +263,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--test",])
-    @patch('pulp.server.db.manage.logs.start_logging')
+    @patch('pulp.server.db.manage.logging')
     def test_migrate_with_test_flag(self, start_logging_mock, mocked_apply_migration, mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
