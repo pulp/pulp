@@ -88,6 +88,12 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
+        code = self.exception_handler.handle_exception(exceptions.ApacheServerException('Test Message'))
+        self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
+        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
         code = self.exception_handler.handle_exception(gaierror())
         self.assertEqual(code, handler.CODE_UNKNOWN_HOST)
         self.assertEqual(1, len(self.prompt.tags))
@@ -266,6 +272,20 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_WRONG_HOST)
         self.assertTrue(expected in self.recorder.lines[0])
         self.assertTrue(actual in self.recorder.lines[0])
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+
+    def test_apache_server_error(self):
+        """
+        Tests handling the case where Apache raised an exception.
+        """
+
+        # Test
+        msg = 'Test Message'
+        e = exceptions.ApacheServerException(msg)
+        code = self.exception_handler.handle_apache_error(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
 
     def test_unknown_host(self):

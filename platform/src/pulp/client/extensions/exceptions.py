@@ -41,6 +41,7 @@ CODE_BAD_REQUEST = os.EX_DATAERR
 CODE_NOT_FOUND = os.EX_DATAERR
 CODE_CONFLICT = os.EX_DATAERR
 CODE_PULP_SERVER_EXCEPTION = os.EX_SOFTWARE
+CODE_APACHE_SERVER_EXCEPTION = os.EX_SOFTWARE
 CODE_CONNECTION_EXCEPTION = os.EX_IOERR
 CODE_PERMISSIONS_EXCEPTION = os.EX_NOPERM
 CODE_UNEXPECTED = os.EX_SOFTWARE
@@ -75,15 +76,16 @@ class ExceptionHandler:
 
         # Determine which method to call based on exception type
         mappings = (
-            (BadRequestException,  self.handle_bad_request),
-            (NotFoundException,    self.handle_not_found),
-            (ConflictException,    self.handle_conflict),
-            (PulpServerException,  self.handle_server_error),
-            (ConnectionException,  self.handle_connection_error),
-            (PermissionsException, self.handle_permission),
-            (InvalidConfig,        self.handle_invalid_config),
-            (WrongHost,            self.handle_wrong_host),
-            (gaierror,             self.handle_unknown_host),
+            (BadRequestException,   self.handle_bad_request),
+            (NotFoundException,     self.handle_not_found),
+            (ConflictException,     self.handle_conflict),
+            (ConnectionException,   self.handle_connection_error),
+            (PermissionsException,  self.handle_permission),
+            (InvalidConfig,         self.handle_invalid_config),
+            (WrongHost,             self.handle_wrong_host),
+            (gaierror,              self.handle_unknown_host),
+            (PulpServerException,   self.handle_server_error),
+            (ApacheServerException, self.handle_apache_error),
         )
 
         handle_func = self.handle_unexpected
@@ -324,6 +326,27 @@ class ExceptionHandler:
 
         self.prompt.render_failure_message(msg)
         return CODE_UNKNOWN_HOST
+
+    def handle_apache_error(self, e):
+        """
+        Handles an exception that crops up from Apache itself, which won't have
+        all of the extra data Pulp adds to its standard exception format.
+
+        @type e: ApacheServerException
+
+        @return: appropriate exit code for this error
+        """
+
+        self._log_client_exception(e)
+
+        msg = _('The web server reported an error trying to access the '
+                'Pulp application. The likely cause is that the pulp-manage-db '
+                'script has not been run prior to starting the server. '
+                'More information can be found in Apache\'s error log file '
+                'on the server itself.')
+
+        self.prompt.render_failure_message(msg)
+        return CODE_APACHE_SERVER_EXCEPTION
 
     def handle_unexpected(self, e):
         """
