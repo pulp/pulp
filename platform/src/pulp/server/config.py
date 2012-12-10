@@ -21,9 +21,6 @@ config = None # ConfigParser.SafeConfigParser instance
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
-    'cds': {
-        'sync_timeout': '10:7200',
-    },
     'consumer_history': {
         'lifetime': '180', # in days
     },
@@ -39,7 +36,6 @@ _default_values = {
         'repo_group_publish_history': '60',
     },
     'database': {
-        'auto_migrate': 'false',
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
         'operation_retries': '2',
@@ -48,10 +44,6 @@ _default_values = {
         'host': 'localhost',
         'port': '25',
         'enabled' : 'false'
-    },
-    'events': {
-        'send_enabled': 'false',
-        'recv_enabled': 'false',
     },
     'oauth': {
         'enabled': 'false',
@@ -64,13 +56,7 @@ _default_values = {
     },
     'logs': {
         'config': '/etc/pulp/logging/basic.cfg',
-        # XXX are the rest of these even used?
-        'qpid_log_level': 'info',
-        'level': 'info',
-        'max_size': '1048576',
-        'backups': '4',
-        'pulp_file': '/var/log/pulp/pulp.log',
-        'grinder_file': '/var/log/pulp/grinder.log',
+        'db_config' : '/etc/pulp/logging/db.cfg',
     },
     'messaging': {
         'url': 'tcp://localhost:5672',
@@ -96,9 +82,6 @@ _default_values = {
     },
     'server': {
         'server_name': socket.gethostname(),
-        'relative_url': '/pulp/repos',
-        'key_url': '/pulp/gpg',
-        'ks_url' : '/pulp/ks',
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'false',
