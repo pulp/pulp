@@ -59,6 +59,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 0.1.10-1
+- 885264 - Fix repos with an existing xml:base, pulp generates bad repodata.
+  (jortel@redhat.com)
+
 * Fri Dec 07 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.10-1
 - 885264 - yum xml dumps use the download url as the base, overrid that so we
   dont preseve this in pulp db and let yum handle the baseurl from .repo file
