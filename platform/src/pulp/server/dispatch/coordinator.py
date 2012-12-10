@@ -105,7 +105,7 @@ class Coordinator(object):
         @rtype:  L{call.CallReport} instance
         """
         task = self._create_task(call_request, call_report)
-        self._ready_task(task)
+        self._process_tasks([task])
 
         if not isinstance(task, AsyncTask) and task.call_report.response is dispatch_constants.CALL_ACCEPTED_RESPONSE:
             self._run_task(task)
@@ -133,7 +133,7 @@ class Coordinator(object):
         if isinstance(task, AsyncTask):
             raise dispatch_exceptions.AsynchronousExecutionError(['asynchronous'])
 
-        self._ready_task(task)
+        self._process_tasks([task])
 
         if task.call_report.response is not dispatch_constants.CALL_REJECTED_RESPONSE:
             self._run_task(task, timeout)
@@ -152,7 +152,7 @@ class Coordinator(object):
         @rtype:  L{call.CallReport} instance
         """
         task = self._create_task(call_request, call_report)
-        self._ready_task(task)
+        self._process_tasks([task])
 
         return copy.copy(task.call_report)
 
@@ -168,7 +168,7 @@ class Coordinator(object):
         """
         call_request_group_id = self._generate_call_request_group_id()
         task_list = []
-        call_report_list = []
+        #call_report_list = []
 
         for call_request in call_request_list:
             task = self._create_task(call_request, call_request_group_id=call_request_group_id)
@@ -185,13 +185,11 @@ class Coordinator(object):
         task_queue.lock()
 
         try:
-            for task in sorted_task_list:
-                self._ready_task(task)
-                call_report_list.append(copy.copy(task.call_report))
+            self._process_tasks(sorted_task_list)
         finally:
             task_queue.unlock()
 
-        return call_report_list
+        return [t.call_report for t in sorted_task_list]
 
     # execution utilities ------------------------------------------------------
 
@@ -217,11 +215,12 @@ class Coordinator(object):
 
         return task
 
-    def _ready_task(self, task):
+    def _process_tasks(self, task_list):
         """
-        Look for and potentially resolve resource conflicts and enqueue the task.
-        @param task: task to ready
-        @type  task: L{Task} instance
+        Look for, and potentially resolve resource, conflicts for and enqueue
+        the tasks in the task list.
+        @param task_list: list of tasks tasks to work the coordinator magic on
+        @type  task_list: list
         """
 
         # we have to lock the task queue here as there is a race condition
@@ -231,27 +230,43 @@ class Coordinator(object):
         task_queue = dispatch_factory._task_queue()
         task_queue.lock()
 
-        try:
-            response, blocking, reasons, call_resources = self._find_conflicts(task.call_request.resources)
-            task.call_report.response = response
-            task.call_report.reasons = reasons
+        responses_list = []
+        call_resource_list = []
 
-            if response is dispatch_constants.CALL_REJECTED_RESPONSE:
+        try:
+            for task in task_list:
+                response, blocking, reasons, call_resources = self._find_conflicts(task.call_request.resources)
+                task.call_report.response = response
+                task.call_report.reasons = reasons
+
+                responses_list.append(response)
+
+                if response is dispatch_constants.CALL_REJECTED_RESPONSE:
+                    continue
+
+                dependencies = dict.fromkeys(blocking, dispatch_constants.CALL_COMPLETE_STATES)
+                # use the original (possibly more restrictive) values, when present
+                dependencies.update(task.call_request.dependencies)
+                task.call_request.dependencies = dependencies
+
+                task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, GrantPermmissionsForTaskV2())
+                task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, RevokePermissionsForTaskV2())
+                task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
+
+                if call_resources:
+                    set_call_request_id_on_call_resources(task.call_request.id, call_resources)
+                    call_resource_list.extend(call_resources)
+
+            # for a call request group: if 1 of the tasks is rejected, then they are all rejected
+            if reduce(lambda p, r: r is dispatch_constants.CALL_REJECTED_RESPONSE or p, responses_list, False):
+                map(lambda t: setattr(t.call_report, 'response', dispatch_constants.CALL_REJECTED_RESPONSE), task_list)
                 return
 
-            dependencies = dict.fromkeys(blocking, dispatch_constants.CALL_COMPLETE_STATES)
-            dependencies.update(task.call_request.dependencies) # use the original (possibly more restrictive) values, when present
-            task.call_request.dependencies = dependencies
+            if call_resource_list:
+                self.call_resource_collection.insert(call_resource_list, safe=True)
 
-            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK, GrantPermmissionsForTaskV2())
-            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, RevokePermissionsForTaskV2())
-            task.call_request.add_life_cycle_callback(dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK, coordinator_dequeue_callback)
-
-            if call_resources:
-                set_call_request_id_on_call_resources(task.call_request.id, call_resources)
-                self.call_resource_collection.insert(call_resources, safe=True)
-
-            task_queue.enqueue(task)
+            for task in task_list:
+                task_queue.enqueue(task)
 
         finally:
             task_queue.unlock()
