@@ -340,14 +340,14 @@ class CoordinatorRunTaskTests(CoordinatorTests):
 
     def test_run_task_async(self):
         task = Task(call.CallRequest(dummy_call))
-        self.coordinator._ready_task(task)
+        self.coordinator._process_tasks([task])
         self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK]) == 1)
         self.assertTrue(len(task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK]) == 2)
         self.assertTrue(coordinator.coordinator_dequeue_callback in task.call_request.execution_hooks[dispatch_constants.CALL_DEQUEUE_LIFE_CYCLE_CALLBACK])
 
     def test_run_task_sync(self):
         task = Task(call.CallRequest(dummy_call))
-        self.coordinator._ready_task(task)
+        self.coordinator._process_tasks([task])
         self.coordinator._run_task(task)
         self.assertTrue(coordinator.wait_for_task.call_count == 2, coordinator.wait_for_task.call_count)
 
@@ -366,28 +366,28 @@ class CoordinatorCallExecutionTests(CoordinatorTests):
 
     def setUp(self):
         super(CoordinatorCallExecutionTests, self).setUp()
-        self.coordinator._ready_task = mock.Mock()
+        self.coordinator._process_tasks = mock.Mock()
         self.coordinator._run_task = mock.Mock()
 
     def test_execute_call(self):
         call_request = call.CallRequest(dummy_call)
         call_report = self.coordinator.execute_call(call_request)
         self.assertTrue(isinstance(call_report, call.CallReport))
-        self.assertTrue(self.coordinator._ready_task.call_count == 1)
-        task = self.coordinator._ready_task.call_args[0][0]
+        self.assertTrue(self.coordinator._process_tasks.call_count == 1)
+        task = self.coordinator._process_tasks.call_args[0][0][0]
         self.assertTrue(isinstance(task, Task))
         self.assertTrue(call_report.call_request_id == task.call_request.id, '"%s" != "%s"' % (call_report.call_request_id, task.call_request.id))
 
     def test_execute_call_synchronously(self):
         call_request = call.CallRequest(dummy_call)
         self.coordinator.execute_call_synchronously(call_request)
-        self.assertTrue(self.coordinator._ready_task.call_count == 1)
+        self.assertTrue(self.coordinator._process_tasks.call_count == 1)
         self.assertTrue(self.coordinator._run_task.call_count == 1)
 
     def test_execute_call_asynchronously(self):
         call_request = call.CallRequest(dummy_call)
         self.coordinator.execute_call_asynchronously(call_request)
-        self.assertTrue(self.coordinator._ready_task.call_count == 1)
+        self.assertTrue(self.coordinator._process_tasks.call_count == 1)
         self.assertTrue(self.coordinator._run_task.call_count == 0)
 
 # multiple call execution tests ------------------------------------------------
@@ -440,13 +440,13 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
     def setUp(self):
         super(CoordinatorMultipleCallExecutionTests, self).setUp()
-        self.coordinator._ready_task = mock.Mock()
+        self.coordinator._process_tasks = mock.Mock()
 
     def test_execute_multiple_calls(self):
         call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
         call_reports = self.coordinator.execute_multiple_calls(call_requests)
         self.assertTrue(len(call_requests) == len(call_reports))
-        self.assertTrue(self.coordinator._ready_task.call_count == len(call_requests))
+        self.assertTrue(self.coordinator._process_tasks.call_count == 1)
 
     def test_execute_multiple_calls_dependencies(self):
         call_request_1 = call.CallRequest(dummy_call)
@@ -462,7 +462,7 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
         call_reports = self.coordinator.execute_multiple_calls(call_requests)
         self.assertTrue(len(call_requests) == len(call_reports))
-        self.assertTrue(self.coordinator._ready_task.call_count == len(call_requests))
+        self.assertTrue(self.coordinator._process_tasks.call_count == 1)
 
     def test_execute_multiple_calls_circular_dependencies(self):
         call_request_1 = call.CallRequest(dummy_call)
@@ -479,7 +479,7 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
         self.assertRaises(CycleExists,
                           self.coordinator.execute_multiple_calls,
                           call_requests)
-        self.assertTrue(self.coordinator._ready_task.call_count == 0)
+        self.assertTrue(self.coordinator._process_tasks.call_count == 0)
 
 
     def test_task_blockers_from_dependencies(self):
@@ -490,8 +490,8 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
         self.coordinator.execute_multiple_calls([call_request_2, call_request_1])
 
-        task_1 = self.coordinator._ready_task.call_args_list[0][0][0]
-        task_2 = self.coordinator._ready_task.call_args_list[1][0][0]
+        task_1 = self.coordinator._process_tasks.call_args_list[0][0][0][0]
+        task_2 = self.coordinator._process_tasks.call_args_list[0][0][0][1]
 
         self.assertTrue(task_1.call_request is call_request_1)
         self.assertTrue(task_2.call_request is call_request_2)
