@@ -166,29 +166,10 @@ class Coordinator(object):
         @rtype:  list of L{call.CallReport} instances
         @raise: L{TopologicalSortError} if inter-task dependencies are malformed
         """
-        call_request_group_id = self._generate_call_request_group_id()
-        task_list = []
-        #call_report_list = []
-
-        for call_request in call_request_list:
-            task = self._create_task(call_request, call_request_group_id=call_request_group_id)
-            task_list.append(task)
-
+        group_id = self._generate_call_request_group_id()
+        task_list = [self._create_task(c, None, group_id) for c in call_request_list]
         sorted_task_list = self._analyze_dependencies(task_list)
-
-        task_queue = dispatch_factory._task_queue()
-
-        # locking the task queue so that the dependency validation can take place
-        # for all tasks in the group *before* any of them are run, eliminating
-        # a race condition in the dependency validation
-
-        task_queue.lock()
-
-        try:
-            self._process_tasks(sorted_task_list)
-        finally:
-            task_queue.unlock()
-
+        self._process_tasks(sorted_task_list)
         return [t.call_report for t in sorted_task_list]
 
     # execution utilities ------------------------------------------------------
