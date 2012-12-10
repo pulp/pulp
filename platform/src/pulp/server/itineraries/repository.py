@@ -159,10 +159,12 @@ def distributor_update_itinerary(repo_id, distributor_id, config):
 
     update_request = CallRequest(
         manager.update_distributor_config,
-        [repo_id, distributor_id, config],
+        [repo_id, distributor_id],
+        {'distributor_config': config},
         resources=resources,
         tags=tags,
-        archive=True)
+        archive=True,
+        kwarg_blacklist=['distributor_config'])
 
     call_requests.append(update_request)
 
