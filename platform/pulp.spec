@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.13.beta
+Release: 0.14.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -408,6 +408,9 @@ exit 0
 %endif
 
 %changelog
+* Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.14.beta
+- 885229 - add requires: nss-tools. (jortel@redhat.com)
+
 * Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
 - 885098 - Use a separate logging config for pulp-manage-db.
   (rbarlow@redhat.com)
