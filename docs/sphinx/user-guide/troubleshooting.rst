@@ -9,7 +9,11 @@ Log File Locations
   Pulp server logs its activity here
 
 /var/log/pulp/db.log
-  database log
+  Database log
+
+/var/log/httpd/error_log
+  This is where Apache will log errors that the Pulp server itself did not
+  handle. Bootstrap errors often get logged here.
 
 /var/log/httpd/ssl_error_log
   This is where Apache will log errors that the Pulp server itself did not
@@ -24,10 +28,14 @@ Log File Locations
   pulp-consumer logs its activity here.
 
 ~/.pulp/server_calls.log
-  HTTP requests and responses get logger by the admin and consumer clients in
+  HTTP requests and responses get logged by the admin client in
   this file. To enable/disable this, consult the ``[logging]`` section of
   ``/etc/pulp/admin/admin.conf``.
 
+~/.pulp/consumer_server_calls.log
+  HTTP requests and responses get logged by the consumer client in
+  this file. To enable/disable this, consult the ``[logging]`` section of
+  ``/etc/pulp/consumer/consumer.conf``.
 
 Common Issues
 -------------
@@ -46,5 +54,5 @@ it, then run ``make testcert``. Be sure to answer "localhost" for the
 "Common Name". Other responses do not matter.
 
 For production installations of Pulp, it is up to the installer to provide
-appropriate SSL certificates.
+appropriate SSL certificates and configure Apache to use them.
 

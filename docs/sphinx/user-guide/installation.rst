@@ -57,10 +57,10 @@ Storage Requirements
 The MongoDB database can easily grow to 10GB or more in size, which vastly
 exceeds the amount of data actually stored in the database. This is normal
 (but admittedly surprising) behavior for MongoDB. As such, make sure you
-**allocate plenty of storage within** ``/var/lib/mongodb``.
+allocate plenty of storage within ``/var/lib/mongodb``.
 
 To host Pulp's content units on an **NFS share**, please mount that share at
-``/var/lib/pulp/content``, and NOT at ``/var/lib/pulp``. Because parts of Pulp
+``/var/lib/pulp/content``, and not at ``/var/lib/pulp``. Because parts of Pulp
 use transient sqlite databases, and sqlite is known to have problems working over
 NFS, it is important to mount an NFS share only in the ``content`` directory.
 
