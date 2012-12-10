@@ -82,9 +82,8 @@ class BaseTasksSection(PulpCliSection):
         for task in response.response_body:
 
             # Interpret task values
-            state, start_time, finish_time = self.parse_state(task)
+            state, start_time, finish_time, result = self.parse_state(task)
             actions, resources = self.parse_tags(task)
-            result = self.parse_result(task)
 
             task_doc = {
                 'operations' : ', '.join(actions),
@@ -112,9 +111,8 @@ class BaseTasksSection(PulpCliSection):
         task = response.response_body
 
         # Interpret task values
-        state, start_time, finish_time = self.parse_state(task)
+        state, start_time, finish_time, result = self.parse_state(task)
         actions, resources = self.parse_tags(task)
-        result = self.parse_result(task)
 
         # Assemble document to be displayed
         task_doc = {
@@ -163,7 +161,8 @@ class BaseTasksSection(PulpCliSection):
 
     # -- rendering utilities --------------------------------------------------
 
-    def parse_state(self, task):
+    @staticmethod
+    def parse_state(task):
         """
         Uses the state of the task to return user-friendly descriptions of the
         state and task timing values.
@@ -171,32 +170,45 @@ class BaseTasksSection(PulpCliSection):
         @param task: object representation of the task
         @type  task: Task
 
-        @return: tuple of state, start time, and finish time
-        @rtype: (str, str, str)
+        @return: tuple of state, start time, finish time, and result
+        @rtype: (str, str, str, str)
         """
+
         state = _('Unknown')
-        start_time = _('Unstarted')
-        finish_time = _('Incomplete')
+        result = _('Unknown')
+        start_time = task.start_time or _('Unstarted')
+        finish_time = task.finish_time or _('Incomplete')
 
         if task.is_rejected():
             state = _('Rejected')
+            result = _('N/A')
         elif task.is_postponed() or task.is_waiting():
             state = _('Waiting')
+            result = _('Incomplete')
         elif task.is_running():
             state = _('Running')
-            start_time = task.start_time
+            result = _('Incomplete')
         elif task.is_completed():
-            finish_time = task.finish_time
             if task.was_successful():
                 state = _('Successful')
+                # Use the result value or pretty text if there was none
+                result = task.result or _('N/A')
             elif task.was_failure():
                 state = _('Failed')
+                result = task.result or _('N/A')
+            elif task.was_skipped():
+                state = _('Skipped')
+                start_time = _('N/A')
+                finish_time = _('N/A')
+                result = _('N/A')
             elif task.was_cancelled():
                 state = _('Cancelled')
+                result = _('N/A')
 
-        return state, start_time, finish_time
+        return state, start_time, finish_time, result
 
-    def parse_tags(self, task):
+    @staticmethod
+    def parse_tags(task):
         """
         Uses the tags entry in the task to render a user-friendly display of
         the actions and resources involved in the task.
@@ -220,18 +232,6 @@ class BaseTasksSection(PulpCliSection):
                 actions.append(tag_value)
 
         return actions, resources
-
-    def parse_result(self, task):
-        """
-        Converts the result of the task into a user-friendly explanation.
-
-        @param task: object representation of the task
-        @type  task: Task
-
-        @return: tuple of list of actions and list of resources involved
-        @rtype:  ([], [])
-        """
-        return task.result or _('Incomplete')
 
 # -- override below -------------------------------------------------------
 
