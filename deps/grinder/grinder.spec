@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.1.9
+Version: 0.1.10
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -59,8 +59,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Thu Dec 06 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.9-1
-- updating grinder (pkilambi@redhat.com)
+* Fri Dec 07 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.10-1
+- 885264 - yum xml dumps use the download url as the base, overrid that so we
+  dont preseve this in pulp db and let yum handle the baseurl from .repo file
+  (pkilambi@redhat.com)
 
 * Thu Dec 06 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.9-1
 - check whether download url we got back from yum is a url or a relativepath
