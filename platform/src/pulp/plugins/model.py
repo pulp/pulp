@@ -116,6 +116,7 @@ class RelatedRepositoryGroup(RepositoryGroup):
                                                      working_dir)
         self.plugin_configs = plugin_configs
 
+
 class Unit(object):
     """
     Contains information related to a single content unit. The unit may or
@@ -135,7 +136,7 @@ class Unit(object):
     @ivar metadata: mapping of key/value pairs describing the unit
     @type metadata: dict
 
-    @ivar storage_path: full path to where on disk the unit is stored
+    @ivar storage_path: full path to where on disk the unit is stored, including the filename
     @type storage_path: str
     """
 
@@ -152,9 +153,10 @@ class Unit(object):
 
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)
-    
+
     def __repr__(self):
         return str(self)
+
 
 class AssociatedUnit(Unit):
     """

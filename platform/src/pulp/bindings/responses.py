@@ -177,6 +177,15 @@ class Task(object):
         """
         return self.state == STATE_ERROR
 
+    def was_skipped(self):
+        """
+        Indicates if a task was skipped. If the task is not finished, this call
+        returns False
+
+        :rtype: bool
+        """
+        return self.state == STATE_SKIPPED
+
     def was_cancelled(self):
         """
         Indicates if a task was cancelled.

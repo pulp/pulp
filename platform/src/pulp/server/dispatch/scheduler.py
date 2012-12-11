@@ -20,7 +20,6 @@ from pprint import pformat
 import isodate
 
 from pulp.common import dateutils
-from pulp.common.tags import resource_tag
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -91,9 +90,12 @@ class Scheduler(object):
 
         for call_group in self._get_scheduled_call_groups():
 
-            for call_request in call_group:
-                call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
-                                                     scheduler_complete_callback)
+            # this is a bit of hack and presumes that the first call in the call
+            # group is the most important, need to re-think this and implement
+            # something more general (counter-based?)
+            # but for right now, the presumption is correct
+            call_group[0].add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
+                                                  scheduler_complete_callback)
 
             if len(call_group) == 1:
                 call_report_list = [coordinator.execute_call_asynchronously(call_group[0])]
@@ -131,7 +133,9 @@ class Scheduler(object):
             # get the itinerary call request and execute
             serialized_call_request = scheduled_call['serialized_call_request']
             call_request = call.CallRequest.deserialize(serialized_call_request)
-            call_report = coordinator.execute_call_synchronously(call_request)
+            call_report = call.CallReport.from_call_request(call_request)
+            call_report.serialize_result = False
+            call_report = coordinator.execute_call_synchronously(call_request, call_report)
 
             # call request group is the return of an itinerary function
             call_request_group = call_report.result
@@ -197,7 +201,7 @@ class Scheduler(object):
                 msg = _('Scheduled task [%s] disabled after %d consecutive failures')
                 _LOG.error(msg % (schedule_id, consecutive_failures))
 
-        else:
+        elif state == dispatch_constants.CALL_FINISHED_STATE:
             delta = update.setdefault('$set', {})
             delta['consecutive_failures'] = 0
 
