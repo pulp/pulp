@@ -19,7 +19,7 @@ import mock
 
 import base
 
-from pulp.server.db.model.dispatch import CallResource
+from pulp.server.db.model.dispatch import CallResource, QueuedCall, ArchivedCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
 from pulp.server.dispatch import coordinator
@@ -56,6 +56,8 @@ class CoordinatorTests(base.PulpServerTests):
         self._task_queue_factory = None
         self.collection.drop()
         self.collection = None
+        QueuedCall.get_collection().drop()
+        ArchivedCall.get_collection().drop()
 
 # or query tests ---------------------------------------------------------------
 
@@ -440,7 +442,7 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
 
     def setUp(self):
         super(CoordinatorMultipleCallExecutionTests, self).setUp()
-        self.coordinator._process_tasks = mock.Mock()
+        self.mock(self.coordinator, '_process_tasks')
 
     def test_execute_multiple_calls(self):
         call_requests = [call.CallRequest(dummy_call), call.CallRequest(dummy_call)]
@@ -481,7 +483,6 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
                           call_requests)
         self.assertTrue(self.coordinator._process_tasks.call_count == 0)
 
-
     def test_task_blockers_from_dependencies(self):
         call_request_1 = call.CallRequest(dummy_call)
         call_request_2 = call.CallRequest(dummy_call)
@@ -497,4 +498,25 @@ class CoordinatorMultipleCallExecutionTests(CoordinatorTests):
         self.assertTrue(task_2.call_request is call_request_2)
         self.assertTrue(task_1.call_request.id in task_2.call_request.dependencies)
         self.assertFalse(task_2.call_request.id in task_1.call_request.dependencies)
+
+
+class CoordinatorMultipleCallRejectedTests(CoordinatorTests):
+
+    def setUp(self):
+        super(CoordinatorMultipleCallRejectedTests, self).setUp()
+        self.coordinator._find_conflicts = mock.Mock(return_value=(dispatch_constants.CALL_REJECTED_RESPONSE, set(), [], []))
+
+    def test_execute_multiple_rejected(self):
+        call_request_1 = call.CallRequest(dummy_call)
+        call_request_2 = call.CallRequest(dummy_call)
+
+        call_report_list = self.coordinator.execute_multiple_calls([call_request_1, call_request_2])
+
+        self.assertEqual(self.coordinator._find_conflicts.call_count, 2)
+
+        self.assertEqual(call_report_list[0].call_request_id, call_request_1.id)
+        self.assertEqual(call_report_list[1].call_request_id, call_request_2.id)
+
+        self.assertEqual(call_report_list[0].response, dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertEqual(call_report_list[1].response, dispatch_constants.CALL_REJECTED_RESPONSE)
 
