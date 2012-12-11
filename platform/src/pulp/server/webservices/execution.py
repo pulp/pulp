@@ -165,5 +165,9 @@ def execute_multiple(call_request_list):
     """
     coordinator = dispatch_factory.coordinator()
     call_report_list = coordinator.execute_multiple_calls(call_request_list)
+    if call_report_list[0].response is dispatch_constants.CALL_REJECTED_RESPONSE:
+        # the coordinator will put the reasons on the call report that conflicted
+        reasons = reduce(lambda p, c: c.reasons or p, call_report_list, None)
+        raise ConflictingOperation(reasons)
     raise MultipleOperationsPostponed(call_report_list)
 
