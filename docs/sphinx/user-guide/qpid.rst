@@ -7,45 +7,49 @@ Overview
 The steps to reconfigure both Pulp and QPID to communicate using SSL are as follows:
 
  1. Generate x.509 keys, certificates and NSS database.
- 2. Edit /etc/qpidd.conf to require SSL and define certificates.
- 3. Edit /etc/pulp/server.conf *messaging* section to connect to the QPID broker using SSL.
- 4. On each consumer, edit /etc/pulp/consumer/consumer.conf *messaging* section
+ 2. Edit ``/etc/qpidd.conf`` to require SSL and define certificates.
+ 3. Edit ``/etc/pulp/server.conf`` *messaging* section to connect to the QPID broker using SSL.
+ 4. On each consumer, edit ``/etc/pulp/consumer/consumer.conf`` *messaging* section
     to connect to the QPID broker using SSL.
  5. Copy x.509 certificates to each consumer:
 
-   * /etc/pki/pulp/qpid/ca.crt
-   * /etc/pki/pulp/qpid/client.crt
+   * ``/etc/pki/pulp/qpid/ca.crt``
+   * ``/etc/pki/pulp/qpid/client.crt``
 
- 6. Make sure qpid-cpp-server-ssl is installed.
+ 6. Make sure the ``qpid-cpp-server-ssl`` RPM is installed.
  7. Restart qpidd, httpd and pulp-agent
 
 
-Step #1 - Create x.509 keys, certificates and NSS database
-----------------------------------------------------------
+Details
+-------
 
-The recommended way to create the needed NSS DB and SSL certificates, is to run the
-pulp-qpid-ssl-cfg script installed in /usr/bin.  When installing into the default location
-/etc/pki/pulp/qpid, users must run this script as root (or use sudo) due to the permissions
-required to create files and directories within /etc/pki.  The script prompts for optional
+The steps in detail:
+
+Step #1 - Create x.509 keys, certificates and NSS database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The recommended way to create the needed NSS DB and SSL certificates is to run the
+``pulp-qpid-ssl-cfg`` script installed in /usr/bin.  When installing into the default location
+``/etc/pki/pulp/qpid``, users must run this script as root (or use sudo) due to the permissions
+required to create files and directories within ``/etc/pki``.  The script prompts for optional
 user input but in all cases, a default is provided.
 
 These inputs are as follows:
 
- *The output directory* - The user may define the output directory in which the script
- will write the created NSS database and certificate files.  The default location is:
- /etc/pki/pulp/qpid.
+ *The output directory*
+    The user may define the output directory in which the script will write the created
+    NSS database and certificate files.  The default location is: ``/etc/pki/pulp/qpid``.
 
  *The password for the NSS database*
-     NSS databases are secured by specifying a password
-     when they are created.  All future access to the database for both read and writes will
-     require this password.  Users may enter a password or press <enter> to request that the
-     script generate the password.
+     NSS databases are secured by specifying a password when they are created.  All future
+     access to the database for both read and writes will require this password.  Users may
+     enter a password or press <enter> to request that the script generate the password.
 
  *The CA certificate*
-     The user has the opportunity to enter the path of an existing
-     CA certificate or press <enter> to have a CA key and certificate generated.  The CA
-     certificate is used sign the generated client certificates usednby the QPID broker, the
-     Pulp server and the Consumer.  All keys and certificates are stored in the NSS database.
+     The user has the opportunity to enter the path of an existing CA certificate or press
+     <enter> to have a CA key and certificate generated.  The CA certificate is used sign
+     the generated client certificates used by the QPID broker, the Pulp server and the
+     consumer.  All keys and certificates are stored in the NSS database.
 
 The following is an example of running the script:
 
@@ -135,25 +139,25 @@ The following is an example of running the script:
 
 The following directory and files are created by the script:
 
-  * /etc/pki/pulp/qpid
-  * /etc/pki/pulp/qpid/client.crt
-  * /etc/pki/pulp/qpid/nss
-  * /etc/pki/pulp/qpid/nss/cert8.db
-  * /etc/pki/pulp/qpid/nss/password
-  * /etc/pki/pulp/qpid/nss/secmod.db
-  * /etc/pki/pulp/qpid/nss/key3.db
-  * /etc/pki/pulp/qpid/broker.crt
-  * /etc/pki/pulp/qpid/ca.crt
+  * ``/etc/pki/pulp/qpid``
+  * ``/etc/pki/pulp/qpid/client.crt``
+  * ``/etc/pki/pulp/qpid/nss``
+  * ``/etc/pki/pulp/qpid/nss/cert8.db``
+  * ``/etc/pki/pulp/qpid/nss/password``
+  * ``/etc/pki/pulp/qpid/nss/secmod.db``
+  * ``/etc/pki/pulp/qpid/nss/key3.db``
+  * ``/etc/pki/pulp/qpid/broker.crt``
+  * ``/etc/pki/pulp/qpid/ca.crt``
 
 
 Step #2 - Edit the QPID broker configuration
---------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, qpidd is configured to accept non-encryped client connections on port 5672.
-After creating the certificates and NSS database, qpidd needs to be reconfigured to accept
-only SSL connections using the key and certificates stored in the NSS database.  The
-/etc/qpidd.conf needs to be edited and the following SSL related properties defined
-as follows:
+By default, the QPID broker (qpidd) is configured to accept non-encryped client connections
+on port 5672.  After creating the certificates and NSS database, qpidd needs to be
+reconfigured to accept only SSL connections using the key and certificates stored in the
+NSS database.  The ``/etc/qpidd.conf`` needs to be edited and the following SSL related
+properties defined as follows:
 
 *auth*
     Require authentication. (value: no)
@@ -165,11 +169,11 @@ as follows:
     Require client SSL certificates for all SSL connections. (value: yes)
 
 *ssl-cert-db*
-    The fully qualified path to the NSS DB. (value: /etc/pki/pulp/qpid/nss)
+    The fully qualified path to the NSS DB. (value: ``/etc/pki/pulp/qpid/nss``)
 
 *ssl-cert-password-file*
     The fully qualified path to the password file used to access the NSS DB.
-    (value: /etc/pki/pulp/qpid/nss/password)
+    (value: ``/etc/pki/pulp/qpid/nss/password``)
 
 *ssl-cert-name*
     The name of the certificate in the NSS DB to be used by the qpid broker. (value: broker)
@@ -178,90 +182,148 @@ as follows:
     The port to be use for SSL connections. (value: 5671)
 
 
-Step #3 - Edit pulp server configuration
-----------------------------------------
+Step #3 - Edit the Pulp server configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the Pulp server is configured to connect to the QPID broker on port 5672.
-Now that qpidd has been reconfigured to only accept SSL connections on port 5671, the
-Pulp server configuration file (/etc/pulp/server.conf) needs to be edited.  The properties
+Now that QPID broker has been reconfigured to only accept SSL connections on port 5671, the
+Pulp server configuration file, ``/etc/pulp/server.conf``, needs to be edited.  The properties
 in the *messaging* section that specify the port, the CA certificate and client certificate
 need to be updated as follows:
 
 *url*
-    The URL to the qpid broker. Protocol choices: tcp=plain, ssl=SSL.
+    The URL to the QPID broker. Protocol choices: tcp=plain, ssl=SSL.
     (value: ssl://<host>:5671)
 
 *cacert*
-    The fully qualified path to the CA certificate used to validate the broker
-    (value: /etc/pki/pulp/qpid/ca.crt)
+    The fully qualified path to the CA certificate used to validate the broker's
+    SSL certificate (value: ``/etc/pki/pulp/qpid/ca.crt``)
 
 *clientcert*
     The fully qualified path a file containing both the client private key and certificate.
-    (value: /etc/pki/pulp/qpid/client.crt)
+    The certificate is sent to the broker when the SSL connection is initiated by the Pulp
+    server.  The broker authenticates the Pulp server based on this certificate.
+    (value: ``/etc/pki/pulp/qpid/client.crt``)
 
 Step #4 - Edit consumer configuration
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the Pulp consumer is configured to connect to the QPID broker on port 5672.
-Now that qpidd has been reconfigured to only accept SSL connections on port 5671, the
-Pulp consumer configuration file (/etc/pulp/consumer/consumer.conf) needs to be edited.
+Now that the QPID broker has been reconfigured to only accept SSL connections on port 5671, the
+Pulp consumer configuration file, ``/etc/pulp/consumer/consumer.conf``, needs to be edited.
 The properties in the *messaging* section that specify the port, the CA certificate and
 client certificate need to be updated as follows:
 
-scheme
+ *scheme*
     The protocol used in the URL. (value: ssl)
 
-port
-    The port number. (value: 5671)
+ *port*
+    The TCP port number. (value: 5671)
 
-cacert
-    The fully qualified path to the CA certificate used to validate the broker.
-    (value: /etc/pki/pulp/qpid/ca.crt)
+ *cacert*
+    The fully qualified path to the CA certificate used to validate the broker's SSL
+    certificate. (value: ``/etc/pki/pulp/qpid/ca.crt``)
 
-clientcert
+ *clientcert*
     The fully qualified path a file containing both the client private key and certificate.
-    (value: /etc/pki/pulp/qpid/client.crt)
+    The certificate is sent to the broker when the SSL connection is initiated by the
+    consumer.  The broker authenticates the consumer based on this certificate.
+    (value: ``/etc/pki/pulp/qpid/client.crt``)
 
 
 Step #5 - Copy certificates to consumers
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In step #4, we updated the consumer.conf and specified the SSL properties which included
 the paths to the CA and client certificate files.  Those files need to be copied to each
 consumer.
 
-Eg:
+For example:
 
 ::
 
- cd /etc/pki/pulp/qpid
+ cd ``/etc/pki/pulp/qpid``
  scp ca.crt root@<host>:/etc/pki/pulp/qpid
  scp client.crt root@<host>:/etc/pki/pulp/qpid
 
-Note: the <host> is the hostname of a consumer.
+**Note:** the <host> is the hostname of a consumer.
 
 
 Step #6 - Install qpid-cpp-server-ssl
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To support SSL, the QPID broker must have the SSL module installed.  This module
-is provided by the *qpid-cpp-server-ssl* package.  Make sure this package is installed.
+is provided by the ``qpid-cpp-server-ssl`` package.  Make sure this package is installed.
 
 
 Step #7 - Restart services
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now that the QPID and pulp configurations have been updated, the corresponding services
-need to be restarted.  These services are:
+need to be restarted.
 
+On the Pulp server:
   * qpidd
   * httpd
+
+On each consumer:
   * pulp-agent
+
+
+Troubleshooting
+---------------
+
+Here are a few troubleshooting tips:
+
+General
+^^^^^^^
+
+ #. The QPID broker (qpidd) logs in ``/var/log/messages`` by default.
+
+ #. Pulp server logs QPID connection information in ``/var/log/pulp/pulp.log``
+
+ #. The consumer agent (goferd) logs QPID connection information in ``/var/log/gofer/agent.log``
+
+ #. Make sure you've copied the client key and certificate to each consumer.
+
+ #. Make sure you have restarted the services involved: httpd, qpidd and pulp-agent.
+
+ #. Make sure the firewall on the Pulp server is configured to permit TCP on port 5671
+    or that it's disabled.
+
+ #. Make sure that SELinux is disabled or that the pulp-selinux RPM is installed on the
+    Pulp server.
+
+Log Messages Explained
+^^^^^^^^^^^^^^^^^^^^^^
+
+``connection refused``
+  Log messages containing ``connection refused`` most likely indicate firewall and/or
+  SELinux problems and not SSL issues.
+
+``[Security] notice Listening for SSL connections on TCP port 5671``
+   If you don't see a log message containing this in ``/var/log/messages`` then either the
+   ``qpid-cpp-server-ssl`` package is not installed or the QPID broker is not configured
+   for SSL.  This can also indicate that SSL configuration is complete but the QPID broker
+   service (qpidd) needs to be restarted.
+
+``[Security] notice SSL plugin not enabled, you must set --ssl-cert-db to enable it.``
+   Log messages in ``/var/log/messages`` containing this indicate that the QPID broker has
+   been configured for SSL but the ``qpid-cpp-server-ssl`` RPM has not been installed.
+   This can also indicate that the RPM has been installed but that the QPID service (qpidd)
+   needs to be restarted.
+
+``[Security] error Rejected un-encrypted connection.``
+   Log messages in ``/var/log/messages`` containing this indicate that either the Pulp
+   server or the consumer is not properly configured to connect using SSL.  This can also
+   indicate that SSL configuration is complete but that either the Pulp server (httpd) or
+   the consumer agent (goferd) needs to be restarted.
 
 
 Helpful Links
 -------------
 
-  * ​http://www.mail-archive.com/qpid-commits@incubator.apache.org/msg06212.html
-  * ​http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html
-  ​* http://rajith.2rlabs.com/2010/03/01/apache-qpid-securing-connections-with-ssl/
+  * `<​http://www.mail-archive.com/qpid-commits@incubator.apache.org/msg06212.html>`_
+  * `<​http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html>`_
+  ​* `<http://www.rajith.2rlabs.com/2010/03/01/apache-qpid-securing-connections-with-ssl/>`_
+
