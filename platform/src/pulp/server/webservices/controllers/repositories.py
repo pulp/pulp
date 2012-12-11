@@ -29,7 +29,7 @@ from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp.server.db.model.repository import RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -134,8 +134,7 @@ class RepoCollection(JSONController):
         'distributors'.
         """
         query_params = web.input()
-        query_manager = manager_factory.repo_query_manager()
-        all_repos = query_manager.find_all()
+        all_repos = list(Repo.get_collection().find(projection = {'scratchpad' : 0}))
 
         if query_params.get('details', False):
             query_params['importers'] = True
