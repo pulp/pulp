@@ -122,7 +122,10 @@ class RepoCollection(JSONController):
 
         for repo in repos:
             repo.update(serialization.link.search_safe_link_obj(repo['id']))
-
+            # Remove internally used scratchpad from repo details
+            if 'scratchpad' in repo:
+                del repo['scratchpad']
+ 
         return repos
 
     @auth_required(READ)
