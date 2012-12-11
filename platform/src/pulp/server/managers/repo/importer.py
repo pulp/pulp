@@ -77,7 +77,8 @@ class RepoImporterManager(object):
         @rtype:  list of dict
         """
         spec = {'repo_id' : {'$in' : repo_id_list}}
-        return list(RepoImporter.get_collection().find(spec))
+        projection = {'scratchpad' : 0}
+        return list(RepoImporter.get_collection().find(spec, projection))
 
     def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
