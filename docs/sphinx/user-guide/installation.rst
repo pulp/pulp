@@ -68,15 +68,12 @@ Repositories
  * MRG Messaging v. 1
  * MRG Messaging Base v. 1
 
-4. QPID RPMs are not available in the default CentOS repositories for CentOS
+4. Qpid RPMs are not available in the default CentOS repositories for CentOS
     releases 6.2 and earlier. Instructions on building those RPMs can be found
     at :ref:`centos-build-qpid-rpms`.
 
 Server
 ------
-.. configure qpid with SSL (jortel knows about this, might have a wiki page about it)
-.. when this happens, add a note to install qpid-cpp-server-ssl
-
 
 1. Install the Pulp server and its dependencies.
 
@@ -95,11 +92,16 @@ Server
 
   * **email** if you intend to have the server send email (off by default)
   * **database** if you want to use non-default database settings
-  * **messaging** if your qpid server is on a different host or if you want to use SSL
+  * **messaging** if your Qpid server is on a different host or if you want to use SSL
   * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use Pulp in production
   * **server** if you want to change the server's URL components or default credentials
 
-4. Configure qpid server in /etc/qpidd.conf and either add or change the auth setting to be off by having ``auth=no`` on its own line.
+4. Configure the Qpid broker in /etc/qpidd.conf and either add or change the auth setting
+   to be off by having ``auth=no`` on its own line.  The server can be *optionally* configured
+   so that it will connect to the broker using SSL by following the steps defined in the
+   :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.  By default, the server
+   will connect using a plain TCP connection.
+::
 
 5. Start Mongo and Qpid, and set them to start at boot.
 
@@ -212,7 +214,13 @@ repositories.
   host = localhost.localdomain
 
 
-3. Start the agent:
+3. The agent may be configured so that it will connect to the Qpid broker using SSL by
+   following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
+   By default, the agent will connect using a plain TCP connection.
+
+::
+
+4. Start the agent:
 
 ::
 
