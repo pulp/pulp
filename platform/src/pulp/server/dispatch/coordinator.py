@@ -198,7 +198,7 @@ class Coordinator(object):
 
     def _process_tasks(self, task_list):
         """
-        Look for, and potentially resolve resource, conflicts for and enqueue
+        Look for, and potentially resolve, resource conflicts for and enqueue
         the tasks in the task list.
         @param task_list: list of tasks tasks to work the coordinator magic on
         @type  task_list: list
