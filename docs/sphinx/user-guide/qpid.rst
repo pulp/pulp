@@ -1,3 +1,5 @@
+.. _qpid-ssl-configuration:
+
 QPID Configuration
 ==================
 
@@ -205,8 +207,8 @@ need to be updated as follows:
     server.  The broker authenticates the Pulp server based on this certificate.
     (value: ``/etc/pki/pulp/qpid/client.crt``)
 
-Step #4 - Edit consumer configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step #4 - Edit each consumer configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the Pulp consumer is configured to connect to the QPID broker on port 5672.
 Now that the QPID broker has been reconfigured to only accept SSL connections on port 5671, the
@@ -231,8 +233,8 @@ client certificate need to be updated as follows:
     (value: ``/etc/pki/pulp/qpid/client.crt``)
 
 
-Step #5 - Copy certificates to consumers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step #5 - Copy certificates to each consumer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In step #4, we updated the consumer.conf and specified the SSL properties which included
 the paths to the CA and client certificate files.  Those files need to be copied to each
@@ -275,6 +277,7 @@ Troubleshooting
 
 Here are a few troubleshooting tips:
 
+
 General
 ^^^^^^^
 
@@ -294,30 +297,31 @@ General
  #. Make sure that SELinux is disabled or that the pulp-selinux RPM is installed on the
     Pulp server.
 
+
 Log Messages Explained
 ^^^^^^^^^^^^^^^^^^^^^^
 
-``connection refused``
-  Log messages containing ``connection refused`` most likely indicate firewall and/or
-  SELinux problems and not SSL issues.
+ ``connection refused``
+   Log messages containing ``connection refused`` most likely indicate firewall and/or
+   SELinux problems and not SSL issues.
 
-``[Security] notice Listening for SSL connections on TCP port 5671``
-   If you don't see a log message containing this in ``/var/log/messages`` then either the
-   ``qpid-cpp-server-ssl`` package is not installed or the QPID broker is not configured
-   for SSL.  This can also indicate that SSL configuration is complete but the QPID broker
-   service (qpidd) needs to be restarted.
+ ``[Security] notice Listening for SSL connections on TCP port 5671``
+    If you don't see a log message containing this in ``/var/log/messages`` then either the
+    ``qpid-cpp-server-ssl`` package is not installed or the QPID broker is not configured
+    for SSL.  This can also indicate that SSL configuration is complete but the QPID broker
+    service (qpidd) needs to be restarted.
 
-``[Security] notice SSL plugin not enabled, you must set --ssl-cert-db to enable it.``
-   Log messages in ``/var/log/messages`` containing this indicate that the QPID broker has
-   been configured for SSL but the ``qpid-cpp-server-ssl`` RPM has not been installed.
-   This can also indicate that the RPM has been installed but that the QPID service (qpidd)
-   needs to be restarted.
+ ``[Security] notice SSL plugin not enabled, you must set --ssl-cert-db to enable it.``
+    Log messages in ``/var/log/messages`` containing this indicate that the QPID broker has
+    been configured for SSL but the ``qpid-cpp-server-ssl`` RPM has not been installed.
+    This can also indicate that the RPM has been installed but that the QPID service (qpidd)
+    needs to be restarted.
 
-``[Security] error Rejected un-encrypted connection.``
-   Log messages in ``/var/log/messages`` containing this indicate that either the Pulp
-   server or the consumer is not properly configured to connect using SSL.  This can also
-   indicate that SSL configuration is complete but that either the Pulp server (httpd) or
-   the consumer agent (goferd) needs to be restarted.
+ ``[Security] error Rejected un-encrypted connection.``
+    Log messages in ``/var/log/messages`` containing this indicate that either the Pulp
+    server or the consumer is not properly configured to connect using SSL.  This can also
+    indicate that SSL configuration is complete but that either the Pulp server (httpd) or
+    the consumer agent (goferd) needs to be restarted.
 
 
 Helpful Links
@@ -326,4 +330,3 @@ Helpful Links
   * `<​http://www.mail-archive.com/qpid-commits@incubator.apache.org/msg06212.html>`_
   * `<​http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html>`_
   ​* `<http://www.rajith.2rlabs.com/2010/03/01/apache-qpid-securing-connections-with-ssl/>`_
-
