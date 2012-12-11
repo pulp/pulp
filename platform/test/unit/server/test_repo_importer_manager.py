@@ -611,6 +611,7 @@ class RepoManagerTests(base.PulpServerTests):
     @mock.patch.object(RepoImporter, 'get_collection')
     def test_find_by_repo_list(self, mock_get_collection):
         EXPECT = {'repo_id': {'$in': ['repo-1']}}
+        PROJECTION = {'scratchpad': 0}
         self.importer_manager.find_by_repo_list(['repo-1'])
         self.assertTrue(mock_get_collection.return_value.find.called)
-        mock_get_collection.return_value.find.assert_called_once_with(EXPECT)
+        mock_get_collection.return_value.find.assert_called_once_with(EXPECT, PROJECTION)
