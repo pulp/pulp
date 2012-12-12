@@ -22,7 +22,7 @@ from   pulp.plugins.conduits.upload import UploadConduit
 from   pulp.plugins.model import Repository
 from   pulp.server.db.model.auth import User
 from   pulp.server.db.model.repository import Repo, RepoImporter
-from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException
+from   pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException, InvalidValue
 import pulp.server.managers.factory as manager_factory
 from   pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
 
@@ -223,3 +223,15 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
         # Test
         self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
+
+    def test_import_uploaded_unit_importer_error_reraise_pulp_exception(self):
+        # Setup
+        self.repo_manager.create_repo('repo-u')
+        self.importer_manager.set_importer('repo-u', 'mock-importer', {})
+
+        mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = InvalidValue('filename')
+
+        upload_id = self.upload_manager.initialize_upload()
+
+        # Test
+        self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
