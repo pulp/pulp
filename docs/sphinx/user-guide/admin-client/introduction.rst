@@ -20,7 +20,7 @@ For example, the steps for synchronizing a repository will differ based on
 the type of content being synchronized.
 
 To facilitate this, the client provides an :term:`extension` mechanism.
-Extensions added by a content type :term:`bundle` and customize the client
+Extensions added by a content type :term:`bundle` will customize the client
 with commands related to the types being supported. Typically, these commands
 will focus around managing repositories of a particular type, however there
 is no restriction to what commands an extension may add.

@@ -17,7 +17,7 @@ Glossary
     on the specified consumer.
 
   bundle
-    Term used to denote the collection of server, client, and agent plugins to
+    Term used to denote the collection of server, client, and agent components to
     provide support for a particular set of content types. For example, support
     for handling RPMs and errata is provided by the RPM bundle whereas support
     for Puppet modules is provided by the Puppet bundle.
@@ -42,7 +42,7 @@ Glossary
     more than one distributor associated with it at a given time.
 
   extension
-    Client-side plugin that augments the client with new functionality. While
+    Client-side component that augments the CLI with new functionality. While
     all functionality in the client is provided through extensions, this term
     is typically used to refer to content type specific extensions provided
     by a content type bundle.
