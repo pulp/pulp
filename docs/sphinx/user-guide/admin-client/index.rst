@@ -10,7 +10,6 @@ Contents:
    authentication
    events
    repositories
-   bundle/index
    orphan
    server
    tasks
