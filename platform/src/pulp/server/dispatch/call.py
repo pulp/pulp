@@ -183,6 +183,10 @@ class CallRequest(object):
         assert key in dispatch_constants.CALL_CONTROL_HOOKS
         self.control_hooks[key] = hook
 
+    def remove_control_hook(self, key):
+        assert key in dispatch_constants.CALL_CONTROL_HOOKS
+        self.control_hooks[key] = None
+
     # call request serialization/deserialization -------------------------------
 
     copied_fields = ('id', 'group_id', 'schedule_id', 'tags', 'resources', 'weight', 'asynchronous', 'archive')

@@ -85,6 +85,8 @@ class RepoPublishManager(object):
         call_request.kwargs['distributor_instance'] = None
         call_request.kwargs['distributor_config'] = None
 
+        call_request.remove_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
+
     def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None):
         """
         Requests the given distributor publish the repository it is configured

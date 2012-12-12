@@ -95,6 +95,8 @@ class RepoSyncManager(object):
         call_request.kwargs['importer_instance'] = None
         call_request.kwargs['importer_config'] = None
 
+        call_request.remove_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
+
     def sync(self, repo_id, importer_instance=None, importer_config=None, sync_config_override=None):
         """
         Performs a synchronize operation on the given repository.
