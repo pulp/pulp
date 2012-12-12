@@ -16,6 +16,12 @@ Glossary
     :term:`distributor` for the purpose of installing :term:`content units <content unit>`
     on the specified consumer.
 
+  bundle
+    Term used to denote the collection of server, client, and agent components to
+    provide support for a particular set of content types. For example, support
+    for handling RPMs and errata is provided by the RPM bundle whereas support
+    for Puppet modules is provided by the Puppet bundle.
+
   CLI
     Command Line Interface
 
@@ -34,7 +40,13 @@ Glossary
     for consumption. The process by which a distributor publishes content varies
     based on the desired approach of the distributor. A repository may have
     more than one distributor associated with it at a given time.
-    
+
+  extension
+    Client-side component that augments the CLI with new functionality. While
+    all functionality in the client is provided through extensions, this term
+    is typically used to refer to content type specific extensions provided
+    by a content type bundle.
+
   importer
     Server-side plugin that provides support for synchronizing content from an
     external source and importing that content into the Pulp server. Importers
