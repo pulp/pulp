@@ -107,7 +107,7 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
         self.assertTrue(url.endswith('/repositories/test-repo/'))
 
         self.assertEqual(1, len(self.prompt.get_write_tags()))
-        self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
+        self.assertEqual('queued', self.prompt.get_write_tags()[0])
 
     def test_run_not_found(self):
         # Setup
