@@ -96,8 +96,10 @@ class DeleteRepositoryCommand(PulpCliCommand):
 
         try:
             self.context.server.repo.delete(id)
-            msg = _('Repository [%(r)s] successfully deleted')
-            self.prompt.render_success_message(msg % {'r' : id})
+            msg = _('The request to delete repository [%(r)s] has been received '
+                    'by the server. The progress of the task can be viewed '
+                    'using the commands under "repo tasks"')
+            self.prompt.write(msg % {'r' : id}, tag='queued')
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
             self.prompt.write(msg % {'r' : id}, tag='not-found')
