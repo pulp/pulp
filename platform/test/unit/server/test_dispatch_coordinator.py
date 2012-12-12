@@ -514,9 +514,6 @@ class CoordinatorMultipleCallRejectedTests(CoordinatorTests):
 
         self.assertEqual(self.coordinator._find_conflicts.call_count, 2)
 
-        self.assertEqual(call_report_list[0].call_request_id, call_request_1.id)
-        self.assertEqual(call_report_list[1].call_request_id, call_request_2.id)
-
         self.assertEqual(call_report_list[0].response, dispatch_constants.CALL_REJECTED_RESPONSE)
         self.assertEqual(call_report_list[1].response, dispatch_constants.CALL_REJECTED_RESPONSE)
 
