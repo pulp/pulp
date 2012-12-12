@@ -1,3 +1,5 @@
+:orphan:
+
 .. _qpid-ssl-configuration:
 
 Qpid SSL Configuration

@@ -87,8 +87,8 @@ Repositories
  * MRG Messaging Base v. 1
 
 4. Qpid RPMs are not available in the default CentOS repositories for CentOS
-    releases 6.2 and earlier. Instructions on building those RPMs can be found
-    at :ref:`centos-build-qpid-rpms`.
+   releases 6.2 and earlier. Instructions on building those RPMs can be found
+   at :ref:`centos-build-qpid-rpms`.
 
 Server
 ------
@@ -119,7 +119,6 @@ Server
    so that it will connect to the broker using SSL by following the steps defined in the
    :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.  By default, the server
    will connect using a plain TCP connection.
-::
 
 5. Start Mongo and Qpid, and set them to start at boot.
 
@@ -217,8 +216,6 @@ repositories.
 3. The agent may be configured so that it will connect to the Qpid broker using SSL by
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
-
-::
 
 4. Start the agent:
 
