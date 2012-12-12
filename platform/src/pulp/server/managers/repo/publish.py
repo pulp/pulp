@@ -73,6 +73,18 @@ class RepoPublishManager(object):
             config = None
         return distributor, config
 
+    def post_publish(self, call_request, call_report):
+        """
+        Clean up the keyword arguments that were created in prep_publish to
+        avoid serialization issues when archiving.
+        @param call_request: call request for the completed publish
+        @param call_report: call report for the completed publish
+        """
+        assert call_report.state in dispatch_constants.CALL_COMPLETE_STATES
+
+        call_request.kwargs['distributor_instance'] = None
+        call_request.kwargs['distributor_config'] = None
+
     def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None):
         """
         Requests the given distributor publish the repository it is configured

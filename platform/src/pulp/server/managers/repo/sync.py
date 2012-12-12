@@ -83,6 +83,18 @@ class RepoSyncManager(object):
             config = None
         return importer, config
 
+    def post_sync(self, call_request, call_report):
+        """
+        Clean up the kwargs that were created during the prep_sync call to as
+        not to cause problems when serializing the call request for archival.
+        @param call_request: call request for the completed repo sync
+        @param call_report: call report for the completed repo sync
+        """
+        assert call_report.state in dispatch_constants.CALL_COMPLETE_STATES
+
+        call_request.kwargs['importer_instance'] = None
+        call_request.kwargs['importer_config'] = None
+
     def sync(self, repo_id, importer_instance=None, importer_config=None, sync_config_override=None):
         """
         Performs a synchronize operation on the given repository.
