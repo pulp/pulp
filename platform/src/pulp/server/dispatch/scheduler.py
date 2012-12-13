@@ -571,12 +571,14 @@ def scheduler_complete_callback(call_request, call_report):
     """
     Call back for call request results and rescheduling
     """
-    scheduler = dispatch_factory.scheduler()
     scheduled_call_collection = ScheduledCall.get_collection()
-
     schedule_id = call_report.schedule_id
     scheduled_call = scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
 
+    if scheduled_call is None: # schedule was deleted while call was running
+        return
+
+    scheduler = dispatch_factory.scheduler()
     scheduler.update_last_run(scheduled_call, call_report)
     scheduler.update_next_run(scheduled_call)
 
