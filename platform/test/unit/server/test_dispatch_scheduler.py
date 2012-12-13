@@ -25,7 +25,7 @@ from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallReport, CallRequest
-from pulp.server.dispatch.scheduler import Scheduler
+from pulp.server.dispatch.scheduler import Scheduler, scheduler_complete_callback
 
 import base
 
@@ -69,12 +69,16 @@ class SchedulerTests(base.PulpServerTests):
     def setUp(self):
         super(SchedulerTests, self).setUp()
         pickling.initialize()
-        self.scheduler = Scheduler()
+
+        self.scheduler = Scheduler() # NOTE we are not starting the scheduler
+        self.scheduled_call_collection = ScheduledCall.get_collection()
+
         # replace the coordinator so we do not actually execute tasks
         self._coordinator_factory = dispatch_factory.coordinator
         dispatch_factory.coordinator = mock.Mock()
-        # NOTE we are not starting the scheduler
-        self.scheduled_call_collection = ScheduledCall.get_collection()
+
+        # replace the scheduler with ours
+        dispatch_factory._SCHEDULER = self.scheduler
 
     def tearDown(self):
         super(SchedulerTests, self).tearDown()
@@ -82,6 +86,7 @@ class SchedulerTests(base.PulpServerTests):
         self.scheduler = None
         dispatch_factory.coordinator = self._coordinator_factory
         self._coordinator_factory = None
+        dispatch_factory._SCHEDULER = None
 
 # scheduled call control tests -------------------------------------------------
 
@@ -122,6 +127,37 @@ class SchedulerCallControlTests(SchedulerTests):
         self.scheduler.enable(schedule_id)
         scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
         self.assertTrue(scheduled_call['enabled'])
+
+    def test_complete_callback(self):
+        scheduled_call_request = CallRequest(itinerary_call)
+        schedule_id = self.scheduler.add(scheduled_call_request, SCHEDULE_3_RUNS)
+
+        run_call_request = scheduled_call_request.call()[0]
+        run_call_report = CallReport.from_call_request(run_call_request)
+        run_call_report.schedule_id = schedule_id
+
+        scheduler_complete_callback(run_call_request, run_call_report)
+
+        collection = ScheduledCall.get_collection()
+        scheduled_call = collection.find_one({'_id': ObjectId(schedule_id)})
+
+        self.assertNotEqual(scheduled_call['last_run'], None)
+
+    def test_complete_callback_missing_schedule(self):
+        scheduled_call_request = CallRequest(itinerary_call)
+        schedule_id = self.scheduler.add(scheduled_call_request, SCHEDULE_3_RUNS)
+
+        run_call_request = scheduled_call_request.call()[0]
+        run_call_report = CallReport.from_call_request(run_call_request)
+        run_call_report.schedule_id = schedule_id
+
+        collection = ScheduledCall.get_collection()
+        collection.remove({'_id': ObjectId(schedule_id)}, safe=True)
+
+        try:
+            scheduler_complete_callback(run_call_request, run_call_report)
+        except:
+            self.fail()
 
 # scheduling tests -------------------------------------------------------------
 
