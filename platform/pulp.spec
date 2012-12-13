@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.14.beta
+Release: 0.15.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -408,6 +408,30 @@ exit 0
 %endif
 
 %changelog
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
+- 886547 - added check for deleted schedule in scheduled call complete callback
+  (jason.connor@gmail.com)
+- 882412 - Re-raising PulpException upon upload error instead of always
+  replacing exceptions with PulpExecutionException, the latter of which results
+  in an undesirable 500 HTTP response. (mhrivnak@redhat.com)
+- 875843 - added post sync/publish callbacks to cleanup importer and
+  distributor instances before calls are archived (jason.connor@gmail.com)
+- 769381 - Fixed delete confirmation message to be task centric
+  (jason.dobies@redhat.com)
+- 856762 - removing scratchpads from repo search queries (skarmark@redhat.com)
+- 886148 - used new result masking to keep full consumer package profiles from
+  showing up in the task list and log file (jason.connor@gmail.com)
+- 856762 - removing scratchpad from the repo list --details commmand for repo,
+  importer and distributor (skarmark@redhat.com)
+- 883899 - added conflict detection for call request groups in the webservices
+  execution wrapper module (jason.connor@gmail.com)
+- 876158 - Removed unused configuration values and cleaned up wording and
+  formatting of the remaining options (jason.dobies@redhat.com)
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+- 882422 - added the distributor_list keyword argument to the call requets
+  kwarg_blacklist to prevent it from being logged (jason.connor@gmail.com)
+
 * Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.14.beta
 - 885229 - add requires: nss-tools. (jortel@redhat.com)
 
