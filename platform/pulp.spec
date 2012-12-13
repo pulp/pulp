@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.6
-Release: 0.15.beta
+Release: 0.16.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -408,6 +408,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.16.beta
+- 
+
 * Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
 - 886547 - added check for deleted schedule in scheduled call complete callback
   (jason.connor@gmail.com)
