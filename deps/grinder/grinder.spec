@@ -59,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 0.1.11-1
+- grinder 0.1.11. (jortel@redhat.com)
+
 * Thu Dec 13 2012 John Matthews <jmatthews@redhat.com> 0.1.11-1
 - 885264 - Repos with an existing xml:base cause pulp to generate bad repodata
   (jmatthews@redhat.com)
