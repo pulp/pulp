@@ -266,7 +266,7 @@ class RepositoryActionsAPI(PulpAPI):
         self.base_path = "/v2/repositories/%s/actions/"
 
     def sync(self, repo_id, override_config):
-        path = self.base_path % repo_id + "/sync/"
+        path = self.base_path % repo_id + "sync/"
         data = {'override_config' : override_config,}
         return self.server.POST(path, data)
 

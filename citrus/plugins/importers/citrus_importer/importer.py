@@ -11,21 +11,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import urllib
 import hashlib
 
+from pulp.server.config import config as pulp_conf
 from pulp.server.compat import json
-from pulp.common.config import Config
 from pulp.plugins.model import Unit
 from pulp.plugins.importer import Importer
+from pulp.citrus.transport import HttpReader
 from logging import getLogger
 
 
 _LOG = getLogger(__name__)
-
-
-CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
 class UnitKey:
@@ -109,58 +105,84 @@ class CitrusImporter(Importer):
         @return: report of the details of the sync
         @rtype:  L{pulp.server.plugins.model.SyncReport}
         """
+        base_url = config.get('base_url')
+        reader = HttpReader(base_url)
+        return self._synchronize(repo.id, reader, conduit)
 
-        # url
-        baseurl = config.get('baseurl')
-        if not baseurl:
-            cfg = Config(CONFIG_PATH)
-            host = cfg['server']['host']
-            baseurl = 'http://%s/pulp/citrus/repos' % host
-        # read upstream units (json) document
-        reader = UnitsReader(baseurl, repo.id)
-        upstream =  dict([(UnitKey(u), u) for u in reader.read()])
-        # fetch local units
-        units = dict([(UnitKey(u), u) for u in conduit.get_units()])
-        downloader = UnitDownloader(baseurl, repo.id)
+    def _synchronize(self, repo_id, reader, conduit):
+        local_units = self._local_units(conduit)
+        upstream_units = self._upstream_units(repo_id, reader)
         # add missing units
-        for k,unit in upstream.items():
-            if k in units:
+        storage_dir = pulp_conf.get('server', 'storage_dir')
+        for k, unit in upstream_units.items():
+            if k in local_units:
                 continue
             unit['metadata'].pop('_id')
             unit['metadata'].pop('_ns')
-            u = Unit(unit['type_id'],
-                     unit['unit_key'],
-                     unit['metadata'],
-                     unit['storage_path'])
-            conduit.save_unit(u)
-            downloader.install(unit)
-        # purge units
-        for k,unit in units.items():
-            if k not in upstream:
+            unit_in = Unit(
+                unit['type_id'],
+                unit['unit_key'],
+                unit['metadata'],
+                '/'.join((storage_dir, unit['storage_path'])))
+            conduit.save_unit(unit_in)
+            reader.download(repo_id, unit, unit_in)
+         # purge extra units
+        for k, unit in local_units.items():
+            if k not in upstream_units:
                 conduit.remove_unit(unit)
+
+    def _local_units(self, conduit):
+        """
+        Fetch all local units.
+        @param conduit: provides access to relevant Pulp functionality
+        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        @return: A dictionary of units keyed by L{UnitKey}.
+        @rtype: dict
+        """
+        units = conduit.get_units()
+        return self._unit_dictionary(units)
+
+    def _upstream_units(self, repo_id, reader):
+        """
+        Fetch upstream units.
+        @param repo_id: The repository ID.
+        @type repo_id: str
+        @return: A dictionary of units keyed by L{UnitKey}.
+        @rtype: dict
+        """
+        manifest = Manifest(reader, repo_id)
+        units = manifest.read()
+        return self._unit_dictionary(units)
+
+    def _unit_dictionary(self, units):
+        """
+        Construct a dictionary of units.
+        @param units: A list of content units.
+        @type units: list
+        @return: A dictionary of units keyed by L{UnitKey}.
+        @rtype: dict
+        """
+        items = [(UnitKey(u), u) for u in units]
+        return dict(items)
 
     def cancel_sync_repo(self, call_request, call_report):
         pass
 
 
-class UnitsReader:
+class Manifest:
     """
-    An http based upstream units (json) document reader.
+    An http based upstream units (json) document.
     Download the document and perform the JSON conversion.
-    @ivar baseurl: The base URL.
-    @type baseurl: str
     @ivar repo_id: A repository ID.
     @type repo_id: str
     """
 
-    def __init__(self, baseurl, repo_id):
+    def __init__(self, reader, repo_id):
         """
-        @param baseurl: The base URL.
-        @type baseurl: str
         @param repo_id: A repository ID.
         @type repo_id: str
         """
-        self.baseurl = baseurl
+        self.reader = reader
         self.repo_id = repo_id
 
     def read(self):
@@ -169,77 +191,8 @@ class UnitsReader:
         @return: The downloaded json document.
         @rtype: str
         """
-        url = '/'.join((self.baseurl, self.repo_id, 'units.json'))
-        fp = urllib.urlopen(url)
+        fp_in = self.reader.open(self.repo_id, 'units.json')
         try:
-            return json.load(fp)
-        finally:
-            fp.close()
-
-
-class UnitDownloader:
-    """
-    An http based unit (bits) downloader.
-    Used to download & install bits associated with content units.
-    @ivar baseurl: The base URL.
-    @type baseurl: str
-    @ivar repo_id: A repository ID.
-    @type repo_id: str
-    """
-
-    def __init__(self, baseurl, repo_id):
-        """
-        @param baseurl: The base URL.
-        @type baseurl: str
-        @param repo_id: A repository ID.
-        @type repo_id: str
-        """
-        self.baseurl = baseurl
-        self.repo_id = repo_id
-
-    def install(self, unit):
-        """
-        Download & install the (bits) associated with the specified unit.
-        @param unit: The content unit to install
-        @type unit: Unit
-        """
-        m = hashlib.sha256()
-        target = unit['storage_path']
-        m.update(target)
-        url = '/'.join((self.baseurl, self.repo_id, 'content', m.hexdigest()))
-        fp_in = urllib.urlopen(url)
-        try:
-            self.__write(fp_in, target)
+            return json.load(fp_in)
         finally:
             fp_in.close()
-
-    def __write(self, fp_in, path):
-        """
-        Write contents of the open file to the specified path.
-        Ensure the directory exists.
-        @param fp_in: An open file descriptor.
-        @type fp_in: file-like
-        @param path: The fully qualified path.
-        @type path: str
-        """
-        self.__mkdir(path)
-        fp_out = open(path, 'w+')
-        try:
-            while True:
-                bfr = fp_in.read(0x100000)
-                if bfr:
-                    fp_out.write(bfr)
-                else:
-                    break
-        finally:
-            fp_out.close()
-
-    def __mkdir(self, path):
-        """
-        Ensure the specified directory exists.
-        @param path: The directory path.
-        @type path: str
-        """
-        path = os.path.dirname(path)
-        if not os.path.exists(path):
-            os.makedirs(path)

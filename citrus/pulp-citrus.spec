@@ -14,11 +14,11 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
-# ---- Pulp --------------------------------------------------------------------
+# ---- Pulp Citrus -------------------------------------------------------------
 
 Name: pulp-citrus
-Version: 0.0.325
-Release: 3%{?dist}
+Version: 2.0.6
+Release: 0.14.beta
 Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
@@ -76,8 +76,14 @@ cp -R plugins/* %{buildroot}/%{_usr}/lib/pulp/plugins
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
+rm %{buildroot}/%{python_sitelib}/pulp/__init__.*
+
 %clean
 rm -rf %{buildroot}
+
+%files
+%{python_sitelib}/pulp/citrus/
+%doc
 
 
 # ---- Plugins -----------------------------------------------------------------

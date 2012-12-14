@@ -27,8 +27,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-PULP_IMPORTER = 'citrus_importer'
-PULP_DISTRIBUTOR = 'citrus_distributor'
+CITRUS_DISTRIBUTOR = 'citrus_distributor'
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
@@ -108,7 +107,7 @@ class RepositoryHandler(ContentHandler):
         else:
             binds = self.binds(repoids)
         details = self.synchronize(binds)
-        report.succeeded(details, len(details))
+        report.set_succeeded(details, len(details))
         return report
 
     def all_binds(self):
@@ -153,7 +152,7 @@ class RepositoryHandler(ContentHandler):
         @return: The filtered list of bind payloads.
         @rtype: list
         """
-        type_id = PULP_DISTRIBUTOR
+        type_id = CITRUS_DISTRIBUTOR
         return [b for b in binds if b['type_id'] == type_id]
 
     def synchronize(self, binds):
@@ -264,6 +263,15 @@ class Repository:
         """
         return self.details['distributors']
 
+    @property
+    def importers(self):
+        """
+        Get the list of distributors defined in I{details}.
+        @return: A list of distributors.
+        @rtype: list
+        """
+        return self.details['importers']
+
 
 class LocalRepository(Local, Repository):
     """
@@ -318,8 +326,10 @@ class LocalRepository(Local, Repository):
             dist = LocalDistributor(self.repo_id, dist_id, details)
             dist.add()
         # importer
-        importer = LocalImporter(self.repo_id, PULP_IMPORTER)
-        importer.add()
+        for details in self.importers:
+            imp_id = details['id']
+            importer = LocalImporter(self.repo_id, imp_id, details)
+            importer.add()
         log.info('Repository: %s, added', self.repo_id)
 
     def update(self, delta):
@@ -399,8 +409,7 @@ class Distributor:
     def __init__(self, repo_id, dist_id, details={}):
         self.repo_id = repo_id
         self.dist_id = dist_id
-        self.details = \
-            subdict(details, 'config', 'auto_publish', 'distributor_type_id')
+        self.details = subdict(details, 'config', 'auto_publish', 'distributor_type_id')
 
 
 class LocalDistributor(Local, Distributor):

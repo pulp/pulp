@@ -16,4 +16,4 @@ setup(
     packages=find_packages(),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
-    )
+)
