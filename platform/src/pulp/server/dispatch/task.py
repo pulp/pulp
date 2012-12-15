@@ -72,13 +72,19 @@ class Task(object):
             raise TypeError('No comparison defined between task and %s' % type(other))
         return self.call_request.id == other.call_request.id
 
-    # progress information -----------------------------------------------------
+    # in-context task control --------------------------------------------------
 
     def _report_progress(self, progress):
         """
         Progress report callback
         """
         self.call_report.progress = progress
+
+    def _set_cancel_control_hook(self, hook):
+        self.call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, hook)
+
+    def _clear_cancel_control_hook(self):
+        self.call_request.remove_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
 
     # task lifecycle -----------------------------------------------------------
 
