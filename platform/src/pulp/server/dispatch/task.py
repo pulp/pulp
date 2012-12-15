@@ -124,13 +124,12 @@ class Task(object):
         except:
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
-            # to bad 2.4 doesn't support try/except/finally blocks
+            return self._failed(e, tb)
+        else:
+            return self._succeeded(result)
+        finally:
             principal_manager.clear_principal()
             dispatch_context.CONTEXT.clear_task_attributes()
-            return self._failed(e, tb)
-        principal_manager.clear_principal()
-        dispatch_context.CONTEXT.clear_task_attributes()
-        return self._succeeded(result)
 
     def _succeeded(self, result=None):
         """
@@ -280,11 +279,10 @@ class AsyncTask(Task):
             # faced with _succeeded or _failed being called again
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
-            # too bad 2.4 doesn't support try/except/finally blocks
+            return self._failed(e, tb)
+        else:
+            return result
+        finally:
             principal_manager.clear_principal()
             dispatch_context.CONTEXT.clear_task_attributes()
-            return self._failed(e, tb)
-        principal_manager.clear_principal()
-        dispatch_context.CONTEXT.clear_task_attributes()
-        return result
 
