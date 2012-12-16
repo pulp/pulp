@@ -41,15 +41,27 @@ class Context(local):
         self.call_request_id = task.call_request.id
         self.call_request_group_id = task.call_request.group_id
         self.report_progress = task._report_progress
+        self.set_cancel_control_hook = task._set_cancel_control_hook
+        self.clear_cancel_control_hook = task._clear_cancel_control_hook
 
     def clear_task_attributes(self):
         self.call_request_id = None
         self.call_request_group_id = None
         self.report_progress = self._report_progress
+        self.set_cancel_control_hook = self._set_cancel_control_hook
+        self.clear_cancel_control_hook = self._clear_cancel_control_hook
 
     def _report_progress(self, progress):
         msg = _('report_progress called on cleared dispatch context: %(p)s')
         _LOG.debug(msg % {'p': pformat(progress)})
+
+    def _set_cancel_control_hook(self, hook):
+        msg = _('set_cancel_control_hook called on cleared dispatch context: %(p)s')
+        _LOG.debug(msg % {'p': pformat(hook)})
+
+    def _clear_cancel_control_hook(self):
+        msg = _('clear_cancel_control_hook called on cleared dispatch context')
+        _LOG.debug(msg)
 
 # context global ---------------------------------------------------------------
 # NOTE this is here and not in the factory module to prevent circular imports
