@@ -62,8 +62,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config, False, distributor_id='dist-2')
 
         # Test
-        distributor, config = self.publish_manager._get_distributor_instance_and_config('repo-1', 'dist-1')
-        self.publish_manager.publish('repo-1', 'dist-1', distributor, config, None)
+        self.publish_manager.publish('repo-1', 'dist-1', None)
 
         # Verify
 
@@ -116,8 +115,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(False, 'Summary of the publish', 'Details of the publish')
 
         # Test
-        distributor, config = self.publish_manager._get_distributor_instance_and_config('repo-1', 'dist-1')
-        self.publish_manager.publish('repo-1', 'dist-1', distributor, config, None)
+        self.publish_manager.publish('repo-1', 'dist-1', None)
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
@@ -149,8 +147,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         publish_overrides = {'key-1' : 'new-1', 'key-3' : 'new-3'}
-        distributor, config = self.publish_manager._get_distributor_instance_and_config('repo-1', 'dist-2')
-        self.publish_manager.publish('repo-1', 'dist-2', distributor, config, publish_overrides)
+        self.publish_manager.publish('repo-1', 'dist-2', publish_overrides)
 
         # Verify call into mock
         call_args = mock_plugins.MOCK_DISTRIBUTOR.publish_repo.call_args[0]
@@ -184,8 +181,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         try:
-            distributor, config = self.publish_manager._get_distributor_instance_and_config('no-dist', 'fake-dist')
-            self.publish_manager.publish('no-dist', 'fake-dist', distributor, config)
+            self.publish_manager.publish('no-dist', 'fake-dist')
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('no-dist' == e.resources['repository'])
@@ -206,8 +202,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         try:
-            distributor, config = self.publish_manager._get_distributor_instance_and_config('repo', 'dist-1')
-            self.publish_manager.publish('repo', 'dist-1', distributor, config, None)
+            self.publish_manager.publish('repo', 'dist-1', None)
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('repo' == e.resources['resource_id'])
@@ -227,8 +222,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         try:
-            distributor, config = self.publish_manager._get_distributor_instance_and_config('repo', 'dist-1')
-            self.publish_manager.publish('repo', 'dist-1', distributor, config)
+            self.publish_manager.publish('repo', 'dist-1')
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('repo' == e.resources['repository'])
@@ -247,8 +241,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         try:
-            distributor, config = self.publish_manager._get_distributor_instance_and_config('gonna-bail', 'bad-dist')
-            self.publish_manager.publish('gonna-bail', 'bad-dist', distributor, config)
+            self.publish_manager.publish('gonna-bail', 'bad-dist')
             self.fail('Expected exception was not raised')
         except publish_manager.PulpExecutionException, e:
             print(e) # for coverage
@@ -380,8 +373,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = None # lame plugin
 
         # Test
-        distributor, config = self.publish_manager._get_distributor_instance_and_config('sloppy', 'slop')
-        self.publish_manager.publish('sloppy', 'slop', distributor, config)
+        self.publish_manager.publish('sloppy', 'slop')
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'sloppy'}))

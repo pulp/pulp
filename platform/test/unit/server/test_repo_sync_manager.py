@@ -100,8 +100,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
         # Test
-        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
-        self.sync_manager.sync('repo-1', importer, config, sync_config_override=None)
+        self.sync_manager.sync('repo-1', sync_config_override=None)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -154,8 +153,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = SyncReport(False, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
 
         # Test
-        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
-        self.assertRaises(PulpExecutionException, self.sync_manager.sync, 'repo-1', importer, config)
+        self.assertRaises(PulpExecutionException, self.sync_manager.sync, 'repo-1')
 
         # Verify
         history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
@@ -182,8 +180,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         sync_config_override = {'clint' : 'hawkeye'}
-        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
-        self.sync_manager.sync('repo-1', importer, config, sync_config_override=sync_config_override)
+        self.sync_manager.sync('repo-1', sync_config_override=sync_config_override)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -285,8 +282,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Test
         try:
-            importer, config = self.sync_manager._get_importer_instance_and_config('gonna-bail')
-            self.sync_manager.sync('gonna-bail', importer, config)
+            self.sync_manager.sync('gonna-bail')
         except repo_sync_manager.PulpExecutionException, e:
             print(e) # for coverage
 
@@ -334,8 +330,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.importer_manager.set_importer('repo', 'mock-importer', {})
 
         # Test
-        importer, config = self.sync_manager._get_importer_instance_and_config('repo')
-        self.sync_manager.sync('repo', importer, config)
+        self.sync_manager.sync('repo')
 
         # Verify
         self.assertEqual('repo', MockRepoPublishManager.repo_id)
@@ -373,8 +368,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None # sloppy plugin
 
         # Test
-        importer, config = self.sync_manager._get_importer_instance_and_config('repo-1')
-        self.sync_manager.sync('repo-1', importer, config)
+        self.sync_manager.sync('repo-1')
 
         # Verify
 
@@ -409,8 +403,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.importer_manager.set_importer(repo_id, 'mock-importer', {})
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None
 
-        importer, config = self.sync_manager._get_importer_instance_and_config(repo_id)
-        self.sync_manager.sync(repo_id, importer, config)
+        self.sync_manager.sync(repo_id)
 
         sync_result = RepoSyncResult.get_collection().find_one({'repo_id': repo_id})
         self.assertFalse(sync_result is None)
