@@ -47,10 +47,6 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
                                     tags=sync_tags,
                                     archive=True)
     sync_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-    sync_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                              repo_sync_manager.prep_sync)
-    sync_call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
-                                              repo_sync_manager.post_sync)
 
     call_requests = [sync_call_request]
 
