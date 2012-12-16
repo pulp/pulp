@@ -18,11 +18,12 @@ need to execute syncs asynchronously must be handled at a higher layer.
 """
 
 import datetime
-from gettext import gettext as _
 import logging
-import pymongo
 import sys
 import traceback
+from gettext import gettext as _
+
+import pymongo
 
 from pulp.common import dateutils
 from pulp.plugins.loader import api as plugin_api
@@ -31,10 +32,10 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.dispatch import constants as dispatch_constants
-import pulp.server.managers.repo._common as common_utils
-from pulp.server.managers import factory as manager_factory
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.repo import _common as common_utils
 
 # -- constants ----------------------------------------------------------------
 
@@ -44,50 +45,7 @@ _LOG = logging.getLogger(__name__)
 
 class RepoPublishManager(object):
 
-    def prep_publish(self, call_request, call_report):
-        """
-        Task enqueue callback that sets the distributor instance and config
-        keyword arguments for a publish call request.
-        @param call_request: call request for the repo publish
-        @param call_report: call report for the repo publish
-        @return:
-        """
-        repo_id = call_request.args[0]
-        distributor_id = call_request.args[1]
-
-        distributor, config = self._get_distributor_instance_and_config(repo_id, distributor_id)
-
-        call_request.kwargs['distributor_instance'] = distributor
-        call_request.kwargs['distributor_config'] = config
-
-        if distributor is not None:
-            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, distributor.cancel_publish_repo)
-
-    def _get_distributor_instance_and_config(self, repo_id, distributor_id):
-        repo_distributor_manager = manager_factory.repo_distributor_manager()
-        try:
-            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except (MissingResource, plugin_exceptions.PluginNotFound):
-            distributor = None
-            config = None
-        return distributor, config
-
-    def post_publish(self, call_request, call_report):
-        """
-        Clean up the keyword arguments that were created in prep_publish to
-        avoid serialization issues when archiving.
-        @param call_request: call request for the completed publish
-        @param call_report: call report for the completed publish
-        """
-        assert call_report.state in dispatch_constants.CALL_COMPLETE_STATES
-
-        call_request.kwargs['distributor_instance'] = None
-        call_request.kwargs['distributor_config'] = None
-
-        call_request.remove_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
-
-    def publish(self, repo_id, distributor_id, distributor_instance=None, distributor_config=None, publish_config_override=None):
+    def publish(self, repo_id, distributor_id, publish_config_override=None):
         """
         Requests the given distributor publish the repository it is configured
         on.
@@ -101,12 +59,6 @@ class RepoPublishManager(object):
 
         @param distributor_id: identifies the repo's distributor to publish
         @type  distributor_id: str
-
-        @param distributor_instance: the distributor instance for this repo and this publish
-        @type distributor_instance: pulp.plugins.distributor.Distributor
-
-        @param distributor_config: base configuration for the distributor
-        @type distributor_config: dict
 
         @param publish_config_override: optional config values to use for this
                                         publish call only
@@ -125,8 +77,13 @@ class RepoPublishManager(object):
         if repo_distributor is None:
             raise MissingResource(repository=repo_id, distributor=distributor_id)
 
+        distributor_instance, distributor_config = self._get_distributor_instance_and_config(repo_id, distributor_id)
+
         if distributor_instance is None:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
+
+        dispatch_context = dispatch_factory.context()
+        dispatch_context.set_cancel_control_hook(distributor_instance.cancel_publish_repo)
 
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id)
@@ -140,6 +97,18 @@ class RepoPublishManager(object):
         fire_manager.fire_repo_publish_started(repo_id, distributor_id)
         result = self._do_publish(repo, distributor_id, distributor_instance, transfer_repo, conduit, call_config)
         fire_manager.fire_repo_publish_finished(result)
+
+        dispatch_context.clear_cancel_control_hook()
+
+    def _get_distributor_instance_and_config(self, repo_id, distributor_id):
+        repo_distributor_manager = manager_factory.repo_distributor_manager()
+        try:
+            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+        except (MissingResource, plugin_exceptions.PluginNotFound):
+            distributor = None
+            config = None
+        return distributor, config
 
     def _do_publish(self, repo, distributor_id, distributor_instance, transfer_repo, conduit, call_config):
 
