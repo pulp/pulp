@@ -18,7 +18,7 @@
 
 Name: pulp-citrus
 Version: 2.0.6
-Release: 0.14.beta
+Release: 0.17.beta
 Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
