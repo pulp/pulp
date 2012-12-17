@@ -18,6 +18,8 @@ from pulp.citrus.transport import HttpPublisher, HttpReader
 
 class TestHttp(TestCase):
 
+    TMP_ROOT = '/tmp/pulp/citrus/transport'
+
     UNITS = [
         'test_1.unit',
         'test_2.unit',
@@ -25,16 +27,17 @@ class TestHttp(TestCase):
     ]
 
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp()
-        self.tmpdir = '/tmp/citrus/transport' # TODO: REMOVE THIS
+        if not os.path.exists(self.TMP_ROOT):
+            os.makedirs(self.TMP_ROOT)
+        self.tmpdir = tempfile.mkdtemp(dir=self.TMP_ROOT)
         self.unit_dir = os.path.join(self.tmpdir, 'unit_storage')
         shutil.rmtree(self.tmpdir)
         os.makedirs(self.unit_dir)
 
     def shutDown(self):
-        shutil.rmtree(self.tmpdir)
+        shutil.rmtree(self.TMP_ROOT)
 
-    def test_basic(self):
+    def test_http(self):
         # setup
         units = []
         for i in range(0, 3):
@@ -58,7 +61,10 @@ class TestHttp(TestCase):
         s = fp.read()
         print s
         fp.close()
-        fp = reader.open(repo_id, 'content', 'a25a6359a948d36810caa20118718a1e2fdb7d33541d37076af6963950881598')
-        s = fp.read()
-        print s
-        fp.close()
+        publish_dir = os.path.join(self.tmpdir, 'citrus', 'repos', repo_id, 'content')
+        for fn in os.listdir(publish_dir):
+            path = os.path.join(self.tmpdir, fn)
+            fp = reader.open(repo_id, 'content', fn)
+            s = fp.read()
+            print s
+            fp.close()
