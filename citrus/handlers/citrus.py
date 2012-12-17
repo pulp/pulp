@@ -18,7 +18,7 @@ import socket
 from pulp.common.bundle import Bundle as BundleImpl
 from pulp.common.config import Config
 from pulp.agent.lib.handler import ContentHandler
-from pulp.agent.lib.report import HandlerReport
+from pulp.agent.lib.report import ContentReport
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
@@ -87,19 +87,24 @@ class Bundle(BundleImpl):
 
 class RepositoryHandler(ContentHandler):
 
-    def update(self, units, options):
+    def update(self, conduit, units, options):
         """
         Update content unit(s).
         Unit key of {} or None indicates updates update all
         but only if (all) option is True.
+        @param conduit: A handler conduit.
+        @type conduit: L{pulp.agent.lib.conduit.Conduit}
         @param units: A list of content unit_keys.
         @type units: list
         @param options: Unit update options.
+          - apply : apply the transaction
+          - importkeys : import GPG keys
+          - reboot : Reboot after installed
         @type options: dict
-        @return: An update report.  See: L{Package.update}
-        @rtype: L{HandlerReport}
+        @return: An update report.
+        @rtype: L{ContentReport}
         """
-        report = HandlerReport()
+        report = ContentReport()
         all = options.get('all', False)
         repoids = [key['repo_id'] for key in units if key]
         if all:
@@ -348,7 +353,10 @@ class LocalRepository(Local, Repository):
 
     def merge(self, upstream):
         """
-        Merge upstream repository properties.
+        Merge upstream repositories.
+          1. Update the repository properties.
+          2. Merge importers
+          3. Merge distributors
         @param upstream: The upstream repository.
         @type upstream: L{Repository}
         """
@@ -359,7 +367,41 @@ class LocalRepository(Local, Repository):
                 delta[k] = v
         if delta:
             self.update(delta)
+        self.merge_importers(upstream)
         self.merge_distributors(upstream)
+
+    def merge_importers(self, upstream):
+        """
+        Merge importers.
+          - Delete importers associated locally but not associated w/ upstream.
+          - Merge importers associated locally AND associated w/ upstream.
+          - Add importers associated w/ upstream but NOT associated locally.
+        @param upstream: The upstream repository.
+        @type upstream: L{Repository}
+        """
+        self.purge_importers(upstream)
+        for details in upstream.importers:
+            imp_id = details['id']
+            imp = Importer(self.repo_id, imp_id, details)
+            myimp = LocalImporter.fetch(self.repo_id, imp_id)
+            if myimp:
+                myimp.merge(imp)
+            else:
+                myimp = LocalImporter(self.repo_id, imp_id, details)
+                myimp.add()
+
+    def purge_importers(self, upstream):
+        """
+        Purge importers not associated with the upstream repository.
+        @param upstream: The upstream repository.
+        @type upstream: L{Repository}
+        """
+        upstream_impids = [d['id'] for d in upstream.importers]
+        for details in self.importers:
+            imp_id = details['id']
+            if imp_id not in upstream_impids:
+                imp = LocalImporter(self.repo_id, imp_id)
+                imp.delete()
 
     def merge_distributors(self, upstream):
         """
@@ -484,10 +526,10 @@ class Importer:
     @type cfg: dict
     """
 
-    def __init__(self, repo_id, imp_id, cfg={}):
+    def __init__(self, repo_id, imp_id, details={}):
         self.repo_id = repo_id
         self.imp_id = imp_id
-        self.cfg = cfg
+        self.details = details
 
 
 class LocalImporter(Local, Importer):
@@ -497,5 +539,37 @@ class LocalImporter(Local, Importer):
         Add the importer.
         """
         binding = self.binding.repo_importer
-        binding.create(self.repo_id, self.imp_id, self.cfg)
+        binding.create(self.repo_id, self.imp_id, self.details['config'])
         log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
+
+    def update(self, delta):
+        """
+        Update the local repository-importer.
+        @param delta: The configuration delta.
+        @type delta: dict
+        """
+        binding = self.binding.repo_importer
+        binding.update(self.repo_id, self.imp_id, delta)
+        log.info('Importer: %s/%s, updated', self.repo_id, self.imp_id)
+
+    def delete(self):
+        """
+        Delete the local repository-importer.
+        """
+        binding = self.binding.repo_importer
+        binding.delete(self.repo_id, self.imp_id)
+        log.info('Importer: %s/%s, deleted', self.repo_id, self.imp_id)
+
+    def merge(self, upstream):
+        """
+        Merge the importer configuration
+        @param upstream: The upstream importer
+        @type upstream: L{Importer}
+        """
+        delta = {}
+        for k,v in upstream.details['config'].items():
+            if self.details['config'][k] != v:
+                self.details['config'][k] = v
+                delta[k] = v
+        if delta:
+            self.update(delta)

@@ -91,6 +91,7 @@ rm -rf %{buildroot}
 %package plugins
 Summary: Pulp citrus support plugins
 Group: Development/Languages
+Requires: %{name} >= %{version}
 Requires: pulp-server >= %{version}
 
 %description plugins

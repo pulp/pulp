@@ -14,6 +14,7 @@
 from pulp.plugins.distributor import Distributor
 from pulp.citrus.transport import HttpPublisher
 from pulp.server.managers import factory
+from pulp.server.config import config as pulp_conf
 from logging import getLogger
 
 
@@ -108,11 +109,13 @@ class CitrusDistributor(Distributor):
         payload['repository'] = manager.get_repository(repo_id)
 
     def _add_importers(self, payload):
+        host = pulp_conf.get('server', 'server_name')
         importer = {
             'id':'citrus_importer',
-            'distributor_type_id':'citrus_importer',
-            'auto_publish':True,
-            'base_url':'http://localhost/pulp/citrus/repos',
+            'importer_type_id':'citrus_importer',
+            'config':{
+                'base_url':'http://%s/pulp/citrus/repos' % host,
+            }
         }
         payload['importers'] = [importer]
 

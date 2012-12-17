@@ -15,6 +15,7 @@ import os
 import sys
 import tempfile
 import shutil
+import time
 from mock import Mock, patch
 from base import WebTest
 
@@ -39,6 +40,7 @@ from pulp.server.managers import factory
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.server.config import config as pulp_conf
+from pulp.agent.lib.conduit import Conduit
 
 CITRUS_IMPORTER = 'citrus_importer'
 CITRUS_DISTRUBUTOR = 'citrus_distributor'
@@ -194,7 +196,8 @@ class TestHandler(RepositoryHandler):
         self.tester.clean()
         pulp_conf.set('server', 'storage_dir', self.tester.downfs)
         imp = binds[0]['details']['importers'][0]
-        imp['base_url'] = 'file://%s' % self.tester.upfs
+        cfg = imp['config']
+        cfg['base_url'] = 'file://%s' % self.tester.upfs
         RepositoryHandler.merge(self, binds)
 
 
@@ -239,6 +242,5 @@ class TestAgentPlugin(TestPlugins):
             units = []
             options = dict(all=True)
             handler = TestHandler(self)
-            handler.update(units, options)
+            handler.update(Conduit(), units, options)
         test_handler()
-        print 'done'

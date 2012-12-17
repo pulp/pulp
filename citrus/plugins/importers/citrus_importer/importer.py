@@ -11,8 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import hashlib
-
+from gettext import gettext as _
 from pulp.server.config import config as pulp_conf
 from pulp.server.compat import json
 from pulp.plugins.model import Unit
@@ -67,6 +66,11 @@ class CitrusImporter(Importer):
         }
 
     def validate_config(self, repo, config, related_repos):
+        msg = _('Missing required configuration property: %(p)s')
+        for key in ('base_url',):
+            value = config.get(key)
+            if not value:
+                return (False, msg % dict(p=key))
         return (True, None)
 
     def sync_repo(self, repo, conduit, config):
