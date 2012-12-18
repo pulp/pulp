@@ -6,8 +6,8 @@ General Reference
 Resource IDs
 ------------
 
-All resource ID values must contain only letters, numbers, underscores (``_``),
-and hyphens (``-``).
+All resource ID values must contain only letters, numbers, underscores,
+and hyphens.
 
 .. _date-and-time:
 
@@ -106,10 +106,19 @@ Putting it all together, below are some examples and their real world explanatio
 Criteria
 --------
 
-Pulp offers a standard set of criteria for searching for resources as well
-as for specifying resources to act upon. The fields that make up a criteria
-are used to scope the resources returned, data retrieved for each resource, and
-pagination contructs such as limits and skips.
+Pulp offers a standard search interface across all resource types. This
+interface is used in two different ways:
+
+* As a query syntax to scope the resources returned, data retrieved for each
+  resource, and pagination constructs such as limits and skips.
+* As a matching syntax, used when indicating resources that should be included
+  in an operation.
+
+In other words, the same parameters used to search for specific resources can then
+be fed into an operation that affects matching resources. For example, a query
+can be passed to the repository search to determine which repositories match.
+The same query can then be passed into the repository group membership command
+to add all matching repositories to a particular group.
 
 Where applicable, the client supports a number of arguments for describing
 the desired query. More information on each argument can be found using the
@@ -172,7 +181,7 @@ The primary differences are as follows:
 
 * There are two added search criteria, ``--after`` and ``--before``. These
   fields apply to the point at which the unit was first added to the repository.
-  The values for these fields is an :term:`iso8601` timestamp.
+  The values for these fields are expressed as an :term:`iso8601` timestamp.
 * A ``--details`` flag is provided when searching for units within a repository.
   If specified, information about the association between the unit and the
   repository will be displayed in addition to the metadata about the unit itself.
@@ -182,22 +191,14 @@ The primary differences are as follows:
 Client Argument Boolean Values
 ------------------------------
 
-In most cases, boolean values are specified to a client command by the existence
-of a flag at execution time. For instance, to list repository details::
+Depending on the situation, booleans are expressed in one of two ways in the
+client:
+
+Flags are used to indicate the behavior of the immediate command::
 
   $ pulp-admin repo list --details
 
-However, when supplying configuration for a resource, such as a repository,
-this approach isn't sufficient. For example, to enable SSL verification for
-an RPM repository::
+Boolean values are specified for cases where the value is saved::
 
   $ pulp-admin rpm repo create --repo-id foo --verify-feed-ssl true
-
-Not using a flag allows the value to later be set to false without the need
-for a differently named flag::
-
   $ pulp-admin rpm repo create --repo-id foo --verify-feed-ssl false
-
-Again, this only applies to arguments that are for configuring a resource.
-In such cases, the values "true" and "false" are used to indicate the desired
-effect.
