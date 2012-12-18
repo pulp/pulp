@@ -6,7 +6,7 @@ used to manage the operation of the server itself as well as trigger remote
 operations on registered consumers.
 
 For more information on the client that runs on Pulp consumers, see the
-:doc:`../consumer-client/introduction` section of this guide.
+:doc:`Consumer <../consumer-client/introduction>` section of this guide.
 
 The following sections describe some unique concepts that apply to the admin
 client.
