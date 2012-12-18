@@ -43,7 +43,6 @@ class CitrusDistributor(Distributor):
     def publish_repo(self, repo, conduit, config):
         """
         Publishes the given repository.
-
         While this call may be implemented using multiple threads, its execution
         from the Pulp server's standpoint should be synchronous. This call should
         not return until the publish is complete.
@@ -54,21 +53,29 @@ class CitrusDistributor(Distributor):
 
         @param repo: metadata describing the repository
         @type  repo: pulp.plugins.model.Repository
-
         @param publish_conduit: provides access to relevant Pulp functionality
         @type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
-
         @param config: plugin configuration
         @type  config: pulp.plugins.config.PluginConfiguration
-
         @return: report describing the publish run
         @rtype:  pulp.plugins.model.PublishReport
         """
         units = conduit.get_units()
         publisher = self.publisher(repo, config)
-        publisher.publish([u.__dict__ for u in units])
+        units = [u.__dict__ for u in units]
+        manifest, links = publisher.publish(units)
+        details = dict(manifest=manifest, links=links)
+        return conduit.build_success_report('succeeded', details)
 
     def publisher(self, repo, config):
+        """
+        Get a configured publisher.
+        @param repo: A repository.
+        @type repo: pulp.plugins.model.Repository
+        @param config: plugin configuration
+        @type  config: pulp.plugins.config.PluginConfiguration
+        @return: The configured publisher.
+        """
         virtual_host = config.get('virtual_host', VIRTUAL_HOST)
         return HttpPublisher(repo.id, virtual_host)
 
@@ -84,13 +91,10 @@ class CitrusDistributor(Distributor):
         of returned data includes authentication information, location of the
         repository (e.g. URL), and data required to verify the contents
         of the published repository.
-
         @param repo: metadata describing the repository
         @type  repo: pulp.plugins.model.Repository
-
         @param config: plugin configuration
         @type  config: pulp.plugins.config.PluginCallConfiguration
-
         @return: dictionary of relevant data
         @rtype:  dict
         """

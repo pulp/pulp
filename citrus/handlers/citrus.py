@@ -157,8 +157,7 @@ class RepositoryHandler(ContentHandler):
         @return: The filtered list of bind payloads.
         @rtype: list
         """
-        type_id = CITRUS_DISTRIBUTOR
-        return [b for b in binds if b['type_id'] == type_id]
+        return [b for b in binds if b['type_id'] == CITRUS_DISTRIBUTOR]
 
     def synchronize(self, binds):
         """
@@ -184,10 +183,10 @@ class RepositoryHandler(ContentHandler):
         @type binds: list
         """
         self.purge(binds)
-        for b in binds:
+        for bind in binds:
             try:
-                repo_id = b['repo_id']
-                details = b['details']
+                repo_id = bind['repo_id']
+                details = bind['details']
                 upstream = Repository(repo_id, details)
                 myrepo = LocalRepository.fetch(repo_id)
                 if myrepo:
@@ -196,7 +195,7 @@ class RepositoryHandler(ContentHandler):
                     myrepo = LocalRepository(repo_id, upstream.details)
                     myrepo.add()
             except Exception:
-                log.exception(str(b))
+                log.exception(str(bind))
 
     def purge(self, binds):
         """
@@ -227,7 +226,7 @@ class Local:
 
 class Remote:
     """
-    Remove (upstream) entity.
+    Remote (upstream) entity.
     @cvar binding: A REST API binding.
     @type binding: L{Binding}
     """
@@ -237,7 +236,7 @@ class Remote:
 
 class Repository:
     """
-    A repository object.
+    Represents a repository object.
     @ivar repo_id: Repository ID.
     @type repo_id: str
     @ivar details: Repository details as modeled by bind payload.
@@ -439,7 +438,7 @@ class LocalRepository(Local, Repository):
 
 class Distributor:
     """
-    A repository-distributor association.
+    Represents a repository-distributor association.
     @ivar repo_id: Repository ID.
     @type repo_id: str
     @param dist_id: Distributor ID.
@@ -449,12 +448,23 @@ class Distributor:
     """
 
     def __init__(self, repo_id, dist_id, details={}):
+        """
+        @param repo_id: Repository ID.
+        @type repo_id: str
+        @param dist_id: Distributor ID.
+        @type dist_id: str
+        @param details: Distributor details as modeled by bind payload.
+        @type details: dict
+        """
         self.repo_id = repo_id
         self.dist_id = dist_id
         self.details = subdict(details, 'config', 'auto_publish', 'distributor_type_id')
 
 
 class LocalDistributor(Local, Distributor):
+    """
+    Represents a local repository-distributor association.
+    """
 
     @classmethod
     def fetch(cls, repo_id, dist_id):
@@ -517,22 +527,33 @@ class LocalDistributor(Local, Distributor):
 
 class Importer:
     """
-    A repository-importer association.
+    Represents a repository-importer association.
     @ivar repo_id: Repository ID.
     @type repo_id: str
     @param imp_id: Importer ID.
     @type imp_id: str
-    @ivar cfg: Importer configuration.
-    @type cfg: dict
+    @ivar details: Importer details as modeled by bind payload.
+    @type details: dict
     """
 
     def __init__(self, repo_id, imp_id, details={}):
+        """
+        @param repo_id: Repository ID.
+        @type repo_id: str
+        @param imp_id: Importer ID.
+        @type imp_id: str
+        @param details: Importer details as modeled by bind payload.
+        @type details: dict
+        """
         self.repo_id = repo_id
         self.imp_id = imp_id
         self.details = details
 
 
 class LocalImporter(Local, Importer):
+    """
+    Represents a repository-importer association.
+    """
 
     def add(self):
         """

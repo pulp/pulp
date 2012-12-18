@@ -99,13 +99,10 @@ class CitrusImporter(Importer):
 
         @param repo: metadata describing the repository
         @type  repo: L{pulp.server.plugins.model.Repository}
-
         @param sync_conduit: provides access to relevant Pulp functionality
         @type  sync_conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
-
         @param config: plugin configuration
         @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
-
         @return: report of the details of the sync
         @rtype:  L{pulp.server.plugins.model.SyncReport}
         """

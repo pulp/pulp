@@ -67,7 +67,7 @@ class FileReader:
         the specified location.
         @param unit: A content unit defined in the manifest.
         @type unit: dict
-        @param storage_path: The fully qualified file path where downloaded
+        @param storage_path: The fully qualified file path to where downloaded
             file will be stored.
         @type storage_path: str
         """
@@ -115,6 +115,15 @@ class HttpReader(FileReader):
 class Publisher:
 
     def publish(self, units):
+        """
+        Publish the specified units.
+        Writes the units.json file and symlinks each of the
+        files associated to the unit's 'storage_path'.
+        @param units: A list of units.
+        @type units: list
+        @return: The manifest and links created.
+        @rtype: tuple(2)
+        """
         pass
 
 
@@ -156,22 +165,28 @@ class FilePublisher(Publisher):
         files associated to the unit's 'storage_path'.
         @param units: A list of units.
         @type units: list
+        @return: The manifest and links created.
+        @rtype: tuple(2)
         """
         units = [dict(u) for u in units]
-        self.link(units)
-        self.write_manifest(units)
+        links = self.link(units)
+        manifest = self.write_manifest(units)
+        return (manifest, links)
 
     def write_manifest(self, units):
         """
         Write the manifest (units.json) for the specified list of units.
         @param units: A list of units.
         @type units: list
+        @return: The path to the written manifest.
+        @rtype: str
         """
         path = join(self.publish_dir, self.repo_id, 'units.json')
         make_directory(path)
         fp = open(path, 'w+')
         try:
             json.dump(units, fp, indent=2)
+            return path
         finally:
             fp.close()
 
