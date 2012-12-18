@@ -59,6 +59,8 @@ mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
+mkdir -p %{buildroot}/%{_var}/lib/pulp/citrus/published
+mkdir -p %{buildroot}/%{_var}/www
 
 # Configuration
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
@@ -72,6 +74,9 @@ cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 
 # Plugins
 cp -R plugins/* %{buildroot}/%{_usr}/lib/pulp/plugins
+
+# WWW
+ln -s %{_var}/lib/pulp/citrus/published %{buildroot}/%{_var}/www/citrus
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
@@ -102,6 +107,9 @@ Plugins to provide citrus support.
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_citrus.conf
 %{_usr}/lib/pulp/plugins/importers/citrus_importer/
 %{_usr}/lib/pulp/plugins/distributors/citrus_distributor/
+%defattr(-,apache,apache,-)
+%{_var}/lib/pulp/citrus/published
+%{_var}/www/citrus
 %doc
 
 # ---- Admin (builtin) Extensions ----------------------------------------------

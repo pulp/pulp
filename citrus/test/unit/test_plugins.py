@@ -118,6 +118,7 @@ class TestPlugins(WebTest):
         fp = open(storage_path, 'w+')
         fp.write(self.UNIT_ID)
         fp.close()
+        self.storage_path = storage_path
         # add unit
         manager.add_content_unit(
             self.UNIT_TYPE_ID,
@@ -151,7 +152,7 @@ class TestDistributor(TestPlugins):
         # Test
         dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = dict(publish_dir=self.upfs)
+        cfg = dict(virtual_host=(self.upfs, self.upfs))
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         # Verify
@@ -165,7 +166,7 @@ class ImporterTest(TestPlugins):
         self.populate()
         dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = dict(publish_dir=self.upfs)
+        cfg = dict(virtual_host=(self.upfs, self.upfs))
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
@@ -174,7 +175,9 @@ class ImporterTest(TestPlugins):
         unit_db.clean()
         # Test
         importer = CitrusImporter()
-        cfg = dict(base_url='file://%s' % self.upfs)
+        cfg = dict(
+            base_url='file://',
+            manifest_path=dist.publisher(repo, cfg).manifest_path())
         conduit = RepoSyncConduit(
             self.REPO_ID,
             CITRUS_IMPORTER,
@@ -197,7 +200,7 @@ class TestHandler(RepositoryHandler):
         pulp_conf.set('server', 'storage_dir', self.tester.downfs)
         imp = binds[0]['details']['importers'][0]
         cfg = imp['config']
-        cfg['base_url'] = 'file://%s' % self.tester.upfs
+        cfg['base_url'] = 'file://'
         RepositoryHandler.merge(self, binds)
 
 
@@ -207,12 +210,14 @@ class TestAgentPlugin(TestPlugins):
 
     def populate(self):
         TestPlugins.populate(self)
+        self.virtual_host = (self.upfs, self.upfs)
         # register downstream
         manager = factory.consumer_manager()
         manager.register(self.PULP_ID)
         manager = factory.repo_distributor_manager()
         # add distrubutor
-        manager.add_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR, {}, True, CITRUS_DISTRUBUTOR)
+        cfg = dict(virtual_host=self.virtual_host)
+        manager.add_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR, cfg, True, CITRUS_DISTRUBUTOR)
         # bind
         manager = factory.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -226,7 +231,45 @@ class TestAgentPlugin(TestPlugins):
         unit_db.clean()
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
-    def test_handler(self, cn):
+    def test_handler(self, unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        This produces a file structure of:
+          storage    - The upstream unit storage.
+          upstream   - The upstream publishing location
+          downstream - The downstream unit storage
+        For example:
+
+        ├── downstream-3ei7PD
+        │   ├── tmp
+        │   │   └── pulp
+        │   │       └── citrus
+        │   │           └── storage
+        │   │               └── test_unit.rpm
+        │   └── working
+        │       └── repos
+        │           └── test-repo
+        │               ├── distributors
+        │               │   └── citrus_distributor
+        │               └── importers
+        │                   └── citrus_importer
+        ├── storage
+        │   ├── test_unit.rpm
+        │   └── working
+        │       └── repos
+        │           └── test-repo
+        │               └── distributors
+        │                   └── citrus_distributor
+        └── upstream-siqxkL
+            └── test-repo
+                ├── content
+                │   └── b6490982531f2b4bc5f423d0 -> /tmp/pulp/citrus/storage/test_unit.rpm
+                └── units.json
+
+        @param unused:
+        @return:
+        """
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
         @patch('citrus.Local.binding', binding)
@@ -236,7 +279,7 @@ class TestAgentPlugin(TestPlugins):
             self.populate()
             dist = CitrusDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(publish_dir=self.upfs)
+            cfg = dict(virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -244,3 +287,7 @@ class TestAgentPlugin(TestPlugins):
             handler = TestHandler(self)
             handler.update(Conduit(), units, options)
         test_handler()
+        time.sleep(2)
+        # Validate
+        path = '/'.join((self.downfs, self.storage_path))
+        self.assertTrue(os.path.exists(path))

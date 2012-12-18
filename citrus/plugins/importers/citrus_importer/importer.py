@@ -67,7 +67,7 @@ class CitrusImporter(Importer):
 
     def validate_config(self, repo, config, related_repos):
         msg = _('Missing required configuration property: %(p)s')
-        for key in ('base_url',):
+        for key in ('base_url', 'manifest_url',):
             value = config.get(key)
             if not value:
                 return (False, msg % dict(p=key))
@@ -110,12 +110,10 @@ class CitrusImporter(Importer):
         @rtype:  L{pulp.server.plugins.model.SyncReport}
         """
         base_url = config.get('base_url')
+        manifest_url = config.get('manifest_url')
         reader = HttpReader(base_url)
-        return self._synchronize(repo.id, reader, conduit)
-
-    def _synchronize(self, repo_id, reader, conduit):
         local_units = self._local_units(conduit)
-        upstream_units = self._upstream_units(repo_id, reader)
+        upstream_units = self._upstream_units(reader, manifest_url)
         # add missing units
         storage_dir = pulp_conf.get('server', 'storage_dir')
         for k, unit in upstream_units.items():
@@ -129,7 +127,7 @@ class CitrusImporter(Importer):
                 unit['metadata'],
                 '/'.join((storage_dir, unit['storage_path'])))
             conduit.save_unit(unit_in)
-            reader.download(repo_id, unit, unit_in)
+            reader.download(unit, unit_in.storage_path)
          # purge extra units
         for k, unit in local_units.items():
             if k not in upstream_units:
@@ -146,7 +144,7 @@ class CitrusImporter(Importer):
         units = conduit.get_units()
         return self._unit_dictionary(units)
 
-    def _upstream_units(self, repo_id, reader):
+    def _upstream_units(self, reader, manifest_url):
         """
         Fetch upstream units.
         @param repo_id: The repository ID.
@@ -154,7 +152,7 @@ class CitrusImporter(Importer):
         @return: A dictionary of units keyed by L{UnitKey}.
         @rtype: dict
         """
-        manifest = Manifest(reader, repo_id)
+        manifest = Manifest(reader, manifest_url)
         units = manifest.read()
         return self._unit_dictionary(units)
 
@@ -177,17 +175,21 @@ class Manifest:
     """
     An http based upstream units (json) document.
     Download the document and perform the JSON conversion.
-    @ivar repo_id: A repository ID.
-    @type repo_id: str
+    @ivar reader: A file reader.
+    @type reader: L{FileReader}
+    @ivar manifest_url: The relative URL for the manifest.
+    @type manifest_url: str
     """
 
-    def __init__(self, reader, repo_id):
+    def __init__(self, reader, manifest_url):
         """
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param reader: A file reader.
+        @type reader: L{FileReader}
+        @param manifest_url: The relative URL for the manifest.
+        @type manifest_url: str
         """
         self.reader = reader
-        self.repo_id = repo_id
+        self.manifest_url = manifest_url
 
     def read(self):
         """
@@ -195,7 +197,7 @@ class Manifest:
         @return: The downloaded json document.
         @rtype: str
         """
-        fp_in = self.reader.open(self.repo_id, 'units.json')
+        fp_in = self.reader.open(self.manifest_url)
         try:
             return json.load(fp_in)
         finally:

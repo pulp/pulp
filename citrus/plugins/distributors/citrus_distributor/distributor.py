@@ -21,7 +21,7 @@ from logging import getLogger
 _LOG = getLogger(__name__)
 
 
-PUBLISH_DIR='/var/lib/pulp/published/http/citrus/repos'
+VIRTUAL_HOST = ('/pulp/citrus/repos', '/var/lib/pulp/citrus/published/http/repos')
 
 
 class CitrusDistributor(Distributor):
@@ -64,10 +64,13 @@ class CitrusDistributor(Distributor):
         @return: report describing the publish run
         @rtype:  pulp.plugins.model.PublishReport
         """
-        publish_dir = config.get('publish_dir', PUBLISH_DIR)
         units = conduit.get_units()
-        pub = HttpPublisher(publish_dir, repo.id)
-        pub.publish([u.__dict__ for u in units])
+        publisher = self.publisher(repo, config)
+        publisher.publish([u.__dict__ for u in units])
+
+    def publisher(self, repo, config):
+        virtual_host = config.get('virtual_host', VIRTUAL_HOST)
+        return HttpPublisher(repo.id, virtual_host)
 
     def cancel_publish_repo(self, call_report, call_request):
         pass
@@ -93,7 +96,7 @@ class CitrusDistributor(Distributor):
         """
         payload = {}
         self._add_repository(repo.id, payload)
-        self._add_importers(payload)
+        self._add_importers(repo, config, payload)
         self._add_distributors(repo.id, payload)
         return payload
 
@@ -108,13 +111,15 @@ class CitrusDistributor(Distributor):
         manager = factory.repo_query_manager()
         payload['repository'] = manager.get_repository(repo_id)
 
-    def _add_importers(self, payload):
+    def _add_importers(self, repo, config, payload):
+        publisher = self.publisher(repo, config)
         host = pulp_conf.get('server', 'server_name')
         importer = {
             'id':'citrus_importer',
             'importer_type_id':'citrus_importer',
             'config':{
-                'base_url':'http://%s/pulp/citrus/repos' % host,
+                'base_url':'http://%s' % host,
+                'manifest_url':publisher.manifest_path(),
             }
         }
         payload['importers'] = [importer]

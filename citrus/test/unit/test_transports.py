@@ -12,6 +12,7 @@
 import os
 import shutil
 import tempfile
+import json
 
 from unittest import TestCase
 from pulp.citrus.transport import HttpPublisher, HttpReader
@@ -31,8 +32,10 @@ class TestHttp(TestCase):
             os.makedirs(self.TMP_ROOT)
         self.tmpdir = tempfile.mkdtemp(dir=self.TMP_ROOT)
         self.unit_dir = os.path.join(self.tmpdir, 'unit_storage')
+        self.unit_dir2 = os.path.join(self.tmpdir, 'unit_storage2')
         shutil.rmtree(self.tmpdir)
         os.makedirs(self.unit_dir)
+        os.makedirs(self.unit_dir2)
 
     def shutDown(self):
         shutil.rmtree(self.TMP_ROOT)
@@ -52,19 +55,17 @@ class TestHttp(TestCase):
         # publish
         repo_id = 'elmer'
         publish_dir = os.path.join(self.tmpdir, 'citrus/repos')
-        base_url = '/'.join(('file://', publish_dir))
-        reader = HttpReader(base_url)
-        p = HttpPublisher(publish_dir, repo_id)
+        virtual_host = (publish_dir, publish_dir)
+        p = HttpPublisher(repo_id, virtual_host)
         p.publish(units)
         # read
-        fp = reader.open(repo_id, 'units.json')
+        base_url = 'file://'
+        reader = HttpReader(base_url)
+        fp = reader.open(publish_dir, repo_id, 'units.json')
         s = fp.read()
         print s
+        units = json.loads(s)
         fp.close()
-        publish_dir = os.path.join(self.tmpdir, 'citrus', 'repos', repo_id, 'content')
-        for fn in os.listdir(publish_dir):
-            path = os.path.join(self.tmpdir, fn)
-            fp = reader.open(repo_id, 'content', fn)
-            s = fp.read()
-            print s
-            fp.close()
+        for unit in units:
+            storage_path = os.path.join(self.unit_dir2, unit['storage_path'])
+            reader.download(unit, storage_path)
