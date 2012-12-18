@@ -56,6 +56,144 @@ features will be customized and augmented by plugins, such that their versions o
 common commands will only be applicable to their own content. Commands that can
 operate on all repositories go in the generic "repo" section.
 
+
+Create, Update, Delete
+----------------------------
+
+To create a repository, the only required argument is a unique ID. Consult the
+help text for the create command of each particular repository type to see what
+other options are available.
+
+::
+
+  $ pulp-admin rpm repo create --repo-id=foo
+  Successfully created repository [foo]
+
+The ``update`` command takes similar arguments to the ``create`` command.
+
+::
+
+  $ pulp-admin rpm repo update --repo-id=foo --display-name='Foo Repo'
+  Repository [foo] successfully updated
+
+The new repository can be seen with its unique ID and display name.
+
+::
+
+  $ pulp-admin rpm repo list
+  +----------------------------------------------------------------------+
+                              RPM Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 foo
+  Display Name:       Foo Repo
+  Description:        None
+  Content Unit Count: 0
+
+Deleting a repository is an asynchronous operation. In case other tasks are
+already in progress on this repository, the server will allow those tasks to
+complete before executing the deletion. The example below shows how to request
+deletion and then check the status of that task.
+
+::
+
+  $ pulp-admin rpm repo delete --repo-id=foo
+  The request to delete repository [foo] has been received by the server. The
+  progress of the task can be viewed using the commands under "repo tasks"
+
+  $ pulp-admin repo tasks list --repo-id=foo
+  +----------------------------------------------------------------------+
+                                   Tasks
+  +----------------------------------------------------------------------+
+
+  Operations:  delete
+  Resources:   foo (repository)
+  State:       Successful
+  Start Time:  2012-12-17T23:17:46Z
+  Finish Time: 2012-12-17T23:17:46Z
+  Result:      N/A
+  Task Id:     2d4fc3da-7ad7-448c-a9dd-78e79f71ef2f
+
+
+List
+----
+
+This command lists all repositories in Pulp, regardless of their content type. To
+list and search repositories only of a particular type, go to that type's area of
+the CLI, such as ``pulp-admin rpm repo list``.
+
+::
+
+  $ pulp-admin repo list
+  +----------------------------------------------------------------------+
+                                Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 pulp
+  Display Name:       Pulp
+  Description:        Pulp's stable repository
+  Content Unit Count: 39
+
+  Id:                 repo1
+  Display Name:       repo1
+  Description:        None
+  Content Unit Count: 0
+
+  Id:                 repo2
+  Display Name:       repo2
+  Description:        None
+  Content Unit Count: 0
+
+
+Copy Between Repositories
+-------------------------
+
+Content units can be copied from one repository to another. For content units
+that involve an on-disk file (such as RPMs having a package stored on disk), the
+file is only stored once even if it is included in multiple Pulp repositories.
+
+The following example assumes that the repository "foo" has some content units
+and that we want to copy them to the repository "bar".
+
+::
+
+  $ pulp-admin rpm repo copy rpm --from-repo-id=foo --to-repo-id=bar
+  Progress on this task can be viewed using the commands under "repo tasks".
+
+  $ foo-admin repo tasks list --repo-id=foo
+  +----------------------------------------------------------------------+
+                                   Tasks
+  +----------------------------------------------------------------------+
+
+  Operations:  associate
+  Resources:   bar (repository), foo (repository)
+  State:       Successful
+  Start Time:  2012-12-17T23:27:12Z
+  Finish Time: 2012-12-17T23:27:13Z
+  Result:      N/A
+  Task Id:     8c3a6964-245f-4fe5-9d7c-8c6bac55cffb
+
+The copy was successful. Here you can see that the repository "bar" now has the
+same number of content units as "foo".
+
+::
+
+  $ pulp-admin rpm repo list
+  +----------------------------------------------------------------------+
+                              RPM Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 foo
+  Display Name:       foo
+  Description:        None
+  Content Unit Count: 36
+
+  Id:                 bar
+  Display Name:       bar
+  Description:        None
+  Content Unit Count: 36
+
+
 Groups
 ------
 
@@ -115,31 +253,3 @@ of the CLI, you can ``cancel``, ``list``, and get ``details`` about repository t
     details - displays more detailed information about a specific task
     list    - lists tasks queued or running in the server
 
-List
-----
-
-This command lists all repositories in Pulp, regardless of their content type. To
-list and search repositories only of a particular type, go to that type's area of
-the CLI, such as ``pulp-admin rpm repo list``.
-
-::
-
-  $ pulp-admin repo list
-  +----------------------------------------------------------------------+
-                                Repositories
-  +----------------------------------------------------------------------+
-
-  Id:                 pulp
-  Display Name:       Pulp
-  Description:        Pulp's stable repository
-  Content Unit Count: 75
-
-  Id:                 repo1
-  Display Name:       repo1
-  Description:        None
-  Content Unit Count: 0
-
-  Id:                 repo2
-  Display Name:       repo2
-  Description:        None
-  Content Unit Count: 0
