@@ -186,15 +186,15 @@ class RepositoryImporterAPI(PulpAPI):
         return self.server.POST(path, data)
 
     def importer(self, repo_id, importer_id):
-        path = self.base_path % repo_id + ("/%s/" % importer_id)
+        path = self.base_path % repo_id + ("%s/" % importer_id)
         return self.server.GET(path)
 
     def delete(self, repo_id, importer_id):
-        path = self.base_path % repo_id + "/%s/" % importer_id
+        path = self.base_path % repo_id + "%s/" % importer_id
         return self.server.DELETE(path)
 
     def update(self, repo_id, importer_id, importer_config):
-        path = self.base_path % repo_id + "/%s/" % importer_id
+        path = self.base_path % repo_id + "%s/" % importer_id
         data = {"importer_config": importer_config}
         return self.server.PUT(path, data)
 
@@ -223,15 +223,15 @@ class RepositoryDistributorAPI(PulpAPI):
         return self.server.POST(path, data)
 
     def distributor(self, repo_id, distributor_id):
-        path = self.base_path % repo_id + ("/%s/" % distributor_id)
+        path = self.base_path % repo_id + ("%s/" % distributor_id)
         return self.server.GET(path)
 
     def delete(self, repo_id, distributor_id):
-        path = self.base_path % repo_id + "/%s/" % distributor_id
+        path = self.base_path % repo_id + "%s/" % distributor_id
         return self.server.DELETE(path)
 
     def update(self, repo_id, distributor_id, distributor_config):
-        path = self.base_path % repo_id + "/%s/" % distributor_id
+        path = self.base_path % repo_id + "%s/" % distributor_id
         return self.server.PUT(path, distributor_config)
 
 
