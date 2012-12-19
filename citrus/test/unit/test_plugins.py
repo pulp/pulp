@@ -214,8 +214,15 @@ class TestAgentPlugin(TestPlugins):
         # register downstream
         manager = factory.consumer_manager()
         manager.register(self.PULP_ID)
-        manager = factory.repo_distributor_manager()
+        manager = factory.repo_importer_manager()
+        # add importer
+        cfg = {
+            'base_url':'http://google.com',
+            'manifest_url':'http://apple.com',
+        }
+        manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distrubutor
+        manager = factory.repo_distributor_manager()
         cfg = dict(virtual_host=self.virtual_host)
         manager.add_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR, cfg, True, CITRUS_DISTRUBUTOR)
         # bind
@@ -270,6 +277,43 @@ class TestAgentPlugin(TestPlugins):
         @param unused:
         @return:
         """
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('citrus.Local.binding', binding)
+        @patch('citrus.Remote.binding', binding)
+        def test_handler(*unused):
+            # publish
+            self.populate()
+            dist = CitrusDistributor()
+            repo = Repository(self.REPO_ID)
+            cfg = dict(virtual_host=self.virtual_host)
+            conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            units = []
+            options = dict(all=True)
+            handler = TestHandler(self)
+            handler.update(Conduit(), units, options)
+        test_handler()
+        time.sleep(2)
+        # Validate
+        path = '/'.join((self.downfs, self.storage_path))
+        self.assertTrue(os.path.exists(path))
+
+    def clean_units(self):
+        Bind.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+
+    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    def test_handler_merge(self, unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        This test does NOT clean so citrus will merge.
+        @see: test_handler for directory tree details.
+        @param unused:
+        @return:
+        """
+        self.clean = self.clean_units
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
         @patch('citrus.Local.binding', binding)

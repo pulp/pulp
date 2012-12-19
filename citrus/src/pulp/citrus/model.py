@@ -367,7 +367,8 @@ class LocalDistributor(Local, Distributor):
         @rtype: L{LocalDistributor}
         """
         try:
-            http = cls.binding.repo_distributor.distributor(repo_id, dist_id)
+            binding = cls.binding.repo_distributor
+            http = binding.distributor(repo_id, dist_id)
             details = http.response_body
             return cls(repo_id, dist_id, details)
         except NotFoundException:
@@ -450,6 +451,21 @@ class LocalImporter(Local, Importer):
     """
     Represents a repository-importer association.
     """
+
+    @classmethod
+    def fetch(cls, repo_id, imp_id):
+        """
+        Fetch the local repository-distributor.
+        @return: The fetched distributor.
+        @rtype: L{LocalImporter}
+        """
+        try:
+            binding = cls.binding.repo_importer
+            http = binding.importer(repo_id, imp_id)
+            details = http.response_body
+            return cls(repo_id, imp_id, details)
+        except NotFoundException:
+            return None
 
     def add(self):
         """

@@ -126,7 +126,7 @@ class RepositoryHandler(ContentHandler):
                     progress.set_action('add', repo_id)
                     myrepo = LocalRepository(repo_id, upstream.details)
                     myrepo.add()
-            except Exception, e:
+            except Exception:
                 log.exception(str(bind))
 
     def purge(self, progress, binds):
