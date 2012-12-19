@@ -43,7 +43,7 @@ class HandlerProgress(ProgressReport):
         Designed to be overridden and reported.
         """
         ProgressReport._updated(self)
-        self.conduit.update_progress(self)
+        self.conduit.update_progress(self.dict())
 
 
 class RepositoryHandler(ContentHandler):

@@ -84,15 +84,32 @@ class PollingCommand(PulpCliCommand):
         cfg = self.context.config
         spinner = self.context.prompt.create_spinner()
         interval = float(cfg['output']['poll_frequency_in_seconds'])
+        last_hash = None
         while not task.is_completed():
             if task.is_waiting():
                 spinner.next(_('Waiting to begin'))
             else:
-                spinner.next()
+                # report progress only if valid & changed
+                if task.progress:
+                    _hash = hash(repr(task.progress))
+                    if _hash != last_hash:
+                        self.progress(task.progress)
+                        last_hash = _hash
+                else:
+                    spinner.next()
             time.sleep(interval)
             response = server.tasks.get_task(task.task_id)
             task = response.response_body
+        if task.progress:
+            self.progress(task.progress)
         return task
+
+    def progress(self, report):
+        """
+        The task has reported progress
+        @param report: A progress report.
+        """
+        pass
 
     def rejected(self, task):
         """
@@ -125,10 +142,10 @@ class PollingCommand(PulpCliCommand):
         """
         postponed = task.is_postponed()
         if postponed:
-            msg  = \
-                'The request to update content was accepted but postponed ' \
-                'due to one or more previous requests against the consumer.' \
-                ' This request will take place at the earliest possible time.'
+            msg  =\
+            'The request to update content was accepted but postponed '\
+            'due to one or more previous requests against the consumer.'\
+            ' This request will take place at the earliest possible time.'
             self.context.prompt.render_paragraph(_(msg))
         return postponed
 

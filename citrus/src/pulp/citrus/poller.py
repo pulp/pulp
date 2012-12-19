@@ -13,7 +13,7 @@ import httplib
 
 from time import sleep
 
-from pulp.server.dispatch.constants import CALL_FINISHED_STATE, CALL_ERROR_STATE
+from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
 class TaskPoller:
@@ -35,7 +35,7 @@ class TaskPoller:
             last_hash = self.report_progress(task, last_hash)
             if task.state == CALL_ERROR_STATE:
                 break
-            if task.state in CALL_FINISHED_STATE:
+            if task.state in CALL_COMPLETE_STATES:
                 return
 
     def report_progress(self, task, last_hash):

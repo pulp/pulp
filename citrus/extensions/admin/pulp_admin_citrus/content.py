@@ -38,7 +38,6 @@ class ContentSection(PulpCliSection):
                 _('identifies the pulp server'),
                 required=True)
             self.add_command(command)
-            self.progress_tracker = ProgressTracker(context.prompt)
 
 
 class Update(PollingCommand):
@@ -60,6 +59,7 @@ class Update(PollingCommand):
             '--all',
             _('update all bound repositories'),
             aliases=['-a'])
+        self.progress_tracker = ProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         pulp_id = kwargs['pulp-id']
