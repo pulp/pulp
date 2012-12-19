@@ -106,8 +106,8 @@ Content Unit Distributors
 -------------------------
 
 The **pulp-admin** command line client provides the ``server`` section and the
-``distributors`` command to query to the server about the distributor plugins
-that have been loaded.
+``distributors`` command to query the server about the distributor plugins that
+have been loaded.
 
 ::
 
