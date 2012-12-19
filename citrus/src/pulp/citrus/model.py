@@ -184,6 +184,8 @@ class LocalRepository(Local, Repository):
             details['repository'] = http.response_body
             http = cls.binding.repo_distributor.distributors(repo_id)
             details['distributors'] = http.response_body
+            http = cls.binding.repo_importer.importers(repo_id)
+            details['importers'] = http.response_body
             return cls(repo_id, details)
         except NotFoundException:
             return None
