@@ -12,8 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 
-import httplib
-
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
 from pulp.citrus.progress import ProgressReport
@@ -72,45 +70,15 @@ class RepositoryHandler(ContentHandler):
         progress.push_step('fetch')
         all = options.get('all', False)
         repoids = [key['repo_id'] for key in units if key]
+        binding = Binding()
         if all:
-            binds = self.all_binds()
+            binds = binding.fetch_all()
         else:
-            binds = self.binds(repoids)
+            binds = binding.fetch(repoids)
         details = self.synchronize(progress, binds)
         progress.set_status(progress.SUCCEEDED)
         report.set_succeeded(details, len(details))
         return report
-
-    def all_binds(self):
-        """
-        Get a list of ALL bind payloads for this consumer.
-        @return: List of bind payloads.
-        @rtype: list
-        """
-        binding = Binding()
-        return binding.fetch_all()
-
-    def binds(self, repoids):
-        """
-        Get a list of bind payloads for the specified list of repository ID.
-        @param repoids: A list of repository IDs.
-        @type repoids:  list
-        @return: List of bind payloads.
-        @rtype: list
-        """
-        binding = Binding()
-        return binding.fetch(repoids)
-
-    def filtered(self, binds):
-        """
-        Get a filtered list of binds.
-          - Includes only the (pulp) distributor.
-        @param binds: A list of bind payloads.
-        @type binds: list
-        @return: The filtered list of bind payloads.
-        @rtype: list
-        """
-        return [b for b in binds if b['type_id'] == CITRUS_DISTRIBUTOR]
 
     def synchronize(self, progress, binds):
         """
