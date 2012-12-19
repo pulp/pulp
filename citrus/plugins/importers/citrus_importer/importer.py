@@ -17,6 +17,7 @@ from pulp.server.compat import json
 from pulp.plugins.model import Unit
 from pulp.plugins.importer import Importer
 from pulp.citrus.transport import HttpReader
+from pulp.citrus.progress import ProgressReport
 from logging import getLogger
 
 
@@ -53,6 +54,16 @@ class UnitKey:
 
     def __ne__(self, other):
         return self.uid != other.uid
+
+
+class ImporterProgress(ProgressReport):
+
+    def __init__(self, conduit):
+        self.conduit = conduit
+        ProgressReport.__init__(self)
+
+    def _updated(self):
+        self.conduit.set_progress(self.dict())
 
 
 class CitrusImporter(Importer):
@@ -109,9 +120,13 @@ class CitrusImporter(Importer):
         base_url = config.get('base_url')
         manifest_url = config.get('manifest_url')
         reader = HttpReader(base_url)
+        progress = ImporterProgress(conduit)
+        progress.push_step('fetch_local')
         local_units = self._local_units(conduit)
+        progress.push_step('fetch_upstream')
         upstream_units = self._upstream_units(reader, manifest_url)
         # add missing units
+        progress.push_step('add_units')
         storage_dir = pulp_conf.get('server', 'storage_dir')
         for k, unit in upstream_units.items():
             if k in local_units:
@@ -123,12 +138,17 @@ class CitrusImporter(Importer):
                 unit['unit_key'],
                 unit['metadata'],
                 '/'.join((storage_dir, unit['storage_path'])))
+            progress.set_action('save_unit', unit['unit_key'])
             conduit.save_unit(unit_in)
+            progress.set_action('download_unit', unit['unit_key'])
             reader.download(unit, unit_in.storage_path)
          # purge extra units
+        progress.push_step('purge_units')
         for k, unit in local_units.items():
             if k not in upstream_units:
+                progress.set_action('delete_unit', unit['unit_key'])
                 conduit.remove_unit(unit)
+        progress.set_status(progress.SUCCEEDED)
 
     def _local_units(self, conduit):
         """

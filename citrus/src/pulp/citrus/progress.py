@@ -69,7 +69,7 @@ class ProgressReport:
         @param subject: The subject of the action.
         @type subject: object
         """
-        self.details = dict(action=action, subject=str(subject))
+        self.details = dict(action=action, subject=subject)
         self._updated()
 
     def error(self, msg):
@@ -88,3 +88,11 @@ class ProgressReport:
         Designed to be overridden and reported.
         """
         log.info('PROGRESS: %s %s', self.steps[-1:], self.details)
+
+    def dict(self):
+        """
+        Dictionary representation.
+        @return: self as a dictionary.
+        @rtype: dict
+        """
+        return dict(steps=self.steps, details=self.details)

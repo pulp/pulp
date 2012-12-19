@@ -9,25 +9,37 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import time
+import httplib
+
+from time import sleep
+
+from pulp.server.dispatch.constants import CALL_FINISHED_STATE, CALL_ERROR_STATE
+
 
 class TaskPoller:
 
-    TASK_ERROR = ('error',)
-    TASK_FINISHED = ('skipped', 'finished', 'cancelled', 'timed out')
+    PROGRESS_DELAY = 0.5
 
     def __init__(self, binding, progress):
         self.binding = binding
         self.progress = progress
 
     def join(self, task_id):
+        last_hash = 0
         while True:
-            time.sleep(.25)
+            sleep(self.PROGRESS_DELAY)
             http = self.binding.tasks.get_task(task_id)
-            if http.response_code != 200:
+            if http.response_code != httplib.OK:
                 break
             task = http.response_body
-            if task.state in self.TASK_FINISHED:
-                return
-            if task.state in self.TASK_ERROR:
+            last_hash = self.report_progress(task, last_hash)
+            if task.state == CALL_ERROR_STATE:
                 break
+            if task.state in CALL_FINISHED_STATE:
+                return
+
+    def report_progress(self, task, last_hash):
+        _hash = hash(repr(task.progress))
+        if _hash != last_hash:
+            self.progress.set_action('task', task.progress)
+        return _hash

@@ -20,6 +20,7 @@ from pulp.common.config import Config
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
+from pulp.citrus.poller import TaskPoller
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -309,7 +310,18 @@ class LocalRepository(Local, Repository):
                 dist.delete()
 
     def run_sync(self, progress):
+        """
+        Run a sync() on the repository.
+        @param progress: A progress report.
+        @type progress: pulp.citrus.progress.ProgressReport
+        """
         http = self.binding.repo_actions.sync(self.repo_id, {})
+        if http.response_code == httplib.ACCEPTED:
+            poller = TaskPoller(self.binding, progress)
+            for task in http.response_body:
+                poller.join(task.task_id)
+        else:
+            raise Exception('run_sync() failed:%d', http.response_code)
 
 
 class Distributor:

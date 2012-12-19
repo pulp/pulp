@@ -18,6 +18,7 @@ Contains package (RPM) management section and commands.
 import time
 from gettext import gettext as _
 from command import PollingCommand
+from tracker import ProgressTracker
 from pulp.client.extensions.extensions import PulpCliSection
 from pulp.bindings.exceptions import NotFoundException
 
@@ -37,6 +38,7 @@ class ContentSection(PulpCliSection):
                 _('identifies the pulp server'),
                 required=True)
             self.add_command(command)
+            self.progress_tracker = ProgressTracker(context.prompt)
 
 
 class Update(PollingCommand):
@@ -99,6 +101,9 @@ class Update(PollingCommand):
         except NotFoundException:
             msg = _('Consumer [%s] not found') % pulp_id
             prompt.write(msg, tag='not-found')
+
+    def progress(self, report):
+        self.progress_tracker.display(report)
 
     def succeeded(self, id, task):
         prompt = self.context.prompt
