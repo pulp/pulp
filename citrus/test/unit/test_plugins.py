@@ -195,13 +195,13 @@ class TestHandler(RepositoryHandler):
         self.tester = tester
         RepositoryHandler.__init__(self, cfg)
 
-    def merge(self, binds):
+    def merge(self, progress, binds):
         self.tester.clean()
         pulp_conf.set('server', 'storage_dir', self.tester.downfs)
         imp = binds[0]['details']['importers'][0]
         cfg = imp['config']
         cfg['base_url'] = 'file://'
-        RepositoryHandler.merge(self, binds)
+        RepositoryHandler.merge(self, progress, binds)
 
 
 class TestAgentPlugin(TestPlugins):
