@@ -6,8 +6,10 @@ Introduction
 ------------
 
 The Pulp server uses an internal tasking system to handle requests that may
-take longer than a TCP timeout to execute. Many of the commands from the
-**pulp-admin** command line client will return messages along the lines of::
+take longer than a HTTP request timeout to execute. Many of the commands from the
+**pulp-admin** command line client will return messages along the lines of
+
+::
 
  Request accepted
 
@@ -24,7 +26,9 @@ Details
 
 The **pulp-admin** command line client provides the ``tasks`` section and the
 ``details`` command to inspect the runtime details of a task, identified with the
-required ``--task-id=<id>`` flag.::
+required ``--task-id=<id>`` flag.
+
+::
 
  $ pulp-admin tasks details --task-id e239ae4f-7fad-4004-bfb6-8e06f17d22ef
  +----------------------------------------------------------------------+
@@ -45,7 +49,7 @@ In the output above there are several sections:
  * *Operations*: a list of operations that are being performed by this task
  * *Resources*: a list of resources that are being operated on
  * *State*: the state of the task, such as: Waiting, Running, Successful or Error
- * *State Time*: the UTC time the task started
+ * *Start Time*: the UTC time the task started
  * *Finish Time*: the UTC time the task finished
  * *Result*: the reported result of the task, if any
  * *Task Id*: a unique identifier for the task (as a UUID)
@@ -66,12 +70,13 @@ Canceling a Task
 ----------------
 
 Tasks may be canceled before they are run (i.e. in the waiting state) or while
-they are running if they support cancellation. Not all tasks support
-cancellation while  running.
+they are running if they support cancellation.
 
 The **pulp-admin** command line client provides the ``tasks`` section and the
 ``cancel`` command to try and cancel a task identified by the required
-``--task-id`` flag.::
+``--task-id`` flag.
+
+::
 
  $ pulp-admin tasks cancel --task-id e0e0a250-eded-468f-9d97-0419a00b130f
 
@@ -133,4 +138,13 @@ The **pulp-admin** command line client provides the ``tasks`` section and the
        State: NOT_STARTED
      Metadata:
        State: FINISHED
+
+It is important to note that not all tasks support cancellation once they enter
+the running state. If you try to cancel one of these tasks you will get the
+following message
+
+::
+
+ $ pulp-admin tasks cancel --task-id e0e0a250-eded-468f-9d97-0419a00b130f
+ Cancel Not Implemented for Task: e0e0a250-eded-468f-9d97-0419a00b130f
 

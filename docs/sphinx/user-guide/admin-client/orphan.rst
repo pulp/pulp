@@ -5,8 +5,8 @@ Orphaned Content Units
 Introduction
 ------------
 
-Repositories are the conduit in which content is drawn into Pulp and by which
-Pulp server content. However, under the hood, Pulp actually manages content
+Repositories are the container into which content is drawn into Pulp and by which
+Pulp serves content. However, under the hood, Pulp actually manages content
 separately from repositories. This allows Pulp to minimize disk space by never
 duplicating content that is shared between repositories (i.e. content units
 that appear in more than one repository).
