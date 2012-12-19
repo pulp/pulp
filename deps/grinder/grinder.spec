@@ -61,6 +61,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Dec 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.12-1
+- updating grinder (pkilambi@redhat.com)
+
+* Wed Dec 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.12-1
 - fix the presto parser to handle xz compressed xml files (pkilambi@redhat.com)
 
 * Thu Dec 13 2012 John Matthews <jmatthews@redhat.com> 0.1.11-1
