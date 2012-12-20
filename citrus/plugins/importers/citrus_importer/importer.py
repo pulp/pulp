@@ -149,6 +149,7 @@ class CitrusImporter(Importer):
                 progress.set_action('delete_unit', unit['unit_key'])
                 conduit.remove_unit(unit)
         progress.set_status(progress.SUCCEEDED)
+        return conduit.build_success_report({}, {})
 
     def _local_units(self, conduit):
         """
