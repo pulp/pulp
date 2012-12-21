@@ -94,7 +94,7 @@ def load_extensions(extensions_dir, context, role):
 
     @param context: pre-populated context the extensions should be given to
                     interact with the client
-    @type  context: ClientContext
+    @type  context: pulp.client.extensions.core.ClientContext
 
     @param role:    name of a role, either "admin" or "consumer", so we know
                     which extensions to load
