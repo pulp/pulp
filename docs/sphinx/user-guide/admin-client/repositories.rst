@@ -145,15 +145,74 @@ the CLI, such as ``pulp-admin rpm repo list``.
   Content Unit Count: 0
 
 
+Search
+------
+
+For more targeted results than the ``list`` command provides, you can use Pulp's
+:ref:`criteria` search feature to search repositories. For example, to find all
+RPM repositories that contain at least one content unit:
+
+::
+
+  $ pulp-admin rpm repo search --gt 'content_unit_count=0'
+  +----------------------------------------------------------------------+
+                                Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 pulp
+  Display Name:       pulp
+  Description:        None
+  Content Unit Count: 39
+  Notes:
+
+  Id:                 repo1
+  Display Name:       repo1
+  Description:        None
+  Content Unit Count: 36
+  Notes:
+
+
+Content Search
+--------------
+
+:term:`Content units <content unit>` can be searched within a repository
+using Pulp's :ref:`criteria` search feature. The layout of this command may vary
+based on the content type; for example, RPM support includes a separate command
+for each package type (rpm, srpm, etc.). Here is an example of searching for an
+rpm package by name. The ``--repo-id`` argument is required, and the ``--match``
+argument applies a regular expression.
+
+::
+
+  $ pulp-admin rpm repo content rpm --repo-id=pulp --match 'name=^python-w.+'
+  Arch:         noarch
+  Buildhost:    localhost
+  Checksum:     edfbe47f61a64c2196720e8ab1eb66c696303f89080fbe950444b9384bcfd2ee
+  Checksumtype: sha256
+  Description:  web.py is a web framework for python that is as simple as it is
+                powerful. web.py is in the public domain; you can use it for
+                whatever purpose with absolutely no restrictions.
+  Epoch:        0
+  Filename:     python-webpy-0.32-9.fc17.noarch.rpm
+  License:      Public Domain and BSD
+  Name:         python-webpy
+  Provides:     [[u'python-webpy', u'EQ', [u'0', u'0.32', u'9.fc17']]]
+  Release:      9.fc17
+  Requires:     [[u'python(abi)', u'EQ', [u'0', u'2.7', None]]]
+  Vendor:
+  Version:      0.32
+
+
 Copy Between Repositories
 -------------------------
 
-Content units can be copied from one repository to another. For content units
-that involve an on-disk file (such as RPMs having a package stored on disk), the
-file is only stored once even if it is included in multiple Pulp repositories.
+:term:`Content units <content unit>` can be copied from one repository to another using Pulp's
+:ref:`criteria` search. For content units that involve an on-disk file (such as
+RPMs having a package stored on disk), the file is only stored once even if it
+is included in multiple Pulp repositories.
 
 The following example assumes that the repository "foo" has some content units
-and that we want to copy them to the repository "bar".
+and that we want to copy all of them to the repository "bar".
 
 ::
 
@@ -213,7 +272,7 @@ Here is an example of creating a repo group and adding members to it:
 
 .. TODO link this to a section explaining criteria-based search
 
-The ``members add`` command takes advantage of Pulp's generic search feature, so
+The ``members add`` command takes advantage of Pulp's :ref:`criteria` search feature, so
 you can add many repositories at once. In this case, we provided a specific
 repository name. Let's look at the result of these two commands by listing the
 repository groups.
