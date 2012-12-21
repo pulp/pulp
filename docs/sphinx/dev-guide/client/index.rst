@@ -14,7 +14,7 @@ Create an Entry Point
 ---------------------
 
 Your extension should define a method that will be an entry point. It should
-accept one argument, and the convention is to use this definition:
+accept one argument and return ``None``. The convention is to use this definition:
 
 ::
 
@@ -34,7 +34,9 @@ for an example of how to add features to the CLI.
 
 The ``@priority()`` decorator controls the order in which this extension will be
 loaded relative to other extensions. By not passing a value, this example accepts
-the default priority level.
+the default priority level. The default is found in
+``pulp.client.extensions.loader.DEFAULT_PRIORITY``, and its value is 5 as of
+this writing.
 
 
 Advertise the Entry Point
