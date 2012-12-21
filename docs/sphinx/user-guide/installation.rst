@@ -222,3 +222,19 @@ repositories.
 ::
 
   $ sudo service pulp-agent start
+
+
+SSL Configuration
+-----------------
+
+To try out Pulp, the default SSL configuration should work well. However,
+when deploying Pulp in production, you should supply your own SSL certificates.
+
+In ``/etc/pulp/server.conf``, find the ``[security]`` section. There is good
+documentation in-line, but make sure in particular that ``cacert`` and ``cakey``
+point to the certificate and private key that you want Apache to use for HTTPS.
+Also make sure that Apache's config in ``/etc/httpd/conf.d/pulp.conf`` matches
+these settings. If you plan to use Pulp's consumer features, set ``ssl_ca_certificate``.
+
+If you want to use SSL with Qpid, see the
+:ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
