@@ -85,6 +85,7 @@ all the details or specific fields for users.
 	Roles:  
 
 ::
+
     $ pulp-admin auth user list --fields roles
     +----------------------------------------------------------------------+
     	                             Users
