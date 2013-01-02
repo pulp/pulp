@@ -103,8 +103,8 @@ Users can be removed from the Pulp server using the ``user delete`` command.
 
 ::
 
-    $ pulp-admin auth user delete --login test-user
-    User [test-user] successfully deleted
+	$ pulp-admin auth user delete --login test-user
+	User [test-user] successfully deleted
 	
 Users belonging to the ``super-users`` role can be deleted as well, as long as there is at least one such user 
 remaining in the system.
@@ -129,14 +129,14 @@ granted and revoked from a resource which is essentially a REST API path.
 Here are a few examples of accessing and manipulation permissions:
 
 ::
-    
-    $ pulp-admin auth permission list --resource /
+
+	$ pulp-admin auth permission list --resource /
 	+----------------------------------------------------------------------+
-    	                       Permissions for /
+		                       Permissions for /
 	+----------------------------------------------------------------------+
 
 	Admin:  CREATE, READ, UPDATE, DELETE, EXECUTE
-	
+
 
 The following command will give permissions to create, read and update repositories to ``test-user``.
 
@@ -177,9 +177,9 @@ The ``role list`` command is used to list the current roles.
 
 ::
 
-   $ pulp-admin auth role list
+	$ pulp-admin auth role list
 	+----------------------------------------------------------------------+
-                                 	Roles
+	                             	Roles
 	+----------------------------------------------------------------------+
 
 	Id:     super-users
@@ -203,20 +203,20 @@ All pulp-admin commands accept username and password to capture authentication c
 
 ::
 
-    $ pulp-admin --help
+	$ pulp-admin --help
 	Usage: pulp-admin [options]
 
 	Options:
-  	-h, --help	            show this help message and exit
-  	-u USERNAME, --username=USERNAME
-    	                    credentials for the Pulp server; if specified will
-        	                bypass the stored certificate
-  	-p PASSWORD, --password=PASSWORD
-    	                    credentials for the Pulp server; must be specified
-        	                with --username
-  	--debug	        	    enables debug logging
-  	--config=CONFIG	        absolute path to the configuration file
-    --map                   prints a map of the CLI sections and commands
+	-h, --help	            show this help message and exit
+	-u USERNAME, --username=USERNAME
+		                    credentials for the Pulp server; if specified will
+	    	                bypass the stored certificate
+	-p PASSWORD, --password=PASSWORD
+		                    credentials for the Pulp server; must be specified
+	    	                with --username
+	--debug	        	    enables debug logging
+	--config=CONFIG	        absolute path to the configuration file
+	--map                   prints a map of the CLI sections and commands
 
 Below is an example of basic authentication of users based on their username and password when 
 running a pulp-admin command.
@@ -233,8 +233,8 @@ Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
 
 ::
 
-    $ pulp-admin login -u admin
-    Enter password:
+	$ pulp-admin login -u admin
+	Enter password:
     Successfully logged in. Session certificate will expire at Dec  6 21:47:33 2012
     GMT.
 
