@@ -83,13 +83,12 @@ all the details or specific fields for users.
 	Login:  test-user
 	Name:   test-user
 	Roles:  
-	
+
 ::
-	
     $ pulp-admin auth user list --fields roles
-	+----------------------------------------------------------------------+
+    +----------------------------------------------------------------------+
     	                             Users
-	+----------------------------------------------------------------------+
+    +----------------------------------------------------------------------+
 
 	Login:  admin
 	Roles:  super-users
@@ -97,7 +96,7 @@ all the details or specific fields for users.
 
 	Login:  test-user
 	Roles:  
-	
+
 
 Users can be removed from the Pulp server using the ``user delete`` command. 
 
@@ -238,6 +237,7 @@ Rather than specifying the credentials on each call to pulp-admin, a user can lo
 Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
 
 ::
+
     $ pulp-admin login -u admin
     Enter password:
     Successfully logged in. Session certificate will expire at Dec  6 21:47:33 2012
