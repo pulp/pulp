@@ -223,10 +223,16 @@ running a pulp-admin command.
 
 ::
 
-	$ pulp-admin -u admin -p admin repo list
+	$ pulp-admin -u admin repo list
+	Enter password: 
+	+----------------------------------------------------------------------+
+	                              Repositories
+	+----------------------------------------------------------------------+
 
-Note that the username and password are passed to the ``pulp-admin`` command and not the sub-command, 
-like ``repo list`` in this case.
+
+Note that the username and password are parameters to the ``pulp-admin`` command and not the sub-command, 
+like ``repo list`` in this case. You can also pass the password parameter on the command line with ``--password``, 
+but this is not a recommended method. Users should use interactive password as a preferred method.
 
 Rather than specifying the credentials on each call to pulp-admin, a user can log in to the Pulp server. 
 Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``. 
@@ -238,8 +244,9 @@ Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
     Successfully logged in. Session certificate will expire at Dec  6 21:47:33 2012
     GMT.
 
- Subsequent commands to pulp-admin will no longer require the username-password arguments 
- and will instead use the user certificate. User can be logged out by using ``pulp-admin logout`` command.
+Subsequent commands to pulp-admin will no longer require the username-password arguments 
+and will instead use the user certificate. The user can be logged out by using 
+the ``pulp-admin logout`` command.
 
 ::
 
