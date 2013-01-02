@@ -18,7 +18,6 @@ DIR_STORAGE_ROOT = '/var/lib/pulp/content/'
 DIR_RPMS = os.path.join(DIR_STORAGE_ROOT, 'rpm')
 DIR_SRPMS = os.path.join(DIR_STORAGE_ROOT, 'srpm')
 DIR_DRPM = os.path.join(DIR_STORAGE_ROOT, 'drpm')
-
 V1_DIR_RPMS = '/var/lib/pulp/packages/'
 
 def upgrade(v1_database, v2_database):
@@ -32,7 +31,7 @@ def upgrade(v1_database, v2_database):
 
 def _rpms(v1_database, v2_database):
     rpm_coll = v2_database.units_rpm
-    all_v1_rpms = v1_database.packages.find({'arch' : {'$ne' : 'src'}})
+    all_v1_rpms = v1_database.packages.find()
     for v1_rpm in all_v1_rpms:
         rpm_rel_path =  "%s/%s/%s/%s/%s/%s" % (v1_rpm['name'], v1_rpm['version'], v1_rpm['release'],
                                           v1_rpm['arch'], v1_rpm['checksum'].values()[0], v1_rpm['filename'])
