@@ -7,18 +7,18 @@ Layout
 ------
 
 The root level ``auth`` section contains sub-sections to create and manage 
-Pulp users, roles and their permissions for various resources. 
+Pulp users, roles and their permissions for various resources.
 
 ::
 
     $ pulp-admin auth
-	Usage: pulp-admin auth [SUB_SECTION, ..] COMMAND
-	Description: user, role and permission commands
-
-	Available Sections:
-  	permission - manage granting, revoking and listing permissions for resources
-  	role       - manage user roles
-  	user       - manage users
+    Usage: pulp-admin auth [SUB_SECTION, ..] COMMAND
+    Description: user, role and permission commands
+    
+    Available Sections:
+    permission - manage granting, revoking and listing permissions for resources
+    role       - manage user roles
+    user       - manage users
 
 Users
 -----
