@@ -235,12 +235,11 @@ like ``repo list`` in this case. You can also pass the password parameter on the
 but this is not a recommended method. Users should use interactive password as a preferred method.
 
 Rather than specifying the credentials on each call to pulp-admin, a user can log in to the Pulp server. 
-Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``. 
+Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
 
 ::
-
-	$ pulp-admin login -u admin
-	Enter password:
+    $ pulp-admin login -u admin
+    Enter password:
     Successfully logged in. Session certificate will expire at Dec  6 21:47:33 2012
     GMT.
 
