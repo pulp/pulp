@@ -267,7 +267,7 @@ Note that both the user and the role should exist on the pulp server.
     $ pulp-admin auth role user remove --role-id super-users --login test-user
     User [test-user] successfully removed from role [super-users]
 
-Permissions can be granted and revoked from roles just like users. In this case all the users belonging to given 
+Permissions can be granted and revoked from roles just like users. In this case all the users belonging to the given 
 role will inherit these permissions.
 
 ::
