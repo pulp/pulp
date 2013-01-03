@@ -26,7 +26,7 @@ All pulp-admin commands accept username and password to capture authentication c
 	--map                   prints a map of the CLI sections and commands
 
 Pulp Server installation comes with one default user created with admin level privileges. 
-Login and password for this user can be configured in ``/etc/pulp/server.conf`` at the time 
+Username and password for this user can be configured in ``/etc/pulp/server.conf`` at the time 
 of installation.
 
 Below is an example of basic authentication of users based on their username and password when 
@@ -41,9 +41,10 @@ running a pulp-admin command.
 	+----------------------------------------------------------------------+
 
 
-Note that the username and password are parameters to the ``pulp-admin`` command and not the sub-command, 
-like ``repo list`` in this case. You can also pass the password parameter on the command line with ``--password``, 
-but this is not a recommended method. Users should use interactive password as a preferred method.
+Note that username and password are parameters to the ``pulp-admin`` command, not the sub-command, 
+like ``repo list`` in this case. You can also pass the password parameter on the command line 
+with ``--password`` argument, but this is not a recommended method. Users should use interactive password 
+as a preferred method.
 
 Rather than specifying the credentials on each call to pulp-admin, a user can log in to the Pulp server. 
 Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
@@ -151,12 +152,12 @@ all the details or specific fields for users.
     	                             Users
     +----------------------------------------------------------------------+
 
-	Login:  admin
-	Roles:  super-users
+    Login:  admin
+    Roles:  super-users
 
 
-	Login:  test-user
-	Roles:  
+    Login:  test-user
+    Roles:  
 
 
 Users can be removed from the Pulp server using the ``user delete`` command. 
@@ -275,5 +276,4 @@ role will inherit these permissions.
     Permissions [/repositories : ['READ']] successfully granted to role [test-role]
 
     $ pulp-admin auth permission revoke --resource /repositories --role-id test-role -o read
-	Permissions [/repositories : ['READ']] successfully revoked from role
-	[test-role]
+    Permissions [/repositories : ['READ']] successfully revoked from role [test-role]
