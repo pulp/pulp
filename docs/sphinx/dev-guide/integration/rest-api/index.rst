@@ -1,9 +1,6 @@
 REST API
 ================
 
-APIs
-----
-
 .. toctree::
    :maxdepth: 2
 
@@ -17,12 +14,3 @@ APIs
    user/index
    role/index
    permission/index
-
-Documentation
--------------
-
-.. toctree::
-   :maxdepth: 2
-
-   conventions/index
-   authentication
