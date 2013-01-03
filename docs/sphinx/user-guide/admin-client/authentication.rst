@@ -3,8 +3,70 @@ Authentication
 
 This guide covers basic authentication and authorization in the Pulp Platform.
 
-Layout
-------
+Basic Authentication of Users
+-----------------------------
+
+All pulp-admin commands accept username and password to capture authentication credentials. 
+
+::
+
+	$ pulp-admin --help
+	Usage: pulp-admin [options]
+
+	Options:
+	-h, --help	            show this help message and exit
+	-u USERNAME, --username=USERNAME
+		                    credentials for the Pulp server; if specified will
+	    	                bypass the stored certificate
+	-p PASSWORD, --password=PASSWORD
+		                    credentials for the Pulp server; must be specified
+	    	                with --username
+	--debug	        	    enables debug logging
+	--config=CONFIG	        absolute path to the configuration file
+	--map                   prints a map of the CLI sections and commands
+
+Pulp Server installation comes with one default user created with admin level privileges. 
+Login and password for this user can be configured in ``/etc/pulp/server.conf`` at the time 
+of installation.
+
+Below is an example of basic authentication of users based on their username and password when 
+running a pulp-admin command.
+
+::
+
+	$ pulp-admin -u admin repo list
+	Enter password: 
+	+----------------------------------------------------------------------+
+	                              Repositories
+	+----------------------------------------------------------------------+
+
+
+Note that the username and password are parameters to the ``pulp-admin`` command and not the sub-command, 
+like ``repo list`` in this case. You can also pass the password parameter on the command line with ``--password``, 
+but this is not a recommended method. Users should use interactive password as a preferred method.
+
+Rather than specifying the credentials on each call to pulp-admin, a user can log in to the Pulp server. 
+Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
+
+::
+
+    $ pulp-admin login -u admin
+    Enter password:
+    Successfully logged in. Session certificate will expire at Dec  6 21:47:33 2012
+    GMT.
+
+Subsequent commands to pulp-admin will no longer require the username-password arguments 
+and will instead use the user certificate. The user can be logged out by using 
+the ``pulp-admin logout`` command.
+
+::
+
+    $ pulp-admin logout
+    Session certificate successfully removed.
+
+
+Layout of Auth Section
+----------------------
 
 The root level ``auth`` section contains sub-sections to create and manage 
 Pulp users, roles and their permissions for various resources.
@@ -23,9 +85,7 @@ Pulp users, roles and their permissions for various resources.
 Users
 -----
 
-Pulp Server installation comes with one default user created with admin level privileges. 
-Login and password for this user can be configured in ``/etc/pulp/server.conf`` at the time 
-of installation. More users can be created to perform various administrative tasks. You can 
+Users can be created to perform various administrative tasks on the Pulp Server. You can 
 configure them with either admin level access or limited access to a few resources  
 on the server.
 
@@ -170,7 +230,7 @@ Roles
 In order to efficiently administer permissions, Pulp uses the notion of roles to enable an administrator 
 to grant and revoke permission on a resource to a group of users instead of individually. The ``pulp-admin auth role`` 
 command provides the ability to list the currently defined roles, create/delete roles, and manage user membership 
-in a role. Pulp installation comes with a default `super-users` role with admin level privileges, and the default 
+in a role. Pulp installation comes with a default ``super-users`` role with admin level privileges, and the default 
 admin user belongs to this role.
 
 The ``role list`` command is used to list the current roles. 
@@ -185,70 +245,35 @@ The ``role list`` command is used to list the current roles.
 	Id:     super-users
 	Users:  admin
 
+A role can be created and deleted by specifying a role id.
+
 ::
 
 	$ pulp-admin auth role create --role-id consumer-admin
 	Role [consumer-admin] successfully created
-	
-::
 
 	$ pulp-admin auth role delete --role-id consumer-admin
 	Role [consumer-admin] successfully deleted
-	
 
-Basic Authentication of Users
------------------------------
-
-All pulp-admin commands accept username and password to capture authentication credentials. 
+A user can be added and removed from a role using ``role user add`` and ``role user remove'' commands respectively.
+Note that both the user and the role should exist on the pulp server.
 
 ::
 
-	$ pulp-admin --help
-	Usage: pulp-admin [options]
+    $ pulp-admin auth role user add --role-id super-users --login test-user
+    User [test-user] successfully added to role [super-users]
 
-	Options:
-	-h, --help	            show this help message and exit
-	-u USERNAME, --username=USERNAME
-		                    credentials for the Pulp server; if specified will
-	    	                bypass the stored certificate
-	-p PASSWORD, --password=PASSWORD
-		                    credentials for the Pulp server; must be specified
-	    	                with --username
-	--debug	        	    enables debug logging
-	--config=CONFIG	        absolute path to the configuration file
-	--map                   prints a map of the CLI sections and commands
+    $ pulp-admin auth role user remove --role-id super-users --login test-user
+    User [test-user] successfully removed from role [super-users]
 
-Below is an example of basic authentication of users based on their username and password when 
-running a pulp-admin command.
+Permissions can be granted and revoked from roles just like users. In this case all the users belonging to given 
+role will inherit these permissions.
 
 ::
 
-	$ pulp-admin -u admin repo list
-	Enter password: 
-	+----------------------------------------------------------------------+
-	                              Repositories
-	+----------------------------------------------------------------------+
+    $ pulp-admin auth permission grant --resource /repositories --role-id test-role -o read
+    Permissions [/repositories : ['READ']] successfully granted to role [test-role]
 
-
-Note that the username and password are parameters to the ``pulp-admin`` command and not the sub-command, 
-like ``repo list`` in this case. You can also pass the password parameter on the command line with ``--password``, 
-but this is not a recommended method. Users should use interactive password as a preferred method.
-
-Rather than specifying the credentials on each call to pulp-admin, a user can log in to the Pulp server. 
-Logging in stores a user credentials certificate at ``~/.pulp/user-cert.pem``.
-
-::
-
-    $ pulp-admin login -u admin
-    Enter password:
-    Successfully logged in. Session certificate will expire at Dec  6 21:47:33 2012
-    GMT.
-
-Subsequent commands to pulp-admin will no longer require the username-password arguments 
-and will instead use the user certificate. The user can be logged out by using 
-the ``pulp-admin logout`` command.
-
-::
-
-    $ pulp-admin logout
-    Session certificate successfully removed.
+    $ pulp-admin auth permission revoke --resource /repositories --role-id test-role -o read
+	Permissions [/repositories : ['READ']] successfully revoked from role
+	[test-role]
