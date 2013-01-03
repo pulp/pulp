@@ -23,13 +23,13 @@ V1_DIR_RPMS = '/var/lib/pulp/packages/'
 def upgrade(v1_database, v2_database):
     report = UpgradeStepReport()
 
-    rpms_report = _rpms(v1_database, v2_database)
-    drpms_report = _drpms(v1_database, v2_database)
+    rpms_success = _rpms(v1_database, v2_database, report)
+    drpms_success = _drpms(v1_database, v2_database, report)
 
-    report.success = (rpms_report and drpms_report)
+    report.success = (rpms_success and drpms_success)
     return report
 
-def _rpms(v1_database, v2_database):
+def _rpms(v1_database, v2_database, report):
     rpm_coll = v2_database.units_rpm
     all_v1_rpms = v1_database.packages.find()
     for v1_rpm in all_v1_rpms:
@@ -43,16 +43,16 @@ def _rpms(v1_database, v2_database):
 
         if not os.path.exists(v1_pkgpath):
             # missing source path, skip migrate
-            print "Package %s does not exist" % v1_pkgpath
+            report.warning("Package %s does not exist" % v1_pkgpath)
             continue
         try:
             v2_pkg_dir = os.path.dirname(v2_pkgpath)
             os.makedirs(os.path.dirname(v2_pkgpath))
             shutil.copy(v1_pkgpath, v2_pkg_dir)
         except Exception, e:
-            print "Error: %s" % e
-            continue
+            report.error("Error: %s" % e)
+            return False
+    return True
+def _drpms(v1_database, v2_database, report):
 
-def _drpms(v1_database, v2_database):
-
-    pass
+    return True

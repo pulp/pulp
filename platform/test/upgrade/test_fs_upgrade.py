@@ -13,17 +13,20 @@ import os
 import shutil
 import glob
 from base_file_upgrade import BaseFileUpgradeTests
-from pulp.server.upgrade.filesystem import rpms
+from pulp.server.upgrade.filesystem import rpms, distribution
+from pulp.server.upgrade.model import UpgradeStepReport
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
 V1_TEST_FILESYSTEM = os.path.join(DATA_DIR, 'filesystem/v1')
 V2_TEST_FILESYSTEM = os.path.join(DATA_DIR, 'filesystem/v2')
 V1_REPOS_DIR = os.path.join(V1_TEST_FILESYSTEM, "var/lib/pulp/repos")
 
-class TestFileUpgrade(BaseFileUpgradeTests):
+class TestFileSystemUpgrade(BaseFileUpgradeTests):
 
     def tearDown(self):
-        shutil.rmtree(V2_TEST_FILESYSTEM + '/var')
+        v2_var_dir = V2_TEST_FILESYSTEM + '/var'
+        if os.path.exists(v2_var_dir):
+            shutil.rmtree(v2_var_dir)
 
     def get_files_in_dir(self, pattern, path):
         files = []
@@ -32,10 +35,22 @@ class TestFileUpgrade(BaseFileUpgradeTests):
         return files
 
     def test_rpms(self):
+        report = UpgradeStepReport()
         rpms.V1_DIR_RPMS = "%s/%s" % (V1_TEST_FILESYSTEM, rpms.V1_DIR_RPMS)
         rpms.DIR_RPMS = "%s/%s" % (V2_TEST_FILESYSTEM, rpms.DIR_RPMS)
-        rpms._rpms(self.v1_test_db.database, self.v2_test_db.database)
+        status = rpms._rpms(self.v1_test_db.database, self.v2_test_db.database, report)
+        self.assertTrue(status)
         v1_rpms_list = self.get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
         v2_rpms_list = self.get_files_in_dir('*.rpm', rpms.DIR_RPMS)
         print len(v1_rpms_list), len(v2_rpms_list)
         self.assertEquals(len(v1_rpms_list), len(v2_rpms_list))
+
+    def test_distributions(self):
+        report = UpgradeStepReport()
+        distribution.V1_DIR_DISTROS = "%s/%s" % (V1_TEST_FILESYSTEM, distribution.V1_DIR_DISTROS)
+        distribution.DIR_DISTROS = "%s/%s" % (V2_TEST_FILESYSTEM, distribution.DIR_DISTROS)
+        status = distribution._distribution(self.v1_test_db.database, self.v2_test_db.database, report)
+        self.assertTrue(status)
+        v1_distro_list = self.get_files_in_dir('*', distribution.V1_DIR_DISTROS)
+        v2_distro_list = self.get_files_in_dir('*', distribution.DIR_DISTROS)
+        self.assertEquals(len(v1_distro_list), len(v2_distro_list))
