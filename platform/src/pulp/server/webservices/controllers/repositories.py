@@ -125,7 +125,7 @@ class RepoCollection(JSONController):
             # Remove internally used scratchpad from repo details
             if 'scratchpad' in repo:
                 del repo['scratchpad']
- 
+
         return repos
 
     @auth_required(READ)
@@ -287,10 +287,13 @@ class RepoResource(JSONController):
                 action_tag('update')]
 
         call_request = CallRequest(repo_manager.update_repo_and_plugins,
-                                   [id, delta, importer_config, distributor_configs],
+                                   [id, delta],
+                                   {'importer_config': importer_config,
+                                    'distributor_configs': distributor_configs},
                                    resources=resources,
                                    tags=tags,
-                                   archive=True)
+                                   archive=True,
+                                   kwarg_blacklist=['importer_config', 'distributor_configs'])
         repo = execution.execute(call_request)
         repo.update(serialization.link.current_link_obj())
         return self.ok(repo)
