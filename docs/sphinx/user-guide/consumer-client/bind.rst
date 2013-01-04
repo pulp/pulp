@@ -43,6 +43,11 @@ to the specified repository.
   Timestamp:    2013-01-02T22:01:17Z
 
 
+.. note::
+  It may take a few moments for the bind to take effect. It happens asynchronously
+  in the background, and we are working on a way to show positive confirmation of
+  success from ``pulp-consumer``.
+
 Unbind
 ------
 
