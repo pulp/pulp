@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.341
-Release: 1
+Version: 2.1.0
+Release: 0.1.alpha
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -93,13 +93,60 @@ client capabilities.
 
 
 %changelog
-* Mon Nov 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.341-1
+* Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
 - 
 
-* Mon Nov 19 2012 Jeff Ortel <jortel@redhat.com> 0.0.340-1
+* Wed Dec 19 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.beta
 - 
 
-* Wed Nov 14 2012 Jeff Ortel <jortel@redhat.com> 0.0.339-1
+* Tue Dec 18 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.18.beta
+- 
+
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
+- 
+
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+
+* Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.14.beta
+- 
+
+* Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
+- 
+
+* Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
+- 861383 - more descriptive message on unregister when server does not exist on
+  the server. (jortel@redhat.com)
+- 883049 - check we have write permissions to cert dir before
+  register/unregister. (jortel@redhat.com)
+- 878632 - adding usage to permission grant and revoke commands to mention that
+  both role-id and login cannot be used at the same time (skarmark@redhat.com)
+
+* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
+- 
+
+* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+
+* Mon Nov 26 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.9.beta
+- 878107 - consumer status now mentions which pulp server the consumer is
+  registered to as well (skarmark@redhat.com)
+
+* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.8.beta
+- 
+
+* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.7.beta
+- 
+
+* Tue Nov 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.3.beta
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.2.beta
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.1.beta
 - 
 
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.338-1
