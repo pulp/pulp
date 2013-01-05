@@ -49,6 +49,8 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
     sync_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
     sync_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
                                               repo_sync_manager.prep_sync)
+    sync_call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
+                                              repo_sync_manager.post_sync)
 
     call_requests = [sync_call_request]
 
@@ -66,6 +68,8 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
         publish_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
         publish_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
                                                      repo_publish_manager.prep_publish)
+        publish_call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
+                                                     repo_publish_manager.post_publish)
         publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
 
         call_requests.append(publish_call_request)
@@ -101,5 +105,7 @@ def publish_itinerary(repo_id, distributor_id, overrides=None):
     call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
     call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
                                          repo_publish_manager.prep_publish)
+    call_request.add_life_cycle_callback(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK,
+                                         repo_publish_manager.post_publish)
 
     return [call_request]

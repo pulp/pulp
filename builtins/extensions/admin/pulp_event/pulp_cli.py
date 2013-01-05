@@ -150,18 +150,18 @@ class RestApiSection(GenericSection):
         @param context:
         @type  context: pulp.client.extensions.core.ClientContext
         """
-        super(RestApiSection, self).__init__(context, 'restapi',
-            _('manage rest-api listeners'))
+        super(RestApiSection, self).__init__(context, 'http',
+            _('manage http listeners'))
 
         m = _('full URL to invoke to send the event info')
         url_option = PulpCliOption('--url', m, required=True)
 
         m = _('optional username to be passed as basic auth credentials when'
-              'the REST API is invoked.')
+              'the HTTP call is invoked.')
         username_option = PulpCliOption('--username', m, required=False)
 
         m = _('optional password to be passed as basic auth credentials when'
-              'the REST API is invoked.')
+              'the HTTP call is invoked.')
         password_option = PulpCliOption('--password', m, required=False)
 
         create_command = PulpCliCommand('create', _('create a listener'),
@@ -197,7 +197,7 @@ class RestApiSection(GenericSection):
         for attr in ('username', 'password'):
             if kwargs.get(attr) is not None:
                 config[attr] = kwargs[attr]
-        self._create('rest-api', config, kwargs['event-type'])
+        self._create('http', config, kwargs['event-type'])
 
     def update(self, **kwargs):
         """

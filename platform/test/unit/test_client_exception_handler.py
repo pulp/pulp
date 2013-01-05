@@ -11,13 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from _socket import gaierror
+from M2Crypto.SSL.Checker import WrongHost
 
 import base
-
 import pulp.bindings.exceptions as exceptions
 from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
 import pulp.client.extensions.exceptions as handler
 from pulp.client.arg_utils import InvalidConfig
+
 
 class ExceptionsLoaderTest(base.PulpClientTests):
     """
@@ -76,6 +78,24 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
         code = self.exception_handler.handle_exception(InvalidConfig('Test Message'))
         self.assertEqual(code, handler.CODE_INVALID_CONFIG)
+        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
+        code = self.exception_handler.handle_exception(WrongHost('expected', 'actual'))
+        self.assertEqual(code, handler.CODE_WRONG_HOST)
+        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
+        code = self.exception_handler.handle_exception(exceptions.ApacheServerException('Test Message'))
+        self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
+        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
+        code = self.exception_handler.handle_exception(gaierror())
+        self.assertEqual(code, handler.CODE_UNKNOWN_HOST)
         self.assertEqual(1, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
@@ -225,7 +245,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
     def test_invalid_config(self):
         """
-        Tests a client-side argument parsing errror.
+        Tests a client-side argument parsing error.
         """
 
         # Test
@@ -235,6 +255,52 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         # Verify
         self.assertEqual(code, handler.CODE_INVALID_CONFIG)
         self.assertEqual('Expected', self.recorder.lines[0].strip())
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+
+    def test_wrong_host(self):
+        """
+        Tests a client-side wrong host error.
+        """
+
+        # Test
+        expected = 'localhost'
+        actual = 'pulp-server'
+        e = WrongHost(expected, actual)
+        code = self.exception_handler.handle_wrong_host(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_WRONG_HOST)
+        self.assertTrue(expected in self.recorder.lines[0])
+        self.assertTrue(actual in self.recorder.lines[0])
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+
+    def test_apache_server_error(self):
+        """
+        Tests handling the case where Apache raised an exception.
+        """
+
+        # Test
+        msg = 'Test Message'
+        e = exceptions.ApacheServerException(msg)
+        code = self.exception_handler.handle_apache_error(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+
+    def test_unknown_host(self):
+        """
+        Tests the case where the client is configured with a host that cannot
+        be resolved.
+        """
+
+        # Test
+        e = gaierror()
+        code = self.exception_handler.handle_unknown_host(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_UNKNOWN_HOST)
+        self.assertTrue(self.config['server']['host'] in self.recorder.lines[0])
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
 
     def test_unexpected(self):

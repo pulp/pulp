@@ -24,8 +24,9 @@ STATE_WAITING = 'waiting'
 STATE_FINISHED = 'finished'
 STATE_ERROR = 'error'
 STATE_CANCELED = 'canceled'
+STATE_SKIPPED = 'skipped'
 
-COMPLETED_STATES = (STATE_FINISHED, STATE_ERROR, STATE_CANCELED)
+COMPLETED_STATES = (STATE_FINISHED, STATE_ERROR, STATE_CANCELED, STATE_SKIPPED)
 
 # -- model --------------------------------------------------------------------
 
@@ -175,6 +176,15 @@ class Task(object):
         :rtype: bool
         """
         return self.state == STATE_ERROR
+
+    def was_skipped(self):
+        """
+        Indicates if a task was skipped. If the task is not finished, this call
+        returns False
+
+        :rtype: bool
+        """
+        return self.state == STATE_SKIPPED
 
     def was_cancelled(self):
         """

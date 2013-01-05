@@ -104,7 +104,8 @@ class ConsumerGroupResource(JSONController):
                                    [consumer_group_id],
                                    tags=tags)
         call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(authorization.UPDATE)
     def PUT(self, consumer_group_id):

@@ -26,12 +26,13 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest
+from pulp.server.dispatch.call import CallRequest, CallReport
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
 from pulp.server.exceptions import MissingResource, MissingValue
-from pulp.server.itineraries.bind import bind_itinerary, unbind_itinerary
+from pulp.server.itineraries.bind import (
+    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -98,25 +99,25 @@ class Consumers(JSONController):
         display_name = body.get('display_name')
         description = body.get('description')
         notes = body.get('notes')
+
         manager = managers.consumer_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id: dispatch_constants.RESOURCE_CREATE_OPERATION}
-        }
         args = [id, display_name, description, notes]
         weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-            action_tag('create'),
-        ]
-        call_request = CallRequest(
-            manager.register,
-            args,
-            resources=resources,
-            weight=weight,
-            tags=tags)
-        return execution.execute_sync_created(self, call_request, id)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
+                action_tag('create')]
 
+        call_request = CallRequest(manager.register,
+                                   args,
+                                   weight=weight,
+                                   tags=tags)
+        call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
+
+        call_report = CallReport.from_call_request(call_request)
+        call_report.serialize_result = False
+
+        consumer = execution.execute_sync(call_request, call_report)
+        consumer.update({'_href': serialization.link.child_link_obj(consumer['id'])})
+        return self.created(consumer['_href'], consumer)
 
 class Consumer(JSONController):
 
@@ -242,14 +243,20 @@ class Bindings(JSONController):
         @return: The list of call_reports
         @rtype: list
         """
-        # validate resources
-        manager = managers.consumer_manager()
-        manager.get_consumer(consumer_id)
-        # bind
+        # validate consumer
+        consumer_manager = managers.consumer_manager()
+        consumer_manager.get_consumer(consumer_id)
+
+        # get other options and validate them
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
         options = body.get('options', {})
+
+        managers.repo_query_manager().get_repository(repo_id)
+        managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
+
+        # bind
         call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, options)
         execution.execute_multiple(call_requests)
 
@@ -303,14 +310,20 @@ class Binding(JSONController):
         manager = managers.consumer_bind_manager()
         manager.get_bind(consumer_id, repo_id, distributor_id)
         # delete (unbind)
-        force = body.get('force', False)
+        forced = body.get('force', False)
         options = body.get('options', {})
-        call_requests = unbind_itinerary(
-            consumer_id,
-            repo_id,
-            distributor_id,
-            options,
-            force)
+        if forced:
+            call_requests = forced_unbind_itinerary(
+                consumer_id,
+                repo_id,
+                distributor_id,
+                options)
+        else:
+            call_requests = unbind_itinerary(
+                consumer_id,
+                repo_id,
+                distributor_id,
+                options)
         execution.execute_multiple(call_requests)
 
 
@@ -465,24 +478,28 @@ class Profiles(JSONController):
         body = self.params()
         content_type = body.get('content_type')
         profile = body.get('profile')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_id,
-            content_type,
-            profile,
-        ]
+
         manager = managers.consumer_profile_manager()
-        call_request = CallRequest(
-            manager.create,
-            args,
-            resources=resources,
-            weight=0)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
+                action_tag('profile_create')]
+
+        call_request = CallRequest(manager.create,
+                                   [consumer_id, content_type],
+                                   {'profile': profile},
+                                   tags=tags,
+                                   weight=0,
+                                   kwarg_blacklist=['profile'])
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+
+        call_report = CallReport.from_call_request(call_request)
+        call_report.serialize_result = False
+
+        consumer = execution.execute_sync(call_request, call_report)
         link = serialization.link.child_link_obj(consumer_id, content_type)
-        result = execution.execute_sync_created(self, call_request, link)
-        return result
+        consumer.update(link)
+
+        return self.created(link['_href'], consumer)
 
 
 class Profile(JSONController):
@@ -517,24 +534,28 @@ class Profile(JSONController):
         """
         body = self.params()
         profile = body.get('profile')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_id,
-            content_type,
-            profile,
-        ]
+
         manager = managers.consumer_profile_manager()
-        call_request = CallRequest(
-            manager.update,
-            args,
-            resources=resources,
-            weight=0)
+        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
+                action_tag('profile_update')]
+
+        call_request = CallRequest(manager.update,
+                                   [consumer_id, content_type],
+                                   {'profile': profile},
+                                   tags=tags,
+                                   weight=0,
+                                   kwarg_blacklist=['profile'])
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+
+        call_report = CallReport.from_call_request(call_request)
+        call_report.serialize_result = False
+
+        consumer = execution.execute_sync(call_request, call_report)
         link = serialization.link.child_link_obj(consumer_id, content_type)
-        result = execution.execute_sync_created(self, call_request, link)
-        return result
+        consumer.update(link)
+
+        return self.ok(consumer)
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, content_type):
@@ -725,7 +746,8 @@ class UnitInstallScheduleResource(JSONController):
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
 
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class UnitUpdateScheduleCollection(JSONController):
@@ -851,8 +873,8 @@ class UnitUpdateScheduleResource(JSONController):
                                    archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class UnitUninstallScheduleCollection(JSONController):
@@ -979,7 +1001,8 @@ class UnitUninstallScheduleResource(JSONController):
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
 
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 # -- web.py application -------------------------------------------------------
 
