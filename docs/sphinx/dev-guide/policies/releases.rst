@@ -1,6 +1,9 @@
 Release Management
 ==================
 
+This page explains processes that should be carried out by a Release Manager
+only.
+
 Branch Management
 -----------------
 

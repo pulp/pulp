@@ -16,6 +16,7 @@ Release Branches
 
 Pulp uses a version scheme x.y.z. A branch will be made for each x.y named
 "pulp-x.y". For example, the 2.0 release lives in a branch named "pulp-2.0".
+Increments of "z" occur within the same branch and are identified by tags.
 
 
 Bug Fix Branches
@@ -57,9 +58,10 @@ Cherry-picking and Rebasing
 ---------------------------
 
 Don't do it! Seriously though, this should not happen between release branches.
-It is a good idea for a developer to rebase his or her development branch *before*
-submitting a pull request. Cherry-picking may also be valuable among development
-branches. However, master and release branches should not be involved in either.
+It is a good idea (but not required) for a developer to rebase his or her
+development branch *before* submitting a pull request. Cherry-picking may also
+be valuable among development branches. However, master and release branches
+should not be involved in either.
 
 The reason is that both of these operations generate new and unique commits from
 the same changes. We do not want pulp-x.y and master to have the same bug fix
@@ -67,3 +69,7 @@ applied by two different commits. By merging the same commit into both, we can
 easily verify months later that a critical bug fix is present in every appropriate
 release branch and build tag.
 
+.. note::
+ If you are not sure what "rebasing" and "cherry-picking" mean,
+ `Pro Git <http://git-scm.com/book>`_ by Scott Chacon is an excellent resource
+ for learning about git, including advanced topics such as these.
