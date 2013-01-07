@@ -13,7 +13,8 @@ To create a new release branch, follow these steps.
 Work can now continue as normal. Bug and feature branches can branch from the
 "pulp-x.y" branch and be merged into both "pulp-x.y" and master.
 
-When it is time to release version x.y.(z+1), follow these steps.
+When it is time to release version x.y.(z+1), follow these steps. There should be
+a branch freeze during this operation.
 
 1. make sure pulp-x.y is fully merged into master.
 
@@ -23,12 +24,15 @@ When it is time to release version x.y.(z+1), follow these steps.
 3. Merge pulp-x.y into master (and every release branch greater than x.y)
    using the "ours" strategy. This ignores the file
    changes from step 2, but makes sure that pulp-x.y is still fully merged into
-   master.
+   master. To protect from a race condition where someone might commit or merge
+   to pulp-x.y between steps 1 and 3, merge a specific commit instead of a branch
+   name. For example, ``git show pulp-2.0`` will show a commit ID on the first
+   line, and then you can merge that commit as shown below.
 
  ::
 
    $ git checkout master
-   $ git merge -s ours pulp-2.0
+   $ git merge -s ours b41f5b49
 
 
 .. note::
