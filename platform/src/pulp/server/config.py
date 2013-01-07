@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import socket
 from ConfigParser import SafeConfigParser
 
 # global configuration --------------------------------------------------------
@@ -20,17 +21,21 @@ config = None # ConfigParser.SafeConfigParser instance
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
-    'cds': {
-        'sync_timeout': '10:7200',
-    },
     'consumer_history': {
         'lifetime': '180', # in days
     },
     'coordinator': {
         'task_state_poll_interval': '0.1',
     },
+    'data_reaping': {
+        'reaper_interval': '0.25',
+        'archived_calls': '0.5',
+        'consumer_history': '60',
+        'repo_sync_history': '60',
+        'repo_publish_history': '60',
+        'repo_group_publish_history': '60',
+    },
     'database': {
-        'auto_migrate': 'false',
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
         'operation_retries': '2',
@@ -39,10 +44,6 @@ _default_values = {
         'host': 'localhost',
         'port': '25',
         'enabled' : 'false'
-    },
-    'events': {
-        'send_enabled': 'false',
-        'recv_enabled': 'false',
     },
     'oauth': {
         'enabled': 'false',
@@ -55,19 +56,18 @@ _default_values = {
     },
     'logs': {
         'config': '/etc/pulp/logging/basic.cfg',
-        # XXX are the rest of these even used?
-        'qpid_log_level': 'info',
-        'level': 'info',
-        'max_size': '1048576',
-        'backups': '4',
-        'pulp_file': '/var/log/pulp/pulp.log',
-        'grinder_file': '/var/log/pulp/grinder.log',
+        'db_config' : '/etc/pulp/logging/db.cfg',
     },
     'messaging': {
         'url': 'tcp://localhost:5672',
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
         'topic_exchange': 'amq.topic',
+        'install_timeout': '10:600',
+        'update_timeout': '10:600',
+        'uninstall_timeout': '10:600',
+        'bind_timeout': '2592000:600',
+        'unbind_timeout': '2592000:600',
     },
     'scheduler': {
         'dispatch_interval': '30',
@@ -81,10 +81,7 @@ _default_values = {
         'serial_number_path': '/var/lib/pulp/sn.dat',
     },
     'server': {
-        'server_name': 'localhost',
-        'relative_url': '/pulp/repos',
-        'key_url': '/pulp/gpg',
-        'ks_url' : '/pulp/ks',
+        'server_name': socket.gethostname(),
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'false',

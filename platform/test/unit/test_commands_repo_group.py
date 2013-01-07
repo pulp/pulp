@@ -43,7 +43,7 @@ class CreateRepositoryGroupCommandTests(base.PulpClientTests):
             OPTION_GROUP_ID.keyword : 'test-group',
             OPTION_NAME.keyword : 'Group',
             OPTION_DESCRIPTION.keyword : 'Description',
-            OPTION_NOTES.keyword : ['a=a', 'b=b'],
+            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
         }
 
         self.server_mock.request.return_value = 201, {}
@@ -146,7 +146,7 @@ class UpdateRepositoryGroupCommandTests(base.PulpClientTests):
             OPTION_GROUP_ID.keyword : 'test-group',
             OPTION_NAME.keyword : 'Group',
             OPTION_DESCRIPTION.keyword : 'Description',
-            OPTION_NOTES.keyword : ['a=a', 'b=b'],
+            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -274,8 +274,8 @@ class SearchRepositoryGroupsCommandTests(base.PulpClientTests):
         url = self.server_mock.request.call_args[0][1]
         self.assertTrue(url.endswith('/repo_groups/search/'))
 
-        self.assertEqual(2, len(self.prompt.get_write_tags()))
-        self.assertEqual(self.prompt.get_write_tags(), [TAG_DOCUMENT, TAG_DOCUMENT])
+        self.assertEqual(3, len(self.prompt.get_write_tags()))
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, TAG_DOCUMENT, TAG_DOCUMENT])
 
 
 class ListRepositoryGroupMembersCommandTests(base.PulpClientTests):

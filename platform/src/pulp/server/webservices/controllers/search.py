@@ -68,17 +68,17 @@ class SearchController(JSONController):
                                 instance, which will fail if unexpected field
                                 names are present.
         @type  ignore_fields:   list
-        
+
         @type is_user_search:   True if executing a user search. This is basically to add
                                 login by default to the fields instead of id
-                                
+
         @type is_user_search
- 
+
         @return:    list of documents from the DB that match the given criteria
                     for the collection associated with this controller
         @rtype:     list
         """
-        input = web.input(field=[])
+        input = self._ensure_input_encoding(web.input(field=[]))
         if ignore_fields:
             for field in ignore_fields:
                 input.pop(field, None)

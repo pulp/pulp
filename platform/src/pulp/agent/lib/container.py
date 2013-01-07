@@ -189,14 +189,14 @@ class Container:
     """
     A content handler container.
     Loads and maintains a collection of content handlers
-    mapped by typeid.
+    mapped by type_id.
     @cvar PATH: A list of directories containing handlers.
     @type PATH: list
     @ivar root: The descriptor root directory.
     @type root: str
     @ivar path: The list of directories to search for handlers.
     @type path: list
-    @ivar handlers: A mapping of typeid to handler.
+    @ivar handlers: A mapping of type_id to handler.
     @type handlers: tuple (content={},distributor={})
     @ivar raised: A list of handler loading exceptions.
     @type raised: list
@@ -236,20 +236,20 @@ class Container:
         """
         self.reset()
         for name, descriptor in Descriptor.list(self.root):
-            self.__import(name, descriptor)
+            self.__load(name, descriptor)
 
-    def find(self, typeid, role=CONTENT):
+    def find(self, type_id, role=CONTENT):
         """
         Find and return a content handler for the specified
         content type ID.
-        @param typeid: A content type ID.
-        @type typeid: str
+        @param type_id: A content type ID.
+        @type type_id: str
         @return: The content type handler registered to
             handle the specified type ID.
         @rtype: L{Handler}
         """
         role = self.handlers.get(role, {})
-        return role.get(typeid)
+        return role.get(type_id)
 
     def all(self, *roles):
         """
@@ -257,7 +257,7 @@ class Container:
         @param roles: A list of roles to include.
             Empty list = ALL
         @type roles: list
-        @return: A list of (<typeid>,<handler>).
+        @return: A list of (<type_id>,<handler>).
         @rtype: list
         """
         all = []
@@ -274,29 +274,57 @@ class Container:
         """
         return self.raised
 
-    def __import(self, name, descriptor):
+    def __load(self, name, descriptor):
         """
-        Import the handler defined by the name and descriptor.
+        Load the handler defined by the name and descriptor.
+        The modules defining the handler classes are loaded from defined
+        handler installation directories.  If not found there, the class
+        property is expected to be fully package qualified so that the
+        classes can be loaded from the python path.
         @param name: The handler name.
         @type name: str
         @param descriptor: A handler descriptor.
         @type descriptor: L{Descriptor}
         """
         try:
-            path = self.__findimpl(name)
-            mangled = self.__mangled(name)
-            mod = imp.load_source(mangled, path)
+            mod = self.__load_module(name)
             provided = descriptor.types()
             for role, types in provided.items():
-                for typeid in types:
-                    typedef = Typedef(descriptor.cfg, typeid)
-                    hclass = typedef.cfg['class']
-                    hclass = getattr(mod, hclass)
-                    handler = hclass(typedef.cfg)
-                    self.handlers[role][typeid] = handler
+                for type_id in types:
+                    typedef = Typedef(descriptor.cfg, type_id)
+                    path = typedef.cfg['class']
+                    if mod is None:
+                       mod = self.__import_module(path)
+                    Handler = getattr(mod, path.rsplit('.')[-1])
+                    handler = Handler(typedef.cfg)
+                    self.handlers[role][type_id] = handler
         except Exception, e:
             self.raised.append(e)
             log.exception('handler "%s", import failed', name)
+
+    def __load_module(self, name):
+        """
+        Load (import) from source the module by name.
+        @param name: The module name.
+        @type name: str
+        @return: The module (or None)
+        """
+        mod = None
+        path = self.__find_module(name)
+        if path:
+            mangled = self.__mangled(name)
+            mod = imp.load_source(mangled, path)
+        return mod
+
+    def __import_module(self, path):
+        """
+        Import and return the specified class.
+        @param path: A package qualified class reference.
+        @return: The leaf module (or None)
+        """
+        path = path.rsplit('.', 1)
+        mod = __import__(path[0], globals(), locals(), [path[-1]])
+        return mod
 
     def __mangled(self, name):
         """
@@ -310,19 +338,20 @@ class Container:
         n = hex(n)[2:]
         return ''.join((name, n))
 
-    def __findimpl(self, name):
+    def __find_module(self, name):
         """
-        Find a handler module.
-        @param name: The handler name.
+        Find a handler module by searching the directories
+        in the container's path.
+        @param name: The module name.
         @type name: str
-        @return: The fully qualified path to the handler module.
+        @return: The path to the module (or None).
         @rtype: str
-        @raise Exception: When not found.
         """
-        mod = '%s.py' % name
-        for root in self.path:
-            path = os.path.join(root, mod)
-            if os.path.exists(path):
-                log.info('using: %s', path)
-                return path
-        raise Exception('%s, not found in:%s' % (mod, self.path))
+        extensions = ('pyo', 'pyc', 'py')
+        for extension in extensions:
+            file = '.'.join((name, extension))
+            for dir in self.path:
+                path = os.path.join(dir, file)
+                if os.path.exists(path):
+                    log.info('using: %s', path)
+                    return path

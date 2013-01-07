@@ -20,11 +20,16 @@ import web
 
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
+from pulp.server.itineraries.repository import (
+    repo_delete_itinerary,
+    distributor_delete_itinerary,
+    distributor_update_itinerary,
+)
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp.server.db.model.repository import RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
@@ -117,6 +122,9 @@ class RepoCollection(JSONController):
 
         for repo in repos:
             repo.update(serialization.link.search_safe_link_obj(repo['id']))
+            # Remove internally used scratchpad from repo details
+            if 'scratchpad' in repo:
+                del repo['scratchpad']
 
         return repos
 
@@ -129,8 +137,7 @@ class RepoCollection(JSONController):
         'distributors'.
         """
         query_params = web.input()
-        query_manager = manager_factory.repo_query_manager()
-        all_repos = query_manager.find_all()
+        all_repos = list(Repo.get_collection().find(projection = {'scratchpad' : 0}))
 
         if query_params.get('details', False):
             query_params['importers'] = True
@@ -164,16 +171,23 @@ class RepoCollection(JSONController):
         # Creation
         repo_manager = manager_factory.repo_manager()
         resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
-        args = [id, display_name, description, notes, importer_type_id, importer_repo_plugin_config, distributors]
+        args = [id, display_name, description, notes]
+        kwargs = {'importer_type_id': importer_type_id,
+                  'importer_repo_plugin_config': importer_repo_plugin_config,
+                  'distributor_list': distributors}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
                 action_tag('create')]
 
         call_request = CallRequest(repo_manager.create_and_configure_repo,
                                    args,
+                                   kwargs,
                                    resources=resources,
                                    weight=weight,
-                                   tags=tags)
+                                   tags=tags,
+                                   kwarg_blacklist=['importer_repo_plugin_config',
+                                                    'distributor_list'])
+
         repo = execution.execute_sync(call_request)
         repo.update(serialization.link.child_link_obj(id))
         return self.created(id, repo)
@@ -253,17 +267,12 @@ class RepoResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, id):
-        repo_manager = manager_factory.repo_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
-                action_tag('delete')]
-
-        call_request = CallRequest(repo_manager.delete_repo,
-                                   [id],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # validate
+        manager_factory.repo_query_manager().get_repository(id)
+        # delete
+        call_requests = repo_delete_itinerary(id)
+        _LOG.info('Itinerary: %s', [r.id for r in call_requests])
+        execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, id):
@@ -278,10 +287,13 @@ class RepoResource(JSONController):
                 action_tag('update')]
 
         call_request = CallRequest(repo_manager.update_repo_and_plugins,
-                                   [id, delta, importer_config, distributor_configs],
+                                   [id, delta],
+                                   {'importer_config': importer_config,
+                                    'distributor_configs': distributor_configs},
                                    resources=resources,
                                    tags=tags,
-                                   archive=True)
+                                   archive=True,
+                                   kwarg_blacklist=['importer_config', 'distributor_configs'])
         repo = execution.execute(call_request)
         repo.update(serialization.link.current_link_obj())
         return self.ok(repo)
@@ -310,7 +322,7 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_type is None:
-            _LOG.exception('Missing importer type adding importer to repository [%s]' % repo_id)
+            _LOG.error('Missing importer type adding importer to repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_type'])
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
@@ -324,10 +336,12 @@ class RepoImporters(JSONController):
                 action_tag('add_importer')]
 
         call_request = CallRequest(importer_manager.set_importer,
-                                   [repo_id, importer_type, importer_config],
+                                   [repo_id, importer_type],
+                                   {'repo_plugin_config': importer_config},
                                    resources=resources,
                                    weight=weight,
-                                   tags=tags)
+                                   tags=tags,
+                                   kwarg_blacklist=['repo_plugin_config'])
         return execution.execute_sync_created(self, call_request, 'importer')
 
 
@@ -363,7 +377,8 @@ class RepoImporter(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -373,7 +388,7 @@ class RepoImporter(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_config is None:
-            _LOG.exception('Missing configuration updating importer for repository [%s]' % repo_id)
+            _LOG.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -383,11 +398,14 @@ class RepoImporter(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('update_importer')]
         call_request = CallRequest(importer_manager.update_importer_config,
-                                   [repo_id, importer_config],
+                                   [repo_id],
+                                   {'importer_config': importer_config},
                                    resources=resources,
                                    tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+                                   archive=True,
+                                   kwarg_blacklist=['importer_config'])
+        result = execution.execute(call_request)
+        return self.ok(result)
 
 
 class SyncScheduleCollection(JSONController):
@@ -475,7 +493,8 @@ class SyncScheduleResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, importer_id, schedule_id):
@@ -558,10 +577,13 @@ class RepoDistributors(JSONController):
             resources.update({dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_CREATE_OPERATION}})
             tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id))
         call_request = CallRequest(distributor_manager.add_distributor,
-                                   [repo_id, distributor_type, distributor_config, auto_publish, distributor_id],
+                                   [repo_id, distributor_type],
+                                   {'repo_plugin_config': distributor_config, 'auto_publish': auto_publish,
+                                    'distributor_id': distributor_id},
                                    resources=resources,
                                    weight=weight,
-                                   tags=tags)
+                                   tags=tags,
+                                   kwarg_blacklist=['repo_plugin_config'])
         return execution.execute_created(self, call_request, distributor_id)
 
 
@@ -581,42 +603,29 @@ class RepoDistributor(JSONController):
 
     @auth_required(UPDATE)
     def DELETE(self, repo_id, distributor_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('remove_distributor')]
-        call_request = CallRequest(distributor_manager.remove_distributor,
-                                   [repo_id, distributor_id],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # validate resources
+        manager = manager_factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        # delete
+        call_requests = distributor_delete_itinerary(repo_id, distributor_id)
+        execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
-
-        # Params (validation will occur in the manager)
         params = self.params()
-        distributor_config = params.get('distributor_config', None)
-
-        if distributor_config is None:
-            _LOG.exception('Missing configuration when updating distributor [%s] on repository [%s]' % (distributor_id, repo_id))
+        # validate
+        manager = manager_factory.repo_distributor_manager()
+        manager.get_distributor(repo_id, distributor_id)
+        config = params.get('distributor_config')
+        if config is None:
+            _LOG.error(
+                'Missing configuration when updating distributor [%s] on repository [%s]',
+                distributor_id,
+                repo_id)
             raise exceptions.MissingValue(['distributor_config'])
-
-        distributor_manager = manager_factory.repo_distributor_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE: {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('update_distributor')]
-        call_request = CallRequest(distributor_manager.update_distributor_config,
-                                   [repo_id, distributor_id, distributor_config],
-                                   resources=resources,
-                                   tags=tags,
-                                   archive=True)
-        return execution.execute_ok(self, call_request)
+        # update
+        call_requests = distributor_update_itinerary(repo_id, distributor_id, config)
+        execution.execute_multiple(call_requests)
 
 
 class PublishScheduleCollection(JSONController):
@@ -700,7 +709,8 @@ class PublishScheduleResource(JSONController):
                                    resources=resources,
                                    tags=tags,
                                    archive=True)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, distributor_id, schedule_id):
@@ -765,7 +775,7 @@ class RepoSyncHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.exception('Invalid limit specified [%s]' % limit)
+                _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
 
         sync_manager = manager_factory.repo_sync_manager()
@@ -788,7 +798,7 @@ class RepoPublishHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.exception('Invalid limit specified [%s]' % limit)
+                _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
 
         publish_manager = manager_factory.repo_publish_manager()
@@ -815,41 +825,7 @@ class RepoSync(JSONController):
         manager_factory.repo_query_manager().get_repository(repo_id)
 
         # Execute the sync asynchronously
-        repo_sync_manager = manager_factory.repo_sync_manager()
 
-        sync_weight = pulp_config.config.getint('tasks', 'sync_weight')
-        sync_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                     action_tag('sync')]
-
-        sync_call_request = CallRequest(repo_sync_manager.sync,
-                                        [repo_id],
-                                        {'sync_config_override': overrides},
-                                        weight=sync_weight,
-                                        tags=sync_tags,
-                                        archive=True)
-        sync_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        sync_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                                  repo_sync_manager.prep_sync)
-
-        call_requests = [sync_call_request]
-
-        repo_publish_manager = manager_factory.repo_publish_manager()
-        auto_publish_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                             action_tag('auto_publish'), action_tag('publish')]
-        auto_distributors = repo_publish_manager.auto_distributors(repo_id)
-
-        for distributor in auto_distributors:
-            distributor_id = distributor['id']
-            publish_call_request = CallRequest(repo_publish_manager.publish,
-                                               [repo_id, distributor_id],
-                                               tags=auto_publish_tags,
-                                               archive=True)
-            publish_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-            publish_call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                                         repo_publish_manager.prep_publish)
-            publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
-
-            call_requests.append(publish_call_request)
         call_requests = sync_with_auto_publish_itinerary(repo_id, overrides)
 
         # this raises an exception that is handled by the middleware,
@@ -891,12 +867,23 @@ class RepoAssociate(JSONController):
         if source_repo_id is None:
             raise exceptions.MissingValue(['source_repo_id'])
 
+        # A 404 only applies to things in the URL, so the destination repo
+        # check allows the MissingResource to bubble up, but if the source
+        # repo doesn't exist, it's considered bad data.
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo_query_manager.get_repository(dest_repo_id)
+
+        try:
+            repo_query_manager.get_repository(source_repo_id)
+        except exceptions.MissingResource:
+            raise exceptions.InvalidValue(['source_repo_id'])
+
         criteria = params.get('criteria', None)
         if criteria is not None:
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.exception('Error parsing association criteria [%s]' % criteria)
+                _LOG.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -929,7 +916,7 @@ class RepoUnassociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.exception('Error parsing unassociation criteria [%s]' % criteria)
+                _LOG.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -968,7 +955,8 @@ class RepoImportUpload(JSONController):
             [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
             resources=resources, tags=tags, archive=True)
 
-        return execution.execute_ok(self, call_request)
+        execution.execute(call_request)
+        return self.ok(None)
 
 class RepoResolveDependencies(JSONController):
 
@@ -985,7 +973,7 @@ class RepoResolveDependencies(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.exception('Error parsing association criteria [%s]' % query)
+            _LOG.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         try:
@@ -1027,7 +1015,7 @@ class RepoUnitAdvancedSearch(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.exception('Error parsing association criteria [%s]' % query)
+            _LOG.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # Data lookup

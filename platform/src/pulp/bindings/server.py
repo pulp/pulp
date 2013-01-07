@@ -170,7 +170,15 @@ class PulpConnection(object):
                                409 : exceptions.ConflictException}
 
         if response_code not in code_class_mappings:
-            raise exceptions.PulpServerException(response_body)
+
+            # Apache errors are simply strings as compared to Pulp's dicts,
+            # so differentiate based on that so we don't get a parse error
+
+            if isinstance(response_body, basestring):
+                raise exceptions.ApacheServerException(response_body)
+            else:
+                raise exceptions.PulpServerException(response_body)
+
         else:
             raise code_class_mappings[response_code](response_body)
 

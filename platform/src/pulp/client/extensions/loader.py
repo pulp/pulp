@@ -39,7 +39,7 @@ DEFAULT_PRIORITY = 5
 _MODULES = 'modules'
 _ENTRY_POINTS = 'entry points'
 # name of the entry point
-ENTRY_POINT_EXTENSIONS = 'pulp.extensions'
+ENTRY_POINT_EXTENSIONS = 'pulp.extensions.%s'
 
 # -- exceptions ---------------------------------------------------------------
 
@@ -81,7 +81,7 @@ class InvalidExtensionConfig(ExtensionLoaderException): pass
 
 # -- loading ------------------------------------------------------------------
 
-def load_extensions(extensions_dir, context):
+def load_extensions(extensions_dir, context, role):
     """
     @param extensions_dir: directory in which to find extension packs
     @type  extensions_dir: str
@@ -94,7 +94,11 @@ def load_extensions(extensions_dir, context):
 
     @param context: pre-populated context the extensions should be given to
                     interact with the client
-    @type  context: ClientContext
+    @type  context: pulp.client.extensions.core.ClientContext
+
+    @param role:    name of a role, either "admin" or "consumer", so we know
+                    which extensions to load
+    @type  role:    str
     """
 
     # Validation
@@ -109,7 +113,7 @@ def load_extensions(extensions_dir, context):
         raise LoadFailed([e.pack_name]), None, sys.exc_info()[2]
 
     # find extensions from entry points and add them to the sorted structure
-    for extension in pkg_resources.iter_entry_points(ENTRY_POINT_EXTENSIONS):
+    for extension in pkg_resources.iter_entry_points(ENTRY_POINT_EXTENSIONS % role):
         priority = getattr(extension, PRIORITY_VAR, DEFAULT_PRIORITY)
         sorted_extensions.setdefault(priority, {}).setdefault(_ENTRY_POINTS, []).append(extension)
 

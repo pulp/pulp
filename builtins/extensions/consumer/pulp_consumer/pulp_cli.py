@@ -12,12 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.client import validators
 
 # -- framework hook -----------------------------------------------------------
 
@@ -25,7 +27,7 @@ def initialize(context):
 
     # Common Options
     d = 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed'
-    id_option = PulpCliOption('--consumer-id', _(d), required=True)
+    id_option = PulpCliOption('--consumer-id', _(d), required=True, validate_func=validators.id_validator)
 
     d = 'user-readable display name for the consumer'
     name_option = PulpCliOption('--display-name', _(d), required=False)
@@ -121,8 +123,9 @@ class RegisterCommand(PulpCliCommand):
         # Check write permissions to cert directory
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         if not os.access(id_cert_dir, os.W_OK):
-            self.prompt.render_failure_message(_("Write permission is required for %(p)s to perform this operation.") %
-                                                 {'p' : id_cert_dir} )
+            msg = _("Write permission is required for %(d)s to perform this operation.")
+            self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
+            return os.EX_NOPERM
 
         # Call the server
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
@@ -179,23 +182,30 @@ class UnregisterCommand(PulpCliCommand):
             'removed even if the server cannot be contacted'
         self.create_flag('--force', _(d))
 
-
     def unregister(self, **kwargs):
         consumer_id = load_consumer_id(self.context)
         if not consumer_id:
             self.context.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
             return
 
+        # Check write permissions to cert directory
+        id_cert_dir = self.context.config['filesystem']['id_cert_dir']
+        if not os.access(id_cert_dir, os.W_OK):
+            msg = _("Write permission is required for %(d)s to perform this operation.")
+            self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
+            return os.EX_NOPERM
+
         try:
             self.context.server.consumer.unregister(consumer_id)
             self._delete_cert()
             self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
-        except Exception:
+        except NotFoundException:
             if kwargs['force']:
                 self._delete_cert()
                 self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
             else:
-                raise
+                msg = _('This consumer does not exist on the server. Please retry using the --force option.')
+                self.prompt.render_failure_message(msg)
 
     def _delete_cert(self):
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
@@ -236,6 +246,7 @@ class UnbindCommand(PulpCliCommand):
 
         self.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         self.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        self.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
 
 
     def unbind(self, **kwargs):
@@ -245,8 +256,9 @@ class UnbindCommand(PulpCliCommand):
             return
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
+        force = kwargs['force']
         try:
-            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id)
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
             self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
@@ -293,8 +305,9 @@ class StatusCommand(PulpCliCommand):
         consumer_id = load_consumer_id(self.context)
 
         if consumer_id:
-            m = 'This consumer is registered with the ID [%(i)s].'
-            self.prompt.render_success_message(_(m) % {'i' : consumer_id})
+            server = self.context.config['server']['host']
+            m = 'This consumer is registered to the server [%(s)s] with the ID [%(i)s].'
+            self.prompt.render_success_message(_(m) % {'s': server, 'i' : consumer_id})
         else:
             m = 'This consumer is not currently registered.'
             self.prompt.render_paragraph(_(m))

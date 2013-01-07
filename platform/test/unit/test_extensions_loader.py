@@ -66,7 +66,7 @@ class ExtensionLoaderTests(unittest.TestCase):
         """
 
         # Test
-        loader.load_extensions(VALID_SET, self.context)
+        loader.load_extensions(VALID_SET, self.context, 'admin')
 
         # Verify
         self.assertTrue(self.cli.root_section.find_subsection('section-1') is not None)
@@ -95,7 +95,7 @@ class ExtensionLoaderTests(unittest.TestCase):
         Tests loading extensions on a directory that doesn't exist.
         """
         try:
-            loader.load_extensions('fake_dir', self.context)
+            loader.load_extensions('fake_dir', self.context, 'admin')
         except loader.InvalidExtensionsDirectory, e:
             self.assertEqual(e.dir, 'fake_dir')
             print(e) # for coverage
@@ -105,7 +105,7 @@ class ExtensionLoaderTests(unittest.TestCase):
     def test_load_partial_fail_set_cli(self, mock_entry):
         # Test
         try:
-            loader.load_extensions(PARTIAL_FAIL_SET, self.context)
+            loader.load_extensions(PARTIAL_FAIL_SET, self.context, 'admin')
             self.fail('Exception expected')
         except loader.LoadFailed, e:
             self.assertEqual(1, len(e.failed_packs))
@@ -114,7 +114,7 @@ class ExtensionLoaderTests(unittest.TestCase):
     def test_load_partial_fail_set_2_cli(self):
         # Test
         try:
-            loader.load_extensions(PARTIAL_FAIL_SET_2, self.context)
+            loader.load_extensions(PARTIAL_FAIL_SET_2, self.context, 'admin')
             self.fail('Exception expected')
         except loader.LoadFailed, e:
             self.assertEqual(1, len(e.failed_packs))
@@ -159,9 +159,9 @@ class ExtensionLoaderTests(unittest.TestCase):
         entry_point = mock.MagicMock()
         mock_iter.return_value = [entry_point]
 
-        loader.load_extensions(EMPTY_SET, context)
+        loader.load_extensions(EMPTY_SET, context, 'admin')
 
-        mock_iter.assert_called_once_with('pulp.extensions')
+        mock_iter.assert_called_once_with('pulp.extensions.admin')
         entry_point.load.assert_called_once_with()
         entry_point.load.return_value.assert_called_once_with(context)
 
@@ -190,7 +190,7 @@ class ExtensionLoaderTests(unittest.TestCase):
         entry_point3.load = MockLoad(3, order_of_calling)
         mock_iter.return_value = [entry_point1, entry_point2, entry_point3]
 
-        loader.load_extensions(EMPTY_SET, context)
+        loader.load_extensions(EMPTY_SET, context, 'admin')
 
         self.assertEqual(len(order_of_calling), 3)
         print order_of_calling

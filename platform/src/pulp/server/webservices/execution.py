@@ -20,7 +20,7 @@ from pulp.server.exceptions import (
 
 # execution wrapper api --------------------------------------------------------
 
-def execute(call_request):
+def execute(call_request, call_report=None):
     """
     Execute a call request through the controller and return the result iff the
     call was executed immediately.
@@ -29,7 +29,7 @@ def execute(call_request):
     @return: return value from call in call request
     """
     coordinator = dispatch_factory.coordinator()
-    call_report = coordinator.execute_call(call_request)
+    call_report = coordinator.execute_call(call_request, call_report)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise ConflictingOperation(call_report.reasons)
     if call_report.state in dispatch_constants.CALL_INCOMPLETE_STATES:
@@ -39,7 +39,7 @@ def execute(call_request):
     return call_report.result
 
 
-def execute_ok(controller, call_request):
+def execute_ok(controller, call_request, call_report=None):
     """
     DEPRECATED! This method has been deprecated. Please use 'execute' instead.
                 The only change you will need to make is to handle calling ok()
@@ -53,7 +53,7 @@ def execute_ok(controller, call_request):
     @type  call_request: pulp.server.dispatch.call.CallRequest
     @return: http server response
     """
-    return controller.ok(execute(call_request))
+    return controller.ok(execute(call_request, call_report))
 
 
 def execute_created(controller, call_request, location):
@@ -81,7 +81,7 @@ def execute_created(controller, call_request, location):
     return controller.created(location, call_report.result)
 
 
-def execute_async(controller, call_request):
+def execute_async(controller, call_request, call_report=None):
     """
     Execute a call request asynchronously via the coordinator.
     @param controller: web services rest controller
@@ -91,13 +91,13 @@ def execute_async(controller, call_request):
     @return: http server response
     """
     coordinator = dispatch_factory.coordinator()
-    call_report = coordinator.execute_call_asynchronously(call_request)
+    call_report = coordinator.execute_call_asynchronously(call_request, call_report)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise ConflictingOperation(call_report.reasons)
     raise OperationPostponed(call_report)
 
 
-def execute_sync(call_request, timeout=timedelta(seconds=20)):
+def execute_sync(call_request, call_report=None, timeout=timedelta(seconds=20)):
     """
     Execute a call request synchronously via the coordinator.
     @param call_request: call request to execute
@@ -107,7 +107,7 @@ def execute_sync(call_request, timeout=timedelta(seconds=20)):
     @return: return value from call in call request
     """
     coordinator = dispatch_factory.coordinator()
-    call_report = coordinator.execute_call_synchronously(call_request, timeout=timeout)
+    call_report = coordinator.execute_call_synchronously(call_request, call_report, timeout)
     if call_report.response is dispatch_constants.CALL_REJECTED_RESPONSE:
         raise ConflictingOperation(call_report.reasons)
     if call_report.state is dispatch_constants.CALL_ERROR_STATE:
@@ -165,5 +165,9 @@ def execute_multiple(call_request_list):
     """
     coordinator = dispatch_factory.coordinator()
     call_report_list = coordinator.execute_multiple_calls(call_request_list)
+    if call_report_list[0].response is dispatch_constants.CALL_REJECTED_RESPONSE:
+        # the coordinator will put the reasons on the call report that conflicted
+        reasons = reduce(lambda p, c: c.reasons or p, call_report_list, None)
+        raise ConflictingOperation(reasons)
     raise MultipleOperationsPostponed(call_report_list)
 

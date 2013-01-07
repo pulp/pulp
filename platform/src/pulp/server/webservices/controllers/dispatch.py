@@ -111,8 +111,11 @@ class TaskResource(JSONController):
             raise MissingResource(call_request_id)
         if result is False:
             raise TaskCancelNotImplemented(call_request_id)
-        link = serialization.link.current_link_obj()
-        return self.accepted(link)
+        # if we've gotten here, the call request *should* exist
+        call_report = coordinator.find_call_reports(call_request_id=call_request_id)[0]
+        serialized_call_report = call_report.serialize()
+        serialized_call_report.update(serialization.link.current_link_obj())
+        return self.accepted(serialized_call_report)
 
 # queued call controllers ------------------------------------------------------
 
@@ -181,9 +184,11 @@ class TaskGroupResource(JSONController):
         link = serialization.link.link_obj('/pulp/api/v2/task_groups/%s/' % call_request_group_id)
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(call_request_group_id=call_request_group_id)
+        found_call_request_ids = set(c.call_request_id for c in call_reports)
         serialized_call_reports = [c.serialize() for c in call_reports]
-        archived_calls = dispatch_history.find_archived_calls(task_group_id=call_request_group_id)
-        serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls)
+        archived_calls = dispatch_history.find_archived_calls(call_request_group_id=call_request_group_id)
+        serialized_call_reports.extend(c['serialized_call_report'] for c in archived_calls
+                                       if c['serialized_call_report']['call_request_id'] not in found_call_request_ids)
         if not serialized_call_reports:
             raise TaskGroupNotFound(call_request_group_id)
         map(lambda r: r.update(link), serialized_call_reports)
@@ -196,9 +201,16 @@ class TaskGroupResource(JSONController):
         results = coordinator.cancel_multiple_calls(call_request_group_id)
         if not results:
             raise TaskGroupNotFound(call_request_group_id)
-        if None in results.values():
+        if reduce(lambda p, v: p and (v is None), results.values(), True):
+            # in other words, all results values are None
             raise TaskGroupCancelNotImplemented(call_request_group_id)
-        return self.accepted(results)
+        # if we've gotten this far, the call requests exist and have been cancelled
+        call_reports = coordinator.find_call_reports(call_request_group_id=call_request_group_id)
+        serialized_call_reports = [c.serialize() for c in call_reports]
+        link = serialization.link.current_link_obj()
+        for s in serialized_call_reports:
+            s.update(link)
+        return self.accepted(serialized_call_reports)
 
 # web.py applications ----------------------------------------------------------
 

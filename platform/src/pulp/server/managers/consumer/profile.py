@@ -15,7 +15,7 @@
 Contains profile management classes
 """
 
-from pymongo.errors import DuplicateKeyError
+from pulp.server.exceptions import MissingResource
 from pulp.server.db.model.consumer import UnitProfile
 from pulp.server.managers import factory
 from logging import getLogger
@@ -55,11 +55,11 @@ class ProfileManager(object):
         """
         manager = factory.consumer_manager()
         manager.get_consumer(consumer_id)
-        p = self.get_profile(consumer_id, content_type)
-        if p is None:
-            p = UnitProfile(consumer_id, content_type, profile)
-        else:
+        try:
+            p = self.get_profile(consumer_id, content_type)
             p['profile'] = profile
+        except MissingResource:
+            p = UnitProfile(consumer_id, content_type, profile)
         collection = UnitProfile.get_collection()
         collection.save(p, safe=True)
         return p
@@ -73,9 +73,8 @@ class ProfileManager(object):
         @type content_type: str
         """
         profile = self.get_profile(consumer_id, content_type)
-        if profile is not None:
-            collection = UnitProfile.get_collection()
-            collection.remove(profile, safe=True)
+        collection = UnitProfile.get_collection()
+        collection.remove(profile, safe=True)
 
     def consumer_deleted(self, id):
         """
@@ -97,10 +96,15 @@ class ProfileManager(object):
         @type content_type: str
         @return: The requested profile.
         @rtype: object
+        @raise MissingResource when profile not found.
         """
         collection = UnitProfile.get_collection()
-        query = dict(consumer_id=consumer_id, content_type=content_type)
-        return collection.find_one(query)
+        profile_id = dict(consumer_id=consumer_id, content_type=content_type)
+        profile = collection.find_one(profile_id)
+        if profile is None:
+            raise MissingResource(profile_id=profile_id)
+        else:
+            return profile
 
     def get_profiles(self, consumer_id):
         """

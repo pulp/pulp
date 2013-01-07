@@ -12,14 +12,21 @@
 import os
 import re
 
+import shutil
+
 from tito.tagger import VersionTagger
+from tito.common import error_out
 
-
+# changelog
 BUGZILLA_REGEX = re.compile('([0-9]+\s+\-\s+)(.+)')
 FEATURE_REGEX = re.compile('([\-]\s+)(.+)')
 EMBEDDED_REGEX = re.compile('(\[\[)([^$]+)(\]\])')
 
-FORCED_VERSION = 'TITO_FORCED_VERSION'
+# version and release
+VERSION_REGEX = re.compile("^(version:\s*)(.+)$", re.IGNORECASE)
+RELEASE_REGEX = re.compile("^(release:\s*)(.+)$", re.IGNORECASE)
+VERSION_AND_RELEASE = 'PULP_VERSION_AND_RELEASE'
+NL = '\n'
 
 
 class PulpTagger(VersionTagger):
@@ -29,15 +36,49 @@ class PulpTagger(VersionTagger):
 
     def _bump_version(self):
         """
-        Force options we need.
+        Bump the version unless VERSION_AND_RELEASE specified
+        in the environment.  When specified, both the version and
+        release are forced as specified.
+        VERSION_AND_RELEASE must be VR part of NEVRA
+          Eg: 2.0.1-0.1.alpha
         """
-        version = os.environ.get(FORCED_VERSION)
+        version = os.environ.get(VERSION_AND_RELEASE)
         if version:
-            self._use_version = version
-            forced = True
+            parts = version.rsplit('-', 1)
+            if len(parts) != 2:
+                error_out('"%s" not valid' % version)
+            self.__update_spec(*parts)
+            return version
         else:
-            forced = False
-        return VersionTagger._bump_version(self, False, False, forced)
+            return VersionTagger._bump_version(self)
+
+    def __update_spec(self, version, release):
+        """
+        Update the .spec file with specified version and release.
+        @param version: The version
+        @type version: str
+        @param release: The release
+        @type release: str
+        """
+        old = self.spec_file
+        tmp = '.'.join((old, 'new'))
+        r_fp = open(old)
+        w_fp = open(tmp, 'w+')
+        for line in r_fp.readlines():
+            match = re.match(VERSION_REGEX, line)
+            if match:
+                line = ''.join((match.group(1), version, NL))
+                w_fp.write(line)
+                continue
+            match = re.match(RELEASE_REGEX, line)
+            if match:
+                line = ''.join((match.group(1), release, NL))
+                w_fp.write(line)
+                continue
+            w_fp.write(line)
+        r_fp.close()
+        w_fp.close()
+        shutil.move(tmp, old)
 
     def _generate_default_changelog(self, last_tag):
         """

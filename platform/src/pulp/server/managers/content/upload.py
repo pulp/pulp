@@ -16,13 +16,13 @@ import os
 import sys
 from uuid import uuid4
 
-from   pulp.plugins.conduits.upload import UploadConduit
+from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
-from   pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import RepoContentUnit
-from   pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException
+from pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException, PulpException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as repo_common_utils
 
@@ -224,8 +224,10 @@ class ContentUploadManager(object):
 
         # Invoke the importer
         try:
-            # def upload_unit(self, type_id, unit_key, metadata, file_path, conduit, config):
-            report = importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key, unit_metadata, file_path, conduit, call_config)
+            importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key, unit_metadata, file_path, conduit, call_config)
+        except PulpException:
+            _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
+            raise
         except Exception, e:
             _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
             raise PulpExecutionException(e), None, sys.exc_info()[2]

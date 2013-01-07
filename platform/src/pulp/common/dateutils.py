@@ -29,6 +29,10 @@ from isodate.duration import fquotmod, max_days_in_month
 _iso8601_delimiter = re.compile(r'(--|/)')
 _iso8601_recurrences = re.compile(r'^R(?P<num>\d+)$')
 
+_VALID_DELTA_KEYS = ('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds')
+
+SECONDS_IN_A_DAY = 86400
+
 # timezone functions -----------------------------------------------------------
 
 def local_tz():
@@ -338,3 +342,36 @@ def add_interval_to_datetime(interval, dt):
     new_dt = dt.replace(year=int(new_year), month=int(new_month), day=int(new_day))
     return interval.tdelta + new_dt
 
+# time delta methods -----------------------------------------------------------
+
+def delta_from_key_value_pairs(key_value_pairs):
+    """
+    Create a timedelta or Duration instance, whichever is appropriate, from a
+    dictionary of key value pairs.
+    Valid keys in the dictionary:
+     * years
+     * months
+     * weeks
+     * days
+     * hours
+     * minutes
+     * seconds
+    All values must be integers or floats
+    @param key_value_pairs: dictionary of time specifications
+    @type key_value_pairs: dict
+    @return: timedelta or Duration
+    @rtype: datetime.timedelta or isodate.Duration
+    """
+
+    for k in key_value_pairs:
+        if k in _VALID_DELTA_KEYS:
+            continue
+        raise ValueError('Cannot create delta using key: %s' % k)
+
+    if 'years' in key_value_pairs or 'months' in key_value_pairs:
+        delta_class = isodate.Duration
+    else:
+        delta_class = datetime.timedelta
+
+    delta = delta_class(**key_value_pairs)
+    return delta

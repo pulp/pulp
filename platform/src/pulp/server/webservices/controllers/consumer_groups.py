@@ -104,7 +104,8 @@ class ConsumerGroupResource(JSONController):
                                    [consumer_group_id],
                                    tags=tags)
         call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        return self.ok(result)
 
     @auth_required(authorization.UPDATE)
     def PUT(self, consumer_group_id):
@@ -134,10 +135,8 @@ class ConsumerGroupAssociateAction(JSONController):
                                    [consumer_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        execution.execute(call_request)
-        collection = ConsumerGroup.get_collection()
-        group = collection.find_one({'id': consumer_group_id})
-        return self.ok(group['consumer_ids'])
+        matched = execution.execute(call_request)
+        return self.ok(matched)
 
 
 class ConsumerGroupUnassociateAction(JSONController):
@@ -152,10 +151,8 @@ class ConsumerGroupUnassociateAction(JSONController):
                                    [consumer_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        execution.execute(call_request)
-        collection = ConsumerGroup.get_collection()
-        group = collection.find_one({'id': consumer_group_id})
-        return self.ok(group['consumer_ids'])
+        matched = execution.execute(call_request)
+        return self.ok(matched)
 
 
 class ConsumerGroupContentAction(JSONController):

@@ -13,8 +13,6 @@
 
 import csv
 
-from okaara.cli import CommandUsage
-
 from pulp.bindings.base import PulpAPI
 
 class Operator(object):
