@@ -63,6 +63,7 @@ class ImporterProgress(ProgressReport):
         ProgressReport.__init__(self)
 
     def _updated(self):
+        ProgressReport._updated(self)
         self.conduit.set_progress(self.dict())
 
 
@@ -126,11 +127,13 @@ class CitrusImporter(Importer):
         progress.push_step('fetch_upstream')
         upstream_units = self._upstream_units(reader, manifest_url)
         # add missing units
-        progress.push_step('add_units')
         storage_dir = pulp_conf.get('server', 'storage_dir')
+        missing_units = []
         for k, unit in upstream_units.items():
-            if k in local_units:
-                continue
+            if k not in local_units:
+                missing_units.append(unit)
+        progress.push_step('add_units', len(missing_units))
+        for unit in missing_units:
             unit['metadata'].pop('_id')
             unit['metadata'].pop('_ns')
             unit_in = Unit(

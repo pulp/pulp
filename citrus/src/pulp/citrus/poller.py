@@ -13,6 +13,7 @@ import httplib
 
 from time import sleep
 
+from pulp.citrus.progress import ProgressReport
 from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
@@ -41,5 +42,10 @@ class TaskPoller:
     def report_progress(self, task, last_hash):
         _hash = hash(repr(task.progress))
         if _hash != last_hash:
-            self.progress.set_action('task', task.progress)
+            if task.progress:
+                reported = task.progress.values()[0]
+                report = ProgressReport()
+                report.steps = reported['steps']
+                report.action = reported['action']
+                self.progress.set_nested_report(report)
         return _hash

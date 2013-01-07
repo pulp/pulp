@@ -26,10 +26,6 @@ class HandlerProgress(ProgressReport):
     Citrus synchronization progress reporting object.
     """
 
-    PENDING = None
-    SUCCEEDED = True
-    FAILED = False
-
     def __init__(self, conduit):
         """
         Constructor.
@@ -67,7 +63,7 @@ class RepositoryHandler(ContentHandler):
         """
         report = ContentReport()
         progress = HandlerProgress(conduit)
-        progress.push_step('fetch')
+        progress.push_step('fetch_bindings')
         all = options.get('all', False)
         repoids = [key['repo_id'] for key in units if key]
         binding = Binding()
@@ -83,6 +79,9 @@ class RepositoryHandler(ContentHandler):
     def synchronize(self, progress, binds):
         """
         Synchronize repositories.
+          - Merge bound repositories.
+          - Synchronize repositories.
+          - Purge orphaned content units.
         @param progress: A progress report.
         @type progress: L{ProgressReport}
         @param binds: A list of bind payloads.
@@ -91,12 +90,14 @@ class RepositoryHandler(ContentHandler):
         @rtype: TBD
         """
         report = {}
+        self.purge(progress, binds)
         self.merge(progress, binds)
-        progress.push_step('synchronize')
+        progress.push_step('synchronize', len(binds))
         for repo_id in [b['repo_id'] for b in binds]:
-            progress.set_action('synchronize', repo_id)
             repo = LocalRepository(repo_id)
             repo.run_sync(progress)
+        progress.push_step('purge_orphans')
+        LocalRepository.purge_orphans()
         progress.set_status(progress.SUCCEEDED)
         return report
 
@@ -111,8 +112,7 @@ class RepositoryHandler(ContentHandler):
         @param binds: List of bind payloads.
         @type binds: list
         """
-        self.purge(progress, binds)
-        progress.push_step('merge')
+        progress.push_step('merge', len(binds))
         for bind in binds:
             try:
                 repo_id = bind['repo_id']
@@ -138,7 +138,7 @@ class RepositoryHandler(ContentHandler):
         @type binds: list
         """
         try:
-            progress.push_step('purge')
+            progress.push_step('purge', len(binds))
             upstream = [b['repo_id'] for b in binds]
             downstream = [r.repo_id for r in LocalRepository.fetch_all()]
             for repo_id in downstream:

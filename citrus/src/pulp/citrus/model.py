@@ -190,6 +190,15 @@ class LocalRepository(Local, Repository):
         except NotFoundException:
             return None
 
+    @classmethod
+    def purge_orphans(cls):
+        """
+        Purge orphaned units.
+        """
+        http = cls.binding.content_orphan.remove_all()
+        if http.response_code != httplib.ACCEPTED:
+            raise Exception('purge_orphans() failed:%d', http.response_code)
+
     def add(self):
         """
         Add the local repository and associated distributors.

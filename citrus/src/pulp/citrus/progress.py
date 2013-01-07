@@ -18,33 +18,47 @@ class ProgressReport:
     """
     Citrus synchronization progress reporting object.
     @ivar step: A list package steps.
-        Each step is: (name, status)
+        Each step is: [name, status, num_actions]
+          name - the name of the step.
+          status - the status of the step.
+          action_ratio - a tuple (<completed>, <total>) representing
+            the ratio of complete and total actions to included in a step.
     @type step: tuple
     @ivar details: Details about actions taking place
         in the current step.
+    @cvar PENDING: The step is pending.
+    @cvar SUCCEEDED: The step is finished and succeeded.
+    @cvar FAILED: The step is finished and failed.
     """
 
     PENDING = None
     SUCCEEDED = True
     FAILED = False
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """
         Constructor.
         """
         self.steps = []
-        self.details = {}
+        self.action = {}
+        self.nested_report = None
+        self.parent = parent
+        if parent:
+            parent.nested_report = self
 
-    def push_step(self, name):
+    def push_step(self, name, total_actions=0):
         """
         Push the specified step.
         First, update the last status to SUCCEEDED.
         @param name: The step name to push.
         @type name: str
+        @param total_actions: Number of anticipated actions to complete the step.
+        @type total_actions: int
         """
         self.set_status(self.SUCCEEDED)
-        self.steps.append([name, self.PENDING])
-        self.details = {}
+        self.steps.append([name, self.PENDING, [0, total_actions]])
+        self.action = {}
+        self.nested_report = None
         self._updated()
 
     def set_status(self, status):
@@ -55,21 +69,39 @@ class ProgressReport:
         """
         if not self.steps:
             return
-        last = self.steps[-1]
+        last = self.current_step()
         if last[1] is self.PENDING:
             last[1] = status
-            self.details = {}
+            self.action = {}
+            self.nested_report = None
             self._updated()
 
     def set_action(self, action, subject):
         """
         Set the specified package action for the current step.
+        If the action_ratio has been specified, update the number
+        of completed actions.  Reminder: action_ratio is a tuple of
+        (<completed>/<total>) actions.  The 'action' may be the dict
+        representation of a nested ProgressReport.
         @param action: The action being performed.
         @type action: str
         @param subject: The subject of the action.
         @type subject: object
         """
-        self.details = dict(action=action, subject=subject)
+        action_ratio = self.current_step()[2]
+        if action_ratio[0] < action_ratio[1]:
+            action_ratio[0] += 1
+        self.action = dict(action=action, subject=subject)
+        self._updated()
+        
+    def set_nested_report(self, report):
+        """
+        Set the nested progress report for the current step.
+        @param report: A progress report
+        @type report: ProgressReport
+        """
+        report.parent = self
+        self.nested_report = report
         self._updated()
 
     def error(self, msg):
@@ -79,15 +111,16 @@ class ProgressReport:
         @type msg: str
         """
         self.set_status(self.FAILED)
-        self.details = dict(error=msg)
+        self.action = dict(error=msg)
         self._updated()
 
-    def _updated(self):
+    def current_step(self):
         """
-        Notification that the report has been updated.
-        Designed to be overridden and reported.
+        Get the current step.
+        @return: The current step: [name, status, action_ratio]
+        @rtype: list
         """
-        log.info('PROGRESS: %s %s', self.steps[-1:], self.details)
+        return self.steps[-1]
 
     def dict(self):
         """
@@ -95,4 +128,18 @@ class ProgressReport:
         @return: self as a dictionary.
         @rtype: dict
         """
-        return dict(steps=self.steps, details=self.details)
+        if self.nested_report:
+            nested_report = self.nested_report.dict()
+        else:
+            nested_report = {}
+        return dict(steps=self.steps, action=self.action, nested_report=nested_report)
+
+    def _updated(self):
+        """
+        Notification that the report has been updated.
+        Designed to be overridden and reported.
+        """
+        if self.parent:
+            self.parent._updated()
+        else:
+            log.debug('PROGRESS: %s', self.dict())
