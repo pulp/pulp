@@ -73,6 +73,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Jan 08 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.28-1
+- 883938 - Added okaara ability to display unexpected options separately
+  (jason.dobies@redhat.com)
+
+* Tue Jan 08 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.28-1
 - Added support for telling the user if an unexpected option was specified
   (jason.dobies@redhat.com)
 - Remove Pulp references (jason.dobies@redhat.com)
