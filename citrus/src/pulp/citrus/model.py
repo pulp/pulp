@@ -329,8 +329,8 @@ class LocalRepository(Local, Repository):
         http = self.binding.repo_actions.sync(self.repo_id, {})
         if http.response_code == httplib.ACCEPTED:
             poller = TaskPoller(self.binding, progress)
-            for task in http.response_body:
-                poller.join(task.task_id)
+            task = http.response_body[0]
+            poller.join(task.task_id)
         else:
             raise Exception('run_sync() failed:%d', http.response_code)
 
