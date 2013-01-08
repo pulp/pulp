@@ -40,7 +40,7 @@ Infrequently, there may be a need to apply a change to an old release but not
 newer releases. This should only be a last resort.
 
 One way or another, it is important to merge this change into newer release
-branches, even if the actual changes don't get applies. When fixing code that no
+branches, even if the actual changes don't get applied. When fixing code that no
 longer exists in newer branches, simply do the merge and resolve any conflicts
 that arise.
 
