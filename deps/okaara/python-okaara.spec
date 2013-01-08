@@ -3,7 +3,7 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.27
+Version:        1.0.28
 Release:        1%{?dist}
 Summary:        Python command line utilities
 
@@ -72,8 +72,11 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Thu Dec 06 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.27-1
-- Upgrading okaara to 1.0.27 (jason.dobies@redhat.com)
+* Tue Jan 08 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.28-1
+- Added support for telling the user if an unexpected option was specified
+  (jason.dobies@redhat.com)
+- Remove Pulp references (jason.dobies@redhat.com)
+- Fixed class formatting (jason.dobies@redhat.com)
 
 * Thu Dec 06 2012 Jay Dobies <jason.dobies@redhat.com> 1.0.27-1
 - The full path to the section isn't known, so the usage was misleading since
