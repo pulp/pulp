@@ -4,7 +4,7 @@ Pulp Developer Guide
 .. toctree::
    :maxdepth: 3
 
-   contributing
+   contributing/index
    architecture
    conventions/index
    policies/index
