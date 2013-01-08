@@ -5,3 +5,4 @@ How To Contribute
    :maxdepth: 3
 
    branching
+   merging

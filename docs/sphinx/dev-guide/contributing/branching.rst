@@ -38,6 +38,8 @@ In a case where multiple developers will contribute to a feature branch, simply
 omit the username and call it "named-searches".
 
 
+.. _choosing-upstream-branch:
+
 Choosing an Upstream Branch
 ---------------------------
 
