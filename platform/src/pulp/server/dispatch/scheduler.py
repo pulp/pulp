@@ -20,6 +20,7 @@ from pprint import pformat
 import isodate
 
 from pulp.common import dateutils
+from pulp.common.tags import resource_tag
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -128,6 +129,13 @@ class Scheduler(object):
             if not scheduled_call['enabled']:
                 # update the next run information for disabled calls
                 self.update_next_run(scheduled_call)
+                continue
+
+            # test to see if any tasks from this schedule are already in the queue
+            already_queued = coordinator.find_call_reports(schedule_id=scheduled_call['id'])
+            if already_queued:
+                log_msg = _('Schedule %(s)s skipped: last scheduled call still running') % {'s': scheduled_call['id']}
+                _LOG.info(log_msg)
                 continue
 
             # get the itinerary call request and execute
