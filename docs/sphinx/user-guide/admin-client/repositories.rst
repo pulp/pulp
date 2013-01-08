@@ -56,6 +56,203 @@ features will be customized and augmented by plugins, such that their versions o
 common commands will only be applicable to their own content. Commands that can
 operate on all repositories go in the generic "repo" section.
 
+
+Create, Update, Delete
+----------------------------
+
+To create a repository, the only required argument is a unique ID. Consult the
+help text for the create command of each particular repository type to see what
+other options are available.
+
+::
+
+  $ pulp-admin rpm repo create --repo-id=foo
+  Successfully created repository [foo]
+
+The ``update`` command takes similar arguments to the ``create`` command.
+
+::
+
+  $ pulp-admin rpm repo update --repo-id=foo --display-name='Foo Repo'
+  Repository [foo] successfully updated
+
+The new repository can be seen with its unique ID and display name.
+
+::
+
+  $ pulp-admin rpm repo list
+  +----------------------------------------------------------------------+
+                              RPM Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 foo
+  Display Name:       Foo Repo
+  Description:        None
+  Content Unit Count: 0
+
+Deleting a repository is an asynchronous operation. In case other tasks are
+already in progress on this repository, the server will allow those tasks to
+complete before executing the deletion. The example below shows how to request
+deletion and then check the status of that task.
+
+::
+
+  $ pulp-admin rpm repo delete --repo-id=foo
+  The request to delete repository [foo] has been received by the server. The
+  progress of the task can be viewed using the commands under "repo tasks"
+
+  $ pulp-admin repo tasks list --repo-id=foo
+  +----------------------------------------------------------------------+
+                                   Tasks
+  +----------------------------------------------------------------------+
+
+  Operations:  delete
+  Resources:   foo (repository)
+  State:       Successful
+  Start Time:  2012-12-17T23:17:46Z
+  Finish Time: 2012-12-17T23:17:46Z
+  Result:      N/A
+  Task Id:     2d4fc3da-7ad7-448c-a9dd-78e79f71ef2f
+
+
+List
+----
+
+This command lists all repositories in Pulp, regardless of their content type. To
+list and search repositories only of a particular type, go to that type's area of
+the CLI, such as ``pulp-admin rpm repo list``.
+
+::
+
+  $ pulp-admin repo list
+  +----------------------------------------------------------------------+
+                                Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 pulp
+  Display Name:       Pulp
+  Description:        Pulp's stable repository
+  Content Unit Count: 39
+
+  Id:                 repo1
+  Display Name:       repo1
+  Description:        None
+  Content Unit Count: 0
+
+  Id:                 repo2
+  Display Name:       repo2
+  Description:        None
+  Content Unit Count: 0
+
+
+Search
+------
+
+For more targeted results than the ``list`` command provides, you can use Pulp's
+:ref:`criteria` search feature to search repositories. For example, to find all
+RPM repositories that contain at least one content unit:
+
+::
+
+  $ pulp-admin rpm repo search --gt 'content_unit_count=0'
+  +----------------------------------------------------------------------+
+                                Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 pulp
+  Display Name:       pulp
+  Description:        None
+  Content Unit Count: 39
+  Notes:
+
+  Id:                 repo1
+  Display Name:       repo1
+  Description:        None
+  Content Unit Count: 36
+  Notes:
+
+
+Content Search
+--------------
+
+:term:`Content units <content unit>` can be searched within a repository
+using Pulp's :ref:`criteria` search feature. The layout of this command may vary
+based on the content type; for example, RPM support includes a separate command
+for each package type (rpm, srpm, etc.). Here is an example of searching for an
+rpm package by name. The ``--repo-id`` argument is required, and the ``--match``
+argument applies a regular expression.
+
+::
+
+  $ pulp-admin rpm repo content rpm --repo-id=pulp --match 'name=^python-w.+'
+  Arch:         noarch
+  Buildhost:    localhost
+  Checksum:     edfbe47f61a64c2196720e8ab1eb66c696303f89080fbe950444b9384bcfd2ee
+  Checksumtype: sha256
+  Description:  web.py is a web framework for python that is as simple as it is
+                powerful. web.py is in the public domain; you can use it for
+                whatever purpose with absolutely no restrictions.
+  Epoch:        0
+  Filename:     python-webpy-0.32-9.fc17.noarch.rpm
+  License:      Public Domain and BSD
+  Name:         python-webpy
+  Provides:     [[u'python-webpy', u'EQ', [u'0', u'0.32', u'9.fc17']]]
+  Release:      9.fc17
+  Requires:     [[u'python(abi)', u'EQ', [u'0', u'2.7', None]]]
+  Vendor:
+  Version:      0.32
+
+
+Copy Between Repositories
+-------------------------
+
+:term:`Content units <content unit>` can be copied from one repository to another using Pulp's
+:ref:`criteria` search. For content units that involve an on-disk file (such as
+RPMs having a package stored on disk), the file is only stored once even if it
+is included in multiple Pulp repositories.
+
+The following example assumes that the repository "foo" has some content units
+and that we want to copy all of them to the repository "bar".
+
+::
+
+  $ pulp-admin rpm repo copy rpm --from-repo-id=foo --to-repo-id=bar
+  Progress on this task can be viewed using the commands under "repo tasks".
+
+  $ foo-admin repo tasks list --repo-id=foo
+  +----------------------------------------------------------------------+
+                                   Tasks
+  +----------------------------------------------------------------------+
+
+  Operations:  associate
+  Resources:   bar (repository), foo (repository)
+  State:       Successful
+  Start Time:  2012-12-17T23:27:12Z
+  Finish Time: 2012-12-17T23:27:13Z
+  Result:      N/A
+  Task Id:     8c3a6964-245f-4fe5-9d7c-8c6bac55cffb
+
+The copy was successful. Here you can see that the repository "bar" now has the
+same number of content units as "foo".
+
+::
+
+  $ pulp-admin rpm repo list
+  +----------------------------------------------------------------------+
+                              RPM Repositories
+  +----------------------------------------------------------------------+
+
+  Id:                 foo
+  Display Name:       foo
+  Description:        None
+  Content Unit Count: 36
+
+  Id:                 bar
+  Display Name:       bar
+  Description:        None
+  Content Unit Count: 36
+
+
 Groups
 ------
 
@@ -75,7 +272,7 @@ Here is an example of creating a repo group and adding members to it:
 
 .. TODO link this to a section explaining criteria-based search
 
-The ``members add`` command takes advantage of Pulp's generic search feature, so
+The ``members add`` command takes advantage of Pulp's :ref:`criteria` search feature, so
 you can add many repositories at once. In this case, we provided a specific
 repository name. Let's look at the result of these two commands by listing the
 repository groups.
@@ -115,31 +312,3 @@ of the CLI, you can ``cancel``, ``list``, and get ``details`` about repository t
     details - displays more detailed information about a specific task
     list    - lists tasks queued or running in the server
 
-List
-----
-
-This command lists all repositories in Pulp, regardless of their content type. To
-list and search repositories only of a particular type, go to that type's area of
-the CLI, such as ``pulp-admin rpm repo list``.
-
-::
-
-  $ pulp-admin repo list
-  +----------------------------------------------------------------------+
-                                Repositories
-  +----------------------------------------------------------------------+
-
-  Id:                 pulp
-  Display Name:       Pulp
-  Description:        Pulp's stable repository
-  Content Unit Count: 75
-
-  Id:                 repo1
-  Display Name:       repo1
-  Description:        None
-  Content Unit Count: 0
-
-  Id:                 repo2
-  Display Name:       repo2
-  Description:        None
-  Content Unit Count: 0

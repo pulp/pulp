@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.1.11
+Version: 0.1.12
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -16,6 +16,7 @@ BuildRequires:  python-setuptools
 Requires:       createrepo, python >= 2.4
 Requires:       PyYAML
 Requires:       python-pycurl
+Requires:       pyliblzma
 %if 0%{?rhel} == 6
 # RHEL-6, 
 # Require updated nss/curl for BZ: https://bugzilla.redhat.com/show_bug.cgi?id=710455
@@ -59,8 +60,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 0.1.11-1
-- grinder 0.1.11. (jortel@redhat.com)
+* Wed Dec 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.12-1
+- updating grinder (pkilambi@redhat.com)
+
+* Wed Dec 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.12-1
+- fix the presto parser to handle xz compressed xml files (pkilambi@redhat.com)
 
 * Thu Dec 13 2012 John Matthews <jmatthews@redhat.com> 0.1.11-1
 - 885264 - Repos with an existing xml:base cause pulp to generate bad repodata
