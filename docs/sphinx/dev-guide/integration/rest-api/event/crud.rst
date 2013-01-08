@@ -35,7 +35,7 @@ when events of the given types are fired.
    "notifier_config" : {
      "url" : "http://localhost/api"
    },
-   "event_types" : ["repo-sync-finished", "repo-publish-finished"]
+   "event_types" : ["repo.sync.finish", "repo.publish.finish"]
  }
 
 :sample_response:`201` ::
@@ -45,8 +45,8 @@ when events of the given types are fired.
    "_id": {"$oid": "4ff708048a905b7016000008"},
    "_ns": "event_listeners",
    "event_types": [
-     "repo-sync-finished",
-     "repo-publish-finished"
+     "repo.sync.finish",
+     "repo.publish.finish"
    ],
    "id": "4ff708048a905b7016000008",
    "notifier_config": {
@@ -79,8 +79,8 @@ Returns a list of all event listeners in the server.
      "_id": {"$oid": "4ff708048a905b7016000008"},
      "_ns": "event_listeners",
      "event_types": [
-       "repo-sync-finished",
-       "repo-publish-finished"
+       "repo.sync.finish",
+       "repo.publish.finish"
      ],
      "id": "4ff708048a905b7016000008",
      "notifier_config": {
@@ -148,7 +148,7 @@ overwritten.
 :sample_request:`_` ::
 
   {
-    "event_types" : ["repo-sync-started"]
+    "event_types" : ["repo.sync.started"]
   }
 
 :sample_response:`200` ::
@@ -158,7 +158,7 @@ overwritten.
     "_id": {"$oid": "4ff73d598a905b777d000014"},
     "_ns": "event_listeners",
     "event_types": [
-      "repo-sync-started"
+      "repo.sync.started"
     ],
     "id": "4ff73d598a905b777d000014",
     "notifier_config": {
