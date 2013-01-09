@@ -56,12 +56,26 @@ class UnitKey:
 
 
 class ImporterProgress(ProgressReport):
+    """
+    Progress report provides integration between the
+    citrus progress report and the plugin progress reporting facility.
+    @ivar conduit: The importer conduit.
+    @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+    """
 
     def __init__(self, conduit):
+        """
+        @param conduit: The importer conduit.
+        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+            """
         self.conduit = conduit
         ProgressReport.__init__(self)
 
     def _updated(self):
+        """
+        Send progress report using the conduit when the
+        report is updated.
+        """
         ProgressReport._updated(self)
         self.conduit.set_progress(self.dict())
 
@@ -76,6 +90,15 @@ class CitrusImporter(Importer):
             'types':['rpm',]
         }
 
+    def __init__(self):
+        """
+        @ivar cancelled: The flag indicating that the
+            current operation has been cancelled.
+        @type cancelled: bool
+        """
+        Importer.__init__(self)
+        self.cancelled = False
+
     def validate_config(self, repo, config, related_repos):
         msg = _('Missing required configuration property: %(p)s')
         for key in ('manifest_url',):
@@ -86,93 +109,63 @@ class CitrusImporter(Importer):
 
     def sync_repo(self, repo, conduit, config):
         """
-        Synchronizes content into the given repository. This call is responsible
-        for adding new content units to Pulp as well as associating them to the
-        given repository.
-
-        While this call may be implemented using multiple threads, its execution
-        from the Pulp server's standpoint should be synchronous. This call should
-        not return until the sync is complete.
-
-        It is not expected that this call be atomic. Should an error occur, it
-        is not the responsibility of the importer to rollback any unit additions
-        or associations that have been made.
-
-        The returned report object is used to communicate the results of the
-        sync back to the user. Care should be taken to i18n the free text "log"
-        attribute in the report if applicable.
-
+        Synchronize content units associated with the repository.
         Steps:
           1. Read the (upstream) units.json
-          2. Fetch the local (downstream) units associated with the repostory.
+          2. Fetch the local (downstream) units associated with the repository.
           3. Add missing units.
           4. Delete units specified locally but not upstream.
-
         @param repo: metadata describing the repository
         @type  repo: L{pulp.server.plugins.model.Repository}
-        @param sync_conduit: provides access to relevant Pulp functionality
-        @type  sync_conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        @param conduit: provides access to relevant Pulp functionality
+        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
         @param config: plugin configuration
         @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
         @return: report of the details of the sync
         @rtype:  L{pulp.server.plugins.model.SyncReport}
         """
-        manifest_url = config.get('manifest_url')
-        progress = ImporterProgress(conduit)
-        progress.push_step('fetch_local')
-        local_units = self._local_units(conduit)
-        progress.push_step('fetch_upstream')
-        upstream_units = self._upstream_units(manifest_url)
+        context = Context(conduit, config)
+        context.progress.push_step('fetch_local')
+        local_units = self._local_units(context)
+        context.progress.push_step('fetch_upstream')
+        upstream_units = self._upstream_units(context)
+        unit_inventory = UnitInventory(local_units, upstream_units)
 
         # add missing units
         added = []
         try:
-            added = self._add_units(conduit, progress, local_units, upstream_units)
-            progress.set_status(progress.SUCCEEDED)
+            added = self._add_units(context, unit_inventory)
+            context.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception, e:
             _LOG.exception('Add units failed.')
-            progress.error(str(e))
-
-        # download added units
-        try:
-            downloaded = self._download_units(progress, added)
-            progress.set_status(progress.SUCCEEDED)
-        except Exception, e:
-            _LOG.exception('Download units failed.')
-            progress.error(str(e))
+            context.progress.error(str(e))
 
          # purge extra units
+        added = []
         try:
-            purge = self._purge_units(conduit, progress, local_units, upstream_units)
-            progress.set_status(progress.SUCCEEDED)
+            purged = self._purge_units(context, unit_inventory)
+            context.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception, e:
             _LOG.exception('Purge units failed.')
-            progress.error(str(e))
+            context.progress.error(str(e))
 
         return conduit.build_success_report({}, {})
 
-    def _add_units(self, conduit, progress, local, upstream):
+    def _missing_units(self, unit_inventory):
         """
-        Add units inventoried upstream but not locally.
-        @param conduit: provides access to relevant Pulp functionality
-        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
-        @param progress: A progress report.
-        @type progress: L{ImporterProgress}
-        @param local: A dictionary of locally defined units.
-        @type local: dict
-        @param upstream: A dictionary of units defined upstream.
-        @type upstream: dict
-        @return: The list of purged units.
+        Listing of units contained in the upstream inventory but
+        not in the local inventory.
+        @param context: The operation context.
+        @type context: L{Context}
+        @param unit_inventory: The inventory of content units.
+        @type unit_inventory: L{UnitInventory}
+        @return: The list of units to be added.
+            Each item: (upstream_unit, new_unit)
         @rtype: list
         """
-        missing = []
-        for k, unit in upstream.items():
-            if k not in local:
-                missing.append(unit)
+        new_units = []
         storage_dir = pulp_conf.get('server', 'storage_dir')
-        progress.push_step('add_units', len(missing))
-        added = []
-        for unit in missing:
+        for unit in unit_inventory.upstream_only():
             unit['metadata'].pop('_id')
             unit['metadata'].pop('_ns')
             type_id = unit['type_id']
@@ -182,89 +175,88 @@ class CitrusImporter(Importer):
             if storage_path:
                 storage_path = '/'.join((storage_dir, storage_path))
             unit_in = Unit(type_id, unit_key, metadata, storage_path)
-            progress.set_action('save_unit', unit_key)
-            conduit.save_unit(unit_in)
-            added.append((unit, unit_in))
-        return added
+            new_units.append((unit, unit_in))
+        return new_units
 
-    def _download_units(self, progress, units):
+    def _add_units(self, context, unit_inventory):
         """
         Download specified units.
-        @param progress: A progress report.
-        @type progress: L{ImporterProgress}
-        @param units: List of unit tuple (unit, local_unit)
-        @type units: list
-        @return: list of downloaded units.
-        @rtype: list
+        @param context: The operation context.
+        @type context: L{Context}
+        @param unit_inventory: The inventory of content units.
+        @type unit_inventory: L{UnitInventory}
         """
-        progress.push_step('download_units', len(units))
-        downloaded = []
-        request_list = []
+        added = []
+        units = self._missing_units(unit_inventory)
+        context.progress.push_step('add_units', len(units))
+        requests = []
         for unit, local_unit in units:
             download = unit.get('_download')
             if not download:
-                # not all units are associated with files.
-                progress.set_action('skipped', '')
+                self._add_unit(local_unit)
+                added.append(local_unit)
                 continue
-            protocol = download['protocol']
-            details = download['details']
-            storage_path = local_unit.storage_path
-            request = DownloadRequest(protocol, details, storage_path)
-            request_list.append(request)
-        def _fn(request):
-            progress.set_action('downloaded', request.storage_path)
-            downloaded.append(request.storage_path)
+            request = Download(self, context, unit, local_unit)
+            requests.append(request)
         # transport hacked in here
-        TransportLayer.download(request_list, _fn)
-        return downloaded
+        for local_unit in TransportLayer.download(requests):
+            added.append(local_unit)
+        return added
 
-    def _purge_units(self, conduit, progress, local, upstream):
+    def _add_unit(self, context, unit):
+        """
+        Add units inventoried upstream but not locally.
+        @param context: The operation context.
+        @type context: L{Context}
+        @param unit: A unit to be added.
+        @type unit: L{Unit}
+        """
+        context.conduit.save_unit(unit)
+        context.progress.set_action('unit_added', str(unit.unit_key))
+
+    def _purge_units(self, context, unit_inventory):
         """
         Purge units inventoried locally but not upstream.
-        @param conduit: provides access to relevant Pulp functionality
-        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
-        @param progress: A progress report.
-        @type progress: L{ImporterProgress}
-        @param local: A dictionary of locally defined units.
-        @type local: dict
-        @param upstream: A dictionary of units defined upstream.
-        @type upstream: dict
+        @param context: The operation context.
+        @type context: L{Context}
+        @param unit_inventory: The inventory of content units.
+        @type unit_inventory: L{UnitInventory}
         @return: The list of purged units.
         @rtype: list
         """
-        unwanted = []
-        for k, unit in local.items():
-            if k not in upstream:
-                unwanted.append(unit)
         purged = []
-        progress.push_step('purge_units', len(purged))
-        for unit in unwanted:
-            progress.set_action('delete_unit', unit.unit_key)
-            conduit.remove_unit(unit)
+        units = unit_inventory.local_only()
+        context.progress.push_step('purge_units', len(units))
+        for unit in units:
+            context.progress.set_action('delete_unit', unit.unit_key)
+            context.conduit.remove_unit(unit)
             purged.append(unit)
         return purged
 
-    def _local_units(self, conduit):
+    def _local_units(self, context):
         """
         Fetch all local units.
-        @param conduit: provides access to relevant Pulp functionality
-        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        @param context: The operation context.
+        @type context: L{Context}
         @return: A dictionary of units keyed by L{UnitKey}.
         @rtype: dict
         """
-        units = conduit.get_units()
+        units = context.conduit.get_units()
         return self._unit_dictionary(units)
 
-    def _upstream_units(self, manifest_url):
+    def _upstream_units(self, context):
         """
         Fetch upstream units.
+        @param context: The operation context.
+        @type context: L{Context}
         @param repo_id: The repository ID.
         @type repo_id: str
         @return: A dictionary of units keyed by L{UnitKey}.
         @rtype: dict
         """
+        url = context.config.get('manifest_url')
         manifest = Manifest()
-        units = manifest.read(manifest_url)
+        units = manifest.read(url)
         return self._unit_dictionary(units)
 
     def _unit_dictionary(self, units):
@@ -282,40 +274,188 @@ class CitrusImporter(Importer):
         pass
 
 
+class Context:
+    """
+    Current operation environment.
+    @ivar conduit: Provides safe access to pulp sever functionality.
+    @type conduit: object
+    @ivar config: plugin configuration
+    @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+    @ivar progress: A progress report for the current operation.
+    @type progress: L{ImporterProgress}
+    """
+
+    def __init__(self, conduit, config):
+        """
+        @param conduit: Provides safe access to pulp sever functionality.
+        @type conduit: object
+        @param config: plugin configuration
+        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        """
+        self.conduit = conduit
+        self.config = config
+        self.progress = ImporterProgress(conduit)
+
+
+class UnitInventory:
+    """
+    Unit inventory.
+    @ivar local: The dictionary of unit in the local inventory.
+    @type local: dict
+    @ivar upstream: The dictionary of unit in the upstream inventory.
+    @type upstream: dict
+    """
+
+    def __init__(self, local, upstream):
+        """
+        @param local: The dictionary of unit in the local inventory.
+        @type local: dict
+        @param upstream: The dictionary of unit in the upstream inventory.
+        @type upstream: dict
+        """
+        self.local = local
+        self.upstream = upstream
+
+    def upstream_only(self):
+        """
+        Listing of units contained in the upstream inventory
+        but not not in the local inventory.
+        @return: List of units that need to be added.
+        @rtype: list
+        """
+        units = []
+        for k, unit in self.upstream.items():
+            if k not in self.local:
+                units.append(unit)
+        return units
+
+    def local_only(self):
+        """
+        Listing of units contained in the local inventory
+        but not not in the upstream inventory.
+        @return: List of units that need to be purged.
+        @rtype: list
+        """
+        units = []
+        for k, unit in self.local.items():
+            if k not in self.upstream:
+                units.append(units)
+        return units
+
+
+class Download:
+    """
+    The download request provides integration between the importer
+    and the transport layer.  It's used to request the download of
+    the file referenced by a content unit.
+    @ivar importer: The importer making the request.
+    @type importer: L{CitrusImporter}
+    @ivar context: The current operation context.
+    @type context: L{Context}
+    @ivar unit: The upstream content unit.
+    @type unit: dict
+    @ivar local_unit: A local content unit that is in the process of
+        being added.  The request is to download the file referenced
+        in the unit.
+    @type local_unit: L{Unit}
+    """
+
+    def __init__(self, importer, context, unit, local_unit):
+        """
+        @param importer: The importer making the request.
+        @type importer: L{CitrusImporter}
+        @param context: The current operation context.
+        @type context: L{Context}
+        @param unit: The upstream content unit.
+        @type unit: dict
+        @param local_unit: A local content unit that is in the process of
+            being added.  The request is to download the file referenced
+            in the unit.
+        @type local_unit: L{Unit}
+        """
+        self.importer = importer
+        self.context = context
+        self.unit = unit
+        self.local_unit = local_unit
+
+    def protocol(self):
+        """
+        Get the protocol specified by the upstream unit to be used for
+        the download.  A value of 'None' indicates that there is no file
+        to be downloaded.
+        @return: The protocol name.
+        @rtype: str
+        """
+        download = self.unit.get('_download')
+        if download:
+            return download.get('protocol')
+
+    def details(self):
+        """
+        Get the details specified by the upstream unit to be used for
+        the download.  A value of 'None' indicates that there is no file
+        to be downloaded.  Contains information such as URL for http transports.
+        @return: The download specification.
+        @rtype: dict
+        """
+        download = self.unit.get('_download')
+        if download:
+            return download.get('details')
+
+    def succeeded(self):
+        """
+        Called by the transport to indicate the requested download succeeded.
+        """
+        self.importer._add_unit(self.context, self.local_unit)
+
+    def failed(self, exception):
+        """
+        Called by the transport to indicate the requested download failed.
+        @param exception: The exception raised.
+        @type exception: Exception
+        """
+        _LOG.exception('download failed: %s', self.details())
+
 
 # --- Hacking in the transport -----------------------------------------------------------
 
 import os
 import urllib
 
-class DownloadRequest:
 
-    def __init__(self, protocol, details, storage_path):
-        self.protocol = protocol
-        self.details = details
-        self.storage_path = storage_path
+
 
 class HttpTransport:
 
-    def download(self, request_list, callback):
-        for request in request_list:
-            url = request.details['url']
-            fp_in = urllib.urlopen(url)
+    def download(self, requests):
+        downloaded = []
+        for request in requests:
+          try:
+              self._download(request)
+              request.succeeded()
+              downloaded.append(request.local_unit)
+          except Exception, e:
+              request.failed(e)
+        return downloaded
+
+    def _download(self, request):
+        url = request.details()['url']
+        fp_in = urllib.urlopen(url)
+        try:
+            storage_path = request.local_unit.storage_path
+            self._mkdir(storage_path)
+            fp_out = open(storage_path, 'w+')
             try:
-                self._mkdir(request.storage_path)
-                fp_out = open(request.storage_path, 'w+')
-                try:
-                    while True:
-                        bfr = fp_in.read(0x100000)
-                        if bfr:
-                            fp_out.write(bfr)
-                        else:
-                            break
-                finally:
-                    fp_out.close()
-                    callback(request)
+                while True:
+                    bfr = fp_in.read(0x100000)
+                    if bfr:
+                        fp_out.write(bfr)
+                    else:
+                        break
             finally:
-                fp_in.close()
+                fp_out.close()
+        finally:
+            fp_in.close()
 
     def _mkdir(self, file_path):
         dir_path = os.path.dirname(file_path)
@@ -330,6 +470,6 @@ class TransportLayer:
     }
 
     @classmethod
-    def download(self, request_list, callback):
+    def download(self, requests):
         tr = HttpTransport()
-        tr.download(request_list, callback)
+        return tr.download(requests)
