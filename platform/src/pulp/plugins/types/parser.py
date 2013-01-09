@@ -33,7 +33,7 @@ OPTIONAL_DEFINITION_FIELDS = ['search_indexes', 'referenced_types']
 
 TYPE_ID_REGEX = re.compile(r'^[_A-Za-z]+$') # letters and underscore
 
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger('db')
 
 # -- syntax exceptions -------------------------------------------------------
 
