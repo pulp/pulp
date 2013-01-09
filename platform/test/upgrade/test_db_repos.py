@@ -20,7 +20,8 @@ from pulp.common import dateutils
 from pulp.server.compat import ObjectId
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
-from pulp.server.managers.auth.principal import PrincipalManager, SystemUser
+from pulp.server.managers.auth.principal import PrincipalManager
+from pulp.server.managers.auth.user.system import SystemUser
 from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.db import repos
 

@@ -30,9 +30,11 @@ class BaseDbUpgradeTests(unittest.TestCase):
         db_file = DB_FILE_PATH
 
         self.v1_test_db = PulpTestDatabase(self.v1_db_name)
+        self.v1_test_db.delete()
         self.v1_test_db.load_from_file(db_file)
 
         self.tmp_test_db = PulpTestDatabase(self.tmp_db_name)
+        self.tmp_test_db.delete()
 
     def tearDown(self):
         super(BaseDbUpgradeTests, self).tearDown()

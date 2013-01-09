@@ -46,17 +46,9 @@ class InitializeContentTypesTests(BaseDbUpgradeTests):
             unit_coll = getattr(self.tmp_test_db.database, units._units_collection_name(type_def['id']))
             indexes = unit_coll.index_information()
             indexes.pop('_id_') # remove the default one, the other is named weird and this is easier
-            self.assertEqual(len(indexes), 1) # sanity check, should be the unit_key
-            index = indexes[indexes.keys()[0]]
 
-            self.assertEqual(index['unique'], True)
-
-            sorted_index_tuples = sorted(index['key'], key=lambda x : x[0])
-            sorted_unit_key_names = sorted(type_def['unit_key'])
-
-            for ituple, key_name in zip(sorted_index_tuples, sorted_unit_key_names):
-                self.assertEqual(ituple[0], key_name)
-                self.assertEqual(ituple[1], 1)
+            total_index_count = len(type_def['search_indexes']) + 1 # 1 for unit key
+            self.assertEqual(len(indexes), total_index_count)
 
         # Verify the data itself
         for type_def in units.TYPE_DEFS:
