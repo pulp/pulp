@@ -12,14 +12,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.plugins.distributor import Distributor
-from pulp.citrus.transport import HttpPublisher
+from pulp.citrus.publisher import HttpPublisher
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 from logging import getLogger
 
 
 _LOG = getLogger(__name__)
-
 
 VIRTUAL_HOST = ('/pulp/citrus/repos', '/var/lib/pulp/citrus/published/http/repos')
 
@@ -76,8 +75,12 @@ class CitrusDistributor(Distributor):
         @type  config: pulp.plugins.config.PluginConfiguration
         @return: The configured publisher.
         """
+        base_url = config.get('base_url')
+        if not base_url:
+            host = pulp_conf.get('server', 'server_name')
+            base_url = 'http://%s' % host
         virtual_host = config.get('virtual_host', VIRTUAL_HOST)
-        return HttpPublisher(repo.id, virtual_host)
+        return HttpPublisher(repo.id, base_url, virtual_host)
 
     def cancel_publish_repo(self, call_report, call_request):
         pass
@@ -117,13 +120,12 @@ class CitrusDistributor(Distributor):
 
     def _add_importers(self, repo, config, payload):
         publisher = self.publisher(repo, config)
-        host = pulp_conf.get('server', 'server_name')
+        manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
         importer = {
             'id':'citrus_importer',
             'importer_type_id':'citrus_importer',
             'config':{
-                'base_url':'http://%s' % host,
-                'manifest_url':publisher.manifest_path(),
+                'manifest_url':manifest_url,
             }
         }
         payload['importers'] = [importer]

@@ -11,8 +11,8 @@
 
 import os
 import hashlib
-import urllib
-import json
+
+from pulp.citrus.manifest import Manifest
 
 from logging import getLogger
 
@@ -31,7 +31,7 @@ def join(*parts):
     parts = parts[0:1]+[p.strip('/') for p in parts[1:]]
     return '/'.join(parts)
 
-def make_directory(file_path):
+def mkdir(file_path):
     """
     Ensure the directory for the specified file path exists.
     @param file_path: The path to a file.
@@ -40,76 +40,6 @@ def make_directory(file_path):
     dir_path = os.path.dirname(file_path)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-
-
-class FileReader:
-    """
-    A file-based reader.
-    Defines the API for reading and downloading upstream files.
-    """
-
-    def open(self, repo_id, *path):
-        """
-        Open a repository file for reading.
-        @param repo_id: A repository ID.
-        @type repo_id: str
-        @param path: A list of path components relative the base_url.
-        @type path: list
-        @return: A file-like object that may be used to
-            read the contents of the specified file.  The caller
-            is responsible for calling close() on the returned object.
-        """
-        pass
-
-    def download(self, unit, storage_path):
-        """
-        Download the file referenced in the unit's storage_path to
-        the specified location.
-        @param unit: A content unit defined in the manifest.
-        @type unit: dict
-        @param storage_path: The fully qualified file path to where downloaded
-            file will be stored.
-        @type storage_path: str
-        """
-        pass
-
-
-class HttpReader(FileReader):
-    """
-    An HTTP file reader.
-    @ivar base_url: The base URL.  Prepended to all paths.
-    @type base_url: str
-    """
-
-    def __init__(self, base_url):
-        """
-        @param base_url: The base URL.  Prepended to all paths.
-        @type base_url: str
-        """
-        self.base_url = base_url
-
-    def open(self, *path):
-        url = join(self.base_url, *path)
-        fp_in = urllib.urlopen(url)
-        return fp_in
-
-    def download(self, unit, storage_path):
-        url = join(self.base_url, unit['relative_url'])
-        fp_in = urllib.urlopen(url)
-        try:
-            make_directory(storage_path)
-            fp_out = open(storage_path, 'w+')
-            try:
-                while True:
-                    bfr = fp_in.read(0x100000)
-                    if bfr:
-                        fp_out.write(bfr)
-                    else:
-                        break
-            finally:
-                fp_out.close()
-        finally:
-            fp_in.close()
 
 
 class Publisher:
@@ -181,14 +111,10 @@ class FilePublisher(Publisher):
         @return: The path to the written manifest.
         @rtype: str
         """
-        path = join(self.publish_dir, self.repo_id, 'units.json')
-        make_directory(path)
-        fp = open(path, 'w+')
-        try:
-            json.dump(units, fp, indent=2)
-            return path
-        finally:
-            fp.close()
+        manifest = Manifest()
+        dir_path = join(self.publish_dir, self.repo_id)
+        mkdir(dir_path)
+        return manifest.write(dir_path, units)
 
     def link(self, units):
         """
@@ -202,10 +128,13 @@ class FilePublisher(Publisher):
         links = []
         for unit in units:
             storage_path = unit.get('storage_path')
+            if not storage_path:
+                # not all units are associated with files.
+                continue
             encoded_path = self.encode_path(storage_path)
             relative_path = join(self.repo_id, 'content', encoded_path)
             published_path = join(self.publish_dir, relative_path)
-            make_directory(published_path)
+            mkdir(published_path)
             if not os.path.islink(published_path):
                 os.symlink(storage_path, published_path)
             link = (unit, relative_path)
@@ -222,13 +151,16 @@ class HttpPublisher(FilePublisher):
     @type virtual_host: tuple(2)
     """
 
-    def __init__(self, repo_id, virtual_host):
+    def __init__(self, repo_id, base_url, virtual_host):
         """
         @param repo_id: A repository ID.
         @type repo_id: str
+        @param base_url: The base URL.
+        @type base_url: str
         @param virtual_host: The virtual host (base_url, publish_dir)
         @type virtual_host: tuple(2)
         """
+        self.base_url = base_url
         self.virtual_host = virtual_host
         publish_dir = self.virtual_host[1]
         FilePublisher.__init__(self, publish_dir, repo_id)
@@ -239,8 +171,8 @@ class HttpPublisher(FilePublisher):
         #
         links = FilePublisher.link(self, units)
         for unit, relative_path in links:
-            url = join(self.virtual_host[0], relative_path)
-            unit['relative_url'] = url
+            url = join(self.base_url, self.virtual_host[0], relative_path)
+            unit['_download'] = dict(protocol='http', details=dict(url=url))
         return links
 
     def manifest_path(self):
@@ -249,4 +181,4 @@ class HttpPublisher(FilePublisher):
         @return: The path component of the URL.
         @rtype: str
         """
-        return join(self.virtual_host[0], self.repo_id, 'units.json')
+        return join(self.virtual_host[0], self.repo_id, Manifest.FILE_NAME)

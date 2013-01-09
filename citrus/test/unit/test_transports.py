@@ -15,7 +15,7 @@ import tempfile
 import json
 
 from unittest import TestCase
-from pulp.citrus.transport import HttpPublisher, HttpReader
+from pulp.citrus.publisher import HttpPublisher, HttpReader
 
 class TestHttp(TestCase):
 

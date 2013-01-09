@@ -16,6 +16,7 @@ import sys
 import tempfile
 import shutil
 import time
+import re
 from mock import Mock, patch
 from base import WebTest
 
@@ -79,7 +80,7 @@ class TestPlugins(WebTest):
         plugin_api._MANAGER.importers.add_plugin(CITRUS_IMPORTER, CitrusImporter, {})
         plugin_api._MANAGER.distributors.add_plugin(CITRUS_DISTRUBUTOR, CitrusDistributor, {})
         unit_db.type_definition = \
-            Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=['A', 'B']))
+            Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
             Mock(return_value=['A', 'B'])
 
@@ -198,9 +199,6 @@ class TestHandler(RepositoryHandler):
     def merge(self, progress, binds):
         self.tester.clean()
         pulp_conf.set('server', 'storage_dir', self.tester.downfs)
-        imp = binds[0]['details']['importers'][0]
-        cfg = imp['config']
-        cfg['base_url'] = 'file://'
         RepositoryHandler.merge(self, progress, binds)
 
 
@@ -216,14 +214,11 @@ class TestAgentPlugin(TestPlugins):
         manager.register(self.PULP_ID)
         manager = factory.repo_importer_manager()
         # add importer
-        cfg = {
-            'base_url':'http://google.com',
-            'manifest_url':'http://apple.com',
-        }
+        cfg = dict(manifest_url='http://apple.com')
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distrubutor
         manager = factory.repo_distributor_manager()
-        cfg = dict(virtual_host=self.virtual_host)
+        cfg = dict(base_url='file:///', virtual_host=self.virtual_host)
         manager.add_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR, cfg, True, CITRUS_DISTRUBUTOR)
         # bind
         manager = factory.consumer_bind_manager()
@@ -286,7 +281,7 @@ class TestAgentPlugin(TestPlugins):
             self.populate()
             dist = CitrusDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(virtual_host=self.virtual_host)
+            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -323,7 +318,7 @@ class TestAgentPlugin(TestPlugins):
             self.populate()
             dist = CitrusDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(virtual_host=self.virtual_host)
+            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
