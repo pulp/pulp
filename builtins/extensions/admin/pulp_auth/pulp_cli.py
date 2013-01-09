@@ -45,7 +45,7 @@ class AuthSection(PulpCliSection):
         @param context: pre-populated context that is given to the extensions by loader
         @type  context: pulp.client.extensions.core.ClientContext
         """
-        PulpCliSection.__init__(self, 'auth', _('user, role and permission commands'))
+        PulpCliSection.__init__(self, 'auth', _('manage users, roles and permissions'))
 
         self.context = context
         self.prompt = context.prompt # for easier access
