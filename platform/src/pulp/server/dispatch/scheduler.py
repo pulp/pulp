@@ -20,7 +20,6 @@ from pprint import pformat
 import isodate
 
 from pulp.common import dateutils
-from pulp.common.tags import resource_tag
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -126,9 +125,13 @@ class Scheduler(object):
 
         for scheduled_call in self.scheduled_call_collection.find(query):
 
+            # updating the next run time will keep the scheduler from finding
+            # this call again before it completes
+            # it's also important to update the next run time even if the call
+            # is disabled
+            self.update_next_run(scheduled_call)
+
             if not scheduled_call['enabled']:
-                # update the next run information for disabled calls
-                self.update_next_run(scheduled_call)
                 continue
 
             # test to see if any tasks from this schedule are already in the queue
@@ -588,5 +591,4 @@ def scheduler_complete_callback(call_request, call_report):
 
     scheduler = dispatch_factory.scheduler()
     scheduler.update_last_run(scheduled_call, call_report)
-    scheduler.update_next_run(scheduled_call)
 
