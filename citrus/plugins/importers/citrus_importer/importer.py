@@ -201,14 +201,14 @@ class CitrusImporter(Importer):
         downloaded = []
         request_list = []
         for unit, local_unit in units:
-            download = unit['_download']
-            protocol = download['protocol']
-            details = download['details']
-            storage_path = local_unit.storage_path
-            if not storage_path:
+            download = unit.get('_download')
+            if not download:
                 # not all units are associated with files.
                 progress.set_action('skipped', '')
                 continue
+            protocol = download['protocol']
+            details = download['details']
+            storage_path = local_unit.storage_path
             request = DownloadRequest(protocol, details, storage_path)
             request_list.append(request)
         def _fn(request):
