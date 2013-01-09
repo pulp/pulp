@@ -127,8 +127,7 @@ class Scheduler(object):
 
             # updating the next run time will keep the scheduler from finding
             # this call again before it completes
-            # it's also important to update the next run time even if the call
-            # is disabled
+            # it's also important to update the next run time for disabled calls
             self.update_next_run(scheduled_call)
 
             if not scheduled_call['enabled']:
@@ -141,15 +140,18 @@ class Scheduler(object):
                 _LOG.error(log_msg % {'s': scheduled_call['id']})
                 continue
 
+            # scheduled calls are always itinerary calls: calls that generate
+            # call requests
             # get the itinerary call request and execute
             serialized_call_request = scheduled_call['serialized_call_request']
-            call_request = call.CallRequest.deserialize(serialized_call_request)
-            call_report = call.CallReport.from_call_request(call_request)
-            call_report.serialize_result = False
-            call_report = coordinator.execute_call_synchronously(call_request, call_report)
+            itinerary_call_request = call.CallRequest.deserialize(serialized_call_request)
+            itinerary_call_request.archive = False
+            itinerary_call_report = call.CallReport.from_call_request(itinerary_call_request)
+            itinerary_call_report.serialize_result = False
+            itinerary_call_report = coordinator.execute_call_synchronously(itinerary_call_request, itinerary_call_report)
 
             # call request group is the return of an itinerary function
-            call_request_group = call_report.result
+            call_request_group = itinerary_call_report.result
             map(lambda r: setattr(r, 'schedule_id', str(scheduled_call['_id'])), call_request_group)
             yield  call_request_group
 
