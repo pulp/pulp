@@ -137,8 +137,8 @@ class Scheduler(object):
             # test to see if any tasks from this schedule are already in the queue
             already_queued = coordinator.find_call_reports(schedule_id=scheduled_call['id'])
             if already_queued:
-                log_msg = _('Schedule %(s)s skipped: last scheduled call still running') % {'s': scheduled_call['id']}
-                _LOG.info(log_msg)
+                log_msg = _('Schedule %(s)s skipped: last scheduled call still running')
+                _LOG.error(log_msg % {'s': scheduled_call['id']})
                 continue
 
             # get the itinerary call request and execute
