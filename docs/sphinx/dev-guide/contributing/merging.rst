@@ -16,7 +16,9 @@ release you intend to merge into. Once review and revision is complete, merge
 your branch from the pull request web page. Do not delete the branch yet.
 
 For cases where there are few merge conflicts, merge your working branch manually
-into each successively newer release branch, and finally into master.
+into each successively newer release branch, and finally into master. Generally,
+unless you are resolving conflicts or otherwise modifying your initial fix to
+accommodate the newer branches, additional pull requests just add noise and bureaucracy.
 
 For cases where there are substantial merge conflicts whose resolution merits
 review, create a new branch from your working branch and merge the release branch
