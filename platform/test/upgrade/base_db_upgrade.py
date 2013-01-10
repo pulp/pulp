@@ -27,6 +27,7 @@ def configure_for_non_unit_test_db():
     import test_db_yum_repos
     from pulp.server.upgrade.db import yum_repos as repo_db_upgrades
 
+    global DB_FILE_PATH
     DB_FILE_PATH = '/home/jdob/code/pulp/databases/large.tar.gz'
 
     # These rely on the filesystem being in a specific state
