@@ -49,11 +49,7 @@ branch that will need to contain your work.
 
 For example, if your work needs to go in versions 2.0, 2.1 and 2.2 alpha, you
 would create your branch from the 2.0 branch. After making some commits, merge
-your branch into each of the release branches. Merge into the oldest branch
-with a pull request, and use your discretion to decide if a pull request
-is necessary for the other branches. Generally, unless you are resolving conflicts
-or otherwise modifying your initial fix to accommodate the newer branches, additional
-pull requests just add noise and bureaucracy.
+your branch into each of the release branches.
 
 
 Cherry-picking and Rebasing
