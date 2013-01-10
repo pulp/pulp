@@ -145,6 +145,54 @@ Pulp citrus handlers.
 %{_usr}/lib/pulp/agent/handlers/citrus.py*
 %doc
 
+%post
+#
+# Generate the certificate used to access the local server.
+#
+
+PKI=/etc/pki/pulp
+CA_KEY=$PKI/ca.key
+CA_CRT=$PKI/ca.crt
+BASE='citrus'
+TMP=/tmp/$RANDOM
+CN='admin:admin:0'
+
+mkdir -p $TMP
+
+# create client key
+openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
+
+# create signing request for client
+openssl req \
+  -new \
+  -key $TMP/$BASE.key \
+  -out $TMP/$BASE.req \
+  -subj "/CN=$CN" &> /dev/null
+
+# sign server request w/ CA key and gen x.509 cert.
+openssl x509 \
+  -req  \
+  -in $TMP/$BASE.req \
+  -out $TMP/$BASE.xx \
+  -sha1 \
+  -CA $CA_CRT \
+  -CAkey $CA_KEY \
+  -CAcreateserial \
+  -set_serial $RANDOM \
+  -days 3650 &> /dev/null
+
+# bundle
+cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI/citrus.crt
+
+# clean
+rm -rf $TMP
+
+%postun
+#
+# clean up the citrus certificate.
+#
+rm /etc/pki/pulp/citrus.crt
+
 
 %changelog
 * Mon Dec 17 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
