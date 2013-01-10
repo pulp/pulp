@@ -72,13 +72,19 @@ class Task(object):
             raise TypeError('No comparison defined between task and %s' % type(other))
         return self.call_request.id == other.call_request.id
 
-    # progress information -----------------------------------------------------
+    # in-context task control --------------------------------------------------
 
     def _report_progress(self, progress):
         """
         Progress report callback
         """
         self.call_report.progress = progress
+
+    def _set_cancel_control_hook(self, hook):
+        self.call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, hook)
+
+    def _clear_cancel_control_hook(self):
+        self.call_request.remove_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
 
     # task lifecycle -----------------------------------------------------------
 
@@ -87,6 +93,7 @@ class Task(object):
         Mark the task as skipped. Called *instead* of run.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
+
         self._complete(dispatch_constants.CALL_SKIPPED_STATE)
 
     def run(self):
@@ -94,11 +101,14 @@ class Task(object):
         Public wrapper to kick off the call in the call_request in a new thread.
         """
         assert self.call_report.state in dispatch_constants.CALL_READY_STATES
+
         # NOTE using run wrapper so that state transition is protected by the
         # task queue lock and doesn't occur in another thread
         self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+
         task_thread = threading.Thread(target=self._run)
         task_thread.start()
+
         # I'm fairly certain these will always be called *before* the context
         # switch to the task_thread
         self.call_life_cycle_callbacks(dispatch_constants.CALL_RUN_LIFE_CYCLE_CALLBACK)
@@ -111,26 +121,33 @@ class Task(object):
         # used for calling _run directly during testing
         principal_manager = managers_factory.principal_manager()
         principal_manager.set_principal(self.call_request.principal)
+
         # generally set in the wrapper, but not when called directly
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
             self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
+
         dispatch_context.CONTEXT.set_task_attributes(self)
+
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
+
         try:
             result = call(*args, **kwargs)
+
         except:
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
-            # to bad 2.4 doesn't support try/except/finally blocks
+            return self._failed(e, tb)
+
+        else:
+            return self._succeeded(result)
+
+        finally:
             principal_manager.clear_principal()
             dispatch_context.CONTEXT.clear_task_attributes()
-            return self._failed(e, tb)
-        principal_manager.clear_principal()
-        dispatch_context.CONTEXT.clear_task_attributes()
-        return self._succeeded(result)
 
     def _succeeded(self, result=None):
         """
@@ -139,8 +156,11 @@ class Task(object):
         @type  result: any
         """
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
+
         self.call_report.result = result
+
         _LOG.info(_('SUCCESS: %(t)s') % {'t': str(self)})
+
         self.call_life_cycle_callbacks(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_FINISHED_STATE)
 
@@ -153,9 +173,12 @@ class Task(object):
         @type  traceback: TracebackType instance
         """
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
+
         self.call_report.exception = exception
         self.call_report.traceback = traceback
+
         _LOG.info(_('FAILURE: %(t)s') % {'t': str(self)})
+
         self.call_life_cycle_callbacks(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_ERROR_STATE)
 
@@ -164,14 +187,19 @@ class Task(object):
         Cleanup and state finalization for call on either success or failure.
         """
         assert state in dispatch_constants.CALL_COMPLETE_STATES
+
         self.call_report.finish_time = datetime.datetime.now(dateutils.utc_tz())
         self.call_request_exit_state = state
+
         self._call_complete_callback()
+
         # don't set the state to complete in the report until the task is actually complete
         self.call_report.state = state
+
         self.call_life_cycle_callbacks(dispatch_constants.CALL_COMPLETE_LIFE_CYCLE_CALLBACK)
         if not self.call_request.archive:
             return
+
         # archive the completed call
         dispatch_history.archive_call(self.call_request, self.call_report)
 
@@ -181,8 +209,10 @@ class Task(object):
         """
         if self.complete_callback is None:
             return
+
         try:
             self.complete_callback(self)
+
         except Exception, e:
             _LOG.exception(e)
 
@@ -194,6 +224,7 @@ class Task(object):
         Key must be a member of dispatch_constants.CALL_EXECUTION_HOOKS
         """
         assert key in dispatch_constants.CALL_LIFE_CYCLE_CALLBACKS
+
         for hook in self.call_request.execution_hooks[key]:
             hook(self.call_request, self.call_report)
 
@@ -222,13 +253,17 @@ class Task(object):
         # a complete task cannot be cancelled
         if self.call_report.state in dispatch_constants.CALL_COMPLETE_STATES:
             return None
+
         # to cancel a running task, the cancel control hook *must* be called
         if self.call_report.state == dispatch_constants.CALL_RUNNING_STATE:
+
             try:
                 self._call_cancel_control_hook()
+
             except Exception, e:
                 _LOG.exception(e)
                 return False
+
         # nothing special needs to happen to cancel a task in a ready state
         self.call_life_cycle_callbacks(dispatch_constants.CALL_CANCEL_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_CANCELED_STATE)
@@ -236,12 +271,13 @@ class Task(object):
 
     def _call_cancel_control_hook(self):
         cancel_hook = self.call_request.control_hooks[dispatch_constants.CALL_CANCEL_CONTROL_HOOK]
+
         if cancel_hook is None:
             field = dispatch_constants.call_control_hook_to_string(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
             raise dispatch_exceptions.MissingCancelControlHook(field)
+
         # it is expected that this hook can and even will throw an exception
-        # if this occurs, the task DID NOT CANCEL and should not proceed as if
-        # it has
+        # if this occurs, the task DID NOT CANCEL and should not proceed as if it has
         cancel_hook(self.call_request, self.call_report)
 
 # asynchronous task ------------------------------------------------------------
@@ -261,30 +297,38 @@ class AsyncTask(Task):
         Run the call in the call request.
         Generally the target of a new thread.
         """
+
         # used for calling _run directly during testing
         principal_manager = managers_factory.principal_manager()
         principal_manager.set_principal(self.call_request.principal)
+
         # usually set in the wrapper, unless called directly
         if self.call_report.state in dispatch_constants.CALL_READY_STATES:
             self.call_report.state = dispatch_constants.CALL_RUNNING_STATE
+
         self.call_report.start_time = datetime.datetime.now(dateutils.utc_tz())
+
         dispatch_context.CONTEXT.set_task_attributes(self)
+
         call = self.call_request.call
         args = copy.copy(self.call_request.args)
         kwargs = copy.copy(self.call_request.kwargs)
+
         try:
             result = call(*args, **kwargs)
+
         except:
             # NOTE: this is making an assumption here that the call failed to
             # execute, if this isn't the case, or it got far enough, we may be
             # faced with _succeeded or _failed being called again
             e, tb = sys.exc_info()[1:]
             _LOG.exception(e)
-            # too bad 2.4 doesn't support try/except/finally blocks
+            return self._failed(e, tb)
+
+        else:
+            return result
+
+        finally:
             principal_manager.clear_principal()
             dispatch_context.CONTEXT.clear_task_attributes()
-            return self._failed(e, tb)
-        principal_manager.clear_principal()
-        dispatch_context.CONTEXT.clear_task_attributes()
-        return result
 
