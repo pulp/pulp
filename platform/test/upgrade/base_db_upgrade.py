@@ -15,12 +15,35 @@ import unittest
 
 from db_loader import DB_DIR, PulpTestDatabase
 
-
 # Full path to the DB that will be loaded for the test run
 DB_FILE_PATH = os.path.join(DB_DIR, 'unit_test.tar.gz')
-#DB_FILE_PATH = '/home/jdob/code/pulp/pulp-dbs/large.tar.gz'
+
+
+def configure_for_non_unit_test_db():
+    """
+    Used to tweak the settings to run against the sample DBs that jdob collected.
+    Once the bulk of upgrade has been debugged this can be deleted.
+    """
+    import test_db_yum_repos
+    from pulp.server.upgrade.db import yum_repos as repo_db_upgrades
+
+    DB_FILE_PATH = '/home/jdob/code/pulp/databases/large.tar.gz'
+
+    # These rely on the filesystem being in a specific state
+    repo_db_upgrades.SKIP_GPG_KEYS = True
+    repo_db_upgrades.SKIP_SERVER_CONF = True
+
+    # These tests munge the repos to point to a place on disk and can only
+    # run against the unit test DB
+    test_db_yum_repos.RepoGpgKeyTests.ENABLED = False
+
 
 class BaseDbUpgradeTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(BaseDbUpgradeTests, cls).setUpClass()
+#        configure_for_non_unit_test_db()
 
     def setUp(self):
         super(BaseDbUpgradeTests, self).setUp()

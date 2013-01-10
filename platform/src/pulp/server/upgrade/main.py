@@ -23,8 +23,8 @@ from okaara.progress import ThreadedSpinner
 from pymongo import Connection
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
-from pulp.server.upgrade.db import (cds, consumers, events, repos, tasks,
-                                    units, users)
+from pulp.server.upgrade.db import (all_repos, cds, consumers, events, iso_repos,
+                                    tasks, units, users, yum_repos)
 
 
 # Indicates which Pulp stream (v1, v2, etc.) is installed
@@ -38,7 +38,9 @@ DB_UPGRADE_CALLS = (
     (events.upgrade, _('Event')),
     (users.upgrade, _('Users, Permissions, and Roles')),
     (tasks.upgrade, _('Tasks')),
-    (repos.upgrade, _('Repositories, Content')),
+    (yum_repos.upgrade, _('Repositories, Content')),
+    (iso_repos.upgrade, _('File Repositories, Content')),
+    (all_repos.upgrade, _('Repository Groups, Sync Schedules')),
     (units.upgrade, _('Packages, Errata, and Distributions')),
 )
 
