@@ -136,7 +136,7 @@ def _repo_importers(v1_database, v2_database, report):
             'importer_type_id' : YUM_IMPORTER_TYPE_ID,
             'scratchpad' : None,
             'last_sync' : v1_repo['last_sync'],
-            'scheduled_syncs' : [], # likely need to revisit
+            'scheduled_syncs' : [],
         }
 
         # The configuration intentionally omits the importer configuration
@@ -146,13 +146,13 @@ def _repo_importers(v1_database, v2_database, report):
         # is the desired behavior of the upgrade.
 
         config = {
-            'feed' : None, # set below
+            'feed_url' : None, # set below
             'ssl_ca_cert' : v1_repo['feed_ca'],
             'ssl_client_cert' : v1_repo['feed_cert'],
         }
 
         if v1_repo['source']: # will be None for a feedless repo
-            config['feed'] = v1_repo['source']['url']
+            config['feed_url'] = v1_repo['source']['url']
 
         # Load values from the static server.conf file
         if not SKIP_SERVER_CONF:
@@ -177,12 +177,11 @@ def _repo_distributors(v1_database, v2_database, report):
     v2_repo_coll = v2_database.repos
     v2_dist_coll = v2_database.repo_distributors
 
-    # Only the yum distributor is added in this process. The ISO distributor
+    # Only the yum distributor is added in this process. The export distributor
     # will be added to any repositories that do not have it as part of the
     # normal DB migration process.
 
-    # Idempotency: There is a single importer per repo, so we can simply check
-    # for an importer with the given repo ID
+    # Idempotency: Only one distributor is added per repo, so check for that
     v2_distributor_repo_ids = [x['repo_id'] for x in v2_dist_coll.find({}, {'repo_id' : 1})]
     spec = {
         '$and' : [

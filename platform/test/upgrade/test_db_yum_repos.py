@@ -76,7 +76,7 @@ class ReposUpgradeNoFilesTests(BaseDbUpgradeTests):
             self.assertEqual(v2_importer['last_sync'], v1_repo['last_sync'])
 
             config = v2_importer['config']
-            self.assertEqual(config['feed'], v1_repo['source']['url'])
+            self.assertEqual(config['feed_url'], v1_repo['source']['url'])
             self.assertEqual(config['ssl_ca_cert'], v1_repo['feed_ca'])
             self.assertEqual(config['ssl_client_cert'], v1_repo['feed_cert'])
             self.assertTrue('skip' not in config)
