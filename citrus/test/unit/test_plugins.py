@@ -109,7 +109,7 @@ class TestPlugins(WebTest):
             self.REPO_ID,
             CITRUS_DISTRUBUTOR,
             {},
-            True,
+            False,
             distributor_id=CITRUS_DISTRUBUTOR)
         manager = factory.content_manager()
         unit = dict(self.UNIT_METADATA)
@@ -223,7 +223,12 @@ class TestAgentPlugin(TestPlugins):
         # add distrubutor
         manager = factory.repo_distributor_manager()
         cfg = dict(base_url='file:///', virtual_host=self.virtual_host)
-        manager.add_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR, cfg, True, CITRUS_DISTRUBUTOR)
+        manager.add_distributor(
+            self.REPO_ID,
+            CITRUS_DISTRUBUTOR,
+            cfg,
+            False,
+            CITRUS_DISTRUBUTOR)
         # bind
         manager = factory.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, CITRUS_DISTRUBUTOR)
