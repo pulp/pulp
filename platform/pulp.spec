@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.6
-Release: 0.19.rc
+Version: 2.0.7
+Release: 0.1.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -408,6 +408,17 @@ exit 0
 %endif
 
 %changelog
+* Fri Jan 11 2013 Jeff Ortel <jortel@redhat.com> 2.0.7-0.1.beta
+- 889893 - added detection of still queued scheduled calls and skip re-
+  enqueueing with log message (jason.connor@gmail.com)
+- 891760 - added importer and distributor configs to kwargs and
+  kwargs_blacklist to prevent logging of sensitive data
+  (jason.connor@gmail.com)
+- 889320 - updating relabel script to run restorecon on /var/www/pulp_puppet
+  (skarmark@redhat.com)
+- 889320 - adding httpd_sys_content_rw_t context to /var/www/pulp_puppet
+  (skarmark@redhat.com)
+
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
 - 
 
