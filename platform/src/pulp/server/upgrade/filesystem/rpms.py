@@ -32,6 +32,11 @@ def upgrade(v1_database, v2_database):
     return report
 
 def _rpms(v1_database, v2_database, report):
+    """
+    Migrate RPM/SRPM units on filesystem from v1 to v2 database. This assumes that the
+    database migration is already complete at this point. The rpm units are migrated
+    from v1 location to v2 content location /var/lib/pulp/content/{rpm,srpm}.
+    """
     rpm_coll = v2_database.units_rpm
     all_v1_rpms = v1_database.packages.find()
     for v1_rpm in all_v1_rpms:
@@ -57,6 +62,12 @@ def _rpms(v1_database, v2_database, report):
     return True
 
 def _drpms(v1_database, v2_database, report):
+    """
+    Migrate DRPMS from v1 to v2 location on filesystem. DRPMs are not inventoried in the DB in v1.
+    This method looks up each repo in v1 for repodata and pretodelta in particular. If availble,
+    It parses the presto, extracts the drpm info and finds the drpms in repo dir in v1 and migrates
+    then to /var/lib/pulp/content/drpm/ in v1.
+    """
     drpm_v2_coll = v2_database.units_drpm
     v1_coll = v1_database.repos
     repos = v1_coll.find()

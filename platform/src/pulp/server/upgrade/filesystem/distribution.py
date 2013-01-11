@@ -26,6 +26,11 @@ def upgrade(v1_database, v2_database):
     return report
 
 def _distribution(v1_database, v2_database, report):
+    """
+    Migrate distribution and associated from v1 to v2 location on filesystem. It assumes
+    the distribution is already migrated in the Database. The distribution and its files
+    from v1 are migarted to /var/lib/pulp/content/distribution/ in v2.
+    """
     all_v2_distros = v2_database.units_distribution
     all_v1_distros = v1_database.distribution.find()
     for v1_distro in all_v1_distros:
