@@ -26,15 +26,16 @@ import base
 from pulp.bindings.responses import Response, Task
 from pulp.client.commands import options
 from pulp.client.commands.repo import sync_publish as sp
+from pulp.client.extensions.core import TAG_TITLE
 
 from pulp.client.extensions.extensions import PulpCliOption
 
 
 CALL_REPORT_TEMPLATE = {
     "exception": None,
-    "task_group_id": 'default-group',
-    "task_id": 'default-id',
-    "tags": ['pulp:action:sync'],
+    "call_request_group_id": 'default-group',
+    "call_request_id": 'default-id',
+    "call_request_tags": ['pulp:action:sync'],
     "reasons": [],
     "start_time": None,
     "traceback": None,
@@ -172,9 +173,46 @@ class SyncStatusCommand(base.PulpClientTests):
         self.assertEqual(self.command.name, 'status')
         self.assertEqual(self.command.description, sp.DESC_SYNC_STATUS)
 
-    def test_run(self):
-        # Make sure it doesn't raise an exception
-        self.command.run()
+    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
+    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
+    def test_run(self, mock_get, mock_status):
+        # Setup
+        data = {
+            options.OPTION_REPO_ID.keyword : 'test-repo',
+        }
+
+        # Simulate a task already running
+        task_data = copy.copy(CALL_REPORT_TEMPLATE)
+        task_data['response'] = 'accepted'
+        task_data['state'] = 'running'
+        task = Task(task_data)
+        mock_get.return_value = Response(200, [task])
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(1, mock_get.call_count)
+        self.assertEqual(1, mock_status.call_count)
+
+    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
+    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
+    def test_run_no_status(self, mock_get, mock_status):
+        # Setup
+        data = {
+            options.OPTION_REPO_ID.keyword : 'test-repo',
+        }
+
+        # No tasks are running
+        mock_get.return_value = Response(200, [])
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(1, mock_get.call_count)
+        self.assertEqual(0, mock_status.call_count)
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
 
 
 class StatusRendererTests(unittest.TestCase):
@@ -308,3 +346,63 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         self.assertEqual(2, len(tags))
         self.assertEqual(tags[1], 'background')
 
+
+class PublishStatusCommand(base.PulpClientTests):
+    def setUp(self):
+        super(PublishStatusCommand, self).setUp()
+        self.renderer = mock.MagicMock()
+        self.command = sp.PublishStatusCommand(self.context, self.renderer)
+
+    def test_structure(self):
+        # Ensure all of the expected options are there
+        found_options = set(self.command.options)
+        expected_options = set([options.OPTION_REPO_ID])
+        self.assertEqual(found_options, expected_options)
+
+        # Ensure the correct method is wired up
+        self.assertEqual(self.command.method, self.command.run)
+
+        # Ensure the correct metadata
+        self.assertEqual(self.command.name, 'status')
+        self.assertEqual(self.command.description, sp.DESC_PUBLISH_STATUS)
+
+    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
+    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
+    def test_run(self, mock_get, mock_status):
+        # Setup
+        data = {
+            options.OPTION_REPO_ID.keyword : 'test-repo',
+        }
+
+        # Simulate a task already running
+        task_data = copy.copy(CALL_REPORT_TEMPLATE)
+        task_data['response'] = 'accepted'
+        task_data['state'] = 'running'
+        task = Task(task_data)
+        mock_get.return_value = Response(200, [task])
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(1, mock_get.call_count)
+        self.assertEqual(1, mock_status.call_count)
+
+    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
+    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
+    def test_run_no_status(self, mock_get, mock_status):
+        # Setup
+        data = {
+            options.OPTION_REPO_ID.keyword : 'test-repo',
+        }
+
+        # No tasks are running
+        mock_get.return_value = Response(200, [])
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(1, mock_get.call_count)
+        self.assertEqual(0, mock_status.call_count)
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])

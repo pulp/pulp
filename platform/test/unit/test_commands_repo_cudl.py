@@ -19,7 +19,8 @@ import base
 
 from pulp.client.commands.repo import cudl
 from pulp.client.commands.options import OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID
-from pulp.client.extensions.core import TAG_SUCCESS
+from pulp.client.extensions.core import TAG_SUCCESS, TAG_TITLE
+
 
 class CreateRepositoryCommandTests(base.PulpClientTests):
 
@@ -106,7 +107,7 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
         self.assertTrue(url.endswith('/repositories/test-repo/'))
 
         self.assertEqual(1, len(self.prompt.get_write_tags()))
-        self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
+        self.assertEqual('queued', self.prompt.get_write_tags()[0])
 
     def test_run_not_found(self):
         # Setup
@@ -198,7 +199,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
     def test_structure(self):
         # Ensure the correct arguments are present
-        expected_option_names = set(['--details', '--fields'])
+        expected_option_names = set(['--details', '--fields', '--all'])
         found_option_names = set([o.name for o in self.command.options])
         self.assertEqual(expected_option_names, found_option_names)
 
@@ -208,6 +209,13 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         # Ensure the correct metadata
         self.assertEqual(self.command.name, 'list')
         self.assertEqual(self.command.description, cudl.DESC_LIST)
+
+    def test_no_all_structure(self):
+        # Ensure the all argument isn't present
+        self.command = cudl.ListRepositoriesCommand(self.context, include_all_flag=False)
+        expected_option_names = set(['--details', '--fields'])
+        found_option_names = set([o.name for o in self.command.options])
+        self.assertEqual(expected_option_names, found_option_names)
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document_list')
     def test_run_with_details(self, mock_call):
@@ -236,12 +244,14 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual(render_kwargs['filters'], expected)
         self.assertEqual(render_kwargs['order'], expected)
 
+        self.assertEqual(1, len(self.prompt.get_write_tags())) # only one title, not the others
+
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document_list')
     def test_run_with_fields(self, mock_call):
         # Setup
         data = {
             'details' : False,
-            'fields' : 'display_name'
+            'fields' : 'display_name',
         }
 
         self.server_mock.request.return_value = 200, []
@@ -255,3 +265,21 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
         self.assertEqual(render_kwargs['filters'], expected_filters)
         self.assertEqual(render_kwargs['order'], ['id'])
+
+        self.assertEqual(1, len(self.prompt.get_write_tags())) # only one title, not the others
+
+    def test_all(self):
+        # Setup
+        data = {
+            'details' : True,
+            'all' : True,
+        }
+
+        self.server_mock.request.return_value = 200, []
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(2, len(self.prompt.get_write_tags())) # only one title, not the others
+        self.assertEqual([TAG_TITLE, TAG_TITLE], self.prompt.get_write_tags())

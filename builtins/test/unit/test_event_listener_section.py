@@ -221,7 +221,7 @@ class TestRESTAPISection(unittest.TestCase):
         self.section.create(**kwargs)
 
         self.section.context.server.event_listener.create.assert_called_once_with(
-            'rest-api',
+            'http',
             {'url': 'http://redhat.com'},
             'repo-sync-finished'
         )
@@ -236,7 +236,7 @@ class TestRESTAPISection(unittest.TestCase):
         self.section.create(**kwargs)
 
         self.section.context.server.event_listener.create.assert_called_once_with(
-            'rest-api',
+            'http',
             {
                 'url': 'http://redhat.com',
                 'username' : 'me',

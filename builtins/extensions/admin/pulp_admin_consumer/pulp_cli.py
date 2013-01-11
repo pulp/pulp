@@ -14,7 +14,7 @@
 import time
 from gettext import gettext as _
 
-from pulp.client import arg_utils
+from pulp.client import arg_utils, validators
 from pulp.client.extensions.extensions import (PulpCliSection, PulpCliCommand,
     PulpCliOption, PulpCliFlag)
 from pulp.bindings.exceptions import NotFoundException
@@ -23,11 +23,14 @@ from pulp.client.commands.criteria import CriteriaCommand
 # -- framework hook -----------------------------------------------------------
 
 def initialize(context):
-    consumer_section = AdminConsumerSection(context)
-    consumer_section.add_subsection(ContentSection(context))
-    consumer_section.add_subsection(ConsumerGroupSection(context))
-    context.cli.add_section(consumer_section)
-    
+    # XXX (jconnor 2012-11-08) temporarily disabled as only functional
+    # implementations have been moved under the 'rpm' section
+    pass
+    #consumer_section = AdminConsumerSection(context)
+    #consumer_section.add_subsection(ContentSection(context))
+    #consumer_section.add_subsection(ConsumerGroupSection(context))
+    #context.cli.add_section(consumer_section)
+
 # -- common exceptions --------------------------------------------------------
 
 class InvalidConfig(Exception):
@@ -43,13 +46,14 @@ class InvalidConfig(Exception):
 class AdminConsumerSection(PulpCliSection):
 
     def __init__(self, context):
-        PulpCliSection.__init__(self, 'consumer', 'consumer lifecycle (list, update, etc.) commands')
+        PulpCliSection.__init__(self, 'consumer', _('register, bind, and interact with consumers'))
 
         self.context = context
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed', required=True)
+        consumer_id_option = PulpCliOption('--consumer-id', 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed',
+                                           required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', 'user-readable display name for the consumer', required=False)
         description_option = PulpCliOption('--description', 'user-readable description for the consumer', required=False)
 
@@ -92,8 +96,9 @@ class AdminConsumerSection(PulpCliSection):
         unbind_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
         unbind_command.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
         unbind_command.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
+        unbind_command.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
         self.add_command(unbind_command)
-        
+
         # History Retrieval Command
         history_command = PulpCliCommand('history', 'lists history of a consumer', self.history)
         history_command.add_option(PulpCliOption('--consumer-id', 'consumer id', required=True))
@@ -163,6 +168,7 @@ class AdminConsumerSection(PulpCliSection):
         # render
         self.prompt.render_title('Consumers')
         for c in response.response_body:
+            self._format_bindings(c)
             self.prompt.render_document(c, filters=filters, order=order)
 
     def search(self, **kwargs):
@@ -184,8 +190,9 @@ class AdminConsumerSection(PulpCliSection):
         consumer_id = kwargs['consumer-id']
         repo_id = kwargs['repo-id']
         distributor_id = kwargs['distributor-id']
+        force = kwargs['force']
         try:
-            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id)
+            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
             self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
@@ -199,7 +206,6 @@ class AdminConsumerSection(PulpCliSection):
         order = filters
         for history in history_list:
             self.prompt.render_document(history, filters=filters, order=order)
-
 
     def install(self, **kwargs):
         consumer_id = kwargs['consumer-id']
@@ -216,6 +222,19 @@ class AdminConsumerSection(PulpCliSection):
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
+    def _format_bindings(self, consumer):
+        bindings = consumer.get('bindings')
+        if not bindings:
+            return
+        confirmed = []
+        unconfirmed = []
+        for binding in bindings:
+            repo_id = binding['repo_id']
+            if (binding['deleted'] or len(binding['consumer_actions'])):
+                unconfirmed.append(repo_id)
+            else:
+                confirmed.append(repo_id)
+        consumer['bindings'] = dict(confirmed=confirmed, unconfirmed=unconfirmed)
 
     def _parse_notes(self, notes_list):
         """
@@ -559,7 +578,7 @@ class ConsumerGroupMemberSection(PulpCliSection):
         self.context = context
         self.prompt = context.prompt
 
-        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True)
+        id_option = PulpCliOption('--consumer-group-id', _('id of a consumer group'), required=True, validate_func=validators.id_validator)
 
         list_command = PulpCliCommand('list', _('list of consumers in a particular group'), self.list)
         list_command.add_option(id_option)
@@ -582,7 +601,7 @@ class ConsumerGroupMemberSection(PulpCliSection):
         consumer_group_list = self.context.server.consumer_group_search.search(**criteria)
         if len(consumer_group_list) != 1:
             self.prompt.write(
-                'Consumer group [%s] does not exist on the server' % 
+                'Consumer group [%s] does not exist on the server' %
                 consumer_group_id, tag='not-found')
         else:
             consumer_ids = consumer_group_list[0].get('consumer_ids')
@@ -616,7 +635,8 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_subsection(ConsumerGroupMemberSection(context))
 
         # Common Options
-        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'), required=True)
+        id_option = PulpCliOption('--consumer-group-id', _('uniquely identifies the consumer group; only alphanumeric, -, and _ allowed'),
+                                  required=True, validate_func=validators.id_validator)
         name_option = PulpCliOption('--display-name', _('user-readable display name for the consumer group'), required=False)
         description_option = PulpCliOption('--description', _('user-readable description for the consumer group'), required=False)
 
@@ -657,7 +677,7 @@ class ConsumerGroupSection(PulpCliSection):
         self.add_command(CriteriaCommand(self.search, include_search=True))
 
         # Bind Command
-        bind_command = PulpCliCommand('bind', 
+        bind_command = PulpCliCommand('bind',
             _('binds each consumer in a consumer group to a repository '
               'distributor for consuming published content'),
             self.bind)

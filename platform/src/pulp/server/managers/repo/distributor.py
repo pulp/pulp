@@ -92,7 +92,8 @@ class RepoDistributorManager(object):
         @rtype:  list of dict
         """
         spec = {'repo_id' : {'$in' : repo_id_list}}
-        return list(RepoDistributor.get_collection().find(spec))
+        projection = {'scratchpad' : 0}
+        return list(RepoDistributor.get_collection().find(spec, projection))
 
     def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
                         auto_publish, distributor_id=None):
@@ -243,10 +244,6 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
         distributor_instance.distributor_removed(transfer_repo, call_config)
-
-        # clean up binds
-        bind_manager = manager_factory.consumer_bind_manager()
-        bind_manager.distributor_deleted(repo_id, distributor_id)
 
         # Update the database to reflect the removal
         distributor_coll.remove(repo_distributor, safe=True)

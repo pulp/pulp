@@ -32,12 +32,12 @@ class RepoSection(PulpCliSection):
         @param context:
         @type  context: pulp.client.extensions.core.ClientContext
         """
-        PulpCliSection.__init__(self, 'repo', _('general repository commands'))
+        PulpCliSection.__init__(self, 'repo', _('list repositories and manage repo groups'))
 
         self.context = context
         self.prompt = context.prompt # for easier access
 
-        self.add_command(repo_commands.ListRepositoriesCommand(context))
+        self.add_command(repo_commands.ListRepositoriesCommand(context, include_all_flag=False))
 
         # Subsections
         self.add_subsection(RepoGroupSection(context))

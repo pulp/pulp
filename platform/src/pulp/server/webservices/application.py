@@ -10,8 +10,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import sys
 
-# XXX monkey patching web.py YUCK!
 # This keeps the web.py wsgi app from trying to handle otherwise unhandled
 # exceptions and lets Pulp error handling middleware handle them instead
 # This exists here as it is the first place that Pulp imports web.py, so all
@@ -29,23 +29,23 @@ import web
 
 web.application.handle_with_processors = _handle_with_processors
 
-
 from pulp.server import config # automatically loads config
 from pulp.server import logs
 from pulp.server.db import connection as db_connection
 
 # We need to read the config, start the logging, and initialize the db
 # connection prior to any other imports, since some of the imports will invoke
-# setup methods
+# setup methods.
 logs.start_logging()
 db_connection.initialize()
 
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.agent.direct.services import Services as AgentServices
 
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.db import reaper
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch import history as dispatch_history
 from pulp.server.managers import factory as manager_factory
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
@@ -73,49 +73,81 @@ URLS = (
     '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,
-    )
+)
 
 _LOG = logging.getLogger(__name__)
 _IS_INITIALIZED = False
 
 STACK_TRACER = None
 
-# initialization ---------------------------------------------------------------
+# -- initialization -----------------------------------------------------------
+
+class InitializationException(Exception):
+
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        self.message = message
+
 
 def _initialize_pulp():
-    # XXX ORDERING COUNTS
+
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
-    # over itself on start up. If you do not know where to add something, ASK!
+    # over itself on start up.
+
     global _IS_INITIALIZED, STACK_TRACER
     if _IS_INITIALIZED:
         return
-    _IS_INITIALIZED = True
 
-    # check our db version and other support
-    migration_models.check_package_versions()
+    # Verify the database has been migrated to the correct version. This is
+    # very likely a reason the server will fail to start.
+    try:
+        migration_models.check_package_versions()
+    except Exception:
+        msg  = 'The database has not been migrated to the current version. '
+        msg += 'Run pulp-manage-db and restart the application.'
+        raise InitializationException(msg), None, sys.exc_info()[2]
 
-    # pulp generic content initialization
+    # Load plugins and resolve against types. This is also a likely candidate
+    # for causing the server to fail to start.
+    try:
+        plugin_api.initialize()
+    except Exception:
+        msg  = 'One or more plugins failed to initialize. If a new type has '
+        msg += 'been added, run pulp-manage-db to load the type into the '
+        msg += 'database and restart the application.'
+        raise InitializationException(msg), None, sys.exc_info()[2]
+
+    # There's a significantly smaller chance the following calls will fail.
+    # The previous two are likely user errors, but the remainder represent
+    # something gone horribly wrong. As such, I'm not going to account for each
+    # and instead simply let the exception itself bubble up.
+
+    # Load the mappings of manager type to managers
     manager_factory.initialize()
-    plugin_api.initialize()
 
-    # new async dispatch initialization
+    # Initialize the tasking subsystem
     dispatch_factory.initialize()
-    dispatch_history.start_reaper_thread()
 
-    # ensure necessary infrastructure
+    # Ensure the minimal auth configuration
     role_manager = manager_factory.role_manager()
     role_manager.ensure_super_user_role()
     user_manager = manager_factory.user_manager()
     user_manager.ensure_admin()
 
+    # database document reaper
+    reaper.initialize()
+
     # agent services
     AgentServices.start()
 
-    # setup debugging, if configured
+    # Setup debugging, if configured
     if config.config.getboolean('server', 'debugging_mode'):
         STACK_TRACER = StacktraceDumper()
         STACK_TRACER.start()
+
+    # If we got this far, it was successful, so flip the flag
+    _IS_INITIALIZED = True
 
 
 def wsgi_application():
@@ -127,5 +159,34 @@ def wsgi_application():
     application = web.subdir_application(URLS).wsgifunc()
     stack_components = [application, PostponedOperationMiddleware, ExceptionHandlerMiddleware]
     stack = reduce(lambda a, m: m(a), stack_components)
-    _initialize_pulp()
+
+    # The following intentionally don't raise the exception. The logging writes
+    # to both error_log and pulp.log. Raising the exception caused it to be
+    # logged twice to error_log, which was annoying. The Pulp server still
+    # fails to start (I can't even log in), and on attempts to use it the
+    # initialize failure message is logged again. I like that behavior so I
+    # think this approach makes sense. But if there is a compelling reason to
+    # raise the exception, change it; I don't have a strong conviction behind
+    # this approach other than the duplicate logging and the appearance that it
+    # works as desired.
+    # jdob, Nov 21, 2012
+
+    try:
+        _initialize_pulp()
+    except InitializationException, e:
+        _LOG.fatal('*************************************************************')
+        _LOG.fatal('The Pulp server failed to start due to the following reasons:')
+        _LOG.exception('  ' + e.message)
+        _LOG.fatal('*************************************************************')
+        return
+    except:
+        _LOG.fatal('*************************************************************')
+        _LOG.exception('The Pulp server encountered an unexpected failure during initialization')
+        _LOG.fatal('*************************************************************')
+        return
+
+    _LOG.info('*************************************************************')
+    _LOG.info('The Pulp server has been successfully initialized')
+    _LOG.info('*************************************************************')
+
     return stack

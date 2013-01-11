@@ -66,8 +66,13 @@ class Bind(Model):
     @type repo_id: str
     @ivar distributor_id: uniquely identifies a distributor.
     @type distributor_id: str
+    @ivar consumer_actions: Tracks consumer bind/unbind actions.
+      Each entry: {id:<str>, action:<str>, status:<str>}
+        Status: (pending|succeeded|failed)
+        Action: (bind|unbind)
+    @ivar deleted: Indicates the bind has been deleted.
+    @type deleted: bool
     """
-
     collection_name = 'consumer_bindings'
     unique_indices = (
         ('repo_id', 'distributor_id', 'consumer_id'),
@@ -75,6 +80,17 @@ class Bind(Model):
     search_indices = (
         ('consumer_id',),
     )
+
+    class Action:
+        # enumerated actions
+        BIND = 'bind'
+        UNBIND = 'unbind'
+
+    class Status:
+        # enumerated status
+        PENDING = 'pending'
+        SUCCEEDED = 'succeeded'
+        FAILED = 'failed'
 
     def __init__(self, consumer_id, repo_id, distributor_id):
         """
@@ -89,6 +105,8 @@ class Bind(Model):
         self.consumer_id = consumer_id
         self.repo_id = repo_id
         self.distributor_id = distributor_id
+        self.consumer_actions = []
+        self.deleted = False
 
 
 class UnitProfile(Model):

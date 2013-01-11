@@ -51,7 +51,7 @@ def display_group_status(context, renderer, task_group_id):
     :type  context: pulp.client.extensions.core.ClientContext
     :param renderer: StatusRenderer subclass that will interpret the sync or
            publish progress report
-    :type  renderer: StatusRenderer
+    :type  renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
     :param task_group_id: task group to display
     :type  task_group_id: str
     """
@@ -65,6 +65,9 @@ def display_group_status(context, renderer, task_group_id):
 # -- private ------------------------------------------------------------------
 
 def _display_status(context, renderer, task_list):
+    """
+    :type renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
+    """
 
     m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the server.')
     context.prompt.render_paragraph(m, tag='ctrl-c')
@@ -100,6 +103,8 @@ def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     """
     Poll an individual task and display the progress for it.
 
+    :type renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
+
     :return: the completed task
     :rtype: Task
     """
@@ -112,7 +117,7 @@ def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     while not response.response_body.is_completed():
 
         if response.response_body.is_waiting() and not quiet_waiting:
-            begin_spinner.next(_('Waiting to begin'))
+            begin_spinner.next(_('Waiting to begin next step'))
         else:
             renderer.display_report(response.response_body.progress)
 

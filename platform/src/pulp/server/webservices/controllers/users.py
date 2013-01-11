@@ -23,6 +23,7 @@ from pulp.server import config as pulp_config
 import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.webservices import execution
+from pulp.server.db.model.auth import Permission
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.webservices.controllers.base import JSONController
@@ -140,11 +141,14 @@ class UserResource(JSONController):
                                    [login],
                                    resources=resources,
                                    tags=tags)
-        # Remove permissions
-        user_link = serialization.link.current_link_obj()
-        permission_manager = managers.permission_manager()
-        permission_manager.delete_permission(user_link['_href'])
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+
+        # Delete any existing user permissions given to the creator of the user
+        user_link = serialization.link.current_link_obj()['_href']
+        if Permission.get_collection().find_one({'resource' : user_link}):
+            Permission.get_collection().remove({'resource' : user_link}, safe=True)
+
+        return self.ok(result)
 
 
     @auth_required(UPDATE)
@@ -163,7 +167,9 @@ class UserResource(JSONController):
                                    [login, delta],
                                    resources=resources,
                                    tags=tags)
-        return execution.execute_ok(self, call_request)
+        result = execution.execute(call_request)
+        result.update(serialization.link.current_link_obj())
+        return self.ok(result)
 
 
 class UserSearch(SearchController):

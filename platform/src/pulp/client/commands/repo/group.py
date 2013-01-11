@@ -49,6 +49,10 @@ DESC_MEMBER_LIST   = _('lists repositories in a repository group')
 DESC_MEMBER_ADD    = _('adds repositories to an existing repository group')
 DESC_MEMBER_REMOVE = _('removes repositories from a repository group')
 
+# Defaults to pass to render_document_list when displaying groups
+DEFAULT_FILTERS = ['id', 'display_name', 'description', 'repo_ids', 'notes']
+DEFAULT_ORDER = DEFAULT_FILTERS
+
 # -- commands -----------------------------------------------------------------
 
 class CreateRepositoryGroupCommand(PulpCliCommand):
@@ -79,9 +83,7 @@ class CreateRepositoryGroupCommand(PulpCliCommand):
             name = kwargs[OPTION_NAME.keyword]
         description = kwargs[OPTION_DESCRIPTION.keyword]
 
-        notes = None
-        if kwargs[OPTION_NOTES.keyword] is not None:
-            notes = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+        notes = kwargs.get(OPTION_NOTES.keyword, None)
 
         # Call the server
         self.context.server.repo_group.create(id, name, description, notes)
@@ -146,7 +148,7 @@ class UpdateRepositoryGroupCommand(PulpCliCommand):
             delta['display_name'] = delta.pop(OPTION_NAME.keyword)
 
         if delta.pop(OPTION_NOTES.keyword, None) is not None:
-            delta['notes'] = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+            delta['notes'] = kwargs[OPTION_NOTES.keyword]
 
         try:
             self.context.server.repo_group.update(kwargs[OPTION_GROUP_ID.keyword], delta)
@@ -179,9 +181,8 @@ class ListRepositoryGroupsCommand(PulpCliCommand):
 
         repo_group_list = self.context.server.repo_group.repo_groups().response_body
 
-        # Default flags to render_document_list
-        filters = ['id', 'display_name', 'description', 'repo_ids', 'notes']
-        order = filters
+        filters = DEFAULT_FILTERS
+        order = DEFAULT_ORDER
 
         if kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
@@ -190,7 +191,9 @@ class ListRepositoryGroupsCommand(PulpCliCommand):
             order = ['id']
 
         if len(repo_group_list) > 0:
-            self.prompt.render_document_list(repo_group_list, filters=filters, order=order)
+            self.prompt.render_document_list(repo_group_list,
+                                             filters=filters,
+                                             order=order)
         else:
             self.prompt.render_paragraph(_('No repository groups found'), tag='not-found')
 
@@ -211,8 +214,11 @@ class SearchRepositoryGroupsCommand(CriteriaCommand):
             description=description, include_search=True)
 
     def run(self, **kwargs):
+        self.prompt.render_title(_('Repository Groups'))
+
         repo_group_list = self.context.server.repo_group_search.search(**kwargs)
-        self.prompt.render_document_list(repo_group_list)
+        self.prompt.render_document_list(repo_group_list,
+                                         order=DEFAULT_ORDER)
 
 
 class ListRepositoryGroupMembersCommand(PulpCliCommand):
@@ -283,7 +289,7 @@ class RepositoryGroupMembersCommand(CriteriaCommand):
         group_id = kwargs.pop(OPTION_GROUP_ID.keyword)
         if not compat.any(kwargs.values()):
             self.prompt.render_failure_message(
-                _('at least one matching option must be provided.'))
+                _('At least one matching option must be provided.'))
             return
         del kwargs[FLAG_ALL.keyword]
         repo_ids = kwargs.pop(OPTION_REPO_ID.keyword)

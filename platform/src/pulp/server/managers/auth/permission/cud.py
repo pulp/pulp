@@ -15,14 +15,17 @@
 Contains the manager class and exceptions for operations surrounding the creation,
 update, and deletion on a Pulp Role.
 """
-from gettext import gettext as _
 
 import logging
+from gettext import gettext as _
 
-from pulp.server.db.model.auth import Permission, User
 from pulp.server.auth.authorization import _get_operations
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpDataException, PulpExecutionException
+from pulp.server.db.model.auth import Permission, User
+from pulp.server.exceptions import (
+    DuplicateResource, InvalidValue, MissingResource, PulpDataException,
+    PulpExecutionException)
 from pulp.server.managers import factory
+from pulp.server.managers.auth.user import system
 
 
 # -- constants ----------------------------------------------------------------
@@ -65,8 +68,6 @@ class PermissionManager(object):
 
         return created
 
-
-
     def update_permission(self, resource_uri, delta):
         """
         Updates a permission object.
@@ -97,7 +98,6 @@ class PermissionManager(object):
 
         Permission.get_collection().save(found, safe=True)
 
-
     def delete_permission(self, resource_uri):
         """
         Deletes the given permission.
@@ -117,10 +117,7 @@ class PermissionManager(object):
         if found is None:
             raise MissingResource(resource_uri)
 
-        # To do: Remove respective roles from users
-
         Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
-
 
     def grant(self, resource, login, operations):
         """
@@ -135,6 +132,10 @@ class PermissionManager(object):
         @type operations: list or tuple of integers
         @param operations:list of allowed operations being granted
         """
+        # we don't grant permissions to the system
+        if login == system.SYSTEM_LOGIN:
+            return
+
         user = User.get_collection().find_one({'login' : login})
         if user is None:
             raise MissingResource(user=login)
@@ -169,9 +170,13 @@ class PermissionManager(object):
         @type operations: list or tuple of integers
         @param operations:list of allowed operations being revoked
         """
+        # we don't revoke permissions from the system
+        if login == system.SYSTEM_LOGIN:
+            return
+
         user = User.get_collection().find_one({'login' : login})
         if user is None:
-            raise MissingResource(user=user)
+            raise MissingResource(user=login)
 
         permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:
@@ -197,7 +202,6 @@ class PermissionManager(object):
 
         Permission.get_collection().save(permission, safe=True)
 
-
     def grant_automatic_permissions_for_resource(self, resource):
         """
         Grant CRUDE permissions for a newly created resource to current principal.
@@ -219,7 +223,6 @@ class PermissionManager(object):
         operations = [self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE]
         self.grant(resource, user['login'], operations)
 
-
     def grant_automatic_permissions_for_user(self, login):
         """
         Grant the permissions required for a new user so that they my log into Pulp
@@ -231,7 +234,6 @@ class PermissionManager(object):
         self.grant('/v2/actions/login/', login, [self.READ, self.UPDATE])
         self.grant('/v2/actions/logout/', login, [self.READ, self.UPDATE])
         self.grant('/v2/users/%s/' % login, login, [self.READ, self.UPDATE])
-
 
     def revoke_permission_from_user(self, resource, login, operation_names):
         """
@@ -252,7 +254,6 @@ class PermissionManager(object):
         self.revoke(resource, login, operations)
         return True
 
-
     def revoke_all_permissions_from_user(self, login):
         """
         Revoke all the permissions from a given user
@@ -270,6 +271,6 @@ class PermissionManager(object):
             if permission['users']:
                 Permission.get_collection().save(permission, safe=True)
             else:
-                # Delete entire permission if there are no more users 
+                # Delete entire permission if there are no more users
                 Permission.get_collection().remove({'resource':permission['resource']}, safe=True)
 

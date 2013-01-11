@@ -28,6 +28,8 @@ from pulp.server.managers import factory as managers_factory
 
 _LOG = logging.getLogger(__name__)
 
+OBFUSCATED_VALUE = '****'
+
 # call request class -----------------------------------------------------------
 
 class CallRequest(object):
@@ -128,7 +130,7 @@ class CallRequest(object):
 
     def callable_kwargs_reprs(self):
         kwarg_reprs = dict((k, repr(v)) for k, v in self.kwargs.items() if k not in self.kwarg_blacklist)
-        kwarg_reprs.update((k, '****') for k in self.kwargs if k in self.kwarg_blacklist)
+        kwarg_reprs.update((k, OBFUSCATED_VALUE) for k in self.kwargs if k in self.kwarg_blacklist)
         return kwarg_reprs
 
     def __str__(self):
@@ -180,6 +182,10 @@ class CallRequest(object):
     def add_control_hook(self, key, hook):
         assert key in dispatch_constants.CALL_CONTROL_HOOKS
         self.control_hooks[key] = hook
+
+    def remove_control_hook(self, key):
+        assert key in dispatch_constants.CALL_CONTROL_HOOKS
+        self.control_hooks[key] = None
 
     # call request serialization/deserialization -------------------------------
 
@@ -294,6 +300,10 @@ class CallReport(object):
     @type exception: Exception
     @ivar traceback: traceback from callable, if any
     @type traceback: TracebackType
+    @ivar serialize_result: toggle the reporting of the call result
+    @type serialize_result: bool
+    @ivar dependency_failures: dictionary reporting the failures of any call requests this report's corresponding call request depended on
+    @type dependency_failures: dict
     @ivar start_time: time the call in the call request was executed
     @type start_time: datetime.datetime
     @ivar finish_time: time the call in the call request completed
@@ -331,7 +341,8 @@ class CallReport(object):
                  progress=None,
                  result=None,
                  exception=None,
-                 traceback=None):
+                 traceback=None,
+                 serialize_result=True):
 
         assert isinstance(call_request_id, (NoneType, basestring))
         assert isinstance(call_request_group_id, (NoneType, basestring))
@@ -344,6 +355,7 @@ class CallReport(object):
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
         assert isinstance(traceback, (NoneType, TracebackType))
+        assert isinstance(serialize_result, bool)
 
         self.call_request_id = call_request_id
         self.call_request_group_id = call_request_group_id
@@ -359,6 +371,8 @@ class CallReport(object):
         self.result = result
         self.exception = exception
         self.traceback = traceback
+
+        self.serialize_result = serialize_result
 
         self.dependency_failures = {}
 
@@ -378,7 +392,7 @@ class CallReport(object):
 
         for field in ('call_request_id', 'call_request_group_id', 'call_request_tags',
                       'schedule_id', 'principal_login', 'response', 'reasons',
-                      'state', 'progress', 'result', 'dependency_failures'):
+                      'state', 'progress', 'dependency_failures'):
             data[field] = getattr(self, field)
 
         # legacy fields
@@ -386,6 +400,13 @@ class CallReport(object):
         data['task_id'] = self.call_request_id
         data['task_group_id'] = self.call_request_group_id
         data['tags'] = self.call_request_tags
+
+        # report the result, if configured to
+
+        if self.serialize_result:
+            data['result'] = self.result
+        else:
+            data['result'] = OBFUSCATED_VALUE
 
         # format the exception and traceback, if they exist
 

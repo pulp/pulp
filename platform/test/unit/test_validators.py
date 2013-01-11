@@ -54,3 +54,26 @@ class TestNonNegativeInt(unittest.TestCase):
     def test_none(self):
         self.assertRaises(TypeError, validators.non_negative_int_validator, None)
 
+class TestId(unittest.TestCase):
+
+    def test_valid_ids(self):
+
+        # Single input
+        validators.id_validator('test123')
+        validators.id_validator('test_123-')
+        validators.id_validator('TesT-0')
+        validators.id_validator('-_-_-')
+
+        # Multiple input
+        validators.id_validator(['test123', 'TesT-0'])
+
+    def test_invalid_ids(self):
+
+        # Single input
+        self.assertRaises(ValueError, validators.id_validator, '**invalid**')
+        self.assertRaises(ValueError, validators.id_validator, 'invalid-@')
+        self.assertRaises(ValueError, validators.id_validator, '-_-_- ')
+
+        # Multiple input
+        self.assertRaises(ValueError, validators.id_validator, ['**invalid**', '!#$%'])
+        self.assertRaises(ValueError, validators.id_validator, ['valid', '**invalid**'])

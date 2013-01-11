@@ -20,14 +20,18 @@ import os
 import shutil
 
 from pulp.agent.lib.report import *
-from pulp.agent.lib.conduit import Conduit
+
+
+PACKAGE = 'test.handlers'
 
 #
 # Handlers to be deployed for loader testing
 #
 
+# -- Mock RPM Handler --------------------------------------------------------------------
+
 RPM = dict(
-name='RPM Handler',
+name='rpm',
 descriptor="""
 [main]
 enabled=1
@@ -63,6 +67,95 @@ class RpmHandler(ContentHandler):
     assert(isinstance(units, list))
     assert(isinstance(options, dict))
     report = HandlerReport()
+    report.set_succeeded({}, len(units))
+    return report
+
+  def update(self, conduit, units, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(units, list))
+    assert(isinstance(options, dict))
+    report = HandlerReport()
+    report.set_succeeded({}, len(units))
+    return report
+
+  def uninstall(self, conduit, units, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(units, list))
+    assert(isinstance(options, dict))
+    report = HandlerReport()
+    report.set_succeeded({}, len(units))
+    return report
+
+  def profile(self, conduit):
+    assert(isinstance(conduit, Conduit))
+    return ProfileReport()
+
+class YumHandler(BindHandler):
+
+  def bind(self, conduit, binding, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(binding, dict))
+    assert(isinstance(options, dict))
+    assert('repo_id' in binding)
+    assert('details' in binding)
+    report = BindReport(binding['repo_id'])
+    report.set_succeeded({}, 1)
+    return report
+
+  def unbind(self, conduit, repo_id, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(repo_id, str))
+    assert(isinstance(options, dict))
+    report = BindReport(repo_id)
+    report.set_succeeded({}, 1)
+    return report
+
+  def clean(self, conduit):
+    assert(isinstance(conduit, Conduit))
+    report = CleanReport()
+    report.set_succeeded({}, 1)
+    return report
+
+class LinuxHandler(SystemHandler):
+
+  def reboot(self, conduit, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(options, dict))
+    report = RebootReport()
+    report.set_succeeded()
+    return report
+""")
+
+
+# -- Mock SRPM Handler -------------------------------------------------------------------
+# note: loading into site-packages
+
+SRPM = dict(
+name='srpm',
+descriptor="""
+[main]
+enabled=1
+
+[types]
+content=srpm
+
+[srpm]
+class=%s.srpm.SRpmHandler
+
+""" % PACKAGE,
+handler=
+"""
+from pulp.agent.lib.handler import *
+from pulp.agent.lib.report import *
+from pulp.agent.lib.conduit import *
+
+class SRpmHandler(ContentHandler):
+
+  def install(self, conduit, units, options):
+    assert(isinstance(conduit, Conduit))
+    assert(isinstance(units, list))
+    assert(isinstance(options, dict))
+    report = HandlerReport()
     report.succeeded({}, len(units))
     return report
 
@@ -81,55 +174,17 @@ class RpmHandler(ContentHandler):
     report = HandlerReport()
     report.succeeded({}, len(units))
     return report
+""",
+site_packages=True)
 
-  def profile(self, conduit):
-    assert(isinstance(conduit, Conduit))
-    return ProfileReport()
-
-class YumHandler(BindHandler):
-
-  def bind(self, conduit, definitions):
-    assert(isinstance(conduit, Conduit))
-    assert(isinstance(definitions, list))
-    report = BindReport()
-    report.succeeded({}, 1)
-    return report
-
-  def rebind(self, conduit, definitions):
-    assert(isinstance(conduit, Conduit))
-    assert(isinstance(definitions, list))
-    report = BindReport()
-    report.succeeded({}, 1)
-    return report
-
-  def unbind(self, conduit, repo_id):
-    assert(isinstance(conduit, Conduit))
-    assert(isinstance(repo_id, (int,str)))
-    report = BindReport()
-    report.succeeded({}, 1)
-    return report
-
-  def clean(self, conduit):
-    assert(isinstance(conduit, Conduit))
-    report = CleanReport()
-    report.succeeded({}, 1)
-    return report
-
-class LinuxHandler(SystemHandler):
-
-  def reboot(self, conduit, options):
-    assert(isinstance(conduit, Conduit))
-    assert(isinstance(options, dict))
-    report = RebootReport()
-    report.succeeded()
-    return report
-""")
+# -- Mock (section missing) Handler ------------------------------------------------------
 
 SECTION_MISSING = dict(
-name='Test section not found',
+name='Test-section-not-found',
 descriptor="""
 [main]
 enabled=1
+
 [types]
 content=puppet
 """,
@@ -137,9 +192,12 @@ handler="""
 class A: pass
 """)
 
-CLASS_NDEF = dict(
-name='Test class property missing',
-descriptor="""
+
+# -- Mock (class not defined) Handler ----------------------------------------------------
+
+NO_MODULE = dict(
+    name='Test-class-property-missing',
+    descriptor="""
 [main]
 enabled=1
 [types]
@@ -151,77 +209,74 @@ handler="""
 class A: pass
 """)
 
+# -- Mock (class not found) Handler ----------------------------------------------------
+
+CLASS_NDEF = dict(
+name='Test-class-not-found',
+descriptor="""
+[main]
+enabled=1
+[types]
+content=something
+[something]
+class=Something
+""")
+
 #
 # Mock Deployer
 #
 
 class MockDeployer:
 
-    ROOT = '/tmp/etc/agent/handler'
-    PATH = ['/tmp/usr/lib/agent/handler',]
+    ROOT = '/tmp/pulp-test'
+    CONF_D = os.path.join(ROOT, 'etc/agent/handler')
+    PATH = os.path.join(ROOT, 'usr/lib/agent/handler')
+    SITE_PACKAGES = os.path.join(ROOT, 'site-packages')
 
     def deploy(self):
-        for path in (self.ROOT, self.PATH[0]):
+        for path in (self.CONF_D, self.PATH, self.SITE_PACKAGES):
             shutil.rmtree(path, ignore_errors=True)
             os.makedirs(path)
-        for handler in (RPM, SECTION_MISSING, CLASS_NDEF):
+        self.build_site_packages()
+        sys.path.insert(0, self.SITE_PACKAGES)
+        for handler in (RPM, SRPM, SECTION_MISSING, CLASS_NDEF, NO_MODULE):
             self.__deploy(handler)
-    
+        print 'deployed'
+
     def clean(self):
-        for path in (self.ROOT, self.PATH[0]):
-            shutil.rmtree(path, ignore_errors=True)
-    
+        shutil.rmtree(self.ROOT, ignore_errors=True)
+
     def __deploy(self, handler):
         name = handler['name']
+        descriptor = handler['descriptor']
         fn = '.'.join((name, 'conf'))
-        path = os.path.join(self.ROOT, fn)
+        path = os.path.join(self.CONF_D, fn)
+        # deploy descriptor
         f = open(path, 'w')
-        f.write(handler['descriptor'])
+        f.write(descriptor)
         f.close()
+        # deploy module (if defined)
+        mod = handler.get('handler')
+        if not mod:
+            return
         fn = '.'.join((name, 'py'))
-        path = os.path.join(self.PATH[0], fn)
+        if handler.get('site_packages', False):
+            pkgpath = os.path.join(*PACKAGE.split('.'))
+            rootdir = os.path.join(self.SITE_PACKAGES, pkgpath)
+        else:
+            rootdir = self.PATH
+        path = os.path.join(rootdir, fn)
         f = open(path, 'w')
-        f.write(handler['handler'])
+        f.write(mod)
         f.close()
 
-#
-# Mock Handlers
-#
-
-class RpmHandler:
-
-  def __init__(self, cfg=None):
-    pass
-
-  def install(self, conduit, units, options):
-    report = HandlerReport()
-    report.succeeded({}, len(units))
-    return report
-
-  def update(self, conduit, units, options):
-    report = HandlerReport()
-    report.succeeded({}, len(units))
-    return report
-
-  def uninstall(self, conduit, units, options):
-    report = HandlerReport()
-    report.succeeded({}, len(units))
-    return report
-
-  def profile(self, conduit):
-    report = ProfileReport()
-    return report
-
-  def reboot(self, conduit, options):
-    report = RebootReport()
-    report.succeeded()
-    return report
-
-  def bind(self, conduit, definitions):
-    return BindReport()
-
-  def rebind(self, conduit, definitions):
-    return BindReport()
-
-  def unbind(self, conduit, repo_id):
-    return BindReport()
+    def build_site_packages(self):
+        history = [self.SITE_PACKAGES]
+        for p in PACKAGE.split('.'):
+            history.append(p)
+            pkgdir = os.path.join(*history)
+            os.makedirs(pkgdir)
+            path = os.path.join(pkgdir, '__init__.py')
+            f = open(path, 'w')
+            f.write('# package:%s' % p)
+            f.close()

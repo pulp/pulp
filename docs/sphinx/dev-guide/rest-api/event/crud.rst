@@ -31,7 +31,7 @@ when events of the given types are fired.
 :sample_request:`_` ::
 
  {
-   "notifier_type_id" : "rest-api",
+   "notifier_type_id" : "http",
    "notifier_config" : {
      "url" : "http://localhost/api"
    },
@@ -52,7 +52,7 @@ when events of the given types are fired.
    "notifier_config": {
      "url": "http://localhost/api"
    },
-   "notifier_type_id": "rest-api"
+   "notifier_type_id": "http"
  }
 
 
@@ -86,7 +86,7 @@ Returns a list of all event listeners in the server.
      "notifier_config": {
        "url": "http://localhost/api"
      },
-     "notifier_type_id": "rest-api"
+     "notifier_type_id": "http"
    }
   ]
 
@@ -164,5 +164,5 @@ overwritten.
     "notifier_config": {
       "url": "https://localhost/pulp/api/jdob/"
     },
-    "notifier_type_id": "rest-api"
+    "notifier_type_id": "http"
   }

@@ -15,13 +15,17 @@
 Contains (proxy) classes that represent the pulp agent.
 """
 
+from logging import getLogger
+
 from gofer.proxy import Agent
+
 from pulp.server.agent.context import Context, Capability
 from pulp.server.agent.direct.services import Services
-from logging import getLogger
+
 
 
 log = getLogger(__name__)
+
 
 #
 # Agent
@@ -94,40 +98,56 @@ class Consumer(Capability):
         """
         agent = Agent(
             self.context.uuid,
+            url=self.context.url,
             secret=self.context.secret,
             async=True)
         consumer = agent.Consumer()
         return consumer.unregistered()
 
-    def bind(self, repo_id):
+    def bind(self, bindings, options):
         """
         Bind a consumer to the specified repository.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param bindings: A list of bindings to add/update.
+          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+            The 'details' are at the discretion of the distributor.
+        @type bindings: list
+        @param options: Bind options.
+        @type options: dict
         @return: The RMI request serial number.
         @rtype: str
         """
         agent = Agent(
             self.context.uuid,
+            url=self.context.url,
+            timeout=self.context.get_timeout('bind_timeout'),
             secret=self.context.secret,
-            async=True)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
-        return consumer.bind(repo_id)
+        return consumer.bind(bindings, options)
 
-    def unbind(self, repo_id):
+    def unbind(self, bindings, options):
         """
         Unbind a consumer from the specified repository.
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        @param bindings: A list of bindings to be removed.
+          Each binding is: {type_id:<str>, repo_id:<str>}
+        @type bindings: list
+        @param options: Unbind options.
+        @type options: dict
         @return: The RMI request serial number.
         @rtype: str
         """
         agent = Agent(
             self.context.uuid,
+            url=self.context.url,
+            timeout=self.context.get_timeout('unbind_timeout'),
             secret=self.context.secret,
-            async=True)
+            ctag=self.context.ctag,
+            watchdog=self.context.watchdog,
+            any=self.context.call_request_id)
         consumer = agent.Consumer()
-        return consumer.unbind(repo_id)
+        return consumer.unbind(bindings, options)
 
 
 class Content(Capability):
@@ -148,11 +168,12 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('install_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         return content.install(units, options)
 
@@ -169,11 +190,12 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('update_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         return content.update(units, options)
 
@@ -190,11 +212,12 @@ class Content(Capability):
         """
         agent = Agent(
             self.context.uuid,
-            timeout=(10, 600),
+            url=self.context.url,
+            timeout=self.context.get_timeout('uninstall_timeout'),
             secret=self.context.secret,
             ctag=self.context.ctag,
             watchdog=self.context.watchdog,
-            any=self.context.callid)
+            any=self.context.call_request_id)
         content = agent.Content()
         return content.uninstall(units, options)
 

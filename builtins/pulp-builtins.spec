@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 0.0.335
-Release: 1%{?dist}
+Version: 2.1.0
+Release: 0.1.alpha
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -63,14 +63,13 @@ client capabilites.
 %defattr(-,root,root,-)
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_admin_consumer/
+%{_usr}/lib/pulp/admin/extensions/pulp_auth/
 %{_usr}/lib/pulp/admin/extensions/pulp_event/
 %{_usr}/lib/pulp/admin/extensions/pulp_orphan/
-%{_usr}/lib/pulp/admin/extensions/pulp_permission/
-%{_usr}/lib/pulp/admin/extensions/pulp_role/
 %{_usr}/lib/pulp/admin/extensions/pulp_repo/
 %{_usr}/lib/pulp/admin/extensions/pulp_tasks/
-%{_usr}/lib/pulp/admin/extensions/pulp_user/
 %{_usr}/lib/pulp/admin/extensions/pulp_server_info/
+%{_usr}/lib/pulp/admin/extensions/pulp_binding/
 %doc
 
 
@@ -94,6 +93,75 @@ client capabilities.
 
 
 %changelog
+* Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
+- 
+
+* Wed Dec 19 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.beta
+- 
+
+* Tue Dec 18 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.18.beta
+- 
+
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
+- 
+
+* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+
+* Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.14.beta
+- 
+
+* Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
+- 
+
+* Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
+- 861383 - more descriptive message on unregister when server does not exist on
+  the server. (jortel@redhat.com)
+- 883049 - check we have write permissions to cert dir before
+  register/unregister. (jortel@redhat.com)
+- 878632 - adding usage to permission grant and revoke commands to mention that
+  both role-id and login cannot be used at the same time (skarmark@redhat.com)
+
+* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
+- 
+
+* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+
+* Mon Nov 26 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.9.beta
+- 878107 - consumer status now mentions which pulp server the consumer is
+  registered to as well (skarmark@redhat.com)
+
+* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.8.beta
+- 
+
+* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.7.beta
+- 
+
+* Tue Nov 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.3.beta
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.2.beta
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.1.beta
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.338-1
+- 
+
+* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 0.0.337-1
+- 873913 - added id_validator similar to the one used in consumer group
+  creation to other entities to keep consistency (skarmark@redhat.com)
+- 870160 - adding id_validator in client and using it to verify consumer and
+  group ids and adding id regex check in server to support apis
+  (skarmark@redhat.com)
+
+* Mon Nov 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.336-1
+- 868022 - updating CLI section descriptions (mhrivnak@redhat.com)
+
 * Tue Oct 30 2012 Jeff Ortel <jortel@redhat.com> 0.0.335-1
 - 
 

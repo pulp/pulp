@@ -640,7 +640,7 @@ TYPE_DEFS = [
         'unit_key' :
             ['id'],
         'search_indexes' : [
-            'id', 'title', 'version', 'release', 'type',
+            'title', 'version', 'release', 'type',
             'status', 'updated', 'issued', 'severity', 'references'
         ],
         'referenced_types' : ['rpm'],
@@ -653,7 +653,7 @@ TYPE_DEFS = [
         'unit_key' :
             ['id', 'repo_id'],
         'search_indexes' :
-            ['id', 'repo_id', 'name', 'mandatory_package_names', 'conditional_package_names',
+            ['repo_id', 'name', 'mandatory_package_names', 'conditional_package_names',
              'optional_package_names', 'default_package_names'],
         'referenced_types' : [],
     },
@@ -665,7 +665,7 @@ TYPE_DEFS = [
         'unit_key' :
             ['id', 'repo_id'],
         'search_indexes' :
-            ['id', 'repo_id', 'name', 'packagegroupids'],
+            ['repo_id', 'name', 'packagegroupids'],
         'referenced_types' : [],
     },
 
@@ -688,6 +688,15 @@ TYPE_DEFS = [
             ['name', 'epoch', 'version', 'release', 'arch', 'checksumtype', 'checksum'],
         'search_indexes' :
             ['name', 'epoch', 'version', 'release', 'arch', 'filename', 'checksum', 'checksumtype'],
+        'referenced_types' : [],
+    },
+
+    {
+        'id': 'iso',
+        'display_name': 'ISO',
+        'description': 'ISO',
+        'unit_key': ['name', 'checksum_type', 'checksum'],
+        'search_indexes': [],
         'referenced_types' : [],
     },
 ]
