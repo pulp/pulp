@@ -325,12 +325,13 @@ class LocalRepository(Local, Repository):
         Run a sync() on the repository.
         @param progress: A progress report.
         @type progress: pulp.citrus.progress.ProgressReport
+        @return: The task result.
         """
         http = self.binding.repo_actions.sync(self.repo_id, {})
         if http.response_code == httplib.ACCEPTED:
             poller = TaskPoller(self.binding, progress)
             task = http.response_body[0]
-            poller.join(task.task_id)
+            return poller.join(task.task_id)
         else:
             raise Exception('run_sync() failed:%d', http.response_code)
 

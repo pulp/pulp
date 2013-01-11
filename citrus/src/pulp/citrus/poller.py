@@ -19,7 +19,7 @@ from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STAT
 
 class TaskPoller:
 
-    PROGRESS_DELAY = 0.5
+    DELAY = 0.5
 
     def __init__(self, binding, progress):
         self.binding = binding
@@ -28,7 +28,7 @@ class TaskPoller:
     def join(self, task_id):
         last_hash = 0
         while True:
-            sleep(self.PROGRESS_DELAY)
+            sleep(self.DELAY)
             http = self.binding.tasks.get_task(task_id)
             if http.response_code != httplib.OK:
                 break
@@ -37,7 +37,7 @@ class TaskPoller:
             if task.state == CALL_ERROR_STATE:
                 break
             if task.state in CALL_COMPLETE_STATES:
-                return
+                return task.result
 
     def report_progress(self, task, last_hash):
         _hash = hash(repr(task.progress))

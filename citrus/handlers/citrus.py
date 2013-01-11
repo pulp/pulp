@@ -79,8 +79,9 @@ class RepositoryHandler(ContentHandler):
     def synchronize(self, progress, binds):
         """
         Synchronize repositories.
-          - Merge bound repositories.
-          - Synchronize repositories.
+          - Add/Merge bound repositories as needed.
+          - Synchronize all bound repositories.
+          - Purge unbound repositories.
           - Purge orphaned content units.
         @param progress: A progress report.
         @type progress: L{ProgressReport}
@@ -89,22 +90,37 @@ class RepositoryHandler(ContentHandler):
         @return: A sync report.
         @rtype: TBD
         """
-        report = {}
-        self.purge(progress, binds)
-        self.merge(progress, binds)
+
+        # add/merge repositories
+        added, merged = self.add_repositories(progress, binds)
+
+        # synchronize repositories
+        units_added = []
         progress.push_step('synchronize', len(binds))
         for repo_id in [b['repo_id'] for b in binds]:
             repo = LocalRepository(repo_id)
-            repo.run_sync(progress)
+            report = repo.run_sync(progress)
+
+        # purge repositories
+        removed = self.purge_repositories(progress, binds)
+
+        # remove orphans
         progress.push_step('purge_orphans')
         LocalRepository.purge_orphans()
+
         progress.set_status(progress.SUCCEEDED)
+
+        report = {
+            'added':added,
+            'merged':merged,
+            'removed':removed,
+        }
+
         return report
 
-    def merge(self, progress, binds):
+    def add_repositories(self, progress, binds):
         """
-        Merge repositories.
-          - Delete repositories found locally but not upstream.
+        Add or update repositories.
           - Merge repositories found BOTH upstream and locally.
           - Add repositories found upstream but NOT locally.
         @param progress: A progress report.
@@ -112,24 +128,26 @@ class RepositoryHandler(ContentHandler):
         @param binds: List of bind payloads.
         @type binds: list
         """
+        added = []
+        merged = []
         progress.push_step('merge', len(binds))
         for bind in binds:
-            try:
-                repo_id = bind['repo_id']
-                details = bind['details']
-                upstream = Repository(repo_id, details)
-                myrepo = LocalRepository.fetch(repo_id)
-                if myrepo:
-                    progress.set_action('merge', repo_id)
-                    myrepo.merge(upstream)
-                else:
-                    progress.set_action('add', repo_id)
-                    myrepo = LocalRepository(repo_id, upstream.details)
-                    myrepo.add()
-            except Exception:
-                log.exception(str(bind))
+            repo_id = bind['repo_id']
+            details = bind['details']
+            upstream = Repository(repo_id, details)
+            myrepo = LocalRepository.fetch(repo_id)
+            if myrepo:
+                progress.set_action('merge', repo_id)
+                myrepo.merge(upstream)
+                merged.append(repo_id)
+            else:
+                progress.set_action('add', repo_id)
+                myrepo = LocalRepository(repo_id, upstream.details)
+                myrepo.add()
+                added.append(repo_id)
+        return (added, merged)
 
-    def purge(self, progress, binds):
+    def purge_repositories(self, progress, binds):
         """
         Purge repositories found locally but NOT upstream.
         @param progress: A progress report.
@@ -137,14 +155,14 @@ class RepositoryHandler(ContentHandler):
         @param binds: List of bind payloads.
         @type binds: list
         """
-        try:
-            progress.push_step('purge', len(binds))
-            upstream = [b['repo_id'] for b in binds]
-            downstream = [r.repo_id for r in LocalRepository.fetch_all()]
-            for repo_id in downstream:
-                if repo_id not in upstream:
-                    progress.set_action('delete', repo_id)
-                    repo = LocalRepository(repo_id)
-                    repo.delete()
-        except Exception, e:
-            return e
+        removed = []
+        progress.push_step('purge', len(binds))
+        upstream = [b['repo_id'] for b in binds]
+        downstream = [r.repo_id for r in LocalRepository.fetch_all()]
+        for repo_id in downstream:
+            if repo_id not in upstream:
+                progress.set_action('delete', repo_id)
+                repo = LocalRepository(repo_id)
+                repo.delete()
+                removed.append(repo_id)
+        return removed

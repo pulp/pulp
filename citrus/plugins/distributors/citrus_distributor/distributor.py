@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.plugins.distributor import Distributor
-from pulp.citrus.publisher import HttpPublisher
+from pulp.citrus.http.publisher import HttpPublisher
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 from logging import getLogger

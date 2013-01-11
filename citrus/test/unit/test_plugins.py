@@ -201,9 +201,9 @@ class TestHandler(RepositoryHandler):
         self.tester = tester
         RepositoryHandler.__init__(self, cfg)
 
-    def merge(self, progress, binds):
+    def synchronize(self, progress, binds):
         self.tester.clean()
-        RepositoryHandler.merge(self, progress, binds)
+        return RepositoryHandler.synchronize(self, progress, binds)
 
 
 class TestAgentPlugin(TestPlugins):
