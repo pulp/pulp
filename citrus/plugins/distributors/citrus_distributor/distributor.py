@@ -61,10 +61,28 @@ class CitrusDistributor(Distributor):
         """
         units = conduit.get_units()
         publisher = self.publisher(repo, config)
-        units = [u.__dict__ for u in units]
+        units = self._prepare_units(units)
         manifest, links = publisher.publish(units)
         details = dict(manifest=manifest, links=links)
         return conduit.build_success_report('succeeded', details)
+
+    def _prepare_units(self, units):
+        """
+        Prepare units to be published.
+            - add _relative storage path.
+        @param units: A list of units to be published.
+        @type units: list
+        """
+        prepared = []
+        storage_dir = pulp_conf.get('server', 'storage_dir')
+        for unit in units:
+            _unit = unit.__dict__
+            storage_path = _unit['storage_path']
+            if storage_path:
+                relative_path = storage_path[len(storage_dir):]
+                _unit['_relative_path'] = relative_path
+            prepared.append(_unit)
+        return prepared
 
     def publisher(self, repo, config):
         """
@@ -80,7 +98,7 @@ class CitrusDistributor(Distributor):
             host = pulp_conf.get('server', 'server_name')
             base_url = 'http://%s' % host
         virtual_host = config.get('virtual_host', VIRTUAL_HOST)
-        return HttpPublisher(repo.id, base_url, virtual_host)
+        return HttpPublisher(base_url, virtual_host, repo.id)
 
     def cancel_publish_repo(self, call_report, call_request):
         pass

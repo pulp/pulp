@@ -97,6 +97,9 @@ class TestPlugins(WebTest):
         unit_db.clean()
 
     def populate(self):
+        # make content/ dir.
+        os.makedirs(os.path.join(self.upfs, 'content'))
+        pulp_conf.set('server', 'storage_dir', self.upfs)
         # create repo
         manager = factory.repo_manager()
         manager.create_repo(self.REPO_ID)
@@ -113,13 +116,12 @@ class TestPlugins(WebTest):
         # add unit file
         storage_dir = pulp_conf.get('server', 'storage_dir')
         storage_path = \
-            os.path.join(storage_dir,
+            os.path.join(storage_dir, 'content',
                 '.'.join((self.UNIT_ID, self.UNIT_TYPE_ID)))
         unit['_storage_path'] = storage_path
         fp = open(storage_path, 'w+')
         fp.write(self.UNIT_ID)
         fp.close()
-        self.storage_path = storage_path
         # add unit
         manager.add_content_unit(
             self.UNIT_TYPE_ID,
@@ -140,6 +142,7 @@ class TestDistributor(TestPlugins):
     def test_payload(self):
         # Setup
         self.populate()
+        pulp_conf.set('server', 'storage_dir', self.upfs)
         # Test
         dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
@@ -150,6 +153,7 @@ class TestDistributor(TestPlugins):
     def test_publish(self):
         # Setup
         self.populate()
+        pulp_conf.set('server', 'storage_dir', self.upfs)
         # Test
         dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
@@ -165,6 +169,7 @@ class ImporterTest(TestPlugins):
     def test_import(self):
         # Setup
         self.populate()
+        pulp_conf.set('server', 'storage_dir', self.upfs)
         dist = CitrusDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(virtual_host=(self.upfs, self.upfs))
@@ -178,7 +183,7 @@ class ImporterTest(TestPlugins):
         importer = CitrusImporter()
         cfg = dict(
             base_url='file://',
-            manifest_path=dist.publisher(repo, cfg).manifest_path())
+            manifest_url=dist.publisher(repo, cfg).manifest_path())
         conduit = RepoSyncConduit(
             self.REPO_ID,
             CITRUS_IMPORTER,
@@ -198,7 +203,6 @@ class TestHandler(RepositoryHandler):
 
     def merge(self, progress, binds):
         self.tester.clean()
-        pulp_conf.set('server', 'storage_dir', self.tester.downfs)
         RepositoryHandler.merge(self, progress, binds)
 
 
@@ -243,31 +247,32 @@ class TestAgentPlugin(TestPlugins):
           downstream - The downstream unit storage
         For example:
 
-        ├── downstream-3ei7PD
-        │   ├── tmp
-        │   │   └── pulp
-        │   │       └── citrus
-        │   │           └── storage
-        │   │               └── test_unit.rpm
-        │   └── working
-        │       └── repos
-        │           └── test-repo
-        │               ├── distributors
-        │               │   └── citrus_distributor
-        │               └── importers
-        │                   └── citrus_importer
-        ├── storage
-        │   ├── test_unit.rpm
-        │   └── working
-        │       └── repos
-        │           └── test-repo
-        │               └── distributors
-        │                   └── citrus_distributor
-        └── upstream-siqxkL
-            └── test-repo
+            citrus/
+            ├── downstream-2BUtUa
+            │   ├── content
+            │   │   └── test_unit.rpm
+            │   └── working
+            │       └── repos
+            │           └── test-repo
+            │               ├── distributors
+            │               │   └── citrus_distributor
+            │               └── importers
+            │                   └── citrus_importer
+            ├── storage
+            └── upstream-SgASM7
                 ├── content
-                │   └── b6490982531f2b4bc5f423d0 -> /tmp/pulp/citrus/storage/test_unit.rpm
-                └── units.json
+                │   └── test_unit.rpm
+                ├── test-repo
+                │   ├── content
+                │   │   └── 3ae69ea97c -> /tmp/pulp/citrus/upstream-SgASM7/content/test_unit.rpm
+                │   └── units.json
+                └── working
+                    └── repos
+                        └── test-repo
+                            ├── distributors
+                            │   └── citrus_distributor
+                            └── importers
+                                └── citrus_importer
 
         @param unused:
         @return:
@@ -279,6 +284,7 @@ class TestAgentPlugin(TestPlugins):
         def test_handler(*unused):
             # publish
             self.populate()
+            pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusDistributor()
             repo = Repository(self.REPO_ID)
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
@@ -287,12 +293,16 @@ class TestAgentPlugin(TestPlugins):
             units = []
             options = dict(all=True)
             handler = TestHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.downfs)
             handler.update(Conduit(), units, options)
         test_handler()
         time.sleep(2)
         # Validate
-        path = '/'.join((self.downfs, self.storage_path))
-        self.assertTrue(os.path.exists(path))
+        upstream_files = os.listdir(os.path.join(self.upfs, 'content'))
+        self.assertEqual(1, len(upstream_files))
+        for file in upstream_files:
+            path = os.path.join(os.path.join(self.downfs, 'content', file))
+            self.assertTrue(os.path.exists(path))
 
     def clean_units(self):
         Bind.get_collection().remove()
@@ -316,6 +326,7 @@ class TestAgentPlugin(TestPlugins):
         def test_handler(*unused):
             # publish
             self.populate()
+            pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusDistributor()
             repo = Repository(self.REPO_ID)
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
@@ -324,9 +335,13 @@ class TestAgentPlugin(TestPlugins):
             units = []
             options = dict(all=True)
             handler = TestHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.downfs)
             handler.update(Conduit(), units, options)
         test_handler()
         time.sleep(2)
         # Validate
-        path = '/'.join((self.downfs, self.storage_path))
-        self.assertTrue(os.path.exists(path))
+        upstream_files = os.listdir(os.path.join(self.upfs, 'content'))
+        self.assertEqual(1, len(upstream_files))
+        for file in upstream_files:
+            path = os.path.join(os.path.join(self.downfs, 'content', file))
+            self.assertTrue(os.path.exists(path))

@@ -173,7 +173,8 @@ class CitrusImporter(Importer):
             metadata = unit['metadata']
             storage_path = unit.get('storage_path')
             if storage_path:
-                storage_path = '/'.join((storage_dir, storage_path))
+                relative_path = unit['_relative_path']
+                storage_path = '/'.join((storage_dir, relative_path))
             unit_in = Unit(type_id, unit_key, metadata, storage_path)
             new_units.append((unit, unit_in))
         return new_units
@@ -193,7 +194,7 @@ class CitrusImporter(Importer):
         for unit, local_unit in units:
             download = unit.get('_download')
             if not download:
-                self._add_unit(local_unit)
+                self._add_unit(context, local_unit)
                 added.append(local_unit)
                 continue
             request = Download(self, context, unit, local_unit)

@@ -98,7 +98,6 @@ class FilePublisher(Publisher):
         @return: The manifest and links created.
         @rtype: tuple(2)
         """
-        units = [dict(u) for u in units]
         links = self.link(units)
         manifest = self.write_manifest(units)
         return (manifest, links)
@@ -151,19 +150,18 @@ class HttpPublisher(FilePublisher):
     @type virtual_host: tuple(2)
     """
 
-    def __init__(self, repo_id, base_url, virtual_host):
+    def __init__(self, base_url, virtual_host, repo_id):
         """
-        @param repo_id: A repository ID.
-        @type repo_id: str
         @param base_url: The base URL.
         @type base_url: str
         @param virtual_host: The virtual host (base_url, publish_dir)
         @type virtual_host: tuple(2)
+        @param repo_id: A repository ID.
+        @type repo_id: str
         """
         self.base_url = base_url
         self.virtual_host = virtual_host
-        publish_dir = self.virtual_host[1]
-        FilePublisher.__init__(self, publish_dir, repo_id)
+        FilePublisher.__init__(self, virtual_host[1], repo_id)
 
     def link(self, units):
         #

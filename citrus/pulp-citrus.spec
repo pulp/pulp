@@ -146,9 +146,7 @@ Pulp citrus handlers.
 %doc
 
 %post
-#
 # Generate the certificate used to access the local server.
-#
 
 PKI=/etc/pki/pulp
 CA_KEY=$PKI/ca.key
@@ -188,10 +186,10 @@ cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI/citrus.crt
 rm -rf $TMP
 
 %postun
-#
 # clean up the citrus certificate.
-#
-rm /etc/pki/pulp/citrus.crt
+if [ $1 -eq 0 ]; then
+  rm /etc/pki/pulp/citrus.crt
+fi
 
 
 %changelog
