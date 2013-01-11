@@ -14,7 +14,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 #
-
+import os
+import yum
 import gzip
 try:
     from cElementTree import iterparse
@@ -92,5 +93,36 @@ class PrestoParser(object):
 
     def getDeltas(self):
         return self.deltainfo
+
+
+def get_deltas(repo):
+    """
+    A helper call to lookup repomd.xml for prestodelta info,
+    parse the presto delta using PrestoParser and extract
+    the deltarpm data.
+    """
+    repomd_xml_path = repo["repomd_xml_path"]
+    if not os.path.exists(repomd_xml_path):
+        return {}
+    prestodelta_rel_path = __get_repomd_filetype_path(repomd_xml_path, "prestodelta")
+    prestodelta_path = repomd_xml_path.split("repodata/repomd.xml")[0] + '/' + prestodelta_rel_path
+    if prestodelta_path is None:
+        # No presto info, no drpms to process
+        return {}
+    deltas = PrestoParser(prestodelta_path).getDeltas()
+    return deltas
+
+def __get_repomd_filetype_path(path, filetype):
+    """
+    Lookup the metadata file type's path
+    """
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", path)
+    if rmd:
+        try:
+            data = rmd.getData(filetype)
+            return data.location[1]
+        except:
+            return None
+    return None
 
 

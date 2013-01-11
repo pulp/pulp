@@ -38,9 +38,12 @@ def _distribution(v1_database, v2_database, report):
         v2_distro_path = os.path.join(DIR_DISTROS, distro_id)
         try:
             v2_distro_dir = os.path.dirname(v2_distro_path)
-            os.makedirs(os.path.dirname(v2_distro_dir))
+            print "GGGGGGGG",v2_distro_dir
+            if not os.path.isdir(v2_distro_dir):
+                os.makedirs(v2_distro_dir)
             shutil.copytree(v1_distro_path, v2_distro_path)
         except Exception, e:
             report.error("Error: %s" % e)
+            raise e
             return False
     return True

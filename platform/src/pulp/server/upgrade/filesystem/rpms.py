@@ -12,7 +12,9 @@
 
 import os
 import shutil
+import yum
 from pulp.server.upgrade.model import UpgradeStepReport
+from pulp.server.upgrade.utils import PrestoParser
 
 DIR_STORAGE_ROOT = '/var/lib/pulp/content/'
 DIR_RPMS = os.path.join(DIR_STORAGE_ROOT, 'rpm')
@@ -53,6 +55,27 @@ def _rpms(v1_database, v2_database, report):
             report.error("Error: %s" % e)
             return False
     return True
-def _drpms(v1_database, v2_database, report):
 
+def _drpms(v1_database, v2_database, report):
+    drpm_v2_coll = v2_database.units_drpm
+    v1_coll = v1_database.repos
+    repos = v1_coll.find()
+    for repo in repos:
+        deltarpms = PrestoParser.get_deltas(repo)
+        for nevra, dpkg in deltarpms.items():
+            for drpm in dpkg.deltas.values():
+                v2_path = os.path.join(DIR_DRPM, drpm.filename)
+                v1_path = repo['repomd_xml_path'].split("repodata/repomd.xml")[0] + drpm.filename
+                if not os.path.exists(v1_path):
+                    # missing source path, skip migrate
+                    report.warning("Package %s does not exist" % v1_path)
+                    continue
+                try:
+                    v2_pkg_dir = os.path.dirname(v2_path)
+                    if not os.path.isdir(v2_pkg_dir):
+                        os.makedirs(v2_pkg_dir)
+                    shutil.copy(v1_path, v2_pkg_dir)
+                except Exception, e:
+                    report.error("Error: %s" % e)
+                    return False
     return True

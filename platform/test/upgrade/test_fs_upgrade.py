@@ -28,20 +28,14 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         if os.path.exists(v2_var_dir):
             shutil.rmtree(v2_var_dir)
 
-    def get_files_in_dir(self, pattern, path):
-        files = []
-        for d,_,_ in os.walk(path):
-            files.extend(glob.glob(os.path.join(d,pattern)))
-        return files
-
     def test_rpms(self):
         report = UpgradeStepReport()
         rpms.V1_DIR_RPMS = "%s/%s" % (V1_TEST_FILESYSTEM, rpms.V1_DIR_RPMS)
         rpms.DIR_RPMS = "%s/%s" % (V2_TEST_FILESYSTEM, rpms.DIR_RPMS)
         status = rpms._rpms(self.v1_test_db.database, self.v2_test_db.database, report)
         self.assertTrue(status)
-        v1_rpms_list = self.get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
-        v2_rpms_list = self.get_files_in_dir('*.rpm', rpms.DIR_RPMS)
+        v1_rpms_list = get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
+        v2_rpms_list = get_files_in_dir('*.rpm', rpms.DIR_RPMS)
         print len(v1_rpms_list), len(v2_rpms_list)
         self.assertEquals(len(v1_rpms_list), len(v2_rpms_list))
 
@@ -51,6 +45,37 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         distribution.DIR_DISTROS = "%s/%s" % (V2_TEST_FILESYSTEM, distribution.DIR_DISTROS)
         status = distribution._distribution(self.v1_test_db.database, self.v2_test_db.database, report)
         self.assertTrue(status)
-        v1_distro_list = self.get_files_in_dir('*', distribution.V1_DIR_DISTROS)
-        v2_distro_list = self.get_files_in_dir('*', distribution.DIR_DISTROS)
+        v1_distro_list = get_files_in_dir('*', distribution.V1_DIR_DISTROS)
+        v2_distro_list = get_files_in_dir('*', distribution.DIR_DISTROS)
         self.assertEquals(len(v1_distro_list), len(v2_distro_list))
+
+class DRPMUpgradeTests(BaseFileUpgradeTests):
+
+    def setUp(self):
+        super(DRPMUpgradeTests, self).setUp()
+        new_repo = {
+                'id' : 'test_drpm_repo',
+                'content_types' : 'yum',
+                'repomd_xml_path' : os.path.join(V1_REPOS_DIR,
+                    'repos/pulp/pulp/demo_repos/test_drpm_repo/repodata/repomd.xml'),
+                'relative_path' : 'repos/pulp/pulp/demo_repos/test_drpm_repo/',
+            }
+        if self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}):
+            self.v1_test_db.database.repos.remove({'id' : 'test_drpm_repo'})
+        self.v1_test_db.database.repos.insert(new_repo, safe=True)
+
+    def test_drpms(self):
+        report = UpgradeStepReport()
+        rpms.DIR_DRPM = "%s/%s" % (V2_TEST_FILESYSTEM, rpms.DIR_DRPM)
+        status = rpms._drpms(self.v1_test_db.database, self.v2_test_db.database, report)
+        print status
+        self.assertTrue(status)
+        v2_rpms_list = get_files_in_dir('*.drpm', rpms.DIR_DRPM)
+        print  len(v2_rpms_list)
+        self.assertEquals(18, len(v2_rpms_list))
+
+def get_files_in_dir(pattern, path):
+    files = []
+    for d,_,_ in os.walk(path):
+        files.extend(glob.glob(os.path.join(d,pattern)))
+    return files
