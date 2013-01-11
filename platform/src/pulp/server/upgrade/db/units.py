@@ -100,10 +100,11 @@ def upgrade(v1_database, v2_database):
     drpms_success = _drpms(v1_database, v2_database, report)
     errata_success = _errata(v1_database, v2_database, report)
     distributions_success = _distributions(v1_database, v2_database, report)
+    iso_success = _isos(v1_database, v2_database, report)
 
     report.success = (init_types_success and init_associations_success and
                       rpms_success and srpms_success and drpms_success and
-                      errata_success and distributions_success)
+                      errata_success and distributions_success and iso_success)
     return report
 
 # -- upgrade steps ------------------------------------------------------------
@@ -226,7 +227,7 @@ def _packages(v1_database, v2_database, package_coll, all_v1_packages,
             'license' : v1_rpm['license'],
 
             '_id' : new_rpm_id,
-            '_content_type_id' : 'rpm'
+            '_content_type_id' : unit_type_id
         }
 
         # Checksum is weird, it's stored as a dict of checksum type to the
@@ -628,6 +629,63 @@ def _package_group_categories(v1_database, v2_database, report):
 
     return True
 
+
+def _isos(v1_database, v2_database, report):
+
+    v1_repo_coll = v1_database.repos
+    v2_ass_coll = v2_database.repo_content_units
+    v2_iso_coll = v2_database.units_iso
+
+    # Idempotency: I still dislike this as a strategy, but the easiest approach
+    # is to attempt the insert and let the uniqueness check kick out anything
+    # that's already been added.
+
+    v1_files = v1_database.file.find()
+    for v1_file in v1_files:
+        new_iso_id = ObjectId()
+
+        v2_iso = {
+            '_id' : new_iso_id,
+            '_content_type_id' : 'iso',
+            'name' : v1_file['filename'],
+            'size' : v1_file['size'],
+        }
+
+        # Checksum is stored as a dict from type to checksum, but in v1 we
+        # only ever used sha256. The model has been flattened in 2.0 to just
+        # store the checksum itself.
+        v2_iso['checksum'] = v1_file['checksum'].values()[0]
+
+        try:
+            v2_iso_coll.insert(v2_iso, safe=True)
+        except DuplicateKeyError:
+            # Still try to do the association in the event the unit already
+            # existed, so find the existing unit for its ID.
+            spec = dict([ (k, v2_iso[k]) for k in v2_iso if k in ('name', 'checksum', 'size')])
+            existing = v2_iso_coll.find_one(spec)
+            new_iso_id = existing['_id']
+
+        repos_with_iso = v1_repo_coll.find({'files' : v1_file['_id']}, {'id' : 1})
+        for v1_repo in repos_with_iso:
+            new_association = {
+                '_id' : ObjectId(),
+                'repo_id' : v1_repo['id'],
+                'unit_id' : new_iso_id,
+                'unit_type_id' : 'iso',
+                'owner_type' : DEFAULT_OWNER_TYPE,
+                'owner_id' : DEFAULT_OWNER_ID,
+                'created' : DEFAULT_CREATED,
+                'updated' : DEFAULT_UPDATED,
+                }
+            try:
+                v2_ass_coll.insert(new_association, safe=True)
+            except DuplicateKeyError:
+                # Still hate this model, still the simplest
+                pass
+
+    return True
+
+
 # -- really private -----------------------------------------------------------
 
 def _units_collection_name(type_id):
@@ -725,7 +783,7 @@ TYPE_DEFS = [
         'id': 'iso',
         'display_name': 'ISO',
         'description': 'ISO',
-        'unit_key': ['name', 'checksum_type', 'checksum'],
+        'unit_key': ['name', 'checksum', 'size'],
         'search_indexes': [],
         'referenced_types' : [],
     },
