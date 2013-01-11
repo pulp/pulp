@@ -720,4 +720,13 @@ TYPE_DEFS = [
             ['name', 'epoch', 'version', 'release', 'arch', 'filename', 'checksum', 'checksumtype'],
         'referenced_types' : [],
     },
+
+    {
+        'id': 'iso',
+        'display_name': 'ISO',
+        'description': 'ISO',
+        'unit_key': ['name', 'checksum_type', 'checksum'],
+        'search_indexes': [],
+        'referenced_types' : [],
+    },
 ]

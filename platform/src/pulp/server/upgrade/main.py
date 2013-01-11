@@ -24,7 +24,7 @@ from pymongo import Connection
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 from pulp.server.upgrade.db import (all_repos, cds, consumers, events, iso_repos,
-                                    tasks, units, users, yum_repos)
+                                    tasks, unit_count, units, users, yum_repos)
 
 
 # Indicates which Pulp stream (v1, v2, etc.) is installed
@@ -42,6 +42,7 @@ DB_UPGRADE_CALLS = (
     (iso_repos.upgrade, _('File Repositories, Content')),
     (all_repos.upgrade, _('Repository Groups, Sync Schedules')),
     (units.upgrade, _('Packages, Errata, and Distributions')),
+    (unit_count.upgrade, _('Calculate Repository Content Counts')),
 )
 
 # Name of the production Pulp database
