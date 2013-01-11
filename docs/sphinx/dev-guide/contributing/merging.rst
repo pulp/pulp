@@ -4,6 +4,70 @@ Merging
 Pull Requests
 -------------
 
+You have some commits in a branch, and you're ready to merge. The Pulp Team makes
+use of pull requests for all but the most trivial contributions.
+
+On the GitHub page for the repo where your development branch lives, there will be
+a "Pull Request" button. Click it. From there you will choose the source and
+destination branches.
+
+For details about using pull requests, see GitHub's
+`official documentation <https://help.github.com/articles/using-pull-requests>`_.
+
+
+Review
+------
+
+Once a pull request has been submitted, a member of the team will review it.
+That person can indicate their intent to review a particular pull request by
+assigning it to them self.
+
+Comments on a pull request are meant to be helpful for the patch author. They
+may point out critical flaws, suggest more efficient approaches, express admiration
+for your work, ask questions, make jokes, etc. Once review is done, the reviewer
+assigns the pull request back to the author. The next step for the author will
+go in one of two directions:
+
+1. If you have commit access and can merge the pull request yourself, you can
+   take the comments for whatever you think they are worth. Use your own
+   judgement, make any revisions you see fit, and merge when you are satisfied.
+   Think of the review like having someone proof-read your paper in college.
+
+2. If you are a community member and do not have commit access, we ask that you
+   take the review more literally. Since the Pulp Team is accepting responsibility
+   for maintaining your code into perpetuity, please address all concerns expressed
+   by the reviewer, and assign it back to them when you are done. The reviewer
+   will strive to make it clear which issues are blocking your pull request from
+   being merged.
+
+.. note::
+   *To the community:* The Pulp Team is very grateful for your contribution and
+   values your involvement tremendously! There are few things in an OSS project as
+   satisfying as receiving a pull request from the community.
+
+   We are very open and honest when we review each other's work. We will do our
+   best to review your contribution with respect and professionalism. In return,
+   we hope you will accept our review process as an opportunity for everyone to
+   learn something, and to make Pulp the best product it can be.
+
+
+Rebasing and Squashing
+----------------------
+
+Before you submit a pull request, consider an interactive rebase with some
+squashing. Do you have a dozen commits? Consider some squashing.
+
+- Rebasing makes it more likely that your merge will be fast-forward only, which
+  helps avoid conflicts and has other advantages.
+- Nobody wants to see a your typo fixes in the commit log. Consider squashing
+  trivial commits so that each commit you merge is as story-focused as possible.
+
+.. warning::
+   Keep in mind that rebasing creates new commits that are unique from your
+   original commits. Thus, if you have three commits and rebase them, you must
+   make sure that all copies of those original commits get deleted. Did you push
+   your branch to origin? Delete it and re-push after the rebase.
+
 
 Merge to Multiple Releases
 --------------------------
