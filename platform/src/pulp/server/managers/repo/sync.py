@@ -124,6 +124,9 @@ class RepoSyncManager(object):
                                      for this sync only
         @type  sync_config_override: dict
 
+        @return: The synchronization report.
+        @rtype: L{pulp.server.plugins.model.SyncReport}
+
         @raise MissingResource: if repo_id does not refer to a valid repo
         @raise OperationFailed: if the given repo does not have an importer set
         """
@@ -156,6 +159,8 @@ class RepoSyncManager(object):
 
         if sync_result['result'] == RepoSyncResult.RESULT_FAILED:
             raise PulpExecutionException(_('Importer indicated a failed response'))
+
+        return sync_result
 
         # auto publish call has been moved to a dependent call in a multiple
         # call execution through the coordinator
