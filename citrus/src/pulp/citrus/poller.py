@@ -24,18 +24,24 @@ class TaskPoller:
     def __init__(self, binding, progress):
         self.binding = binding
         self.progress = progress
+        self.poll = True
+
+    def abort(self):
+        self.poll = False
 
     def join(self, task_id):
         last_hash = 0
-        while True:
+        while self.poll:
             sleep(self.DELAY)
             http = self.binding.tasks.get_task(task_id)
             if http.response_code != httplib.OK:
-                break
+                msg = 'Fetch task %s, failed: http=%s' % task_id, http.response_code
+                raise Exception(msg)
             task = http.response_body
             last_hash = self.report_progress(task, last_hash)
             if task.state == CALL_ERROR_STATE:
-                break
+                msg = 'Task %s, failed: state=%s' % task_id, task.state
+                raise Exception(msg)
             if task.state in CALL_COMPLETE_STATES:
                 return task.result
 

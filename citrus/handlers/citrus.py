@@ -95,11 +95,12 @@ class RepositoryHandler(ContentHandler):
         added, merged = self.add_repositories(progress, binds)
 
         # synchronize repositories
-        units_added = []
+        importer_reports = {}
         progress.push_step('synchronize', len(binds))
         for repo_id in [b['repo_id'] for b in binds]:
             repo = LocalRepository(repo_id)
             report = repo.run_sync(progress)
+            importer_reports[repo_id] = report
 
         # purge repositories
         removed = self.purge_repositories(progress, binds)
@@ -111,9 +112,12 @@ class RepositoryHandler(ContentHandler):
         progress.set_status(progress.SUCCEEDED)
 
         report = {
-            'added':added,
-            'merged':merged,
-            'removed':removed,
+            'merge':{
+                'added':added,
+                'merged':merged,
+                'removed':removed,
+            },
+            'synchronization': importer_reports,
         }
 
         return report
