@@ -20,15 +20,37 @@ log = getLogger(__name__)
 
 
 class Transport:
+    """
+    The transport interface.
+    """
 
     def download(self, requests):
         """
         Process the specified download requests.
         @param requests: A list of L{DownloadRequest} objects.
         @type requests: list
-        @return: The list of downloaded units.
-            Each unit is: L{pulp.plugins.model.Unit}
-        @rtype: list
+        """
+        pass
+
+
+class DownloadTracker:
+    """
+    Track progress of download requests.
+    """
+
+    def succeeded(self, request):
+        """
+        Called when a download request succeeds.
+        @param request: The download request that succeeded.
+        @type request: L{DownloadRequest}
+        """
+        pass
+
+    def failed(self, request, exception):
+        """
+        Called when a download request fails.
+        @param request: The download request that failed.
+        @type request: L{DownloadRequest}
         """
         pass
 
@@ -48,10 +70,10 @@ class DownloadRequest:
     @type local_unit: L{Unit}
     """
 
-    def __init__(self, importer, unit, local_unit):
+    def __init__(self, tracker, unit, local_unit):
         """
-        @param importer: The importer making the request.
-        @type importer: L{Importer}
+        @param tracker: A download tracker.
+        @type tracker: L{DownloadTracker}
         @param unit: The upstream content unit.
         @type unit: dict
         @param local_unit: A local content unit that is in the process of
@@ -59,21 +81,9 @@ class DownloadRequest:
             in the unit.
         @type local_unit: L{Unit}
         """
-        self.importer = importer
+        self.tracker = tracker
         self.unit = unit
         self.local_unit = local_unit
-
-    def protocol(self):
-        """
-        Get the protocol specified by the upstream unit to be used for
-        the download.  A value of 'None' indicates that there is no file
-        to be downloaded.
-        @return: The protocol name.
-        @rtype: str
-        """
-        download = self.unit.get('_download')
-        if download:
-            return download.get('protocol')
 
     def details(self):
         """
@@ -91,7 +101,7 @@ class DownloadRequest:
         """
         Called by the transport to indicate the requested download succeeded.
         """
-        self.importer._add_unit(self.local_unit)
+        self.tracker.succeeded(self)
 
     def failed(self, exception):
         """
@@ -99,4 +109,4 @@ class DownloadRequest:
         @param exception: The exception raised.
         @type exception: Exception
         """
-        log.exception('download failed: %s', self.details())
+        self.tracker.failed(self, exception)

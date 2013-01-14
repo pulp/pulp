@@ -18,15 +18,12 @@ import urllib
 class HttpTransport:
 
     def download(self, requests):
-        downloaded = []
         for request in requests:
             try:
                 self._download(request)
                 request.succeeded()
-                downloaded.append(request.local_unit)
             except Exception, e:
                 request.failed(e)
-        return downloaded
 
     def _download(self, request):
         url = request.details()['url']

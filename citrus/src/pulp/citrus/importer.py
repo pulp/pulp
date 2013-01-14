@@ -13,7 +13,7 @@ from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 from pulp.citrus.manifest import Manifest
 from pulp.citrus.progress import ProgressReport
-from pulp.citrus.transport import DownloadRequest
+from pulp.citrus.transport import DownloadTracker, DownloadRequest
 from logging import getLogger
 
 
@@ -163,11 +163,13 @@ class Importer:
                 self._add_unit(local_unit)
                 added.append(local_unit)
                 continue
-            request = DownloadRequest(self, unit, local_unit)
+            tracker = Tracker(self)
+            request = DownloadRequest(tracker, unit, local_unit)
             requests.append(request)
         # download units
-        for local_unit in self.transport.download(requests):
-            added.append(local_unit)
+        self.transport.download(requests)
+        for unit in tracker.get_succeeded():
+            added.append(unit)
         return added
 
     def _add_unit(self, unit):
@@ -309,3 +311,66 @@ class UnitInventory:
             if k not in self.upstream:
                 units.append(units)
         return units
+
+
+class Tracker(DownloadTracker):
+    """
+    The unit download tracker.
+    Maintains the list of succeeded and failed downloads.  Provides feedback
+    to the importer so that progress can be reported and units added to the
+    database based on the download success.
+    @ivar importer: The importer object.
+    @type importer: L{Importer}
+    @ivar succeeded: The list of downloaded units.
+    @type succeeded: list
+    @ivar failed: The list of units and exception raised.
+    @type failed: list
+    """
+
+    def __init__(self, importer):
+        """
+        @param importer: The importer object.
+        @type importer: L{Importer}
+        @param succeeded: The list of downloaded units.
+        @type succeeded: list
+        @param failed: The list of units and exception raised.
+        @type failed: list
+        """
+        self._importer = importer
+        self._succeeded = []
+        self._failed = []
+
+    def succeeded(self, request):
+        """
+        Called when a download request succeeds.
+        Add to succeeded list and notify the importer.
+        @param request: The download request that succeeded.
+        @type request: L{DownloadRequest}
+        """
+        unit = request.local_unit
+        self._succeeded.append(unit)
+        self._importer._add_unit(unit)
+
+    def failed(self, request, exception):
+        """
+        Called when a download request fails.
+        Add to the failed list.
+        @param request: The download request that failed.
+        @type request: L{DownloadRequest}
+        """
+        self._failed.append((request.local_unit, exception))
+
+    def get_succeeded(self):
+        """
+        Get a list of successfully downloaded units.
+        @return: List of successfully downloaded units.
+        """
+        return self._succeeded
+
+    def get_failed(self):
+        """
+        Get a list of units that failed to download.
+          Each item is: (unit, exception)
+        @return: List of units that failed to download.
+        """
+        return self._failed
