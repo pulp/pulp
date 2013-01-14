@@ -121,6 +121,13 @@ class Importer:
 
         return (units_added, units_purged)
 
+    def cancel(self):
+        """
+        Cancel the synchronization in progress.
+        """
+        self.cancelled = True
+        self.transport.cancel()
+
     def _missing_units(self, unit_inventory):
         """
         Listing of units contained in the upstream inventory but
@@ -158,6 +165,8 @@ class Importer:
         self.progress.push_step('add_units', len(units))
         requests = []
         for unit, local_unit in units:
+            if self.cancelled:
+                return added
             download = unit.get('_download')
             if not download:
                 self._add_unit(local_unit)

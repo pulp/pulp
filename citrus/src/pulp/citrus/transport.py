@@ -32,6 +32,12 @@ class Transport:
         """
         pass
 
+    def cancel(self):
+        """
+        Cancel an active download.
+        """
+        pass
+
 
 class DownloadTracker:
     """

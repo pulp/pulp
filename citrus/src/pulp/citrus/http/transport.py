@@ -17,13 +17,21 @@ import urllib
 
 class HttpTransport:
 
+    def __init__(self):
+        self.cancelled = False
+
     def download(self, requests):
         for request in requests:
             try:
                 self._download(request)
                 request.succeeded()
+                if self.cancelled:
+                    break
             except Exception, e:
                 request.failed(e)
+
+    def cancel(self):
+        self.cancelled = True
 
     def _download(self, request):
         url = request.details()['url']
