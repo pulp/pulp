@@ -99,7 +99,7 @@ class RepositoryHandler(ContentHandler):
         progress.push_step('synchronize', len(binds))
         for repo_id in [b['repo_id'] for b in binds]:
             repo = LocalRepository(repo_id)
-            report = repo.run_sync(progress)
+            report = repo.run_synchronization(progress)
             importer_reports[repo_id] = report
 
         # purge repositories

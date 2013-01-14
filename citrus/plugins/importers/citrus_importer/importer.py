@@ -14,6 +14,7 @@
 from gettext import gettext as _
 from pulp.plugins.importer import Importer
 from pulp.citrus.importer import Importer as ImporterImpl
+from pulp.citrus.http.transport import HttpTransport
 from logging import getLogger
 
 
@@ -65,48 +66,3 @@ class CitrusImporter(Importer):
 
         summary = {}
         return conduit.build_success_report(summary, report)
-
-
-
-
-# --- hacking in the transport -----------------------------------------------------------
-
-import os
-import urllib
-
-class HttpTransport:
-
-    def download(self, requests):
-        downloaded = []
-        for request in requests:
-          try:
-              self._download(request)
-              request.succeeded()
-              downloaded.append(request.local_unit)
-          except Exception, e:
-              request.failed(e)
-        return downloaded
-
-    def _download(self, request):
-        url = request.details()['url']
-        fp_in = urllib.urlopen(url)
-        try:
-            storage_path = request.local_unit.storage_path
-            self._mkdir(storage_path)
-            fp_out = open(storage_path, 'w+')
-            try:
-                while True:
-                    bfr = fp_in.read(0x100000)
-                    if bfr:
-                        fp_out.write(bfr)
-                    else:
-                        break
-            finally:
-                fp_out.close()
-        finally:
-            fp_in.close()
-
-    def _mkdir(self, file_path):
-        dir_path = os.path.dirname(file_path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)

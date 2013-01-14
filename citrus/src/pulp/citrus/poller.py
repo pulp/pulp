@@ -21,15 +21,14 @@ class TaskPoller:
 
     DELAY = 0.5
 
-    def __init__(self, binding, progress):
+    def __init__(self, binding):
         self.binding = binding
-        self.progress = progress
         self.poll = True
 
     def abort(self):
         self.poll = False
 
-    def join(self, task_id):
+    def join(self, task_id, progress):
         last_hash = 0
         while self.poll:
             sleep(self.DELAY)
@@ -38,14 +37,14 @@ class TaskPoller:
                 msg = 'Fetch task %s, failed: http=%s' % task_id, http.response_code
                 raise Exception(msg)
             task = http.response_body
-            last_hash = self.report_progress(task, last_hash)
+            last_hash = self.report_progress(progress, task, last_hash)
             if task.state == CALL_ERROR_STATE:
                 msg = 'Task %s, failed: state=%s' % task_id, task.state
                 raise Exception(msg)
             if task.state in CALL_COMPLETE_STATES:
                 return task.result
 
-    def report_progress(self, task, last_hash):
+    def report_progress(self, progress, task, last_hash):
         _hash = hash(repr(task.progress))
         if _hash != last_hash:
             if task.progress:
@@ -53,5 +52,5 @@ class TaskPoller:
                 report = ProgressReport()
                 report.steps = reported['steps']
                 report.action = reported['action']
-                self.progress.set_nested_report(report)
+                progress.set_nested_report(report)
         return _hash

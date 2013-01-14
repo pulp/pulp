@@ -199,6 +199,14 @@ class LocalRepository(Local, Repository):
         if http.response_code != httplib.ACCEPTED:
             raise Exception('purge_orphans() failed:%d', http.response_code)
 
+    def __init__(self, repo_id, details=None):
+        """
+        @param repo_id:
+        @param details:
+        """
+        Repository.__init__(self, repo_id, details)
+        self.poller = TaskPoller(self.binding)
+
     def add(self):
         """
         Add the local repository and associated distributors.
@@ -320,7 +328,7 @@ class LocalRepository(Local, Repository):
                 dist = LocalDistributor(self.repo_id, dist_id)
                 dist.delete()
 
-    def run_sync(self, progress):
+    def run_synchronization(self, progress):
         """
         Run a sync() on the repository.
         @param progress: A progress report.
@@ -329,11 +337,16 @@ class LocalRepository(Local, Repository):
         """
         http = self.binding.repo_actions.sync(self.repo_id, {})
         if http.response_code == httplib.ACCEPTED:
-            poller = TaskPoller(self.binding, progress)
             task = http.response_body[0]
-            return poller.join(task.task_id)
+            return self.poller.join(task.task_id, progress)
         else:
-            raise Exception('run_sync() failed:%d', http.response_code)
+            raise Exception('synchronization failed: http=%d', http.response_code)
+
+    def cancel_synchronization(self):
+        """
+        Cancel running synchronization.
+        """
+        self.poller.abort()
 
 
 class Distributor:
