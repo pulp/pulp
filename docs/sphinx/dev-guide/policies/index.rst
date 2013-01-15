@@ -5,6 +5,7 @@ Policies
    :maxdepth: 3
 
    releases
+   versioning
 
 
 These policies apply to code that is supported by the Pulp Team. Third-party
