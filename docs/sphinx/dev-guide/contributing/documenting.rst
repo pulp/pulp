@@ -1,7 +1,7 @@
 Creating Documentation
 ======================
 
-Platform vs. Other User Guides
+Platform vs. Type-Specific User Guides
 ------------------------------
 
 The platform user guide should cover all generic features of Pulp. When examples
@@ -32,6 +32,11 @@ The user guides should instead add value beyond what the CLI tools can
 self-document. Focus on how to use specific features, show lots of examples, and
 keep in mind what use cases users are likely to be interested in.
 
+Examples should not include long lines that will require horizontal scrolling.
+
+All example commands should begin with only ``$ `` as a prompt. Commands that
+must be run as root should be shown using ``sudo``.
+
 
 Read the Docs
 -------------
@@ -44,7 +49,7 @@ Links to all current documentation can be found at
 RTD Versions
 ------------
 
-When viewing docs on Red the Docs, there are multiple versions linked in the
+When viewing docs on Read the Docs, there are multiple versions linked in the
 upper-left corner of the page. The "latest" version corresponds to the version
 of Pulp currently under development. Past releases each have a link named
 "pulp-x.y".
