@@ -5,3 +5,4 @@ Policies
    :maxdepth: 3
 
    releases
+   versioning
