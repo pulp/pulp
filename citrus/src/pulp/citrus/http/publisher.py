@@ -43,7 +43,7 @@ class HttpPublisher(FilePublisher):
         links = FilePublisher.link(self, units)
         for unit, relative_path in links:
             url = join(self.base_url, self.virtual_host[0], relative_path)
-            unit['_download'] = dict(details=dict(url=url))
+            unit['_download'] = dict(url=url)
         return links
 
     def manifest_path(self):

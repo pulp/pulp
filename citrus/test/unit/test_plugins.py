@@ -37,7 +37,7 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
-from pulp.server.managers import factory
+from pulp.server.managers import factory as managers
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.server.config import config as pulp_conf
@@ -52,13 +52,14 @@ class Repository(object):
         self.id = id
 
 
-class TestPlugins(WebTest):
+class PluginTestBase(WebTest):
 
     REPO_ID = 'test-repo'
     UNIT_TYPE_ID = 'rpm'
-    UNIT_ID = 'test_unit'
-    UNIT_METADATA = {'A':'a','B':'b'}
+    UNIT_ID = 'test_unit_%d'
+    UNIT_METADATA = {'A':'a','B':'b', 'N': 0}
     TYPEDEF_ID = UNIT_TYPE_ID
+    NUM_UNITS = 3
 
     @classmethod
     def tmpdir(cls, role):
@@ -82,7 +83,7 @@ class TestPlugins(WebTest):
         unit_db.type_definition = \
             Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
-            Mock(return_value=['A', 'B'])
+            Mock(return_value=['A', 'B', 'N'])
 
     def tearDown(self):
         WebTest.tearDown(self)
@@ -101,9 +102,9 @@ class TestPlugins(WebTest):
         os.makedirs(os.path.join(self.upfs, 'content'))
         pulp_conf.set('server', 'storage_dir', self.upfs)
         # create repo
-        manager = factory.repo_manager()
+        manager = managers.repo_manager()
         manager.create_repo(self.REPO_ID)
-        manager = factory.repo_distributor_manager()
+        manager = managers.repo_distributor_manager()
         # add distrubutor
         manager.add_distributor(
             self.REPO_ID,
@@ -111,33 +112,37 @@ class TestPlugins(WebTest):
             {},
             False,
             distributor_id=CITRUS_DISTRUBUTOR)
-        manager = factory.content_manager()
-        unit = dict(self.UNIT_METADATA)
-        # add unit file
-        storage_dir = pulp_conf.get('server', 'storage_dir')
-        storage_path = \
-            os.path.join(storage_dir, 'content',
-                '.'.join((self.UNIT_ID, self.UNIT_TYPE_ID)))
-        unit['_storage_path'] = storage_path
-        fp = open(storage_path, 'w+')
-        fp.write(self.UNIT_ID)
-        fp.close()
-        # add unit
-        manager.add_content_unit(
-            self.UNIT_TYPE_ID,
-            self.UNIT_ID,
-            unit)
-        manager = factory.repo_unit_association_manager()
-        # associate unit
-        manager.associate_unit_by_id(
-            self.REPO_ID,
-            self.UNIT_TYPE_ID,
-            self.UNIT_ID,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
-            CITRUS_IMPORTER)
+        # add units
+        for n in range(0, self.NUM_UNITS):
+            unit_id = self.UNIT_ID % n
+            unit = dict(self.UNIT_METADATA)
+            unit['N'] = n
+            # add unit file
+            storage_dir = pulp_conf.get('server', 'storage_dir')
+            storage_path = \
+                os.path.join(storage_dir, 'content',
+                    '.'.join((unit_id, self.UNIT_TYPE_ID)))
+            unit['_storage_path'] = storage_path
+            fp = open(storage_path, 'w+')
+            fp.write(unit_id)
+            fp.close()
+            # add unit
+            manager = managers.content_manager()
+            manager.add_content_unit(
+                self.UNIT_TYPE_ID,
+                unit_id,
+                unit)
+            manager = managers.repo_unit_association_manager()
+            # associate unit
+            manager.associate_unit_by_id(
+                self.REPO_ID,
+                self.UNIT_TYPE_ID,
+                unit_id,
+                RepoContentUnit.OWNER_TYPE_IMPORTER,
+                CITRUS_IMPORTER)
 
 
-class TestDistributor(TestPlugins):
+class TestDistributor(PluginTestBase):
 
     def test_payload(self):
         # Setup
@@ -164,7 +169,7 @@ class TestDistributor(TestPlugins):
         # TODO: verify published
 
 
-class ImporterTest(TestPlugins):
+class ImporterTest(PluginTestBase):
 
     def test_import(self):
         # Setup
@@ -182,7 +187,6 @@ class ImporterTest(TestPlugins):
         # Test
         importer = CitrusImporter()
         cfg = dict(
-            base_url='file://',
             manifest_url=dist.publisher(repo, cfg).manifest_path())
         conduit = RepoSyncConduit(
             self.REPO_ID,
@@ -192,7 +196,7 @@ class ImporterTest(TestPlugins):
         importer.sync_repo(repo, conduit, cfg)
         # Verify
         units = conduit.get_units()
-        self.assertEquals(len(units), 1)
+        self.assertEquals(len(units), self.NUM_UNITS)
 
 
 class TestHandler(RepositoryHandler):
@@ -206,23 +210,23 @@ class TestHandler(RepositoryHandler):
         return RepositoryHandler.synchronize(self, progress, binds)
 
 
-class TestAgentPlugin(TestPlugins):
+class TestAgentPlugin(PluginTestBase):
 
     PULP_ID = 'downstream'
 
     def populate(self):
-        TestPlugins.populate(self)
+        PluginTestBase.populate(self)
         self.virtual_host = (self.upfs, self.upfs)
         # register downstream
-        manager = factory.consumer_manager()
+        manager = managers.consumer_manager()
         manager.register(self.PULP_ID)
-        manager = factory.repo_importer_manager()
+        manager = managers.repo_importer_manager()
         # add importer
         cfg = dict(manifest_url='http://apple.com')
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distrubutor
-        manager = factory.repo_distributor_manager()
-        cfg = dict(base_url='file:///', virtual_host=self.virtual_host)
+        manager = managers.repo_distributor_manager()
+        cfg = dict(base_url='file://', virtual_host=self.virtual_host)
         manager.add_distributor(
             self.REPO_ID,
             CITRUS_DISTRUBUTOR,
@@ -230,7 +234,7 @@ class TestAgentPlugin(TestPlugins):
             False,
             CITRUS_DISTRUBUTOR)
         # bind
-        manager = factory.consumer_bind_manager()
+        manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, CITRUS_DISTRUBUTOR)
 
     def clean(self):
@@ -240,6 +244,43 @@ class TestAgentPlugin(TestPlugins):
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+
+    def verify_merge(self):
+        # repository
+        manager = managers.repo_query_manager()
+        manager.get_repository(self.REPO_ID)
+        # importer
+        manager = managers.repo_importer_manager()
+        importer = manager.get_importer(self.REPO_ID)
+        manifest_url = importer['config']['manifest_url']
+        self.assertTrue(manifest_url.endswith('%s/units.json' % self.REPO_ID))
+        # distributor
+        manager = managers.repo_distributor_manager()
+        distributor = manager.get_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR)
+        base_url = distributor['config']['base_url']
+        self.assertEqual(base_url, 'file://')
+        virtual_host = distributor['config']['virtual_host']
+        self.assertEqual(virtual_host[0], self.upfs)
+        self.assertEqual(virtual_host[1], self.upfs)
+        # check units
+        manager = managers.repo_unit_association_query_manager()
+        units = manager.get_units(self.REPO_ID)
+        units = dict([(u['metadata']['N'], u) for u in units])
+        self.assertEqual(len(units), self.NUM_UNITS)
+        for n in range(0, self.NUM_UNITS):
+            unit = units[n]
+            unit_id = self.UNIT_ID % n
+            metadata = unit['metadata']
+            storage_path = metadata['_storage_path'].replace('//', '/')
+            self.assertEqual(unit['unit_type_id'], self.UNIT_TYPE_ID)
+            self.assertEqual(unit['repo_id'], self.REPO_ID)
+            self.assertEqual(unit['owner_id'], CITRUS_IMPORTER)
+            file = '.'.join((unit_id, self.UNIT_TYPE_ID))
+            self.assertEqual(storage_path, os.path.join(self.downfs, 'content', file))
+            self.assertTrue(os.path.exists(storage_path))
+            # unit files
+        upstream_files = os.listdir(os.path.join(self.upfs, 'content'))
+        self.assertEqual(self.NUM_UNITS, len(upstream_files))
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
     def test_handler(self, unused):
@@ -282,6 +323,7 @@ class TestAgentPlugin(TestPlugins):
         @param unused:
         @return:
         """
+        _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
         @patch('citrus.Local.binding', binding)
@@ -299,19 +341,29 @@ class TestAgentPlugin(TestPlugins):
             options = dict(all=True)
             handler = TestHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
-            handler.update(Conduit(), units, options)
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
         test_handler()
         time.sleep(2)
-        # Validate
-        upstream_files = os.listdir(os.path.join(self.upfs, 'content'))
-        self.assertEqual(1, len(upstream_files))
-        for file in upstream_files:
-            path = os.path.join(os.path.join(self.downfs, 'content', file))
-            self.assertTrue(os.path.exists(path))
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        merge = report.details['merge']
+        self.assertEqual(merge['added'], [self.REPO_ID])
+        self.assertEqual(merge['merged'], [])
+        self.assertEqual(merge['removed'], [])
+        synchronization = report.details['synchronization'][self.REPO_ID]
+        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
+        self.assertEqual(synchronization['removed_count'], 0)
+        details = synchronization['details']
+        self.assertEqual(len(details['added']), self.NUM_UNITS)
+        self.assertEqual(len(details['removed']), 0)
+        self.assertEqual(len(details['errors']), 0)
+        self.verify_merge()
 
     def clean_units(self):
-        Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
+        unit_db.clean()
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge(self, unused):
@@ -323,6 +375,7 @@ class TestAgentPlugin(TestPlugins):
         @param unused:
         @return:
         """
+        _report = []
         self.clean = self.clean_units
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
@@ -341,12 +394,22 @@ class TestAgentPlugin(TestPlugins):
             options = dict(all=True)
             handler = TestHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
-            handler.update(Conduit(), units, options)
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
         test_handler()
         time.sleep(2)
-        # Validate
-        upstream_files = os.listdir(os.path.join(self.upfs, 'content'))
-        self.assertEqual(1, len(upstream_files))
-        for file in upstream_files:
-            path = os.path.join(os.path.join(self.downfs, 'content', file))
-            self.assertTrue(os.path.exists(path))
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        merge = report.details['merge']
+        self.assertEqual(merge['added'], [])
+        self.assertEqual(merge['merged'], [self.REPO_ID])
+        self.assertEqual(merge['removed'], [])
+        synchronization = report.details['synchronization'][self.REPO_ID]
+        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
+        self.assertEqual(synchronization['removed_count'], 0)
+        details = synchronization['details']
+        self.assertEqual(len(details['added']), self.NUM_UNITS)
+        self.assertEqual(len(details['removed']), 0)
+        self.assertEqual(len(details['errors']), 0)
+        self.verify_merge()

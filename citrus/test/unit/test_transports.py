@@ -13,9 +13,10 @@ import os
 import shutil
 import tempfile
 import json
+import urllib
 
 from unittest import TestCase
-from pulp.citrus.publisher import HttpPublisher, HttpReader
+from pulp.citrus.http.publisher import HttpPublisher
 
 class TestHttp(TestCase):
 
@@ -32,40 +33,47 @@ class TestHttp(TestCase):
             os.makedirs(self.TMP_ROOT)
         self.tmpdir = tempfile.mkdtemp(dir=self.TMP_ROOT)
         self.unit_dir = os.path.join(self.tmpdir, 'unit_storage')
-        self.unit_dir2 = os.path.join(self.tmpdir, 'unit_storage2')
         shutil.rmtree(self.tmpdir)
         os.makedirs(self.unit_dir)
-        os.makedirs(self.unit_dir2)
 
     def shutDown(self):
         shutil.rmtree(self.TMP_ROOT)
 
-    def test_http(self):
+    def test_publisher(self):
         # setup
         units = []
-        for i in range(0, 3):
-            fn = 'test_%d.unit' % i
+        for n in range(0, 3):
+            fn = 'test_%d' % n
             path = os.path.join(self.unit_dir, fn)
             fp = open(path, 'w')
             fp.write(fn)
             fp.close()
-            unit = {'type_id':'unit', 'storage_path':path}
+            unit = {'type_id':'unit', 'unit_key':{'n':n}, 'storage_path':path}
             units.append(unit)
         # test
         # publish
-        repo_id = 'elmer'
+        repo_id = 'test_repo'
+        base_url = 'file://'
         publish_dir = os.path.join(self.tmpdir, 'citrus/repos')
         virtual_host = (publish_dir, publish_dir)
-        p = HttpPublisher(repo_id, virtual_host)
+        p = HttpPublisher(base_url, virtual_host, repo_id)
         p.publish(units)
-        # read
-        base_url = 'file://'
-        reader = HttpReader(base_url)
-        fp = reader.open(publish_dir, repo_id, 'units.json')
-        s = fp.read()
-        print s
-        units = json.loads(s)
+        # verify
+        manifest_path = p.manifest_path()
+        fp = open(manifest_path)
+        manifest = json.load(fp)
         fp.close()
-        for unit in units:
-            storage_path = os.path.join(self.unit_dir2, unit['storage_path'])
-            reader.download(unit, storage_path)
+        n = 0
+        for unit in manifest:
+            file_content = 'test_%d' % n
+            _download = unit['_download']
+            url = _download['url']
+            self.assertEqual(url.rsplit('/', 1)[0],'/'.join((base_url, publish_dir[1:], repo_id, 'content')))
+            path = url.split('//', 1)[1]
+            self.assertTrue(os.path.islink(path))
+            f = open(path)
+            s = f.read()
+            f.close()
+            self.assertEqual(s, file_content)
+            self.assertEqual(unit['unit_key']['n'], n)
+            n += 1

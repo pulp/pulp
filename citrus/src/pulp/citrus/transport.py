@@ -99,9 +99,7 @@ class DownloadRequest:
         @return: The download specification.
         @rtype: dict
         """
-        download = self.unit.get('_download')
-        if download:
-            return download.get('details')
+        return self.unit.get('_download')
 
     def succeeded(self):
         """

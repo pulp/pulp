@@ -387,6 +387,7 @@ class Tracker(DownloadTracker):
         unit = request.local_unit
         try:
             self._repository._add_unit(unit)
+            self._succeeded.append(unit)
         except Exception, e:
             self._failed.append((unit, e))
 
