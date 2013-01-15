@@ -69,7 +69,7 @@ class ReportSkin:
         step = self.report['steps'][-1]
         details = self.report['action']
         action = details.get('action')
-        subject = details.get('subject')
+        subject = details.get('subject', '')[:60]
         error = details.get('error')
         if action:
             action_ratio = step[2]

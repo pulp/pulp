@@ -49,20 +49,11 @@ class CitrusImporter(Importer):
         return (True, None)
 
     def sync_repo(self, repo, conduit, config):
-        report = {
-            'units_added':[],
-            'units_removed':[],
-            'error':None,
-        }
-
         try:
             transport = HttpTransport()
             importer = ImporterImpl(conduit, config, transport)
-            added, removed = importer.synchronize(repo.id)
-            report['added'] = [u.unit_key for u in added]
-            report['removed'] = [u.unit_key for u in removed]
+            report = importer.synchronize(repo.id)
+            return conduit.build_success_report({}, report)
         except Exception, e:
-            report['error'] = str(e)
-
-        summary = {}
-        return conduit.build_success_report(summary, report)
+            msg = str(e)
+            return conduit.build_failure_report(msg, {})

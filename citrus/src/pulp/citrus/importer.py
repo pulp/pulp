@@ -90,18 +90,29 @@ class Importer:
           4. Delete units specified locally but not upstream.
         @param repo_id: The repository ID.
         @type repo_id: str
+        @return: A synchronization report of:
+          - added: list of added unit_key.
+          - removed: list of removed unit_key.
+          - errors: list of (unit_key, error)
+        @rtype: dict
         """
         self.progress.push_step('fetch_local')
         local_units = self._local_units()
         self.progress.push_step('fetch_upstream')
         upstream_units = self._upstream_units()
         unit_inventory = UnitInventory(local_units, upstream_units)
+        errors = []
 
         # add missing units
         units_added = []
         try:
-            units_added = self._add_units(unit_inventory)
-            self.progress.set_status(ProgressReport.SUCCEEDED)
+            added, failed = self._add_units(unit_inventory)
+            units_added.extend(added)
+            if failed:
+                errors.extend(failed)
+                self.progress.set_status(ProgressReport.FAILED)
+            else:
+                self.progress.set_status(ProgressReport.SUCCEEDED)
         except Exception, e:
             msg = 'Add units failed on repository: %s' % repo_id
             log.exception(msg)
@@ -111,15 +122,26 @@ class Importer:
         # purge extra units
         units_purged = []
         try:
-            units_purged = self._purge_units(unit_inventory)
-            self.progress.set_status(ProgressReport.SUCCEEDED)
+            purged, failed = self._purge_units(unit_inventory)
+            units_purged.extend(purged)
+            if failed:
+                errors.extend(failed)
+                self.progress.set_status(ProgressReport.FAILED)
+            else:
+                self.progress.set_status(ProgressReport.SUCCEEDED)
         except Exception, e:
             msg = 'Purge units failed on repository: %s' % repo_id
             log.exception(msg)
             self.progress.error(str(e))
             raise Exception(msg)
 
-        return (units_added, units_purged)
+        report = {
+            'added':[u.unit_key for u in units_added],
+            'removed':[u.unit_key for u in units_purged],
+            'errors':[(u.unit_key, str(e)) for u, e in errors],
+        }
+
+        return report
 
     def cancel(self):
         """
@@ -159,27 +181,33 @@ class Importer:
         Download specified units.
         @param unit_inventory: The inventory of content units.
         @type unit_inventory: L{UnitInventory}
+        @return: A tuple(2) of: (units_added, errors)
+        @rtype: tuple
         """
-        added = []
+        failed = []
+        succeeded = []
+        tracker = Tracker(self)
         units = self._missing_units(unit_inventory)
         self.progress.push_step('add_units', len(units))
         requests = []
         for unit, local_unit in units:
             if self.cancelled:
-                return added
+                return (succeeded, failed)
             download = unit.get('_download')
             if not download:
-                self._add_unit(local_unit)
-                added.append(local_unit)
+                try:
+                    self._add_unit(local_unit)
+                    succeeded.append(local_unit)
+                except Exception, e:
+                    failed.append((local_unit, e))
                 continue
-            tracker = Tracker(self)
             request = DownloadRequest(tracker, unit, local_unit)
             requests.append(request)
         # download units
         self.transport.download(requests)
-        for unit in tracker.get_succeeded():
-            added.append(unit)
-        return added
+        succeeded.extend(tracker.get_succeeded())
+        failed.extend(tracker.get_failed())
+        return (succeeded, failed)
 
     def _add_unit(self, unit):
         """
@@ -195,17 +223,21 @@ class Importer:
         Purge units inventoried locally but not upstream.
         @param unit_inventory: The inventory of content units.
         @type unit_inventory: L{UnitInventory}
-        @return: The list of purged units.
+        @return: The tuple(2) of (purged, errors).
         @rtype: list
         """
-        purged = []
+        failed = []
+        succeeded = []
         units = unit_inventory.local_only()
         self.progress.push_step('purge_units', len(units))
         for unit in units:
-            self.progress.set_action('delete_unit', unit.unit_key)
-            self.conduit.remove_unit(unit)
-            purged.append(unit)
-        return purged
+            try:
+                self.progress.set_action('delete_unit', unit.unit_key)
+                self.conduit.remove_unit(unit)
+                succeeded.append(unit)
+            except Exception, e:
+                failed.append((unit, e))
+        return (succeeded, failed)
 
     def _local_units(self):
         """
@@ -328,22 +360,18 @@ class Tracker(DownloadTracker):
     Maintains the list of succeeded and failed downloads.  Provides feedback
     to the importer so that progress can be reported and units added to the
     database based on the download success.
-    @ivar importer: The importer object.
-    @type importer: L{Importer}
-    @ivar succeeded: The list of downloaded units.
-    @type succeeded: list
-    @ivar failed: The list of units and exception raised.
-    @type failed: list
+    @ivar _importer: The importer object.
+    @type _importer: L{Importer}
+    @ivar _succeeded: The list of downloaded units.
+    @type _succeeded: list
+    @ivar _failed: The list of failed units and exception raised.
+    @type _failed: list
     """
 
     def __init__(self, importer):
         """
         @param importer: The importer object.
         @type importer: L{Importer}
-        @param succeeded: The list of downloaded units.
-        @type succeeded: list
-        @param failed: The list of units and exception raised.
-        @type failed: list
         """
         self._importer = importer
         self._succeeded = []
@@ -357,8 +385,10 @@ class Tracker(DownloadTracker):
         @type request: L{DownloadRequest}
         """
         unit = request.local_unit
-        self._succeeded.append(unit)
-        self._importer._add_unit(unit)
+        try:
+            self._importer._add_unit(unit)
+        except Exception, e:
+            self._failed.append((unit, e))
 
     def failed(self, request, exception):
         """
@@ -367,7 +397,8 @@ class Tracker(DownloadTracker):
         @param request: The download request that failed.
         @type request: L{DownloadRequest}
         """
-        self._failed.append((request.local_unit, exception))
+        unit = request.local_unit
+        self._failed.append((unit, exception))
 
     def get_succeeded(self):
         """
