@@ -39,6 +39,9 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         self.assertEquals(len(v1_rpms_list), 0)
         self.assertEquals(len(v2_rpms_list), 3)
 
+        self.assertEquals(len(report.errors), 0)
+        self.assertTrue(report.succeeded)
+
     def test_distributions(self):
         report = UpgradeStepReport()
         distribution.V1_DIR_DISTROS = "%s/%s" % (V1_TEST_FILESYSTEM, distribution.V1_DIR_DISTROS)
@@ -49,6 +52,9 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         v2_distro_list = get_files_in_dir('*', distribution.DIR_DISTROS)
         self.assertEquals(len(v1_distro_list), 0)
         self.assertEquals(len(v2_distro_list), 4)
+
+        self.assertEquals(len(report.errors), 0)
+        self.assertTrue(report.succeeded)
 
 class DRPMUpgradeTests(BaseFileUpgradeTests):
 
@@ -72,6 +78,9 @@ class DRPMUpgradeTests(BaseFileUpgradeTests):
         self.assertTrue(status)
         v2_rpms_list = get_files_in_dir('*.drpm', rpms.DIR_DRPM)
         self.assertEquals(18, len(v2_rpms_list))
+
+        self.assertEquals(len(report.errors), 0)
+        self.assertTrue(report.succeeded)
 
 def get_files_in_dir(pattern, path):
     files = []
