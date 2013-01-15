@@ -46,7 +46,13 @@ def _distribution(v1_database, v2_database, report):
             if not os.path.isdir(v2_distro_dir):
                 os.makedirs(v2_distro_dir)
             shutil.move(v1_distro_path, v2_distro_path)
+        except (IOError, OSError), e:
+            report.error(e)
+            continue
         except Exception, e:
-            report.error("Error: %s" % e)
-            return False
+            # un known exception
+            report.error("Unknown Error: %s" % e)
+            continue
+    if len(report.errors):
+        return False
     return True
