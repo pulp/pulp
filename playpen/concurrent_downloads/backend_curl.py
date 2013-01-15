@@ -11,11 +11,11 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-import os
 from cStringIO import StringIO
 
 import pycurl
 
+import utils
 from backend import TransportBackend
 
 
@@ -29,8 +29,8 @@ class CurlTransportBackend(TransportBackend):
 
         for url in url_list:
 
-            file_name = self._file_name_from_url(url)
-            file_path, file_handle = self._file_path_and_handle(file_name)
+            file_name = utils.file_name_from_url(url)
+            file_path, file_handle = utils.file_path_and_handle(self.storage_dir, file_name)
 
             files.append(file_path)
 
@@ -40,6 +40,8 @@ class CurlTransportBackend(TransportBackend):
             curl.setopt(pycurl.HEADERFUNCTION, StringIO().write)
 
             curl_multi.add_handle(curl)
+
+        num_handles = None
 
         while True:
             ret, num_handles = curl_multi.perform()

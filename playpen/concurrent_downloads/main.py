@@ -17,11 +17,14 @@ import tempfile
 import urls
 from backend_curl import CurlTransportBackend
 from backend_eventlets import EventletTransportBackend
+from backend_futures import FuturesProcessPoolTransportBackend, FuturesThreadPoolTransportBackend
 
 
 BACKENDS = {
     'pycurl': CurlTransportBackend,
     'eventlets': EventletTransportBackend,
+    #'futures-processes': FuturesProcessPoolTransportBackend,
+    'futures-threads': FuturesThreadPoolTransportBackend,
     }
 
 
@@ -40,7 +43,7 @@ def main():
         transport_backend.fetch_multiple(file_urls)
         run_time = datetime.datetime.now() - start
 
-        print '%-11s %s' % (name + ':', str(run_time))
+        print '%-18s %s' % (name + ':', str(run_time))
 
 
 if __name__ == '__main__':

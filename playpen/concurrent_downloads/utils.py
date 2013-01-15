@@ -11,18 +11,29 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-import functools
-
-import eventlet
-from eventlet.green import urllib2
-
-import utils
-from backend import TransportBackend
+import os
+import urllib2
 
 
-class EventletTransportBackend(TransportBackend):
+def file_name_from_url(url):
+    filename = url.rsplit('/', 1)[-1]
+    assert filename
+    return filename
 
-    def fetch_multiple(self, url_list):
-        pool = eventlet.GreenPool()
-        fetch = functools.partial(utils.fetch, storage_dir=self.storage_dir)
-        return [file_name for file_name in pool.imap(fetch, url_list)]
+
+def file_path_and_handle(storage_dir, file_name):
+    path = os.path.abspath(os.path.join(storage_dir, file_name))
+    handle = open(path, 'w')
+    return path, handle
+
+
+def fetch(url, storage_dir):
+    name = file_name_from_url(url)
+    path, handle = file_path_and_handle(storage_dir, name)
+
+    body = urllib2.urlopen(url).read()
+
+    handle.write(body)
+    handle.close()
+
+    return name

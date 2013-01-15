@@ -23,16 +23,6 @@ class TransportBackend(object):
         assert os.access(storage_dir, os.R_OK | os.W_OK)
         self.storage_dir = storage_dir
 
-    def _file_name_from_url(self, url):
-        filename = url.rsplit('/', 1)[-1]
-        assert filename
-        return filename
-
-    def _file_path_and_handle(self, file_name):
-        path = os.path.abspath(os.path.join(self.storage_dir, file_name))
-        handle = open(path, 'w')
-        return path, handle
-
     def fetch_multiple(self, url_list):
         raise NotImplementedError()
 
