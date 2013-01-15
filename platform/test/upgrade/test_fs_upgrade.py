@@ -36,7 +36,8 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         self.assertTrue(status)
         v1_rpms_list = get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
         v2_rpms_list = get_files_in_dir('*.rpm', rpms.DIR_RPMS)
-        self.assertEquals(len(v1_rpms_list), len(v2_rpms_list))
+        self.assertEquals(len(v1_rpms_list), 0)
+        self.assertEquals(len(v2_rpms_list), 3)
 
     def test_distributions(self):
         report = UpgradeStepReport()
@@ -46,7 +47,8 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         self.assertTrue(status)
         v1_distro_list = get_files_in_dir('*', distribution.V1_DIR_DISTROS)
         v2_distro_list = get_files_in_dir('*', distribution.DIR_DISTROS)
-        self.assertEquals(len(v1_distro_list), len(v2_distro_list))
+        self.assertEquals(len(v1_distro_list), 0)
+        self.assertEquals(len(v2_distro_list), 4)
 
 class DRPMUpgradeTests(BaseFileUpgradeTests):
 

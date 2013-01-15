@@ -55,7 +55,7 @@ def _rpms(v1_database, v2_database, report):
         try:
             v2_pkg_dir = os.path.dirname(v2_pkgpath)
             os.makedirs(os.path.dirname(v2_pkgpath))
-            shutil.copy(v1_pkgpath, v2_pkg_dir)
+            shutil.move(v1_pkgpath, v2_pkg_dir)
         except Exception, e:
             report.error("Error: %s" % e)
             return False
@@ -85,7 +85,7 @@ def _drpms(v1_database, v2_database, report):
                     v2_pkg_dir = os.path.dirname(v2_path)
                     if not os.path.isdir(v2_pkg_dir):
                         os.makedirs(v2_pkg_dir)
-                    shutil.copy(v1_path, v2_pkg_dir)
+                    shutil.move(v1_path, v2_pkg_dir)
                 except Exception, e:
                     report.error("Error: %s" % e)
                     return False

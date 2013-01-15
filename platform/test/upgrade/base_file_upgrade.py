@@ -11,14 +11,28 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import shutil
 import unittest
 
 from db_loader import DB_DIR, PulpTestDatabase
+
+DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
+V1_TEST_FILESYSTEM = os.path.join(DATA_DIR, 'filesystem/v1')
 
 # Full path to the DB that will be loaded for the test run
 V1_DB_FILE_PATH = os.path.join(DB_DIR, 'test-fs-db.tar.gz')
 
 class BaseFileUpgradeTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # take a backup of filesystem data
+        shutil.copytree(V1_TEST_FILESYSTEM, '/tmp/pulp/v1')
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(V1_TEST_FILESYSTEM)
+        shutil.move('/tmp/pulp/v1', V1_TEST_FILESYSTEM)
 
     def setUp(self):
         super(BaseFileUpgradeTests, self).setUp()
@@ -33,5 +47,4 @@ class BaseFileUpgradeTests(unittest.TestCase):
 
     def tearDown(self):
         super(BaseFileUpgradeTests, self).tearDown()
-
 

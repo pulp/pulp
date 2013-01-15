@@ -45,7 +45,7 @@ def _distribution(v1_database, v2_database, report):
             v2_distro_dir = os.path.dirname(v2_distro_path)
             if not os.path.isdir(v2_distro_dir):
                 os.makedirs(v2_distro_dir)
-            shutil.copytree(v1_distro_path, v2_distro_path)
+            shutil.move(v1_distro_path, v2_distro_path)
         except Exception, e:
             report.error("Error: %s" % e)
             return False
