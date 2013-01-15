@@ -20,7 +20,7 @@ Review
 
 Once a pull request has been submitted, a member of the team will review it.
 That person can indicate their intent to review a particular pull request by
-assigning it to them self.
+assigning it to themself.
 
 Comments on a pull request are meant to be helpful for the patch author. They
 may point out critical flaws, suggest more efficient approaches, express admiration
