@@ -60,10 +60,18 @@ DEFAULT_SEEDS = 'localhost:27017'
 _LOG = logging.getLogger(__name__)
 
 
-class InvalidStepReportException(Exception): pass
+class InvalidStepReportException(Exception):
+    """
+    Indicates a step didn't return the proper status. Should only occur during
+    development.
+    """
+    pass
 
 
 class StepException(Exception):
+    """
+    Describes why a step failed.
+    """
 
     def __init__(self, step_description):
         Exception.__init__(self, step_description)

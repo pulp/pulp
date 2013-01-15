@@ -1,0 +1,35 @@
+#!/usr/bin/python
+#
+# Pulp v1 Upgrade Utility
+# Copyright (c) 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+import os
+import sys
+
+from pulp.server.upgrade.main import Upgrader, StepException
+
+
+if __name__ == '__main__':
+
+    # All CLI output is handled in the Upgrader itself
+    upgrader = Upgrader()
+
+    try:
+        upgrader.upgrade()
+        exit_code = 0
+    except StepException:
+        # The error details are printed by the upgrader, so no need to here
+        exit_code = os.EX_SOFTWARE
+
+    sys.exit(exit_code)

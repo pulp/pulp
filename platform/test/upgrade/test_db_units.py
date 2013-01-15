@@ -295,6 +295,7 @@ class DRPMUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(ass['created'], units.DEFAULT_CREATED)
             self.assertEqual(ass['updated'], units.DEFAULT_UPDATED)
 
+
 class DistributionUpgradeTests(BaseDbUpgradeTests):
 
     def setUp(self):
@@ -599,3 +600,61 @@ class PackageCategoryUpgradeTests(BaseDbUpgradeTests):
             associations = self.tmp_test_db.database.repo_content_units.find({'repo_id' : v1_repo['id']})
             self.assertEqual(expected_group_count, associations.count())
 
+
+class ISOUpgradeTests(BaseDbUpgradeTests):
+
+    def test_iso(self):
+        # Test
+        report = UpgradeStepReport()
+        success = units._isos(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(success)
+
+        # Verify - Units
+        v1_files_coll = self.v1_test_db.database.file
+        v2_iso_coll = self.tmp_test_db.database.units_iso
+
+        v1_files = v1_files_coll.find()
+        for v1_file in v1_files:
+            v2_query = {'name' : v1_file['filename']}
+            v2_iso = v2_iso_coll.find_one(v2_query)
+            self.assertTrue(v2_iso is not None)
+
+            self.assertEqual(v2_iso['name'], v1_file['filename'])
+            self.assertEqual(v2_iso['checksum'], v1_file['checksum'].values()[0])
+            self.assertEqual(v2_iso['size'], v1_file['size'])
+
+        # Verify - Associations
+        v1_repo_coll = self.v1_test_db.database.repos
+        v1_file_coll = self.v1_test_db.database.file
+        v2_ass_coll = self.tmp_test_db.database.repo_content_units
+
+        v1_repos = v1_repo_coll.find({'content_types' : 'iso'})
+        for v1_repo in v1_repos:
+            for v1_file_id in v1_repo['files']:
+                v1_file = v1_file_coll.find_one({'_id' : v1_file_id})
+                v2_iso = v2_iso_coll.find_one({'name' : v1_file['filename']})
+
+                spec = {'unit_id' : v2_iso['_id'],
+                        'unit_type_id' : 'iso',
+                        'repo_id' : v1_repo['id']}
+                association = v2_ass_coll.find_one(spec)
+                self.assertTrue(association is not None)
+
+    def test_iso_idempotency(self):
+        # Setup
+        report = UpgradeStepReport()
+        units._initialize_content_types(self.tmp_test_db.database)
+        units._isos(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Test
+        success = units._isos(self.v1_test_db.database, self.tmp_test_db.database, report)
+
+        # Verify
+        self.assertTrue(success)
+
+        v1_count = self.v1_test_db.database.file.find().count()
+        v2_count = self.tmp_test_db.database.units_iso.find().count()
+
+        self.assertEqual(v1_count, v2_count)
