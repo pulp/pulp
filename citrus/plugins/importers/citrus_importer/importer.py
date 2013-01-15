@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 from pulp.plugins.importer import Importer
-from pulp.citrus.importer import Importer as ImporterImpl
+from pulp.citrus.importer import Repository
 from pulp.citrus.http.transport import HttpTransport
 from logging import getLogger
 
@@ -51,8 +51,8 @@ class CitrusImporter(Importer):
     def sync_repo(self, repo, conduit, config):
         try:
             transport = HttpTransport()
-            importer = ImporterImpl(conduit, config, transport)
-            report = importer.synchronize(repo.id)
+            repository = Repository(conduit, config, transport)
+            report = repository.synchronize(repo.id)
             return conduit.build_success_report({}, report)
         except Exception, e:
             msg = str(e)

@@ -45,9 +45,9 @@ class ImportProgress(ProgressReport):
         self.conduit.set_progress(self.dict())
 
 
-class Importer:
+class Repository:
     """
-    Repository importer used to synchronize repositories.
+    Repository object used to synchronize repositories.
     @ivar cancelled: Indicates the current synchronization has been cancelled.
     @type cancelled: bool
     @ivar conduit: provides access to relevant Pulp functionality
@@ -360,20 +360,20 @@ class Tracker(DownloadTracker):
     Maintains the list of succeeded and failed downloads.  Provides feedback
     to the importer so that progress can be reported and units added to the
     database based on the download success.
-    @ivar _importer: The importer object.
-    @type _importer: L{Importer}
+    @ivar _repository: The repository object.
+    @type _repository: L{Importer}
     @ivar _succeeded: The list of downloaded units.
     @type _succeeded: list
     @ivar _failed: The list of failed units and exception raised.
     @type _failed: list
     """
 
-    def __init__(self, importer):
+    def __init__(self, repository):
         """
-        @param importer: The importer object.
-        @type importer: L{Importer}
+        @param repository: The importer object.
+        @type repository: L{Repository}
         """
-        self._importer = importer
+        self._repository = repository
         self._succeeded = []
         self._failed = []
 
@@ -386,7 +386,7 @@ class Tracker(DownloadTracker):
         """
         unit = request.local_unit
         try:
-            self._importer._add_unit(unit)
+            self._repository._add_unit(unit)
         except Exception, e:
             self._failed.append((unit, e))
 
