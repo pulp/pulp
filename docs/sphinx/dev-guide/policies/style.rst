@@ -15,8 +15,8 @@ In-code Documentation
 Document your functions using the markup described
 `here <http://sphinx-doc.org/markup/desc.html#info-field-lists>`_.
 If it's worth having a function, it's worth taking 1 minute to describe what it
-does, define each parameter, and define its return value. This saves tremendous
-time for the next person who looks at your code.
+does, define each parameter, and define its return value. This saves a
+tremendous amount of time for the next person who looks at your code.
 
 Include reasonable in-line comments where they might be helpful.
 
@@ -41,7 +41,7 @@ library components. For example, don't name anything "id", "file", "copy" etc.
 Indentation
 -----------
 
-4 spaces
+4 spaces, never tabs
 
 
 Copyright
