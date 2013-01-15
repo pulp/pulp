@@ -26,3 +26,23 @@ class EventletTransportBackend(TransportBackend):
         pool = eventlet.GreenPool()
         fetch = functools.partial(utils.fetch, storage_dir=self.storage_dir)
         return [file_name for file_name in pool.imap(fetch, url_list)]
+
+
+class EventletEmbeddedTransportBackend(TransportBackend):
+
+    def fetch_multiple(self, url_list):
+
+        def embedded_fetch(url):
+            name = utils.file_name_from_url(url)
+            path, handle = utils.file_path_and_handle(self.storage_dir, name)
+
+            body = urllib2.urlopen(url).read()
+
+            handle.write(body)
+            handle.close()
+
+            return name
+
+        pool = eventlet.GreenPool()
+        return [file_name for file_name in pool.imap(embedded_fetch, url_list)]
+
