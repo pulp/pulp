@@ -105,3 +105,18 @@ class TestKeyValueMultiple(unittest.TestCase):
     def test_none(self):
         ret = parsers.key_value_multiple(None)
         self.assertEqual(ret, [])
+
+
+class TestParsePostiveInt(unittest.TestCase):
+    def test_valid(self):
+        ret = parsers.parse_positive_int('31415')
+        self.assertEqual(ret, 31415)
+
+    def test_string(self):
+        self.assertRaises(ValueError, parsers.parse_positive_int, 'foo')
+
+    def test_zero(self):
+        self.assertRaises(ValueError, parsers.parse_positive_int, '0')
+
+    def test_negative(self):
+        self.assertRaises(ValueError, parsers.parse_positive_int, '-314')

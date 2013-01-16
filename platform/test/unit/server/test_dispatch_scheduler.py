@@ -37,6 +37,9 @@ def itinerary_call(*args, **kwargs):
     call_request = CallRequest(_call, args, kwargs)
     return [call_request]
 
+def dummy_call():
+    pass
+
 SCHEDULE_3_RUNS = 'R3/PT30M'
 SCHEDULE_0_RUNS = 'R0/P1D'
 SCHEDULE_INDEFINITE_RUNS = 'PT12H'
@@ -217,6 +220,46 @@ class SchedulerSchedulingTests(SchedulerTests):
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
         self.assertTrue(updated_next_run == updated_scheduled_call['last_run'])
+
+    def test_next_run_updated(self):
+        call_request = CallRequest(itinerary_call)
+        now = datetime.datetime.now()
+        interval = datetime.timedelta(minutes=1)
+        schedule = dateutils.format_iso8601_interval(interval, now)
+        schedule_id = self.scheduler.add(call_request, schedule)
+
+        scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        next_next_run = self.scheduler.calculate_next_run(scheduled_call)
+
+        self.scheduler._get_scheduled_call_groups()
+
+        updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
+        self.assertEqual(next_next_run, updated_scheduled_call['next_run'])
+
+    def test_scheduled_collision(self):
+        call_request_scheduled = CallRequest(itinerary_call)
+        schedule  = dateutils.format_iso8601_interval(datetime.timedelta(minutes=1),
+                                                      datetime.datetime.now())
+        schedule_id = self.scheduler.add(call_request_scheduled, schedule)
+
+        call_request_in_progress = CallRequest(dummy_call)
+        call_report_in_progress = CallReport.from_call_request(call_request_in_progress)
+        call_report_in_progress.schedule_id = schedule_id
+
+        # return a call report list out of the coordinator that has tasks from
+        # this schedule in it
+        # this will be cleaned up by the base class tearDown method
+        mocked_coordinator = mock.Mock()
+        mocked_call_reports = mock.Mock(return_value=[call_report_in_progress])
+        mocked_coordinator.find_call_reports = mocked_call_reports
+        dispatch_factory.coordinator = mock.Mock(return_value=mocked_coordinator)
+
+        call_group_generator = self.scheduler._get_scheduled_call_groups()
+
+        # call reports should have indicated a collision, in which we do not
+        # run the scheduled call group again, indicated here by an "empty"
+        # generator
+        self.assertRaises(StopIteration, next, call_group_generator)
 
 # query tests ------------------------------------------------------------------
 

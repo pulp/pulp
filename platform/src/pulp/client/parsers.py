@@ -77,6 +77,7 @@ def parse_positive_int(value):
     i = int(value)
     if i < 1:
         raise ValueError(_('value must be a positive integer'))
+    return i
 
 
 def iso8601(value):
