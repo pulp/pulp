@@ -37,7 +37,6 @@ def _rpms(v1_database, v2_database, report):
     database migration is already complete at this point. The rpm units are migrated
     from v1 location to v2 content location /var/lib/pulp/content/{rpm,srpm}.
     """
-    rpm_coll = v2_database.units_rpm
     all_v1_rpms = v1_database.packages.find()
     for v1_rpm in all_v1_rpms:
         rpm_rel_path =  "%s/%s/%s/%s/%s/%s" % (v1_rpm['name'], v1_rpm['version'], v1_rpm['release'],
@@ -73,7 +72,6 @@ def _drpms(v1_database, v2_database, report):
     It parses the presto, extracts the drpm info and finds the drpms in repo dir in v1 and migrates
     then to /var/lib/pulp/content/drpm/ in v1.
     """
-    drpm_v2_coll = v2_database.units_drpm
     v1_coll = v1_database.repos
     repos = v1_coll.find()
     for repo in repos:

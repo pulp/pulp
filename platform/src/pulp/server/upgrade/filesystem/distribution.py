@@ -31,7 +31,6 @@ def _distribution(v1_database, v2_database, report):
     the distribution is already migrated in the Database. The distribution and its files
     from v1 are migarted to /var/lib/pulp/content/distribution/ in v2.
     """
-    all_v2_distros = v2_database.units_distribution
     all_v1_distros = v1_database.distribution.find()
     for v1_distro in all_v1_distros:
         distro_id = v1_distro['id']
