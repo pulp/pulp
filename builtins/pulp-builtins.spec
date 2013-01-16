@@ -48,12 +48,22 @@ cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 rm -rf %{buildroot}
 
 
+# define required pulp platform version.
+# pre-release package packages have dependencies based on both
+# version and release.
+%if %(echo %release | cut -f1 -d'.') < 1
+%global pulp_version %{version}-%{release}
+%else
+%global pulp_version %{version}
+%endif
+
+
 # ---- Admin (client) Extensions -----------------------------------------------
 
 %package admin-extensions
 Summary: The builtin admin client extensions
 Group: Development/Languages
-Requires: pulp-admin-client = %{version}
+Requires: pulp-admin-client = %{pulp_version}
 
 %description admin-extensions
 A collection of extensions used to provide generic consumer
@@ -78,7 +88,7 @@ client capabilites.
 %package consumer-extensions
 Summary: The builtin consumer client extensions
 Group: Development/Languages
-Requires: pulp-consumer-client = %{version}
+Requires: pulp-consumer-client = %{pulp_version}
 
 %description consumer-extensions
 A collection of extensions used to provide generic admin
