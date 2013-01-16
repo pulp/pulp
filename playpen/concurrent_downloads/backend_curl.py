@@ -19,12 +19,16 @@ import utils
 from backend import TransportBackend
 
 
+SELECT_TIMEOUT = 1.0
+
+
 class CurlTransportBackend(TransportBackend):
 
     def fetch_multiple(self, url_list):
 
-        curl_multi = pycurl.CurlMulti()
+        multi_handle = pycurl.CurlMulti()
 
+        requests = []
         files = []
 
         for url in url_list:
@@ -34,28 +38,27 @@ class CurlTransportBackend(TransportBackend):
 
             files.append(file_path)
 
-            curl = pycurl.Curl()
-            curl.setopt(pycurl.URL, url)
-            curl.setopt(pycurl.WRITEFUNCTION, file_handle.write)
-            curl.setopt(pycurl.HEADERFUNCTION, StringIO().write)
+            easy_handle = pycurl.Curl()
+            easy_handle.setopt(pycurl.URL, url)
+            easy_handle.setopt(pycurl.WRITEFUNCTION, file_handle.write)
 
-            curl_multi.add_handle(curl)
+            req = (url, file_handle, easy_handle)
+            multi_handle.add_handle(req[2])
+            requests.append(req)
 
-        num_handles = None
-
-        while True:
-            ret, num_handles = curl_multi.perform()
-            if ret != pycurl.E_CALL_MULTI_PERFORM:
-                break
+        num_handles = len(requests)
 
         while num_handles:
-            ret = curl_multi.select(1.0)
+            ret = multi_handle.select(SELECT_TIMEOUT)
             if ret == -1:
                 continue
             while True:
-                ret, num_handles = curl_multi.perform()
+                ret, num_handles = multi_handle.perform()
                 if ret != pycurl.E_CALL_MULTI_PERFORM:
                     break
+
+        for req in requests:
+            req[1].close()
 
         return files
 
