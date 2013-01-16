@@ -48,7 +48,10 @@ cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 rm -rf %{buildroot}
 
 
-%if %{release} < 1
+# define required pulp platform version.
+# pre-release package packages have dependencies based on both
+# version and release.
+%if %(echo %release | cut -f1 -d'.') < 1
 %global pulp_version %{version}-%{release}
 %else
 %global pulp_version %{version}
