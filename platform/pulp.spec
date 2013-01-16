@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.0.7
-Release: 0.2.beta
+Release: 0.3.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -408,6 +408,9 @@ exit 0
 %endif
 
 %changelog
+* Wed Jan 16 2013 Jeff Ortel <jortel@redhat.com> 2.0.7-0.3.beta
+- 
+
 * Tue Jan 15 2013 Jeff Ortel <jortel@redhat.com> 2.0.7-0.2.beta
 - 894467 - Parser methods need to return the value, not just validate it
   (jason.dobies@redhat.com)
