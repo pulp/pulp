@@ -12,20 +12,23 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import datetime
+import sys
 import tempfile
 
 import urls
 from backend_curl import CurlTransportBackend
 from backend_eventlets import EventletEmbeddedTransportBackend, EventletTransportBackend
 from backend_futures import FuturesProcessPoolTransportBackend, FuturesThreadPoolTransportBackend
+from backend_jconnor import DumbAssTransportBackend
 
 
 BACKENDS = {
-    #'pycurl': CurlTransportBackend,
+    'pycurl': CurlTransportBackend,
     'eventlets-embedded': EventletEmbeddedTransportBackend,
     'eventlets': EventletTransportBackend,
-    #'futures-processes': FuturesProcessPoolTransportBackend,
+    'futures-processes': FuturesProcessPoolTransportBackend,
     'futures-threads': FuturesThreadPoolTransportBackend,
+    'jconnor': DumbAssTransportBackend,
     }
 
 
@@ -35,7 +38,15 @@ def main():
 
     print 'Downloading %d files from %s' % (len(file_urls), urls.ABRT_URL)
 
-    for name, transport_backend_class in BACKENDS.items():
+    available_backends = set(BACKENDS.keys())
+    requested_backends = set(sys.argv[1:])
+
+    if not requested_backends:
+        backends = available_backends
+    else:
+        backends = requested_backends.intersection(available_backends)
+
+    for name, transport_backend_class in dict((k, BACKENDS[k]) for k in backends).items():
         prefix = name + '-'
         storage_dir = tempfile.mkdtemp(prefix=prefix)
         transport_backend = transport_backend_class(storage_dir)
