@@ -32,6 +32,7 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         report = UpgradeStepReport()
         rpms.V1_DIR_RPMS = "%s/%s" % (V1_TEST_FILESYSTEM, rpms.V1_DIR_RPMS)
         rpms.DIR_RPMS = "%s/%s" % (V2_TEST_FILESYSTEM, rpms.DIR_RPMS)
+        v1_rpms_list_pre_upgrade = get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
         status = rpms._rpms(self.v1_test_db.database, self.v2_test_db.database, report)
         self.assertTrue(status)
         v1_rpms_list = get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
@@ -39,6 +40,9 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         self.assertEquals(len(v1_rpms_list), 0)
         self.assertEquals(len(v2_rpms_list), 3)
 
+        for v1_path in v1_rpms_list_pre_upgrade:
+            v2_path = "%s/%s" % (rpms.DIR_RPMS, v1_path.split(rpms.V1_DIR_RPMS)[-1])
+            self.assertTrue(os.path.exists(v2_path))
         self.assertEquals(len(report.errors), 0)
         self.assertTrue(report.succeeded)
 
@@ -46,6 +50,7 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         report = UpgradeStepReport()
         distribution.V1_DIR_DISTROS = "%s/%s" % (V1_TEST_FILESYSTEM, distribution.V1_DIR_DISTROS)
         distribution.DIR_DISTROS = "%s/%s" % (V2_TEST_FILESYSTEM, distribution.DIR_DISTROS)
+
         status = distribution._distribution(self.v1_test_db.database, self.v2_test_db.database, report)
         self.assertTrue(status)
         v1_distro_list = get_files_in_dir('*', distribution.V1_DIR_DISTROS)

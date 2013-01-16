@@ -17,7 +17,7 @@ from pymongo.objectid import ObjectId
 from base_db_upgrade import BaseDbUpgradeTests
 from pulp.server.upgrade.db import units
 from pulp.server.upgrade.model import UpgradeStepReport
-
+from pulp.server.upgrade.utils import PrestoParser
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
 V1_TEST_FILESYSTEM=os.path.join(DATA_DIR, 'filesystem/v1')
@@ -250,9 +250,7 @@ class DRPMUpgradeTests(BaseDbUpgradeTests):
         # Verify
         self.assertTrue(result)
         v1_drpms = []
-        print self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'})
-        deltarpms = units._get_deltas(self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}))
-        print deltarpms
+        deltarpms = PrestoParser.get_deltas(self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}))
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():
                 v1_drpms.append(drpm)
