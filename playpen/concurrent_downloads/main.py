@@ -19,7 +19,7 @@ import urls
 from backend_curl import CurlTransportBackend
 from backend_eventlets import EventletEmbeddedTransportBackend, EventletTransportBackend
 from backend_futures import FuturesProcessPoolTransportBackend, FuturesThreadPoolTransportBackend
-from backend_jconnor import DumbAssTransportBackend
+from backend_jconnor import DumbAssTransportBackend, BadAssTransportBackend
 
 
 BACKENDS = {
@@ -28,7 +28,8 @@ BACKENDS = {
     'eventlets': EventletTransportBackend,
     'futures-processes': FuturesProcessPoolTransportBackend,
     'futures-threads': FuturesThreadPoolTransportBackend,
-    'jconnor': DumbAssTransportBackend,
+    'jconnor-dumbass': DumbAssTransportBackend,
+    'jconnor-badass': BadAssTransportBackend,
     }
 
 

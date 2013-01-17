@@ -19,6 +19,9 @@ import utils
 from backend import TransportBackend
 
 
+BUFFER_SIZE = 1024
+
+
 class DumbAssTransportBackend(TransportBackend):
 
     def fetch_multiple(self, url_list):
@@ -30,28 +33,107 @@ class DumbAssTransportBackend(TransportBackend):
             file_path = os.path.abspath(os.path.join(self.storage_dir, file_name))
             files.append(file_path)
 
-            for i in fetch_url_generator(url, file_path):
+            for i in fetch_url_generator(url, file_path, BUFFER_SIZE):
                 total_bytes_written += i
 
         return files
 
+
+class BadAssTransportBackend(TransportBackend):
+
+    def fetch_multiple(self, url_list):
+        files = []
+        generators = []
+
+        for url in url_list:
+            file_name = utils.file_name_from_url(url)
+            file_path = os.path.abspath(os.path.join(self.storage_dir, file_name))
+            files.append(file_name)
+
+            generators.append(fetch_url_generator(url, file_path, BUFFER_SIZE))
+
+        loop = DownloadGeneratorLoop(generators)
+        loop.loop()
+
+        return files
+
+
+class DownloadGeneratorLoop(object):
+
+    class DoublyLinkedGenerators(object):
+
+        def __init__(self, generator=None):
+            self.generator = generator
+            self.previous_node = None
+            self.next_node = None
+
+        @classmethod
+        def from_iterable(cls, iterable):
+            head_node = None
+            previous_node = None
+            for i in iterable:
+                node = cls(i)
+                node.previous_node = previous_node
+                if previous_node is not None:
+                    previous_node.next_node = node
+                if head_node is None:
+                    head_node = node
+                previous_node = node
+            return head_node
+
+        def remove(self):
+            if self.previous_node is not None:
+                self.previous_node.next_node = self.next_node
+            if self.next_node is not None:
+                self.next_node.previous_node = self.previous_node
+
+
+    def __init__(self, generator_list, max_concurrency=None):
+        assert max_concurrency is None or max_concurrency > 0
+        self.generator_list = generator_list
+        self.max_concurrency = max_concurrency or len(generator_list)
+
+    def loop(self):
+        head = self.DoublyLinkedGenerators.from_iterable(self.generator_list)
+        current = head
+        count = 0
+
+        while head is not None:
+            count += 1
+
+            try:
+                current.generator.next()
+
+            except StopIteration:
+                current.remove()
+                if current is head:
+                    head = head.next_node
+
+            current = current.next_node
+
+            if current is None or count == self.max_concurrency:
+                current = head
+                count = 0
+
 # producer/consumer generators -------------------------------------------------
 
-def network_content_generator(url):
+def network_content_generator(url, buffer_size=None):
     network_buffer = urllib2.urlopen(url)
-    body = network_buffer.read()
-    while body:
+    info = network_buffer.info()
+    content_length = int(info['content-length'])
+
+    while content_length:
+        body = network_buffer.read(buffer_size)
+        content_length -= len(body)
         yield body
-        body = network_buffer.read()
 
 
-def fetch_url_generator(url, file_path):
+def fetch_url_generator(url, file_path, buffer_size=None):
     file_handle = open(file_path, 'w')
-    for part in network_content_generator(url):
-        file_handle.write(part)
+
+    for part in network_content_generator(url, buffer_size):
+        if part:
+            file_handle.write(part)
         yield len(part)
 
-
-def fetch_multiples_url_generator(url_list):
-    pass
 
