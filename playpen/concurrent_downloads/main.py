@@ -25,7 +25,7 @@ from backend_jconnor import DumbAssTransportBackend, BadAssTransportBackend
 BACKENDS = {
     'pycurl': CurlTransportBackend,
     'eventlets-embedded': EventletEmbeddedTransportBackend,
-    'eventlets': EventletTransportBackend,
+    'eventlets-pymagic': EventletTransportBackend,
     'futures-processes': FuturesProcessPoolTransportBackend,
     'futures-threads': FuturesThreadPoolTransportBackend,
     'jconnor-dumbass': DumbAssTransportBackend,
