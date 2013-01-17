@@ -18,8 +18,8 @@ Note that only operations that are triggered through Pulp are logged. If the con
 through another means (eg. rpm, yum etc.) an event will not be logged. The package profile, however, 
 will eventually be sent to the server and will reflect any changes that have been made.
 
-A consumer can view its own history using the consumer history command.  A number of query arguments 
-may be passed in to the ``consumer history`` command in order to refine the results. Here are a few
+A consumer can view its own history using the *consumer history* command.  A number of query arguments 
+may be passed in to the *consumer history* command in order to refine the results. Here are a few
 examples of querying consumer history:
 
 ::
