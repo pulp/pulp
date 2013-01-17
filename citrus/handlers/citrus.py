@@ -99,7 +99,7 @@ class RepositoryHandler(ContentHandler):
             _added, _merged, _failed = self.add_repositories(progress, binds)
             added.extend(_added)
             merged.extend(_merged)
-            errors.append(_failed)
+            errors.extend(_failed)
         except Exception, e:
             msg = str(e)
             errors.append(msg)
@@ -122,7 +122,7 @@ class RepositoryHandler(ContentHandler):
         try:
             _removed, _failed = self.delete_repositories(progress, binds)
             removed.extend(_removed)
-            errors.append(_failed)
+            errors.extend(_failed)
         except Exception, e:
             msg = str(e)
             errors.append(msg)

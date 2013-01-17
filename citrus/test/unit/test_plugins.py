@@ -42,6 +42,8 @@ from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
+from pulp.agent.lib.container import CONTENT, Container
+from pulp.agent.lib.dispatcher import Dispatcher
 
 CITRUS_IMPORTER = 'citrus_importer'
 CITRUS_DISTRUBUTOR = 'citrus_distributor'
@@ -337,25 +339,28 @@ class TestAgentPlugin(PluginTestBase):
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            units = []
             options = dict(all=True)
-            handler = TestHandler(self)
+            units = [{'type_id':'repository', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.downfs)
-            report = handler.update(Conduit(), units, options)
+            container = Container(self.upfs)
+            dispatcher = Dispatcher(container)
+            container.handlers[CONTENT]['repository'] = TestHandler(self)
+            report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
-        report = _report[0]
-        self.assertTrue(report.succeeded)
-        merge = report.details['merge']
+        report = _report[0].details['repository']
+        self.assertTrue(report['succeeded'])
+        merge = report['details']['merge']
         self.assertEqual(merge['added'], [self.REPO_ID])
         self.assertEqual(merge['merged'], [])
         self.assertEqual(merge['removed'], [])
-        synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
-        self.assertEqual(synchronization['removed_count'], 0)
-        details = synchronization['details']
+        synchronization = report['details']['synchronization'][self.REPO_ID]
+        importer_report = synchronization['report']
+        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']
         self.assertEqual(len(details['added']), self.NUM_UNITS)
         self.assertEqual(len(details['removed']), 0)
         self.assertEqual(len(details['errors']), 0)
