@@ -39,8 +39,8 @@ class TaskPoller:
             task = http.response_body
             last_hash = self.report_progress(progress, task, last_hash)
             if task.state == CALL_ERROR_STATE:
-                msg = 'Task %s, failed: state=%s' % task_id, task.state
-                raise Exception(msg)
+                msg = 'Task %s, failed: state=%s' % (task_id, task.state)
+                raise Exception(msg, task.exception, task.traceback)
             if task.state in CALL_COMPLETE_STATES:
                 return task.result
 

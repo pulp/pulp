@@ -205,9 +205,9 @@ class TestHandler(RepositoryHandler):
         self.tester = tester
         RepositoryHandler.__init__(self, cfg)
 
-    def synchronize(self, progress, binds):
+    def synchronize(self, progress, binds, options):
         self.tester.clean()
-        return RepositoryHandler.synchronize(self, progress, binds)
+        return RepositoryHandler.synchronize(self, progress, binds, options)
 
 
 class TestAgentPlugin(PluginTestBase):
@@ -245,7 +245,7 @@ class TestAgentPlugin(PluginTestBase):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 
-    def verify_merge(self):
+    def verify(self, num_units=PluginTestBase.NUM_UNITS):
         # repository
         manager = managers.repo_query_manager()
         manager.get_repository(self.REPO_ID)
@@ -266,8 +266,8 @@ class TestAgentPlugin(PluginTestBase):
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
         units = dict([(u['metadata']['N'], u) for u in units])
-        self.assertEqual(len(units), self.NUM_UNITS)
-        for n in range(0, self.NUM_UNITS):
+        self.assertEqual(len(units), num_units)
+        for n in range(0, num_units):
             unit = units[n]
             unit_id = self.UNIT_ID % n
             metadata = unit['metadata']
@@ -279,8 +279,8 @@ class TestAgentPlugin(PluginTestBase):
             self.assertEqual(storage_path, os.path.join(self.downfs, 'content', file))
             self.assertTrue(os.path.exists(storage_path))
             # unit files
-        upstream_files = os.listdir(os.path.join(self.upfs, 'content'))
-        self.assertEqual(self.NUM_UNITS, len(upstream_files))
+        files = os.listdir(os.path.join(self.downfs, 'content'))
+        self.assertEqual(num_units, len(files))
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
     def test_handler(self, unused):
@@ -359,7 +359,7 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['added']), self.NUM_UNITS)
         self.assertEqual(len(details['removed']), 0)
         self.assertEqual(len(details['errors']), 0)
-        self.verify_merge()
+        self.verify()
 
     def clean_units(self):
         RepoContentUnit.get_collection().remove()
@@ -406,10 +406,111 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(merge['merged'], [self.REPO_ID])
         self.assertEqual(merge['removed'], [])
         synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
-        self.assertEqual(synchronization['removed_count'], 0)
-        details = synchronization['details']
+        self.assertTrue(synchronization['succeeded'])
+        importer_report = synchronization['report']
+        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']
         self.assertEqual(len(details['added']), self.NUM_UNITS)
         self.assertEqual(len(details['removed']), 0)
         self.assertEqual(len(details['errors']), 0)
-        self.verify_merge()
+        self.verify()
+
+    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.citrus.http.transport.HttpTransport._download', side_effect=Exception('No Route To Host'))
+    def test_handler_unit_errors(self, *unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        @see: test_handler for directory tree details.
+        @param unused:
+        @return:
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('citrus.Local.binding', binding)
+        @patch('citrus.Remote.binding', binding)
+        def test_handler(*unused):
+            # publish
+            self.populate()
+            pulp_conf.set('server', 'storage_dir', self.upfs)
+            dist = CitrusDistributor()
+            repo = Repository(self.REPO_ID)
+            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+            conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            units = []
+            options = dict(all=True)
+            handler = TestHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.downfs)
+            os.makedirs(os.path.join(self.downfs, 'content'))
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        merge = report.details['merge']
+        self.assertEqual(merge['added'], [self.REPO_ID])
+        self.assertEqual(merge['merged'], [])
+        self.assertEqual(merge['removed'], [])
+        synchronization = report.details['synchronization'][self.REPO_ID]
+        self.assertTrue(synchronization['succeeded'])
+        importer_report = synchronization['report']
+        self.assertEqual(importer_report['added_count'], 0)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']
+        self.assertEqual(len(details['added']), 0)
+        self.assertEqual(len(details['removed']), 0)
+        self.assertEqual(len(details['errors']), self.NUM_UNITS)
+        self.verify(0)
+
+    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.citrus.http.transport.HttpTransport.download', side_effect=Exception('Barf'))
+    def test_handler_transport_exception(self, *unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        @see: test_handler for directory tree details.
+        @param unused:
+        @return:
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('citrus.Local.binding', binding)
+        @patch('citrus.Remote.binding', binding)
+        def test_handler(*unused):
+            # publish
+            self.populate()
+            pulp_conf.set('server', 'storage_dir', self.upfs)
+            dist = CitrusDistributor()
+            repo = Repository(self.REPO_ID)
+            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+            conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            units = []
+            options = dict(all=True)
+            handler = TestHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.downfs)
+            os.makedirs(os.path.join(self.downfs, 'content'))
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        errors = report.details['errors']
+        self.assertEqual(len(errors), 3)
+        merge = report.details['merge']
+        self.assertEqual(merge['added'], [self.REPO_ID])
+        self.assertEqual(merge['merged'], [])
+        self.assertEqual(merge['removed'], [])
+        synchronization = report.details['synchronization'][self.REPO_ID]
+        self.assertFalse(synchronization['succeeded'])
+        exception = synchronization['exception']
+        self.assertTrue(len(exception) > 0)
+        self.verify(0)
