@@ -20,6 +20,7 @@ from backend import TransportBackend
 
 
 BUFFER_SIZE = 1024
+MAX_CONCURRENT = 8
 
 
 class DumbAssTransportBackend(TransportBackend):
@@ -52,7 +53,7 @@ class BadAssTransportBackend(TransportBackend):
 
             generators.append(fetch_url_generator(url, file_path, BUFFER_SIZE))
 
-        loop = DownloadGeneratorLoop(generators)
+        loop = DownloadGeneratorLoop(generators, MAX_CONCURRENT)
         loop.loop()
 
         return files
@@ -61,11 +62,6 @@ class BadAssTransportBackend(TransportBackend):
 class DownloadGeneratorLoop(object):
 
     class DoublyLinkedGenerators(object):
-
-        def __init__(self, generator=None):
-            self.generator = generator
-            self.previous_node = None
-            self.next_node = None
 
         @classmethod
         def from_iterable(cls, iterable):
@@ -80,6 +76,11 @@ class DownloadGeneratorLoop(object):
                     head_node = node
                 previous_node = node
             return head_node
+
+        def __init__(self, generator=None):
+            self.generator = generator
+            self.previous_node = None
+            self.next_node = None
 
         def remove(self):
             if self.previous_node is not None:
