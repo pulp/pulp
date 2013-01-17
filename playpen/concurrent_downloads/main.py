@@ -35,9 +35,14 @@ BACKENDS = {
 
 def main():
 
-    file_urls = urls.abrt_file_urls()
+    #file_urls = urls.abrt_file_urls()
+    #print 'Downloading %d files from %s' % (len(file_urls), urls.ABRT_URL)
 
-    print 'Downloading %d files from %s' % (len(file_urls), urls.ABRT_URL)
+    #file_urls = urls.epel_6_file_urls()
+    #print 'Downloading %d files from %s' % (len(file_urls), urls.EPEL_6_URL)
+
+    file_urls = urls.fedora_18_iso_url()
+    print 'Downloading %d files from %s' % (len(file_urls), urls.FEDORA_18_ISO)
 
     available_backends = set(BACKENDS.keys())
     requested_backends = set(sys.argv[1:])
