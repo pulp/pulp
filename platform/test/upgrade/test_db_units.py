@@ -12,7 +12,7 @@
 
 import os
 
-from pymongo.objectid import ObjectId
+from pulp.server.compat import ObjectId
 
 from base_db_upgrade import BaseDbUpgradeTests
 from pulp.server.upgrade.db import units

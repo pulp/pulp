@@ -43,7 +43,7 @@ class BaseDbUpgradeTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(BaseDbUpgradeTests, cls).setUpClass()
+        unittest.TestCase.setUpClass()
 #        configure_for_non_unit_test_db()
 
     def setUp(self):
