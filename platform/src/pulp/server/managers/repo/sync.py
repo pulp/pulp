@@ -19,20 +19,21 @@ need to execute syncs asynchronously must be handled at a higher layer.
 
 # Python
 import datetime
-from gettext import gettext as _
 import logging
 import os
-import pymongo
 import sys
+from gettext import gettext as _
+
+import pymongo
 
 # Pulp
 from pulp.common import dateutils
-from pulp.server import config as pulp_config
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
+from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -52,52 +53,7 @@ class RepoSyncManager(object):
     Manager used to handle sync and sync query operations.
     """
 
-    def prep_sync(self, call_request, call_report):
-        """
-        Task enqueue callback that sets the keyword argument of the importer
-        instance to use for the sync.
-        @param call_request: call request for repo sync
-        @param call_report: call report for repo sync
-        """
-        assert call_report.state in dispatch_constants.CALL_READY_STATES
-
-        repo_id = call_request.args[0] # XXX this will fail if we start setting
-                                       # the repo_id as a keyword argument
-                                       # jconnor (2012-07-30)
-
-        importer, config = self._get_importer_instance_and_config(repo_id)
-
-        call_request.kwargs['importer_instance'] = importer
-        call_request.kwargs['importer_config'] = config
-
-        if importer is not None:
-            call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, importer.cancel_sync_repo)
-
-    def _get_importer_instance_and_config(self, repo_id):
-        importer_manager = manager_factory.repo_importer_manager()
-        try:
-            repo_importer = importer_manager.get_importer(repo_id)
-            importer, config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
-        except (MissingResource, plugin_exceptions.PluginNotFound):
-            importer = None
-            config = None
-        return importer, config
-
-    def post_sync(self, call_request, call_report):
-        """
-        Clean up the kwargs that were created during the prep_sync call to as
-        not to cause problems when serializing the call request for archival.
-        @param call_request: call request for the completed repo sync
-        @param call_report: call report for the completed repo sync
-        """
-        assert call_report.state in dispatch_constants.CALL_COMPLETE_STATES
-
-        call_request.kwargs['importer_instance'] = None
-        call_request.kwargs['importer_config'] = None
-
-        call_request.remove_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK)
-
-    def sync(self, repo_id, importer_instance=None, importer_config=None, sync_config_override=None):
+    def sync(self, repo_id, sync_config_override=None):
         """
         Performs a synchronize operation on the given repository.
 
@@ -114,12 +70,6 @@ class RepoSyncManager(object):
         @param repo_id: identifies the repo to sync
         @type  repo_id: str
 
-        @param importer_instance: the importer instance for this repo and this sync
-        @type importer_instance: pulp.plugins.importer.Importer
-
-        @param importer_config: base configuration for the importer
-        @type importer_config: dict
-
         @param sync_config_override: optional config containing values to use
                                      for this sync only
         @type  sync_config_override: dict
@@ -135,8 +85,13 @@ class RepoSyncManager(object):
         if repo is None:
             raise MissingResource(repo_id)
 
+        importer_instance, importer_config = self._get_importer_instance_and_config(repo_id)
+
         if importer_instance is None:
             raise MissingResource(repo_id)
+
+        dispatch_context = dispatch_factory.context()
+        dispatch_context.set_cancel_control_hook(importer_instance.cancel_sync_repo)
 
         importer_manager = manager_factory.repo_importer_manager()
         repo_importer = importer_manager.get_importer(repo_id)
@@ -154,11 +109,23 @@ class RepoSyncManager(object):
         sync_result = self._do_sync(repo, importer_instance, transfer_repo, conduit, call_config)
         fire_manager.fire_repo_sync_finished(sync_result)
 
+        dispatch_context.clear_cancel_control_hook()
+
         if sync_result['result'] == RepoSyncResult.RESULT_FAILED:
             raise PulpExecutionException(_('Importer indicated a failed response'))
 
         # auto publish call has been moved to a dependent call in a multiple
         # call execution through the coordinator
+
+    def _get_importer_instance_and_config(self, repo_id):
+        importer_manager = manager_factory.repo_importer_manager()
+        try:
+            repo_importer = importer_manager.get_importer(repo_id)
+            importer, config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+        except (MissingResource, plugin_exceptions.PluginNotFound):
+            importer = None
+            config = None
+        return importer, config
 
     def _do_sync(self, repo, importer_instance, transfer_repo, conduit, call_config):
         """

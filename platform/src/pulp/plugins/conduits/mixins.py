@@ -173,7 +173,6 @@ class MultipleRepoUnitsMixin(object):
 class SearchUnitsMixin(object):
 
     def __init__(self, exception_class):
-        super(SearchUnitsMixin, self).__init__()
         self.exception_class = exception_class
 
     def search_all_units(self, type_id, criteria):

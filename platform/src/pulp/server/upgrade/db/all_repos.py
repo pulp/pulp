@@ -48,7 +48,8 @@ def _repo_groups(v1_database, v2_database, report):
     # I should probably use a map reduce here, but frankly this is simpler and
     # I'm not terribly worried about either the mongo performance or memory
     # consumption from the approach below.
-    repo_and_group_ids = [(x['id'], x['groupid']) for x in v1_coll.find({}, {'id' : 1, 'groupid' : 1, 'content_types' : 1})]
+    repo_and_group_ids = [(x['id'], x['groupid']) for x in v1_coll.find({}, {'id' : 1, 'groupid' : 1, 'content_types' : 1})
+                          if x.has_key('groupid')]
     repo_ids_by_group = {}
     for repo_id, group_id_list in repo_and_group_ids:
 

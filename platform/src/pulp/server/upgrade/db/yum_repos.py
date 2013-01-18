@@ -84,13 +84,14 @@ def _repos(v1_database, v2_database):
 
     new_repos = []
     for v1_repo in missing_v1_repos:
+
         id = ObjectId()
         v2_repo = {
             '_id' : id, # technically not needed but added for clarity
             'id' : v1_repo['id'],
-            'display_name' : v1_repo['name'],
+            'display_name' : v1_repo.get('name', v1_repo['id']),
             'description' : None,
-            'notes' : v1_repo['notes'],
+            'notes' : v1_repo.get('notes', {}),
             'scratchpad' : {},
             'content_unit_count' : 0
         }
