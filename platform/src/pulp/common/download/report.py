@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2013 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the License
+# (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied, including the
+# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
+# PARTICULAR PURPOSE.
+# You should have received a copy of GPLv2 along with this software; if not,
+# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
+
+class DownloadReport(object):
+    """
+    Report object for individual downloads.
+    """
+
+    def __init__(self, url, file_path, total_file_size=None):
+        self.url = url
+        self.file_path = file_path
+        self.total_file_size = total_file_size
+        self.bytes_downloaded = 0
+        self.started = False
+        self.finished = False
