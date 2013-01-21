@@ -1,0 +1,9 @@
+{"types": [
+    {
+        "id" : "repository",
+        "display_name" : "Repository",
+        "description" : "A Pulp Repository",
+        "unit_key" : ["repo_id",],
+        "search_indexes" : ["repo_id",]
+    }
+]}

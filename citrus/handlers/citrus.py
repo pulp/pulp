@@ -21,7 +21,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-class HandlerProgress(ProgressReport):
+class Progress(ProgressReport):
     """
     Citrus synchronization progress reporting object.
     """
@@ -42,7 +42,7 @@ class HandlerProgress(ProgressReport):
         self.conduit.update_progress(self.dict())
 
 
-class RepositoryHandler(ContentHandler):
+class CitrusHandler(ContentHandler):
 
     def update(self, conduit, units, options):
         """
@@ -59,7 +59,7 @@ class RepositoryHandler(ContentHandler):
         @rtype: L{ContentReport}
         """
         report = ContentReport()
-        progress = HandlerProgress(conduit)
+        progress = Progress(conduit)
         progress.push_step('fetch_bindings')
         all = options.get('all', False)
         repoids = [key['repo_id'] for key in units if key]

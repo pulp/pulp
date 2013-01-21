@@ -21,14 +21,14 @@ from logging import getLogger
 _LOG = getLogger(__name__)
 
 
-class CitrusImporter(Importer):
+class CitrusHttpImporter(Importer):
 
     @classmethod
     def metadata(cls):
         return {
             'id':'citrus_http_importer',
             'display_name':'Pulp Citrus HTTP Importer',
-            'types':['rpm',]
+            'types':['repository',]
         }
 
     def __init__(self):

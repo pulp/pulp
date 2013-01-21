@@ -23,7 +23,7 @@ _LOG = getLogger(__name__)
 VIRTUAL_HOST = ('/pulp/citrus/repos', '/var/lib/pulp/citrus/published/http/repos')
 
 
-class CitrusDistributor(Distributor):
+class CitrusHttpDistributor(Distributor):
     """
     The (citrus) distributor
     """

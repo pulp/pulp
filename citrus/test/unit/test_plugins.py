@@ -26,9 +26,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/citrus_http_distributor")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../handlers")
 
-from distributor import CitrusDistributor
-from importer import CitrusImporter
-from citrus import RepositoryHandler
+from distributor import CitrusHttpDistributor
+from importer import CitrusHttpImporter
+from citrus import CitrusHandler
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
@@ -80,8 +80,8 @@ class PluginTestBase(WebTest):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
         plugin_api._create_manager()
-        plugin_api._MANAGER.importers.add_plugin(CITRUS_IMPORTER, CitrusImporter, {})
-        plugin_api._MANAGER.distributors.add_plugin(CITRUS_DISTRUBUTOR, CitrusDistributor, {})
+        plugin_api._MANAGER.importers.add_plugin(CITRUS_IMPORTER, CitrusHttpImporter, {})
+        plugin_api._MANAGER.distributors.add_plugin(CITRUS_DISTRUBUTOR, CitrusHttpDistributor, {})
         unit_db.type_definition = \
             Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
@@ -151,7 +151,7 @@ class TestDistributor(PluginTestBase):
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.upfs)
         # Test
-        dist = CitrusDistributor()
+        dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
         payload = dist.create_consumer_payload(repo, {})
         # Verify
@@ -162,7 +162,7 @@ class TestDistributor(PluginTestBase):
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.upfs)
         # Test
-        dist = CitrusDistributor()
+        dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(virtual_host=(self.upfs, self.upfs))
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -177,7 +177,7 @@ class ImporterTest(PluginTestBase):
         # Setup
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.upfs)
-        dist = CitrusDistributor()
+        dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
         cfg = dict(virtual_host=(self.upfs, self.upfs))
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -187,7 +187,7 @@ class ImporterTest(PluginTestBase):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
         # Test
-        importer = CitrusImporter()
+        importer = CitrusHttpImporter()
         cfg = dict(
             manifest_url=dist.publisher(repo, cfg).manifest_path())
         conduit = RepoSyncConduit(
@@ -201,15 +201,15 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
 
 
-class TestHandler(RepositoryHandler):
+class TestHandler(CitrusHandler):
 
     def __init__(self, tester, cfg={}):
         self.tester = tester
-        RepositoryHandler.__init__(self, cfg)
+        CitrusHandler.__init__(self, cfg)
 
     def synchronize(self, progress, binds, options):
         self.tester.clean()
-        return RepositoryHandler.synchronize(self, progress, binds, options)
+        return CitrusHandler.synchronize(self, progress, binds, options)
 
 
 class TestAgentPlugin(PluginTestBase):
@@ -334,7 +334,7 @@ class TestAgentPlugin(PluginTestBase):
             # publish
             self.populate()
             pulp_conf.set('server', 'storage_dir', self.upfs)
-            dist = CitrusDistributor()
+            dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -390,7 +390,7 @@ class TestAgentPlugin(PluginTestBase):
             # publish
             self.populate()
             pulp_conf.set('server', 'storage_dir', self.upfs)
-            dist = CitrusDistributor()
+            dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -440,7 +440,7 @@ class TestAgentPlugin(PluginTestBase):
             # publish
             self.populate()
             pulp_conf.set('server', 'storage_dir', self.upfs)
-            dist = CitrusDistributor()
+            dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
@@ -491,7 +491,7 @@ class TestAgentPlugin(PluginTestBase):
             # publish
             self.populate()
             pulp_conf.set('server', 'storage_dir', self.upfs)
-            dist = CitrusDistributor()
+            dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
             cfg = dict(base_url='file://', virtual_host=self.virtual_host)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
