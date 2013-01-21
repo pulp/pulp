@@ -53,19 +53,14 @@ def _get_downloader_class(protocol):
     return downloader_class
 
 
-def http_downloader():
+def http_downloader(max_concurrent=None, event_listener=None):
     downloader_class = _get_downloader_class('http')
-    downloader = downloader_class()
+    downloader = downloader_class(max_concurrent, event_listener)
     return downloader
 
 
-def https_downloader():
+def https_downloader(max_concurrent=None, event_listener=None):
     downloader_class = _get_downloader_class('https')
-    downloader = downloader_class()
+    downloader = downloader_class(max_concurrent, event_listener)
     return downloader
-
-
-def downloader_for_request_list(request_list):
-    pass
-
 
