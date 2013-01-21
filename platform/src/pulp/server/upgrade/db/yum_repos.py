@@ -241,8 +241,8 @@ def _repo_distributors(v1_database, v2_database, report):
                                    'repository [%s]' % (ca_filename, v1_repo['id']))
 
         # Load the GPG keys from disk if present
-        if not SKIP_GPG_KEYS:
-            repo_key_dir = os.path.join(GPG_KEY_ROOT, v1_repo['relative_path'])
+        repo_key_dir = os.path.join(GPG_KEY_ROOT, v1_repo['relative_path'])
+        if os.path.exists(repo_key_dir) and not SKIP_GPG_KEYS:
             key_filenames = os.listdir(repo_key_dir)
             if len(key_filenames) > 0:
                 filename = os.path.join(repo_key_dir, key_filenames[0])
