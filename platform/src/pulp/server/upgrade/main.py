@@ -45,6 +45,10 @@ DB_UPGRADE_CALLS = (
     (unit_count.upgrade, _('Calculate Repository Content Counts')),
 )
 
+FILES_UPGRADE_CALLS = (
+
+)
+
 # Name of the production Pulp database
 PULP_DATABASE_NAME = 'pulp_database'
 
@@ -82,9 +86,24 @@ class Upgrader(object):
     :ivar stream_file: full location to the file containing stream information;
           the file does not necessarily have to exist
     :type stream_file: str
+
+    :ivar upgrade_db: configures whether or not the DB upgrade scripts will be run
+    :type upgrade_db: bool
+
     :ivar db_upgrade_calls: dictates which database upgrade steps will be performed;
           see DB_UPGRADE_CALLS comment above for a description of the entries
     :type db_upgrade_calls: list
+
+    :ivar db_seeds: seeds for accessing MongoDB
+    :type db_seeds: str
+
+    :ivar upgrade_files: configures whether or not the filesystem upgrade scripts
+                         will be run
+    :type upgrade_files: bool
+
+    :ivar files_upgrade_calls: dictates which filesystem upgrade steps will be
+          performed; see FILES_UPGRADE_CALLS for a description of the entries
+    :type files_upgrade_calls: list
     """
 
     def __init__(self,
@@ -93,8 +112,11 @@ class Upgrader(object):
                  tmp_db_name=TEMP_DATABASE_NAME,
                  v1_backup_db_name=V1_BACKUP_DATABASE_NAME,
                  backup_v1_db=False,
+                 upgrade_db=True,
                  db_seeds=DEFAULT_SEEDS,
-                 db_upgrade_calls=DB_UPGRADE_CALLS):
+                 db_upgrade_calls=DB_UPGRADE_CALLS,
+                 upgrade_files=True,
+                 files_upgrade_calls=FILES_UPGRADE_CALLS):
         self.stream_file = stream_file
 
         self.prod_db_name = prod_db_name
@@ -103,8 +125,12 @@ class Upgrader(object):
 
         self.backup_v1_db = backup_v1_db
 
+        self.upgrade_db = upgrade_db
         self.db_seeds = db_seeds
         self.db_upgrade_calls = db_upgrade_calls
+
+        self.upgrade_files = upgrade_files
+        self.files_upgrade_calls = files_upgrade_calls
 
         self.prompt = Prompt()
 
@@ -123,9 +149,21 @@ class Upgrader(object):
             self._print(_('Pulp installation is already upgraded to the latest version'))
             return
 
-        self._upgrade_database()
+        if not self.upgrade_db:
+            self._print(_('Skipping Database Upgrade'))
+        else:
+            self._upgrade_database()
+
+        if not self.upgrade_files:
+            self._print(_('Skipping Filesystem Upgrade'))
+        else:
+            self._upgrade_files()
 
     def _upgrade_database(self):
+        """
+        Runs all configured upgrade scripts for handling the database.
+        """
+
         self._print(_('Upgrading Database'))
 
         v1_database = self._database(self.prod_db_name)
@@ -165,17 +203,38 @@ class Upgrader(object):
 
         # Handle the v1 database to get it out of the way
         if self.backup_v1_db:
+            spinner = ThreadedSpinner(self.prompt)
+            spinner.start()
+
             self._print(_('Backing up the v1 database to %(db)s') % self.v1_backup_db_name)
             self._backup_v1()
+
+            spinner.stop()
+            spinner.clear()
         else:
             self._print(_('The v1 database will not be backed up'))
 
+        self.prompt.write('')
+
         # Install the v2 database
+        spinner = ThreadedSpinner(self.prompt)
+        spinner.start()
         self._print(_('Installing the v2 database'))
         self._install_v2()
+        spinner.stop()
+        spinner.clear()
 
-        self._print(_(''))
+        self.prompt.write('')
         self._cleanup()
+
+    def _upgrade_files(self):
+        """
+        Runs all configured upgrade scripts for handling the filesystem.
+        """
+
+        self._print(_('Upgrading Pulp Files'))
+
+        # TODO: Implement when the filesystem code is finished
 
     # -- utilities ----------------------------------------------------------------
 
