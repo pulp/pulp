@@ -31,8 +31,7 @@ class BaseFileUpgradeTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(V1_TEST_FILESYSTEM)
-        shutil.move('/tmp/pulp/v1', V1_TEST_FILESYSTEM)
+        shutil.rmtree('/tmp/pulp/v1')
 
     def setUp(self):
         super(BaseFileUpgradeTests, self).setUp()
@@ -47,4 +46,6 @@ class BaseFileUpgradeTests(unittest.TestCase):
 
     def tearDown(self):
         super(BaseFileUpgradeTests, self).tearDown()
+        self.v1_test_db.delete()
+        self.v2_test_db.delete()
 

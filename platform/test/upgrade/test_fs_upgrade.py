@@ -17,7 +17,7 @@ from pulp.server.upgrade.filesystem import rpms, distribution
 from pulp.server.upgrade.model import UpgradeStepReport
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
-V1_TEST_FILESYSTEM = os.path.join(DATA_DIR, 'filesystem/v1')
+V1_TEST_FILESYSTEM = "/tmp/pulp/v1"
 V2_TEST_FILESYSTEM = os.path.join(DATA_DIR, 'filesystem/v2')
 V1_REPOS_DIR = os.path.join(V1_TEST_FILESYSTEM, "var/lib/pulp/repos")
 

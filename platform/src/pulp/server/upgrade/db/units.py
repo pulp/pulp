@@ -41,7 +41,7 @@ import yum
 
 from pulp.common import dateutils
 from pulp.server.upgrade.model import UpgradeStepReport
-from pulp.server.upgrade.utils import PrestoParser
+from pulp.server.upgrade.utils import presto_parser
 
 # Passed to mongo to scope the returned results to only the RPM unit key
 
@@ -305,7 +305,7 @@ def _drpms(v1_database, v2_database, report):
     v2_ass_coll = v2_database.repo_content_units
     repos = v1_coll.find()
     for repo in repos:
-        deltarpms = PrestoParser.get_deltas(repo)
+        deltarpms = presto_parser.get_deltas(repo)
         new_associations = []
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():

@@ -17,7 +17,7 @@ from pulp.server.compat import ObjectId
 from base_db_upgrade import BaseDbUpgradeTests
 from pulp.server.upgrade.db import units
 from pulp.server.upgrade.model import UpgradeStepReport
-from pulp.server.upgrade.utils import PrestoParser
+from pulp.server.upgrade.utils import presto_parser
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
 V1_TEST_FILESYSTEM=os.path.join(DATA_DIR, 'filesystem/v1')
@@ -250,7 +250,7 @@ class DRPMUpgradeTests(BaseDbUpgradeTests):
         # Verify
         self.assertTrue(result)
         v1_drpms = []
-        deltarpms = PrestoParser.get_deltas(self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}))
+        deltarpms = presto_parser.get_deltas(self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}))
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():
                 v1_drpms.append(drpm)

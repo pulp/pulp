@@ -14,7 +14,7 @@ import os
 import shutil
 import yum
 from pulp.server.upgrade.model import UpgradeStepReport
-from pulp.server.upgrade.utils import PrestoParser
+from pulp.server.upgrade.utils import presto_parser
 
 DIR_STORAGE_ROOT = '/var/lib/pulp/content/'
 DIR_RPMS = os.path.join(DIR_STORAGE_ROOT, 'rpm')
@@ -56,10 +56,10 @@ def _rpms(v1_database, v2_database, report):
             os.makedirs(os.path.dirname(v2_pkgpath))
             shutil.move(v1_pkgpath, v2_pkg_dir)
         except (IOError, OSError), e:
-            report.error(e)
+            report.error(str(e))
             continue
         except Exception, e:
-            report.error("Error: %s" % e)
+            report.error("Error: %s" % str(e))
             continue
     if len(report.errors):
         return False
@@ -68,18 +68,18 @@ def _rpms(v1_database, v2_database, report):
 def _drpms(v1_database, v2_database, report):
     """
     Migrate DRPMS from v1 to v2 location on filesystem. DRPMs are not inventoried in the DB in v1.
-    This method looks up each repo in v1 for repodata and pretodelta in particular. If availble,
-    It parses the presto, extracts the drpm info and finds the drpms in repo dir in v1 and migrates
-    then to /var/lib/pulp/content/drpm/ in v1.
+    This method looks up each repo in v1 for repodata and pretodelta in particular. If available,
+    it parses the presto, extracts the drpm info and finds the drpms in repo dir in v1 and migrates
+    them to /var/lib/pulp/content/drpm/ in v1.
     """
     v1_coll = v1_database.repos
     repos = v1_coll.find()
     for repo in repos:
-        deltarpms = PrestoParser.get_deltas(repo)
+        deltarpms = presto_parser.get_deltas(repo)
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():
                 v2_path = os.path.join(DIR_DRPM, drpm.filename)
-                v1_path = repo['repomd_xml_path'].split("repodata/repomd.xml")[0] + drpm.filename
+                v1_path = os.path.join(repo['repomd_xml_path'].split("repodata/repomd.xml")[0], drpm.filename)
                 if not os.path.exists(v1_path):
                     # missing source path, skip migrate
                     report.warning("Package %s does not exist" % v1_path)
@@ -90,10 +90,10 @@ def _drpms(v1_database, v2_database, report):
                         os.makedirs(v2_pkg_dir)
                     shutil.move(v1_path, v2_pkg_dir)
                 except (IOError, OSError), e:
-                    report.error(e)
+                    report.error(str(e))
                     continue
                 except Exception, e:
-                    report.error("Error: %s" % e)
+                    report.error("Error: %s" % str(e))
                     continue
     if len(report.errors):
         return False
