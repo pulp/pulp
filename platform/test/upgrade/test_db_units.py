@@ -390,10 +390,10 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
             self.assertTrue(isinstance(v2_erratum['_id'], ObjectId))
             self.assertEqual(v2_erratum['_storage_path'], None)
 
-            for k in ('description', 'from_str', 'id', 'issued', 'pushcount',
-                      'reboot_suggested', 'references', 'release', 'rights',
-                      'severity', 'solution', 'status', 'summary', 'title',
-                      'type', 'updated', 'version'):
+            for k in ('description', 'from_str', 'id', 'issued', 'pkglist',
+                      'pushcount', 'reboot_suggested', 'references', 'release',
+                      'rights', 'severity', 'solution', 'status', 'summary',
+                      'title', 'type', 'updated', 'version'):
                 self.assertEqual(v2_erratum[k], v1_erratum[k], msg='Unequal key: %s' % k)
 
         #   Associations

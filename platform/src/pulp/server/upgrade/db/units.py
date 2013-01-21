@@ -367,6 +367,7 @@ def _errata(v1_database, v2_database, report):
             'from_str' : v1_erratum['from_str'],
             'id' : v1_erratum['id'],
             'issued' : v1_erratum['issued'],
+            'pkglist' : v1_erratum.get('pkglist', []),
             'pushcount' : v1_erratum['pushcount'],
             'reboot_suggested' : v1_erratum['reboot_suggested'],
             'references' : v1_erratum['references'],
