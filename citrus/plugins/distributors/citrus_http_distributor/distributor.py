@@ -11,6 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import re
+
+from gettext import gettext as _
 from pulp.plugins.distributor import Distributor
 from pulp.citrus.http.publisher import HttpPublisher
 from pulp.server.managers import factory
@@ -19,8 +22,6 @@ from logging import getLogger
 
 
 _LOG = getLogger(__name__)
-
-HTTPD_ALIAS = ('/pulp/citrus/repos', '/var/lib/pulp/citrus/published/http/repos')
 
 
 class CitrusHttpDistributor(Distributor):
@@ -37,6 +38,31 @@ class CitrusHttpDistributor(Distributor):
         }
 
     def validate_config(self, repo, config, related_repos):
+        """
+        Layout:
+          {
+            protocol : (http|https|file),
+            alais : {
+              <protocol> : (url, directory)
+              ...
+            }
+          }
+        """
+        missing_msg = _('Missing required configuration property: %(p)s')
+        invalid_msg = _('Property %(p)s must be: %(v)s')
+        key = 'protocol'
+        protocol = config.get(key)
+        if not protocol:
+            return (False, missing_msg % {'p':key})
+        protocols = ('http', 'https', 'file')
+        if protocol not in protocols:
+            return (False, invalid_msg % {'p':key, 'v':protocols})
+        key = 'alias'
+        alias = config.get(key)
+        if not alias:
+            return (False, missing_msg % {'p':key})
+        if protocol not in alias:
+            return (False, missing_msg % {'p':'.'.join((protocol, key))})
         return (True, None)
 
     def publish_repo(self, repo, conduit, config):
@@ -93,11 +119,11 @@ class CitrusHttpDistributor(Distributor):
         @type  config: pulp.plugins.config.PluginConfiguration
         @return: The configured publisher.
         """
-        base_url = config.get('base_url')
-        if not base_url:
-            host = pulp_conf.get('server', 'server_name')
-            base_url = 'http://%s' % host
-        alias = config.get('alias', HTTPD_ALIAS)
+        host = self._host()
+        protocol = config.get('protocol')
+        alias = config.get('alias')
+        alias = alias.get(protocol)
+        base_url = '://'.join((protocol, host))
         return HttpPublisher(base_url, alias, repo.id)
 
     def cancel_publish_repo(self, call_report, call_request):
@@ -158,3 +184,7 @@ class CitrusHttpDistributor(Distributor):
         """
         manager = factory.repo_distributor_manager()
         payload['distributors'] = manager.get_distributors(repo_id)
+
+    def _host(self):
+        host = pulp_conf.get('server', 'server_name')
+        return host

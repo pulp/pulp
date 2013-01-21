@@ -72,6 +72,7 @@ class PluginTestBase(WebTest):
         WebTest.setUp(self)
         self.upfs = self.tmpdir('upstream-')
         self.downfs = self.tmpdir('downstream-')
+        self.alias = (self.upfs, self.upfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
         Repo.get_collection().remove()
@@ -108,10 +109,16 @@ class PluginTestBase(WebTest):
         manager.create_repo(self.REPO_ID)
         manager = managers.repo_distributor_manager()
         # add distrubutor
+        cfg = {
+            'protocol':'file',
+            'alias': {
+                'file': None,
+            }
+        }
         manager.add_distributor(
             self.REPO_ID,
             CITRUS_DISTRUBUTOR,
-            {},
+            cfg,
             False,
             distributor_id=CITRUS_DISTRUBUTOR)
         # add units
@@ -164,7 +171,11 @@ class TestDistributor(PluginTestBase):
         # Test
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = dict(alias=(self.upfs, self.upfs))
+        protocol = 'file'
+        cfg = {
+            'protocol':protocol,
+            'alias': {protocol:self.alias}
+        }
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         # Verify
@@ -179,7 +190,11 @@ class ImporterTest(PluginTestBase):
         pulp_conf.set('server', 'storage_dir', self.upfs)
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = dict(alias=(self.upfs, self.upfs))
+        protocol = 'file'
+        cfg = {
+            'protocol':protocol,
+            'alias': {protocol:self.alias}
+        }
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
@@ -218,7 +233,6 @@ class TestAgentPlugin(PluginTestBase):
 
     def populate(self):
         PluginTestBase.populate(self)
-        self.alias = (self.upfs, self.upfs)
         # register downstream
         manager = managers.consumer_manager()
         manager.register(self.PULP_ID)
@@ -228,7 +242,11 @@ class TestAgentPlugin(PluginTestBase):
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distrubutor
         manager = managers.repo_distributor_manager()
-        cfg = dict(base_url='file://', alias=self.alias)
+        protocol = 'file'
+        cfg = {
+            'protocol':protocol,
+            'alias': {protocol:self.alias}
+        }
         manager.add_distributor(
             self.REPO_ID,
             CITRUS_DISTRUBUTOR,
@@ -259,9 +277,9 @@ class TestAgentPlugin(PluginTestBase):
         # distributor
         manager = managers.repo_distributor_manager()
         distributor = manager.get_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR)
-        base_url = distributor['config']['base_url']
-        self.assertEqual(base_url, 'file://')
-        alias = distributor['config']['alias']
+        protocol = distributor['config']['protocol']
+        self.assertEqual(protocol, 'file')
+        alias = distributor['config']['alias'][protocol]
         self.assertEqual(alias[0], self.upfs)
         self.assertEqual(alias[1], self.upfs)
         # check units
@@ -336,7 +354,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', alias=self.alias)
+            protocol = 'file'
+            cfg = {
+                'protocol':protocol,
+                'alias': {protocol:self.alias}
+            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             options = dict(all=True)
@@ -392,7 +414,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', alias=self.alias)
+            protocol = 'file'
+            cfg = {
+                'protocol':protocol,
+                'alias': {protocol:self.alias}
+            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -442,7 +468,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', alias=self.alias)
+            protocol = 'file'
+            cfg = {
+                'protocol':protocol,
+                'alias': {protocol:self.alias}
+            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -493,7 +523,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', alias=self.alias)
+            protocol = 'file'
+            cfg = {
+                'protocol':protocol,
+                'alias': {protocol:self.alias}
+            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -509,7 +543,7 @@ class TestAgentPlugin(PluginTestBase):
         report = _report[0]
         self.assertTrue(report.succeeded)
         errors = report.details['errors']
-        self.assertEqual(len(errors), 3)
+        self.assertEqual(len(errors), 1)
         merge = report.details['merge']
         self.assertEqual(merge['added'], [self.REPO_ID])
         self.assertEqual(merge['merged'], [])
