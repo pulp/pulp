@@ -62,6 +62,9 @@ class ReposUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v2_repo['description'], None)
             self.assertEqual(v2_repo['scratchpad'], {})
             self.assertEqual(v2_repo['content_unit_count'], 0)
+            notes = v2_repo['notes']
+            self.assertTrue(notes is not None)
+            self.assertEqual(notes[iso_repos.REPO_NOTE_KEY], iso_repos.REPO_NOTE_ISO)
 
             v2_importer = self.tmp_test_db.database.repo_importers.find_one({'repo_id' : repo_id})
             self.assertTrue(v2_importer is not None)

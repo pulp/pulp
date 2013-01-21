@@ -28,6 +28,10 @@ YUM_IMPORTER_ID = YUM_IMPORTER_TYPE_ID
 YUM_DISTRIBUTOR_TYPE_ID = 'yum_distributor'
 YUM_DISTRIBUTOR_ID = YUM_DISTRIBUTOR_TYPE_ID
 
+# Notes added to repos to easily differentiate them; copied from the RPM support
+REPO_NOTE_KEY = '_repo-type' # needs to be standard across extensions
+REPO_NOTE_RPM = 'rpm-repo'
+
 # Value for the flag in v1 that distinguishes the type of repo
 V1_YUM_REPO = 'yum'
 
@@ -84,14 +88,18 @@ def _repos(v1_database, v2_database):
 
     new_repos = []
     for v1_repo in missing_v1_repos:
-
         id = ObjectId()
+
+        # Identifying tag for the CLI
+        v2_notes = v1_repo.get('notes', {})
+        v2_notes[REPO_NOTE_KEY] = REPO_NOTE_RPM
+
         v2_repo = {
             '_id' : id, # technically not needed but added for clarity
             'id' : v1_repo['id'],
             'display_name' : v1_repo.get('name', v1_repo['id']),
             'description' : None,
-            'notes' : v1_repo.get('notes', {}),
+            'notes' : v2_notes,
             'scratchpad' : {},
             'content_unit_count' : 0
         }

@@ -28,6 +28,10 @@ ISO_IMPORTER_ID = ISO_IMPORTER_TYPE_ID
 ISO_DISTRIBUTOR_TYPE_ID = 'iso_distributor'
 ISO_DISTRIBUTOR_ID = ISO_DISTRIBUTOR_TYPE_ID
 
+# Notes added to repos to easily differentiate them; copied from the RPM support
+REPO_NOTE_KEY = '_repo-type' # needs to be standard across extensions
+REPO_NOTE_ISO = 'iso-repo'
+
 # Value for the flag in v1 that distinguishes the type of repo
 V1_ISO_REPO = 'file'
 
@@ -75,12 +79,17 @@ def _repos(v1_database, v2_database):
     new_repos = []
     for v1_repo in missing_v1_repos:
         id = ObjectId()
+
+        # Identifying tag for the CLI
+        v2_notes = v1_repo.get('notes', {})
+        v2_notes[REPO_NOTE_KEY] = REPO_NOTE_ISO
+
         v2_repo = {
             '_id' : id, # technically not needed but added for clarity
             'id' : v1_repo['id'],
             'display_name' : v1_repo['name'],
             'description' : None,
-            'notes' : v1_repo['notes'],
+            'notes' : v2_notes,
             'scratchpad' : {},
             'content_unit_count' : 0
         }
