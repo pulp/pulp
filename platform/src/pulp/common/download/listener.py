@@ -28,9 +28,6 @@ class DownloadEventListener(object):
     def batch_finished(self, report_list):
         pass
 
-    def batch_cancelled(self, report_list):
-        pass
-
     # individual download events
 
     def download_started(self, report):
@@ -45,6 +42,4 @@ class DownloadEventListener(object):
     def download_failed(self, report):
         pass
 
-    def download_canceled(self, report):
-        pass
 
