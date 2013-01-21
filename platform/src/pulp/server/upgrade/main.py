@@ -49,7 +49,7 @@ DB_UPGRADE_CALLS = (
 PULP_DATABASE_NAME = 'pulp_database'
 
 # Name of the temporary database used to assemble the v2 database
-TEMP_DATABASE_NAME = 'pulp_database'
+TEMP_DATABASE_NAME = 'pulp_v2_tmp'
 
 # Name the v1 database will be backed up to if configured to do so
 V1_BACKUP_DATABASE_NAME = 'pulp_database_v1'
