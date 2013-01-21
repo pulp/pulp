@@ -20,7 +20,7 @@ from logging import getLogger
 
 _LOG = getLogger(__name__)
 
-VIRTUAL_HOST = ('/pulp/citrus/repos', '/var/lib/pulp/citrus/published/http/repos')
+HTTPD_ALIAS = ('/pulp/citrus/repos', '/var/lib/pulp/citrus/published/http/repos')
 
 
 class CitrusHttpDistributor(Distributor):
@@ -97,8 +97,8 @@ class CitrusHttpDistributor(Distributor):
         if not base_url:
             host = pulp_conf.get('server', 'server_name')
             base_url = 'http://%s' % host
-        virtual_host = config.get('virtual_host', VIRTUAL_HOST)
-        return HttpPublisher(base_url, virtual_host, repo.id)
+        alias = config.get('alias', HTTPD_ALIAS)
+        return HttpPublisher(base_url, alias, repo.id)
 
     def cancel_publish_repo(self, call_report, call_request):
         pass

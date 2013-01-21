@@ -164,7 +164,7 @@ class TestDistributor(PluginTestBase):
         # Test
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = dict(virtual_host=(self.upfs, self.upfs))
+        cfg = dict(alias=(self.upfs, self.upfs))
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         # Verify
@@ -179,7 +179,7 @@ class ImporterTest(PluginTestBase):
         pulp_conf.set('server', 'storage_dir', self.upfs)
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = dict(virtual_host=(self.upfs, self.upfs))
+        cfg = dict(alias=(self.upfs, self.upfs))
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
@@ -218,7 +218,7 @@ class TestAgentPlugin(PluginTestBase):
 
     def populate(self):
         PluginTestBase.populate(self)
-        self.virtual_host = (self.upfs, self.upfs)
+        self.alias = (self.upfs, self.upfs)
         # register downstream
         manager = managers.consumer_manager()
         manager.register(self.PULP_ID)
@@ -228,7 +228,7 @@ class TestAgentPlugin(PluginTestBase):
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distrubutor
         manager = managers.repo_distributor_manager()
-        cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+        cfg = dict(base_url='file://', alias=self.alias)
         manager.add_distributor(
             self.REPO_ID,
             CITRUS_DISTRUBUTOR,
@@ -261,9 +261,9 @@ class TestAgentPlugin(PluginTestBase):
         distributor = manager.get_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR)
         base_url = distributor['config']['base_url']
         self.assertEqual(base_url, 'file://')
-        virtual_host = distributor['config']['virtual_host']
-        self.assertEqual(virtual_host[0], self.upfs)
-        self.assertEqual(virtual_host[1], self.upfs)
+        alias = distributor['config']['alias']
+        self.assertEqual(alias[0], self.upfs)
+        self.assertEqual(alias[1], self.upfs)
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
@@ -336,7 +336,7 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+            cfg = dict(base_url='file://', alias=self.alias)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             options = dict(all=True)
@@ -392,7 +392,7 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+            cfg = dict(base_url='file://', alias=self.alias)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -442,7 +442,7 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+            cfg = dict(base_url='file://', alias=self.alias)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -493,7 +493,7 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = dict(base_url='file://', virtual_host=self.virtual_host)
+            cfg = dict(base_url='file://', alias=self.alias)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
