@@ -26,8 +26,8 @@ class CitrusImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id':'citrus_importer',
-            'display_name':'Pulp Citrus Importer',
+            'id':'citrus_http_importer',
+            'display_name':'Pulp Citrus HTTP Importer',
             'types':['rpm',]
         }
 

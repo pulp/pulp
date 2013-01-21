@@ -28,8 +28,6 @@ log = getLogger(__name__)
 
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
-CITRUS_DISTRIBUTOR = 'citrus_distributor'
-
 
 def subdict(adict, *keylist):
     """
@@ -578,4 +576,4 @@ class Binding(Remote):
         @return: The filtered list of bind payloads.
         @rtype: list
         """
-        return [b for b in binds if b['type_id'] == CITRUS_DISTRIBUTOR]
+        return [b for b in binds if b['type_id'].startswith('citrus')]

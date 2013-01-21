@@ -22,8 +22,8 @@ from base import WebTest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platform/src/")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/citrus_importer")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/citrus_distributor")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/citrus_http_importer")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/citrus_http_distributor")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../handlers")
 
 from distributor import CitrusDistributor
@@ -45,8 +45,8 @@ from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
 
-CITRUS_IMPORTER = 'citrus_importer'
-CITRUS_DISTRUBUTOR = 'citrus_distributor'
+CITRUS_IMPORTER = 'citrus_http_importer'
+CITRUS_DISTRUBUTOR = 'citrus_http_distributor'
 
 class Repository(object):
 
@@ -303,9 +303,9 @@ class TestAgentPlugin(PluginTestBase):
             │       └── repos
             │           └── test-repo
             │               ├── distributors
-            │               │   └── citrus_distributor
+            │               │   └── citrus_http_distributor
             │               └── importers
-            │                   └── citrus_importer
+            │                   └── citrus_http_importer
             ├── storage
             └── upstream-SgASM7
                 ├── content
@@ -318,9 +318,9 @@ class TestAgentPlugin(PluginTestBase):
                     └── repos
                         └── test-repo
                             ├── distributors
-                            │   └── citrus_distributor
+                            │   └── citrus_http_distributor
                             └── importers
-                                └── citrus_importer
+                                └── citrus_http_importer
 
         @param unused:
         @return:

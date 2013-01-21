@@ -105,8 +105,8 @@ Plugins to provide citrus support.
 %files plugins
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_citrus.conf
-%{_usr}/lib/pulp/plugins/importers/citrus_importer/
-%{_usr}/lib/pulp/plugins/distributors/citrus_distributor/
+%{_usr}/lib/pulp/plugins/importers/citrus_http_importer/
+%{_usr}/lib/pulp/plugins/distributors/citrus_http_distributor/
 %defattr(-,apache,apache,-)
 %{_var}/lib/pulp/citrus/published
 %{_var}/www/citrus

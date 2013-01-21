@@ -31,8 +31,8 @@ class CitrusDistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id':'citrus_distributor',
-            'display_name':'Pulp Citrus Distributor',
+            'id':'citrus_http_distributor',
+            'display_name':'Pulp Citrus HTTP Distributor',
             'types':['repository',]
         }
 
@@ -140,8 +140,8 @@ class CitrusDistributor(Distributor):
         publisher = self.publisher(repo, config)
         manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
         importer = {
-            'id':'citrus_importer',
-            'importer_type_id':'citrus_importer',
+            'id':'citrus_http_importer',
+            'importer_type_id':'citrus_http_importer',
             'config':{
                 'manifest_url':manifest_url,
             }

@@ -120,8 +120,8 @@ LINKS = (
     # Citrus (all)
     ('citrus/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
     ('citrus/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
-    ('citrus/plugins/distributors/citrus_distributor', DIR_PLUGINS + '/distributors/citrus_distributor'),
-    ('citrus/plugins/importers/citrus_importer', DIR_PLUGINS + '/importers/citrus_importer'),
+    ('citrus/plugins/distributors/citrus_http_distributor', DIR_PLUGINS + '/distributors/citrus_http_distributor'),
+    ('citrus/plugins/importers/citrus_http_importer', DIR_PLUGINS + '/importers/citrus_http_importer'),
     ('citrus/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
     ('citrus/extensions/admin/pulp_admin_citrus', DIR_ADMIN_EXTENSIONS + 'pulp_admin_citrus'),
     ('citrus/extensions/consumer/pulp_consumer_citrus', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer_citrus'),

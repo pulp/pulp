@@ -17,7 +17,7 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client.extensions.extensions import PulpCliCommand
 from pulp.client.consumer_utils import load_consumer_id
 
-DISTRIBUTOR_ID = 'citrus_distributor'
+DISTRIBUTOR_ID = 'citrus_http_distributor'
 
 
 class BindCommand(PulpCliCommand):
