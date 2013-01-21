@@ -21,7 +21,7 @@ from pulp.common.download.backends.base import DownloadBackend
 SELECT_TIMEOUT = 1.0
 
 
-class CurlDownloadBackend(DownloadBackend):
+class HTTPCurlDownloadBackend(DownloadBackend):
 
     def download(self, request_list):
 

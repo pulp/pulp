@@ -14,9 +14,7 @@
 from gettext import gettext as _
 
 from pulp.common.download.backends.base import DownloadBackend
-from pulp.common.download.backends.curl import CurlDownloadBackend
-from pulp.common.download.backends.local import LocalCopyDownloadBackend
-from pulp.common.download.requests.base import DownloadRequest
+from pulp.common.download.backends.curl import HTTPCurlDownloadBackend
 
 # download backends and management ---------------------------------------------
 
@@ -31,10 +29,8 @@ class NoBackendForProtocol(Exception):
 
 
 _BACKENDS = {
-    'http': CurlDownloadBackend,
-    'https': CurlDownloadBackend,
-    'ftp': CurlDownloadBackend,
-    'file': LocalCopyDownloadBackend,
+    'http': HTTPCurlDownloadBackend,
+    'https': HTTPCurlDownloadBackend,
 }
 
 
@@ -69,25 +65,7 @@ def https_downloader():
     return downloader
 
 
-def ftp_downloader():
-    downloader_class = _get_downloader_class('ftp')
-    downloader = downloader_class()
-    return downloader
-
-
-def local_downloader():
-    downloader_class = _get_downloader_class('file')
-    downloader = downloader_class()
-    return downloader
-
-
 def downloader_for_request_list(request_list):
     pass
 
-# download convenience api -----------------------------------------------------
-
-# provide this? move this into a different module?
-
-def download(request_list, event_listener=None):
-    pass
 
