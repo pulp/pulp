@@ -14,16 +14,30 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import optparse
 import os
 import sys
 
-from pulp.server.upgrade.main import Upgrader, StepException
+from pulp.server.upgrade.main import Upgrader, StepException, V1_BACKUP_DATABASE_NAME
 
 
 if __name__ == '__main__':
 
+    # Script configuration
+    parser = optparse.OptionParser()
+    parser.add_option('--skip-files', dest='skip_files', action='store_true',
+                      help='skip the filesystem portion of the upgrade')
+    parser.add_option('--skip-db', dest='skip_db', action='store_true',
+                      help='skip the database portion of the upgrade')
+    parser.add_option('--backup-v1-db', dest='backup_v1_db', action='store_true',
+                      help='if specified, the v1 database will be saved as %s in MongoDB' % V1_BACKUP_DATABASE_NAME)
+
+    options, args = parser.parse_args()
+
     # All CLI output is handled in the Upgrader itself
-    upgrader = Upgrader()
+    upgrader = Upgrader(upgrade_db=not options.skip_db,
+                        upgrade_files= not options.skip_files,
+                        backup_v1_db=options.backup_v1_db)
 
     try:
         upgrader.upgrade()

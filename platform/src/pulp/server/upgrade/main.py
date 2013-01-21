@@ -159,6 +159,8 @@ class Upgrader(object):
         else:
             self._upgrade_files()
 
+        self._drop_stream_flag()
+
     def _upgrade_database(self):
         """
         Runs all configured upgrade scripts for handling the database.
@@ -235,6 +237,15 @@ class Upgrader(object):
         self._print(_('Upgrading Pulp Files'))
 
         # TODO: Implement when the filesystem code is finished
+
+    def _drop_stream_flag(self):
+        """
+        Creates the stream flag that is used to prevent multiple runs of the
+        upgrade
+        """
+        f = open(self.stream_file, 'w')
+        f.write('v2')
+        f.close()
 
     # -- utilities ----------------------------------------------------------------
 
