@@ -17,7 +17,7 @@ class DownloadEventListener(object):
     Downloader event listener class for responding to download events.
 
     The individual methods are used as callbacks at certain points in batch and
-    individual download lifecycles.
+    individual download life-cycles.
     """
 
     # batch downloads events
@@ -39,7 +39,10 @@ class DownloadEventListener(object):
     def download_progress(self, report):
         pass
 
-    def download_finished(self, report):
+    def download_succeeded(self, report):
+        pass
+
+    def download_failed(self, report):
         pass
 
     def download_canceled(self, report):

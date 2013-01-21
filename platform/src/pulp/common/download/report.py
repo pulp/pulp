@@ -17,10 +17,17 @@ class DownloadReport(object):
     Report object for individual downloads.
     """
 
-    def __init__(self, url, file_path, total_file_size=None):
+    @classmethod
+    def from_download_request(cls, request):
+
+        return cls(request.url, request.file_path, request.file_size)
+
+    def __init__(self, url, file_path, file_size=None):
+
         self.url = url
         self.file_path = file_path
-        self.total_file_size = total_file_size
+        self.file_size = file_size
+
         self.bytes_downloaded = 0
-        self.started = False
-        self.finished = False
+        self.start_time = None
+        self.finish_time = None

@@ -11,8 +11,52 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import os
+
+import pycurl
+
 from pulp.common.download.backends.base import DownloadBackend
 
 
+SELECT_TIMEOUT = 1.0
+
+
 class CurlDownloadBackend(DownloadBackend):
-    pass
+
+    def download(self, request_list):
+
+        multi_handle = pycurl.CurlMulti()
+
+        requests = []
+        files = []
+
+        for request in request_list:
+
+            file_handle = open(request.file_path, 'wb')
+
+            files.append(request.file_path)
+
+            easy_handle = pycurl.Curl()
+            easy_handle.setopt(pycurl.URL, request.url)
+            easy_handle.setopt(pycurl.WRITEFUNCTION, file_handle.write)
+
+            req = (request.url, file_handle, easy_handle)
+            multi_handle.add_handle(req[2])
+            requests.append(req)
+
+        num_handles = len(requests)
+
+        while num_handles:
+            ret = multi_handle.select(SELECT_TIMEOUT)
+            if ret == -1:
+                continue
+            while True:
+                ret, num_handles = multi_handle.perform()
+                if ret != pycurl.E_CALL_MULTI_PERFORM:
+                    break
+
+        for req in requests:
+            req[1].close()
+
+        return files
+

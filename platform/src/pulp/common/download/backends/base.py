@@ -11,31 +11,20 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from pulp.common.download.listener import DownloadEventListener
+
 
 class DownloadBackend(object):
 
-    def __init__(self, request_list, max_concurrent=None):
+    def __init__(self, max_concurrent=None, event_listener=None):
         assert max_concurrent is None or max_concurrent > 0
+        self.max_concurrent = max_concurrent
+        self.event_listener = event_listener or DownloadEventListener()
+        self.is_cancelled = False
 
-        self.request_list = request_list
-        self.max_concurrent = max_concurrent or len(request_list)
-
-    # batch downloads api
-
-    def download_all(self):
+    def download(self, request_list):
         raise NotImplementedError()
 
-    def cancel_all(self):
-        raise NotImplementedError()
-
-    # individual download management
-
-    def add_request(self, request):
-        raise NotImplementedError()
-
-    def remove_request(self, request):
-        raise NotImplementedError()
-
-    def cancel_request(self, request):
-        raise NotImplementedError()
+    def cancel(self):
+        self.is_cancelled = True
 

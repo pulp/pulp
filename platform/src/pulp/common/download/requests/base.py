@@ -11,14 +11,14 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from pulp.common.download.listener import DownloadEventListener
-
 
 class DownloadRequest(object):
 
     protocol = None
 
-    def __init__(self, url, file_path, event_listener=None):
+    def __init__(self, url, file_path, file_size=None):
+
         self.url = url
         self.file_path = file_path
-        self.event_listener = event_listener or DownloadEventListener()
+        self.file_size = file_size
+
