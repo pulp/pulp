@@ -115,15 +115,26 @@ class HTTPCurlDownloadBackend(DownloadBackend):
             while True:
                 num_q, ok_list, err_list = multi_handle.info_read()
 
-                for easy_handle in itertools.chain(ok_list, err_list):
+                # XXX these loops contain duplicate code; which just pisses me off
+
+                for easy_handle in ok_list:
                     easy_handle.report.finish_time = datetime.datetime.now()
 
-                    if easy_handle in ok_list:
-                        easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
-                        self.fire_event_to_listener(self.event_listener.download_succeeded, easy_handle.report)
-                    else: # in err_list
-                        easy_handle.report.state = download_report.DOWNLOAD_FAILED
-                        self.fire_event_to_listener(self.event_listener.download_failed, easy_handle.report)
+                    easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
+                    self.fire_event_to_listener(self.event_listener.download_succeeded, easy_handle.report)
+
+                    self._clear_easy_handle_download(easy_handle)
+                    free_handles.append(easy_handle)
+
+                for easy_handle, err_code, err_msg in err_list:
+                    easy_handle.report.finish_time = datetime.datetime.now()
+
+                    easy_handle.report.state = download_report.DOWNLOAD_FAILED
+                    response_code = easy_handle.getinfo(pycurl.HTTP_CODE)
+                    easy_handle.report.error_report['response_code'] = response_code
+                    easy_handle.report.error_report['error_code'] = err_code
+                    easy_handle.report.error_report['error_message'] = err_msg
+                    self.fire_event_to_listener(self.event_listener.download_failed, easy_handle.report)
 
                     self._clear_easy_handle_download(easy_handle)
                     free_handles.append(easy_handle)

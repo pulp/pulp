@@ -19,6 +19,7 @@ DOWNLOAD_SUCCEEDED = 'succeeded'
 DOWNLOAD_FAILED = 'failed'
 DOWNLOAD_CANCELED = 'canceled'
 
+# download report --------------------------------------------------------------
 
 class DownloadReport(object):
     """
@@ -40,3 +41,4 @@ class DownloadReport(object):
         self.bytes_downloaded = 0
         self.start_time = None
         self.finish_time = None
+        self.error_report = {}
