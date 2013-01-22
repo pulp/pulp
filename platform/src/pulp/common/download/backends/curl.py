@@ -22,6 +22,9 @@ from pulp.common.download.backends.base import DownloadBackend
 
 # default constants ------------------------------------------------------------
 
+# backend constants
+DEFAULT_MAX_CONCURRENT = 5
+
 # multi handle constants
 DEFAULT_SELECT_TIMEOUT = 1.0
 DEFAULT_MULTI_PIPELINING = 1
@@ -36,6 +39,10 @@ DEFAULT_NO_SIGNAL = 1
 # curl-based http download backend ---------------------------------------------
 
 class HTTPCurlDownloadBackend(DownloadBackend):
+
+    @property
+    def max_concurrent(self):
+        return self.config.max_concurrent or DEFAULT_MAX_CONCURRENT
 
     def download(self, request_list):
 
@@ -91,6 +98,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         self._set_signals()
 
         # main request processing loop
+        # TODO add cancellation detection to this loop
         while processed_requests < total_requests:
 
             # populate max_concurrent downloads into the pycurl multi handle
@@ -105,7 +113,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                 easy_handle.report.start_time = datetime.datetime.now()
                 self.fire_event_to_listener(self.event_listener.download_started, easy_handle.report)
 
-            # download i/o loop for current set of downloads
+            # i/o loop for current set of downloads
             while True:
                 ret, num_handles = multi_handle.perform()
                 if ret != pycurl.E_CALL_MULTI_PERFORM:
@@ -162,10 +170,14 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
     def _build_multi_handle(self):
         multi_handle = pycurl.CurlMulti()
-        if self.config.max_concurrent is not None:
-            multi_handle.setopt(pycurl.M_MAXCONNECTS, self.config.max_concurrent)
-        multi_handle.setopt(pycurl.M_PIPELINING, DEFAULT_MULTI_PIPELINING) # XXX I don't think this is necessary
-        multi_handle.handles = [self._build_easy_handle() for i in range(self.config.max_concurrent)]
+
+        # XXX I don't think that any of this is actually necessary
+        multi_handle.setopt(pycurl.M_MAXCONNECTS, self.max_concurrent)
+        multi_handle.setopt(pycurl.M_PIPELINING, DEFAULT_MULTI_PIPELINING)
+
+        # track the easy handle pool here too keep us from loosing references to them
+        multi_handle.handles = [self._build_easy_handle() for i in range(self.max_concurrent)]
+
         return multi_handle
 
     def _build_easy_handle(self):
@@ -181,6 +193,8 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
         # XXX not sure if I should use this or not
         easy_handle.setopt(pycurl.NOSIGNAL, DEFAULT_NO_SIGNAL)
+
+        # TODO set various options here: authentication/authorization, proxy, etc
 
         return easy_handle
 
@@ -202,8 +216,23 @@ class HTTPCurlDownloadBackend(DownloadBackend):
     def _clear_easy_handle_download(self, easy_handle):
         easy_handle.request = None
         easy_handle.report = None
+
         easy_handle.fp.close() # XXX not sure this belongs here, it's really a side-effect
         easy_handle.fp = None
+
+        return easy_handle
+
+# curl-based https download backend --------------------------------------------
+
+class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
+
+    # TODO override __init__ and __del__ to create and cleanup tmp directories
+
+    def _build_easy_handle(self):
+        easy_handle = super(self.__class__, self)._build_easy_handle()
+
+        # TODO add all of the ssl options
+
         return easy_handle
 
 # download progress callback functor -------------------------------------------
