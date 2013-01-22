@@ -44,6 +44,7 @@ from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
+from pulp.citrus.manifest import Manifest
 
 CITRUS_IMPORTER = 'citrus_http_importer'
 CITRUS_DISTRUBUTOR = 'citrus_http_distributor'
@@ -122,6 +123,7 @@ class PluginTestBase(WebTest):
             False,
             distributor_id=CITRUS_DISTRUBUTOR)
         # add units
+        units = []
         for n in range(0, self.NUM_UNITS):
             unit_id = self.UNIT_ID % n
             unit = dict(self.UNIT_METADATA)
@@ -149,6 +151,8 @@ class PluginTestBase(WebTest):
                 unit_id,
                 RepoContentUnit.OWNER_TYPE_IMPORTER,
                 CITRUS_IMPORTER)
+            units.append(unit)
+        self.units = units
 
 
 class TestDistributor(PluginTestBase):
@@ -179,7 +183,18 @@ class TestDistributor(PluginTestBase):
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         # Verify
-        # TODO: verify published
+        manifest = Manifest()
+        pub = dist.publisher(repo, cfg)
+        url = '/'.join((pub.base_url, pub.manifest_path()))
+        units = manifest.read(url)
+        self.assertEqual(len(units), self.NUM_UNITS)
+        for n in range(0, self.NUM_UNITS):
+            unit = units[n]
+            created = self.units[n]
+            for p, v in unit['metadata'].items():
+                if p.startswith('_'):
+                    continue
+                self.assertEqual(created[p], v)
 
 
 class ImporterTest(PluginTestBase):

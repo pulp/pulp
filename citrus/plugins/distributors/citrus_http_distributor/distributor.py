@@ -119,8 +119,8 @@ class CitrusHttpDistributor(Distributor):
         @type  config: pulp.plugins.config.PluginConfiguration
         @return: The configured publisher.
         """
-        host = self._host()
         protocol = config.get('protocol')
+        host = pulp_conf.get('server', 'server_name')
         alias = config.get('alias')
         alias = alias.get(protocol)
         base_url = '://'.join((protocol, host))
@@ -184,7 +184,3 @@ class CitrusHttpDistributor(Distributor):
         """
         manager = factory.repo_distributor_manager()
         payload['distributors'] = manager.get_distributors(repo_id)
-
-    def _host(self):
-        host = pulp_conf.get('server', 'server_name')
-        return host
