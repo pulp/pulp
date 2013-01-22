@@ -17,7 +17,7 @@ import tempfile
 
 from pulp.common.download import factory as download_factory
 from pulp.common.download.config import DownloaderConfig
-#from pulp.common.download.listener import DownloadEventListener
+from pulp.common.download.listener import DownloadEventListener
 from pulp.common.download.request import DownloadRequest
 
 import urls
@@ -28,6 +28,27 @@ TESTS = {
     'epel': urls.epel_6_file_urls,
     'iso': urls.fedora_18_iso_url,
 }
+
+
+class TestDownloadEventListener(DownloadEventListener):
+
+    def batch_started(self, report_list):
+        print 'Yay! started downloading %d files' % len(report_list)
+
+    def batch_finished(self, report_list):
+        print 'Yay! finished downloading %d files' % len(report_list)
+
+    def download_started(self, report):
+        print 'Downloading %s to %s' % (report.url, report.file_path)
+
+    def download_progress(self, report):
+        print '\tdownloaded %d of %d bytes' % (report.bytes_downloaded, report.total_bytes)
+
+    def download_succeeded(self, report):
+        print 'SUCCEEDED: %s' % report.file_path
+
+    def download_failed(self, report):
+        print 'FAILED: %s' % report.file_path
 
 
 def _get_test_names():
@@ -52,7 +73,7 @@ def main():
         download_dir = tempfile.mkdtemp(prefix=name+'-')
         request_list = [DownloadRequest(url, os.path.join(download_dir, _filename_from_url(url))) for url in url_list]
 
-        downloader = download_factory.get_downloader(config)
+        downloader = download_factory.get_downloader(config, TestDownloadEventListener())
         downloader.download(request_list)
 
 # ------------------------------------------------------------------------------
