@@ -42,6 +42,9 @@ def _get_downloader_class_for_protocol(protocol):
 
 def get_downloader(downloader_config, event_listener=None):
     # XXX keeping this protocol based for the time being
+    # in the future we may want to support multiple backends for any particular
+    # protocol and use the downloader_config as a "hint" as to which one the
+    # caller wants
     downloader_class = _get_downloader_class_for_protocol(downloader_config.protocol)
     downloader_instance = downloader_class(downloader_config, event_listener)
     return downloader_instance
