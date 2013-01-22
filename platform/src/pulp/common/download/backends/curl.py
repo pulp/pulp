@@ -60,8 +60,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         multi_handle = self._build_multi_handle()
         free_handles = multi_handle.handles[:]
 
-        self.fire_event_to_listener(self.event_listener.batch_started,
-                                    [i[1] for i in request_queue[::-1]])
+        self.fire_batch_started([i[1] for i in request_queue[::-1]])
         self._set_signals()
 
         # main request processing loop
@@ -79,7 +78,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
                 easy_handle.report.state = download_report.DOWNLOAD_DOWNLOADING
                 easy_handle.report.start_time = datetime.datetime.now()
-                self.fire_event_to_listener(self.event_listener.download_started, easy_handle.report)
+                self.fire_download_started(easy_handle.report)
 
             # i/o loop for current set of downloads
             multi_handle.select(DEFAULT_SELECT_TIMEOUT)
@@ -99,7 +98,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     easy_handle.report.finish_time = datetime.datetime.now()
 
                     easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
-                    self.fire_event_to_listener(self.event_listener.download_succeeded, easy_handle.report)
+                    self.fire_download_succeeded(easy_handle.report)
 
                     multi_handle.remove_handle(easy_handle)
                     self._clear_easy_handle_download(easy_handle)
@@ -113,7 +112,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     easy_handle.report.error_report['response_code'] = response_code
                     easy_handle.report.error_report['error_code'] = err_code
                     easy_handle.report.error_report['error_message'] = err_msg
-                    self.fire_event_to_listener(self.event_listener.download_failed, easy_handle.report)
+                    self.fire_download_failed(easy_handle.report)
 
                     multi_handle.remove_handle(easy_handle)
                     self._clear_easy_handle_download(easy_handle)
@@ -125,8 +124,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     break
 
         self._clear_signals()
-        self.fire_event_to_listener(self.event_listener.batch_finished,
-                                    [i[1] for i in request_cache])
+        self.fire_batch_finished([i[1] for i in request_cache])
 
     # signal utility methods ---------------------------------------------------
 
@@ -188,7 +186,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.setopt(pycurl.URL, request.url)
         easy_handle.setopt(pycurl.WRITEDATA, easy_handle.fp)
 
-        progress_functor = CurlDownloadProgressFunctor(report, self.event_listener.download_progress)
+        progress_functor = CurlDownloadProgressFunctor(report, self.fire_download_progress)
         easy_handle.setopt(pycurl.NOPROGRESS, 0)
         easy_handle.setopt(pycurl.PROGRESSFUNCTION, progress_functor)
 

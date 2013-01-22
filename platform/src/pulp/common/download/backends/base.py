@@ -26,13 +26,35 @@ class DownloadBackend(object):
         self.event_listener = event_listener or DownloadEventListener()
         self.is_cancelled = False
 
+    # download api -------------------------------------------------------------
+
     def download(self, request_list):
         raise NotImplementedError()
 
     def cancel(self):
         self.is_cancelled = True
 
-    def fire_event_to_listener(self, event_listener_callback, *args, **kwargs):
+    # events api ---------------------------------------------------------------
+
+    def fire_batch_started(self, report_list):
+        self._fire_event_to_listener(self.event_listener.batch_started, report_list)
+
+    def fire_batch_finished(self, report_list):
+        self._fire_event_to_listener(self.event_listener.batch_finished, report_list)
+
+    def fire_download_started(self, report):
+        self._fire_event_to_listener(self.event_listener.download_started, report)
+
+    def fire_download_progress(self, report):
+        self._fire_event_to_listener(self.event_listener.download_progress, report)
+
+    def fire_download_succeeded(self, report):
+        self._fire_event_to_listener(self.event_listener.download_succeeded, report)
+
+    def fire_download_failed(self, report):
+        self._fire_event_to_listener(self.event_listener.download_failed, report)
+
+    def _fire_event_to_listener(self, event_listener_callback, *args, **kwargs):
         try:
             event_listener_callback(*args, **kwargs)
         except Exception, e:
