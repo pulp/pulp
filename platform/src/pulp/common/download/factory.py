@@ -13,7 +13,8 @@
 
 from gettext import gettext as _
 
-from pulp.common.download.backends.curl import HTTPCurlDownloadBackend
+from pulp.common.download.backends.curl import (
+    HTTPCurlDownloadBackend, HTTPSCurlDownloadBackend)
 
 # download backends and management ---------------------------------------------
 
@@ -29,6 +30,7 @@ class NoBackendForProtocol(Exception):
 
 _BACKENDS = {
     'http': HTTPCurlDownloadBackend,
+    'https': HTTPSCurlDownloadBackend,
 }
 
 # downloader factory methods ---------------------------------------------------
