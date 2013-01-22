@@ -48,6 +48,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         # this list is backwards so we can pop() efficiently and maintain the original order
         request_queue = [(r, download_report.DownloadReport.from_download_request(r))
                          for r in request_list[::-1]]
+        request_cache = []
 
         total_requests = len(request_queue)
         processed_requests = 0
@@ -56,7 +57,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         free_handles = multi_handle.handles[:]
 
         self.fire_event_to_listener(self.event_listener.batch_started,
-                                    [i[1] for i in request_queue])
+                                    [i[1] for i in request_queue[::-1]])
         self._set_signals()
 
         # main request processing loop
@@ -66,8 +67,9 @@ class HTTPCurlDownloadBackend(DownloadBackend):
             # populate max_concurrent downloads into the pycurl multi handle
             while request_queue and free_handles:
                 request, report = request_queue.pop()
-                easy_handle = free_handles.pop()
+                request_cache.append((request, report))
 
+                easy_handle = free_handles.pop()
                 self._set_easy_handle_download(easy_handle, request, report)
                 multi_handle.add_handle(easy_handle)
 
@@ -120,7 +122,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
         self._clear_signals()
         self.fire_event_to_listener(self.event_listener.batch_finished,
-                                    [i[1] for i in request_queue])
+                                    [i[1] for i in request_cache])
 
     # signal utility methods ---------------------------------------------------
 
