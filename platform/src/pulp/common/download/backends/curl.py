@@ -12,7 +12,6 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import datetime
-import itertools
 import signal
 
 import pycurl
@@ -77,6 +76,8 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                 self.fire_event_to_listener(self.event_listener.download_started, easy_handle.report)
 
             # i/o loop for current set of downloads
+            multi_handle.select(DEFAULT_SELECT_TIMEOUT)
+
             while True:
                 ret, num_handles = multi_handle.perform()
                 if ret != pycurl.E_CALL_MULTI_PERFORM:
@@ -94,6 +95,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
                     self.fire_event_to_listener(self.event_listener.download_succeeded, easy_handle.report)
 
+                    multi_handle.remove_handle(easy_handle)
                     self._clear_easy_handle_download(easy_handle)
                     free_handles.append(easy_handle)
 
@@ -107,6 +109,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     easy_handle.report.error_report['error_message'] = err_msg
                     self.fire_event_to_listener(self.event_listener.download_failed, easy_handle.report)
 
+                    multi_handle.remove_handle(easy_handle)
                     self._clear_easy_handle_download(easy_handle)
                     free_handles.append(easy_handle)
 
@@ -114,8 +117,6 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
                 if num_q == 0:
                     break
-
-            multi_handle.select(DEFAULT_SELECT_TIMEOUT)
 
         self._clear_signals()
         self.fire_event_to_listener(self.event_listener.batch_finished,
