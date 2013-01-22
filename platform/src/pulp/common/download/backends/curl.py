@@ -152,7 +152,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
         return easy_handle
 
-    def _set_easy_handle_download(self, easy_handle, request, report=None):
+    def _set_easy_handle_download(self, easy_handle, request, report):
         # store this on the handle so that it's easier to track
         easy_handle.request = request
         easy_handle.report = report
