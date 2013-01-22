@@ -14,23 +14,19 @@
 
 class DownloaderConfig(object):
 
-    def __init__(self, **kwargs):
-
-        # XXX solve the open-ended nature of the options with documentation?
+    def __init__(self, protocol, **kwargs):
 
         # TODO *ALL LOT* more validation than this
-
-        protocol = kwargs.pop('protocol', None)
-        if protocol is None:
-            raise AttributeError('no protocol provided')
 
         self.protocol = protocol.lower()
 
         max_concurrent = kwargs.pop('max_concurrent', None)
-        assert max_concurrent > 0 or max_concurrent is None
+        if not (max_concurrent > 0 or max_concurrent is None):
+            raise AttributeError('max_concurrent must be greater than 0')
 
         self.max_concurrent = max_concurrent
 
+        # XXX solve the open-ended nature of the options with documentation?
         self.__dict__.update(kwargs)
 
     def __getattr__(self, item):
