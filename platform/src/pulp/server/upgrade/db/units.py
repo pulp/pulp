@@ -81,6 +81,14 @@ DEFAULT_OWNER_ID = 'yum_importer'
 DEFAULT_CREATED = dateutils.format_iso8601_datetime(dateutils.to_utc_datetime(datetime.datetime.utcnow()))
 DEFAULT_UPDATED = DEFAULT_CREATED
 
+# Used when converting the v1 distribution files into v2
+
+# Substitute in distro ID
+V1_DISTRO_DIR = '/var/lib/pulp/distributions/%s/'
+
+# Substitute in distro ID and file relative path
+V2_DISTRO_FILE_DIR = '/var/lib/pulp/content/distribution/%s/%s/'
+
 # The paths for the files in a v1 distro are hardcoded to /var/lib/pulp/distributions,
 # but I can't have the unit test write test data there for permissions reasons.
 # The simplest approach is to just skip that portion of the upgrade during
@@ -485,7 +493,7 @@ def _convert_distribution_file(v1_file, v1_distro):
     distro_id = v1_distro['id']
 
     # Relative Path
-    v1_prefix = '/var/lib/pulp/distributions/%s/' % distro_id
+    v1_prefix = V1_DISTRO_DIR % distro_id
     relative_path = v1_file[len(v1_prefix):]
 
     # File Stats
@@ -499,9 +507,8 @@ def _convert_distribution_file(v1_file, v1_distro):
     filename = os.path.basename(v1_file)
 
     # v2 Location for the File
-    pkg_path_template = '/var/lib/pulp/content/distribution/%s/%s/'
     pkg_path_suffix = os.path.dirname(relative_path)
-    pkg_path = pkg_path_template % (distro_id, pkg_path_suffix)
+    pkg_path = V2_DISTRO_FILE_DIR % (distro_id, pkg_path_suffix)
 
     v2_file = {
         'checksum' : checksum,
