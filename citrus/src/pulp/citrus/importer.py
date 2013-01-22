@@ -20,7 +20,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-class ImportProgress(ProgressReport):
+class Progress(ProgressReport):
     """
     Progress report provides integration between the
     citrus progress report and the plugin progress reporting facility.
@@ -45,9 +45,52 @@ class ImportProgress(ProgressReport):
         self.conduit.set_progress(self.dict())
 
 
-class Repository:
+class Report:
     """
-    Repository object used to synchronize repositories.
+    Final import report.
+    @ivar added: List of added units by unit_key.
+    @type added: list
+    @ivar removed: List of removed units by unit_key.
+    @type removed: list
+    @ivar removed: List of failed units by unit_key.
+    @type removed: list
+    @ivar errors: List of error messages.
+    @type errors: list
+    """
+
+    @staticmethod
+    def units(units):
+        if units:
+            return [u.unit_key for u in units]
+        else:
+            return []
+
+    def __init__(self, added=None, removed=None, failed=None, errors=None):
+        """
+        @param added: List of added units by unit_key.
+        @type added: list
+        @param removed: List of removed units by unit_key.
+        @type removed: list
+        @param removed: List of failed units by unit_key.
+        @type removed: list
+        @param errors: List of error messages.
+        @type errors: list
+        """
+        self.added = Report.units(added)
+        self.removed = Report.units(removed)
+        self.failed = Report.units(failed)
+        self.errors = errors or []
+
+    def dict(self):
+        """
+        Dictionary representation.
+        """
+        return self.__dict__
+
+
+class CitrusImporter:
+    """
+    Provides the generic synchronization behavior.
     @ivar cancelled: Indicates the current synchronization has been cancelled.
     @type cancelled: bool
     @ivar conduit: provides access to relevant Pulp functionality
@@ -78,7 +121,7 @@ class Repository:
         self.conduit = conduit
         self.config = config
         self.transport = transport
-        self.progress = ImportProgress(conduit)
+        self.progress = Progress(conduit)
 
     def synchronize(self, repo_id):
         """
@@ -90,18 +133,36 @@ class Repository:
           4. Delete units specified locally but not upstream.
         @param repo_id: The repository ID.
         @type repo_id: str
-        @return: A synchronization report of:
-          - added: list of added unit_key.
-          - removed: list of removed unit_key.
-          - errors: list of (unit_key, error)
-        @rtype: dict
+        @return: A synchronization report.
+        @rtype: L{Report}
         """
-        self.progress.push_step('fetch_local')
-        local_units = self._local_units()
-        self.progress.push_step('fetch_upstream')
-        upstream_units = self._upstream_units()
+
+        # fetch local units
+        local_units = {}
+        try:
+            self.progress.push_step('fetch_local')
+            units = self._local_units()
+            local_units.update(units)
+        except Exception, e:
+            msg = 'Fetch local units failed for repository: %s' % repo_id
+            log.exception(msg)
+            self.progress.error(msg)
+            return Report(errors=[msg])
+
+        # fetch upstream units
+        upstream_units = {}
+        try:
+            self.progress.push_step('fetch_upstream')
+            units = self._upstream_units()
+            upstream_units.update(units)
+        except Exception, e:
+            msg = 'Fetch local units failed for repository: %s' % repo_id
+            log.exception(msg)
+            self.progress.error(msg)
+            return Report(errors=[msg])
+
+        units_failed = []
         unit_inventory = UnitInventory(local_units, upstream_units)
-        errors = []
 
         # add missing units
         units_added = []
@@ -109,15 +170,15 @@ class Repository:
             added, failed = self._add_units(unit_inventory)
             units_added.extend(added)
             if failed:
-                errors.extend(failed)
+                units_failed.extend(failed)
                 self.progress.set_status(ProgressReport.FAILED)
             else:
                 self.progress.set_status(ProgressReport.SUCCEEDED)
         except Exception, e:
             msg = 'Add units failed on repository: %s' % repo_id
             log.exception(msg)
-            self.progress.error(str(e))
-            raise Exception(msg)
+            self.progress.error(msg)
+            return Report(errors=[msg])
 
         # purge extra units
         units_purged = []
@@ -125,23 +186,17 @@ class Repository:
             purged, failed = self._purge_units(unit_inventory)
             units_purged.extend(purged)
             if failed:
-                errors.extend(failed)
+                units_failed.extend(failed)
                 self.progress.set_status(ProgressReport.FAILED)
             else:
                 self.progress.set_status(ProgressReport.SUCCEEDED)
         except Exception, e:
             msg = 'Purge units failed on repository: %s' % repo_id
             log.exception(msg)
-            self.progress.error(str(e))
-            raise Exception(msg)
+            self.progress.error(msg)
+            return Report(errors=[msg])
 
-        report = {
-            'added':[u.unit_key for u in units_added],
-            'removed':[u.unit_key for u in units_purged],
-            'errors':[(u.unit_key, str(e)) for u, e in errors],
-        }
-
-        return report
+        return Report(units_added, units_purged, units_failed)
 
     def cancel(self):
         """

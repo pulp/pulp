@@ -385,6 +385,7 @@ class TestAgentPlugin(PluginTestBase):
         details = importer_report['details']
         self.assertEqual(len(details['added']), self.NUM_UNITS)
         self.assertEqual(len(details['removed']), 0)
+        self.assertEqual(len(details['failed']), 0)
         self.assertEqual(len(details['errors']), 0)
         self.verify()
 
@@ -444,6 +445,7 @@ class TestAgentPlugin(PluginTestBase):
         details = importer_report['details']
         self.assertEqual(len(details['added']), self.NUM_UNITS)
         self.assertEqual(len(details['removed']), 0)
+        self.assertEqual(len(details['failed']), 0)
         self.assertEqual(len(details['errors']), 0)
         self.verify()
 
@@ -499,7 +501,8 @@ class TestAgentPlugin(PluginTestBase):
         details = importer_report['details']
         self.assertEqual(len(details['added']), 0)
         self.assertEqual(len(details['removed']), 0)
-        self.assertEqual(len(details['errors']), self.NUM_UNITS)
+        self.assertEqual(len(details['failed']), self.NUM_UNITS)
+        self.assertEqual(len(details['errors']), 0)
         self.verify(0)
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
