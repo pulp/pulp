@@ -46,43 +46,6 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
     def download(self, request_list):
 
-        multi_handle = pycurl.CurlMulti()
-
-        requests = []
-        files = []
-
-        for request in request_list:
-
-            file_handle = open(request.file_path, 'wb')
-
-            files.append(request.file_path)
-
-            easy_handle = pycurl.Curl()
-            easy_handle.setopt(pycurl.URL, request.url)
-            easy_handle.setopt(pycurl.WRITEFUNCTION, file_handle.write)
-
-            req = (request.url, file_handle, easy_handle)
-            multi_handle.add_handle(req[2])
-            requests.append(req)
-
-        num_handles = len(requests)
-
-        while num_handles:
-            ret = multi_handle.select(DEFAULT_SELECT_TIMEOUT)
-            if ret == -1:
-                continue
-            while True:
-                ret, num_handles = multi_handle.perform()
-                if ret != pycurl.E_CALL_MULTI_PERFORM:
-                    break
-
-        for req in requests:
-            req[1].close()
-
-        return files
-
-    def download_prime(self, request_list):
-
         # this list is backwards so we can pop() efficiently and maintain the original order
         request_queue = [(r, download_report.DownloadReport.from_download_request(r))
                          for r in request_list[::-1]]
@@ -227,6 +190,12 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
 
     # TODO override __init__ and __del__ to create and cleanup tmp directories
+
+    def __init__(self, config, event_listener=None):
+        super(self.__class__, self).__init__(config, event_listener)
+
+    def __del__(self):
+        super(self.__class__, self).__del__()
 
     def _build_easy_handle(self):
         easy_handle = super(self.__class__, self)._build_easy_handle()
