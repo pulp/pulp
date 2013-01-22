@@ -28,7 +28,6 @@ class DownloadReport(object):
 
     @classmethod
     def from_download_request(cls, request):
-
         return cls(request.url, request.file_path)
 
     def __init__(self, url, file_path):

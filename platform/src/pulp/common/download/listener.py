@@ -20,6 +20,8 @@ class DownloadEventListener(object):
     individual download life-cycles.
     """
 
+    # TODO (jconnor 2013-01-22) add cancel state callbacks
+
     # batch downloads events
 
     def batch_started(self, report_list):

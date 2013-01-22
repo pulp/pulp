@@ -60,11 +60,11 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         multi_handle = self._build_multi_handle()
         free_handles = multi_handle.handles[:]
 
-        self.fire_batch_started([i[1] for i in request_queue[::-1]])
+        self.fire_batch_started(i[1] for i in request_queue[::-1])
         self._set_signals()
 
         # main request processing loop
-        # TODO add cancellation detection to this loop
+        # TODO (jconnor 2013-01-22) add cancellation detection to this loop
         while processed_requests < total_requests:
 
             # populate max_concurrent downloads into the pycurl multi handle
@@ -124,7 +124,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     break
 
         self._clear_signals()
-        self.fire_batch_finished([i[1] for i in request_cache])
+        self.fire_batch_finished(i[1] for i in request_cache)
 
     # signal utility methods ---------------------------------------------------
 
@@ -161,7 +161,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         return easy_handle
 
     def _add_connection_configuration(self, easy_handle):
-        # XXX most of this shit should be configurable
+        # TODO (jconnor 2013-01-22) make these configurable
         easy_handle.setopt(pycurl.FOLLOWLOCATION, DEFAULT_FOLLOW_LOCATION)
         easy_handle.setopt(pycurl.MAXREDIRS, DEFAULT_MAX_REDIRECTS)
         easy_handle.setopt(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
@@ -196,7 +196,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.request = None
         easy_handle.report = None
 
-        easy_handle.fp.close() # XXX not sure this belongs here, it's really a side-effect
+        easy_handle.fp.close()
         easy_handle.fp = None
 
         return easy_handle
@@ -234,6 +234,7 @@ class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
     def _build_easy_handle(self):
         easy_handle = super(self.__class__, self)._build_easy_handle()
 
+        # TODO (jconnor 2013-01-22) make this configurable
         easy_handle.setopt(pycurl.SSL_VERIFYPEER, DEFAULT_SSL_VERIFY_PEER)
 
         self._add_ssl_ca_cert(easy_handle)

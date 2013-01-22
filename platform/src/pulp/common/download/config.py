@@ -16,8 +16,6 @@ class DownloaderConfig(object):
 
     def __init__(self, protocol, **kwargs):
 
-        # TODO *ALL LOT* more validation than this
-
         self.protocol = protocol.lower()
 
         max_concurrent = kwargs.pop('max_concurrent', None)
@@ -26,7 +24,7 @@ class DownloaderConfig(object):
 
         self.max_concurrent = max_concurrent
 
-        # XXX solve the open-ended nature of the options with documentation?
+        # the open-ended nature of this will be solved with documentation
         self.__dict__.update(kwargs)
 
     def __getattr__(self, item):
