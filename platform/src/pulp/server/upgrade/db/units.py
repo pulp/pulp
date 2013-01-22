@@ -32,16 +32,19 @@ written) to the latest.
 """
 
 from gettext import gettext as _
-import os
 import datetime
+from functools import partial
+import hashlib
+import os
+
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from pymongo.objectid import ObjectId
-import yum
 
 from pulp.common import dateutils
 from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.utils import presto_parser
+
 
 # Passed to mongo to scope the returned results to only the RPM unit key
 
@@ -77,6 +80,13 @@ DEFAULT_OWNER_ID = 'yum_importer'
 # never change how UTC is generated, which is probably a safe bet.
 DEFAULT_CREATED = dateutils.format_iso8601_datetime(dateutils.to_utc_datetime(datetime.datetime.utcnow()))
 DEFAULT_UPDATED = DEFAULT_CREATED
+
+# The paths for the files in a v1 distro are hardcoded to /var/lib/pulp/distributions,
+# but I can't have the unit test write test data there for permissions reasons.
+# The simplest approach is to just skip that portion of the upgrade during
+# testing. Not ideal, but let's be honest, this entire upgrade process shouldn't
+# be being written in the first place, so I'm willing to cut corners.
+SKIP_FILES = False
 
 
 # Type definition constants located at the end of this file for readability
@@ -346,6 +356,7 @@ def _drpms(v1_database, v2_database, report):
                 pass
     return True
 
+
 def _errata(v1_database, v2_database, report):
 
     v1_coll = v1_database.errata
@@ -431,12 +442,17 @@ def _distributions(v1_database, v2_database, report):
             'version' : v1_distro['version'],
             'variant' : v1_distro['variant'],
             'family' : v1_distro['family'],
-            'files' : v1_distro['files'],
         }
 
         # Storage path
         distro_path = os.path.join(DIR_DISTRIBUTION, new_distro['id'])
         new_distro['_storage_path'] = distro_path
+
+        # Upgrade the files format. The .treeinfo file was inventoried in v1
+        # but not v2, so strip that out first
+        v1_distro_files = [f for f in v1_distro['files'] if '.treeinfo' not in f]
+        new_distro['files'] = map(partial(_convert_distribution_file, v1_distro=v1_distro),
+                                  v1_distro_files)
 
         try:
             v2_coll.insert(new_distro, safe=True)
@@ -447,6 +463,61 @@ def _distributions(v1_database, v2_database, report):
             pass
 
     return True
+
+
+def _convert_distribution_file(v1_file, v1_distro):
+    """
+    The format for files changed significantly in v2. In v1 it's simply a list
+    of paths to each file on disk. In v2, each file entry is a dict that
+    carries a lot of extra data about the file.
+
+    :param v1_file: v1 representation of the file (just its file path) being
+                    converted
+    :type  v1_file: str
+
+    :param v1_distro: the v1 model for the distribution being converted
+    :type  v1_distro: dict
+
+    :return: entry that should be added to the files list in the v2 model
+    :rtype:  dict
+    """
+
+    distro_id = v1_distro['id']
+
+    # Relative Path
+    v1_prefix = '/var/lib/pulp/distributions/%s/' % distro_id
+    relative_path = v1_file[len(v1_prefix):]
+
+    # File Stats
+    checksum = None
+    file_size = None
+    if not SKIP_FILES:
+        checksum = _calculate_checksum(v1_file)
+        file_size = os.path.getsize(v1_file)
+
+    # File Name
+    filename = os.path.basename(v1_file)
+
+    # v2 Location for the File
+    pkg_path_template = '/var/lib/pulp/content/distribution/%s/%s/'
+    pkg_path_suffix = os.path.dirname(relative_path)
+    pkg_path = pkg_path_template % (distro_id, pkg_path_suffix)
+
+    v2_file = {
+        'checksum' : checksum,
+        'checksumtype' : 'sha256',
+        'fileName' : filename,
+        'filename' : filename, # This makes me feel dirty
+        'item_type' : 'tree_file',
+        'pkgpath' : pkg_path,
+        'relativepath' : relative_path,
+        'size' : file_size,
+
+        'downloadurl' : None, # Unused and not yet removed from the data model
+        'savepath' : None, # Unused and not yet removed from the data model
+    }
+
+    return v2_file
 
 
 def _associate_distribution(v1_distribution, v2_distribution, v2_ass_coll):
@@ -665,6 +736,29 @@ def _units_collection_name(type_id):
     # later in a migration script).
 
     return 'units_%s' % type_id
+
+
+def _calculate_checksum(file_path):
+    """
+    Ghetto method to calculate and return the SHA256 checksum of a file.
+    """
+
+    buffer_size = 65536
+    f = open(file_path, 'r')
+    f.seek(0, 0)
+
+    m = hashlib.new('sha256')
+
+    try:
+        while True:
+            buffer = f.read(buffer_size)
+            if not buffer:
+                break
+            m.update(buffer)
+    finally:
+        f.close()
+
+    return m.hexdigest()
 
 # -- point in time data -------------------------------------------------------
 

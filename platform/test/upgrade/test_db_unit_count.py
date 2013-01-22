@@ -23,6 +23,7 @@ class UnitCountUpgradeTests(BaseDbUpgradeTests):
         yum_repos.SKIP_SERVER_CONF = True
         yum_repos.SKIP_GPG_KEYS = True
         iso_repos.SKIP_SERVER_CONF = True
+        units.SKIP_FILES = True
 
     def tearDown(self):
         super(UnitCountUpgradeTests, self).tearDown()
@@ -30,6 +31,7 @@ class UnitCountUpgradeTests(BaseDbUpgradeTests):
         yum_repos.SKIP_SERVER_CONF = False
         yum_repos.SKIP_GPG_KEYS = False
         iso_repos.SKIP_SERVER_CONF = False
+        units.SKIP_FILES = False
 
     def test_upgrade(self):
         # Setup

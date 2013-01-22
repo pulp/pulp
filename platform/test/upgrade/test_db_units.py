@@ -299,8 +299,16 @@ class DistributionUpgradeTests(BaseDbUpgradeTests):
     def setUp(self):
         super(DistributionUpgradeTests, self).setUp()
 
+        units.SKIP_FILES = True
+
         # The unique keys need to be set for these tests
         units._initialize_content_types(self.tmp_test_db.database)
+
+
+    def tearDown(self):
+        super(DistributionUpgradeTests, self).tearDown()
+        units.SKIP_FILES = False
+
 
     def test_upgrade(self):
         # Test
@@ -326,7 +334,8 @@ class DistributionUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_distro['version'], v2_distro['version'])
             self.assertEqual(v1_distro['variant'], v2_distro['variant'])
             self.assertEqual(v1_distro['family'], v2_distro['family'])
-            self.assertEqual(v1_distro['files'], v2_distro['files'])
+            non_treeinfo_v1_files = [f for f in v1_distro['files'] if '.treeinfo' not in f]
+            self.assertEqual(len(non_treeinfo_v1_files), len(v2_distro['files']))
 
         #   Associations
         v1_distros = self.v1_test_db.database.distribution.find()
