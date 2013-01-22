@@ -2,7 +2,7 @@ Pulp Developer Guide
 =======================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    contributing/index
    architecture
