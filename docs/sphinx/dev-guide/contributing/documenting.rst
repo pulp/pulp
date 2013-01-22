@@ -2,7 +2,7 @@ Creating Documentation
 ======================
 
 Platform vs. Type-Specific User Guides
-------------------------------
+--------------------------------------
 
 The platform user guide should cover all generic features of Pulp. When examples
 are appropriate, it should use the "rpm" content type, but only utilize features
