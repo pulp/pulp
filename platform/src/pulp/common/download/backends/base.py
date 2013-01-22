@@ -16,9 +16,8 @@ from pulp.common.download.listener import DownloadEventListener
 
 class DownloadBackend(object):
 
-    def __init__(self, max_concurrent=None, event_listener=None):
-        assert max_concurrent is None or max_concurrent > 0
-        self.max_concurrent = max_concurrent
+    def __init__(self, config, event_listener=None):
+        self.config = config
         self.event_listener = event_listener or DownloadEventListener()
         self.is_cancelled = False
 

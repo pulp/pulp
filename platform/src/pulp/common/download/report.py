@@ -20,14 +20,14 @@ class DownloadReport(object):
     @classmethod
     def from_download_request(cls, request):
 
-        return cls(request.url, request.file_path, request.file_size)
+        return cls(request.url, request.file_path)
 
-    def __init__(self, url, file_path, file_size=None):
+    def __init__(self, url, file_path):
 
         self.url = url
         self.file_path = file_path
-        self.file_size = file_size
 
+        self.total_bytes = 0
         self.bytes_downloaded = 0
         self.start_time = None
         self.finish_time = None

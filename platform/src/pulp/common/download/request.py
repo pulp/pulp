@@ -14,11 +14,7 @@
 
 class DownloadRequest(object):
 
-    protocol = None
-
-    def __init__(self, url, file_path, file_size=None):
+    def __init__(self, url, file_path):
 
         self.url = url
         self.file_path = file_path
-        self.file_size = file_size
-

@@ -130,10 +130,10 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
     def _build_multi_handle(self):
         multi_handle = pycurl.CurlMulti()
-        if self.max_concurrent is not None:
-            multi_handle.setopt(pycurl.M_MAXCONNECTS, self.max_concurrent)
-        multi_handle.setopt(pycurl.M_PIPELINING, 1)
-        multi_handle.handles = [self._build_easy_handle() for i in range(self.max_concurrent)]
+        if self.config.max_concurrent is not None:
+            multi_handle.setopt(pycurl.M_MAXCONNECTS, self.config.max_concurrent)
+        multi_handle.setopt(pycurl.M_PIPELINING, 1) # XXX I don't think this is necessary
+        multi_handle.handles = [self._build_easy_handle() for i in range(self.config.max_concurrent)]
         return multi_handle
 
     def _build_easy_handle(self):
@@ -174,6 +174,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.fp = None
         return easy_handle
 
+# download progress callback functor -------------------------------------------
 
 class CurlDownloadProgressFunctor(object):
 
@@ -182,8 +183,7 @@ class CurlDownloadProgressFunctor(object):
         self.progress_callback = progress_callback
 
     def __call__(self, download_t, download_d, upload_t, upload_d):
-        if self.report.file_size is None:
-            self.report.file_size = download_t
+        self.report.total_bytes = download_t
         self.report.bytes_downloaded = download_d
         self.progress_callback(self.report)
 
