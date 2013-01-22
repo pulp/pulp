@@ -11,6 +11,14 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+# download states --------------------------------------------------------------
+
+DOWNLOAD_WAITING = 'waiting'
+DOWNLOAD_DOWNLOADING = 'downloading'
+DOWNLOAD_SUCCEEDED = 'succeeded'
+DOWNLOAD_FAILED = 'failed'
+DOWNLOAD_CANCELED = 'canceled'
+
 
 class DownloadReport(object):
     """
@@ -27,6 +35,7 @@ class DownloadReport(object):
         self.url = url
         self.file_path = file_path
 
+        self.state = DOWNLOAD_WAITING
         self.total_bytes = 0
         self.bytes_downloaded = 0
         self.start_time = None

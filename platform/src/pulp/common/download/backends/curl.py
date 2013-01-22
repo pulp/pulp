@@ -17,8 +17,8 @@ import signal
 
 import pycurl
 
+from pulp.common.download import report as download_report
 from pulp.common.download.backends.base import DownloadBackend
-from pulp.common.download.report import DownloadReport
 
 # default constants ------------------------------------------------------------
 
@@ -76,7 +76,8 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
     def download_prime(self, request_list):
 
-        request_queue = [(r, DownloadReport.from_download_request(r))
+        # this list is backwards so we can pop() efficiently and maintain the original order
+        request_queue = [(r, download_report.DownloadReport.from_download_request(r))
                          for r in request_list[::-1]]
 
         total_requests = len(request_queue)
@@ -100,6 +101,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                 self._set_easy_handle_download(easy_handle, request, report)
                 multi_handle.add_handle(easy_handle)
 
+                easy_handle.report.state = download_report.DOWNLOAD_DOWNLOADING
                 easy_handle.report.start_time = datetime.datetime.now()
                 self.fire_event_to_listener(self.event_listener.download_started, easy_handle.report)
 
@@ -117,8 +119,10 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     easy_handle.report.finish_time = datetime.datetime.now()
 
                     if easy_handle in ok_list:
+                        easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
                         self.fire_event_to_listener(self.event_listener.download_succeeded, easy_handle.report)
                     else: # in err_list
+                        easy_handle.report.state = download_report.DOWNLOAD_FAILED
                         self.fire_event_to_listener(self.event_listener.download_failed, easy_handle.report)
 
                     self._clear_easy_handle_download(easy_handle)
