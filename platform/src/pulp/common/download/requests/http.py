@@ -19,8 +19,8 @@ class HTTPDownloadRequest(DownloadRequest):
 
     protocol = 'http'
 
-    def __init__(self, url, file_path, event_listener=None):
-        super(self.__class__, self).__init__(url, file_path, event_listener)
+    def __init__(self, url, file_path):
+        super(self.__class__, self).__init__(url, file_path)
 
     # request credentials
 
