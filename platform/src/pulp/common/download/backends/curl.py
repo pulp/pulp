@@ -12,7 +12,9 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import datetime
+import shutil
 import signal
+import tempfile
 
 import pycurl
 
@@ -34,6 +36,8 @@ DEFAULT_MAX_REDIRECTS = 5
 DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_REQUEST_TIMEOUT = 300
 DEFAULT_NO_SIGNAL = 1
+
+DEFAULT_SSL_VERIFY_PEER = 1
 
 # curl-based http download backend ---------------------------------------------
 
@@ -132,12 +136,11 @@ class HTTPCurlDownloadBackend(DownloadBackend):
     def _clear_signals(self):
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-    # pycurl handle utility methods --------------------------------------------
+    # pycurl multi handle construction -----------------------------------------
 
     def _build_multi_handle(self):
         multi_handle = pycurl.CurlMulti()
 
-        # XXX I don't think that any of this is actually necessary
         multi_handle.setopt(pycurl.M_MAXCONNECTS, self.max_concurrent)
         multi_handle.setopt(pycurl.M_PIPELINING, DEFAULT_MULTI_PIPELINING)
 
@@ -146,23 +149,35 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
         return multi_handle
 
+    # pycurl easy handle construction ------------------------------------------
+
     def _build_easy_handle(self):
         easy_handle = pycurl.Curl()
         easy_handle.request = None
         easy_handle.report = None
         easy_handle.fp = None
 
+        self._add_connection_configuration(easy_handle)
+        self._add_basic_auth_credentials(easy_handle)
+
+        return easy_handle
+
+    def _add_connection_configuration(self, easy_handle):
         # XXX most of this shit should be configurable
         easy_handle.setopt(pycurl.FOLLOWLOCATION, DEFAULT_FOLLOW_LOCATION)
         easy_handle.setopt(pycurl.MAXREDIRS, DEFAULT_MAX_REDIRECTS)
         easy_handle.setopt(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
         easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
-        # XXX not sure if I should use this or not
         easy_handle.setopt(pycurl.NOSIGNAL, DEFAULT_NO_SIGNAL)
 
-        # TODO set various options here: authentication/authorization, proxy, etc
+    def _add_basic_auth_credentials(self, easy_handle):
+        if None in (self.config.basic_auth_username, self.config.basic_auth_password):
+            return
+        auth_str = ':'.join((self.config.basic_auth_username, self.config.basic_auth_password))
+        easy_handle.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_BASIC)
+        easy_handle.setopt(pycurl.USERPWD, auth_str)
 
-        return easy_handle
+    # pycurl easy handle download management -----------------------------------
 
     def _set_easy_handle_download(self, easy_handle, request, report):
         # store this on the handle so that it's easier to track
@@ -192,20 +207,57 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
 class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
 
-    # TODO override __init__ and __del__ to create and cleanup tmp directories
-
     def __init__(self, config, event_listener=None):
         super(self.__class__, self).__init__(config, event_listener)
 
+        prefix = self.__class__.__name__ + '-ssl_working_dir-'
+        self.ssl_working_dir = tempfile.mkdtemp(prefix=prefix)
+
+        self.ssl_ca_cert = self._write_tmp_ssl_data(self.config.ssl_ca_cert,
+                                                    '-ssl_ca_cert.pem')
+        self.ssl_client_cert = self._write_tmp_ssl_data(self.config.ssl_client_cert,
+                                                        '-ssl_client_cert.pem')
+        self.ssl_client_key = self._write_tmp_ssl_data(self.config.ssl_client_key,
+                                                       '-ssl_client_key.pem')
+
     def __del__(self):
-        super(self.__class__, self).__del__()
+        shutil.rmtree(self.ssl_working_dir)
+
+    def _write_tmp_ssl_data(self, data, file_suffix=None):
+        if data is None:
+            return None
+        file_handle, file_path = tempfile.mkstemp(suffix=file_suffix, dir=self.ssl_working_dir)
+        file_handle.write(data)
+        file_handle.close()
+        return file_path
+
+    # overridden and augmented easy handle construction ------------------------
 
     def _build_easy_handle(self):
         easy_handle = super(self.__class__, self)._build_easy_handle()
 
-        # TODO add all of the ssl options
+        easy_handle.setopt(pycurl.SSL_VERIFYPEER, DEFAULT_SSL_VERIFY_PEER)
+
+        self._add_ssl_ca_cert(easy_handle)
+        self._add_ssl_client_cert(easy_handle)
+        self._add_ssl_client_key(easy_handle)
 
         return easy_handle
+
+    def _add_ssl_ca_cert(self, easy_handle):
+        if self.ssl_ca_cert is None:
+            return
+        easy_handle.setopt(pycurl.CAINFO, self.ssl_ca_cert)
+
+    def _add_ssl_client_cert(self, easy_handle):
+        if self.ssl_client_cert is None:
+            return
+        easy_handle.setopt(pycurl.SSLCERT, self.ssl_client_cert)
+
+    def _add_ssl_client_key(self, easy_handle):
+        if self.ssl_client_key is None:
+            return
+        easy_handle.setopt(pycurl.SSLKEY, self.ssl_client_key)
 
 # download progress callback functor -------------------------------------------
 
