@@ -103,6 +103,20 @@ client capabilities.
 
 
 %changelog
+* Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+- 861383 - more descriptive message on unregister when server does not exist on
+  the server. (jortel@redhat.com)
+- 883049 - check we have write permissions to cert dir before
+  register/unregister. (jortel@redhat.com)
+- 878632 - adding usage to permission grant and revoke commands to mention that
+  both role-id and login cannot be used at the same time (skarmark@redhat.com)
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+- 878107 - consumer status now mentions which pulp server the consumer is
+  registered to as well (skarmark@redhat.com)
+
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
 - 
 

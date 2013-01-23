@@ -410,6 +410,137 @@ exit 0
 %endif
 
 %changelog
+* Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
+- 891423 - Added conduit calls to be able to create units on copy
+  (jason.dobies@redhat.com)
+- 894467 - Parser methods need to return the value, not just validate it
+  (jason.dobies@redhat.com)
+- 889893 - added detection of still queued scheduled calls and skip re-
+  enqueueing with log message (jason.connor@gmail.com)
+- 883938 - Bumped required version of okaara in the spec
+  (jason.dobies@redhat.com)
+- 885128 - Altered two more files to use the 'db' logger. (rbarlow@redhat.com)
+- 885128 - pulp.plugins.loader.api should use the "db" logger.
+  (rbarlow@redhat.com)
+- 891423 - Added conduit calls to be able to create units on copy
+  (jason.dobies@redhat.com)
+- 891760 - added importer and distributor configs to kwargs and
+  kwargs_blacklist to prevent logging of sensitive data
+  (jason.connor@gmail.com)
+- 889320 - updating relabel script to run restorecon on /var/www/pulp_puppet
+  (skarmark@redhat.com)
+- 889320 - adding httpd_sys_content_rw_t context to /var/www/pulp_puppet
+  (skarmark@redhat.com)
+- 887959 - Removing NameVirtualHost entries from plugin httpd conf files and
+  adding it only at one place in main pulp.conf (skarmark@redhat.com)
+- 886547 - added check for deleted schedule in scheduled call complete callback
+  (jason.connor@gmail.com)
+- 882412 - Re-raising PulpException upon upload error instead of always
+  replacing exceptions with PulpExecutionException, the latter of which results
+  in an undesirable 500 HTTP response. (mhrivnak@redhat.com)
+- 875843 - added post sync/publish callbacks to cleanup importer and
+  distributor instances before calls are archived (jason.connor@gmail.com)
+- 769381 - Fixed delete confirmation message to be task centric
+  (jason.dobies@redhat.com)
+- 856762 - removing scratchpads from repo search queries (skarmark@redhat.com)
+- 886148 - used new result masking to keep full consumer package profiles from
+  showing up in the task list and log file (jason.connor@gmail.com)
+- 856762 - removing scratchpad from the repo list --details commmand for repo,
+  importer and distributor (skarmark@redhat.com)
+- 883899 - added conflict detection for call request groups in the webservices
+  execution wrapper module (jason.connor@gmail.com)
+- 876158 - Removed unused configuration values and cleaned up wording and
+  formatting of the remaining options (jason.dobies@redhat.com)
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+- 882422 - added the distributor_list keyword argument to the call requets
+  kwarg_blacklist to prevent it from being logged (jason.connor@gmail.com)
+- 885229 - add requires: nss-tools. (jortel@redhat.com)
+- 885098 - Use a separate logging config for pulp-manage-db.
+  (rbarlow@redhat.com)
+- 885134 - Added check to not parse an apache error as if it has the Pulp
+  structure and handling in the exception middleware for it
+  (jason.dobies@redhat.com)
+- 867464 - Renaming modules to units and a fixing a few minor output errors
+  (skarmark@redhat.com)
+- 882421 - moving unit remove command into the platform from RPM extensions so
+  it can be used by other extension families (mhrivnak@redhat.com)
+- 877147 - added check for path type when removing orphans
+  (jason.connor@gmail.com)
+- 882423 - fix upload in repo controller. (jortel@redhat.com)
+- 883568 - Reworded portion about recurrences (jason.dobies@redhat.com)
+- 883754 - The notes option was changed to have a parser, but some code using
+  it was continuing to manually parse it again, which would tank.
+  (jason.dobies@redhat.com)
+- 866996 - Added ability to hide the details link on association commands when
+  it isn't a search. (jason.dobies@redhat.com)
+- 877797 - successful call of canceling a task now returns a call report
+  through the rest api (jason.connor@gmail.com)
+- 867464 - updating general module upload command output (skarmark@redhat.com)
+- 882424 - only have 1 task, presumedly the "main" one, in a task group update
+  the last_run field (jason.connor@gmail.com)
+- 883059 - update server.conf to make server_name optional
+  (skarmark@redhat.com)
+- 883059 - updating default server config to lookup server hostname
+  (skarmark@redhat.com)
+- 862187 /var/log/pulp/db.log now includes timestamps. (rbarlow@redhat.com)
+- 883025 - Display note to copy qpid certificates to each consumer.
+  (jortel@redhat.com)
+- 880441 - Fixed call to a method that was renamed (jason.dobies@redhat.com)
+- 881120 - utilized new serialize_result call report flag to hide consumer key
+  when reporting the task information (jason.connor@gmail.com)
+- 882428 - utilizing new call report serialize_result flag to prevent the call
+  reports from being serialized and reported over the rest api
+  (jason.connor@gmail.com)
+- 882401 - added skipped as a recognized state to the cli parser
+  (jason.connor@gmail.com)
+- 862290 - Added documentation for the new ListRepositoriesCommand methods
+  (jason.dobies@redhat.com)
+- 881639 - more programmatic. (jortel@redhat.com)
+- 881389 - fixed rpm consumer bind to raise an error on non existing repos
+  (skarmark@redhat.com)
+- 827620 - updated repo, repo_group, consumer and user apis to use execute
+  instead of execute_ok (skarmark@redhat.com)
+- 878620 - fixed task group resource to return only tasks in the group instead
+  of all tasks ever run... :P (jason.connor@gmail.com)
+- 866491 - Change the source repo ID validation to be a 400, not 404
+  (jason.dobies@redhat.com)
+- 866491 - Check for repo existence and raise a 404 if not found instead of
+  leaving the task to do it (jason.dobies@redhat.com)
+- 881120 - strip the private key from returned consumer object.
+  (jortel@redhat.com)
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+- 877914 - updating old file links from selinux installation and un-
+  installation (skarmark@redhat.com)
+- 873786 - updating enable.sh for correct amqp ports (skarmark@redhat.com)
+- 878654 - fixed error message when revoking permission from a non-existing
+  user and added unit tests (skarmark@redhat.com)
+- added database collection reaper system that will wake up periodically and
+  remove old documents from configured collections (jason.connor@gmail.com)
+- 876662 - Added middleware exception handling for when the client cannot
+  resolve the server hostname (jason.dobies@redhat.com)
+- 753680 - Taking this opportunity to quiet the logs a bit too
+  (jason.dobies@redhat.com)
+- 753680 - Increased the logging clarity and location for initialization errors
+  (jason.dobies@redhat.com)
+- 871858 - Implemented sync and publish status commands
+  (jason.dobies@redhat.com)
+- 873421 - changed a wait-time message to be more appropriate, and added a bit
+  of function parameter documentation. (mhrivnak@redhat.com)
+- 877170 - Added ability to ID validator to handle multiple inputs
+  (jason.dobies@redhat.com)
+- 877435 - Pulled the filters/order to constants and use in search
+  (jason.dobies@redhat.com)
+- 875606 - Added isodate and python-setuptools deps. Rolled into a quick audit
+  of all the requirements and changed quite a few. There were several missing
+  and several no longer applicaple. Also removed a stray import of okaara from
+  within the bindings package. (mhrivnak@redhat.com)
+- 874243 - return 404 when profile does not exist. (jortel@redhat.com)
+- 876662 - Added pretty error message when the incorrect server hostname is
+  used (jason.dobies@redhat.com)
+- 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
+
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
 - 
 
