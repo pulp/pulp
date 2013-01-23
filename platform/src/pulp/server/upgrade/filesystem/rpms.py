@@ -12,7 +12,6 @@
 
 import os
 import shutil
-import yum
 from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.utils import presto_parser
 
