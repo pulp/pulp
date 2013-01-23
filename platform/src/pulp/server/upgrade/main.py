@@ -83,6 +83,7 @@ class StepException(Exception):
         Exception.__init__(self, step_description)
         self.step_description = step_description
 
+
 class Upgrader(object):
     """
     :ivar stream_file: full location to the file containing stream information;
@@ -106,6 +107,9 @@ class Upgrader(object):
     :ivar files_upgrade_calls: dictates which filesystem upgrade steps will be
           performed; see FILES_UPGRADE_CALLS for a description of the entries
     :type files_upgrade_calls: list
+
+    :ivar install_db: dictates if the temporary database created by the build
+          DB step will replace the production database and delete the temp
     """
 
     def __init__(self,
@@ -118,7 +122,8 @@ class Upgrader(object):
                  db_seeds=DEFAULT_SEEDS,
                  db_upgrade_calls=DB_UPGRADE_CALLS,
                  upgrade_files=True,
-                 files_upgrade_calls=FILES_UPGRADE_CALLS):
+                 files_upgrade_calls=FILES_UPGRADE_CALLS,
+                 install_db=True):
         self.stream_file = stream_file
 
         self.prod_db_name = prod_db_name
@@ -133,6 +138,8 @@ class Upgrader(object):
 
         self.upgrade_files = upgrade_files
         self.files_upgrade_calls = files_upgrade_calls
+
+        self.install_db = install_db
 
         self.prompt = Prompt()
 
@@ -149,17 +156,26 @@ class Upgrader(object):
 
         if not self._is_v1():
             self._print(_('Pulp installation is already upgraded to the latest version'))
+            self._print('')
             return
 
         if not self.upgrade_db:
             self._print(_('Skipping Database Upgrade'))
+            self._print('')
         else:
             self._upgrade_database()
 
         if not self.upgrade_files:
             self._print(_('Skipping Filesystem Upgrade'))
+            self._print('')
         else:
             self._upgrade_files()
+
+        if not self.install_db:
+            self._print(_('Skipping v2 Database Installation'))
+            self._print('')
+        else:
+            self._install_and_cleanup()
 
         self._drop_stream_flag()
 
@@ -205,34 +221,6 @@ class Upgrader(object):
 
             self.prompt.write('')
 
-        # Handle the v1 database to get it out of the way
-        if self.backup_v1_db:
-            spinner = ThreadedSpinner(self.prompt)
-            spinner.start()
-
-            self._print(_('Backing up the v1 database to %(db)s') % self.v1_backup_db_name)
-            self._backup_v1()
-
-            spinner.stop()
-            spinner.clear()
-        else:
-            self._print(_('The v1 database will not be backed up'))
-
-        self.prompt.write('')
-
-        # Install the v2 database
-        spinner = ThreadedSpinner(self.prompt)
-        spinner.start()
-        self._print(_('Installing the v2 database'))
-        self._install_v2()
-        spinner.stop()
-        spinner.clear()
-
-        self.prompt.write('')
-
-        # Delete the temporary database that v2 had been assembled into
-        self._cleanup()
-
     def _upgrade_files(self):
         """
         Runs all configured upgrade scripts for handling the filesystem.
@@ -274,6 +262,43 @@ class Upgrader(object):
                 raise StepException(description)
 
             self.prompt.write('')
+
+    def _install_and_cleanup(self):
+
+        # Backup
+        if self.backup_v1_db:
+            self._print(_('Backing up the v1 database to %(db)s') % self.v1_backup_db_name)
+
+            spinner = ThreadedSpinner(self.prompt)
+            spinner.start()
+            self._backup_v1()
+            spinner.stop()
+            spinner.clear()
+        else:
+            self._print(_('The v1 database will not be backed up'))
+            self.prompt.write('')
+
+        # Install
+        self._print(_('Installing the v2 Database'))
+
+        spinner = ThreadedSpinner(self.prompt)
+        spinner.start()
+        self._install_v2()
+        spinner.stop()
+        spinner.clear()
+
+        self.prompt.write('')
+
+        # Clean Up
+        self._print(_('Deleting v2 Temporary Database'))
+
+        spinner = ThreadedSpinner(self.prompt)
+        spinner.start()
+        self._cleanup()
+        spinner.stop()
+        spinner.clear()
+
+        self.prompt.write('')
 
     def _drop_stream_flag(self):
         """
