@@ -433,7 +433,7 @@ class LocalDistributor(Local, Distributor):
         """
         delta = {}
         for k,v in upstream.details['config'].items():
-            if self.details['config'][k] != v:
+            if self.details['config'].get(k) != v:
                 self.details['config'][k] = v
                 delta[k] = v
         if delta:
@@ -522,7 +522,7 @@ class LocalImporter(Local, Importer):
         """
         delta = {}
         for k,v in upstream.details['config'].items():
-            if self.details['config'][k] != v:
+            if self.details['config'].get(k) != v:
                 self.details['config'][k] = v
                 delta[k] = v
         if delta:
@@ -546,7 +546,7 @@ class Binding(Remote):
         if http.response_code == httplib.OK:
             return self.filtered(http.response_body)
         else:
-            raise Exception('sync failed, http:%d', http.response_code)
+            raise Exception('fetch failed, http:%d', http.response_code)
 
     def fetch(self, repoids):
         """
@@ -564,7 +564,7 @@ class Binding(Remote):
             if http.response_code == httplib.OK:
                 binds.extend(self.filtered(http.response_body))
             else:
-                raise Exception('sync failed, http:%d', http.response_code)
+                raise Exception('fetch failed, http:%d', http.response_code)
         return binds
 
     def filtered(self, binds):

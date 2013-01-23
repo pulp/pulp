@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-
+from gettext import gettext as _
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
 from pulp.citrus.progress import ProgressReport
@@ -69,8 +69,11 @@ class CitrusHandler(ContentHandler):
         else:
             binds = binding.fetch(repoids)
         details, errors = self.synchronize(progress, binds, options)
-        progress.set_status(progress.SUCCEEDED)
-        report.set_succeeded(details, len(details))
+        progress.end()
+        if errors:
+            report.set_failed(details)
+        else:
+            report.set_succeeded(details)
         return report
 
     def synchronize(self, progress, binds, options):
@@ -86,13 +89,17 @@ class CitrusHandler(ContentHandler):
         @type binds: list
         @param options: Unit update options.
         @type options: dict
-        @return: A sync report.
-        @rtype: TBD
+        @return: A result of: (report, errors)
+          - report: TBD
+          - errors: A list of: (repo_id, error)
+        @rtype: tuple(2)
         """
         errors = []
         added = []
         merged = []
         removed = []
+
+        strategy = options.get('strategy', 'mirror')
 
         # add/merge repositories
         try:
@@ -101,30 +108,27 @@ class CitrusHandler(ContentHandler):
             merged.extend(_merged)
             errors.extend(_failed)
         except Exception, e:
-            msg = str(e)
+            msg = repr(e)
             errors.append(msg)
 
         # synchronize repositories
         importer_reports = {}
-        progress.push_step('synchronize', len(binds))
-        for repo_id in [b['repo_id'] for b in binds]:
-            repo = LocalRepository(repo_id)
-            try:
-                report = repo.run_synchronization(progress)
-                importer_reports[repo_id] = dict(succeeded=True, report=report)
-            except Exception, e:
-                msg = str(e)
-                progress.error(msg)
-                errors.append((repo_id, msg))
-                importer_reports[repo_id] = dict(succeeded=False, exception=msg)
+        try:
+            repo_ids = added + merged
+            reports, _errors = self.synchronize_repositories(repo_ids, progress)
+            importer_reports.update(reports)
+            errors.extend(_errors)
+        except Exception, e:
+            msg = repr(e)
+            errors.append(msg)
 
-        # purge repositories
+        # delete repositories
         try:
             _removed, _failed = self.delete_repositories(progress, binds)
             removed.extend(_removed)
             errors.extend(_failed)
         except Exception, e:
-            msg = str(e)
+            msg = repr(e)
             errors.append(msg)
 
         # remove orphans
@@ -132,7 +136,7 @@ class CitrusHandler(ContentHandler):
             progress.push_step('purge_orphans')
             LocalRepository.purge_orphans()
         except Exception, e:
-            msg = str(e)
+            msg = repr(e)
             errors.append(msg)
 
         report = {
@@ -160,7 +164,7 @@ class CitrusHandler(ContentHandler):
         @return: A tuple of: (added, merged, failed).
             added is: repo_id
             merged is: repo_id
-            failed is: (repo_id, msg)
+            failed is: (repo_id, error_message)
         @rtype: tuple
         """
         added = []
@@ -183,9 +187,54 @@ class CitrusHandler(ContentHandler):
                     myrepo.add()
                     added.append(repo_id)
             except Exception, e:
-                msg = 'Add/Merge repository: %s failed:%s' % (repo_id, str(e))
-                failed.append((repo_id, msg))
+                msg = _('Add/Merge repository: %(r)s failed: %(e)s')
+                failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
         return (added, merged, failed)
+
+    def synchronize_repositories(self, repo_ids, progress):
+        """
+        Run synchronization on repositories.
+        @param repo_ids: A list of repo IDs.
+        @type repo_ids: list
+        @param progress: A progress report.
+        @type progress: L{ProgressReport}
+        @return: A tuple of: (reports, errors)
+          - reports: A list of repo sync reports.
+          - errors: A list of (repo_id, error_message)
+        """
+        errors = []
+        reports = {}
+        progress.push_step('synchronize', len(repo_ids))
+        for repo_id in repo_ids:
+            repo = LocalRepository(repo_id)
+            try:
+                report = repo.run_synchronization(progress)
+                details = report['details']
+                _report = details.get('report')
+                exception = details.get('exception')
+                if _report:
+                    if not _report['succeeded']:
+                        msg = _('synchronization failed on repository: %(r)s')
+                        errors.append((repo_id, msg % {'r':repo_id}))
+                        progress.set_status(progress.FAILED)
+                    else:
+                        progress.set_status(progress.SUCCEEDED)
+                    reports[repo_id] = report
+                    continue
+                if exception:
+                    msg = _('repository: %(r)s error: %(e)s')
+                    errors.append((repo_id, msg % {'r':repo_id, 'e':exception}))
+                    progress.set_status(progress.FAILED)
+                    continue
+                progress.set_status(progress.FAILED)
+                msg = _('unexpected result for repository: %(r)s')
+                raise Exception(msg % {'r':repo_id})
+            except Exception, e:
+                msg = repr(e)
+                progress.error(msg)
+                errors.append((repo_id, msg))
+                reports[repo_id] = dict(succeeded=False, exception=msg)
+        return (reports, errors)
 
     def delete_repositories(self, progress, binds):
         """
@@ -196,7 +245,7 @@ class CitrusHandler(ContentHandler):
         @type binds: list
         @return: A tuple of: (removed, failed).
             removed is: repo_id
-            failed is: (repo_id, msg)
+            failed is: (repo_id, error_message)
         @rtype: tuple
         """
         removed = []
@@ -212,6 +261,6 @@ class CitrusHandler(ContentHandler):
                     repo.delete()
                     removed.append(repo_id)
             except Exception, e:
-                msg = 'Delete repository %s failed: %s' % (repo_id, str(e))
-                failed.append((repo_id, msg))
+                msg = _('Delete repository: %(r)s failed: %(e)s')
+                failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
         return (removed, failed)

@@ -114,6 +114,12 @@ class ProgressReport:
         self.action = dict(error=msg)
         self._updated()
 
+    def end(self):
+        """
+        End progress reporting.
+        """
+        self.set_status(self.SUCCEEDED)
+
     def current_step(self):
         """
         Get the current step.

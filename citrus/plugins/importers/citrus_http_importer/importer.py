@@ -53,7 +53,9 @@ class CitrusHttpImporter(Importer):
             transport = HttpTransport()
             importer = CitrusImporter(conduit, config, transport)
             report = importer.synchronize(repo.id)
-            return conduit.build_success_report({}, report.dict())
+            details = dict(report=report.dict())
         except Exception, e:
             msg = str(e)
-            return conduit.build_failure_report(msg, {})
+            details = dict(exception=msg)
+        report = conduit.build_success_report({}, details)
+        return report

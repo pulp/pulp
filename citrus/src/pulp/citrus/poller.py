@@ -17,6 +17,10 @@ from pulp.citrus.progress import ProgressReport
 from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
+class TaskFailed(Exception):
+    pass
+
+
 class TaskPoller:
 
     DELAY = 0.5
@@ -40,7 +44,7 @@ class TaskPoller:
             last_hash = self.report_progress(progress, task, last_hash)
             if task.state == CALL_ERROR_STATE:
                 msg = 'Task %s, failed: state=%s' % (task_id, task.state)
-                raise Exception(msg, task.exception, task.traceback)
+                raise TaskFailed(msg, task.exception, task.traceback)
             if task.state in CALL_COMPLETE_STATES:
                 return task.result
 

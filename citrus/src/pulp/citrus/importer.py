@@ -9,6 +9,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 from pulp.citrus.manifest import Manifest
@@ -48,44 +49,50 @@ class Progress(ProgressReport):
 class Report:
     """
     Final import report.
-    @ivar added: List of added units by unit_key.
-    @type added: list
-    @ivar removed: List of removed units by unit_key.
-    @type removed: list
-    @ivar removed: List of failed units by unit_key.
-    @type removed: list
-    @ivar errors: List of error messages.
-    @type errors: list
+    @ivar add_failed: List of units that failed to be added.
+        Each: (L{Unit}, Exception)
+    @type add_failed: list
+    @ivar delete_failed: List of units that failed to be deleted.
+        Each: (L{Unit}, Exception)
+    @type delete_failed: list
     """
 
     @staticmethod
-    def units(units):
-        if units:
-            return [u.unit_key for u in units]
-        else:
-            return []
+    def key_and_repr(units):
+        """
+        Convert to list of unit_key and exception representation.
+        @param units: List of: (Unit, Exception)
+        @type units: list
+        @return: List of: (dict, str)
+        @rtype: list
+        """
+        return [(u[0].unit_key, repr(u[1])) for u in units]
 
-    def __init__(self, added=None, removed=None, failed=None, errors=None):
+    def __init__(self, add_failed, delete_failed):
         """
-        @param added: List of added units by unit_key.
-        @type added: list
-        @param removed: List of removed units by unit_key.
-        @type removed: list
-        @param removed: List of failed units by unit_key.
-        @type removed: list
-        @param errors: List of error messages.
-        @type errors: list
+        @param add_failed: List of units that failed to be added.
+            Each: (L{Unit}, Exception)
+        @type add_failed: list
+        @param delete_failed: List of units that failed to be deleted.
+            Each: (L{Unit}, Exception)
+        @type delete_failed: list
         """
-        self.added = Report.units(added)
-        self.removed = Report.units(removed)
-        self.failed = Report.units(failed)
-        self.errors = errors or []
+        self.add_failed = Report.key_and_repr(add_failed)
+        self.delete_failed = Report.key_and_repr(delete_failed)
+
+    def succeeded(self):
+        return (not self.failed())
+
+    def failed(self):
+        return self.add_failed or self.delete_failed
 
     def dict(self):
         """
         Dictionary representation.
         """
-        return self.__dict__
+        d = dict(succeeded=self.succeeded())
+        d.update(self.__dict__)
+        return d
 
 
 class CitrusImporter:
@@ -138,65 +145,68 @@ class CitrusImporter:
         """
 
         # fetch local units
-        local_units = {}
+        units_local = {}
         try:
             self.progress.push_step('fetch_local')
-            units = self._local_units()
-            local_units.update(units)
-        except Exception, e:
-            msg = 'Fetch local units failed for repository: %s' % repo_id
+            units = self._units_local()
+            units_local.update(units)
+            self.progress.set_status(Progress.SUCCEEDED)
+        except Exception:
+            msg = _('Fetch local units failed for repository: %(r)s')
+            msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
-            return Report(errors=[msg])
+            raise Exception(msg)
 
         # fetch upstream units
-        upstream_units = {}
+        units_upstream = {}
         try:
             self.progress.push_step('fetch_upstream')
-            units = self._upstream_units()
-            upstream_units.update(units)
-        except Exception, e:
-            msg = 'Fetch local units failed for repository: %s' % repo_id
+            units = self._units_upstream()
+            units_upstream.update(units)
+            self.progress.set_status(Progress.SUCCEEDED)
+        except Exception:
+            msg = _('Fetch local units failed for repository: %(r)s')
+            msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
-            return Report(errors=[msg])
+            raise Exception(msg)
 
-        units_failed = []
-        unit_inventory = UnitInventory(local_units, upstream_units)
+        add_failed = []
+        unit_inventory = UnitInventory(units_local, units_upstream)
 
         # add missing units
-        units_added = []
         try:
-            added, failed = self._add_units(unit_inventory)
-            units_added.extend(added)
+            failed = self._add_units(unit_inventory)
             if failed:
-                units_failed.extend(failed)
-                self.progress.set_status(ProgressReport.FAILED)
+                add_failed.extend(failed)
+                self.progress.set_status(Progress.FAILED)
             else:
-                self.progress.set_status(ProgressReport.SUCCEEDED)
+                self.progress.set_status(Progress.SUCCEEDED)
         except Exception, e:
-            msg = 'Add units failed on repository: %s' % repo_id
+            msg = _('Add units failed on repository: %(r)s')
+            msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
-            return Report(errors=[msg])
+            raise Exception(msg)
 
-        # purge extra units
-        units_purged = []
+        # delete extra units
+        delete_failed = []
         try:
-            purged, failed = self._purge_units(unit_inventory)
-            units_purged.extend(purged)
+            failed = self._delete_units(unit_inventory)
             if failed:
-                units_failed.extend(failed)
-                self.progress.set_status(ProgressReport.FAILED)
+                delete_failed.extend(failed)
+                self.progress.set_status(Progress.FAILED)
             else:
-                self.progress.set_status(ProgressReport.SUCCEEDED)
+                self.progress.set_status(Progress.SUCCEEDED)
         except Exception, e:
-            msg = 'Purge units failed on repository: %s' % repo_id
+            msg = _('Purge units failed on repository: %(r)s')
+            msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
-            return Report(errors=[msg])
+            raise Exception(msg)
 
-        return Report(units_added, units_purged, units_failed)
+        return Report(add_failed, delete_failed)
 
     def cancel(self):
         """
@@ -212,7 +222,7 @@ class CitrusImporter:
         @param unit_inventory: The inventory of content units.
         @type unit_inventory: L{UnitInventory}
         @return: The list of units to be added.
-            Each item: (upstream_unit, new_unit)
+            Each item: (unit_upstream, unit_new)
         @rtype: list
         """
         new_units = []
@@ -236,23 +246,21 @@ class CitrusImporter:
         Download specified units.
         @param unit_inventory: The inventory of content units.
         @type unit_inventory: L{UnitInventory}
-        @return: A tuple(2) of: (units_added, errors)
-        @rtype: tuple
+        @return: The list of failed units: (unit, exception)
+        @rtype: list
         """
         failed = []
-        succeeded = []
         tracker = Tracker(self)
         units = self._missing_units(unit_inventory)
         self.progress.push_step('add_units', len(units))
         requests = []
         for unit, local_unit in units:
             if self.cancelled:
-                return (succeeded, failed)
+                return failed
             download = unit.get('_download')
             if not download:
                 try:
                     self._add_unit(local_unit)
-                    succeeded.append(local_unit)
                 except Exception, e:
                     failed.append((local_unit, e))
                 continue
@@ -260,9 +268,8 @@ class CitrusImporter:
             requests.append(request)
         # download units
         self.transport.download(requests)
-        succeeded.extend(tracker.get_succeeded())
         failed.extend(tracker.get_failed())
-        return (succeeded, failed)
+        return failed
 
     def _add_unit(self, unit):
         """
@@ -273,12 +280,12 @@ class CitrusImporter:
         self.conduit.save_unit(unit)
         self.progress.set_action('unit_added', str(unit.unit_key))
 
-    def _purge_units(self, unit_inventory):
+    def _delete_units(self, unit_inventory):
         """
-        Purge units inventoried locally but not upstream.
+        Delete units inventoried locally but not upstream.
         @param unit_inventory: The inventory of content units.
         @type unit_inventory: L{UnitInventory}
-        @return: The tuple(2) of (purged, errors).
+        @return: The list of failed units: (unit, exception)
         @rtype: list
         """
         failed = []
@@ -292,9 +299,9 @@ class CitrusImporter:
                 succeeded.append(unit)
             except Exception, e:
                 failed.append((unit, e))
-        return (succeeded, failed)
+        return failed
 
-    def _local_units(self):
+    def _units_local(self):
         """
         Fetch all local units.
         @return: A dictionary of units keyed by L{UnitKey}.
@@ -303,7 +310,7 @@ class CitrusImporter:
         units = self.conduit.get_units()
         return self._unit_dictionary(units)
 
-    def _upstream_units(self):
+    def _units_upstream(self):
         """
         Fetch upstream units.
         @param repo_id: The repository ID.
@@ -417,8 +424,6 @@ class Tracker(DownloadTracker):
     database based on the download success.
     @ivar _repository: The repository object.
     @type _repository: L{Importer}
-    @ivar _succeeded: The list of downloaded units.
-    @type _succeeded: list
     @ivar _failed: The list of failed units and exception raised.
     @type _failed: list
     """
@@ -429,7 +434,6 @@ class Tracker(DownloadTracker):
         @type repository: L{Repository}
         """
         self._repository = repository
-        self._succeeded = []
         self._failed = []
 
     def succeeded(self, request):
@@ -442,7 +446,6 @@ class Tracker(DownloadTracker):
         unit = request.local_unit
         try:
             self._repository._add_unit(unit)
-            self._succeeded.append(unit)
         except Exception, e:
             self._failed.append((unit, e))
 
@@ -455,13 +458,6 @@ class Tracker(DownloadTracker):
         """
         unit = request.local_unit
         self._failed.append((unit, exception))
-
-    def get_succeeded(self):
-        """
-        Get a list of successfully downloaded units.
-        @return: List of successfully downloaded units.
-        """
-        return self._succeeded
 
     def get_failed(self):
         """

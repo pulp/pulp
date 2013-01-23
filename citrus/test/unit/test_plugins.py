@@ -108,20 +108,6 @@ class PluginTestBase(WebTest):
         # create repo
         manager = managers.repo_manager()
         manager.create_repo(self.REPO_ID)
-        manager = managers.repo_distributor_manager()
-        # add distrubutor
-        cfg = {
-            'protocol':'file',
-            'alias': {
-                'file': None,
-            }
-        }
-        manager.add_distributor(
-            self.REPO_ID,
-            CITRUS_DISTRUBUTOR,
-            cfg,
-            False,
-            distributor_id=CITRUS_DISTRUBUTOR)
         # add units
         units = []
         for n in range(0, self.NUM_UNITS):
@@ -162,9 +148,15 @@ class TestDistributor(PluginTestBase):
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.upfs)
         # Test
+        cfg = {
+            'protocol':'file',
+            'http':{'alias':self.alias},
+            'https':{'alias':self.alias},
+            'file':{'alias':self.alias},
+        }
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        payload = dist.create_consumer_payload(repo, {})
+        payload = dist.create_consumer_payload(repo, cfg)
         # Verify
         print payload
 
@@ -175,10 +167,11 @@ class TestDistributor(PluginTestBase):
         # Test
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        protocol = 'file'
         cfg = {
-            'protocol':protocol,
-            'alias': {protocol:self.alias}
+            'protocol':'file',
+            'http':{'alias':self.alias},
+            'https':{'alias':self.alias},
+            'file':{'alias':self.alias},
         }
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
@@ -205,10 +198,11 @@ class ImporterTest(PluginTestBase):
         pulp_conf.set('server', 'storage_dir', self.upfs)
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        protocol = 'file'
         cfg = {
-            'protocol':protocol,
-            'alias': {protocol:self.alias}
+            'protocol':'file',
+            'http':{'alias':self.alias},
+            'https':{'alias':self.alias},
+            'file':{'alias':self.alias},
         }
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
         dist.publish_repo(repo, conduit, cfg)
@@ -257,10 +251,11 @@ class TestAgentPlugin(PluginTestBase):
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distrubutor
         manager = managers.repo_distributor_manager()
-        protocol = 'file'
         cfg = {
-            'protocol':protocol,
-            'alias': {protocol:self.alias}
+            'protocol':'file',
+            'http':{'alias':self.alias},
+            'https':{'alias':self.alias},
+            'file':{'alias':self.alias},
         }
         manager.add_distributor(
             self.REPO_ID,
@@ -294,7 +289,7 @@ class TestAgentPlugin(PluginTestBase):
         distributor = manager.get_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR)
         protocol = distributor['config']['protocol']
         self.assertEqual(protocol, 'file')
-        alias = distributor['config']['alias'][protocol]
+        alias = distributor['config'][protocol]['alias']
         self.assertEqual(alias[0], self.upfs)
         self.assertEqual(alias[1], self.upfs)
         # check units
@@ -369,10 +364,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            protocol = 'file'
             cfg = {
-                'protocol':protocol,
-                'alias': {protocol:self.alias}
+                'protocol':'file',
+                'http':{'alias':self.alias},
+                'https':{'alias':self.alias},
+                'file':{'alias':self.alias},
             }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
@@ -394,14 +390,11 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(merge['merged'], [])
         self.assertEqual(merge['removed'], [])
         synchronization = report['details']['synchronization'][self.REPO_ID]
-        importer_report = synchronization['report']
-        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']
-        self.assertEqual(len(details['added']), self.NUM_UNITS)
-        self.assertEqual(len(details['removed']), 0)
-        self.assertEqual(len(details['failed']), 0)
-        self.assertEqual(len(details['errors']), 0)
+        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
+        self.assertEqual(synchronization['removed_count'], 0)
+        details = synchronization['details']['report']
+        self.assertEqual(len(details['add_failed']), 0)
+        self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
 
     def clean_units(self):
@@ -430,10 +423,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            protocol = 'file'
             cfg = {
-                'protocol':protocol,
-                'alias': {protocol:self.alias}
+                'protocol':'file',
+                'http':{'alias':self.alias},
+                'https':{'alias':self.alias},
+                'file':{'alias':self.alias},
             }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
@@ -453,15 +447,12 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(merge['merged'], [self.REPO_ID])
         self.assertEqual(merge['removed'], [])
         synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertTrue(synchronization['succeeded'])
-        importer_report = synchronization['report']
-        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']
-        self.assertEqual(len(details['added']), self.NUM_UNITS)
-        self.assertEqual(len(details['removed']), 0)
-        self.assertEqual(len(details['failed']), 0)
-        self.assertEqual(len(details['errors']), 0)
+        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
+        self.assertEqual(synchronization['removed_count'], 0)
+        details = synchronization['details']['report']
+        self.assertTrue(details['succeeded'])
+        self.assertEqual(len(details['add_failed']), 0)
+        self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
@@ -485,10 +476,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            protocol = 'file'
             cfg = {
-                'protocol':protocol,
-                'alias': {protocol:self.alias}
+                'protocol':'file',
+                'http':{'alias':self.alias},
+                'https':{'alias':self.alias},
+                'file':{'alias':self.alias},
             }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
@@ -503,21 +495,18 @@ class TestAgentPlugin(PluginTestBase):
         time.sleep(2)
         # Verify
         report = _report[0]
-        self.assertTrue(report.succeeded)
+        self.assertFalse(report.succeeded)
         merge = report.details['merge']
         self.assertEqual(merge['added'], [self.REPO_ID])
         self.assertEqual(merge['merged'], [])
         self.assertEqual(merge['removed'], [])
         synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertTrue(synchronization['succeeded'])
-        importer_report = synchronization['report']
-        self.assertEqual(importer_report['added_count'], 0)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']
-        self.assertEqual(len(details['added']), 0)
-        self.assertEqual(len(details['removed']), 0)
-        self.assertEqual(len(details['failed']), self.NUM_UNITS)
-        self.assertEqual(len(details['errors']), 0)
+        self.assertEqual(synchronization['added_count'], 0)
+        self.assertEqual(synchronization['removed_count'], 0)
+        details = synchronization['details']['report']
+        self.assertFalse(details['succeeded'])
+        self.assertEqual(len(details['add_failed']), 3)
+        self.assertEqual(len(details['delete_failed']), 0)
         self.verify(0)
 
     @patch('citrus.Bundle.cn', return_value=PULP_ID)
@@ -541,10 +530,11 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            protocol = 'file'
             cfg = {
-                'protocol':protocol,
-                'alias': {protocol:self.alias}
+                'protocol':'file',
+                'http':{'alias':self.alias},
+                'https':{'alias':self.alias},
+                'file':{'alias':self.alias},
             }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
@@ -559,15 +549,16 @@ class TestAgentPlugin(PluginTestBase):
         time.sleep(2)
         # Verify
         report = _report[0]
-        self.assertTrue(report.succeeded)
+        self.assertFalse(report.succeeded)
         errors = report.details['errors']
         self.assertEqual(len(errors), 1)
         merge = report.details['merge']
         self.assertEqual(merge['added'], [self.REPO_ID])
         self.assertEqual(merge['merged'], [])
         self.assertEqual(merge['removed'], [])
-        synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertFalse(synchronization['succeeded'])
-        exception = synchronization['exception']
-        self.assertTrue(len(exception) > 0)
-        self.verify(0)
+        synchronization = report.details['synchronization'].get(self.REPO_ID)
+        if synchronization:
+            self.assertFalse(synchronization['succeeded'])
+            exception = synchronization['exception']
+            self.assertTrue(len(exception) > 0)
+            self.verify(0)

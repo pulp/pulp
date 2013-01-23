@@ -38,7 +38,7 @@ class Manifest:
         """
         Fetch the document.
         @return: The downloaded json document.
-        @rtype: str
+        @rtype: list
         """
         fp_in = urllib.urlopen(url)
         try:

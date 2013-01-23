@@ -11,8 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import re
-
 from gettext import gettext as _
 from pulp.plugins.distributor import Distributor
 from pulp.citrus.http.publisher import HttpPublisher
@@ -42,9 +40,16 @@ class CitrusHttpDistributor(Distributor):
         Layout:
           {
             protocol : (http|https|file),
-            alais : {
-              <protocol> : (url, directory)
-              ...
+            http : {
+              alias : [url, directory]
+            },
+            https : {
+              alias : [url, directory],
+              ssl (optional) : {
+                ca_cert : <path>,
+                client_cert : <path>
+                verify : <bool>
+              }
             }
           }
         """
@@ -57,12 +62,14 @@ class CitrusHttpDistributor(Distributor):
         protocols = ('http', 'https', 'file')
         if protocol not in protocols:
             return (False, invalid_msg % {'p':key, 'v':protocols})
-        key = 'alias'
-        alias = config.get(key)
-        if not alias:
-            return (False, missing_msg % {'p':key})
-        if protocol not in alias:
-            return (False, missing_msg % {'p':'.'.join((protocol, key))})
+        for key in ('http', 'https'):
+            section = config.get(key)
+            if not section:
+                return (False, missing_msg % {'p':key})
+            key = (key, 'alias')
+            alias = section.get(key[1])
+            if not alias:
+                return (False, missing_msg % {'p':'.'.join(key)})
         return (True, None)
 
     def publish_repo(self, repo, conduit, config):
@@ -121,8 +128,8 @@ class CitrusHttpDistributor(Distributor):
         """
         protocol = config.get('protocol')
         host = pulp_conf.get('server', 'server_name')
-        alias = config.get('alias')
-        alias = alias.get(protocol)
+        section = config.get(protocol)
+        alias = section.get('alias')
         base_url = '://'.join((protocol, host))
         return HttpPublisher(base_url, alias, repo.id)
 
@@ -163,16 +170,66 @@ class CitrusHttpDistributor(Distributor):
         payload['repository'] = manager.get_repository(repo_id)
 
     def _add_importers(self, repo, config, payload):
-        publisher = self.publisher(repo, config)
-        manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
+        """
+        Add the citrus importer.
+        @param repo: A repo object.
+        @type repo: L{pulp.plugins.model.Repository}
+        @param config: plugin configuration
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+        @param payload: The bind payload.
+        @type payload: dict
+        """
+        conf = self._importer_conf(repo, config)
         importer = {
             'id':'citrus_http_importer',
             'importer_type_id':'citrus_http_importer',
-            'config':{
-                'manifest_url':manifest_url,
-            }
+            'config':conf,
         }
         payload['importers'] = [importer]
+
+    def _importer_conf(self, repo, config):
+        """
+        Build the citrus importer configuration.
+        @param repo: A repo object.
+        @type repo: L{pulp.plugins.model.Repository}
+        @param config: plugin configuration
+        @type  config: pulp.plugins.config.PluginCallConfiguration
+        @return: The importer configuration.
+        @rtype: dict
+        """
+        publisher = self.publisher(repo, config)
+        protocol =  config.get('protocol')
+        manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
+        section = config.get(protocol)
+        ssl = section.get('ssl', {})
+        ca_cert = ssl.get('ca_cert')
+        client_cert = ssl.get('client_cert')
+        verify = ssl.get('verify', False)
+        conf = {
+            'manifest_url':manifest_url,
+            'ssl':{
+                'ca_cert':self._read(ca_cert),
+                'client_cert':self._read(client_cert),
+                'verify':verify,
+            }
+        }
+        return conf
+
+    def _read(self, path):
+        """
+        Read the file at the specified path unless the path is
+        None or and empty string.
+        @param path: A fully qualified path to a file.
+        @type path: str
+        @return: The file contents.
+        @rtype: str
+        """
+        if path:
+            fp = open(path)
+            try:
+                return fp.read()
+            finally:
+                fp.close()
 
     def _add_distributors(self, repo_id, payload):
         """
