@@ -112,7 +112,7 @@ class Update(PollingCommand):
             msg = 'Update failed'
             details = task.result['details'][TYPE_ID]['details']
             prompt.render_failure_message(_(msg))
-            prompt.render_failure_message(details['message'])
+            prompt.render_failure_message(details['errors'])
             return
         msg = 'Update Succeeded'
         prompt.render_success_message(_(msg))
