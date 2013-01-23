@@ -38,18 +38,30 @@ class MainTests(unittest.TestCase):
     def setUp(self):
         super(MainTests, self).setUp()
 
-        self.mock_upgrade_call_1 = mock.MagicMock().upgrade
-        self.mock_upgrade_call_1.return_value = UpgradeStepReport()
-        self.mock_upgrade_call_1.return_value.succeeded()
-        self.mock_upgrade_call_1.return_value.message('Upgrading collection 1')
-        self.mock_upgrade_call_1.return_value.warning('Small problem with collection 3')
+        # Mock out the DB upgrade calls
+        self.mock_db_upgrade_call_1 = mock.MagicMock().upgrade
+        self.mock_db_upgrade_call_1.return_value = UpgradeStepReport()
+        self.mock_db_upgrade_call_1.return_value.succeeded()
+        self.mock_db_upgrade_call_1.return_value.message('Upgrading collection 1')
+        self.mock_db_upgrade_call_1.return_value.warning('Small problem with collection 3')
 
-        self.mock_upgrade_calls = [(self.mock_upgrade_call_1, 'Mock 1')]
+        self.mock_db_upgrade_calls = [(self.mock_db_upgrade_call_1, 'Mock 1')]
 
+        # Mock out the filesystem upgrade calls
+        self.mock_fs_upgrade_call_1 = mock.MagicMock().upgrade
+        self.mock_fs_upgrade_call_1.return_value = UpgradeStepReport()
+        self.mock_fs_upgrade_call_1.return_value.succeeded()
+        self.mock_fs_upgrade_call_1.return_value.message('Upgrading filesystem')
+        self.mock_fs_upgrade_call_1.return_value.warning('File not found')
+
+        self.mock_fs_upgrade_calls = [(self.mock_fs_upgrade_call_1, 'Mock 1')]
+
+        # Assemble the upgrader with the mock calls
         self.upgrader = main.Upgrader(stream_file=STREAM_FILENAME,
                                       prod_db_name=V1_DB_NAME,
                                       tmp_db_name=TMP_DB_NAME,
-                                      db_upgrade_calls=self.mock_upgrade_calls)
+                                      db_upgrade_calls=self.mock_db_upgrade_calls,
+                                      files_upgrade_calls=self.mock_fs_upgrade_calls)
 
     def tearDown(self):
         super(MainTests, self).tearDown()
@@ -64,20 +76,30 @@ class MainTests(unittest.TestCase):
         # Verify
         self.assertTrue(os.path.exists(LOG_FILENAME))
 
-        self.assertEqual(1, self.mock_upgrade_call_1.call_count)
-        call_args = self.mock_upgrade_call_1.call_args[0]
+        #   DB Upgrade Calls
+        self.assertEqual(1, self.mock_db_upgrade_call_1.call_count)
+        call_args = self.mock_db_upgrade_call_1.call_args[0]
         self.assertEqual(call_args[0].name, V1_DB_NAME)
         self.assertEqual(call_args[1].name, TMP_DB_NAME)
 
+        #   Filesystem Upgrade Calls
+        self.assertEqual(1, self.mock_fs_upgrade_call_1.call_count)
+        call_args = self.mock_fs_upgrade_call_1.call_args[0]
+        self.assertEqual(call_args[0].name, V1_DB_NAME)
+        self.assertEqual(call_args[1].name, TMP_DB_NAME)
+
+        #   Assert the new production database remained
         connection = self.upgrader._connection()
         self.assertTrue(V1_DB_NAME in connection.database_names())
+
+        #   Assert the temporary was cleaned up
         self.assertTrue(not TMP_DB_NAME in connection.database_names())
 
         self.assertTrue(os.path.exists(STREAM_FILENAME))
 
     def test_main_with_error(self):
         # Setup
-        self.mock_upgrade_call_1.return_value.failed()
+        self.mock_db_upgrade_call_1.return_value.failed()
 
         # Test
         try:
@@ -87,7 +109,7 @@ class MainTests(unittest.TestCase):
             self.assertEqual('Mock 1', e[0])
 
         # Verify
-        self.assertEqual(1, self.mock_upgrade_call_1.call_count)
+        self.assertEqual(1, self.mock_db_upgrade_call_1.call_count)
 
     def test_main_with_partial_error(self):
         # Setup
@@ -128,7 +150,7 @@ class MainTests(unittest.TestCase):
         self.upgrader.upgrade()
 
         # Verify
-        self.assertEqual(0, self.mock_upgrade_call_1.call_count)
+        self.assertEqual(0, self.mock_db_upgrade_call_1.call_count)
 
     @mock.patch('pulp.server.upgrade.main.Upgrader._upgrade_database')
     @mock.patch('pulp.server.upgrade.main.Upgrader._upgrade_files')
@@ -137,7 +159,7 @@ class MainTests(unittest.TestCase):
         self.upgrader = main.Upgrader(stream_file=STREAM_FILENAME,
                                       prod_db_name=V1_DB_NAME,
                                       tmp_db_name=TMP_DB_NAME,
-                                      db_upgrade_calls=self.mock_upgrade_calls,
+                                      db_upgrade_calls=self.mock_db_upgrade_calls,
                                       upgrade_db=False)
 
         # Test
@@ -154,7 +176,7 @@ class MainTests(unittest.TestCase):
         self.upgrader = main.Upgrader(stream_file=STREAM_FILENAME,
                                       prod_db_name=V1_DB_NAME,
                                       tmp_db_name=TMP_DB_NAME,
-                                      db_upgrade_calls=self.mock_upgrade_calls,
+                                      db_upgrade_calls=self.mock_db_upgrade_calls,
                                       upgrade_files=False)
 
         # Test

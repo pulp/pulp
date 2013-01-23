@@ -25,6 +25,7 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 from pulp.server.upgrade.db import (all_repos, cds, consumers, events, iso_repos,
                                     tasks, unit_count, units, users, yum_repos)
+from pulp.server.upgrade.filesystem import (distribution, rpms)
 
 
 # Indicates which Pulp stream (v1, v2, etc.) is installed
@@ -46,7 +47,8 @@ DB_UPGRADE_CALLS = (
 )
 
 FILES_UPGRADE_CALLS = (
-
+    (rpms.upgrade, _('RPMs, SRPMs, DRPMs')),
+    (distribution.upgrade, _('Distributions')),
 )
 
 # Name of the production Pulp database
@@ -166,7 +168,7 @@ class Upgrader(object):
         Runs all configured upgrade scripts for handling the database.
         """
 
-        self._print(_('Upgrading Database'))
+        self._print(_('= Upgrading Database ='))
 
         v1_database = self._database(self.prod_db_name)
         tmp_database = self._database(self.tmp_db_name)
@@ -227,6 +229,8 @@ class Upgrader(object):
         spinner.clear()
 
         self.prompt.write('')
+
+        # Delete the temporary database that v2 had been assembled into
         self._cleanup()
 
     def _upgrade_files(self):
@@ -234,9 +238,42 @@ class Upgrader(object):
         Runs all configured upgrade scripts for handling the filesystem.
         """
 
-        self._print(_('Upgrading Pulp Files'))
+        self._print(_('= Upgrading Pulp Files ='))
 
-        # TODO: Implement when the filesystem code is finished
+        v1_database = self._database(self.prod_db_name)
+        tmp_database = self._database(self.tmp_db_name)
+
+        for upgrade_call, description in self.files_upgrade_calls:
+            self._print(_('Upgrading: %(d)s') % {'d' : description})
+            spinner = ThreadedSpinner(self.prompt)
+            spinner.start()
+
+            try:
+                report = upgrade_call(v1_database, tmp_database)
+            except:
+                spinner.stop()
+                spinner.clear()
+                raise
+
+            spinner.stop()
+            spinner.clear()
+
+            if report is None or report.success is None:
+                # This should only happen during development if the script writer
+                # didn't properly configure the report and must be fixed before
+                # release
+                self._print(_('Filesystem upgrade script did not indicate the result of the step'))
+                raise InvalidStepReportException()
+
+            if report.success:
+                self._print_report_data(_('Messages'), report.messages)
+                self._print_report_data(_('Warnings'), report.warnings)
+            else:
+                self._print_report_data(_('Warnings'), report.warnings)
+                self._print_report_data(_('Errors'), report.errors)
+                raise StepException(description)
+
+            self.prompt.write('')
 
     def _drop_stream_flag(self):
         """
