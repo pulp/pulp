@@ -26,7 +26,8 @@ from pulp.server.webservices import execution, serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
-
+from pulp.server.itineraries.consumer_group import (consumer_group_content_install_itinerary,
+     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary)
 
 # consumer group collection ----------------------------------------------------
 
@@ -170,105 +171,66 @@ class ConsumerGroupContentAction(JSONController):
 
     def install(self, consumer_group_id):
         """
-        Install content (units) on a consumer.
+        Install content (units) on the consumers in a consumer group.
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of install options.
-        @param id: A consumer ID.
+        @param id: A consumer group ID.
         @type id: str
-        @return: TBD
-        @rtype: dict
+        @return: list of call requests
+        @rtype: list
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_group_id,
-            units,
-            options,
-        ]
-        manager = managers_factory.consumer_group_manager()
-        call_request = CallRequest(
-            manager.install_content,
-            args,
-            resources=resources,
-            weight=0,
-            asynchronous=True,
-            archive=True,)
-        result = execution.execute_async(self, call_request)
-        return result
+        call_request_list = consumer_group_content_install_itinerary(consumer_group_id, units, options)
+        results = []
+        for call_request in call_request_list:
+            result = execution.execute_async(self, call_request)
+            results.append(result)
+        return results
 
     def update(self, consumer_group_id):
         """
-        Update content (units) on a consumer.
+        Update content (units) on the consumer in a consumer group.
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of update options.
-        @param id: A consumer ID.
+        @param id: A consumer group ID.
         @type id: str
-        @return: TBD
-        @rtype: dict
+        @return: list of call requests
+        @rtype: list
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_group_id,
-            units,
-            options,
-        ]
-        manager = managers_factory.consumer_group_manager()
-        call_request = CallRequest(
-            manager.update_content,
-            args,
-            resources=resources,
-            weight=0,
-            asynchronous=True,
-            archive=True,)
-        result = execution.execute_async(self, call_request)
-        return result
+        call_request_list = consumer_group_content_update_itinerary(consumer_group_id, units, options)
+        results = []
+        for call_request in call_request_list:
+            result = execution.execute_async(self, call_request)
+            results.append(result)
+        return results
 
     def uninstall(self, consumer_group_id):
         """
-        Uninstall content (units) on a consumer.
+        Uninstall content (units) from the consumers in a consumer group.
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of uninstall options.
-        @param id: A consumer ID.
+        @param id: A consumer group ID.
         @type id: str
-        @return: TBD
-        @rtype: dict
+        @return: list of call requests
+        @rtype: list
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_group_id,
-            units,
-            options,
-        ]
-        manager = managers_factory.consumer_group_manager()
-        call_request = CallRequest(
-            manager.uninstall_content,
-            args,
-            resources=resources,
-            weight=0,
-            asynchronous=True,
-            archive=True,)
-        result = execution.execute_async(self, call_request)
-        return result
+        call_request_list = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
+        results = []
+        for call_request in call_request_list:
+            result = execution.execute_async(self, call_request)
+            results.append(result)
+        return results
 
 
 class ConsumerGroupBindings(JSONController):
