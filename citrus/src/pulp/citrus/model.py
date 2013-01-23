@@ -50,7 +50,7 @@ class LocalBindings(Bindings):
     def __init__(self):
         host = socket.gethostname()
         port = 443
-        cert = '/etc/pki/pulp/citrus.crt'
+        cert = '/etc/pki/pulp/citrus/local.crt'
         connection = PulpConnection(host, port, cert_filename=cert)
         Bindings.__init__(self, connection)
 

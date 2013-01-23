@@ -25,11 +25,11 @@ License: GPLv2
 URL: https://fedorahosted.org/pulp/
 Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildArch:      noarch
-BuildRequires:  python2-devel
-BuildRequires:  python-setuptools
-BuildRequires:  python-nose
-BuildRequires:  rpm-python
+BuildArch:noarch
+BuildRequires: python2-devel
+BuildRequires: python-setuptools
+BuildRequires: python-nose
+BuildRequires: rpm-python
 
 %description
 Provides a collection of platform plugins, client extensions and agent
@@ -152,13 +152,17 @@ Pulp citrus handlers.
 # Generate the certificate used to access the local server.
 
 PKI=/etc/pki/pulp
+PKI_CITRUS=$PKI/citrus
 CA_KEY=$PKI/ca.key
 CA_CRT=$PKI/ca.crt
 BASE='citrus'
 TMP=/tmp/$RANDOM
 CN='admin:admin:0'
+ORG='PULP'
+ORG_UNIT='CITRUS'
 
 mkdir -p $TMP
+mkdir -p $PKI_CITRUS
 
 # create client key
 openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
@@ -168,7 +172,7 @@ openssl req \
   -new \
   -key $TMP/$BASE.key \
   -out $TMP/$BASE.req \
-  -subj "/CN=$CN" &> /dev/null
+  -subj "/CN=$CN/O=$ORG/OU=$ORG_UNIT" &> /dev/null
 
 # sign server request w/ CA key and gen x.509 cert.
 openssl x509 \
@@ -183,7 +187,7 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI/citrus.crt
+cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_CITRUS/local.crt
 
 # clean
 rm -rf $TMP
@@ -191,7 +195,7 @@ rm -rf $TMP
 %postun
 # clean up the citrus certificate.
 if [ $1 -eq 0 ]; then
-  rm /etc/pki/pulp/citrus.crt
+  rm /etc/pki/pulp/citrus/local.crt
 fi
 
 
