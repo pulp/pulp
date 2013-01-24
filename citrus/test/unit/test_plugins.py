@@ -283,7 +283,7 @@ class TestAgentPlugin(PluginTestBase):
         manager = managers.repo_importer_manager()
         importer = manager.get_importer(self.REPO_ID)
         manifest_url = importer['config']['manifest_url']
-        self.assertTrue(manifest_url.endswith('%s/units.json' % self.REPO_ID))
+        self.assertTrue(manifest_url.endswith('%s/units.json.gz' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
         distributor = manager.get_distributor(self.REPO_ID, CITRUS_DISTRUBUTOR)
