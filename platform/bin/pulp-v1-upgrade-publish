@@ -1,0 +1,112 @@
+#!/usr/bin/python
+#
+# Pulp Upgrade Utility
+# Copyright (c) 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+#!/usr/bin/env python
+import os
+import sys
+from okaara import prompt, progress
+
+from pulp.common import pic, tags
+
+pic.LOG_BODIES = False
+pic.PATH_PREFIX = '/pulp/api/v2/'
+
+def list_repos():
+    """
+    get all repos within pulp server
+    @return: (status, List of repos)
+    """
+    return pic.GET('/repositories/')
+
+
+def publish(repoid, data=None):
+    """
+    Publish the specific repo with associated distributor info
+    @param repoid: repo id to publish
+    @param data: dict of post data eg: {'id' : distributor_id, 'override_config' : {}}
+    @return: (status, call report representing the current state of they sync)
+    """
+    return pic.POST("/repositories/%s/actions/publish/" % repoid, data)
+
+
+def publish_status():
+    """
+    Get all currently running and waiting tasks
+    @return: (status, list of call reports)
+    """
+    return pic.GET('/tasks/', tag=tags.action_tag(tags.ACTION_PUBLISH_TYPE))
+
+def get_repo_distributors(repo_id):
+    """
+    Get list of distributors associated to a repo
+    @param repo_id: repo id to publish
+    @return: (status, database representations of all distributors on the repository)
+    """
+    return pic.GET('/repositories/%s/distributors/' % repo_id)
+
+def run_publish():
+    # connect to the server
+    pic.connect()
+    status, repos =  list_repos()
+    if status != 200:
+        systemExit(os.EX_DATAERR, "No repos found to publish")
+
+    publish_task_list = []
+    for repo in repos:
+        repo_id = repo['id']
+        # lookup distributors associated with a repo
+        status, repo_distributors = get_repo_distributors(repo_id)
+        for distributor in repo_distributors:
+            if distributor['id'] == 'export_distributor':
+                # skip export distributor from publish
+                continue
+            distributor_id, override_config = distributor['id'], distributor['config']
+            data = {
+                "id": distributor_id,
+                "override_config": override_config,
+                }
+            publish_task_list.append((repo_id, data))
+    # publish repo with relevant distributor info
+    p = prompt.Prompt()
+    p.write("\nQueuing %s publish tasks" % len(publish_task_list))
+    bar = progress.ProgressBar(p)
+    for index, task in enumerate(publish_task_list):
+        repo_id, data = task
+        publish(repo_id, data)
+        bar.render(index, len(publish_task_list)-1)
+
+    p.write("\nWaiting on publish tasks to complete")
+    bar = progress.ProgressBar(p)   
+    status, call_reports = publish_status()
+    def get_pending_reports(call_reports):
+        return [report for report in call_reports if (report['state'] in ['running', 'waiting'])]
+    pending_call_reports = get_pending_reports(call_reports)
+    while len(pending_call_reports) > 0:
+        # Poll the status of all the publish tasks
+        status, call_reports = publish_status()
+        pending_call_reports = get_pending_reports(call_reports)
+        bar.render(len(call_reports) - len(pending_call_reports), len(call_reports))
+
+    p.write("\nSuccessfully published repositories")
+
+
+
+def systemExit(errcode, message=None):
+    if message:
+        sys.stderr.write(str(message)+'\n')
+    sys.exit(errcode)
+
+if __name__=='__main__':
+    run_publish()
