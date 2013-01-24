@@ -61,7 +61,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         multi_handle = self._build_multi_handle()
         free_handles = multi_handle.handles[:]
 
-        self.fire_batch_started(i[1] for i in request_queue[::-1])
+        self.fire_batch_started([i[1] for i in request_queue[::-1]])
         self._set_signals()
 
         # main request processing loop
@@ -125,7 +125,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                     break
 
         self._clear_signals()
-        self.fire_batch_finished(i[1] for i in request_cache)
+        self.fire_batch_finished([i[1] for i in request_cache])
 
     # signal utility methods ---------------------------------------------------
 

@@ -13,8 +13,17 @@
 
 
 class DownloadRequest(object):
+    """
+    Representation of a request for a file download.
+    """
 
     def __init__(self, url, file_path):
+        """
+        :param url: url of the file to be downloaded
+        :type url: str
+        :param file_path: local path to the downloaded file
+        :type file_path: str
+        """
 
         self.url = url
         self.file_path = file_path

@@ -13,8 +13,28 @@
 
 
 class DownloaderConfig(object):
+    """
+    Downloader configuration class that represents the type of download backend,
+    as well as, it's configuration. Instances of this class are used by the
+    download factory to determine which download backend to use.
+
+    Currently supported configuration values are:
+
+     * protocol: network protocol to use (http, https)
+     * max_concurrent: maximum number of downloads to run concurrently
+     * basic_auth_username: http basic auth username (basic_auth_password must also be provided)
+     * basic_auth_password: http basic auth password (basic_auth_username must also be provided)
+     * ssl_ca_cert: certificate authority cert for secure connections (https protocol only)
+     * ssl_client_cert: client certificate for secure connections (https protocol only)
+     * ssl_client_key: client private key for secure connections (https protocol only)
+    """
 
     def __init__(self, protocol, **kwargs):
+        """
+        :param protocol: network protocol to use
+        :type protocol: str
+        :param kwargs: keyword arguments representing the downloader's configuration
+        """
 
         self.protocol = protocol.lower()
 

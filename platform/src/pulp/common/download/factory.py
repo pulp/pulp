@@ -43,6 +43,18 @@ def _get_downloader_class_for_protocol(protocol):
 
 
 def get_downloader(downloader_config, event_listener=None):
+    """
+    Get a downloader instance based on the configuration provided that is
+    coupled to the provided event listener.
+
+    :param downloader_config: configuration object for download backend
+    :type downloader_config: pulp.common.download.config.DownloaderConfig
+    :param event_listener: event listener instance providing callbacks for downloader events
+    :type event_listener: pulp.common.download.listener.DownloadEventListener
+    :return: configured download backend instance coupled to the event listener
+    :rtype: pulp.common.download.backends.base.DownloadBackend
+    """
+
     # XXX keeping this protocol based for the time being; in the future we may
     # want to support multiple backends for any particular protocol and use the
     # downloader_config as a "hint" as to which one the caller wants

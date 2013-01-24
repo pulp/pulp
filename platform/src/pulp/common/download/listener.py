@@ -18,6 +18,12 @@ class DownloadEventListener(object):
 
     The individual methods are used as callbacks at certain points in batch and
     individual download life-cycles.
+
+    Callers are generally expected to sub-class this class in order to implement
+    event-based functionality.
+
+    This class is used as a stub class in the event that no sub-classed event
+    listener is provided to a download backend.
     """
 
     # TODO (jconnor 2013-01-22) add cancel state callbacks
