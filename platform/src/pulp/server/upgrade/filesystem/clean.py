@@ -20,7 +20,10 @@ from pulp.server.upgrade.model import UpgradeStepReport
 CLEAN_UP_DIRS = (
     '/var/lib/pulp/packages',
     '/var/lib/pulp/files',
+    '/var/lib/pulp/repos',
     '/var/lib/pulp/cache',
+    '/var/lib/pulp/published/repos',
+    '/var/lib/pulp/published/gpg',
 )
 
 

@@ -32,6 +32,8 @@ if __name__ == '__main__':
     parser.add_option('--skip-install', dest='skip_install', action='store_true',
                       help='generates the v2 database to a temporary database but ' +
                            'does not replace the production database with it')
+    parser.add_option('--skip-clean', dest='skip_clean', action='store_true',
+                      help='skips deleting the residual v1 directories')
     parser.add_option('--backup-v1-db', dest='backup_v1_db', action='store_true',
                       help='if specified, the v1 database will be saved as %s in MongoDB' % V1_BACKUP_DATABASE_NAME)
 
@@ -41,6 +43,7 @@ if __name__ == '__main__':
     upgrader = Upgrader(upgrade_db=not options.skip_db,
                         upgrade_files= not options.skip_files,
                         install_db = not options.skip_install,
+                        clean=not options.skip_clean,
                         backup_v1_db=options.backup_v1_db)
 
     try:

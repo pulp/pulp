@@ -50,10 +50,14 @@ FILES_UPGRADE_CALLS = (
     (rpms.upgrade, _('RPMs, SRPMs, DRPMs')),
     (distribution.upgrade, _('Distributions')),
     (permissions.upgrade, _('Filesystem Permissions')), # has to be after all content upgrades
-    (clean.upgrade, _('Cleaning Up v1 Directories')), # absolutely must be last
 )
 
-# Name of the production Pulp database
+# Separating so we can easily disable it during testing
+CLEAN_UPGRADE_CALLS = (
+    (clean.upgrade, _('v1 Directories')),
+)
+
+    # Name of the production Pulp database
 PULP_DATABASE_NAME = 'pulp_database'
 
 # Name of the temporary database used to assemble the v2 database
@@ -112,6 +116,10 @@ class Upgrader(object):
 
     :ivar install_db: dictates if the temporary database created by the build
           DB step will replace the production database and delete the temp
+    :type install_db: bool
+
+    :ivar clean: dictates if the filesystem clean up operations will be run
+    :type clean: bool
     """
 
     def __init__(self,
@@ -125,7 +133,8 @@ class Upgrader(object):
                  db_upgrade_calls=DB_UPGRADE_CALLS,
                  upgrade_files=True,
                  files_upgrade_calls=FILES_UPGRADE_CALLS,
-                 install_db=True):
+                 install_db=True,
+                 clean=True):
         self.stream_file = stream_file
 
         self.prod_db_name = prod_db_name
@@ -142,6 +151,7 @@ class Upgrader(object):
         self.files_upgrade_calls = files_upgrade_calls
 
         self.install_db = install_db
+        self.clean = clean
 
         self.prompt = Prompt()
 
@@ -177,7 +187,13 @@ class Upgrader(object):
             self._print(_('Skipping v2 Database Installation'))
             self._print('')
         else:
-            self._install_and_cleanup()
+            self._install()
+
+        if not self.clean:
+            self._print(_('Skipping v1 Filesystem Clean Up'))
+            self._print('')
+        else:
+            self._clean()
 
         self._drop_stream_flag()
 
@@ -265,7 +281,7 @@ class Upgrader(object):
 
             self.prompt.write('')
 
-    def _install_and_cleanup(self):
+    def _install(self):
 
         # Backup
         if self.backup_v1_db:
@@ -301,6 +317,42 @@ class Upgrader(object):
         spinner.clear()
 
         self.prompt.write('')
+
+    def _clean(self):
+
+        self._print(_('= Clean Up ='))
+
+        v1_database = self._database(self.prod_db_name)
+        tmp_database = self._database(self.tmp_db_name)
+
+        for upgrade_call, description in CLEAN_UPGRADE_CALLS:
+            self._print(_('Cleaning: %(d)s') % {'d' : description})
+            spinner = ThreadedSpinner(self.prompt)
+            spinner.start()
+
+            try:
+                report = upgrade_call(v1_database, tmp_database)
+            except:
+                spinner.stop()
+                spinner.clear()
+                raise
+
+            spinner.stop()
+            spinner.clear()
+
+            if report is None or report.success is None:
+                self._print(_('Clean upgrade script did not indicate the result of the step'))
+                raise InvalidStepReportException()
+
+            if report.success:
+                self._print_report_data(_('Messages'), report.messages)
+                self._print_report_data(_('Warnings'), report.warnings)
+            else:
+                self._print_report_data(_('Warnings'), report.warnings)
+                self._print_report_data(_('Errors'), report.errors)
+                raise StepException(description)
+
+            self.prompt.write('')
 
     def _drop_stream_flag(self):
         """
