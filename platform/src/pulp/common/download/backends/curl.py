@@ -12,6 +12,7 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import datetime
+import logging
 import shutil
 import signal
 import tempfile
@@ -22,6 +23,8 @@ from pulp.common.download import report as download_report
 from pulp.common.download.backends.base import DownloadBackend
 
 # default constants ------------------------------------------------------------
+
+_LOG = logging.getLogger(__name__)
 
 # backend constants
 DEFAULT_MAX_CONCURRENT = 5
@@ -36,6 +39,7 @@ DEFAULT_MAX_REDIRECTS = 5
 DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_REQUEST_TIMEOUT = 300
 DEFAULT_NO_SIGNAL = 1
+DEFAULT_NO_PROGRESS = 0
 
 DEFAULT_SSL_VERIFY_PEER = 1
 DEFAULT_SSL_VERIFY_HOST = 2
@@ -68,61 +72,68 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         # TODO (jconnor 2013-01-22) add cancellation detection to this loop
         while processed_requests < total_requests:
 
-            # populate max_concurrent downloads into the pycurl multi handle
-            while request_queue and free_handles:
-                request, report = request_queue.pop()
-                request_cache.append((request, report))
+            try:
 
-                easy_handle = free_handles.pop()
-                self._set_easy_handle_download(easy_handle, request, report)
-                multi_handle.add_handle(easy_handle)
+                # populate max_concurrent downloads into the pycurl multi handle
+                while request_queue and free_handles:
+                    request, report = request_queue.pop()
+                    request_cache.append((request, report))
 
-                easy_handle.report.state = download_report.DOWNLOAD_DOWNLOADING
-                easy_handle.report.start_time = datetime.datetime.now()
-                self.fire_download_started(easy_handle.report)
+                    report.state = download_report.DOWNLOAD_DOWNLOADING
+                    report.start_time = datetime.datetime.now()
+                    self.fire_download_started(report)
 
-            # i/o loop for current set of downloads
-            multi_handle.select(DEFAULT_SELECT_TIMEOUT)
+                    easy_handle = free_handles.pop()
+                    self._set_easy_handle_download(easy_handle, request, report)
+                    multi_handle.add_handle(easy_handle)
 
-            while True:
-                ret, num_handles = multi_handle.perform()
-                if ret != pycurl.E_CALL_MULTI_PERFORM:
-                    break
+                # i/o loop for current set of downloads
+                multi_handle.select(DEFAULT_SELECT_TIMEOUT)
 
-            # post-processing loop for current set of downloads
-            while True:
-                num_q, ok_list, err_list = multi_handle.info_read()
+                while True:
+                    ret, num_handles = multi_handle.perform()
+                    if ret != pycurl.E_CALL_MULTI_PERFORM:
+                        break
 
-                # XXX these loops contain duplicate code; which just pisses me off
+                # post-processing loop for current set of downloads
+                while True:
+                    num_q, ok_list, err_list = multi_handle.info_read()
 
-                for easy_handle in ok_list:
-                    easy_handle.report.finish_time = datetime.datetime.now()
+                    # XXX these loops contain duplicate code; which just pisses me off
 
-                    easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
-                    self.fire_download_succeeded(easy_handle.report)
+                    for easy_handle in ok_list:
+                        easy_handle.report.finish_time = datetime.datetime.now()
+                        easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
 
-                    multi_handle.remove_handle(easy_handle)
-                    self._clear_easy_handle_download(easy_handle)
-                    free_handles.append(easy_handle)
+                        self.fire_download_succeeded(easy_handle.report)
 
-                for easy_handle, err_code, err_msg in err_list:
-                    easy_handle.report.finish_time = datetime.datetime.now()
+                        multi_handle.remove_handle(easy_handle)
+                        self._clear_easy_handle_download(easy_handle)
+                        free_handles.append(easy_handle)
 
-                    easy_handle.report.state = download_report.DOWNLOAD_FAILED
-                    response_code = easy_handle.getinfo(pycurl.HTTP_CODE)
-                    easy_handle.report.error_report['response_code'] = response_code
-                    easy_handle.report.error_report['error_code'] = err_code
-                    easy_handle.report.error_report['error_message'] = err_msg
-                    self.fire_download_failed(easy_handle.report)
+                    for easy_handle, err_code, err_msg in err_list:
+                        easy_handle.report.finish_time = datetime.datetime.now()
+                        easy_handle.report.state = download_report.DOWNLOAD_FAILED
 
-                    multi_handle.remove_handle(easy_handle)
-                    self._clear_easy_handle_download(easy_handle)
-                    free_handles.append(easy_handle)
+                        response_code = easy_handle.getinfo(pycurl.HTTP_CODE)
+                        easy_handle.report.error_report['response_code'] = response_code
+                        easy_handle.report.error_report['error_code'] = err_code
+                        easy_handle.report.error_report['error_message'] = err_msg
 
-                processed_requests += (len(ok_list) + len(err_list))
+                        self.fire_download_failed(easy_handle.report)
 
-                if num_q == 0:
-                    break
+                        multi_handle.remove_handle(easy_handle)
+                        self._clear_easy_handle_download(easy_handle)
+                        free_handles.append(easy_handle)
+
+                    processed_requests += (len(ok_list) + len(err_list))
+
+                    if num_q == 0:
+                        break
+
+            except Exception, e:
+                _LOG.exception(e)
+                break
 
         self._clear_signals()
         self.fire_batch_finished([i[1] for i in request_cache])
@@ -168,6 +179,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.setopt(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
         easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
         easy_handle.setopt(pycurl.NOSIGNAL, DEFAULT_NO_SIGNAL)
+        easy_handle.setopt(pycurl.NOPROGRESS, DEFAULT_NO_PROGRESS)
 
     def _add_basic_auth_credentials(self, easy_handle):
         if None in (self.config.basic_auth_username, self.config.basic_auth_password):
@@ -188,7 +200,6 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.setopt(pycurl.WRITEDATA, easy_handle.fp)
 
         progress_functor = CurlDownloadProgressFunctor(report, self.fire_download_progress)
-        easy_handle.setopt(pycurl.NOPROGRESS, 0)
         easy_handle.setopt(pycurl.PROGRESSFUNCTION, progress_functor)
 
         return easy_handle
