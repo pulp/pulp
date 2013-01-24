@@ -95,11 +95,6 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/repos
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/packages
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/published/http
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/published/https
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
