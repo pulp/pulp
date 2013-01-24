@@ -9,25 +9,51 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+"""
+Provides classes for managing the content unit manifest.
+The unit(s) manifest is a json encoded file containing a list of all
+content units associated with a pulp repository.
+"""
+
 import os
 import json
-import urllib
+import urllib2
+
+from gzip import GzipFile
+from cStringIO import StringIO
+from logging import getLogger
+
+log = getLogger(__name__)
+
 
 class Manifest:
     """
-    An http based upstream units (json) document.
-    Download the document and perform the JSON conversion.
-    @ivar url: The URL for the manifest.
-    @type url: str
+    The unit(s) manifest is a json encoded file containing a
+    list of all content units associated with a pulp repository.
+    @cvar FILE_NAME: The name of the manifest file.
+    @type FILE_NAME: str
     """
 
-    FILE_NAME = 'units.json'
+    FILE_NAME = 'units.json.gz'
 
     def write(self, dir_path, units):
+        """
+        Write a manifest file containing the specified
+        content units into the indicated directory.  The file json
+        encoded and compressed using GZIP.
+        @param dir_path: The fully qualified path to a directory.
+            The directory will be created as necessary.
+        @type dir_path: str
+        @param units: A list of content units. Each is a dictionary.
+        @type units: list
+        @return The path of the file written.
+        @rtype: str
+        """
         path = os.path.join(dir_path, self.FILE_NAME)
+        log.debug('writing manifest to: %s', path)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        fp = open(path, 'w+')
+        fp = GzipFile(path, 'wb')
         try:
             json.dump(units, fp, indent=2)
             return path
@@ -36,12 +62,22 @@ class Manifest:
 
     def read(self, url):
         """
-        Fetch the document.
-        @return: The downloaded json document.
+        Open read the manifest file at the specified URL.
+        The contents are uncompressed and unencoded.
+        @return: The contents of the manifest document which is a
+            list of content units.  Each unit is a dictionary.
         @rtype: list
+        @raise HTTPError, URL errors.
+        @raise ValueError, json decoding errors
         """
-        fp_in = urllib.urlopen(url)
+        log.debug('reading manifest at url: %s', url)
+        fp_in = urllib2.urlopen(url)
         try:
-            return json.load(fp_in)
+            buf = StringIO(fp_in.read())
+            gf_in = GzipFile(fileobj=buf)
+            try:
+                return json.loads(gf_in.read())
+            finally:
+                gf_in.close()
         finally:
             fp_in.close()
