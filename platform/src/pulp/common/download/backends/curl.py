@@ -38,6 +38,7 @@ DEFAULT_REQUEST_TIMEOUT = 300
 DEFAULT_NO_SIGNAL = 1
 
 DEFAULT_SSL_VERIFY_PEER = 1
+DEFAULT_SSL_VERIFY_HOST = 2
 
 # curl-based http download backend ---------------------------------------------
 
@@ -234,14 +235,17 @@ class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
     def _build_easy_handle(self):
         easy_handle = super(self.__class__, self)._build_easy_handle()
 
-        # TODO (jconnor 2013-01-22) make this configurable
-        easy_handle.setopt(pycurl.SSL_VERIFYPEER, DEFAULT_SSL_VERIFY_PEER)
-
+        self._add_ssl_configuration(easy_handle)
         self._add_ssl_ca_cert(easy_handle)
         self._add_ssl_client_cert(easy_handle)
         self._add_ssl_client_key(easy_handle)
 
         return easy_handle
+
+    def _add_ssl_configuration(self, easy_handle):
+        # TODO (jconnor 2013-01-22) make this configurable
+        easy_handle.setopt(pycurl.SSL_VERIFYPEER, DEFAULT_SSL_VERIFY_PEER)
+        easy_handle.setopt(pycurl.SSL_VERIFYHOST, DEFAULT_SSL_VERIFY_HOST)
 
     def _add_ssl_ca_cert(self, easy_handle):
         if self.ssl_ca_cert is None:
