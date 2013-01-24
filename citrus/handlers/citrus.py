@@ -62,12 +62,11 @@ class CitrusHandler(ContentHandler):
         progress = Progress(conduit)
         progress.push_step('fetch_bindings')
         all = options.get('all', False)
-        repoids = [key['repo_id'] for key in units if key]
-        binding = Binding()
+        repo_ids = [key['repo_id'] for key in units if key]
         if all:
-            binds = binding.fetch_all()
+            binds = RemoteBinding.fetch_all()
         else:
-            binds = binding.fetch(repoids)
+            binds = RemoteBinding.fetch(repo_ids)
         details, errors = self.synchronize(progress, binds, options)
         progress.end()
         if errors:
