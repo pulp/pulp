@@ -33,9 +33,8 @@ class CitrusHttpImporter(Importer):
 
     def __init__(self):
         """
-        @ivar cancelled: The flag indicating that the
-            current operation has been cancelled.
-        @type cancelled: bool
+        :ivar cancelled: The flag indicating that the operation has been cancelled.
+        :type cancelled: bool
         """
         Importer.__init__(self)
         self.cancelled = False

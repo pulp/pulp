@@ -83,14 +83,14 @@ class CitrusHttpDistributor(Distributor):
         is not the responsibility of the distributor to rollback any changes
         that have been made.
 
-        @param repo: metadata describing the repository
-        @type  repo: pulp.plugins.model.Repository
-        @param publish_conduit: provides access to relevant Pulp functionality
-        @type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
-        @param config: plugin configuration
-        @type  config: pulp.plugins.config.PluginConfiguration
-        @return: report describing the publish run
-        @rtype:  pulp.plugins.model.PublishReport
+        :param repo: metadata describing the repository
+        :type  repo: pulp.plugins.model.Repository
+        :param publish_conduit: provides access to relevant Pulp functionality
+        :type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
+        :param config: plugin configuration
+        :type  config: pulp.plugins.config.PluginConfiguration
+        :return: report describing the publish run
+        :rtype:  pulp.plugins.model.PublishReport
         """
         units = conduit.get_units()
         publisher = self.publisher(repo, config)
@@ -103,8 +103,8 @@ class CitrusHttpDistributor(Distributor):
         """
         Prepare units to be published.
             - add _relative storage path.
-        @param units: A list of units to be published.
-        @type units: list
+        :param units: A list of units to be published.
+        :type units: list
         """
         prepared = []
         storage_dir = pulp_conf.get('server', 'storage_dir')
@@ -120,11 +120,11 @@ class CitrusHttpDistributor(Distributor):
     def publisher(self, repo, config):
         """
         Get a configured publisher.
-        @param repo: A repository.
-        @type repo: pulp.plugins.model.Repository
-        @param config: plugin configuration
-        @type  config: pulp.plugins.config.PluginConfiguration
-        @return: The configured publisher.
+        :param repo: A repository.
+        :type repo: pulp.plugins.model.Repository
+        :param config: plugin configuration
+        :type  config: pulp.plugins.config.PluginConfiguration
+        :return: The configured publisher.
         """
         protocol = config.get('protocol')
         host = pulp_conf.get('server', 'server_name')
@@ -145,12 +145,12 @@ class CitrusHttpDistributor(Distributor):
         of returned data includes authentication information, location of the
         repository (e.g. URL), and data required to verify the contents
         of the published repository.
-        @param repo: metadata describing the repository
-        @type  repo: pulp.plugins.model.Repository
-        @param config: plugin configuration
-        @type  config: pulp.plugins.config.PluginCallConfiguration
-        @return: dictionary of relevant data
-        @rtype:  dict
+        :param repo: metadata describing the repository
+        :type  repo: pulp.plugins.model.Repository
+        :param config: plugin configuration
+        :type  config: pulp.plugins.config.PluginCallConfiguration
+        :return: dictionary of relevant data
+        :rtype:  dict
         """
         payload = {}
         self._add_repository(repo.id, payload)
@@ -161,10 +161,10 @@ class CitrusHttpDistributor(Distributor):
     def _add_repository(self, repo_id, payload):
         """
         Add repository information to the payload.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @param payload: The repository payload
-        @type payload: dict
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param payload: The repository payload
+        :type payload: dict
         """
         manager = factory.repo_query_manager()
         payload['repository'] = manager.get_repository(repo_id)
@@ -172,12 +172,12 @@ class CitrusHttpDistributor(Distributor):
     def _add_importers(self, repo, config, payload):
         """
         Add the citrus importer.
-        @param repo: A repo object.
-        @type repo: L{pulp.plugins.model.Repository}
-        @param config: plugin configuration
-        @type  config: pulp.plugins.config.PluginCallConfiguration
-        @param payload: The bind payload.
-        @type payload: dict
+        :param repo: A repo object.
+        :type repo: pulp.plugins.model.Repository
+        :param config: plugin configuration
+        :type  config: pulp.plugins.config.PluginCallConfiguration
+        :param payload: The bind payload.
+        :type payload: dict
         """
         conf = self._importer_conf(repo, config)
         importer = {
@@ -190,12 +190,12 @@ class CitrusHttpDistributor(Distributor):
     def _importer_conf(self, repo, config):
         """
         Build the citrus importer configuration.
-        @param repo: A repo object.
-        @type repo: L{pulp.plugins.model.Repository}
-        @param config: plugin configuration
-        @type  config: pulp.plugins.config.PluginCallConfiguration
-        @return: The importer configuration.
-        @rtype: dict
+        :param repo: A repo object.
+        :type repo: pulp.plugins.model.Repository
+        :param config: plugin configuration
+        :type  config: pulp.plugins.config.PluginCallConfiguration
+        :return: The importer configuration.
+        :rtype: dict
         """
         publisher = self.publisher(repo, config)
         protocol =  config.get('protocol')
@@ -219,10 +219,10 @@ class CitrusHttpDistributor(Distributor):
         """
         Read the file at the specified path unless the path is
         None or and empty string.
-        @param path: A fully qualified path to a file.
-        @type path: str
-        @return: The file contents.
-        @rtype: str
+        :param path: A fully qualified path to a file.
+        :type path: str
+        :return: The file contents.
+        :rtype: str
         """
         if path:
             fp = open(path)
@@ -234,10 +234,10 @@ class CitrusHttpDistributor(Distributor):
     def _add_distributors(self, repo_id, payload):
         """
         Add repository distributors information to the payload.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @param payload: The distributor(s) payload
-        @type payload: dict
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param payload: The distributor(s) payload
+        :type payload: dict
         """
         manager = factory.repo_distributor_manager()
         payload['distributors'] = manager.get_distributors(repo_id)

@@ -28,37 +28,37 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-# --- Import Strategies -----------------------------------------------------------------
+# --- import strategies -----------------------------------------------------------------
 
 
 class Strategy:
     """
     This object provides the transport independent content unit synchronization
     strategy used by citrus importer plugins.
-    @ivar cancelled: The flag indicating that the current operation
+    :ivar cancelled: The flag indicating that the current operation
         has been cancelled.
-    @type cancelled: bool
-    @ivar conduit: Provides access to relevant Pulp functionality
-    @type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
-    @ivar config: The plugin configuration.
-    @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
-    @ivar transport: A transport fully configured object used to download files.
-    @type transport: object
-    @ivar progress: A progress reporting object.
-    @type progress: L{Progress}
+    :type cancelled: bool
+    :ivar conduit: Provides access to relevant Pulp functionality
+    :type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+    :ivar config: The plugin configuration.
+    :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+    :ivar transport: A transport fully configured object used to download files.
+    :type transport: object
+    :ivar progress: A progress reporting object.
+    :type progress: L{Progress}
     """
 
     def __init__(self, conduit, config, transport):
         """
-        @ivar cancelled: The flag indicating that the current operation
+        :ivar cancelled: The flag indicating that the current operation
             has been cancelled.
-        @type cancelled: bool
-        @param conduit: Provides access to relevant Pulp functionality.
-        @type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
-        @param config: The plugin configuration.
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
-        @param transport: A fully configured transport object used to download files.
-        @type transport: object
+        :type cancelled: bool
+        :param conduit: Provides access to relevant Pulp functionality.
+        :type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        :param config: The plugin configuration.
+        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :param transport: A fully configured transport object used to download files.
+        :type transport: object
         """
         self.cancelled = False
         self.conduit = conduit
@@ -70,10 +70,10 @@ class Strategy:
         """
         Synchronize the content units associated with the specified repository.
         Specific strategies defined by subclasses.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @return: A synchronization report.
-        @rtype: L{Report}
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :return: A synchronization report.
+        :rtype: L{Report}
         """
         raise NotImplementedError()
 
@@ -89,8 +89,8 @@ class Strategy:
         Add the specified unit to the local inventory using the conduit.
         The conduit will automatically associate the unit to the repository
         to which it's pre-configured.
-        @param unit: The unit to be added.
-        @type unit: L{Unit}
+        :param unit: The unit to be added.
+        :type unit: L{Unit}
         """
         self.conduit.save_unit(unit)
         self.progress.set_action('unit_added', str(unit.unit_key))
@@ -98,10 +98,10 @@ class Strategy:
     def _unit_inventory(self, repo_id):
         """
         Build the unit inventory.
-        @param repo_id: A repository ID.
-        @rtype repo_id: str
-        @return: The built inventory.
-        @rtype: L{UnitInventory}
+        :param repo_id: A repository ID.
+        :rtype repo_id: str
+        :return: The built inventory.
+        :rtype: UnitInventory
         """
         # fetch local units
         local = {}
@@ -135,11 +135,11 @@ class Strategy:
         """
         Determine the list of units defined upstream inventory that are
         not in the local inventory.
-        @param unit_inventory: The inventory of both upstream and local content units.
-        @type unit_inventory: L{UnitInventory}
-        @return: The list of units to be added.
+        :param unit_inventory: The inventory of both upstream and local content units.
+        :type unit_inventory: UnitInventory
+        :return: The list of units to be added.
             Each item: (unit_upstream, unit_to_be_added)
-        @rtype: list
+        :rtype: list
         """
         new_units = []
         storage_dir = pulp_conf.get('server', 'storage_dir')
@@ -170,11 +170,11 @@ class Strategy:
           2. The file associated with the unit is successfully downloaded.
         For units with files, the unit is added to the inventory as part of the
         transport callback.
-        @param unit_inventory: The inventory of both upstream and local content units.
-        @type unit_inventory: L{UnitInventory}
-        @return: The list of failed that failed to be added.
+        :param unit_inventory: The inventory of both upstream and local content units.
+        :type unit_inventory: UnitInventory
+        :return: The list of failed that failed to be added.
             Each item is: (unit, exception)
-        @rtype: list
+        :rtype: list
         """
         failed = []
         tracker = Tracker(self)
@@ -203,11 +203,11 @@ class Strategy:
         """
         Determine the list of units contained in the upstream inventory
         but are not contained in the local inventory and un-associate them.
-        @param unit_inventory: The inventory of both upstream and local content units.
-        @type unit_inventory: L{UnitInventory}
-        @return: The list of units that failed to be un-associated.
+        :param unit_inventory: The inventory of both upstream and local content units.
+        :type unit_inventory: UnitInventory
+        :return: The list of units that failed to be un-associated.
             Each item is: (unit, exception)
-        @rtype: list
+        :rtype: list
         """
         failed = []
         succeeded = []
@@ -227,8 +227,8 @@ class Strategy:
         Fetch the local units using the conduit.  The conduit will
         restrict this search to only those associated with the repository
         to which it is pre-configured.
-        @return: A dictionary of units keyed by L{UnitKey}.
-        @rtype: dict
+        :return: A dictionary of units keyed by UnitKey.
+        :rtype: dict
         """
         units = self.conduit.get_units()
         return self._unit_dictionary(units)
@@ -238,10 +238,10 @@ class Strategy:
         Fetch the list of units published by the upstream citrus distributor.
         This is performed by reading the manifest at the URL defined in
         the configuration.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @return: A dictionary of units keyed by L{UnitKey}.
-        @rtype: dict
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :return: A dictionary of units keyed by L{UnitKey}.
+        :rtype: dict
         """
         url = self.config.get('manifest_url')
         manifest = Manifest()
@@ -250,13 +250,13 @@ class Strategy:
 
     def _unit_dictionary(self, units):
         """
-        Build a dictionary of units keyed by L{UnitKey} using
+        Build a dictionary of units keyed by UnitKey using
         the specified list of units.
-        @param units: A list of content units.
-            Each unit is either: (L{Unit}|dict)
-        @type units: list
-        @return: A dictionary of units keyed by L{UnitKey}.
-        @rtype: dict
+        :param units: A list of content units.
+            Each unit is either: (Unit|dict)
+        :type units: list
+        :return: A dictionary of units keyed by UnitKey.
+        :rtype: dict
         """
         items = [(UnitKey(u), u) for u in units]
         return dict(items)
@@ -276,10 +276,10 @@ class Mirror(Strategy):
           2. Fetch the local units associated with the repository.
           3. Add missing units.
           4. Delete units specified locally but not upstream.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @return: A synchronization report.
-        @rtype: L{Report}
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :return: A synchronization report.
+        :rtype: Report
         """
         unit_inventory = self._unit_inventory(repo_id)
 
@@ -332,10 +332,10 @@ class Additive(Strategy):
           1. Read the (upstream) manifest.
           2. Fetch the local units associated with the repository.
           3. Add missing units.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @return: A synchronization report.
-        @rtype: L{Report}
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :return: A synchronization report.
+        :rtype: Report
         """
         unit_inventory = self._unit_inventory(repo_id)
 
@@ -358,21 +358,21 @@ class Additive(Strategy):
         return Report(add_failed, [])
 
 
-# --- Supporting Objects ----------------------------------------------------------------
+# --- supporting objects ----------------------------------------------------------------
 
 
 class Progress(ProgressReport):
     """
     Progress report provides integration between the citrus progress
     report and the plugin progress reporting facility.
-    @ivar conduit: The importer conduit.
-    @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+    :ivar conduit: The importer conduit.
+    :type  conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
     """
 
     def __init__(self, conduit):
         """
-        @param conduit: The importer conduit.
-        @type  conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        :param conduit: The importer conduit.
+        :type  conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
             """
         self.conduit = conduit
         ProgressReport.__init__(self)
@@ -389,12 +389,12 @@ class Report:
     """
     A report that provides both summary and details regarding the importing
     of content units associated with a repository.
-    @ivar add_failed: List of units that failed to be added.
-        Each item is: (L{Unit}, Exception)
-    @type add_failed: list
-    @ivar delete_failed: List of units that failed to be deleted.
-        Each item is: (L{Unit}, Exception)
-    @type delete_failed: list
+    :ivar add_failed: List of units that failed to be added.
+        Each item is: (Unit, Exception)
+    :type add_failed: list
+    :ivar delete_failed: List of units that failed to be deleted.
+        Each item is: (Unit, Exception)
+    :type delete_failed: list
     """
 
     @staticmethod
@@ -404,21 +404,21 @@ class Report:
         tuple containing the unit_key and string representation of the
         exception.  This could just be done inline but more descriptive
         to wrap in a method.
-        @param units: List of: (Unit, Exception)
-        @type units: list
-        @return: List of: (dict, str)
-        @rtype: list
+        :param units: List of: (Unit, Exception)
+        :type units: list
+        :return: List of: (dict, str)
+        :rtype: list
         """
         return [(u[0].unit_key, repr(u[1])) for u in units]
 
     def __init__(self, add_failed, delete_failed):
         """
-        @param add_failed: List of units that failed to be added.
-            Each item is: (L{Unit}, Exception)
-        @type add_failed: list
-        @param delete_failed: List of units that failed to be deleted.
-            Each item is: (L{Unit}, Exception)
-        @type delete_failed: list
+        :param add_failed: List of units that failed to be added.
+            Each item is: (Unit, Exception)
+        :type add_failed: list
+        :param delete_failed: List of units that failed to be deleted.
+            Each item is: (Unit, Exception)
+        :type delete_failed: list
         """
         self.add_failed = Report.key_and_repr(add_failed)
         self.delete_failed = Report.key_and_repr(delete_failed)
@@ -435,14 +435,14 @@ class UnitKey:
     """
     A unique unit key consisting of a unit's type_id & unit_key.
     The unit key is sorted to ensure consistency.
-    @ivar uid: The unique ID.
-    @type uid: A tuple of: (type_id, unit_key)
+    :ivar uid: The unique ID.
+    :type uid: A tuple of: (type_id, unit_key)
     """
 
     def __init__(self, unit):
         """
-        @param unit: A content unit.
-        @type unit: (dict|L{Unit})
+        :param unit: A content unit.
+        :type unit: (dict|Unit)
         """
         if isinstance(unit, dict):
             type_id = unit['type_id']
@@ -467,18 +467,18 @@ class UnitInventory:
     The unit inventory contains both the upstream and local inventory
     of content units associated with a specific repository.  Each is contained
     within a dictionary keyed by {UnitKey} to ensure uniqueness.
-    @ivar local: The local inventory.
-    @type local: dict
-    @ivar upstream: The upstream inventory.
-    @type upstream: dict
+    :ivar local: The local inventory.
+    :type local: dict
+    :ivar upstream: The upstream inventory.
+    :type upstream: dict
     """
 
     def __init__(self, local, upstream):
         """
-        @param local: The local inventory.
-        @type local: dict
-        @param upstream: The upstream inventory.
-        @type upstream: dict
+        :param local: The local inventory.
+        :type local: dict
+        :param upstream: The upstream inventory.
+        :type upstream: dict
         """
         self.local = local
         self.upstream = upstream
@@ -487,8 +487,8 @@ class UnitInventory:
         """
         Listing of units contained in the upstream inventory
         but not contained in the local inventory.
-        @return: List of units that need to be added.
-        @rtype: list
+        :return: List of units that need to be added.
+        :rtype: list
         """
         units = []
         for k, unit in self.upstream.items():
@@ -500,8 +500,8 @@ class UnitInventory:
         """
         Listing of units contained in the local inventory
         but not contained in the upstream inventory.
-        @return: List of units that need to be purged.
-        @rtype: list
+        :return: List of units that need to be purged.
+        :rtype: list
         """
         units = []
         for k, unit in self.local.items():
@@ -513,17 +513,17 @@ class UnitInventory:
 class Tracker(DownloadTracker):
     """
     The unit download tracker (listener).
-    @ivar _strategy: A strategy object.
-    @type _strategy: L{Strategy}
-    @ivar _failed: The list of units that failed to be downloaded and the
+    :ivar _strategy: A strategy object.
+    :type _strategy: Strategy
+    :ivar _failed: The list of units that failed to be downloaded and the
         exception raised during the download.
-    @type _failed: list
+    :type _failed: list
     """
 
     def __init__(self, strategy):
         """
-        @param repository: The strategy object.
-        @type repository: L{Strategy}
+        :param repository: The strategy object.
+        :type repository: Strategy
         """
         self._strategy = strategy
         self._failed = []
@@ -532,8 +532,8 @@ class Tracker(DownloadTracker):
         """
         Called when a download request succeeds.
         Add to succeeded list and notify the strategy.
-        @param request: The download request that succeeded.
-        @type request: L{DownloadRequest}
+        :param request: The download request that succeeded.
+        :type request: DownloadRequest
         """
         unit = request.local_unit
         try:
@@ -545,8 +545,8 @@ class Tracker(DownloadTracker):
         """
         Called when a download request fails.
         Add to the failed list.
-        @param request: The download request that failed.
-        @type request: L{DownloadRequest}
+        :param request: The download request that failed.
+        :type request: DownloadRequest
         """
         unit = request.local_unit
         self._failed.append((unit, exception))
@@ -555,6 +555,6 @@ class Tracker(DownloadTracker):
         """
         Get a list of units that failed to download.
           Each item is: (unit, exception)
-        @return: List of units that failed to download.
+        :return: List of units that failed to download.
         """
         return self._failed

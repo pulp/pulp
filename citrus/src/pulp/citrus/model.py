@@ -46,11 +46,11 @@ def subdict(adict, *keylist):
     """
     Get a subset dictionary.
     @param adict: A dictionary to subset.
-    @type adict: dict
-    @param keylist: A list of keys to be included in the subset.
-    @type keylist: list
-    @return: The subset dictionary.
-    @rtype: dict.
+    :type adict: dict
+    :param keylist: A list of keys to be included in the subset.
+    :type keylist: list
+    :return: The subset dictionary.
+    :rtype: dict.
     """
     return dict([t for t in adict.items() if t[0] in keylist])
 
@@ -102,8 +102,8 @@ class Bundle(BundleImpl):
 class Local:
     """
     A Local (downstream) entity.
-    @cvar binding: A REST API binding.
-    @type binding: L{Binding}
+    :cvar binding: A REST API binding.
+    :type binding: PulpBindings
     """
 
     binding = LocalPulpBindings()
@@ -112,8 +112,8 @@ class Local:
 class Remote:
     """
     A Remote (upstream) entity.
-    @cvar binding: A REST API binding.
-    @type binding: L{Binding}
+    :cvar binding: A REST API binding.
+    :type binding: PulpBindings
     """
 
     binding = RemotePulpBindings()
@@ -122,19 +122,19 @@ class Remote:
 class Repository:
     """
     Represents a repository database object.
-    @ivar repo_id: Repository ID.
-    @type repo_id: str
-    @ivar details: Repository details as modeled by bind payload.
-    @type details: dict
+    :ivar repo_id: Repository ID.
+    :type repo_id: str
+    :ivar details: Repository details as modeled by bind payload.
+    :type details: dict
     """
 
     def __init__(self, repo_id, details=None):
         """
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @param details: The repository details defined in the bind payload.
-        @type details: dict
-        @return:
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param details: The repository details defined in the bind payload.
+        :type details: dict
+        :return:
         """
         self.repo_id = repo_id
         self.details = details or {}
@@ -143,8 +143,8 @@ class Repository:
     def basic_properties(self):
         """
         Get basic mutable properties within the bind payload I{details}.
-        @return: A dict of basic properties.
-        @rtype: dict
+        :return: A dict of basic properties.
+        :rtype: dict
         """
         return subdict(self.details['repository'], 'display_name', 'description', 'notes')
 
@@ -152,8 +152,8 @@ class Repository:
     def distributors(self):
         """
         Get the list of distributors defined in the bind payload I{details}.
-        @return: A list of distributors.
-        @rtype: list
+        :return: A list of distributors.
+        :rtype: list
         """
         return self.details['distributors']
 
@@ -161,8 +161,8 @@ class Repository:
     def importers(self):
         """
         Get the list of importers defined in the bind payload I{details}.
-        @return: A list of importers.
-        @rtype: list
+        :return: A list of importers.
+        :rtype: list
         """
         return self.details['importers']
 
@@ -173,16 +173,16 @@ class Repository:
 class LocalRepository(Local, Repository):
     """
     Represents a repository associated with the local inventory.
-    @ivar poller: A task poller used to poll for tasks status and progress.
-    @type poller: L{TaskPoller}
+    :ivar poller: A task poller used to poll for tasks status and progress.
+    :type poller: TaskPoller
     """
 
     @classmethod
     def fetch_all(cls):
         """
         Fetch all repositories from the local inventory.
-        @return: A list of L{LocalRepository}
-        @rtype: list
+        :return: A list of: LocalRepository
+        :rtype: list
         """
         all = []
         for repo in cls.binding.repo_search.search():
@@ -199,10 +199,10 @@ class LocalRepository(Local, Repository):
     def fetch(cls, repo_id):
         """
         Fetch a specific repository from the local inventory.
-        @param repo_id: Repository ID.
-        @type repo_id: str
-        @return: The fetched repository.
-        @rtype: L{LocalRepository}
+        :param repo_id: Repository ID.
+        :type repo_id: str
+        :return: The fetched repository.
+        :rtype: LocalRepository
         """
         details = {}
         try:
@@ -227,10 +227,10 @@ class LocalRepository(Local, Repository):
 
     def __init__(self, repo_id, details=None):
         """
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @param details: The repositories details.
-        @type details: dict
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param details: The repositories details.
+        :type details: dict
         """
         Repository.__init__(self, repo_id, details)
         self.poller = TaskPoller(self.binding)
@@ -250,7 +250,7 @@ class LocalRepository(Local, Repository):
             dist_id = details['id']
             dist = LocalDistributor(self.repo_id, dist_id, details)
             dist.add()
-            # importer
+        # importers
         for details in self.importers:
             imp_id = details['id']
             importer = LocalImporter(self.repo_id, imp_id, details)
@@ -260,8 +260,8 @@ class LocalRepository(Local, Repository):
     def update(self, delta):
         """
         Update this local repository.
-        @param delta: The properties that need to be updated.
-        @type delta: dict
+        :param delta: The properties that need to be updated.
+        :type delta: dict
         """
         self.binding.repo.update(self.repo_id, delta)
         log.info('Repository: %s, updated', self.repo_id)
@@ -279,8 +279,8 @@ class LocalRepository(Local, Repository):
           1. Determine the delta and update the repository properties.
           2. Merge importers
           3. Merge distributors
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         delta = {}
         for k,v in remote.basic_properties.items():
@@ -301,8 +301,8 @@ class LocalRepository(Local, Repository):
             with remote repository.
           - Add importers associated with the remote repository but NOT associated
             with this local repository.
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         self.delete_importers(remote)
         for details in remote.importers:
@@ -319,8 +319,8 @@ class LocalRepository(Local, Repository):
         """
         Delete importers associated with this local repository but not
         associated with the remote repository.
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         remote_ids = [d['id'] for d in remote.importers]
         for details in self.importers:
@@ -338,8 +338,8 @@ class LocalRepository(Local, Repository):
             associated with remote repository.
           - Add distributors associated with the remote repository but NOT
             associated with this local repository.
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         self.delete_distributors(remote)
         for details in remote.distributors:
@@ -356,8 +356,8 @@ class LocalRepository(Local, Repository):
         """
         Delete distributors associated with this local repository but not
         associated with the remote repository.
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         remote_ids = [d['id'] for d in remote.distributors]
         for details in self.distributors:
@@ -369,9 +369,9 @@ class LocalRepository(Local, Repository):
     def run_synchronization(self, progress):
         """
         Run a repo_sync() on this local repository.
-        @param progress: A progress report.
-        @type progress: pulp.citrus.progress.ProgressReport
-        @return: The task result.
+        :param progress: A progress report.
+        :type progress: pulp.citrus.progress.ProgressReport
+        :return: The task result.
         """
         http = self.binding.repo_actions.sync(self.repo_id, {})
         if http.response_code == httplib.ACCEPTED:
@@ -390,22 +390,22 @@ class LocalRepository(Local, Repository):
 class Distributor:
     """
     Represents a repository-distributor association.
-    @ivar repo_id: Repository ID.
-    @type repo_id: str
-    @param dist_id: Distributor ID.
-    @type dist_id: str
-    @ivar details: Distributor details as modeled in the bind payload.
-    @type details: dict
+    :ivar repo_id: Repository ID.
+    :type repo_id: str
+    :param dist_id: Distributor ID.
+    :type dist_id: str
+    :ivar details: Distributor details as modeled in the bind payload.
+    :type details: dict
     """
 
     def __init__(self, repo_id, dist_id, details):
         """
-        @param repo_id: Repository ID.
-        @type repo_id: str
-        @param dist_id: Distributor ID.
-        @type dist_id: str
-        @param details: Distributor details as modeled in the bind payload.
-        @type details: dict
+        :param repo_id: Repository ID.
+        :type repo_id: str
+        :param dist_id: Distributor ID.
+        :type dist_id: str
+        :param details: Distributor details as modeled in the bind payload.
+        :type details: dict
         """
         self.repo_id = repo_id
         self.dist_id = dist_id
@@ -424,12 +424,12 @@ class LocalDistributor(Local, Distributor):
     def fetch(cls, repo_id, dist_id):
         """
         Fetch the repository-distributor from the local inventory.
-        @param repo_id: The repository ID.
-        @type repo_id: str
-        @param dist_id: A distributor ID.
-        @type dist_id: str
-        @return: The fetched distributor.
-        @rtype: L{LocalDistributor}
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param dist_id: A distributor ID.
+        :type dist_id: str
+        :return: The fetched distributor.
+        :rtype: LocalDistributor
         """
         try:
             binding = cls.binding.repo_distributor
@@ -454,8 +454,8 @@ class LocalDistributor(Local, Distributor):
     def update(self, delta):
         """
         Update this repository-distributor in the local inventory.
-        @param delta: The properties that need to be updated.
-        @type delta: dict
+        :param delta: The properties that need to be updated.
+        :type delta: dict
         """
         binding = self.binding.repo_distributor
         binding.update(self.repo_id, self.dist_id, delta)
@@ -472,8 +472,8 @@ class LocalDistributor(Local, Distributor):
     def merge(self, remote):
         """
         Merge the distributor configuration from the remote.
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         delta = {}
         for k,v in remote.details['config'].items():
@@ -487,22 +487,22 @@ class LocalDistributor(Local, Distributor):
 class Importer:
     """
     Represents a repository-importer association.
-    @ivar repo_id: Repository ID.
-    @type repo_id: str
-    @param imp_id: Importer ID.
-    @type imp_id: str
-    @ivar details: Importer details as modeled in the bind payload.
-    @type details: dict
+    :ivar repo_id: Repository ID.
+    :type repo_id: str
+    :param imp_id: Importer ID.
+    :type imp_id: str
+    :ivar details: Importer details as modeled in the bind payload.
+    :type details: dict
     """
 
     def __init__(self, repo_id, imp_id, details):
         """
-        @param repo_id: Repository ID.
-        @type repo_id: str
-        @param imp_id: Importer ID.
-        @type imp_id: str
-        @param details: Importer details as modeled in the bind payload.
-        @type details: dict
+        :param repo_id: Repository ID.
+        :type repo_id: str
+        :param imp_id: Importer ID.
+        :type imp_id: str
+        :param details: Importer details as modeled in the bind payload.
+        :type details: dict
         """
         self.repo_id = repo_id
         self.imp_id = imp_id
@@ -521,8 +521,8 @@ class LocalImporter(Local, Importer):
     def fetch(cls, repo_id, imp_id):
         """
         Fetch the repository-importer from the local inventory.
-        @return: The fetched importer.
-        @rtype: L{LocalImporter}
+        :return: The fetched importer.
+        :rtype: LocalImporter
         """
         try:
             binding = cls.binding.repo_importer
@@ -543,8 +543,8 @@ class LocalImporter(Local, Importer):
     def update(self, delta):
         """
         Update this repository-importer in the local inventory.
-        @param delta: The properties that need to be updated.
-        @type delta: dict
+        :param delta: The properties that need to be updated.
+        :type delta: dict
         """
         binding = self.binding.repo_importer
         binding.update(self.repo_id, self.imp_id, delta)
@@ -561,8 +561,8 @@ class LocalImporter(Local, Importer):
     def merge(self, remote):
         """
         Merge this importer configuration from the remote importer.
-        @param remote: The remote repository.
-        @type remote: L{RemoteRepository}
+        :param remote: The remote repository.
+        :type remote: RemoteRepository
         """
         delta = {}
         for k,v in remote.details['config'].items():
@@ -589,8 +589,8 @@ class RemoteBinding(Remote):
     def fetch_all(cls):
         """
         Fetch a list of ALL bind payloads for this consumer.
-        @return: List of bind payloads.
-        @rtype: list
+        :return: List of bind payloads.
+        :rtype: list
         """
         bundle = Bundle()
         myid = bundle.cn()
@@ -604,10 +604,10 @@ class RemoteBinding(Remote):
     def fetch(cls, repo_ids):
         """
         Fetch a list of bind payloads for the specified list of repository ID.
-        @param repo_ids: A list of repository IDs.
-        @type repo_ids:  list
-        @return: List of bind payloads.
-        @rtype: list
+        :param repo_ids: A list of repository IDs.
+        :type repo_ids:  list
+        :return: List of bind payloads.
+        :rtype: list
         """
         binds = []
         bundle = Bundle()
@@ -625,9 +625,9 @@ class RemoteBinding(Remote):
         """
         Get a filtered list of binds.
           - Includes only the citrus_ distributors.
-        @param binds: A list of bind payloads.
-        @type binds: list
-        @return: The filtered list of bind payloads.
-        @rtype: list
+        :param binds: A list of bind payloads.
+        :type binds: list
+        :return: The filtered list of bind payloads.
+        :rtype: list
         """
         return [b for b in binds if b['type_id'].startswith('citrus')]

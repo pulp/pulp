@@ -16,30 +16,28 @@ from pulp.citrus.manifest import Manifest
 
 class HttpPublisher(FilePublisher):
     """
-    The HTTP publisher.
-    @ivar repo_id: A repository ID.
-    @type repo_id: str
-    @ivar alias: The httpd alias (base_url, directory)
-    @type alias: tuple(2)
+    An HTTP publisher.
+    :ivar repo_id: A repository ID.
+    :type repo_id: str
+    :ivar alias: The httpd alias (base_url, directory)
+    :type alias: tuple(2)
     """
 
     def __init__(self, base_url, alias, repo_id):
         """
-        @param base_url: The base URL.
-        @type base_url: str
-        @param alias: The httpd alias (base_url, publish_dir)
-        @type alias: tuple(2)
-        @param repo_id: A repository ID.
-        @type repo_id: str
+        :param base_url: The base URL.
+        :type base_url: str
+        :param alias: The httpd alias (base_url, publish_dir)
+        :type alias: tuple(2)
+        :param repo_id: A repository ID.
+        :type repo_id: str
         """
         self.base_url = base_url
         self.alias = alias
         FilePublisher.__init__(self, alias[1], repo_id)
 
     def link(self, units):
-        #
         # Add the URL to each unit.
-        #
         links = FilePublisher.link(self, units)
         for unit, relative_path in links:
             url = join(self.base_url, self.alias[0], relative_path)
@@ -49,7 +47,7 @@ class HttpPublisher(FilePublisher):
     def manifest_path(self):
         """
         Get the relative URL path to the manifest.
-        @return: The path component of the URL.
-        @rtype: str
+        :return: The path component of the URL.
+        :rtype: str
         """
         return join(self.alias[0], self.repo_id, Manifest.FILE_NAME)

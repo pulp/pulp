@@ -30,8 +30,8 @@ class Manifest:
     """
     The unit(s) manifest is a json encoded file containing a
     list of all content units associated with a pulp repository.
-    @cvar FILE_NAME: The name of the manifest file.
-    @type FILE_NAME: str
+    :cvar FILE_NAME: The name of the manifest file.
+    :type FILE_NAME: str
     """
 
     FILE_NAME = 'units.json.gz'
@@ -41,13 +41,13 @@ class Manifest:
         Write a manifest file containing the specified
         content units into the indicated directory.  The file json
         encoded and compressed using GZIP.
-        @param dir_path: The fully qualified path to a directory.
+        :param dir_path: The fully qualified path to a directory.
             The directory will be created as necessary.
-        @type dir_path: str
-        @param units: A list of content units. Each is a dictionary.
-        @type units: list
-        @return The path of the file written.
-        @rtype: str
+        :type dir_path: str
+        :param units: A list of content units. Each is a dictionary.
+        :type units: list
+        :return The path of the file written.
+        :rtype: str
         """
         path = os.path.join(dir_path, self.FILE_NAME)
         log.debug('writing manifest to: %s', path)
@@ -64,11 +64,11 @@ class Manifest:
         """
         Open read the manifest file at the specified URL.
         The contents are uncompressed and unencoded.
-        @return: The contents of the manifest document which is a
+        :return: The contents of the manifest document which is a
             list of content units.  Each unit is a dictionary.
-        @rtype: list
-        @raise HTTPError, URL errors.
-        @raise ValueError, json decoding errors
+        :rtype: list
+        :raise HTTPError, URL errors.
+        :raise ValueError, json decoding errors
         """
         log.debug('reading manifest at url: %s', url)
         fp_in = urllib2.urlopen(url)

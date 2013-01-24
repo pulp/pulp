@@ -16,19 +16,19 @@ log = getLogger(__name__)
 
 class ProgressReport:
     """
-    Citrus synchronization progress reporting object.
-    @ivar step: A list package steps.
+    Represents a progress report.
+    :ivar step: A list package steps.
         Each step is: [name, status, num_actions]
           name - the name of the step.
           status - the status of the step.
           action_ratio - a tuple (<completed>, <total>) representing
             the ratio of complete and total actions to included in a step.
-    @type step: tuple
-    @ivar details: Details about actions taking place
+    :type step: tuple
+    :ivar details: Details about actions taking place
         in the current step.
-    @cvar PENDING: The step is pending.
-    @cvar SUCCEEDED: The step is finished and succeeded.
-    @cvar FAILED: The step is finished and failed.
+    :cvar PENDING: The step is pending.
+    :cvar SUCCEEDED: The step is finished and succeeded.
+    :cvar FAILED: The step is finished and failed.
     """
 
     PENDING = None
@@ -37,7 +37,8 @@ class ProgressReport:
 
     def __init__(self, parent=None):
         """
-        Constructor.
+        :param parent: An optional parent report.
+        :type parent: ProgressReport
         """
         self.steps = []
         self.action = {}
@@ -50,10 +51,10 @@ class ProgressReport:
         """
         Push the specified step.
         First, update the last status to SUCCEEDED.
-        @param name: The step name to push.
-        @type name: str
-        @param total_actions: Number of anticipated actions to complete the step.
-        @type total_actions: int
+        :param name: The step name to push.
+        :type name: str
+        :param total_actions: Number of anticipated actions to complete the step.
+        :type total_actions: int
         """
         self.set_status(self.SUCCEEDED)
         self.steps.append([name, self.PENDING, [0, total_actions]])
@@ -64,8 +65,8 @@ class ProgressReport:
     def set_status(self, status):
         """
         Update the status of the current step.
-        @param status: The status.
-        @type status: bool
+        :param status: The status.
+        :type status: bool
         """
         if not self.steps:
             return
@@ -78,15 +79,14 @@ class ProgressReport:
 
     def set_action(self, action, subject):
         """
-        Set the specified package action for the current step.
-        If the action_ratio has been specified, update the number
-        of completed actions.  Reminder: action_ratio is a tuple of
-        (<completed>/<total>) actions.  The 'action' may be the dict
+        Set the specified package action for the current step.  If the action_ratio
+        has been specified, update the number of completed actions.
+        Reminder: action_ratio is a tuple of (<completed>/<total>) actions.
         representation of a nested ProgressReport.
-        @param action: The action being performed.
-        @type action: str
-        @param subject: The subject of the action.
-        @type subject: object
+        :param action: The action being performed.
+        :type action: str
+        :param subject: The subject of the action.
+        :type subject: object
         """
         action_ratio = self.current_step()[2]
         if action_ratio[0] < action_ratio[1]:
@@ -97,8 +97,8 @@ class ProgressReport:
     def set_nested_report(self, report):
         """
         Set the nested progress report for the current step.
-        @param report: A progress report
-        @type report: ProgressReport
+        :param report: A progress report
+        :type report: ProgressReport
         """
         report.parent = self
         self.nested_report = report
@@ -107,8 +107,8 @@ class ProgressReport:
     def error(self, msg):
         """
         Report an error on the current step.
-        @param msg: The error message to report.
-        @type msg: str
+        :param msg: The error message to report.
+        :type msg: str
         """
         self.set_status(self.FAILED)
         self.action = dict(error=msg)
@@ -123,16 +123,16 @@ class ProgressReport:
     def current_step(self):
         """
         Get the current step.
-        @return: The current step: [name, status, action_ratio]
-        @rtype: list
+        :return: The current step: [name, status, action_ratio]
+        :rtype: list
         """
         return self.steps[-1]
 
     def dict(self):
         """
         Dictionary representation.
-        @return: self as a dictionary.
-        @rtype: dict
+        :return: self as a dictionary.
+        :rtype: dict
         """
         if self.nested_report:
             nested_report = self.nested_report.dict()

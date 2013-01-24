@@ -49,14 +49,14 @@ class CitrusHandler(ContentHandler):
         Update content unit(s).
         Unit key of {} or None indicates updates update all
         but only if (all) option is True.
-        @param conduit: A handler conduit.
-        @type conduit: L{pulp.agent.lib.conduit.Conduit}
-        @param units: A list of content unit_keys.
-        @type units: list
-        @param options: Unit update options.
-        @type options: dict
-        @return: An update report.
-        @rtype: L{ContentReport}
+        :param conduit: A handler conduit.
+        :type conduit: L{pulp.agent.lib.conduit.Conduit}
+        :param units: A list of content unit_keys.
+        :type units: list
+        :param options: Unit update options.
+        :type options: dict
+        :return: An update report.
+        :rtype: ContentReport
         """
         report = ContentReport()
         progress = Progress(conduit)
@@ -82,16 +82,16 @@ class CitrusHandler(ContentHandler):
           - Synchronize all bound repositories.
           - Purge unbound repositories.
           - Purge orphaned content units.
-        @param progress: A progress report.
-        @type progress: L{ProgressReport}
-        @param binds: A list of bind payloads.
-        @type binds: list
-        @param options: Unit update options.
-        @type options: dict
-        @return: A result of: (report, errors)
+        :param progress: A progress report.
+        :type progress: ProgressReport
+        :param binds: A list of bind payloads.
+        :type binds: list
+        :param options: Unit update options.
+        :type options: dict
+        :return: A result of: (report, errors)
           - report: TBD
           - errors: A list of: (repo_id, error)
-        @rtype: tuple(2)
+        :rtype: tuple(2)
         """
         errors = []
         added = []
@@ -156,15 +156,15 @@ class CitrusHandler(ContentHandler):
         Add or update repositories.
           - Merge repositories found BOTH upstream and locally.
           - Add repositories found upstream but NOT locally.
-        @param progress: A progress report.
-        @type progress: L{ProgressReport}
-        @param binds: List of bind payloads.
-        @type binds: list
-        @return: A tuple of: (added, merged, failed).
+        :param progress: A progress report.
+        :type progress: ProgressReport
+        :param binds: List of bind payloads.
+        :type binds: list
+        :return: A tuple of: (added, merged, failed).
             added is: repo_id
             merged is: repo_id
             failed is: (repo_id, error_message)
-        @rtype: tuple
+        :rtype: tuple
         """
         added = []
         merged = []
@@ -193,11 +193,11 @@ class CitrusHandler(ContentHandler):
     def synchronize_repositories(self, repo_ids, progress):
         """
         Run synchronization on repositories.
-        @param repo_ids: A list of repo IDs.
-        @type repo_ids: list
-        @param progress: A progress report.
-        @type progress: L{ProgressReport}
-        @return: A tuple of: (reports, errors)
+        :param repo_ids: A list of repo IDs.
+        :type repo_ids: list
+        :param progress: A progress report.
+        :type progress: ProgressReport
+        :return: A tuple of: (reports, errors)
           - reports: A list of repo sync reports.
           - errors: A list of (repo_id, error_message)
         """
@@ -238,14 +238,14 @@ class CitrusHandler(ContentHandler):
     def delete_repositories(self, progress, binds):
         """
         Delete repositories found locally but NOT upstream.
-        @param progress: A progress report.
-        @type progress: L{ProgressReport}
-        @param binds: List of bind payloads.
-        @type binds: list
-        @return: A tuple of: (removed, failed).
+        :param progress: A progress report.
+        :type progress: ProgressReport
+        :param binds: List of bind payloads.
+        :type binds: list
+        :return: A tuple of: (removed, failed).
             removed is: repo_id
             failed is: (repo_id, error_message)
-        @rtype: tuple
+        :rtype: tuple
         """
         removed = []
         failed = []
