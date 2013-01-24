@@ -13,7 +13,6 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#!/usr/bin/env python
 import os
 import sys
 from okaara import prompt, progress
@@ -48,6 +47,7 @@ def publish_status():
     """
     return pic.GET('/tasks/', tag=tags.action_tag(tags.ACTION_PUBLISH_TYPE))
 
+
 def get_repo_distributors(repo_id):
     """
     Get list of distributors associated to a repo
@@ -56,12 +56,13 @@ def get_repo_distributors(repo_id):
     """
     return pic.GET('/repositories/%s/distributors/' % repo_id)
 
+
 def run_publish():
     # connect to the server
     pic.connect()
     status, repos =  list_repos()
     if status != 200:
-        systemExit(os.EX_DATAERR, "No repos found to publish")
+        system_exit(os.EX_DATAERR, "No repos found to publish")
 
     publish_task_list = []
     for repo in repos:
@@ -102,11 +103,11 @@ def run_publish():
     p.write("\nSuccessfully published repositories")
 
 
-
-def systemExit(errcode, message=None):
+def system_exit(errcode, message=None):
     if message:
         sys.stderr.write(str(message)+'\n')
     sys.exit(errcode)
+
 
 if __name__=='__main__':
     run_publish()
