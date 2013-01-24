@@ -25,10 +25,16 @@ class HTTPStaticTestServer(object):
     """
     Static test server that server files from the local directory and
     sub-directories. Highly recommended that each test suite puts the files it
-    wants served into a custom sub-directory under 'data/'.
+    wants served into a custom sub-directory under 'data/'. Then tests can
+    reach the files by using the url:
+    http://localhost:8088/data/<custom-sub-directory>/<file>
 
     This server is run in a thread over the local loopback and should be
     started and stopped on each test or test suite run.
+
+    It's recommended that start be put in setUpClass and stop be put in
+    tearDownClass to avoid the overhead of starting and stopping on each test
+    run.
     """
 
     def __init__(self, port=8088):
@@ -49,7 +55,7 @@ class HTTPStaticTestServer(object):
 
     def stop(self):
         self._is_running = False
-        self._send_dummy_request()
+        self._send_dummy_request() # force a dummy request to exit the _serve loop
         self._server_thread.join()
         self._server_thread = None
 
