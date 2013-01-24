@@ -95,6 +95,8 @@ class Strategy:
         self.conduit.save_unit(unit)
         self.progress.set_action('unit_added', str(unit.unit_key))
 
+    # --- protected ---------------------------------------------------------------------
+
     def _unit_inventory(self, repo_id):
         """
         Build the unit inventory.

@@ -16,7 +16,7 @@ import sys
 import tempfile
 import shutil
 import time
-import re
+
 from mock import Mock, patch
 from base import WebTest
 
@@ -45,6 +45,7 @@ from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.citrus.manifest import Manifest
+from pulp.citrus.handler import Mirror
 
 CITRUS_IMPORTER = 'citrus_http_importer'
 CITRUS_DISTRUBUTOR = 'citrus_http_distributor'
@@ -225,15 +226,14 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
 
 
-class TestHandler(CitrusHandler):
+class TestStrategy:
 
-    def __init__(self, tester, cfg={}):
+    def __init__(self, tester):
         self.tester = tester
-        CitrusHandler.__init__(self, cfg)
 
-    def synchronize(self, progress, binds, options):
+    def __call__(self, progress):
         self.tester.clean()
-        return CitrusHandler.synchronize(self, progress, binds, options)
+        return Mirror(progress)
 
 
 class TestAgentPlugin(PluginTestBase):
@@ -312,7 +312,7 @@ class TestAgentPlugin(PluginTestBase):
         files = os.listdir(os.path.join(self.downfs, 'content'))
         self.assertEqual(num_units, len(files))
 
-    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.citrus.handler.Bundle.cn', return_value=PULP_ID)
     def test_handler(self, unused):
         """
         Test the end-to-end collaboration of:
@@ -356,8 +356,9 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('citrus.Local.binding', binding)
-        @patch('citrus.Remote.binding', binding)
+        @patch('pulp.citrus.handler.Local.binding', binding)
+        @patch('pulp.citrus.handler.Remote.binding', binding)
+        @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
@@ -377,7 +378,7 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.downfs)
             container = Container(self.upfs)
             dispatcher = Dispatcher(container)
-            container.handlers[CONTENT]['repository'] = TestHandler(self)
+            container.handlers[CONTENT]['repository'] = CitrusHandler(self)
             report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
@@ -401,7 +402,7 @@ class TestAgentPlugin(PluginTestBase):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 
-    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.citrus.handler.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge(self, unused):
         """
         Test the end-to-end collaboration of:
@@ -415,8 +416,9 @@ class TestAgentPlugin(PluginTestBase):
         self.clean = self.clean_units
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('citrus.Local.binding', binding)
-        @patch('citrus.Remote.binding', binding)
+        @patch('pulp.citrus.handler.Local.binding', binding)
+        @patch('pulp.citrus.handler.Remote.binding', binding)
+        @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
@@ -433,7 +435,7 @@ class TestAgentPlugin(PluginTestBase):
             dist.publish_repo(repo, conduit, cfg)
             units = []
             options = dict(all=True)
-            handler = TestHandler(self)
+            handler = CitrusHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
             report = handler.update(Conduit(), units, options)
             _report.append(report)
@@ -455,7 +457,7 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
 
-    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.citrus.handler.Bundle.cn', return_value=PULP_ID)
     @patch('pulp.citrus.http.transport.HttpTransport._download', side_effect=Exception('No Route To Host'))
     def test_handler_unit_errors(self, *unused):
         """
@@ -468,8 +470,9 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('citrus.Local.binding', binding)
-        @patch('citrus.Remote.binding', binding)
+        @patch('pulp.citrus.handler.Local.binding', binding)
+        @patch('pulp.citrus.handler.Remote.binding', binding)
+        @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
@@ -486,7 +489,7 @@ class TestAgentPlugin(PluginTestBase):
             dist.publish_repo(repo, conduit, cfg)
             units = []
             options = dict(all=True)
-            handler = TestHandler(self)
+            handler = CitrusHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
             os.makedirs(os.path.join(self.downfs, 'content'))
             report = handler.update(Conduit(), units, options)
@@ -509,7 +512,7 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify(0)
 
-    @patch('citrus.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.citrus.handler.Bundle.cn', return_value=PULP_ID)
     @patch('pulp.citrus.http.transport.HttpTransport.download', side_effect=Exception('Barf'))
     def test_handler_transport_exception(self, *unused):
         """
@@ -522,8 +525,9 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('citrus.Local.binding', binding)
-        @patch('citrus.Remote.binding', binding)
+        @patch('pulp.citrus.handler.Local.binding', binding)
+        @patch('pulp.citrus.handler.Remote.binding', binding)
+        @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
@@ -540,7 +544,7 @@ class TestAgentPlugin(PluginTestBase):
             dist.publish_repo(repo, conduit, cfg)
             units = []
             options = dict(all=True)
-            handler = TestHandler(self)
+            handler = CitrusHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
             os.makedirs(os.path.join(self.downfs, 'content'))
             report = handler.update(Conduit(), units, options)
