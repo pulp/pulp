@@ -180,12 +180,13 @@ def sync_history(id):
 def content_applicability():
     criteria = { "sort": [["id", "ascending"]],
                  "filters": {"id": {"$in": ["test-consumer"]}}}
-    units = [ 
-             {"unit_key": {"filename": "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"}, "type_id": "rpm"},
-             {"unit_key": {"name": "pulp-dot-2.0-test"}, "type_id": "rpm"},
-            ]
+    units = { 
+             "rpm": [ {"filename": "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"},
+                      {"name": "pulp-dot-2.0-test"}
+                    ]
+            }
     options = {"units":units, 
-               "criteria":criteria }
+               "consumer_criteria":criteria }
     return POST('/pulp/api/v2/consumers/actions/content/applicability/', options)
 
 # -----------------------------------------------------------------------------
