@@ -26,11 +26,10 @@ from pulp.citrus.progress import ProgressReport
 log = getLogger(__name__)
 
 
-class Strategy:
+class HandlerStrategy:
 
     def __init__(self, progress):
         """
-        Repository synchronization strategy.
         :param progress: A progress reporting object.
         :type progress: ProgressReport
         """
@@ -157,7 +156,7 @@ class Strategy:
         return (removed, failed)
 
 
-class Mirror(Strategy):
+class Mirror(HandlerStrategy):
 
     def synchronize(self, bindings, options):
         """
@@ -218,7 +217,7 @@ class Mirror(Strategy):
         return report
 
 
-# --- supporting objects ----------------------------------------------------------------
+# --- reports ---------------------------------------------------------------------------
 
 
 class MergeReport:
@@ -274,3 +273,27 @@ class Report:
             errors=self.errors,
             merge_report=self.merge_report.dict(),
             importer_reports=self.importer_reports)
+
+
+class HandlerProgress(ProgressReport):
+    """
+    The citrus handler progress report.
+    Extends progress report base class to provide integration
+    with the handler conduit.
+    """
+
+    def __init__(self, conduit):
+        """
+        :param conduit: A handler conduit.
+        :type conduit: pulp.agent.lib.conduit.Conduit
+        """
+        self.conduit = conduit
+        ProgressReport.__init__(self)
+
+    def _updated(self):
+        """
+        Notification that the report has been updated.
+        Reported using the conduit.
+        """
+        ProgressReport._updated(self)
+        self.conduit.update_progress(self.dict())

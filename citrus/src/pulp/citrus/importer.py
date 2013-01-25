@@ -28,10 +28,10 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-# --- import strategies -----------------------------------------------------------------
+# --- strategies ------------------------------------------------------------------------
 
 
-class Strategy:
+class ImporterStrategy:
     """
     This object provides the transport independent content unit synchronization
     strategy used by citrus importer plugins.
@@ -264,7 +264,7 @@ class Strategy:
         return dict(items)
 
 
-class Mirror(Strategy):
+class Mirror(ImporterStrategy):
     """
     The I{mirror} strategy is used to ensure that the content units associated
     with a repository locally exactly matches the units associated with the same
@@ -320,7 +320,7 @@ class Mirror(Strategy):
         return Report(add_failed, delete_failed)
 
 
-class Additive(Strategy):
+class Additive(ImporterStrategy):
     """
     The I{additive} strategy is used to ensure that the content units associated
     with a repository locally contains all of the units associated with the same
@@ -360,7 +360,7 @@ class Additive(Strategy):
         return Report(add_failed, [])
 
 
-# --- supporting objects ----------------------------------------------------------------
+# --- reports ---------------------------------------------------------------------------
 
 
 class Progress(ProgressReport):
@@ -431,6 +431,9 @@ class Report:
         Get a dictionary representation.
         """
         return self.__dict__
+
+
+# --- utils -----------------------------------------------------------------------------
 
 
 class UnitKey:
@@ -510,6 +513,9 @@ class UnitInventory:
             if k not in self.upstream:
                 units.append(units)
         return units
+
+
+# --- transport integration -------------------------------------------------------------
 
 
 class Tracker(DownloadTracker):

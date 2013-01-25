@@ -15,9 +15,8 @@ from logging import getLogger
 
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
-from pulp.citrus.handler import Mirror
+from pulp.citrus.handler import HandlerProgress, Mirror
 from pulp.citrus.model import RemoteBinding
-from pulp.citrus.progress import ProgressReport
 
 
 log = getLogger(__name__)
@@ -43,7 +42,7 @@ class CitrusHandler(ContentHandler):
         :rtype: ContentReport
         """
         report = ContentReport()
-        progress = Progress(conduit)
+        progress = HandlerProgress(conduit)
         progress.push_step('fetch_bindings')
         all = options.get('all', False)
         repo_ids = [key['repo_id'] for key in units if key]
@@ -60,27 +59,3 @@ class CitrusHandler(ContentHandler):
         else:
             report.set_succeeded(details)
         return report
-
-
-# --- supporting objects ----------------------------------------------------------------
-
-class Progress(ProgressReport):
-    """
-    Citrus synchronization progress reporting object.
-    """
-
-    def __init__(self, conduit):
-        """
-        :param conduit: A handler conduit.
-        :type conduit: pulp.agent.lib.conduit.Conduit
-        """
-        self.conduit = conduit
-        ProgressReport.__init__(self)
-
-    def _updated(self):
-        """
-        Notification that the report has been updated.
-        Reported using the conduit.
-        """
-        ProgressReport._updated(self)
-        self.conduit.update_progress(self.dict())
