@@ -13,7 +13,7 @@
 from gettext import gettext as _
 from logging import getLogger
 
-from pulp.citrus.model import *
+from pulp.citrus.handler.model import *
 from pulp.citrus.progress import ProgressReport
 from pulp.citrus.handler.reports import HandlerReport
 
