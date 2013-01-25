@@ -244,14 +244,18 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def unit_applicable(self, consumer, unit, config, conduit):
+    def unit_applicable(self, consumer, repoids, unit, config, conduit):
         """
-        Determine whether the content unit is applicable to
-        the specified consumer.  The definition of "applicable" is content
-        type specific and up to the descision of the profiler.
+        Determine whether the content unit is applicable to the specified consumer
+        using a given list of repo ids. The definition of "applicable" is content
+        type specific and up to the decision of the profiler. If repoids is 'None',
+        it should be defaulted to the list of repos the consumer is bound to.
 
         @param consumer: A consumer.
         @type consumer: L{pulp.server.plugins.model.Consumer}
+
+        @param repoids: List of repo ids to check for unit applicability
+        @type repoids: list
 
         @param unit: A content unit: { type_id:<str>, unit_key:<dict> }
         @type unit: dict

@@ -122,7 +122,7 @@ class ProfileManager(object):
 
     def find_profiles(self, consumer_ids):
         """
-        Get all profiles associated with lost of consumers.
+        Get all profiles associated with lots of consumers.
         @param consumer_ids: A list of consumer IDs.
         @type consumer_ids: list
         @return: A dict of:

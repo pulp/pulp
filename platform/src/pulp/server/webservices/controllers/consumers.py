@@ -599,24 +599,33 @@ class ContentApplicability(JSONController):
     def POST(self):
         """
         Determine content applicability.
-        body {criteria:<dict>, units:[{type_id:<str>,unit_key:<str>}]}
+        body {consumer_criteria:<dict>, repo_criteria:<dict> or None, 
+        units: {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..]
+                <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]} or None
+  
         @return: A dict of applicability reports keyed by consumer ID.
             Each report is:
                 {unit:<{type_id:<str>,unit_key:<str>}>,
-                 applicable:<bool>,
                  summary:<str>,
                  details:<?>}
         @return: dict
         """
         body = self.params()
         try:
-            criteria = body['criteria']
-            units = body['units']
+            consumer_criteria = body['consumer_criteria']
         except KeyError, e:
             raise MissingValue(str(e))
-        criteria = Criteria.from_client_input(criteria)
+
+        repo_criteria = body['repo_criteria'] or None
+        units = body['units'] or None
+
+        consumer_criteria = Criteria.from_client_input(consumer_criteria)
+
+        if repo_criteria:
+            repo_criteria = Criteria.from_client_input(repo_criteria)
+
         manager = managers.consumer_applicability_manager()
-        report = manager.units_applicable(criteria, units)
+        report = manager.units_applicable(consumer_criteria, repo_criteria, units)
         for k,v in report.items():
             report[k] = [serialization.consumer.applicability_report(r) for r in v]
         return self.ok(report)

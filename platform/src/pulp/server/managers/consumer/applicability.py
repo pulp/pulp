@@ -30,35 +30,79 @@ _LOG = getLogger(__name__)
 
 class ApplicabilityManager(object):
 
-    def units_applicable(self, criteria, units):
+    def units_applicable(self, consumer_criteria, repo_criteria=None, units=None):
         """
-        Detemine and report which of the specified content units
-        is applicable to consumers specified by the I{criteria}.
-        @param criteria: The consumer selection criteria.
-        @type criteria: list
-        @param units: A list of content units to be installed.
-        @type units: list of:
-            { type_id:<str>, unit_key:<dict> }
+        Determine and report which of the specified content units
+        is applicable to consumers specified by the I{consumer_criteria} 
+        with repos specified by I{repo_criteria}. If units is None, all
+        units in the repos bound to the consumer are considered.
+
+        @param consumer_criteria: The consumer selection criteria.
+        @type consumer_criteria: dict
+
+        @param repo_criteria: The repo selection criteria.
+        @type repo_criteria: dict
+
+        @param units: A dictionary of type_id : list of unit keys
+        @type units: dict
+                {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..]
+                 <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]}
+
         @return: A dict:
             {consumer_id:[<ApplicabilityReport>]}
-        @rtype: list
+        @rtype: dict
         """
         result = {}
         conduit = ProfilerConduit()
-        manager = managers.consumer_query_manager()
-        ids = [c['id'] for c in manager.find_by_criteria(criteria)]
-        manager = managers.consumer_profile_manager()
-        profiles = manager.find_profiles(ids)
-        for id in ids:
-            for unit in units:
-                typeid = unit['type_id']
+
+        # Get consumer ids satisfied by specified consumer criteria
+        consumer_query_manager = managers.consumer_query_manager()
+        consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+
+        # Make sure you can get profiles of all consumers
+        profile_manager = managers.consumer_profile_manager()
+        profile_manager.find_profiles(consumer_ids)
+
+        # Get repo ids satisfied by specified consumer criteria
+        if repo_criteria:
+            repo_query_manager = managers.repo_query_manager()
+            repo_criteria_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
+        else:
+            repo_criteria_ids = None
+
+        bind_manager = managers.consumer_bind_manager()
+        repo_unit_association_query_manager = managers.repo_unit_association_query_manager()
+
+        for consumer_id in consumer_ids:
+
+            # Find repos bound to a consumer
+            bindings = bind_manager.find_by_consumer(consumer_id)
+            bound_repo_ids = [b['repo_id'] for b in bindings]
+
+            # If repo_criteria is not specified, user repos bound to the consumer, else take intersections 
+            # of repos specified in the criteria and repos bound to the consumer.
+            if repo_criteria_ids is None:
+                repo_ids = bound_repo_ids
+            else:
+                repo_ids = list(set(bound_repo_ids) & set(repo_criteria_ids))
+
+            # If units are not specified, consider all units in the repos bound to the consumer.
+            if units is None:
+                for repo_id in repo_ids:
+                    units = repo_unit_association_query_manager.get_unit_ids(repo_id)
+
+            for typeid, unit_keys in units:
+                # Find a profiler for each type id and find units applicable using that profiler.
                 profiler, cfg = self.__profiler(typeid)
-                pc = self.__profiled_consumer(id)
-                report = profiler.unit_applicable(pc, unit, cfg, conduit)
-                report.unit = unit
-                ulist = result.setdefault(id, [])
-                ulist.append(report)
+                pc = self.__profiled_consumer(consumer_id)
+                for unit_key in unit_keys:
+                    report = profiler.unit_applicable(pc, repo_ids, unit_key, cfg, conduit)
+                    report.unit = unit_key
+                    ulist = result.setdefault(consumer_id, [])
+                    ulist.append(report)
+
         return result
+
 
     def __profiler(self, typeid):
         """
