@@ -20,7 +20,7 @@ DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
 V1_TEST_FILESYSTEM = os.path.join(DATA_DIR, 'filesystem/v1')
 
 # Full path to the DB that will be loaded for the test run
-V1_DB_FILE_PATH = os.path.join(DB_DIR, 'test-fs-db.tar.gz')
+V1_DB_FILE_PATH = os.path.join(DB_DIR, 'test-v1-fs-db.tar.gz')
 
 class BaseFileUpgradeTests(unittest.TestCase):
 

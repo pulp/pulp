@@ -15,7 +15,7 @@ import shutil
 from pulp.server.upgrade.model import UpgradeStepReport
 
 DIR_STORAGE_ROOT = '/var/lib/pulp/content/'
-DIR_DISTROS = os.path.join(DIR_STORAGE_ROOT, 'distributions')
+DIR_DISTROS = os.path.join(DIR_STORAGE_ROOT, 'distribution')
 V1_DIR_DISTROS = '/var/lib/pulp/distributions/'
 
 def upgrade(v1_database, v2_database):
