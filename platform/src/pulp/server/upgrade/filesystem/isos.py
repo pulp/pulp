@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -15,7 +15,7 @@ import shutil
 from pulp.server.upgrade.model import UpgradeStepReport
 
 DIR_STORAGE_ROOT = '/var/lib/pulp/content/'
-DIR_ISOS = os.path.join(DIR_STORAGE_ROOT, 'isos')
+DIR_ISOS = os.path.join(DIR_STORAGE_ROOT, 'iso')
 V1_DIR_ISO = '/var/lib/pulp/files/'
 
 def upgrade(v1_database, v2_database):
@@ -29,7 +29,7 @@ def _isos(v1_database, v2_database, report):
     """
     Migrate isos from v1 to v2 location on filesystem. It assumes
     the iso is already migrated in the Database. The isos from v1
-    are migrated to /var/lib/pulp/content/isos/ in v2.
+    are migrated to DIR_ISOS in v2.
     """
     all_v1_files = v1_database.file.find()
     for v1_file in list(all_v1_files):
