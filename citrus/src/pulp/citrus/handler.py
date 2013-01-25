@@ -170,45 +170,41 @@ class Mirror(Strategy):
         :type bindings: list
         :param options: Unit update options.
         :type options: dict
-        :return: A result of: (report, errors)
-          - report: TBD
-          - errors: A list of: (repo_id, error)
-        :rtype: tuple(2)
+        :return: A report
+        :rtype: Report
         """
-        errors = []
-        added = []
-        merged = []
-        removed = []
+        report = Report()
+        merge_report = report.merge_report
+        importer_reports = report.importer_reports
 
         # add/merge repositories
         try:
-            _added, _merged, _failed = self._add_repositories(bindings)
-            added.extend(_added)
-            merged.extend(_merged)
-            errors.extend(_failed)
+            added, merged, failed = self._add_repositories(bindings)
+            merge_report.added.extend(added)
+            merge_report.merged.extend(merged)
+            report.errors.extend(failed)
         except Exception, e:
             msg = repr(e)
-            errors.append(msg)
+            report.errors.append(msg)
 
         # synchronize repositories
-        importer_reports = {}
         try:
-            repo_ids = added + merged
+            repo_ids = merge_report.added + merge_report.merged
             reports, _errors = self._synchronize_repositories(repo_ids)
             importer_reports.update(reports)
-            errors.extend(_errors)
+            report.errors.extend(_errors)
         except Exception, e:
             msg = repr(e)
-            errors.append(msg)
+            report.errors.append(msg)
 
         # delete repositories
         try:
-            _removed, _failed = self._delete_repositories(bindings)
-            removed.extend(_removed)
-            errors.extend(_failed)
+            removed, failed = self._delete_repositories(bindings)
+            merge_report.removed.extend(removed)
+            report.errors.extend(failed)
         except Exception, e:
             msg = repr(e)
-            errors.append(msg)
+            report.errors.append(msg)
 
         # remove orphans
         try:
@@ -216,18 +212,65 @@ class Mirror(Strategy):
             LocalRepository.purge_orphans()
         except Exception, e:
             msg = repr(e)
-            errors.append(msg)
-
-        report = {
-            'errors':errors,
-            'merge':{
-                'added':added,
-                'merged':merged,
-                'removed':removed,
-                },
-            'synchronization': importer_reports,
-            }
+            report.errors.append(msg)
 
         self.progress.set_status(ProgressReport.SUCCEEDED)
-        return (report, errors)
+        return report
 
+
+# --- supporting objects ----------------------------------------------------------------
+
+
+class MergeReport:
+    """
+    Repository merge report.
+    :ivar added: List of added repositories
+        Each item is a repo_id.
+    :type added: list
+    :ivar merged: List of merged repositories.
+        Each item is a repo_id.
+    :type merged: list
+    :ivar removed: List of removed repositories.
+        Each item is a repo_id.
+    :type removed: list
+    """
+
+    def __init__(self):
+        self.added = []
+        self.merged = []
+        self.removed = []
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return self.__dict__
+
+
+class Report:
+    """
+    Strategy synchronization() report.
+    Aggregates the MergeReport and importer reports.
+    :ivar errors: A list of error messages.
+    :type errors: list
+    :ivar merge_report: A repository merge report.
+    :type merge_report: MergeReport
+    """
+
+    def __init__(self):
+        self.errors = []
+        self.merge_report = MergeReport()
+        self.importer_reports = {}
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return dict(
+            errors=self.errors,
+            merge_report=self.merge_report.dict(),
+            importer_reports=self.importer_reports)

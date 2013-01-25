@@ -52,9 +52,10 @@ class CitrusHandler(ContentHandler):
         else:
             bindings = RemoteBinding.fetch(repo_ids)
         strategy = Mirror(progress)
-        details, errors = strategy.synchronize(bindings, options)
+        strategy_report = strategy.synchronize(bindings, options)
         progress.end()
-        if errors:
+        details = strategy_report.dict()
+        if strategy_report.errors:
             report.set_failed(details)
         else:
             report.set_succeeded(details)

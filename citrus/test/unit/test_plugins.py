@@ -386,14 +386,14 @@ class TestAgentPlugin(PluginTestBase):
         # Verify
         report = _report[0].details['repository']
         self.assertTrue(report['succeeded'])
-        merge = report['details']['merge']
-        self.assertEqual(merge['added'], [self.REPO_ID])
-        self.assertEqual(merge['merged'], [])
-        self.assertEqual(merge['removed'], [])
-        synchronization = report['details']['synchronization'][self.REPO_ID]
-        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
-        self.assertEqual(synchronization['removed_count'], 0)
-        details = synchronization['details']['report']
+        merge_report = report['details']['merge_report']
+        self.assertEqual(merge_report['added'], [self.REPO_ID])
+        self.assertEqual(merge_report['merged'], [])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report['details']['importer_reports'][self.REPO_ID]
+        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']['report']
         self.assertEqual(len(details['add_failed']), 0)
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
@@ -444,14 +444,14 @@ class TestAgentPlugin(PluginTestBase):
         # Verify
         report = _report[0]
         self.assertTrue(report.succeeded)
-        merge = report.details['merge']
-        self.assertEqual(merge['added'], [])
-        self.assertEqual(merge['merged'], [self.REPO_ID])
-        self.assertEqual(merge['removed'], [])
-        synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertEqual(synchronization['added_count'], self.NUM_UNITS)
-        self.assertEqual(synchronization['removed_count'], 0)
-        details = synchronization['details']['report']
+        merge_report = report.details['merge_report']
+        self.assertEqual(merge_report['added'], [])
+        self.assertEqual(merge_report['merged'], [self.REPO_ID])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report.details['importer_reports'][self.REPO_ID]
+        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']['report']
         self.assertTrue(details['succeeded'])
         self.assertEqual(len(details['add_failed']), 0)
         self.assertEqual(len(details['delete_failed']), 0)
@@ -499,14 +499,14 @@ class TestAgentPlugin(PluginTestBase):
         # Verify
         report = _report[0]
         self.assertFalse(report.succeeded)
-        merge = report.details['merge']
-        self.assertEqual(merge['added'], [self.REPO_ID])
-        self.assertEqual(merge['merged'], [])
-        self.assertEqual(merge['removed'], [])
-        synchronization = report.details['synchronization'][self.REPO_ID]
-        self.assertEqual(synchronization['added_count'], 0)
-        self.assertEqual(synchronization['removed_count'], 0)
-        details = synchronization['details']['report']
+        merge_report = report.details['merge_report']
+        self.assertEqual(merge_report['added'], [self.REPO_ID])
+        self.assertEqual(merge_report['merged'], [])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report.details['importer_reports'][self.REPO_ID]
+        self.assertEqual(importer_report['added_count'], 0)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']['report']
         self.assertFalse(details['succeeded'])
         self.assertEqual(len(details['add_failed']), 3)
         self.assertEqual(len(details['delete_failed']), 0)
@@ -556,13 +556,13 @@ class TestAgentPlugin(PluginTestBase):
         self.assertFalse(report.succeeded)
         errors = report.details['errors']
         self.assertEqual(len(errors), 1)
-        merge = report.details['merge']
-        self.assertEqual(merge['added'], [self.REPO_ID])
-        self.assertEqual(merge['merged'], [])
-        self.assertEqual(merge['removed'], [])
-        synchronization = report.details['synchronization'].get(self.REPO_ID)
-        if synchronization:
-            self.assertFalse(synchronization['succeeded'])
-            exception = synchronization['exception']
+        merge_report = report.details['merge_report']
+        self.assertEqual(merge_report['added'], [self.REPO_ID])
+        self.assertEqual(merge_report['merged'], [])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report.details['importer_reports'].get(self.REPO_ID)
+        if importer_report:
+            self.assertFalse(importer_report['succeeded'])
+            exception = importer_report['exception']
             self.assertTrue(len(exception) > 0)
             self.verify(0)
