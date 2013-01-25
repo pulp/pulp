@@ -13,7 +13,7 @@ import os
 import shutil
 import glob
 from base_file_upgrade import BaseFileUpgradeTests
-from pulp.server.upgrade.filesystem import rpms, distribution
+from pulp.server.upgrade.filesystem import rpms, distribution, isos
 from pulp.server.upgrade.model import UpgradeStepReport
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data')
@@ -58,6 +58,19 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
         self.assertEquals(len(v1_distro_list), 0)
         self.assertEquals(len(v2_distro_list), 4)
 
+        self.assertEquals(len(report.errors), 0)
+        self.assertTrue(report.succeeded)
+
+    def test_isos(self):
+        report = UpgradeStepReport()
+        isos.V1_DIR_ISO = "%s/%s" % (V1_TEST_FILESYSTEM, isos.V1_DIR_ISO)
+        isos.DIR_ISOS = "%s/%s" % (V2_TEST_FILESYSTEM, isos.DIR_ISOS)
+        v1_isos_list_pre_upgrade = get_files_in_dir('*.iso', isos.V1_DIR_ISO)
+        status = isos._isos(self.v1_test_db.database, self.v2_test_db.database, report)
+        self.assertTrue(status)
+        for v1_path in v1_isos_list_pre_upgrade:
+            v2_path = "%s/%s" % (isos.DIR_ISOS, v1_path.split(isos.V1_DIR_ISO)[-1])
+            self.assertTrue(os.path.exists(v2_path))
         self.assertEquals(len(report.errors), 0)
         self.assertTrue(report.succeeded)
 
