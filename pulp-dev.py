@@ -62,9 +62,6 @@ DIRS = (
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
-    '/var/lib/pulp/published',
-    '/var/lib/pulp/published/http',
-    '/var/lib/pulp/published/https',
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
@@ -188,18 +185,13 @@ def install(opts):
         if warning_msg:
             warnings.append(warning_msg)
 
-    # Link between pulp and apache
-    create_link(opts, '/var/lib/pulp/published', '/var/www/pub')
-
     # Grant apache write access to the pulp tools log file and pulp
     # packages dir
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
-    os.system('chown -R apache:apache /var/lib/pulp/published')
 
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
-    os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
 
     # Update for certs
