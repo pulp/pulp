@@ -27,9 +27,12 @@ class CitrusHandler(ContentHandler):
 
     def update(self, conduit, units, options):
         """
-        Update content unit(s).
-        Unit key of {} or None indicates updates update all
-        but only if (all) option is True.
+        Update the specified content units.  In citrus, the update of a
+        'repository' unit triggers repository synchronization.  The definition
+        of what synchronization means, depends on the strategy option passed.
+        The synchronization itself, is delegated to the strategy object.
+        Unit key of {} or None indicates updates update all but only if
+        (all) option is True.
         :param conduit: A handler conduit.
         :type conduit: pulp.agent.lib.conduit.Conduit
         :param units: A list of content unit_keys.
@@ -39,7 +42,6 @@ class CitrusHandler(ContentHandler):
         :return: An update report.
         :rtype: ContentReport
         """
-        # TODO: select strategy based on options
         report = ContentReport()
         progress = Progress(conduit)
         progress.push_step('fetch_bindings')
