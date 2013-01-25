@@ -20,6 +20,7 @@ from pulp.server.upgrade.model import UpgradeStepReport
 CLEAN_UP_DIRS = (
     '/var/lib/pulp/packages',
     '/var/lib/pulp/files',
+    '/var/lib/pulp/distributions',
     '/var/lib/pulp/repos',
     '/var/lib/pulp/cache',
     '/var/lib/pulp/published/repos',
@@ -38,6 +39,9 @@ def upgrade(v1_database, v2_database):
     report = UpgradeStepReport()
 
     for dir in CLEAN_UP_DIRS:
+
+        # Some of the content dirs aren't created until used, so make sure not
+        # to tank if they aren't.
         if not os.path.exists(dir):
             continue
 
