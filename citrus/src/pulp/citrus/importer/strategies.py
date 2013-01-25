@@ -20,21 +20,19 @@ from gettext import gettext as _
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 from pulp.citrus.manifest import Manifest
-from pulp.citrus.progress import ProgressReport
-from pulp.citrus.transport import DownloadTracker, DownloadRequest
+from pulp.citrus.importer.reports import ImporterReport, ImporterProgress
+from pulp.citrus.importer.inventory import UnitInventory, unit_dictionary
+from pulp.citrus.importer.downloader import Tracker, DownloadRequest
 from logging import getLogger
 
 
 log = getLogger(__name__)
 
 
-# --- strategies ------------------------------------------------------------------------
-
-
 class ImporterStrategy:
     """
-    This object provides the transport independent content unit synchronization
-    strategy used by citrus importer plugins.
+    This object provides the transport independent content unit
+    synchronization strategy used by citrus importer plugins.
     :ivar cancelled: The flag indicating that the current operation
         has been cancelled.
     :type cancelled: bool
@@ -45,7 +43,7 @@ class ImporterStrategy:
     :ivar transport: A transport fully configured object used to download files.
     :type transport: object
     :ivar progress: A progress reporting object.
-    :type progress: L{Progress}
+    :type progress: L{ImporterProgress}
     """
 
     def __init__(self, conduit, config, transport):
@@ -64,7 +62,7 @@ class ImporterStrategy:
         self.conduit = conduit
         self.config = config
         self.transport = transport
-        self.progress = Progress(conduit)
+        self.progress = ImporterProgress(conduit)
 
     def synchronize(self, repo_id):
         """
@@ -111,20 +109,20 @@ class ImporterStrategy:
             self.progress.push_step('fetch_local')
             units = self._units_local()
             local.update(units)
-            self.progress.set_status(Progress.SUCCEEDED)
+            self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = _('Fetch local units failed for repository: %(r)s')
             msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
-        # fetch upstream units
+            # fetch upstream units
         upstream = {}
         try:
             self.progress.push_step('fetch_upstream')
             units = self._units_upstream()
             upstream.update(units)
-            self.progress.set_status(Progress.SUCCEEDED)
+            self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = _('Fetch local units failed for repository: %(r)s')
             msg = msg % {'r':repo_id}
@@ -196,7 +194,7 @@ class ImporterStrategy:
                 continue
             request = DownloadRequest(tracker, unit, local_unit)
             requests.append(request)
-        # download units
+            # download units
         self.transport.download(requests)
         failed.extend(tracker.get_failed())
         return failed
@@ -233,7 +231,7 @@ class ImporterStrategy:
         :rtype: dict
         """
         units = self.conduit.get_units()
-        return self._unit_dictionary(units)
+        return unit_dictionary(units)
 
     def _units_upstream(self):
         """
@@ -248,20 +246,7 @@ class ImporterStrategy:
         url = self.config.get('manifest_url')
         manifest = Manifest()
         units = manifest.read(url)
-        return self._unit_dictionary(units)
-
-    def _unit_dictionary(self, units):
-        """
-        Build a dictionary of units keyed by UnitKey using
-        the specified list of units.
-        :param units: A list of content units.
-            Each unit is either: (Unit|dict)
-        :type units: list
-        :return: A dictionary of units keyed by UnitKey.
-        :rtype: dict
-        """
-        items = [(UnitKey(u), u) for u in units]
-        return dict(items)
+        return unit_dictionary(units)
 
 
 class Mirror(ImporterStrategy):
@@ -291,9 +276,9 @@ class Mirror(ImporterStrategy):
             failed = self._add_units(unit_inventory)
             if failed:
                 add_failed.extend(failed)
-                self.progress.set_status(Progress.FAILED)
+                self.progress.set_status(ImporterProgress.FAILED)
             else:
-                self.progress.set_status(Progress.SUCCEEDED)
+                self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception, e:
             msg = _('Add units failed on repository: %(r)s')
             msg = msg % {'r':repo_id}
@@ -307,9 +292,9 @@ class Mirror(ImporterStrategy):
             failed = self._delete_units(unit_inventory)
             if failed:
                 delete_failed.extend(failed)
-                self.progress.set_status(Progress.FAILED)
+                self.progress.set_status(ImporterProgress.FAILED)
             else:
-                self.progress.set_status(Progress.SUCCEEDED)
+                self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception, e:
             msg = _('Purge units failed on repository: %(r)s')
             msg = msg % {'r':repo_id}
@@ -317,7 +302,7 @@ class Mirror(ImporterStrategy):
             self.progress.error(msg)
             raise Exception(msg)
 
-        return Report(add_failed, delete_failed)
+        return ImporterReport(add_failed, delete_failed)
 
 
 class Additive(ImporterStrategy):
@@ -347,9 +332,9 @@ class Additive(ImporterStrategy):
             failed = self._add_units(unit_inventory)
             if failed:
                 add_failed.extend(failed)
-                self.progress.set_status(Progress.FAILED)
+                self.progress.set_status(ImporterProgress.FAILED)
             else:
-                self.progress.set_status(Progress.SUCCEEDED)
+                self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception, e:
             msg = _('Add units failed on repository: %(r)s')
             msg = msg % {'r':repo_id}
@@ -357,212 +342,4 @@ class Additive(ImporterStrategy):
             self.progress.error(msg)
             raise Exception(msg)
 
-        return Report(add_failed, [])
-
-
-# --- reports ---------------------------------------------------------------------------
-
-
-class Progress(ProgressReport):
-    """
-    Progress report provides integration between the citrus progress
-    report and the plugin progress reporting facility.
-    :ivar conduit: The importer conduit.
-    :type  conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
-    """
-
-    def __init__(self, conduit):
-        """
-        :param conduit: The importer conduit.
-        :type  conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
-            """
-        self.conduit = conduit
-        ProgressReport.__init__(self)
-
-    def _updated(self):
-        """
-        Send progress report using the conduit when the report is updated.
-        """
-        ProgressReport._updated(self)
-        self.conduit.set_progress(self.dict())
-
-
-class Report:
-    """
-    A report that provides both summary and details regarding the importing
-    of content units associated with a repository.
-    :ivar add_failed: List of units that failed to be added.
-        Each item is: (Unit, Exception)
-    :type add_failed: list
-    :ivar delete_failed: List of units that failed to be deleted.
-        Each item is: (Unit, Exception)
-    :type delete_failed: list
-    """
-
-    @staticmethod
-    def key_and_repr(units):
-        """
-        Convert to list of unit_key and exception tuple into a list of
-        tuple containing the unit_key and string representation of the
-        exception.  This could just be done inline but more descriptive
-        to wrap in a method.
-        :param units: List of: (Unit, Exception)
-        :type units: list
-        :return: List of: (dict, str)
-        :rtype: list
-        """
-        return [(u[0].unit_key, repr(u[1])) for u in units]
-
-    def __init__(self, add_failed, delete_failed):
-        """
-        :param add_failed: List of units that failed to be added.
-            Each item is: (Unit, Exception)
-        :type add_failed: list
-        :param delete_failed: List of units that failed to be deleted.
-            Each item is: (Unit, Exception)
-        :type delete_failed: list
-        """
-        self.add_failed = Report.key_and_repr(add_failed)
-        self.delete_failed = Report.key_and_repr(delete_failed)
-        self.succeeded = not (self.add_failed or self.delete_failed)
-
-    def dict(self):
-        """
-        Get a dictionary representation.
-        """
-        return self.__dict__
-
-
-# --- utils -----------------------------------------------------------------------------
-
-
-class UnitKey:
-    """
-    A unique unit key consisting of a unit's type_id & unit_key.
-    The unit key is sorted to ensure consistency.
-    :ivar uid: The unique ID.
-    :type uid: A tuple of: (type_id, unit_key)
-    """
-
-    def __init__(self, unit):
-        """
-        :param unit: A content unit.
-        :type unit: (dict|Unit)
-        """
-        if isinstance(unit, dict):
-            type_id = unit['type_id']
-            unit_key = tuple(sorted(unit['unit_key'].items()))
-        else:
-            type_id = unit.type_id
-            unit_key = tuple(sorted(unit.unit_key.items()))
-        self.uid = (type_id, unit_key)
-
-    def __hash__(self):
-        return hash(self.uid)
-
-    def __eq__(self, other):
-        return self.uid == other.uid
-
-    def __ne__(self, other):
-        return self.uid != other.uid
-
-
-class UnitInventory:
-    """
-    The unit inventory contains both the upstream and local inventory
-    of content units associated with a specific repository.  Each is contained
-    within a dictionary keyed by {UnitKey} to ensure uniqueness.
-    :ivar local: The local inventory.
-    :type local: dict
-    :ivar upstream: The upstream inventory.
-    :type upstream: dict
-    """
-
-    def __init__(self, local, upstream):
-        """
-        :param local: The local inventory.
-        :type local: dict
-        :param upstream: The upstream inventory.
-        :type upstream: dict
-        """
-        self.local = local
-        self.upstream = upstream
-
-    def upstream_only(self):
-        """
-        Listing of units contained in the upstream inventory
-        but not contained in the local inventory.
-        :return: List of units that need to be added.
-        :rtype: list
-        """
-        units = []
-        for k, unit in self.upstream.items():
-            if k not in self.local:
-                units.append(unit)
-        return units
-
-    def local_only(self):
-        """
-        Listing of units contained in the local inventory
-        but not contained in the upstream inventory.
-        :return: List of units that need to be purged.
-        :rtype: list
-        """
-        units = []
-        for k, unit in self.local.items():
-            if k not in self.upstream:
-                units.append(units)
-        return units
-
-
-# --- transport integration -------------------------------------------------------------
-
-
-class Tracker(DownloadTracker):
-    """
-    The unit download tracker (listener).
-    :ivar _strategy: A strategy object.
-    :type _strategy: Strategy
-    :ivar _failed: The list of units that failed to be downloaded and the
-        exception raised during the download.
-    :type _failed: list
-    """
-
-    def __init__(self, strategy):
-        """
-        :param repository: The strategy object.
-        :type repository: Strategy
-        """
-        self._strategy = strategy
-        self._failed = []
-
-    def succeeded(self, request):
-        """
-        Called when a download request succeeds.
-        Add to succeeded list and notify the strategy.
-        :param request: The download request that succeeded.
-        :type request: DownloadRequest
-        """
-        unit = request.local_unit
-        try:
-            self._strategy.add_unit(unit)
-        except Exception, e:
-            self._failed.append((unit, e))
-
-    def failed(self, request, exception):
-        """
-        Called when a download request fails.
-        Add to the failed list.
-        :param request: The download request that failed.
-        :type request: DownloadRequest
-        """
-        unit = request.local_unit
-        self._failed.append((unit, exception))
-
-    def get_failed(self):
-        """
-        Get a list of units that failed to download.
-          Each item is: (unit, exception)
-        :return: List of units that failed to download.
-        """
-        return self._failed
+        return ImporterReport(add_failed, [])

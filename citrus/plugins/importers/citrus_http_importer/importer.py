@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 from pulp.plugins.importer import Importer
-from pulp.citrus.importer import Mirror
+from pulp.citrus.importer.strategies import Mirror
 from pulp.citrus.http.transport import HttpTransport
 from logging import getLogger
 
