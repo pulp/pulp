@@ -248,7 +248,8 @@ class Profiler(object):
         """
         Determine whether the content unit is applicable to the specified consumer
         using a given list of repo ids. The definition of "applicable" is content
-        type specific and up to the decision of the profiler.
+        type specific and up to the decision of the profiler. If repoids is 'None',
+        it should be defaulted to the list of repos the consumer is bound to.
 
         @param consumer: A consumer.
         @type consumer: L{pulp.server.plugins.model.Consumer}

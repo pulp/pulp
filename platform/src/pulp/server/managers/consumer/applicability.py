@@ -33,10 +33,9 @@ class ApplicabilityManager(object):
     def units_applicable(self, consumer_criteria, repo_criteria=None, units=None):
         """
         Determine and report which of the specified content units
-        is applicable to consumers specified by the I{consumer_criteria}
-        with repos specified by I{repo_criteria}. If repo_criteria
-        is None, all repos bound to the consumer are taken into consideration.
-        If units is None, all units in the repos bound to the consumer are considered.
+        is applicable to consumers specified by the I{consumer_criteria} 
+        with repos specified by I{repo_criteria}. If units is None, all
+        units in the repos bound to the consumer are considered.
 
         @param consumer_criteria: The consumer selection criteria.
         @type consumer_criteria: dict
@@ -97,10 +96,8 @@ class ApplicabilityManager(object):
                 profiler, cfg = self.__profiler(typeid)
                 pc = self.__profiled_consumer(consumer_id)
                 for unit_key in unit_keys:
-                    unit = {'type_id' : typeid, 
-                            'unit_key' : unit_key}
-                    report = profiler.unit_applicable(pc, repo_ids, unit, cfg, conduit)
-                    report.unit = unit
+                    report = profiler.unit_applicable(pc, repo_ids, unit_key, cfg, conduit)
+                    report.unit = unit_key
                     ulist = result.setdefault(consumer_id, [])
                     ulist.append(report)
 
