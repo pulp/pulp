@@ -32,7 +32,7 @@ log = getLogger(__name__)
 class ImporterStrategy:
     """
     This object provides the transport independent content unit
-    synchronization strategy used by citrus importer plugins.
+    synchronization strategies used by citrus importer plugins.
     :ivar cancelled: The flag indicating that the current operation
         has been cancelled.
     :type cancelled: bool
@@ -48,9 +48,6 @@ class ImporterStrategy:
 
     def __init__(self, conduit, config, transport):
         """
-        :ivar cancelled: The flag indicating that the current operation
-            has been cancelled.
-        :type cancelled: bool
         :param conduit: Provides access to relevant Pulp functionality.
         :type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
         :param config: The plugin configuration.
@@ -183,7 +180,7 @@ class ImporterStrategy:
         requests = []
         for unit, local_unit in units:
             if self.cancelled:
-                return failed
+                break
             download = unit.get('_download')
             # unit has no file associated
             if not download:
@@ -194,9 +191,9 @@ class ImporterStrategy:
                 continue
             request = DownloadRequest(tracker, unit, local_unit)
             requests.append(request)
-            # download units
-        self.transport.download(requests)
-        failed.extend(tracker.get_failed())
+        if not self.cancelled:
+            self.transport.download(requests)
+            failed.extend(tracker.get_failed())
         return failed
 
     def _delete_units(self, unit_inventory):
@@ -214,6 +211,8 @@ class ImporterStrategy:
         units = unit_inventory.local_only()
         self.progress.push_step('purge_units', len(units))
         for unit in units:
+            if self.concelled:
+                break
             try:
                 self.progress.set_action('delete_unit', unit.unit_key)
                 self.conduit.remove_unit(unit)

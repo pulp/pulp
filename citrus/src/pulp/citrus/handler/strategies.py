@@ -22,17 +22,27 @@ log = getLogger(__name__)
 
 
 class HandlerStrategy:
+    """
+    Provides strategies for synchronizing repositories between pulp servers.
+    :ivar cancelled: The flag indicating that the current operation
+        has been cancelled.
+    :type cancelled: bool
+    :var progress: A progress report.
+    :type progress: HandlerReport
+    """
 
     def __init__(self, progress):
         """
         :param progress: A progress reporting object.
         :type progress: ProgressReport
         """
+        self.cancelled = False
         self.progress = progress
 
     def synchronize(self, bindings, options):
         """
         Synchronize local repositories based on bindings.
+        Must be overridden by subclasses.
         :param bindings: A list of consumer binding payloads.
         :type bindings: list
         :param options: synchronization options.
@@ -40,6 +50,12 @@ class HandlerStrategy:
         :return: The synchronization report.
         """
         raise NotImplementedError()
+
+    def cancel(self):
+        """
+        Cancel the current operation.
+        """
+        self.cancelled = True
 
     # --- protected ---------------------------------------------------------------------
 
@@ -61,6 +77,8 @@ class HandlerStrategy:
         failed = []
         self.progress.push_step('merge', len(bindings))
         for bind in bindings:
+            if self.cancelled:
+                break
             try:
                 repo_id = bind['repo_id']
                 details = bind['details']
@@ -93,6 +111,8 @@ class HandlerStrategy:
         reports = {}
         self.progress.push_step('synchronize', len(repo_ids))
         for repo_id in repo_ids:
+            if self.cancelled:
+                break
             repo = LocalRepository(repo_id)
             try:
                 report = repo.run_synchronization(self.progress)
@@ -139,6 +159,8 @@ class HandlerStrategy:
         upstream = [b['repo_id'] for b in bindings]
         downstream = [r.repo_id for r in LocalRepository.fetch_all()]
         for repo_id in downstream:
+            if self.cancelled:
+                break
             try:
                 if repo_id not in upstream:
                     self.progress.set_action('delete', repo_id)
