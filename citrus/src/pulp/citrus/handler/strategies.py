@@ -83,15 +83,15 @@ class HandlerStrategy:
                 repo_id = bind['repo_id']
                 details = bind['details']
                 upstream = Repository(repo_id, details)
-                myrepo = LocalRepository.fetch(repo_id)
-                if myrepo:
+                local = LocalRepository.fetch(repo_id)
+                if local:
                     self.progress.set_action('merge', repo_id)
-                    myrepo.merge(upstream)
+                    local.merge(upstream)
                     merged.append(repo_id)
                 else:
                     self.progress.set_action('add', repo_id)
-                    myrepo = LocalRepository(repo_id, upstream.details)
-                    myrepo.add()
+                    local = LocalRepository(repo_id, upstream.details)
+                    local.add()
                     added.append(repo_id)
             except Exception, e:
                 msg = _('Add/Merge repository: %(r)s failed: %(e)s')
@@ -157,8 +157,8 @@ class HandlerStrategy:
         failed = []
         self.progress.push_step('purge', len(bindings))
         upstream = [b['repo_id'] for b in bindings]
-        downstream = [r.repo_id for r in LocalRepository.fetch_all()]
-        for repo_id in downstream:
+        local = [r.repo_id for r in LocalRepository.fetch_all()]
+        for repo_id in local:
             if self.cancelled:
                 break
             try:
