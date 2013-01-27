@@ -900,8 +900,10 @@ class TestApplicability(base.PulpWebserviceTests):
     CONSUMER_IDS = ['test-1', 'test-2']
     FILTER = {'id':{'$in':CONSUMER_IDS}}
     SORT = [('id','ascending')]
-    CRITERIA = dict(filters=FILTER, sort=SORT)
-    UNIT = {'type_id':'errata', 'unit_key':{'name':'security-patch_123'}}
+    CONSUMER_CRITERIA = dict(filters=FILTER, sort=SORT)
+    REPO_CRITERIA = None
+    UNIT = {'errata': [{'name':'security-patch_123'}]}
+    REPORT_UNIT = {'type_id': 'errata', 'unit_key': {'name': 'security-patch_123'}}
     PROFILE = [1,2,3]
     SUMMARY = 'mysummary'
     DETAILS = 'mydetails'
@@ -916,7 +918,7 @@ class TestApplicability(base.PulpWebserviceTests):
         mock_plugins.install()
         profiler = plugin_api.get_profiler_by_type('errata')[0]
         profiler.unit_applicable = \
-            mock.Mock(side_effect=lambda i,u,c,x:
+            mock.Mock(side_effect=lambda i,r,u,c,x:
                 ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
 
     def tearDown(self):
@@ -937,13 +939,14 @@ class TestApplicability(base.PulpWebserviceTests):
         # Setup
         self.populate()
         # Test
-        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        body = dict(consumer_criteria=self.CONSUMER_CRITERIA, repo_criteria=self.REPO_CRITERIA, 
+                    units=self.UNIT)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
         self.assertEquals(len(body), 2)
         for id in self.CONSUMER_IDS:
             report = body[id]
-            self.assertEquals(report[0]['unit'], self.UNIT)
+            self.assertEquals(report[0]['unit'], self.REPORT_UNIT)
             self.assertTrue(report[0]['applicable'])
             self.assertEquals(report[0]['summary'], self.SUMMARY)
             self.assertEquals(report[0]['details'], self.DETAILS)
@@ -952,16 +955,16 @@ class TestApplicability(base.PulpWebserviceTests):
         # Setup
         self.populate()
         # Test
-        body = dict(criteria=self.CRITERIA)
+        body = dict(consumer_criteria=self.CONSUMER_CRITERIA)
         status, body = self.post(self.PATH, body)
-        self.assertEquals(status, 400)
-        body = dict(units=[self.UNIT])
+        self.assertEquals(status, 200)
+        body = dict(units=self.UNIT)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 400)
 
     def test_no_consumers(self):
         # Test
-        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        body = dict(consumer_criteria=self.CONSUMER_CRITERIA, units=self.UNIT)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
         self.assertEquals(len(body), 0)

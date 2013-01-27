@@ -46,7 +46,7 @@ class ApplicabilityManager(object):
 
         @param units: A dictionary of type_id : list of unit keys
         @type units: dict
-                {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..]
+                {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..],
                  <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]}
 
         @return: A dict:
@@ -92,17 +92,18 @@ class ApplicabilityManager(object):
                 for repo_id in repo_ids:
                     units = repo_unit_association_query_manager.get_unit_ids(repo_id)
 
-            for typeid, unit_keys in units:
-                # Find a profiler for each type id and find units applicable using that profiler.
-                profiler, cfg = self.__profiler(typeid)
-                pc = self.__profiled_consumer(consumer_id)
-                for unit_key in unit_keys:
-                    unit = {'type_id' : typeid, 
-                            'unit_key' : unit_key}
-                    report = profiler.unit_applicable(pc, repo_ids, unit, cfg, conduit)
-                    report.unit = unit
-                    ulist = result.setdefault(consumer_id, [])
-                    ulist.append(report)
+            if units:
+                for typeid, unit_keys in units.items():
+                    # Find a profiler for each type id and find units applicable using that profiler.
+                    profiler, cfg = self.__profiler(typeid)
+                    pc = self.__profiled_consumer(consumer_id)
+                    for unit_key in unit_keys:
+                        unit = {'type_id' : typeid,
+                                'unit_key' : unit_key}
+                        report = profiler.unit_applicable(pc, repo_ids, unit, cfg, conduit)
+                        report.unit = unit
+                        ulist = result.setdefault(consumer_id, [])
+                        ulist.append(report)
 
         return result
 

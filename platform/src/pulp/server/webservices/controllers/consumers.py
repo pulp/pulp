@@ -616,8 +616,8 @@ class ContentApplicability(JSONController):
         except KeyError, e:
             raise MissingValue(str(e))
 
-        repo_criteria = body['repo_criteria'] or None
-        units = body['units'] or None
+        repo_criteria = body.get('repo_criteria', None)
+        units = body.get('units', None)
 
         consumer_criteria = Criteria.from_client_input(consumer_criteria)
 
