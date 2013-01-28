@@ -13,10 +13,10 @@ import os
 import shutil
 import tempfile
 import json
-import urllib
 
 from unittest import TestCase
-from pulp.citrus.http.publisher import HttpPublisher
+from pulp_citrus.http.publisher import HttpPublisher
+from pulp_citrus.manifest import Manifest
 
 class TestHttp(TestCase):
 
@@ -60,11 +60,10 @@ class TestHttp(TestCase):
         p.publish(units)
         # verify
         manifest_path = p.manifest_path()
-        fp = open(manifest_path)
-        manifest = json.load(fp)
-        fp.close()
+        manifest = Manifest()
+        units = manifest.read('file://'+manifest_path)
         n = 0
-        for unit in manifest:
+        for unit in units:
             file_content = 'test_%d' % n
             _download = unit['_download']
             url = _download['url']

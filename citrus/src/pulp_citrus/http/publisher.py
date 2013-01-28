@@ -10,8 +10,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp.citrus.publisher import join, FilePublisher
-from pulp.citrus.manifest import Manifest
+from pulp_citrus.publisher import join, FilePublisher
+from pulp_citrus.manifest import Manifest
 
 
 class HttpPublisher(FilePublisher):

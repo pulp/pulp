@@ -13,9 +13,9 @@
 from gettext import gettext as _
 from logging import getLogger
 
-from pulp.citrus.handler.model import *
-from pulp.citrus.progress import ProgressReport
-from pulp.citrus.handler.reports import HandlerReport
+from pulp_citrus.handler.model import *
+from pulp_citrus.progress import ProgressReport
+from pulp_citrus.handler.reports import HandlerReport
 
 
 log = getLogger(__name__)

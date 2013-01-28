@@ -33,7 +33,7 @@ from pulp.common.config import Config
 from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
-from pulp.citrus.poller import TaskPoller
+from pulp_citrus.poller import TaskPoller
 
 
 log = getLogger(__name__)
@@ -370,7 +370,7 @@ class LocalRepository(Local, Repository):
         """
         Run a repo_sync() on this local repository.
         :param progress: A progress report.
-        :type progress: pulp.citrus.progress.ProgressReport
+        :type progress: pulp_citrus.progress.ProgressReport
         :return: The task result.
         """
         http = self.binding.repo_actions.sync(self.repo_id, {})

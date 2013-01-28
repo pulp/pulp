@@ -15,7 +15,7 @@ import shutil
 
 from unittest import TestCase
 
-from pulp.citrus.manifest import Manifest
+from pulp_citrus.manifest import Manifest
 
 
 class TestManifest(TestCase):

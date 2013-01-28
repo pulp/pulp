@@ -21,7 +21,6 @@ from mock import Mock, patch
 from base import WebTest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../../platform/src/")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/importers/citrus_http_importer")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../plugins/distributors/citrus_http_distributor")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../handlers")
@@ -44,8 +43,8 @@ from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
-from pulp.citrus.manifest import Manifest
-from pulp.citrus.handler.strategies import Mirror
+from pulp_citrus.manifest import Manifest
+from pulp_citrus.handler.strategies import Mirror
 
 CITRUS_IMPORTER = 'citrus_http_importer'
 CITRUS_DISTRUBUTOR = 'citrus_http_distributor'
@@ -213,8 +212,9 @@ class ImporterTest(PluginTestBase):
         unit_db.clean()
         # Test
         importer = CitrusHttpImporter()
-        cfg = dict(
-            manifest_url=dist.publisher(repo, cfg).manifest_path())
+        publisher = dist.publisher(repo, cfg)
+        manifest_url = 'file://' + publisher.manifest_path()
+        cfg = dict(manifest_url=manifest_url)
         conduit = RepoSyncConduit(
             self.REPO_ID,
             CITRUS_IMPORTER,
@@ -312,7 +312,7 @@ class TestAgentPlugin(PluginTestBase):
         files = os.listdir(os.path.join(self.downfs, 'content'))
         self.assertEqual(num_units, len(files))
 
-    @patch('pulp.citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler(self, unused):
         """
         Test the end-to-end collaboration of:
@@ -356,8 +356,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp.citrus.handler.strategies.Local.binding', binding)
-        @patch('pulp.citrus.handler.strategies.Remote.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Local.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
         @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -402,7 +402,7 @@ class TestAgentPlugin(PluginTestBase):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 
-    @patch('pulp.citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge(self, unused):
         """
         Test the end-to-end collaboration of:
@@ -416,8 +416,8 @@ class TestAgentPlugin(PluginTestBase):
         self.clean = self.clean_units
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp.citrus.handler.strategies.Local.binding', binding)
-        @patch('pulp.citrus.handler.strategies.Remote.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Local.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
         @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -457,8 +457,8 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
 
-    @patch('pulp.citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
-    @patch('pulp.citrus.http.transport.HttpTransport._download', side_effect=Exception('No Route To Host'))
+    @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_citrus.http.transport.HttpTransport._download', side_effect=Exception('No Route To Host'))
     def test_handler_unit_errors(self, *unused):
         """
         Test the end-to-end collaboration of:
@@ -470,8 +470,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp.citrus.handler.strategies.Local.binding', binding)
-        @patch('pulp.citrus.handler.strategies.Remote.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Local.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
         @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -512,8 +512,8 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify(0)
 
-    @patch('pulp.citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
-    @patch('pulp.citrus.http.transport.HttpTransport.download', side_effect=Exception('Barf'))
+    @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_citrus.http.transport.HttpTransport.download', side_effect=Exception('Barf'))
     def test_handler_transport_exception(self, *unused):
         """
         Test the end-to-end collaboration of:
@@ -525,8 +525,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp.citrus.handler.strategies.Local.binding', binding)
-        @patch('pulp.citrus.handler.strategies.Remote.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Local.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
         @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish

@@ -14,7 +14,7 @@ import httplib
 from time import sleep
 from gettext import gettext as _
 
-from pulp.citrus.progress import ProgressReport
+from pulp_citrus.progress import ProgressReport
 from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
@@ -26,7 +26,7 @@ class TaskPoller:
     """
     The task poller is used to poll a running task by ID.
     :ivar binding: A pulp API binding.
-    :type binding: pulp.citrus.model.PulpBinding
+    :type binding: pulp_citrus.model.PulpBinding
     :ivar delay: The delay in seconds between each poll.
     :type delay: int
     :ivar poll: The main loop latch.
@@ -38,7 +38,7 @@ class TaskPoller:
     def __init__(self, binding, delay=DELAY):
         """
         :ivar binding: A pulp API binding.
-        :type binding: pulp.citrus.model.PulpBinding
+        :type binding: pulp_citrus.model.PulpBinding
         :ivar delay: The delay in seconds between each poll.
         :type delay: int
         """
@@ -59,7 +59,7 @@ class TaskPoller:
         :param task_id: A task ID.
         :type task_id: str
         :param progress: A progress reporting object.
-        :type pulp.citrus.progress.ProgressReport
+        :type pulp_citrus.progress.ProgressReport
         :return: The task result.
         """
         last_hash = 0
@@ -88,7 +88,7 @@ class TaskPoller:
         """
         Update the progress report only if the progress in the task has changed.
         :param progress: A progress reporting object.
-        :type pulp.citrus.progress.ProgressReport
+        :type pulp_citrus.progress.ProgressReport
         :param task: A task
         :type task: Task
         :param last_hash: The hash of the last reported progress.

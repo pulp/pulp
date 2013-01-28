@@ -12,7 +12,7 @@
 import os
 import hashlib
 
-from pulp.citrus.manifest import Manifest
+from pulp_citrus.manifest import Manifest
 
 from logging import getLogger
 

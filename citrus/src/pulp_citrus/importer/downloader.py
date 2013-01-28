@@ -10,7 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp.citrus.transport import DownloadTracker, DownloadRequest
+from pulp_citrus.transport import DownloadTracker, DownloadRequest
 
 
 class Tracker(DownloadTracker):

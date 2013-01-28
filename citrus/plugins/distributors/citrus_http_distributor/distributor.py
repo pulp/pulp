@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 from pulp.plugins.distributor import Distributor
-from pulp.citrus.http.publisher import HttpPublisher
+from pulp_citrus.http.publisher import HttpPublisher
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 from logging import getLogger

@@ -15,9 +15,9 @@ from logging import getLogger
 
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
-from pulp.citrus.handler.strategies import Mirror
-from pulp.citrus.handler.reports import HandlerProgress
-from pulp.citrus.handler.model import RemoteBinding
+from pulp_citrus.handler.strategies import Mirror
+from pulp_citrus.handler.reports import HandlerProgress
+from pulp_citrus.handler.model import RemoteBinding
 
 
 log = getLogger(__name__)

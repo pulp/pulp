@@ -105,6 +105,7 @@ class WebTest(ServerTests):
     def tearDownClass(cls):
         ServerTests.tearDownClass()
         http.request_info = cls.ORIG_HTTP_REQUEST_INFO
+        dispatch_factory.finalize(clear_queued_calls=True)
 
     def setUp(self):
         ServerTests.setUp(self)

@@ -19,10 +19,10 @@ the strategies provided here.
 from gettext import gettext as _
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
-from pulp.citrus.manifest import Manifest
-from pulp.citrus.importer.reports import ImporterReport, ImporterProgress
-from pulp.citrus.importer.inventory import UnitInventory, unit_dictionary
-from pulp.citrus.importer.downloader import Tracker, DownloadRequest
+from pulp_citrus.manifest import Manifest
+from pulp_citrus.importer.reports import ImporterReport, ImporterProgress
+from pulp_citrus.importer.inventory import UnitInventory, unit_dictionary
+from pulp_citrus.importer.downloader import Tracker, DownloadRequest
 from logging import getLogger
 
 

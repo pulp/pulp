@@ -83,13 +83,11 @@ ln -s %{_var}/lib/pulp/citrus/published/https %{buildroot}/%{_var}/www/pulp/citr
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
-rm %{buildroot}/%{python_sitelib}/pulp/__init__.*
-
 %clean
 rm -rf %{buildroot}
 
 %files
-%{python_sitelib}/pulp/citrus/
+%{python_sitelib}/pulp_citrus/
 %doc
 
 

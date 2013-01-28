@@ -10,7 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp.citrus.progress import ProgressReport
+from pulp_citrus.progress import ProgressReport
 
 # --- utils -----------------------------------------------------------------------------
 

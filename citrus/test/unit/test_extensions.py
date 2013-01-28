@@ -20,7 +20,7 @@ from okaara.prompt import Prompt, CLEAR_REMAINDER, MOVE_UP
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../extensions/admin')
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + '/../../src')
 
-from pulp.citrus.progress import ProgressReport
+from pulp_citrus.progress import ProgressReport
 from pulp_admin_citrus.tracker import ProgressTracker
 
 
