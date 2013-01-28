@@ -29,6 +29,10 @@ Another aspect of this is the fact that the content types are explicitly set
 to version 0. This will cause the migrations to take place to move from that
 point in time (which corresponds to before the first migration script being
 written) to the latest.
+
+For units only, the Pulp server does not use ObjectId but instead generates
+a string using the uuid module. The associations created by this script,
+however, must use ObjectId like normal.
 """
 
 from gettext import gettext as _
@@ -36,12 +40,13 @@ import datetime
 from functools import partial
 import hashlib
 import os
+import uuid
 
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
-from pymongo.objectid import ObjectId
 
 from pulp.common import dateutils
+from pulp.server.compat import ObjectId
 from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.utils import presto_parser
 
@@ -168,7 +173,7 @@ def _initialize_content_types(v2_database):
         existing = migrations_coll.find_one({'name' : type_def['display_name']})
         if not existing:
             new_migration = {
-                '_id' : ObjectId(), # for clarity
+                '_id' : ObjectId(),
                 'name' : type_def['display_name'],
                 'version' : 0,
             }
@@ -327,7 +332,7 @@ def _drpms(v1_database, v2_database, report):
         new_associations = []
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():
-                drpm_id = ObjectId()
+                drpm_id = uuid.uuid4()
                 new_drpm = {
                     "_id" : drpm_id,
                     "_storage_path" : os.path.join(DIR_DRPM, drpm.filename),
@@ -378,7 +383,7 @@ def _errata(v1_database, v2_database, report):
     missing_v1_errata = v1_coll.find({'id' : {'$nin' : v2_errata_ids}})
 
     for v1_erratum in missing_v1_errata:
-        erratum_id = ObjectId()
+        erratum_id = uuid.uuid4()
         new_erratum = {
             '_id' : erratum_id,
             '_storage_path' : None,
@@ -443,7 +448,7 @@ def _distributions(v1_database, v2_database, report):
     all_v1_distros = v1_coll.find()
     for v1_distro in all_v1_distros:
         new_distro = {
-            '_id' : ObjectId(),
+            '_id' : uuid.uuid4(),
             '_content_type_id' : 'distribution',
             'id' : v1_distro['id'],
             'arch' : v1_distro['arch'],
@@ -585,7 +590,7 @@ def _package_groups(v1_database, v2_database, report):
                 continue
 
             v1_group = v1_repo['packagegroups'][group_id]
-            v2_group_id = ObjectId()
+            v2_group_id = uuid.uuid4()
             new_group = {
                 '_id' : v2_group_id,
                 '_storage_path' : None,
@@ -648,7 +653,7 @@ def _package_group_categories(v1_database, v2_database, report):
                 continue
 
             v1_category = v1_repo['packagegroupcategories'][category_id]
-            category_id = ObjectId()
+            category_id = uuid.uuid4()
             new_category = {
                 '_id' : category_id,
                 '_storage_path' : None,
@@ -691,7 +696,7 @@ def _isos(v1_database, v2_database, report):
 
     v1_files = v1_database.file.find()
     for v1_file in v1_files:
-        new_iso_id = ObjectId()
+        new_iso_id = uuid.uuid4()
 
         v2_iso = {
             '_id' : new_iso_id,

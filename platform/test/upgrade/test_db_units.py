@@ -11,6 +11,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import uuid
 
 from pulp.server.compat import ObjectId
 
@@ -324,7 +325,7 @@ class DistributionUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(v1_distros.count(), v2_distros.count())
 
         for v1_distro, v2_distro in zip(v1_distros, v2_distros):
-            self.assertTrue(isinstance(v2_distro['_id'], ObjectId))
+            self.assertTrue(isinstance(v2_distro['_id'], uuid.UUID))
             self.assertEqual(v2_distro['_content_type_id'], 'distribution')
             expected_path = '/var/lib/pulp/content/distribution/%s' % v2_distro['id']
             self.assertEqual(v2_distro['_storage_path'], expected_path)
@@ -396,7 +397,7 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(v1_errata.count(), v2_errata.count())
 
         for v1_erratum, v2_erratum in zip(v1_errata, v2_errata):
-            self.assertTrue(isinstance(v2_erratum['_id'], ObjectId))
+            self.assertTrue(isinstance(v2_erratum['_id'], uuid.UUID))
             self.assertEqual(v2_erratum['_storage_path'], None)
 
             for k in ('description', 'from_str', 'id', 'issued', 'pkglist',
@@ -482,7 +483,7 @@ class PackageGroupUpgradeTests(BaseDbUpgradeTests):
                 v2_group = self.tmp_test_db.database.units_package_group.find_one({'repo_id' : v1_repo['id'], 'id' : group_id})
                 self.assertTrue(v2_group is not None)
 
-                self.assertTrue(isinstance(v2_group['_id'], ObjectId))
+                self.assertTrue(isinstance(v2_group['_id'], uuid.UUID))
                 self.assertEqual(v2_group['_storage_path'], None)
                 self.assertEqual(v2_group['_content_type_id'], 'package_group')
 
@@ -563,7 +564,7 @@ class PackageCategoryUpgradeTests(BaseDbUpgradeTests):
                 v2_category = self.tmp_test_db.database.units_package_category.find_one({'repo_id' : v1_repo['id'], 'id' : category_id})
                 self.assertTrue(v2_category is not None)
 
-                self.assertTrue(isinstance(v2_category['_id'], ObjectId))
+                self.assertTrue(isinstance(v2_category['_id'], uuid.UUID))
                 self.assertEqual(v2_category['_storage_path'], None)
                 self.assertEqual(v2_category['_content_type_id'], 'package_category')
 
