@@ -76,11 +76,43 @@ def run_publish():
         bar.render(len(call_reports) - len(pending_call_reports), len(call_reports))
     p.write('')
 
-    p.write('Completed publishing repositories')
+    # Display any failed publish operations
+    failed_publishes = [r for r in call_reports if (r['state'] == 'error')]
+    if len(failed_publishes) > 0:
+        p.write('The following publish operations failed:')
+        for r in failed_publishes:
+            # Figure out the ID of the repo from the task tags
+            task_tags = r['tags']
+            repo_id = _repo_id_from_tags(task_tags)
+            p.write('  %s' % repo_id)
 
-    return os.EX_OK
+        p.write('')
+        p.write('Run the sync command on the repositories list above to '
+                'get more information on the errors.')
+        return os.EX_SOFTWARE
+    else:
+        p.write('Completed publishing repositories')
+        return os.EX_OK
 
 # -- private ------------------------------------------------------------------
+
+def _repo_id_from_tags(task_tags):
+    """
+    Returns the ID of the repository mentioned in the given list of tags.
+    @param task_tags: list of tags from the call report
+    @return: repo ID as a string
+    """
+
+    # There's no real way in common to get a non-repo specific tag, so assemble
+    # that prefix here
+    repo_id_prefix = tags._PULP_NAMESPACE + tags._NAMESPACE_DELIMITER + \
+                     tags.RESOURCE_REPOSITORY_TYPE + tags._NAMESPACE_DELIMITER
+
+    repo_tags = [t for t in task_tags if t.startswith(repo_id_prefix)]
+    repo_id = repo_tags[0][len(repo_id_prefix):]
+
+    return repo_id
+
 
 def _list_repos():
     """
