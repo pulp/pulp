@@ -56,8 +56,6 @@ mkdir -p /srv
 mkdir -p %{buildroot}/%{_sysconfdir}/pulp
 mkdir -p %{buildroot}/%{_usr}/lib
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
-mkdir -p %{buildroot}/%{_usr}/lib/pulp/admin/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 mkdir -p %{buildroot}/%{_var}/lib/pulp/citrus/published/http
 mkdir -p %{buildroot}/%{_var}/lib/pulp/citrus/published/https
@@ -66,9 +64,6 @@ mkdir -p %{buildroot}/%{_var}/www/pulp/citrus
 # Configuration
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
-
-# Extensions
-cp -R extensions/admin/* %{buildroot}/%{_usr}/lib/pulp/admin/extensions
 
 # Agent Handlers
 cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
@@ -111,23 +106,6 @@ Plugins to provide citrus support.
 %defattr(-,apache,apache,-)
 %{_var}/lib/pulp/citrus
 %{_var}/www/pulp/citrus
-%doc
-
-# ---- Admin (builtin) Extensions ----------------------------------------------
-
-%package admin-extensions
-Summary: The citrus admin client extensions
-Group: Development/Languages
-Requires: pulp-admin-client >= %{version}
-
-%description admin-extensions
-A collection of extensions that supplement and override generic admin
-client capabilites with citrus specific features.
-
-
-%files admin-extensions
-%defattr(-,root,root,-)
-%{_usr}/lib/pulp/admin/extensions/pulp_admin_citrus/
 %doc
 
 # ---- Agent Handlers ----------------------------------------------------------
