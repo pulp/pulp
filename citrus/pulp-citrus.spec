@@ -17,8 +17,8 @@
 # ---- Pulp Citrus -------------------------------------------------------------
 
 Name: pulp-citrus
-Version: 2.0.6
-Release: 0.17.beta
+Version: 2.1.0
+Release: 0.1.alpha
 Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
@@ -86,13 +86,23 @@ rm -rf %{buildroot}
 %doc
 
 
+# define required pulp platform version.
+# pre-release package packages have dependencies based on both
+# version and release.
+%if %(echo %release | cut -f1 -d'.') < 1
+%global pulp_version %{version}-%{release}
+%else
+%global pulp_version %{version}
+%endif
+
+
 # ---- Plugins -----------------------------------------------------------------
 
 %package plugins
 Summary: Pulp citrus support plugins
 Group: Development/Languages
-Requires: %{name} >= %{version}
-Requires: pulp-server >= %{version}
+Requires: %{name} = %{version}
+Requires: pulp-server = %{pulp_version}
 
 %description plugins
 Plugins to provide citrus support.
@@ -113,7 +123,7 @@ Plugins to provide citrus support.
 %package handlers
 Summary: Pulp agent rpm handlers
 Group: Development/Languages
-Requires: python-pulp-agent-lib >= %{version}
+Requires: python-pulp-agent-lib = %{pulp_version}
 
 %description handlers
 Pulp citrus handlers.
