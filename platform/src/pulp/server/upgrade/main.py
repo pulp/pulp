@@ -285,7 +285,7 @@ class Upgrader(object):
 
         # Backup
         if self.backup_v1_db:
-            self._print(_('Backing up the v1 database to %(db)s') % self.v1_backup_db_name)
+            self._print(_('Backing up the v1 database to %(db)s') % {'db' : self.v1_backup_db_name})
 
             spinner = ThreadedSpinner(self.prompt)
             spinner.start()
