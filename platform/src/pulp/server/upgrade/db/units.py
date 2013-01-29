@@ -332,7 +332,7 @@ def _drpms(v1_database, v2_database, report):
         new_associations = []
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():
-                drpm_id = uuid.uuid4()
+                drpm_id = str(uuid.uuid4())
                 new_drpm = {
                     "_id" : drpm_id,
                     "_storage_path" : os.path.join(DIR_DRPM, drpm.filename),
@@ -383,7 +383,7 @@ def _errata(v1_database, v2_database, report):
     missing_v1_errata = v1_coll.find({'id' : {'$nin' : v2_errata_ids}})
 
     for v1_erratum in missing_v1_errata:
-        erratum_id = uuid.uuid4()
+        erratum_id = str(uuid.uuid4())
         new_erratum = {
             '_id' : erratum_id,
             '_storage_path' : None,
@@ -448,7 +448,7 @@ def _distributions(v1_database, v2_database, report):
     all_v1_distros = v1_coll.find()
     for v1_distro in all_v1_distros:
         new_distro = {
-            '_id' : uuid.uuid4(),
+            '_id' : str(uuid.uuid4()),
             '_content_type_id' : 'distribution',
             'id' : v1_distro['id'],
             'arch' : v1_distro['arch'],
@@ -590,7 +590,7 @@ def _package_groups(v1_database, v2_database, report):
                 continue
 
             v1_group = v1_repo['packagegroups'][group_id]
-            v2_group_id = uuid.uuid4()
+            v2_group_id = str(uuid.uuid4())
             new_group = {
                 '_id' : v2_group_id,
                 '_storage_path' : None,
@@ -653,7 +653,7 @@ def _package_group_categories(v1_database, v2_database, report):
                 continue
 
             v1_category = v1_repo['packagegroupcategories'][category_id]
-            category_id = uuid.uuid4()
+            category_id = str(uuid.uuid4())
             new_category = {
                 '_id' : category_id,
                 '_storage_path' : None,
@@ -696,7 +696,7 @@ def _isos(v1_database, v2_database, report):
 
     v1_files = v1_database.file.find()
     for v1_file in v1_files:
-        new_iso_id = uuid.uuid4()
+        new_iso_id = str(uuid.uuid4())
 
         v2_iso = {
             '_id' : new_iso_id,
