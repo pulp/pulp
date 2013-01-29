@@ -24,7 +24,8 @@ from pymongo import Connection
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 from pulp.server.upgrade.db import (all_repos, cds, consumers, events, iso_repos,
-                                    tasks, unit_count, units, users, yum_repos)
+                                    migrations, tasks, unit_count, units, users,
+                                    yum_repos)
 from pulp.server.upgrade.filesystem import (clean, distribution, isos, permissions, rpms)
 
 
@@ -44,6 +45,7 @@ DB_UPGRADE_CALLS = (
     (all_repos.upgrade, _('Repository Groups, Sync Schedules')),
     (units.upgrade, _('Packages, Errata, and Distributions')),
     (unit_count.upgrade, _('Calculate Repository Content Counts')),
+    (migrations.upgrade, _('Database Migration Initialization')),
 )
 
 FILES_UPGRADE_CALLS = (
