@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.7
-Release: 2
+Version: 2.0.8
+Release: 0.1.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -409,6 +409,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Jan 29 2013 Jeff Ortel <jortel@redhat.com> 2.0.8-0.1.beta
+- 
+
 * Thu Jan 24 2013 Jeff Ortel <jortel@redhat.com> 2.0.7-2
 - 
 
