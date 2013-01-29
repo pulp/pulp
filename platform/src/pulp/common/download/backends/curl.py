@@ -132,7 +132,9 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                 _LOG.exception(e)
                 break
 
-        self.fire_batch_finished([i[1] for i in request_cache])
+        request_reports = [i[1] for i in request_cache]
+        self.fire_batch_finished(request_reports)
+        return request_reports
 
     # pycurl multi handle construction -----------------------------------------
 
