@@ -234,7 +234,7 @@ def _packages(v1_database, v2_database, package_coll, all_v1_packages,
     # mongo's uniqueness check prevent a duplicate.
 
     for v1_rpm in all_v1_packages:
-        new_rpm_id = ObjectId()
+        new_rpm_id = str(uuid.uuid4())
         v2_rpm = {
             'name' : v1_rpm['name'],
             'epoch' : v1_rpm['epoch'],

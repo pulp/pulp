@@ -153,7 +153,7 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(v1_packages.count(), v2_rpms.count())
 
         for v1_rpm, v2_rpm in zip(v1_packages, v2_rpms):
-            self.assertTrue(isinstance(v2_rpm['_id'], ObjectId))
+            self.assertTrue(isinstance(v2_rpm['_id'], basestring))
             self.assertEqual(v2_rpm['_content_type_id'], 'rpm')
             expected_path = '/var/lib/pulp/content/rpm/%s/%s/%s/%s/%s/%s' % \
                             (v2_rpm['name'], v2_rpm['version'], v2_rpm['release'],
