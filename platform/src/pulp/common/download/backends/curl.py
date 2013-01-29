@@ -14,7 +14,6 @@
 import datetime
 import logging
 import shutil
-import signal
 import tempfile
 
 import pycurl
@@ -38,7 +37,6 @@ DEFAULT_FOLLOW_LOCATION = 1
 DEFAULT_MAX_REDIRECTS = 5
 DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_REQUEST_TIMEOUT = 300
-DEFAULT_NO_SIGNAL = 1
 DEFAULT_NO_PROGRESS = 0
 
 DEFAULT_SSL_VERIFY_PEER = 1
@@ -66,7 +64,6 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         free_handles = multi_handle.handles[:]
 
         self.fire_batch_started([i[1] for i in request_queue[::-1]])
-        self._set_signals()
 
         # main request processing loop
         # TODO (jconnor 2013-01-22) add cancellation detection to this loop
@@ -135,16 +132,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                 _LOG.exception(e)
                 break
 
-        self._clear_signals()
         self.fire_batch_finished([i[1] for i in request_cache])
-
-    # signal utility methods ---------------------------------------------------
-
-    def _set_signals(self):
-        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
-
-    def _clear_signals(self):
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     # pycurl multi handle construction -----------------------------------------
 
@@ -178,7 +166,6 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         easy_handle.setopt(pycurl.MAXREDIRS, DEFAULT_MAX_REDIRECTS)
         easy_handle.setopt(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
         easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
-        easy_handle.setopt(pycurl.NOSIGNAL, DEFAULT_NO_SIGNAL)
         easy_handle.setopt(pycurl.NOPROGRESS, DEFAULT_NO_PROGRESS)
 
     def _add_basic_auth_credentials(self, easy_handle):
