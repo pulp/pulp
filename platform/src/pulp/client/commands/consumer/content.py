@@ -10,3 +10,26 @@
 # PARTICULAR PURPOSE.
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
+from gettext import gettext as _
+
+from pulp.client.commands.polling import PollingCommand
+from pulp.client.extensions.extensions import PulpCliSection
+
+
+class ConsumerContentInstallCommand(PollingCommand):
+    pass
+
+
+class ConsumerContentUpdateCommand(PollingCommand):
+    pass
+
+
+class ConsumerContentUninstallCommand(PollingCommand):
+    pass
+
+# progress tracker -------------------------------------------------------------
+
+class ConsumerContentProgressTracker(object):
+    pass
+

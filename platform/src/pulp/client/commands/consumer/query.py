@@ -10,3 +10,22 @@
 # PARTICULAR PURPOSE.
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
+from gettext import gettext as _
+
+from pulp.client.commands.criteria import CriteriaCommand
+from pulp.client.extensions.extensions import (
+    PulpCliCommand, PulpCliFlag, PulpCliOption)
+
+
+class ConsumerListCommand(PulpCliCommand):
+    pass
+
+
+class ConsumerSearchCommand(CriteriaCommand):
+    pass
+
+
+class ConsumerHistoryCommand(PulpCliCommand):
+    pass
+
