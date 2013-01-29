@@ -42,13 +42,38 @@ content are handler specific.  The options drive how the handler performs the op
      {"unit_key": {"name": "zsh", "version": "4.3.17"}, "type_id": "rpm"}
    ],
    "options": {
-     "apply": true, "reboot": false
+     "apply": true, "reboot": false, "importkeys": false
    }
  }
 
 :sample_response:`202` ::
 
  {
+   "task_group_id": null, 
+   "call_request_id": "4c7d0e50-d8dc-4da6-8996-277d97061086", 
+   "exception": null, 
+   "_href": "/pulp/api/v2/tasks/4c7d0e50-d8dc-4da6-8996-277d97061086/", 
+   "task_id": "4c7d0e50-d8dc-4da6-8996-277d97061086", 
+   "call_request_tags": [
+     "pulp:consumer:test-consumer", 
+     "pulp:action:unit_install"
+   ], 
+   "reasons": [], 
+   "start_time": null, 
+   "traceback": null, 
+   "schedule_id": null, 
+   "finish_time": null, 
+   "state": "waiting", 
+   "result": null, 
+   "dependency_failures": {}, 
+   "call_request_group_id": null, 
+   "progress": {}, 
+   "principal_login": "admin", 
+   "response": "accepted", 
+   "tags": [
+     "pulp:consumer:test-consumer", 
+     "pulp:action:unit_install"
+   ]
  }
 
 
@@ -93,13 +118,38 @@ content are handler specific.  The options drive how the handler performs the op
      {"unit_key": {"name": "zsh"}, "type_id": "rpm"}
    ],
    "options": {
-     "apply": true, "reboot": false
+     "apply": true, "reboot": false, "all": false, "importkeys": false
    }
  }
  
 :sample_response:`202` ::
 
  {
+   "task_group_id": null, 
+   "call_request_id": "9671c8b6-853d-4a3a-ab5b-0bb719ac1501", 
+   "exception": null, 
+   "_href": "/pulp/api/v2/tasks/9671c8b6-853d-4a3a-ab5b-0bb719ac1501/", 
+   "task_id": "9671c8b6-853d-4a3a-ab5b-0bb719ac1501", 
+   "call_request_tags": [
+     "pulp:consumer:test-consumer", 
+     "pulp:action:unit_update"
+   ], 
+   "reasons": [], 
+   "start_time": null, 
+   "traceback": null, 
+   "schedule_id": null, 
+   "finish_time": null, 
+   "state": "waiting", 
+   "result": null, 
+   "dependency_failures": {}, 
+   "call_request_group_id": null, 
+   "progress": {}, 
+   "principal_login": "admin", 
+   "response": "accepted", 
+   "tags": [
+     "pulp:consumer:test-consumer", 
+     "pulp:action:unit_update"
+   ]
  }
  
 
@@ -149,4 +199,30 @@ content are handler specific.  The options drive how the handler performs the op
 :sample_response:`202` ::
 
  {
+   "task_group_id": null, 
+   "call_request_id": "c9195ec7-c101-48ed-a3a5-e8310ee10a5f", 
+   "exception": null, 
+   "_href": "/pulp/api/v2/tasks/c9195ec7-c101-48ed-a3a5-e8310ee10a5f/", 
+   "task_id": "c9195ec7-c101-48ed-a3a5-e8310ee10a5f", 
+   "call_request_tags": [
+     "pulp:consumer:test-consumer", 
+     "pulp:action:unit_uninstall"
+   ], 
+   "reasons": [], 
+   "start_time": null, 
+   "traceback": null, 
+   "schedule_id": null, 
+   "finish_time": null, 
+   "state": "waiting", 
+   "result": null, 
+   "dependency_failures": {}, 
+   "call_request_group_id": null, 
+   "progress": {}, 
+   "principal_login": "admin", 
+   "response": "accepted", 
+   "tags": [
+     "pulp:consumer:test-consumer", 
+     "pulp:action:unit_uninstall"
+   ]
  }
+
