@@ -13,13 +13,12 @@
 from gettext import gettext as _
 import os
 
-from pulp.server.upgrade.filesystem.repos import WORKING_DIR_ROOT
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
 DIRS = (
     '/var/lib/pulp/content',
-    WORKING_DIR_ROOT,
+    '/var/lib/pulp/working',
 )
 
 
