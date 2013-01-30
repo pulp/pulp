@@ -212,12 +212,23 @@ class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
         prefix = self.__class__.__name__ + '-ssl_working_dir-'
         self.ssl_working_dir = tempfile.mkdtemp(prefix=prefix)
 
-        self.ssl_ca_cert = self._write_tmp_ssl_data(self.config.ssl_ca_cert,
-                                                    '-ssl_ca_cert.pem')
-        self.ssl_client_cert = self._write_tmp_ssl_data(self.config.ssl_client_cert,
-                                                        '-ssl_client_cert.pem')
-        self.ssl_client_key = self._write_tmp_ssl_data(self.config.ssl_client_key,
-                                                       '-ssl_client_key.pem')
+        self.ssl_ca_cert = None
+        if config.ssl_ca_cert is not None:
+            self.ssl_ca_cert = self._write_tmp_ssl_data(config.ssl_ca_cert, '-ssl_ca_cert.crt')
+        elif config.ssl_ca_cert_path is not None:
+            self.ssl_ca_cert = config.ssl_ca_cert_path
+
+        self.ssl_client_cert = None
+        if config.ssl_client_cert is not None:
+            self.ssl_client_cert = self._write_tmp_ssl_data(config.ssl_client_cert, '-ssl_client_cert.crt')
+        elif config.ssl_client_cert_path is not None:
+            self.ssl_client_cert = config.ssl_client_cert_path
+
+        self.ssl_client_key = None
+        if config.ssl_client_key is not None:
+            self.ssl_client_key = self._write_tmp_ssl_data(config.ssl_client_key, '-ssl_client_key.key')
+        elif config.ssl_client_key_path is not None:
+            self.ssl_client_key = config.ssl_client_key_path
 
     def __del__(self):
         shutil.rmtree(self.ssl_working_dir)

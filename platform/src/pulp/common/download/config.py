@@ -25,8 +25,11 @@ class DownloaderConfig(object):
      * basic_auth_username: http basic auth username (basic_auth_password must also be provided)
      * basic_auth_password: http basic auth password (basic_auth_username must also be provided)
      * ssl_ca_cert: certificate authority cert for secure connections (https protocol only)
+     * ssl_ca_cert_path: path to a ssl ca cert (incompatible with ssl_ca_cert)
      * ssl_client_cert: client certificate for secure connections (https protocol only)
+     * ssl_client_cert_path: path to a ssl client cert (incompatible with ssl_client_cert)
      * ssl_client_key: client private key for secure connections (https protocol only)
+     * ssl_client_key_path: path to a ssl client key (incompatible with ssl_client_key)
     """
 
     def __init__(self, protocol, **kwargs):
