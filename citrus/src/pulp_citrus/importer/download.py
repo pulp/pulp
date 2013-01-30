@@ -54,18 +54,24 @@ class DownloadListener(DownloadEventListener):
         self.batch = batch
         self.failed = []
 
+    @property
+    def progress(self):
+        return self.strategy.progress
+
     def download_started(self, report):
         self.__lock()
         try:
+            self.progress.set_action('downloading', report.url)
             dir_path = os.path.dirname(report.file_path)
             if not os.path.exists(dir_path):
-                os.mkdir(dir_path)
+                os.makedirs(dir_path)
         finally:
             self.__unlock()
 
     def download_succeeded(self, report):
         self.__lock()
         try:
+            self.progress.set_action('downloaded', report.url)
             unit = self.batch.units.get(report.url)
             try:
                 self.strategy.add_unit(unit)
