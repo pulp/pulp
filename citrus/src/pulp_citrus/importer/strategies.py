@@ -115,7 +115,7 @@ class ImporterStrategy:
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
-            # fetch upstream units
+        # fetch upstream units
         upstream = {}
         try:
             self.progress.push_step('fetch_upstream')
@@ -123,7 +123,7 @@ class ImporterStrategy:
             upstream.update(units)
             self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Fetch local units failed for repository: %(r)s')
+            msg = _('Fetch upstream units failed for repository: %(r)s')
             msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)

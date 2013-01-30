@@ -22,6 +22,7 @@ import shutil
 import gzip
 
 from logging import getLogger
+from tempfile import mktemp, mkdtemp
 
 from pulp.common.download.request import DownloadRequest
 
@@ -78,7 +79,7 @@ class Manifest:
         :raise HTTPError, URL errors.
         :raise ValueError, json decoding errors
         """
-        tmp_dir = tempfile.mkdtemp()
+        tmp_dir = mkdtemp()
         try:
             file_path = os.path.join(tmp_dir, self.FILE_NAME)
             request = DownloadRequest(str(url), file_path)
@@ -99,37 +100,54 @@ class Manifest:
 class File:
 
     @staticmethod
-    def decompress(file_path):
-        fp_in = gzip.open(file_path)
+    def compress(file_path):
+        """
+        In-place file compression using gzip.
+        :param file_path: A fully qualified file path.
+        :type file_path: str
+        """
+        tmp_path = mktemp()
+        shutil.move(file_path, tmp_path)
+        fp_in = open(tmp_path)
         try:
-            tmp_path = tempfile.mktemp()
-            fp_out = open(tmp_path, 'w+')
+            fp_out = gzip.open(file_path, 'wb')
             try:
                 File.copy(fp_in, fp_out)
-                os.unlink(file_path)
-                os.rename(tmp_path, file_path)
             finally:
                 fp_out.close()
         finally:
             fp_in.close()
+            os.unlink(tmp_path)
 
     @staticmethod
-    def compress(file_path):
-        fp_in = open(file_path)
+    def decompress(file_path):
+        """
+        In-place file decompression using gzip.
+        :param file_path: A fully qualified file path.
+        :type file_path: str
+        """
+        tmp_path = mktemp()
+        shutil.move(file_path, tmp_path)
+        fp_in = gzip.open(tmp_path)
         try:
-            tmp_path = tempfile.mktemp()
-            fp_out = gzip.open(tmp_path, 'wb')
+            fp_out = open(file_path, 'wb')
             try:
                 File.copy(fp_in, fp_out)
-                os.unlink(file_path)
-                os.rename(tmp_path, file_path)
             finally:
                 fp_out.close()
         finally:
             fp_in.close()
+            os.unlink(tmp_path)
 
     @staticmethod
     def copy(fp_in, fp_out):
+        """
+        Buffered copy between open file pointers.
+        :param fp_in: Input file.
+        :type fp_in: file-like
+        :param fp_out: Output file.
+        :type fp_out: file-like
+        """
         while True:
             buf = fp_in.read(0x100000)
             if buf:

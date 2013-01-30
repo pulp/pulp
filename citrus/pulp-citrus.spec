@@ -123,6 +123,7 @@ Plugins to provide citrus support.
 %package handlers
 Summary: Pulp agent rpm handlers
 Group: Development/Languages
+Requires: %{name} = %{version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 
 %description handlers
