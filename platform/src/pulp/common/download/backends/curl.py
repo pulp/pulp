@@ -13,6 +13,7 @@
 
 import datetime
 import logging
+import os
 import shutil
 import tempfile
 
@@ -237,8 +238,8 @@ class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
         if data is None:
             return None
         file_handle, file_path = tempfile.mkstemp(suffix=file_suffix, dir=self.ssl_working_dir)
-        file_handle.write(data)
-        file_handle.close()
+        os.write(file_handle, data)
+        os.close(file_handle)
         return file_path
 
     # overridden and augmented easy handle construction ------------------------
