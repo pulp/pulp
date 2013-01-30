@@ -52,6 +52,8 @@ class DownloadBackend(object):
 
         :param request_list: list of download requests
         :type request_list: list of pulp.common.download.request.DownloadRequest
+        :return: list of download reports corresponding the the download requests
+        :rtype: list of pulp.common.download.report.DownloadReport
         """
         raise NotImplementedError()
 

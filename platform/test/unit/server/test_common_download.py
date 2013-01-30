@@ -27,7 +27,7 @@ from pulp.common.download.request import DownloadRequest
 
 from http_static_test_server import HTTPStaticTestServer
 
-# mock and test data classes ---------------------------------------------------
+# mock and test data methods and classes ---------------------------------------
 
 class MockEventListener(mock.Mock):
 
@@ -122,6 +122,15 @@ class MockObjFactory(object):
         self.mock_objs.append(mock_instance)
         return mock_instance
 
+
+def determine_relative_data_dir():
+    possible_data_dir = 'platform/test/unit/server/data/test_common_download/'
+    while possible_data_dir:
+        if os.path.exists(possible_data_dir):
+            return possible_data_dir
+        possible_data_dir = possible_data_dir.split('/', 1)[1]
+    raise RuntimeError('Cannot determine relative data path')
+
 # test suite -------------------------------------------------------------------
 
 class FactoryTests(unittest.TestCase):
@@ -146,7 +155,8 @@ class FactoryTests(unittest.TestCase):
 
 
 class DownloadTests(unittest.TestCase):
-    data_dir = 'data/test_common_download/'
+    #data_dir = 'data/test_common_download/'
+    data_dir = determine_relative_data_dir()
     file_list = ['100K_file', '500K_file', '1M_file']
     file_sizes = [102400, 512000, 1048576]
 
@@ -188,7 +198,7 @@ class MockCurlDownloadTests(DownloadTests):
 
         mock_curl = pycurl.Curl.mock_objs[-1] # curl objects are used from back of the list
 
-        self.assertEqual(mock_curl.setopt.call_count, 9) # also dangerous for the same reasons
+        self.assertEqual(mock_curl.setopt.call_count, 8) # also dangerous for the same reasons
         self.assertEqual(mock_curl.perform.call_count, 1)
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
@@ -254,7 +264,7 @@ class MockCurlDownloadTests(DownloadTests):
 
         mock_curl = pycurl.Curl.mock_objs[-1] # curl objects are used from the end
 
-        self.assertEqual(mock_curl.setopt.call_count, 11) # dangerous as this could easily change
+        self.assertEqual(mock_curl.setopt.call_count, 10) # dangerous as this could easily change
 
 class LiveCurlDownloadTests(DownloadTests):
     # test suite that tests that pycurl is being used (mostly) correctly
