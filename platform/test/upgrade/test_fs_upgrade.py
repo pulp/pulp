@@ -30,7 +30,8 @@ class TestFileSystemUpgrade(BaseFileUpgradeTests):
 
     def test_rpms(self):
         report = UpgradeStepReport()
-        rpms.V1_DIR_RPMS = "%s/%s" % (V1_TEST_FILESYSTEM, rpms.V1_DIR_RPMS)
+        if not rpms.V1_DIR_RPMS.startswith(V1_TEST_FILESYSTEM):
+            rpms.V1_DIR_RPMS = "%s/%s" % (V1_TEST_FILESYSTEM, rpms.V1_DIR_RPMS)
         rpms.DIR_RPMS = "%s/%s" % (V2_TEST_FILESYSTEM, rpms.DIR_RPMS)
         v1_rpms_list_pre_upgrade = get_files_in_dir('*.rpm', rpms.V1_DIR_RPMS)
         status = rpms._rpms(self.v1_test_db.database, self.v2_test_db.database, report)
@@ -91,10 +92,12 @@ class DRPMUpgradeTests(BaseFileUpgradeTests):
 
     def test_drpms(self):
         report = UpgradeStepReport()
+        if not rpms.V1_DIR_RPMS.startswith(V1_TEST_FILESYSTEM):
+            rpms.V1_DIR_RPMS = "%s/%s" % (V1_TEST_FILESYSTEM, rpms.V1_DIR_RPMS)
         rpms.DIR_DRPM = "%s/%s" % (V2_TEST_FILESYSTEM, rpms.DIR_DRPM)
         status = rpms._drpms(self.v1_test_db.database, self.v2_test_db.database, report)
         self.assertTrue(status)
-        v2_rpms_list = get_files_in_dir('*.drpm', rpms.DIR_DRPM)
+        v2_rpms_list = get_files_in_dir('*.drpm', os.path.join(rpms.DIR_DRPM, "drpms"))
         self.assertEquals(18, len(v2_rpms_list))
 
         self.assertEquals(len(report.errors), 0)

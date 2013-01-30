@@ -45,7 +45,6 @@ def _rpms(v1_database, v2_database, report):
             v2_pkgpath = os.path.join(DIR_SRPMS, rpm_rel_path)
         else:
             v2_pkgpath = os.path.join(DIR_RPMS, rpm_rel_path)
-
         if not os.path.exists(v1_pkgpath):
             # missing source path, skip migrate
             report.warning("Package %s does not exist" % v1_pkgpath)
@@ -78,7 +77,7 @@ def _drpms(v1_database, v2_database, report):
         for nevra, dpkg in deltarpms.items():
             for drpm in dpkg.deltas.values():
                 v2_path = os.path.join(DIR_DRPM, drpm.filename)
-                v1_path = os.path.join(repo['repomd_xml_path'].split("repodata/repomd.xml")[0], drpm.filename)
+                v1_path = os.path.join(V1_DIR_RPMS, drpm.filename)
                 if not os.path.exists(v1_path):
                     # missing source path, skip migrate
                     report.warning("Package %s does not exist" % v1_path)
