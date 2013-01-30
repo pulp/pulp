@@ -599,9 +599,12 @@ class ContentApplicability(JSONController):
     def POST(self):
         """
         Determine content applicability.
-        body {consumer_criteria:<dict>, repo_criteria:<dict> or None, 
+        body {
+        consumer_criteria:<dict>, 
+        repo_criteria:<dict> or None, 
         units: {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..]
                 <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]} or None
+        }
 
         @return: A dict of applicability reports keyed by consumer ID.
             Each report is:

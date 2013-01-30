@@ -60,10 +60,6 @@ class ApplicabilityManager(object):
         consumer_query_manager = managers.consumer_query_manager()
         consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
 
-        # Make sure you can get profiles of all consumers
-        profile_manager = managers.consumer_profile_manager()
-        profile_manager.find_profiles(consumer_ids)
-
         # Get repo ids satisfied by specified consumer criteria
         if repo_criteria:
             repo_query_manager = managers.repo_query_manager()
@@ -72,7 +68,6 @@ class ApplicabilityManager(object):
             repo_criteria_ids = None
 
         bind_manager = managers.consumer_bind_manager()
-        repo_unit_association_query_manager = managers.repo_unit_association_query_manager()
 
         for consumer_id in consumer_ids:
 
@@ -80,17 +75,16 @@ class ApplicabilityManager(object):
             bindings = bind_manager.find_by_consumer(consumer_id)
             bound_repo_ids = [b['repo_id'] for b in bindings]
 
-            # If repo_criteria is not specified, user repos bound to the consumer, else take intersections 
+            # If repo_criteria is not specified, use repos bound to the consumer, else take intersection 
             # of repos specified in the criteria and repos bound to the consumer.
             if repo_criteria_ids is None:
                 repo_ids = bound_repo_ids
             else:
                 repo_ids = list(set(bound_repo_ids) & set(repo_criteria_ids))
 
-            # If units are not specified, consider all units in the repos bound to the consumer.
-            if units is None:
-                for repo_id in repo_ids:
-                    units = repo_unit_association_query_manager.get_unit_ids(repo_id)
+            units = self.parse_units(units, repo_ids)
+
+            _LOG.debug("Checking applicability of units - %s for repo ids - %s" % (units, repo_ids))
 
             if units:
                 for typeid, unit_keys in units.items():
@@ -101,9 +95,10 @@ class ApplicabilityManager(object):
                         unit = {'type_id' : typeid,
                                 'unit_key' : unit_key}
                         report = profiler.unit_applicable(pc, repo_ids, unit, cfg, conduit)
-                        report.unit = unit
-                        ulist = result.setdefault(consumer_id, [])
-                        ulist.append(report)
+                        if report is not None:
+                            report.unit = unit
+                            ulist = result.setdefault(consumer_id, [])
+                            ulist.append(report)
 
         return result
 
@@ -139,3 +134,30 @@ class ApplicabilityManager(object):
             profile = p['profile']
             profiles[typeid] = profile
         return ProfiledConsumer(id, profiles)
+
+    def parse_units(self, units, repo_ids):
+        repo_unit_association_query_manager = managers.repo_unit_association_query_manager()
+
+        # If units are not specified, consider all units in repo_ids list.
+        if units is None:
+            result_units = {}
+            for repo_id in repo_ids:
+                repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
+                for unit_type_id, repo_unit_list in repo_units.items():
+                    result_units.setdefault(unit_type_id, []).extend(repo_unit_list)
+        else:
+            result_units = units
+            for unit_type_id, repo_unit_list in units.items():
+                if not repo_unit_list:
+                    for repo_id in repo_ids:
+                        repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
+                        if unit_type_id in repo_units:
+                            result_units.setdefault(unit_type_id, []).extend(repo_units[unit_type_id])
+
+#criteria = UnitAssociationCriteria(type_ids=[unit_type], unit_filters=unit_key)
+# for repo_id in repo_ids:
+#           result = conduit.get_units(repo_id, criteria)
+#             if result:
+#                return result[0]
+        return result_units
+

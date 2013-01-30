@@ -122,11 +122,11 @@ class ProfileManager(object):
 
     def find_profiles(self, consumer_ids):
         """
-        Get all profiles associated with lots of consumers.
+        Get all profiles associated with given consumers.
         @param consumer_ids: A list of consumer IDs.
         @type consumer_ids: list
         @return: A dict of:
-            {consumer_id:{content_type:<profile>}}
+            {<consumer_id>:{<content_type>:<profile>}}
         @rtype: list
         """
         profiles = dict([(c, {}) for c in consumer_ids])
