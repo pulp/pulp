@@ -13,8 +13,17 @@
 
 from gettext import gettext as _
 
+from pulp.bindings.exceptions import NotFoundException
+from pulp.client.arg_utils import args_to_notes_dict
+from pulp.client.commands.options import (
+    OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES)
 from pulp.client.extensions.extensions import (
     PulpCliCommand, PulpCliFlag, PulpCliOption)
+
+
+CONSUMER_REGISTER_DESCRIPTION = _('')
+CONSUMER_UNREGISTER_DESCRIPTION = _('unregisters a consumer')
+CONSUMER_UPDATE_DESCRIPTION = _('changes metadata on an existing consumer')
 
 
 class ConsumerRegisterCommand(PulpCliCommand):
@@ -22,9 +31,49 @@ class ConsumerRegisterCommand(PulpCliCommand):
 
 
 class ConsumerUnregisterCommand(PulpCliCommand):
-    pass
+
+    def __init__(self, context, name='unregister', description=CONSUMER_UNREGISTER_DESCRIPTION):
+        super(self.__class__, self).__init__(name, description, self.unregister)
+        self.context = context
+        self.add_option(OPTION_CONSUMER_ID)
+
+    def unregister(self, **kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        try:
+            self.context.server.consumer.unregister(consumer_id)
+        except NotFoundException:
+            self.context.prompt.write(_('Consumer [%(c)s] does not exist on the server') % {'c': consumer_id})
+        else:
+            self.context.prompt.write(_('Consumer [%(c)s] successfully unregistered') % {'c': consumer_id})
 
 
 class ConsumerUpdateCommand(PulpCliCommand):
-    pass
+
+    def __init__(self, context, name='update', description=CONSUMER_UPDATE_DESCRIPTION):
+        super(self.__class__, self).__init__(name, description, self.update)
+        self.context = context
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_NAME)
+        self.add_option(OPTION_DESCRIPTION)
+        self.add_option(OPTION_NOTES)
+
+    def update(self, **kwargs):
+        delta = dict((k, v) for k, v in kwargs.items() if v is not None)
+        consumer_id = delta.pop(OPTION_CONSUMER_ID.keyword)
+
+        if OPTION_NOTES.keyword in delta:
+            notes_args = delta.pop(OPTION_NOTES.keyword)
+            delta['notes'] = args_to_notes_dict(notes_args)
+
+        if OPTION_NAME.keyword in delta:
+            name = delta.pop(OPTION_NAME.keyword)
+            delta[OPTION_NAME.keyword.replace('-', '_')] = name
+
+        try:
+            self.context.server.consumer.update(consumer_id, delta)
+        except NotFoundException:
+            self.context.prompt.write(_('Consumer [%(c)s] does not exist on server') % {'c': consumer_id})
+        else:
+            self.context.prompt.write(_('Consumer [%(c)s] successfully updated') % {'c': consumer_id})
+
 
