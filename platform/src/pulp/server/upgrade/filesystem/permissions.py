@@ -41,7 +41,7 @@ def upgrade(v1_database, v2_database):
             pass
 
         if not success:
-            report.error(_('Could not correct permissions for directory: %(d)s') % dir)
+            report.error(_('Could not correct permissions for directory: %(d)s') % {'d' : dir})
             report.failed()
 
     if len(report.errors) == 0:

@@ -35,14 +35,14 @@ def upgrade(v1_database, v2_database):
     # directory's existence first, so there's nothing special to do here.
 
     # Importers
-    all_importers = v2_database.repo_importer.find()
+    all_importers = v2_database.repo_importers.find({})
     for i in all_importers:
         repo_id = i['repo_id']
         importer_type_id = i['importer_type_id']
         importer_working_dir(importer_type_id, repo_id)
 
     # Distributors
-    all_distributors = v2_database.repo_distributor.find()
+    all_distributors = v2_database.repo_distributors.find({})
     for d in all_distributors:
         repo_id = d['repo_id']
         distributor_type_id = d['distributor_type_id']
@@ -52,30 +52,30 @@ def upgrade(v1_database, v2_database):
     return report
 
 
-def repository_working_dir(repo_id):
+def repository_working_dir(repo_id, mkdir=True):
     working_dir = os.path.join(WORKING_DIR_ROOT, repo_id)
 
-    if not os.path.exists(working_dir):
+    if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)
 
     return working_dir
 
 
-def importer_working_dir(importer_type_id, repo_id):
-    repo_working_dir = repository_working_dir(repo_id)
+def importer_working_dir(importer_type_id, repo_id, mkdir=True):
+    repo_working_dir = repository_working_dir(repo_id, mkdir=mkdir)
     working_dir = os.path.join(repo_working_dir, 'importers', importer_type_id)
 
-    if not os.path.exists(working_dir):
+    if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)
 
     return working_dir
 
 
-def distributor_working_dir(distributor_type_id, repo_id):
-    repo_working_dir = repository_working_dir(repo_id)
+def distributor_working_dir(distributor_type_id, repo_id, mkdir=True):
+    repo_working_dir = repository_working_dir(repo_id, mkdir=mkdir)
     working_dir = os.path.join(repo_working_dir, 'distributors', distributor_type_id)
 
-    if not os.path.exists(working_dir):
+    if mkdir and not os.path.exists(working_dir):
         os.makedirs(working_dir)
 
     return working_dir
