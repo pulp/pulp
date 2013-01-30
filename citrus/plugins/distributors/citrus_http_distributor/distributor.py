@@ -11,12 +11,17 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
+
 from gettext import gettext as _
+from logging import getLogger
+
 from pulp.plugins.distributor import Distributor
-from pulp_citrus.http.publisher import HttpPublisher
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
-from logging import getLogger
+
+from pulp_citrus.http.publisher import HttpPublisher
+from pulp_citrus import link
 
 
 _LOG = getLogger(__name__)
@@ -200,36 +205,34 @@ class CitrusHttpDistributor(Distributor):
         publisher = self.publisher(repo, config)
         protocol =  config.get('protocol')
         manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
-        section = config.get(protocol)
-        ssl = section.get('ssl', {})
-        ca_cert = ssl.get('ca_cert')
-        client_cert = ssl.get('client_cert')
-        verify = ssl.get('verify', False)
+        protocol_section = config.get(protocol)
+        ssl_dict = protocol_section.get('ssl', {})
+        ssl_conf = self._ssl_conf(ssl_dict)
         conf = {
             'manifest_url':manifest_url,
-            'ssl':{
-                'ca_cert':self._read(ca_cert),
-                'client_cert':self._read(client_cert),
-                'verify':verify,
-            }
+            'protocol':protocol,
+            'ssl':ssl_conf,
         }
         return conf
 
-    def _read(self, path):
+    def _ssl_conf(self, ssl_dict):
         """
-        Read the file at the specified path unless the path is
-        None or and empty string.
-        :param path: A fully qualified path to a file.
-        :type path: str
-        :return: The file contents.
-        :rtype: str
+        Build the SSL configuration.
+        The certificate paths are replaced with packed links.
+        :param ssl_dict: The SSL part of the configuration.
+        :type ssl_dict: dict
+        :return: A built SSL configuration.
+        :rtype: dict
+        :see: Link
         """
-        if path:
-            fp = open(path)
-            try:
-                return fp.read()
-            finally:
-                fp.close()
+        conf = {}
+        if ssl_dict:
+            for key in ('ca_cert', 'client_cert'):
+                value = ssl_dict.get(key)
+                path = value['local']
+                path_out = value['remote']
+                conf[key] = link.pack(path, path_out)
+        return conf
 
     def _add_distributors(self, repo_id, payload):
         """

@@ -76,6 +76,7 @@ class DownloadListener(DownloadEventListener):
             try:
                 self.strategy.add_unit(unit)
             except Exception, e:
+                log.exception(report.url)
                 self.failed.append((unit, e))
         finally:
             self.__unlock()

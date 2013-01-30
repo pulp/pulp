@@ -20,7 +20,7 @@ from pulp.common.download.config import DownloaderConfig
 
 from pulp_citrus.importer.strategies import Mirror
 
-_LOG = getLogger(__name__)
+log = getLogger(__name__)
 
 
 class CitrusHttpImporter(Importer):
@@ -35,7 +35,7 @@ class CitrusHttpImporter(Importer):
 
     def __init__(self):
         """
-        :ivar cancelled: The cancelled indicator.
+        :ivar cancelled: Flag indicates the current operation has been cancelled..
         :type cancelled: bool
         """
         Importer.__init__(self)
@@ -51,13 +51,21 @@ class CitrusHttpImporter(Importer):
 
     def sync_repo(self, repo, conduit, config):
         try:
-            downloader_config = DownloaderConfig('http')
-            downloader = factory.get_downloader(downloader_config)
+            downloader = self._downloader(config)
             strategy = Mirror(conduit, config, downloader)
             report = strategy.synchronize(repo.id)
             details = dict(report=report.dict())
         except Exception, e:
-            msg = str(e)
+            msg = repr(e)
+            log.exception(repo.id)
             details = dict(exception=msg)
         report = conduit.build_success_report({}, details)
         return report
+
+    def _downloader(self, config):
+        ssl = config.get('ssl', {})
+        ca_cert = ssl.get('ca_cert')
+        client_cert = ssl.get('client_cert')
+        conf = DownloaderConfig('https', ssl_ca_cert=ca_cert, ssl_client_cert=client_cert)
+        return factory.get_downloader(conf)
+

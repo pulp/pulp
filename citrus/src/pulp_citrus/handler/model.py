@@ -34,6 +34,7 @@ from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
 from pulp_citrus.poller import TaskPoller
+from pulp_citrus import link
 
 
 log = getLogger(__name__)
@@ -537,7 +538,9 @@ class LocalImporter(Local, Importer):
         Add this importer to the local inventory.
         """
         binding = self.binding.repo_importer
-        binding.create(self.repo_id, self.imp_id, self.details['config'])
+        conf = self.details['config']
+        conf = link.unpack_all(conf)
+        binding.create(self.repo_id, self.imp_id, conf)
         log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
 
     def update(self, delta):
@@ -570,6 +573,7 @@ class LocalImporter(Local, Importer):
                 self.details['config'][k] = v
                 delta[k] = v
         if delta:
+            delta = link.unpack_all(delta)
             self.update(delta)
 
 

@@ -68,6 +68,9 @@ class PluginTestBase(WebTest):
     TYPEDEF_ID = UNIT_TYPE_ID
     NUM_UNITS = 3
 
+    CA_CERT = 'CA_CERTIFICATE'
+    CLIENT_CERT = 'CLIENT_CERTIFICATE_AND_KEY'
+
     @classmethod
     def tmpdir(cls, role):
         dir = tempfile.mkdtemp(dir=cls.TMP_ROOT, prefix=role)
@@ -142,7 +145,40 @@ class PluginTestBase(WebTest):
                 RepoContentUnit.OWNER_TYPE_IMPORTER,
                 CITRUS_IMPORTER)
             units.append(unit)
+        # CA
         self.units = units
+        path = os.path.join(self.upfs, 'ca.crt')
+        fp = open(path, 'w+')
+        fp.write(self.CA_CERT)
+        fp.close()
+        # client cert
+        path = os.path.join(self.upfs, 'local.crt')
+        fp = open(path, 'w+')
+        fp.write(self.CLIENT_CERT)
+        fp.close()
+
+    def dist_conf(self):
+        return {
+            'protocol':'file',
+            'http':{'alias':self.alias},
+            'https':{'alias':self.alias},
+            'file':{'alias':self.alias},
+        }
+
+    def dist_conf_with_ssl(self):
+        ssl = {
+            'ca_cert':{
+                'local':os.path.join(self.upfs, 'ca.crt'),
+                'remote':os.path.join(self.downfs, 'remote', 'ca.crt')
+            },
+            'client_cert':{
+                'local':os.path.join(self.upfs, 'local.crt'),
+                'remote':os.path.join(self.downfs, 'remote', 'client.crt')
+            }
+        }
+        d = self.dist_conf()
+        d['file']['ssl'] = ssl
+        return d
 
 
 class TestDistributor(PluginTestBase):
@@ -152,17 +188,22 @@ class TestDistributor(PluginTestBase):
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.upfs)
         # Test
-        cfg = {
-            'protocol':'file',
-            'http':{'alias':self.alias},
-            'https':{'alias':self.alias},
-            'file':{'alias':self.alias},
-        }
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        payload = dist.create_consumer_payload(repo, cfg)
+        payload = dist.create_consumer_payload(repo, self.dist_conf())
         # Verify
-        print payload
+        # TODO: NEEDED
+
+    def test_payload_with_ssl(self):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.upfs)
+        # Test
+        dist = CitrusHttpDistributor()
+        repo = Repository(self.REPO_ID)
+        payload = dist.create_consumer_payload(repo, self.dist_conf_with_ssl())
+        # Verify
+        # TODO: NEEDED
 
     def test_publish(self):
         # Setup
@@ -171,19 +212,13 @@ class TestDistributor(PluginTestBase):
         # Test
         dist = CitrusHttpDistributor()
         repo = Repository(self.REPO_ID)
-        cfg = {
-            'protocol':'file',
-            'http':{'alias':self.alias},
-            'https':{'alias':self.alias},
-            'file':{'alias':self.alias},
-        }
         conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
-        dist.publish_repo(repo, conduit, cfg)
+        dist.publish_repo(repo, conduit, self.dist_conf())
         # Verify
         conf = DownloaderConfig('http')
         downloader = factory.get_downloader(conf)
         manifest = Manifest()
-        pub = dist.publisher(repo, cfg)
+        pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
         units = manifest.read(url, downloader)
         self.assertEqual(len(units), self.NUM_UNITS)
@@ -253,7 +288,7 @@ class TestAgentPlugin(PluginTestBase):
 
     PULP_ID = 'downstream'
 
-    def populate(self):
+    def populate(self, ssl=False):
         PluginTestBase.populate(self)
         # register downstream
         manager = managers.consumer_manager()
@@ -263,17 +298,16 @@ class TestAgentPlugin(PluginTestBase):
         cfg = dict(manifest_url='http://apple.com')
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distributor
+        if ssl:
+            dist_conf = self.dist_conf_with_ssl()
+        else:
+            dist_conf = self.dist_conf()
+
         manager = managers.repo_distributor_manager()
-        cfg = {
-            'protocol':'file',
-            'http':{'alias':self.alias},
-            'https':{'alias':self.alias},
-            'file':{'alias':self.alias},
-        }
         manager.add_distributor(
             self.REPO_ID,
             CITRUS_DISTRUBUTOR,
-            cfg,
+            dist_conf,
             False,
             CITRUS_DISTRUBUTOR)
         # bind
@@ -374,14 +408,8 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = {
-                'protocol':'file',
-                'http':{'alias':self.alias},
-                'https':{'alias':self.alias},
-                'file':{'alias':self.alias},
-            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
-            dist.publish_repo(repo, conduit, cfg)
+            dist.publish_repo(repo, conduit, self.dist_conf())
             options = dict(all=True)
             units = [{'type_id':'repository', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.downfs)
@@ -428,18 +456,12 @@ class TestAgentPlugin(PluginTestBase):
         @patch('citrus.Mirror', TestStrategy(self))
         def test_handler(*unused):
             # publish
-            self.populate()
+            self.populate(ssl=True)
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = {
-                'protocol':'file',
-                'http':{'alias':self.alias},
-                'https':{'alias':self.alias},
-                'file':{'alias':self.alias},
-            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
-            dist.publish_repo(repo, conduit, cfg)
+            dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
             options = dict(all=True)
             handler = CitrusHandler(self)
@@ -463,6 +485,10 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['add_failed']), 0)
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
+        path = os.path.join(self.downfs, 'remote', 'ca.crt')
+        self.assertTrue(os.path.exists(path))
+        path = os.path.join(self.downfs, 'remote', 'client.crt')
+        self.assertTrue(os.path.exists(path))
 
     @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_unit_errors(self, *unused):
@@ -484,14 +510,8 @@ class TestAgentPlugin(PluginTestBase):
             pulp_conf.set('server', 'storage_dir', self.upfs)
             dist = CitrusHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = {
-                'protocol':'file',
-                'http':{'alias':self.alias},
-                'https':{'alias':self.alias},
-                'file':{'alias':self.alias},
-            }
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
-            dist.publish_repo(repo, conduit, cfg)
+            dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
             options = dict(all=True)
             handler = CitrusHandler(self)
