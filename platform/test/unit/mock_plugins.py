@@ -221,7 +221,7 @@ def install():
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
         profiler.uninstall_units = \
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
-        profiler.unit_applicable = \
+        profiler.units_applicable = \
             mock.Mock(side_effect=lambda i,r,t,u,c,x: [ApplicabilityReport(u, 'mocked-summary', 'mocked-details')])
 
 def reset():

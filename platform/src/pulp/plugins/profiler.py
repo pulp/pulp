@@ -244,7 +244,7 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def unit_applicable(self, consumer, repo_ids, unit_type_id, unit_keys, config, conduit):
+    def units_applicable(self, consumer, repo_ids, unit_type_id, unit_keys, config, conduit):
         """
         Determine whether the content unit is applicable to the specified consumer
         using a given list of repo ids. The definition of "applicable" is content
@@ -256,8 +256,11 @@ class Profiler(object):
         @param repo_ids: List of repo ids to check for unit applicability
         @type repo_ids: list
 
-        @param unit: A content unit: { type_id:<str>, unit_key:<dict> }
-        @type unit: dict
+        @param unit_type_id: Common type id of all the units
+        @type unit_type_id: str
+
+        @param unit_keys: list of unit keys to identify units
+        @type unit_keys: list of dict
 
         @param config: plugin configuration
         @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
@@ -265,8 +268,8 @@ class Profiler(object):
         @param conduit: provides access to relevant Pulp functionality
         @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
-        @return: An applicability report.
-        @rtype: L{pulp.plugins.model.ApplicabilityReport}
+        @return: List of applicability reports.
+        @rtype: List of L{pulp.plugins.model.ApplicabilityReport}
         """
         raise Exception, \
             'Applicability for: %s, not supported' % unit_type_id

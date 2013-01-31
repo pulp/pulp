@@ -41,7 +41,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.unit_applicable = \
+        profiler.units_applicable = \
             Mock(side_effect=lambda i,r,t,u,c,x:
                  [ApplicabilityReport(u, 'mysummary', 'mydetails')])
 
@@ -97,7 +97,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
 
         profiler, cfg = plugins.get_profiler_by_type('rpm')
         call = 0
-        args = [c[0] for c in profiler.unit_applicable.call_args_list]
+        args = [c[0] for c in profiler.units_applicable.call_args_list]
         for id in self.CONSUMER_IDS:
             for unit in rpm_units:
                 self.assertEquals(args[call][0].id, id)
@@ -113,7 +113,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         # Setup
         self.populate()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.unit_applicable = Mock(side_effect=KeyError)
+        profiler.units_applicable = Mock(side_effect=KeyError)
         # Test
         units = {'rpm': [{'name':'zsh'},
                          {'name':'ksh'}],

@@ -917,7 +917,7 @@ class TestApplicability(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
         profiler = plugin_api.get_profiler_by_type('errata')[0]
-        profiler.unit_applicable = \
+        profiler.units_applicable = \
             mock.Mock(side_effect=lambda i,r,u,c,x:
                 ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
 

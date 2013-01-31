@@ -97,7 +97,7 @@ class ApplicabilityManager(object):
                 for typeid, unit_keys in units.items():
                     # Find a profiler for each type id and find units applicable using that profiler.
                     profiler, cfg = self.__profiler(typeid) 
-                    report_list = profiler.unit_applicable(pc, repo_ids, typeid, unit_keys, cfg, conduit)
+                    report_list = profiler.units_applicable(pc, repo_ids, typeid, unit_keys, cfg, conduit)
                     if report_list is not None:
                         result[consumer_id][typeid] = report_list
 
