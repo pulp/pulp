@@ -1,0 +1,42 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+from pulp.client.clients.admin import AdminExceptionHandler
+
+from pulp.client.extensions import exceptions
+from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
+
+import base
+
+class AdminExceptionHandlerTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(AdminExceptionHandlerTests, self).setUp()
+
+        self.handler = AdminExceptionHandler(self.prompt, self.config)
+
+    def test_permission(self):
+        """
+        Tests a client-side error when the connection is rejected due to auth reasons.
+        """
+
+        # Test
+        e = exceptions.PermissionsException()
+        code = self.handler.handle_permission(e)
+
+        # Verify
+        self.assertEqual(code, exceptions.CODE_PERMISSIONS_EXCEPTION)
+        self.assertTrue('Authentication' in self.recorder.lines[0])
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.assertTrue('certificate' in self.recorder.lines[2]) # skip blank line
+        self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
+
