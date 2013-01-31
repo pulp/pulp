@@ -361,7 +361,7 @@ class TestAgentPlugin(PluginTestBase):
             self.assertEqual(content, unit_id)
 
     @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
-    def test_handler(self, *unused):
+    def test_handler_mirror(self, *unused):
         """
         Test the end-to-end collaboration of:
           distributor(publish)->handler(update)->importer(sync)
@@ -411,6 +411,51 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = dict(all=True)
+            units = [{'type_id':'repository', 'unit_key':None}]
+            pulp_conf.set('server', 'storage_dir', self.downfs)
+            container = Container(self.upfs)
+            dispatcher = Dispatcher(container)
+            container.handlers[CONTENT]['repository'] = CitrusHandler(self)
+            report = dispatcher.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0].details['repository']
+        self.assertTrue(report['succeeded'])
+        merge_report = report['details']['merge_report']
+        self.assertEqual(merge_report['added'], [self.REPO_ID])
+        self.assertEqual(merge_report['merged'], [])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report['details']['importer_reports'][self.REPO_ID]
+        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']['report']
+        self.assertEqual(len(details['add_failed']), 0)
+        self.assertEqual(len(details['delete_failed']), 0)
+        self.verify()
+
+    @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_additive(self, *unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_citrus.handler.strategies.Local.binding', binding)
+        @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
+        @patch('citrus.find_strategy', return_value=TestStrategy(self))
+        def test_handler(*unused):
+            # publish
+            self.populate()
+            pulp_conf.set('server', 'storage_dir', self.upfs)
+            dist = CitrusHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            options = dict(all=True, strategy='additive')
             units = [{'type_id':'repository', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.downfs)
             container = Container(self.upfs)
