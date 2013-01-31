@@ -65,9 +65,8 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
         code = self.exception_handler.handle_exception(exceptions.PermissionsException({}))
         self.assertEqual(code, handler.CODE_PERMISSIONS_EXCEPTION)
-        self.assertEqual(2, len(self.prompt.tags))
+        self.assertEqual(1, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
-        self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
         self.prompt.tags = []
 
         code = self.exception_handler.handle_exception(exceptions.PulpServerException({}))
@@ -227,9 +226,9 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_CONNECTION_EXCEPTION)
         self.assertTrue('contact the server' in self.recorder.lines[0])
 
-    def test_permission(self):
+    def test_permissions(self):
         """
-        Tests a client-side error when the connection is rejected due to auth reasons.
+        Tests a client-side permissions error.
         """
 
         # Test
@@ -238,10 +237,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
         # Verify
         self.assertEqual(code, handler.CODE_PERMISSIONS_EXCEPTION)
-        self.assertTrue('Authentication' in self.recorder.lines[0])
-        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
-        self.assertTrue('certificate' in self.recorder.lines[2]) # skip blank line
-        self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
+        self.assertTrue('specified user' in self.recorder.lines[0])
 
     def test_invalid_config(self):
         """
