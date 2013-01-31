@@ -255,9 +255,11 @@ class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
         return easy_handle
 
     def _add_ssl_configuration(self, easy_handle):
-        # TODO (jconnor 2013-01-22) make this configurable
-        easy_handle.setopt(pycurl.SSL_VERIFYPEER, DEFAULT_SSL_VERIFY_PEER)
-        easy_handle.setopt(pycurl.SSL_VERIFYHOST, DEFAULT_SSL_VERIFY_HOST)
+        ssl_verify_peer = self.config.ssl_verify_peer if self.config.ssl_verify_peer is not None else DEFAULT_SSL_VERIFY_PEER
+        easy_handle.setopt(pycurl.SSL_VERIFYPEER, ssl_verify_peer)
+
+        ssl_verify_host = self.config.ssl_verify_host if self.config.ssl_verify_host is not None else DEFAULT_SSL_VERIFY_HOST
+        easy_handle.setopt(pycurl.SSL_VERIFYHOST, ssl_verify_host)
 
     def _add_ssl_ca_cert(self, easy_handle):
         if self.ssl_ca_cert is None:
