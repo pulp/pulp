@@ -227,10 +227,10 @@ class CitrusHttpDistributor(Distributor):
         """
         conf = {}
         if ssl_dict:
-            for key in ('ca_cert', 'client_cert'):
+            for key in ('client_cert',):
                 value = ssl_dict.get(key)
                 path = value['local']
-                path_out = value['remote']
+                path_out = value['child']
                 conf[key] = link.pack(path, path_out)
         return conf
 

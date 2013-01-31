@@ -103,7 +103,9 @@ class CitrusHttpImporter(Importer):
         conf = DownloaderConfig(
             'https',
             ssl_ca_cert_path=str(ssl.get('ca_cert', '')),
-            ssl_client_cert_path=str(ssl.get('client_cert', '')))
+            ssl_client_cert_path=str(ssl.get('client_cert', '')),
+            ssl_verify_host=0,
+            ssl_verify_peer=0)
         downloader = factory.get_downloader(conf)
         return downloader
 
