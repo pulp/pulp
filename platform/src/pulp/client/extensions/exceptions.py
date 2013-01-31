@@ -28,7 +28,6 @@ react to it in the extension itself.
 from _socket import gaierror
 from gettext import gettext as _
 import logging
-from M2Crypto import X509
 from M2Crypto.SSL.Checker import WrongHost
 import os
 
@@ -54,6 +53,13 @@ LOG = logging.getLogger(__name__)
 # -- classes ------------------------------------------------------------------
 
 class ExceptionHandler:
+    """
+    Default implementation of the client-side exception middleware. Subclasses
+    may override the individual handle_* methods to customize the error message
+    displayed to the user, however care should be taken to return the
+    appropriate exit code.
+    """
+
     def __init__(self, prompt, config):
         """
         :param prompt: prompt instance used to display error messages
@@ -233,40 +239,9 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = _('Authentication Failed')
-
-        # If the certificate exists, parse the expiration date
-        id_cert_dir = self.config['filesystem']['id_cert_dir']
-        id_cert_dir = os.path.expanduser(id_cert_dir)
-        id_cert_name = self.config['filesystem']['id_cert_filename']
-        full_cert_path = os.path.join(id_cert_dir, id_cert_name)
-
-        expiration_date = None
-        try:
-            f = open(full_cert_path, 'r')
-            certificate = f.read()
-            f.close()
-
-            certificate_section = str(certificate[certificate.index('-----BEGIN CERTIFICATE'):])
-            x509_cert = X509.load_cert_string(certificate_section)
-            expiration_date = x509_cert.get_not_after()
-        except Exception:
-            # Leave the expiration_date as None and show generic login message
-            pass
-
-        if expiration_date:
-            desc = _('The session certificate expired on %(e)s. Use the login '
-                     'command to begin a new session.')
-            desc = desc % {'e' : expiration_date}
-        else:
-            desc = _('Use the login command to authenticate with the server and '
-                     'download a session certificate for use in future calls to this script. '
-                     'If credentials were specified, please double check the username and '
-                     'password and attempt the request again.')
-            desc = desc
-
+        msg = _('The specified user does not have permission to execute '
+                'the given command')
         self.prompt.render_failure_message(msg)
-        self.prompt.render_paragraph(desc)
 
         return CODE_PERMISSIONS_EXCEPTION
 
