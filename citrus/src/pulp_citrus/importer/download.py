@@ -10,8 +10,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import errno
 
-from threading import RLock
 from logging import getLogger
 
 from pulp.common.download.listener import DownloadEventListener
@@ -49,7 +49,6 @@ class Batch:
 class DownloadListener(DownloadEventListener):
 
     def __init__(self, strategy, batch):
-        self.__mutex = RLock()
         self.strategy = strategy
         self.batch = batch
         self.failed = []
@@ -59,38 +58,22 @@ class DownloadListener(DownloadEventListener):
         return self.strategy.progress
 
     def download_started(self, report):
-        self.__lock()
         try:
-            self.progress.set_action('downloading', report.url)
             dir_path = os.path.dirname(report.file_path)
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
-        finally:
-            self.__unlock()
+            os.makedirs(dir_path)
+        except OSError, e:
+            if e.errno != errno.EEXIST:
+                raise e
 
     def download_succeeded(self, report):
-        self.__lock()
+        self.progress.set_action('downloaded', report.url)
+        unit = self.batch.units.get(report.url)
         try:
-            self.progress.set_action('downloaded', report.url)
-            unit = self.batch.units.get(report.url)
-            try:
-                self.strategy.add_unit(unit)
-            except Exception, e:
-                log.exception(report.url)
-                self.failed.append((unit, e))
-        finally:
-            self.__unlock()
+            self.strategy.add_unit(unit)
+        except Exception, e:
+            log.exception(report.url)
+            self.failed.append((unit, e))
 
     def download_failed(self, report):
-        self.__lock()
-        try:
-            unit = self.batch.units[report.url]
-            self.failed.append((unit, report.error_report))
-        finally:
-            self.__unlock()
-
-    def __lock(self):
-        self.__mutex.acquire()
-
-    def __unlock(self):
-        self.__mutex.release()
+        unit = self.batch.units[report.url]
+        self.failed.append((unit, report.error_report))

@@ -17,7 +17,6 @@ content units associated with a pulp repository.
 
 import os
 import json
-import tempfile
 import shutil
 import gzip
 

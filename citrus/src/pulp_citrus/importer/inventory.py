@@ -20,11 +20,11 @@ def unit_dictionary(units):
     :return: A dictionary of units keyed by UnitKey.
     :rtype: dict
     """
-    items = [(UnitKey(u), u) for u in units]
+    items = [(UniqueKey(u), u) for u in units]
     return dict(items)
 
 
-class UnitKey:
+class UniqueKey:
     """
     A unique unit key consisting of a unit's type_id & unit_key.
     The unit key is sorted to ensure consistency.

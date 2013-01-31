@@ -259,7 +259,7 @@ class ImporterStrategy:
 
 class Mirror(ImporterStrategy):
     """
-    The I{mirror} strategy is used to ensure that the content units associated
+    The *mirror* strategy is used to ensure that the content units associated
     with a repository locally exactly matches the units associated with the same
     repository upstream.  Maintains an exact mirror.
     """
