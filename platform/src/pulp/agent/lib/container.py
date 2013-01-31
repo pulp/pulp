@@ -340,18 +340,15 @@ class Container:
 
     def __find_module(self, name):
         """
-        Find a handler module by searching the directories
-        in the container's path.
+        Find a handler module by searching the directories in the container's path.
         @param name: The module name.
         @type name: str
-        @return: The path to the module (or None).
+        @return: The path to the module or None when not found.
         @rtype: str
         """
-        extensions = ('pyo', 'pyc', 'py')
-        for extension in extensions:
-            file = '.'.join((name, extension))
-            for dir in self.path:
-                path = os.path.join(dir, file)
-                if os.path.exists(path):
-                    log.info('using: %s', path)
-                    return path
+        file_name = '.'.join((name, 'py'))
+        for dir_path in self.path:
+            path = os.path.join(dir_path, file_name)
+            if os.path.exists(path):
+                log.info('using module at: %s', path)
+                return path
