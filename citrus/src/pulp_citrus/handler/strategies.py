@@ -21,6 +21,9 @@ from pulp_citrus.handler.reports import HandlerReport
 log = getLogger(__name__)
 
 
+# --- abstract strategy -----------------------------------------------------------------
+
+
 class HandlerStrategy:
     """
     Provides strategies for synchronizing repositories between pulp servers.
@@ -98,11 +101,13 @@ class HandlerStrategy:
                 failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
         return (added, merged, failed)
 
-    def _synchronize_repositories(self, repo_ids):
+    def _synchronize_repositories(self, repo_ids, options):
         """
         Run synchronization on repositories.
         :param repo_ids: A list of repo IDs.
         :type repo_ids: list
+        :param options: Unit update options.
+        :type options: dict
         :return: A tuple of: (reports, errors)
           - reports: A list of repo sync reports.
           - errors: A list of (repo_id, error_message)
@@ -115,7 +120,8 @@ class HandlerStrategy:
                 break
             repo = LocalRepository(repo_id)
             try:
-                report = repo.run_synchronization(self.progress)
+                strategy = options.get('strategy')
+                report = repo.run_synchronization(self.progress, strategy)
                 details = report['details']
                 _report = details.get('report')
                 exception = details.get('exception')
@@ -173,6 +179,9 @@ class HandlerStrategy:
         return (removed, failed)
 
 
+# --- strategies ------------------------------------------------------------------------
+
+
 class Mirror(HandlerStrategy):
 
     def synchronize(self, bindings, options):
@@ -206,7 +215,7 @@ class Mirror(HandlerStrategy):
         # synchronize repositories
         try:
             repo_ids = merge_report.added + merge_report.merged
-            reports, _errors = self._synchronize_repositories(repo_ids)
+            reports, _errors = self._synchronize_repositories(repo_ids, options)
             importer_reports.update(reports)
             report.errors.extend(_errors)
         except Exception, e:
@@ -223,12 +232,86 @@ class Mirror(HandlerStrategy):
             report.errors.append(msg)
 
         # remove orphans
+        if options.get('purge_orphans'):
+            try:
+                self.progress.push_step('purge_orphans')
+                LocalRepository.purge_orphans()
+            except Exception, e:
+                msg = repr(e)
+                report.errors.append(msg)
+
+        self.progress.set_status(ProgressReport.SUCCEEDED)
+        return report
+
+
+class Additive(HandlerStrategy):
+
+    def synchronize(self, bindings, options):
+        """
+        Synchronize repositories.
+          - Add/Merge bound repositories as needed.
+          - Synchronize all bound repositories.
+        :param bindings: A list of bind payloads.
+        :type bindings: list
+        :param options: Unit update options.
+        :type options: dict
+        :return: A report
+        :rtype: Report
+        """
+        report = HandlerReport()
+        merge_report = report.merge_report
+        importer_reports = report.importer_reports
+
+        # add/merge repositories
         try:
-            self.progress.push_step('purge_orphans')
-            LocalRepository.purge_orphans()
+            added, merged, failed = self._add_repositories(bindings)
+            merge_report.added.extend(added)
+            merge_report.merged.extend(merged)
+            report.errors.extend(failed)
+        except Exception, e:
+            msg = repr(e)
+            report.errors.append(msg)
+
+        # synchronize repositories
+        try:
+            repo_ids = merge_report.added + merge_report.merged
+            reports, _errors = self._synchronize_repositories(repo_ids, options)
+            importer_reports.update(reports)
+            report.errors.extend(_errors)
         except Exception, e:
             msg = repr(e)
             report.errors.append(msg)
 
         self.progress.set_status(ProgressReport.SUCCEEDED)
         return report
+
+
+# --- factory ---------------------------------------------------------------------------
+
+
+STRATEGIES = {
+    'mirror' : Mirror,
+    'additive' : Additive,
+}
+
+
+class StrategyUnsupported(Exception):
+
+    def __init__(self, name):
+        msg = _('handler strategy "%(s)s" not supported')
+        Exception.__init__(self, msg % {'s':name})
+
+
+def find_strategy(name):
+    """
+    Find a strategy (class) by name.
+    :param name: A strategy name.
+    :type name: str
+    :return: A strategy class.
+    :rtype: HandlerStrategy
+    :raise: StrategyUnsupported on not found.
+    """
+    try:
+        return STRATEGIES[name]
+    except KeyError:
+        raise StrategyUnsupported(name)

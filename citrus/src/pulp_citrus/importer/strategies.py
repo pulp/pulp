@@ -31,6 +31,9 @@ from pulp_citrus.importer.download import Batch, DownloadListener
 log = getLogger(__name__)
 
 
+# --- abstract strategy  ----------------------------------------------------------------
+
+
 class ImporterStrategy:
     """
     This object provides the transport independent content unit
@@ -251,6 +254,9 @@ class ImporterStrategy:
         return unit_dictionary(units)
 
 
+# --- strategies ------------------------------------------------------------------------
+
+
 class Mirror(ImporterStrategy):
     """
     The I{mirror} strategy is used to ensure that the content units associated
@@ -345,3 +351,34 @@ class Additive(ImporterStrategy):
             raise Exception(msg)
 
         return ImporterReport(add_failed, [])
+
+
+# --- factory ---------------------------------------------------------------------------
+
+
+STRATEGIES = {
+    'mirror' : Mirror,
+    'additive': Additive,
+}
+
+
+class StrategyUnsupported(Exception):
+
+    def __init__(self, name):
+        msg = _('importer strategy "%(s)s" not supported')
+        Exception.__init__(self, msg % {'s':name})
+
+
+def find_strategy(name):
+    """
+    Find a strategy (class) by name.
+    :param name: A strategy name.
+    :type name: str
+    :return: A strategy class.
+    :rtype: HandlerStrategy
+    :raise: StrategyUnsupported when not found.
+    """
+    try:
+        return STRATEGIES[name]
+    except KeyError:
+        raise StrategyUnsupported(name)

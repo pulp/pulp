@@ -367,14 +367,15 @@ class LocalRepository(Local, Repository):
                 dist = LocalDistributor(self.repo_id, dist_id)
                 dist.delete()
 
-    def run_synchronization(self, progress):
+    def run_synchronization(self, progress, strategy):
         """
         Run a repo_sync() on this local repository.
         :param progress: A progress report.
         :type progress: pulp_citrus.progress.ProgressReport
         :return: The task result.
         """
-        http = self.binding.repo_actions.sync(self.repo_id, {})
+        conf = dict(strategy=strategy)
+        http = self.binding.repo_actions.sync(self.repo_id, conf)
         if http.response_code == httplib.ACCEPTED:
             task = http.response_body[0]
             return self.poller.join(task.task_id, progress)

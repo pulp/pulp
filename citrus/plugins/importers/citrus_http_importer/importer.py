@@ -11,19 +11,22 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from gettext import gettext as _
 from logging import getLogger
+from gettext import gettext as _
 
 from pulp.plugins.importer import Importer
 from pulp.common.download import factory
 from pulp.common.download.config import DownloaderConfig
 
-from pulp_citrus.importer.strategies import Mirror
+from pulp_citrus.importer.strategies import find_strategy, StrategyUnsupported
 
 log = getLogger(__name__)
 
 
 class CitrusHttpImporter(Importer):
+    """
+    The citrus importer is used to synchronize repository content.
+    """
 
     @classmethod
     def metadata(cls):
@@ -34,26 +37,49 @@ class CitrusHttpImporter(Importer):
         }
 
     def __init__(self):
-        """
-        :ivar cancelled: Flag indicates the current operation has been cancelled..
-        :type cancelled: bool
-        """
-        Importer.__init__(self)
-        self.cancelled = False
+        self.strategy = None
 
     def validate_config(self, repo, config, related_repos):
+        """
+        Validate the configuration.
+        :param repo: A repository object.
+        :type repo: pulp.plugins.model.Repository
+        :param config: The importer configuration to validate.
+        :param config: pulp.plugins.config.PluginCallConfiguration
+        :param related_repos: List of other repositories associated with this
+            importer type.  Each item is: pulp.server.plugins.model.RelatedRepository
+        :type related_repos: list
+        :return: A tuple of: (is_valid, reason):
+            is_valid : (bool) True when config if deemed valid.
+            reason: (str) The reason of the validation failure.
+        :rtype: tuple
+        """
         msg = _('Missing required configuration property: %(p)s')
-        for key in ('manifest_url',):
+        for key in ('manifest_url', 'protocol'):
             value = config.get(key)
             if not value:
                 return (False, msg % dict(p=key))
         return (True, None)
 
     def sync_repo(self, repo, conduit, config):
+        """
+        Synchronize the content of the specified repository.
+        The implementation is delegated to the strategy object which
+        is selected based on the 'strategy' option passed specified in
+        the configuration.
+        :param repo: A repository object.
+        :type repo: pulp.plugins.model.Repository
+        :param conduit: Provides access to relevant Pulp functionality.
+        :param config: pulp.server.conduits.repo_sync.RepoSyncConduit
+        :return: A report describing the result.
+        :rtype: pulp.server.plugins.model.SyncReport
+        """
         try:
             downloader = self._downloader(config)
-            strategy = Mirror(conduit, config, downloader)
-            report = strategy.synchronize(repo.id)
+            strategy_name = config.get('strategy')
+            strategy_class = find_strategy(strategy_name)
+            self.strategy = strategy_class(conduit, config, downloader)
+            report = self.strategy.synchronize(repo.id)
             details = dict(report=report.dict())
         except Exception, e:
             msg = repr(e)
@@ -63,9 +89,21 @@ class CitrusHttpImporter(Importer):
         return report
 
     def _downloader(self, config):
+        """
+        Get a configured downloader.
+        The integration between the importer configuration and the
+        download package happens here.  The https downloader may be
+        used for both http and https so always chosen for simplicity.
+        :param config: The importer configuration.
+        :param config: pulp.plugins.config.PluginCallConfiguration
+        :return: A configured downloader
+        :rtype: pulp.common.download.backends.base.DownloadBackend
+        """
         ssl = config.get('ssl', {})
-        ca_cert = ssl.get('ca_cert')
-        client_cert = ssl.get('client_cert')
-        conf = DownloaderConfig('https', ssl_ca_cert_path=ca_cert, ssl_client_cert_path=client_cert)
-        return factory.get_downloader(conf)
+        conf = DownloaderConfig(
+            'https',
+            ssl_ca_cert_path=str(ssl.get('ca_cert', '')),
+            ssl_client_cert_path=str(ssl.get('client_cert', '')))
+        downloader = factory.get_downloader(conf)
+        return downloader
 

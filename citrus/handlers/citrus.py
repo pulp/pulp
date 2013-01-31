@@ -15,7 +15,7 @@ from logging import getLogger
 
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
-from pulp_citrus.handler.strategies import Mirror
+from pulp_citrus.handler.strategies import find_strategy
 from pulp_citrus.handler.reports import HandlerProgress
 from pulp_citrus.handler.model import RemoteBinding
 
@@ -46,13 +46,18 @@ class CitrusHandler(ContentHandler):
         progress = HandlerProgress(conduit)
         progress.push_step('fetch_bindings')
         all = options.get('all', False)
+
         repo_ids = [key['repo_id'] for key in units if key]
         if all:
             bindings = RemoteBinding.fetch_all()
         else:
             bindings = RemoteBinding.fetch(repo_ids)
-        strategy = Mirror(progress)
+
+        strategy_name = options.setdefault('strategy', 'mirror')
+        strategy_class = find_strategy(strategy_name)
+        strategy = strategy_class(progress)
         strategy_report = strategy.synchronize(bindings, options)
+
         progress.end()
         details = strategy_report.dict()
         if strategy_report.errors:

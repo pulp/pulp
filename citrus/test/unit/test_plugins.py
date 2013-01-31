@@ -255,7 +255,7 @@ class ImporterTest(PluginTestBase):
         importer = CitrusHttpImporter()
         publisher = dist.publisher(repo, cfg)
         manifest_url = 'file://' + publisher.manifest_path()
-        cfg = dict(manifest_url=manifest_url)
+        cfg = dict(manifest_url=manifest_url, strategy='mirror')
         conduit = RepoSyncConduit(
             self.REPO_ID,
             CITRUS_IMPORTER,
@@ -295,7 +295,7 @@ class TestAgentPlugin(PluginTestBase):
         manager.register(self.PULP_ID)
         manager = managers.repo_importer_manager()
         # add importer
-        cfg = dict(manifest_url='http://apple.com')
+        cfg = dict(manifest_url='http://apple.com', protocol='file')
         manager.set_importer(self.REPO_ID, CITRUS_IMPORTER, cfg)
         # add distributor
         if ssl:
@@ -401,7 +401,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_citrus.handler.strategies.Local.binding', binding)
         @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
-        @patch('citrus.Mirror', TestStrategy(self))
+        @patch('citrus.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
@@ -453,7 +453,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_citrus.handler.strategies.Local.binding', binding)
         @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
-        @patch('citrus.Mirror', TestStrategy(self))
+        @patch('citrus.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate(ssl=True)
@@ -503,7 +503,7 @@ class TestAgentPlugin(PluginTestBase):
         @patch('pulp_citrus.handler.strategies.Local.binding', binding)
         @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
         @patch('pulp_citrus.importer.strategies.Batch', BadBatch)
-        @patch('citrus.Mirror', TestStrategy(self))
+        @patch('citrus.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
@@ -550,7 +550,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_citrus.handler.strategies.Local.binding', binding)
         @patch('pulp_citrus.handler.strategies.Remote.binding', binding)
-        @patch('citrus.Mirror', TestStrategy(self))
+        @patch('citrus.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
