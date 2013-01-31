@@ -42,8 +42,8 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         mock_plugins.install()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
         profiler.unit_applicable = \
-            Mock(side_effect=lambda i,r,u,c,x:
-                 ApplicabilityReport(u, True, 'mysummary', 'mydetails'))
+            Mock(side_effect=lambda i,r,t,u,c,x:
+                 [ApplicabilityReport(u, 'mysummary', 'mydetails')])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -68,10 +68,13 @@ class ApplicabilityManagerTests(base.PulpServerTests):
                  'mock-type': [{'name':'abc'},
                                {'name':'def'}]
                 }
-        report_units = [{'unit_key': {'name':'zsh', 'version':'2.0'}, 'type_id': 'rpm'},
-                        {'unit_key': {'name':'ksh', 'version':'2.0'}, 'type_id': 'rpm'},
-                        {'unit_key': {'name': 'abc'}, 'type_id': 'mock-type'},
-                        {'unit_key': {'name': 'def'}, 'type_id': 'mock-type'}]
+        report_units = [{'name':'zsh', 'version':'2.0'},
+                        {'name':'ksh', 'version':'2.0'},
+                        {'name': 'abc'},
+                        {'name': 'def'}]
+        
+        rpm_units = [[{'name':'zsh', 'version':'2.0'},{'name':'ksh', 'version':'2.0'}]]
+
         manager = factory.consumer_applicability_manager()
         applicability = manager.units_applicable(consumer_criteria=self.CONSUMER_CRITERIA,
                                                  repo_criteria=self.REPO_CRITERIA, 
@@ -79,31 +82,31 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         # verify
         self.assertEquals(len(applicability), 2)
         for id in self.CONSUMER_IDS:
-            for report in applicability[id]:
+            for type_id, report_list in applicability[id].items():
                 # Check for rpm profiler and valid applicability
-                if report.unit in report_units[0:2]:
-                    self.assertTrue(report.applicable)
-                    self.assertEquals(report.summary, 'mysummary')
-                    self.assertEquals(report.details, 'mydetails')
-                    continue
-                # Check for mock-type profiles and invalid applicability
-                if report.unit in report_units[2:4]:
-                    self.assertFalse(report.applicable)
-                    self.assertEquals(report.summary, 'mocked')
-                    self.assertEquals(report.details, None)
-                    continue
+                for report in report_list:
+                    if report.unit in report_units[0:2]:
+                        self.assertEquals(report.summary, 'mysummary')
+                        self.assertEquals(report.details, 'mydetails')
+                        continue
+                    # Check for mock-type profiles and invalid applicability
+                    if report.unit in report_units[2:4]:
+                        self.assertEquals(report.summary, 'mocked')
+                        self.assertEquals(report.details, None)
+                        continue
 
         profiler, cfg = plugins.get_profiler_by_type('rpm')
         call = 0
         args = [c[0] for c in profiler.unit_applicable.call_args_list]
         for id in self.CONSUMER_IDS:
-            for unit in report_units[0:2]:
+            for unit in rpm_units:
                 self.assertEquals(args[call][0].id, id)
                 self.assertEquals(args[call][0].profiles, {'rpm':self.PROFILE})
                 self.assertEquals(args[call][1], [])
-                self.assertEquals(args[call][2], unit)
-                self.assertEquals(args[call][3], cfg)
-                self.assertEquals(args[call][4].__class__, ProfilerConduit)
+                self.assertEquals(args[call][2], 'rpm')
+                self.assertEquals(args[call][3], unit)
+                self.assertEquals(args[call][4], cfg)
+                self.assertEquals(args[call][5].__class__, ProfilerConduit)
                 call += 1
 
     def test_profiler_exception(self):

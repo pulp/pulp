@@ -595,7 +595,7 @@ class ContentApplicability(JSONController):
     Determine content applicability.
     """
 
-    #@auth_required(READ)
+    @auth_required(READ)
     def POST(self):
         """
         Determine content applicability.
@@ -607,10 +607,11 @@ class ContentApplicability(JSONController):
         }
 
         @return: A dict of applicability reports keyed by consumer ID.
-            Each report is:
-                {unit:<{type_id:<str>,unit_key:<str>}>,
-                 summary:<str>,
-                 details:<?>}
+            Each consumer report is:
+                { <unit_type_id1> : [<ApplicabilityReport>],
+                  <unit_type_id1> : [<ApplicabilityReport>]},
+                }
+                
         @return: dict
         """
         body = self.params()
@@ -629,8 +630,10 @@ class ContentApplicability(JSONController):
 
         manager = managers.consumer_applicability_manager()
         report = manager.units_applicable(consumer_criteria, repo_criteria, units)
-        for k,v in report.items():
-            report[k] = [serialization.consumer.applicability_report(r) for r in v]
+
+        for consumer_report in report.values():
+            for unit_type_id, report_list in consumer_report.items():
+                consumer_report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
         return self.ok(report)
 
 

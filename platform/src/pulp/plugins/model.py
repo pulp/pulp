@@ -254,10 +254,6 @@ class ApplicabilityReport:
     @ivar unit: A content unit: {type_id:<str>, unit_key:<dict>}
     @type unit: dict
 
-    @ivar applicable: Flag indicates whether the unit is
-                      applicable to the consumer.
-    @type applicable: bool
-
     @ivar summary: arbitrary value that will be returned by default as the log
                    for the call (should be short)
     @type summary: just about any serializable object (likely str or dict)
@@ -267,8 +263,7 @@ class ApplicabilityReport:
     @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, unit, applicable, summary, details=None):
+    def __init__(self, unit, summary, details=None):
         self.unit = unit
-        self.applicable = applicable
         self.summary = summary
         self.details = details

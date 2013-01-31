@@ -33,10 +33,11 @@ class ApplicabilityManager(object):
     def units_applicable(self, consumer_criteria, repo_criteria=None, units=None):
         """
         Determine and report which of the specified content units
-        is applicable to consumers specified by the I{consumer_criteria}
+        are applicable to consumers specified by the I{consumer_criteria}
         with repos specified by I{repo_criteria}. If repo_criteria
         is None, all repos bound to the consumer are taken into consideration.
-        If units is None, all units in the repos bound to the consumer are considered.
+        If unit_key list is empty, all units with specific type in the repos bound 
+        to the consumer are taken into consideration.
 
         @param consumer_criteria: The consumer selection criteria.
         @type consumer_criteria: dict
@@ -50,7 +51,12 @@ class ApplicabilityManager(object):
                  <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]}
 
         @return: A dict:
-            {consumer_id:[<ApplicabilityReport>]}
+            {<consumer_id1>:
+               { <unit_type_id1> : [<ApplicabilityReport>],
+                 <unit_type_id1> : [<ApplicabilityReport>]},
+             <consumer_id2>:
+               { <unit_type_id1> : [<ApplicabilityReport>]}
+            }
         @rtype: dict
         """
         result = {}
@@ -69,8 +75,10 @@ class ApplicabilityManager(object):
 
         bind_manager = managers.consumer_bind_manager()
 
+        # Iterate through each consumer to collect applicability reports
         for consumer_id in consumer_ids:
-
+            result[consumer_id] = {}
+            
             # Find repos bound to a consumer
             bindings = bind_manager.find_by_consumer(consumer_id)
             bound_repo_ids = [b['repo_id'] for b in bindings]
@@ -81,24 +89,17 @@ class ApplicabilityManager(object):
                 repo_ids = bound_repo_ids
             else:
                 repo_ids = list(set(bound_repo_ids) & set(repo_criteria_ids))
-
-            units = self.parse_units(units, repo_ids)
-
-            _LOG.debug("Checking applicability of units - %s for repo ids - %s" % (units, repo_ids))
+            
+            units = self.__parse_units(units, repo_ids)
 
             if units:
+                pc = self.__profiled_consumer(consumer_id)
                 for typeid, unit_keys in units.items():
                     # Find a profiler for each type id and find units applicable using that profiler.
-                    profiler, cfg = self.__profiler(typeid)
-                    pc = self.__profiled_consumer(consumer_id)
-                    for unit_key in unit_keys:
-                        unit = {'type_id' : typeid,
-                                'unit_key' : unit_key}
-                        report = profiler.unit_applicable(pc, repo_ids, unit, cfg, conduit)
-                        if report is not None:
-                            report.unit = unit
-                            ulist = result.setdefault(consumer_id, [])
-                            ulist.append(report)
+                    profiler, cfg = self.__profiler(typeid) 
+                    report_list = profiler.unit_applicable(pc, repo_ids, typeid, unit_keys, cfg, conduit)
+                    if report_list is not None:
+                        result[consumer_id][typeid] = report_list
 
         return result
 
@@ -135,29 +136,33 @@ class ApplicabilityManager(object):
             profiles[typeid] = profile
         return ProfiledConsumer(id, profiles)
 
-    def parse_units(self, units, repo_ids):
+    def __parse_units(self, units, repo_ids):
+        """
+        Parse units and return a dictionary of all units to be considered for applicability
+        keyed by unit_type_id
+        @param units: user provided filter to select units
+        @type units: dict
+        @return: all units fulfilled by given units filter keyed by unit_type_id
+        @rtype: dict
+        """
         repo_unit_association_query_manager = managers.repo_unit_association_query_manager()
 
-        # If units are not specified, consider all units in repo_ids list.
-        if units is None:
-            result_units = {}
-            for repo_id in repo_ids:
-                repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
-                for unit_type_id, repo_unit_list in repo_units.items():
-                    result_units.setdefault(unit_type_id, []).extend(repo_unit_list)
-        else:
+        if units is not None:
             result_units = units
             for unit_type_id, repo_unit_list in units.items():
+                # If unit_list is empty for a unit_type, consider all units of specific type
                 if not repo_unit_list:
                     for repo_id in repo_ids:
                         repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
                         if unit_type_id in repo_units:
                             result_units.setdefault(unit_type_id, []).extend(repo_units[unit_type_id])
+        else:
+            # If units are not specified, consider all units in repo_ids list.
+            result_units = {}
+            for repo_id in repo_ids:
+                repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
+                for unit_type_id, repo_unit_list in repo_units.items():
+                    result_units.setdefault(unit_type_id, []).extend(repo_unit_list)
 
-#criteria = UnitAssociationCriteria(type_ids=[unit_type], unit_filters=unit_key)
-# for repo_id in repo_ids:
-#           result = conduit.get_units(repo_id, criteria)
-#             if result:
-#                return result[0]
         return result_units
 

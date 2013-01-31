@@ -244,7 +244,7 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def unit_applicable(self, consumer, repo_ids, unit, config, conduit):
+    def unit_applicable(self, consumer, repo_ids, unit_type_id, unit_keys, config, conduit):
         """
         Determine whether the content unit is applicable to the specified consumer
         using a given list of repo ids. The definition of "applicable" is content
@@ -269,4 +269,4 @@ class Profiler(object):
         @rtype: L{pulp.plugins.model.ApplicabilityReport}
         """
         raise Exception, \
-            'Applicability for: %s, not supported' % unit
+            'Applicability for: %s, not supported' % unit_type_id
