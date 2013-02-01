@@ -26,7 +26,6 @@ import base
 from pulp.plugins.loader import exceptions, loading, manager
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
-from pulp.plugins.profiler import Profiler
 
 # test data and data generation api --------------------------------------------
 
