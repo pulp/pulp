@@ -35,42 +35,52 @@ class ApplicabilityManager(object):
         """
         Determine and report which of the specified content units
         are applicable to consumers specified by the I{consumer_criteria}
-        with repos specified by I{repo_criteria}. If repo_criteria
-        is None, all repos bound to the consumer are taken into consideration.
-        If unit_key list is empty, all units with specific type in the repos bound 
-        to the consumer are taken into consideration.
+        with repos specified by I{repo_criteria}. If consumer_criteria is None, 
+        all consumers registered to the Pulp server are checked for applicability. 
+        If repo_criteria is None, all repos bound to the consumer are taken 
+        into consideration. If unit_key list is empty, all units with specific type 
+        in the repos bound to the consumer are taken into consideration.
+        Returns a dictionary with applicability reports for each unit 
+        keyed by a unit_type_id and further keyed by a consumer id -
 
-        @param consumer_criteria: The consumer selection criteria.
-        @type consumer_criteria: dict
-
-        @param repo_criteria: The repo selection criteria.
-        @type repo_criteria: dict
-
-        @param units: A dictionary of type_id : list of unit keys
-        @type units: dict
-                {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..],
-                 <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]}
-
-        @return: A dict:
             {<consumer_id1>:
                { <unit_type_id1> : [<ApplicabilityReport>],
                  <unit_type_id1> : [<ApplicabilityReport>]},
              <consumer_id2>:
                { <unit_type_id1> : [<ApplicabilityReport>]}
             }
-        @rtype: dict
+
+        :param consumer_criteria: The consumer selection criteria.
+        :type consumer_criteria: dict
+
+        :param repo_criteria: The repo selection criteria.
+        :type repo_criteria: dict
+
+        :param units: A dictionary of type_id : list of unit keys
+        :type units: dict
+                {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..],
+                 <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]}
+
+        :return: a dictionary with applicability reports for each unit 
+                 keyed by a unit_type_id and further keyed by a consumer id.
+                 See above for sample return report.
+        :rtype: dict
         """
         result = {}
         conduit = ProfilerConduit()
 
-        # Get consumer ids satisfied by specified consumer criteria
         consumer_query_manager = managers.consumer_query_manager()
-        consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+        if consumer_criteria:
+            # Get consumer ids satisfied by specified consumer criteria
+            consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+        else:
+            # Get all consumer ids registered to the Pulp server
+            consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
 
         # Get repo ids satisfied by specified consumer criteria
         if repo_criteria:
             repo_query_manager = managers.repo_query_manager()
-            repo_criteria_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
+            repo_criteria_ids = [r['id'] for r in repo_query_manager.find_all(repo_criteria)]
         else:
             repo_criteria_ids = None
 
@@ -100,9 +110,12 @@ class ApplicabilityManager(object):
                     try: 
                         report_list = profiler.units_applicable(pc, repo_ids, typeid, unit_keys, cfg, conduit)
                     except PulpExecutionException:
-                        report_list = []
+                        report_list = None
+
                     if report_list is not None:
                         result[consumer_id][typeid] = report_list
+                    else: 
+                        _LOG.warn("Profiler for unit type [%s] is not returning applicability reports" % typeid)
 
         return result
 
@@ -111,10 +124,12 @@ class ApplicabilityManager(object):
         """
         Find the profiler.
         Returns the Profiler base class when not matched.
-        @param typeid: The content type ID.
-        @type typeid: str
-        @return: (profiler, cfg)
-        @rtype: tuple
+
+        :param typeid: The content type ID.
+        :type typeid: str
+
+        :return: (profiler, cfg)
+        :rtype: tuple
         """
         try:
             plugin, cfg = plugin_api.get_profiler_by_type(typeid)
@@ -126,10 +141,12 @@ class ApplicabilityManager(object):
     def __profiled_consumer(self, id):
         """
         Get a profiler consumer model object.
-        @param id: A consumer ID.
-        @type id: str
-        @return: A populated profiler consumer model object.
-        @rtype: L{ProfiledConsumer}
+
+        :param id: A consumer ID.
+        :type id: str
+
+        :return: A populated profiler consumer model object.
+        :rtype: L{ProfiledConsumer}
         """
         profiles = {}
         manager = managers.consumer_profile_manager()
@@ -143,10 +160,15 @@ class ApplicabilityManager(object):
         """
         Parse units and return a dictionary of all units to be considered for applicability
         keyed by unit_type_id
-        @param units: user provided filter to select units
-        @type units: dict
-        @return: all units fulfilled by given units filter keyed by unit_type_id
-        @rtype: dict
+
+        :param units: user provided filter to select units
+        :type units: dict
+
+        :return: if specific units are specified, return the same units. If units dict are empty, 
+                 return all units in given repo ids keyed by unit_type_id. If unit_key list
+                 for a particular unit type in units is empty, return all units in given repo ids 
+                 with that unit type keyed by unit_type_id.
+        :rtype: dict
         """
         repo_unit_association_query_manager = managers.repo_unit_association_query_manager()
         content_query_manager = managers.content_query_manager()
