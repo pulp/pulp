@@ -112,10 +112,11 @@ def _initialize_pulp():
     # for causing the server to fail to start.
     try:
         plugin_api.initialize()
-    except Exception:
+    except Exception, e:
         msg  = 'One or more plugins failed to initialize. If a new type has '
         msg += 'been added, run pulp-manage-db to load the type into the '
         msg += 'database and restart the application.'
+        msg += 'Error message: %s' % str(e)
         raise InitializationException(msg), None, sys.exc_info()[2]
 
     # There's a significantly smaller chance the following calls will fail.

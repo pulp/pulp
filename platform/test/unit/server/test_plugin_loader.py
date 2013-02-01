@@ -96,8 +96,10 @@ _CONF_TEMPLATE = string.Template('''
 {"enabled": $ENABLED}
 ''')
 
+_INVALID_CONF_TEMPLATE = string.Template('Not real JSON')
 
-def gen_plugin(root, type_, name, types, enabled=True):
+
+def gen_plugin(root, type_, name, types, enabled=True, conf_template=_CONF_TEMPLATE):
     base_name = type_.lower()
     base_title = type_.title()
     plugin_name = name.lower()
@@ -122,7 +124,7 @@ def gen_plugin(root, type_, name, types, enabled=True):
     handle.write(contents)
     handle.close()
     # write plugin config
-    contents = _CONF_TEMPLATE.safe_substitute({'ENABLED': str(enabled).lower()})
+    contents = conf_template.safe_substitute({'ENABLED': str(enabled).lower()})
     cfg_name = os.path.join(plugin_dir, '%s.conf' % plugin_name)
     handle = open(cfg_name, 'w')
     handle.write(contents)
@@ -434,6 +436,23 @@ class LoaderFileSystemOperationsTests(LoaderTest):
         self.assertRaises(exceptions.PluginNotFound,
                           self.loader.importers.get_plugin_by_id,
                           'disabledimporter')
+
+
+class InvalidConfLoaderTests(LoaderTest):
+
+    def test_unparsable_json(self):
+        # Setup
+        plugin_root = gen_plugin_root()
+        dist_root = gen_plugin(plugin_root,
+                              'distributor',
+                              'BustedDistributor',
+                              ['test_distribution'],
+                              conf_template=_INVALID_CONF_TEMPLATE)
+
+        # Test
+        self.assertRaises(loading.ConfigParsingException,
+                          loading.load_plugins_from_path,
+                          dist_root, Distributor, self.loader.distributors)
 
 
 class TestPluginLoader(base.PulpServerTests):
