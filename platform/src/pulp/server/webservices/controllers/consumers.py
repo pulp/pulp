@@ -600,30 +600,28 @@ class ContentApplicability(JSONController):
         """
         Determine content applicability.
         body {
-        consumer_criteria:<dict>, 
+        consumer_criteria:<dict> or None, 
         repo_criteria:<dict> or None, 
         units: {<type_id1> : [{<unit_key1>}, {<unit_key2}, ..]
                 <type_id2> : [{<unit_key1>}, {<unit_key2}, ..]} or None
         }
 
-        @return: A dict of applicability reports keyed by consumer ID.
+        :return: A dict of applicability reports keyed by consumer ID.
             Each consumer report is:
                 { <unit_type_id1> : [<ApplicabilityReport>],
                   <unit_type_id1> : [<ApplicabilityReport>]},
                 }
                 
-        @return: dict
+        :rtype: dict
         """
         body = self.params()
-        try:
-            consumer_criteria = body['consumer_criteria']
-        except KeyError, e:
-            raise MissingValue(str(e))
 
+        consumer_criteria = body.get('consumer_criteria', None)
         repo_criteria = body.get('repo_criteria', None)
         units = body.get('units', None)
 
-        consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        if consumer_criteria:
+            consumer_criteria = Criteria.from_client_input(consumer_criteria)
 
         if repo_criteria:
             repo_criteria = Criteria.from_client_input(repo_criteria)
