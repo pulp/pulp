@@ -31,7 +31,7 @@ _LOG = getLogger(__name__)
 
 class ApplicabilityManager(object):
 
-    def units_applicable(self, consumer_criteria, repo_criteria=None, units=None):
+    def units_applicable(self, consumer_criteria=None, repo_criteria=None, units=None):
         """
         Determine and report which of the specified content units
         are applicable to consumers specified by the I{consumer_criteria}
