@@ -37,6 +37,23 @@ class InvalidUnitsRequested(Exception):
         self.units = units
         self.message = message
 
+class InvalidUnitTypeForApplicability(Exception):
+    """
+    Raised by units_applicable when applicability for a unit type is not yet supported.
+    """
+
+    def __init__(self, unit_type_id, message):
+        """
+        :param unit_type_id: unit type id
+        :type  unit_type_id: str
+
+        :param message: suitable message when the operation is aborted
+        :type  message: str
+        """
+        Exception.__init__(self, message)
+        self.unit_type_id = unit_type_id
+        self.message = message
+
 
 class Profiler(object):
     """
@@ -271,5 +288,6 @@ class Profiler(object):
         @return: List of applicability reports.
         @rtype: List of L{pulp.plugins.model.ApplicabilityReport}
         """
-        raise Exception, \
-            'Applicability for: %s, not supported' % unit_type_id
+        message = 'Applicability for: %s, not supported' % unit_type_id
+        raise InvalidUnitTypeForApplicability(unit_type_id, message)
+            

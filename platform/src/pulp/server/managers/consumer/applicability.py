@@ -18,11 +18,12 @@ Contains content applicability management classes
 from pulp.server.managers import factory as managers
 from pulp.server.managers.pluginwrapper import PluginWrapper
 from pulp.plugins.profiler import Profiler
-from pulp.plugins.model import ApplicabilityReport
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
+from pulp.server.exceptions import PulpExecutionException
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from logging import getLogger
 
 _LOG = getLogger(__name__)
@@ -89,15 +90,17 @@ class ApplicabilityManager(object):
                 repo_ids = bound_repo_ids
             else:
                 repo_ids = list(set(bound_repo_ids) & set(repo_criteria_ids))
-            
-            units = self.__parse_units(units, repo_ids)
 
+            units = self.__parse_units(units, repo_ids)
             if units:
                 pc = self.__profiled_consumer(consumer_id)
                 for typeid, unit_keys in units.items():
                     # Find a profiler for each type id and find units applicable using that profiler.
-                    profiler, cfg = self.__profiler(typeid) 
-                    report_list = profiler.units_applicable(pc, repo_ids, typeid, unit_keys, cfg, conduit)
+                    profiler, cfg = self.__profiler(typeid)
+                    try: 
+                        report_list = profiler.units_applicable(pc, repo_ids, typeid, unit_keys, cfg, conduit)
+                    except PulpExecutionException:
+                        report_list = []
                     if report_list is not None:
                         result[consumer_id][typeid] = report_list
 
@@ -146,6 +149,7 @@ class ApplicabilityManager(object):
         @rtype: dict
         """
         repo_unit_association_query_manager = managers.repo_unit_association_query_manager()
+        content_query_manager = managers.content_query_manager()
 
         if units is not None:
             result_units = units
@@ -153,16 +157,24 @@ class ApplicabilityManager(object):
                 # If unit_list is empty for a unit_type, consider all units of specific type
                 if not repo_unit_list:
                     for repo_id in repo_ids:
-                        repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
-                        if unit_type_id in repo_units:
-                            result_units.setdefault(unit_type_id, []).extend(repo_units[unit_type_id])
+                        criteria = UnitAssociationCriteria(unit_fields = ['unit_id'])
+                        repo_units = repo_unit_association_query_manager.get_units_by_type(repo_id, unit_type_id, criteria)
+                        # Get unit metadata for each unit from type specific collection
+                        collection = content_query_manager.get_content_unit_collection(type_id=unit_type_id)
+                        repo_unit_keys = [collection.find_one({'_id': u['unit_id']}) for u in repo_units]
+                        result_units.setdefault(unit_type_id, []).extend(repo_unit_keys)
         else:
             # If units are not specified, consider all units in repo_ids list.
             result_units = {}
             for repo_id in repo_ids:
-                repo_units = repo_unit_association_query_manager.get_unit_ids(repo_id)
-                for unit_type_id, repo_unit_list in repo_units.items():
-                    result_units.setdefault(unit_type_id, []).extend(repo_unit_list)
+                criteria = UnitAssociationCriteria(unit_fields = ['unit_id','unit_type_id'])
+                repo_units = repo_unit_association_query_manager.get_units(repo_id, criteria)
+                # Get unit metadata for each unit from type specific collection
+                for repo_unit in repo_units:
+                    collection = content_query_manager.get_content_unit_collection(type_id=repo_unit['unit_type_id'])
+                    repo_unit_key = collection.find_one({'_id': repo_unit['unit_id']})
+                    result_units.setdefault(repo_unit['unit_type_id'], []).append(repo_unit_key)
+
 
         return result_units
 
