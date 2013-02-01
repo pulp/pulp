@@ -80,7 +80,7 @@ class ApplicabilityManager(object):
         # Get repo ids satisfied by specified consumer criteria
         if repo_criteria:
             repo_query_manager = managers.repo_query_manager()
-            repo_criteria_ids = [r['id'] for r in repo_query_manager.find_all(repo_criteria)]
+            repo_criteria_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
         else:
             repo_criteria_ids = None
 
