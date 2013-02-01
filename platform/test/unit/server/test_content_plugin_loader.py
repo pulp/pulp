@@ -20,8 +20,9 @@ import traceback
 import tempfile
 from pprint import pprint
 
-import base
+import mock
 
+import base
 from pulp.plugins.loader import exceptions, loading, manager
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
@@ -434,3 +435,23 @@ class LoaderFileSystemOperationsTests(LoaderTest):
         self.assertRaises(exceptions.PluginNotFound,
                           self.loader.importers.get_plugin_by_id,
                           'disabledimporter')
+
+
+class TestPluginLoader(base.PulpServerTests):
+    @mock.patch('pulp.plugins.loader.loading.add_plugin_to_map', autospec=True)
+    @mock.patch('pkg_resources.iter_entry_points', autospec=True)
+    def test_load_entry_points(self, mock_iter, mock_add):
+        ep = mock.MagicMock()
+        cls = mock.MagicMock()
+        cfg = mock.MagicMock()
+        ep.load.return_value.return_value = (cls, cfg)
+        mock_iter.return_value = [ep]
+
+        GROUP_NAME = 'abc'
+        plugin_map = mock.MagicMock()
+
+        # finally, we test
+        loading.load_plugins_from_entry_point(GROUP_NAME, plugin_map)
+
+        mock_iter.assert_called_once_with(GROUP_NAME)
+        mock_add.assert_called_once_with(cls, cfg, plugin_map)

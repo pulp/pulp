@@ -30,6 +30,10 @@ _LOG = logging.getLogger(__name__)
 _CONFIG_REGEX = re.compile('.*\.(config|conf|cfg)$', re.IGNORECASE)
 _INIT_REGEX = re.compile('__init__.py(c|o)?$')
 
+# exceptions -------------------------------------------------------------------
+
+class ConfigParsingException(Exception): pass
+
 # plugin loading methods -------------------------------------------------------
 
 def load_plugins_from_path(path, base_class, plugin_map):
