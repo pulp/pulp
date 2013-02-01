@@ -121,8 +121,8 @@ class Profiler(object):
         running Pulp server and thus should not be used for initialization
         purposes.
 
-        @return: description of the profiler's capabilities
-        @rtype:  dict
+        :return: description of the profiler's capabilities
+        :rtype:  dict
         """
         raise NotImplementedError()
 
@@ -136,20 +136,20 @@ class Profiler(object):
         should raise an appropriate exception.  See: Profile Translation
         examples in class documentation.
 
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
+        :param consumer: A consumer.
+        :type consumer: L{pulp.server.plugins.model.Consumer}
 
-        @param profile: The reported profile.
-        @type profile: list
+        :param profile: The reported profile.
+        :type profile: list
 
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :param config: plugin configuration
+        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
+        :param conduit: provides access to relevant Pulp functionality
+        :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
-        @return: The translated profile.
-        @rtype: list
+        :return: The translated profile.
+        :rtype: list
         """
         return profile
 
@@ -165,25 +165,25 @@ class Profiler(object):
         will be interpreted by the caller as meaning that no content needs to be
         installed.  See: Unit Translation examples in class documentation.
 
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
+        :param consumer: A consumer.
+        :type consumer: L{pulp.server.plugins.model.Consumer}
 
-        @param units: A list of content units to be installed.
-        @type units: list of: { type_id:<str>, unit_key:<dict> }
+        :param units: A list of content units to be installed.
+        :type units: list of: { type_id:<str>, unit_key:<dict> }
 
-        @param options: Install options; based on unit type.
-        @type options: dict
+        :param options: Install options; based on unit type.
+        :type options: dict
         
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :param config: plugin configuration
+        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
+        :param conduit: provides access to relevant Pulp functionality
+        :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
-        @return: The translated units
-        @rtype: list of: { type_id:<str>, unit_key:<dict> }
+        :return: The translated units
+        :rtype: list of: { type_id:<str>, unit_key:<dict> }
 
-        @raise InvalidUnitsRequested: if one or more of the units cannot be installed
+        :raises: InvalidUnitsRequested - if one or more of the units cannot be installed
         """
         return units
 
@@ -201,25 +201,25 @@ class Profiler(object):
 
         @see: Unit Translation examples in class documentation.
 
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
+        :param consumer: A consumer.
+        :type consumer: L{pulp.server.plugins.model.Consumer}
 
-        @param units: A list of content units to be updated.
-        @type units: list of: { type_id:<str>, unit_key:<dict> }
+        :param units: A list of content units to be updated.
+        :type units: list of: { type_id:<str>, unit_key:<dict> }
 
-        @param options: Update options; based on unit type.
-        @type options: dict
+        :param options: Update options; based on unit type.
+        :type options: dict
 
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :param config: plugin configuration
+        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
+        :param conduit: provides access to relevant Pulp functionality
+        :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
-        @return: The translated units
-        @rtype: list of: { type_id:<str>, unit_key:<dict> }
+        :return: The translated units
+        :rtype: list of: { type_id:<str>, unit_key:<dict> }
 
-        @raise InvalidUnitsRequested: if one or more of the units cannot be updated
+        :raises: InvalidUnitsRequested - if one or more of the units cannot be updated
         """
         return units
 
@@ -237,25 +237,25 @@ class Profiler(object):
 
         @see: Unit Translation examples in class documentation.
 
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
+        :param consumer: A consumer.
+        :type consumer: L{pulp.server.plugins.model.Consumer}
 
-        @param units: A list of content units to be uninstalled.
-        @type units: list of: { type_id:<str>, unit_key:<dict> }
+        :param units: A list of content units to be uninstalled.
+        :type units: list of: { type_id:<str>, unit_key:<dict> }
 
-        @param options: Update options; based on unit type.
-        @type options: dict
+        :param options: Update options; based on unit type.
+        :type options: dict
         
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :param config: plugin configuration
+        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
+        :param conduit: provides access to relevant Pulp functionality
+        :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
-        @return: The translated units
-        @rtype: list of: { type_id:<str>, unit_key:<dict> }
+        :return: The translated units
+        :rtype: list of: { type_id:<str>, unit_key:<dict> }
 
-        @raise InvalidUnitsRequested: if one or more of the units cannot be uninstalled
+        :raises: InvalidUnitsRequested - if one or more of the units cannot be uninstalled
         """
         return units
 
@@ -267,26 +267,26 @@ class Profiler(object):
         using a given list of repo ids. The definition of "applicable" is content
         type specific and up to the decision of the profiler.
 
-        @param consumer: A consumer.
-        @type consumer: L{pulp.server.plugins.model.Consumer}
+        :param consumer: A consumer.
+        :type consumer: L{pulp.server.plugins.model.Consumer}
 
-        @param repo_ids: List of repo ids to check for unit applicability
-        @type repo_ids: list
+        :param repo_ids: List of repo ids to check for unit applicability
+        :type repo_ids: list
 
-        @param unit_type_id: Common type id of all the units
-        @type unit_type_id: str
+        :param unit_type_id: Common type id of all the units
+        :type unit_type_id: str
 
-        @param unit_keys: list of unit keys to identify units
-        @type unit_keys: list of dict
+        :param unit_keys: list of unit keys to identify units
+        :type unit_keys: list of dict
 
-        @param config: plugin configuration
-        @type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :param config: plugin configuration
+        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
 
-        @param conduit: provides access to relevant Pulp functionality
-        @type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
+        :param conduit: provides access to relevant Pulp functionality
+        :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
 
-        @return: List of applicability reports.
-        @rtype: List of L{pulp.plugins.model.ApplicabilityReport}
+        :return: List of applicability reports.
+        :rtype: List of L{pulp.plugins.model.ApplicabilityReport}
         """
         message = 'Applicability for: %s, not supported' % unit_type_id
         raise InvalidUnitTypeForApplicability(unit_type_id, message)
