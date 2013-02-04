@@ -65,10 +65,8 @@ def _permissions(v1_database, v2_database):
 
     v2_permissions_to_add = []
     for v1_permission in missing_v1_permissions:
-        id = ObjectId()
         v2_permission = {
-            '_id' : id,
-            'id' : id,
+            '_id' : ObjectId(),
             'resource' : v1_permission['resource'],
             'users' : v1_permission['users'],
         }
@@ -88,10 +86,8 @@ def _users(v1_database, v2_database):
 
     v2_users_to_add = []
     for v1_user in missing_v1_users:
-        id = ObjectId()
         v2_user = {
-            '_id' : id,
-            'id' : id,
+            '_id' : ObjectId(),
             'login' : v1_user['login'],
             'password' : v1_user['password'],
             'name' : v1_user['name'] or v1_user['login'],
