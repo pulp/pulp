@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -31,7 +31,7 @@ def key_and_repr(units):
 # --- reports ---------------------------------------------------------------------------
 
 
-class ImporterReport:
+class ImporterReport(object):
     """
     A report that provides both summary and details regarding the importing
     of content units associated with a repository.
@@ -42,20 +42,6 @@ class ImporterReport:
         Each item is: (Unit, Exception)
     :type delete_failed: list
     """
-
-    @staticmethod
-    def key_and_repr(units):
-        """
-        Convert to list of unit_key and exception tuple into a list of
-        tuple containing the unit_key and string representation of the
-        exception.  This could just be done inline but more descriptive
-        to wrap in a method.
-        :param units: List of: (Unit, Exception)
-        :type units: list
-        :return: List of: (dict, str)
-        :rtype: list
-        """
-        return [(u[0].unit_key, repr(u[1])) for u in units]
 
     def __init__(self, add_failed, delete_failed):
         """

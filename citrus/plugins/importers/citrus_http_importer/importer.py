@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -18,7 +18,8 @@ from pulp.plugins.importer import Importer
 from pulp.common.download import factory
 from pulp.common.download.config import DownloaderConfig
 
-from pulp_citrus.importer.strategies import find_strategy, StrategyUnsupported
+from pulp_citrus import constants
+from pulp_citrus.importer.strategies import find_strategy
 
 log = getLogger(__name__)
 
@@ -31,9 +32,9 @@ class CitrusHttpImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id':'citrus_http_importer',
-            'display_name':'Pulp Citrus HTTP Importer',
-            'types':['node', 'repository']
+            'id' : constants.HTTP_IMPORTER_ID,
+            'display_name' : 'Pulp Citrus HTTP Importer',
+            'types' : ['node', 'repository']
         }
 
     def __init__(self):
@@ -103,10 +104,16 @@ class CitrusHttpImporter(Importer):
         ssl = config.get('ssl', {})
         conf = DownloaderConfig(
             'https',
-            ssl_ca_cert_path=str(ssl.get('ca_cert', '')),
-            ssl_client_cert_path=str(ssl.get('client_cert', '')),
+            ssl_ca_cert_path=self._safe_str(ssl.get('ca_cert')),
+            ssl_client_cert_path=self._safe_str(ssl.get('client_cert')),
             ssl_verify_host=0,
             ssl_verify_peer=0)
         downloader = factory.get_downloader(conf)
         return downloader
+
+    def _safe_str(self, s):
+        if s:
+            return str(s)
+        else:
+            return s
 

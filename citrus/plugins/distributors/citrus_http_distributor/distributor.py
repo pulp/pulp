@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,8 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-
 from gettext import gettext as _
 from logging import getLogger
 
@@ -20,8 +18,9 @@ from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 
-from pulp_citrus.http.publisher import HttpPublisher
 from pulp_citrus import link
+from pulp_citrus import constants
+from pulp_citrus.http.publisher import HttpPublisher
 
 
 _LOG = getLogger(__name__)
@@ -32,14 +31,12 @@ class CitrusHttpDistributor(Distributor):
     The (citrus) distributor
     """
 
-    VALID_PROTOCOLS =  ('http', 'https', 'file')
-
     @classmethod
     def metadata(cls):
         return {
-            'id':'citrus_http_distributor',
-            'display_name':'Pulp Citrus HTTP Distributor',
-            'types':['node',]
+            'id' : constants.HTTP_DISTRIBUTOR_ID,
+            'display_name' : 'Pulp Citrus HTTP Distributor',
+            'types' : ['node',]
         }
 
     def validate_config(self, repo, config, related_repos):
@@ -64,10 +61,11 @@ class CitrusHttpDistributor(Distributor):
         invalid_msg = _('Property %(p)s must be: %(v)s')
         key = 'protocol'
         protocol = config.get(key)
+        valid_protocols =  ('http', 'https', 'file')
         if not protocol:
             return (False, missing_msg % {'p':key})
-        if protocol not in self.VALID_PROTOCOLS:
-            return (False, invalid_msg % {'p':key, 'v':self.VALID_PROTOCOLS})
+        if protocol not in valid_protocols:
+            return (False, invalid_msg % {'p':key, 'v':valid_protocols})
         for key in ('http', 'https'):
             section = config.get(key)
             if not section:
@@ -187,9 +185,9 @@ class CitrusHttpDistributor(Distributor):
         """
         conf = self._importer_conf(repo, config)
         importer = {
-            'id':'citrus_http_importer',
-            'importer_type_id':'citrus_http_importer',
-            'config':conf,
+            'id' : constants.HTTP_IMPORTER_ID,
+            'importer_type_id' : constants.HTTP_IMPORTER_ID,
+            'config' : conf,
         }
         payload['importers'] = [importer]
 
@@ -210,9 +208,9 @@ class CitrusHttpDistributor(Distributor):
         ssl_dict = protocol_section.get('ssl', {})
         ssl_conf = self._ssl_conf(ssl_dict)
         conf = {
-            'manifest_url':manifest_url,
-            'protocol':protocol,
-            'ssl':ssl_conf,
+            'manifest_url' : manifest_url,
+            'protocol' : protocol,
+            'ssl' : ssl_conf,
         }
         return conf
 
@@ -226,13 +224,14 @@ class CitrusHttpDistributor(Distributor):
         :rtype: dict
         :see: Link
         """
+        if not ssl_dict:
+            return {}
         conf = {}
-        if ssl_dict:
-            for key in ('client_cert',):
-                value = ssl_dict.get(key)
-                path = value['local']
-                path_out = value['child']
-                conf[key] = link.pack(path, path_out)
+        for key in ('client_cert',):
+            value = ssl_dict.get(key)
+            path = value['local']
+            path_out = value['child']
+            conf[key] = link.pack(path, path_out)
         return conf
 
     def _add_distributors(self, repo_id, payload):

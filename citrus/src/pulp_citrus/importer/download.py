@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -20,7 +20,7 @@ from pulp.common.download.request import DownloadRequest
 log = getLogger(__name__)
 
 
-class Batch:
+class Batch(object):
     """
     A collection of download requests and a mapping of unit by URL.
     :ivar units: A mapping of units by URL.

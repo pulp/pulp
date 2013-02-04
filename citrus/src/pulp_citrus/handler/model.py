@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011 Red Hat, Inc.
+# Copyright © 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -28,7 +28,7 @@ import httplib
 
 from logging import getLogger
 
-from pulp.common.bundle import Bundle as BundleImpl
+from pulp.common.bundle import Bundle
 from pulp.common.config import Config
 from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
@@ -43,6 +43,9 @@ log = getLogger(__name__)
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
+# --- utils -----------------------------------------------------------------------------
+
+
 def subdict(adict, *keylist):
     """
     Get a subset dictionary.
@@ -54,6 +57,15 @@ def subdict(adict, *keylist):
     :rtype: dict.
     """
     return dict([t for t in adict.items() if t[0] in keylist])
+
+
+# --- exceptions ------------------------------------------------------------------------
+
+class ModelError(Exception):
+    pass
+
+
+# --- pulp bindings ---------------------------------------------------------------------
 
 
 class LocalPulpBindings(PulpBindings):
@@ -85,7 +97,10 @@ class RemotePulpBindings(PulpBindings):
         PulpBindings.__init__(self, connection)
 
 
-class Bundle(BundleImpl):
+# --- certificate bundles ---------------------------------------------------------------
+
+
+class ConsumerSSLCredentialsBundle(Bundle):
     """
     A bundled consumer certificate and private key.
     """
@@ -97,30 +112,31 @@ class Bundle(BundleImpl):
         cfg = Config(CONFIG_PATH)
         files = cfg['filesystem']
         path = os.path.join(files['id_cert_dir'], files['id_cert_filename'])
-        BundleImpl.__init__(self, path)
+        Bundle.__init__(self, path)
 
 
-class Local:
+# --- model objects ---------------------------------------------------------------------
+
+
+class Local(object):
     """
     A Local (downstream) entity.
     :cvar binding: A REST API binding.
     :type binding: PulpBindings
     """
-
     binding = LocalPulpBindings()
 
 
-class Remote:
+class Remote(object):
     """
     A Remote (upstream) entity.
     :cvar binding: A REST API binding.
     :type binding: PulpBindings
     """
-
     binding = RemotePulpBindings()
 
 
-class Repository:
+class Repository(object):
     """
     Represents a repository database object.
     :ivar repo_id: Repository ID.
@@ -224,7 +240,7 @@ class LocalRepository(Local, Repository):
         """
         http = cls.binding.content_orphan.remove_all()
         if http.response_code != httplib.ACCEPTED:
-            raise Exception('purge_orphans() failed:%d', http.response_code)
+            raise ModelError('purge_orphans() failed:%d', http.response_code)
 
     def __init__(self, repo_id, details=None):
         """
@@ -380,7 +396,7 @@ class LocalRepository(Local, Repository):
             task = http.response_body[0]
             return self.poller.join(task.task_id, progress)
         else:
-            raise Exception('synchronization failed: http=%d', http.response_code)
+            raise ModelError('synchronization failed: http=%d', http.response_code)
 
     def cancel_synchronization(self):
         """
@@ -389,7 +405,7 @@ class LocalRepository(Local, Repository):
         self.poller.abort()
 
 
-class Distributor:
+class Distributor(object):
     """
     Represents a repository-distributor association.
     :ivar repo_id: Repository ID.
@@ -486,7 +502,7 @@ class LocalDistributor(Local, Distributor):
             self.update(delta)
 
 
-class Importer:
+class Importer(object):
     """
     Represents a repository-importer association.
     :ivar repo_id: Repository ID.
@@ -578,7 +594,7 @@ class LocalImporter(Local, Importer):
             self.update(delta)
 
 
-class Binding:
+class Binding(object):
     """
     Represents a consumer binding to a repository.
     """
@@ -597,13 +613,13 @@ class RemoteBinding(Remote):
         :return: List of bind payloads.
         :rtype: list
         """
-        bundle = Bundle()
+        bundle = ConsumerSSLCredentialsBundle()
         myid = bundle.cn()
         http = Remote.binding.bind.find_by_id(myid)
         if http.response_code == httplib.OK:
             return cls.filtered(http.response_body)
         else:
-            raise Exception('fetch failed, http:%d', http.response_code)
+            raise ModelError('fetch failed, http:%d', http.response_code)
 
     @classmethod
     def fetch(cls, repo_ids):
@@ -615,14 +631,14 @@ class RemoteBinding(Remote):
         :rtype: list
         """
         binds = []
-        bundle = Bundle()
+        bundle = ConsumerSSLCredentialsBundle()
         myid = bundle.cn()
         for repo_id in repo_ids:
             http = Remote.binding.bind.find_by_id(myid, repo_id)
             if http.response_code == httplib.OK:
                 binds.extend(cls.filtered(http.response_body))
             else:
-                raise Exception('fetch failed, http:%d', http.response_code)
+                raise ModelError('fetch failed, http:%d', http.response_code)
         return binds
 
     @classmethod

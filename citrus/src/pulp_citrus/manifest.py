@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -31,7 +31,7 @@ log = getLogger(__name__)
 # --- manifest --------------------------------------------------------------------------
 
 
-class Manifest:
+class Manifest(object):
     """
     The unit(s) manifest is a json encoded file containing a
     list of all content units associated with a pulp repository.
@@ -96,7 +96,7 @@ class Manifest:
 
 # --- tools -----------------------------------------------------------------------------
 
-class File:
+class File(object):
 
     @staticmethod
     def compress(file_path):

@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -40,11 +40,9 @@ def mkdir(file_path):
     dir_path = os.path.dirname(file_path)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-    else:
-        log.debug('directory at: %s, already exists', dir_path)
 
 
-class Publisher:
+class Publisher(object):
     """
     The publisher does the heavy lifting for citrus distributor.
     """

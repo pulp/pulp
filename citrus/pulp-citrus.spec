@@ -189,15 +189,3 @@ fi
 %changelog
 * Tue Jan 29 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
 - new package built with tito
-
-* Mon Dec 17 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
-- new package built with tito
-
-* Fri Sep 07 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-3
-- Fixes.
-
-* Wed Sep 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-2
-- spec changes.
-
-* Wed Sep 05 2012 Jeff Ortel <jortel@redhat.com> 0.0.325-1
-- new package built with tito

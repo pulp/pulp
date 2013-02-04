@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -34,7 +34,7 @@ log = getLogger(__name__)
 # --- abstract strategy  ----------------------------------------------------------------
 
 
-class ImporterStrategy:
+class ImporterStrategy(object):
     """
     This object provides the transport independent content unit
     synchronization strategies used by citrus importer plugins.
@@ -42,21 +42,21 @@ class ImporterStrategy:
         has been cancelled.
     :type cancelled: bool
     :ivar conduit: Provides access to relevant Pulp functionality
-    :type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+    :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
     :ivar config: The plugin configuration.
-    :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+    :type config: pulp.server.plugins.config.PluginCallConfiguration
     :ivar downloader: A fully configured file downloader.
     :type downloader: pulp.common.download.backends.base.DownloadBackend
     :ivar progress: A progress reporting object.
-    :type progress: L{ImporterProgress}
+    :type progress: ImporterProgress
     """
 
     def __init__(self, conduit, config, downloader):
         """
         :param conduit: Provides access to relevant Pulp functionality.
-        :type conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
         :param config: The plugin configuration.
-        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :type config: pulp.server.plugins.config.PluginCallConfiguration
         :param downloader: A fully configured file downloader.
         :type downloader: pulp.common.download.backends.base.DownloadBackend
         """
@@ -73,7 +73,7 @@ class ImporterStrategy:
         :param repo_id: The repository ID.
         :type repo_id: str
         :return: A synchronization report.
-        :rtype: L{Report}
+        :rtype: Report
         """
         raise NotImplementedError()
 
@@ -90,7 +90,7 @@ class ImporterStrategy:
         The conduit will automatically associate the unit to the repository
         to which it's pre-configured.
         :param unit: The unit to be added.
-        :type unit: L{Unit}
+        :type unit: Unit
         """
         self.conduit.save_unit(unit)
         self.progress.set_action('unit_added', str(unit.unit_key))
@@ -204,8 +204,8 @@ class ImporterStrategy:
 
     def _delete_units(self, unit_inventory):
         """
-        Determine the list of units contained in the upstream inventory
-        but are not contained in the local inventory and un-associate them.
+        Determine the list of units contained in the local inventory
+        but are not contained in the upstream inventory and un-associate them.
         :param unit_inventory: The inventory of both upstream and local content units.
         :type unit_inventory: UnitInventory
         :return: The list of units that failed to be un-associated.
@@ -245,7 +245,7 @@ class ImporterStrategy:
         the configuration.
         :param repo_id: The repository ID.
         :type repo_id: str
-        :return: A dictionary of units keyed by L{UnitKey}.
+        :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
         url = self.config.get('manifest_url')

@@ -8,3 +8,10 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+
+HTTP_DISTRIBUTOR_ID = 'citrus_http_distributor'
+HTTP_IMPORTER_ID = 'citrus_http_importer'
+
+ALL_IMPORTERS = [HTTP_IMPORTER_ID,]
+ALL_DISTRIBUTORS = [HTTP_DISTRIBUTOR_ID,]

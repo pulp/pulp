@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -22,7 +22,7 @@ class TaskFailed(Exception):
     pass
 
 
-class TaskPoller:
+class TaskPoller(object):
     """
     The task poller is used to poll a running task by ID.
     :ivar binding: A pulp API binding.
@@ -33,7 +33,7 @@ class TaskPoller:
     :type poll: bool
     """
 
-    DELAY = 0.5
+    DELAY = 1
 
     def __init__(self, binding, delay=DELAY):
         """

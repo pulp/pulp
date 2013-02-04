@@ -1,4 +1,4 @@
-# Copyright (c) 2012 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -24,7 +24,7 @@ def unit_dictionary(units):
     return dict(items)
 
 
-class UniqueKey:
+class UniqueKey(object):
     """
     A unique unit key consisting of a unit's type_id & unit_key.
     The unit key is sorted to ensure consistency.
@@ -55,7 +55,7 @@ class UniqueKey:
         return self.uid != other.uid
 
 
-class UnitInventory:
+class UnitInventory(object):
     """
     The unit inventory contains both the upstream and local inventory
     of content units associated with a specific repository.  Each is contained
@@ -83,11 +83,7 @@ class UnitInventory:
         :return: List of units that need to be added.
         :rtype: list
         """
-        units = []
-        for k, unit in self.upstream.items():
-            if k not in self.local:
-                units.append(unit)
-        return units
+        return [u for k, u in self.upstream.items() if k not in self.local]
 
     def local_only(self):
         """
@@ -96,8 +92,4 @@ class UnitInventory:
         :return: List of units that need to be purged.
         :rtype: list
         """
-        units = []
-        for k, unit in self.local.items():
-            if k not in self.upstream:
-                units.append(units)
-        return units
+        return [u for k, u in self.local.items() if k not in self.upstream]
