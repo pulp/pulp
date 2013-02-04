@@ -10,8 +10,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pymongo.objectid import ObjectId
-
+from pulp.server.compat import ObjectId
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
@@ -48,6 +47,14 @@ def _consumer_history(v1_database, v2_database):
 
     # Idempotency: The _id values are retained in the migration, so resolve
     # which ones have not yet been migrated and only load those.
+
+    # This leads to a small inconsistency within the server itself. _id values
+    # in v2, with one exception, are ObjectId. In this case, we're porting over
+    # the uuid _id from v1. This is to simplify the idempotency check; I'm not
+    # sure how else we'd do it. More importantly, after a period of times these
+    # will be reaped out of existence, meaning the database awkwardness will
+    # be corrected over time.
+
     v2_ids = [x['_id'] for x in list(v2_coll.find({}, {'_id' : 1}))]
     missing_v1_entries = list(v1_coll.find({'_id' : {'$nin' : v2_ids}}))
 
@@ -79,6 +86,7 @@ def _consumers(v1_database, v2_database):
 
     for v1_consumer in missing_v1_consumers:
         v2_consumer = {
+            '_id' : ObjectId(),
             'id' : v1_consumer['id'],
             'display_name' : v1_consumer['id'],
             'description' : v1_consumer['description'],
@@ -113,13 +121,12 @@ def _consumer_bindings(v2_database, v1_consumer):
 
     new_bindings = []
     for repo_id in unbound_repo_ids:
-        id = ObjectId()
         binding = {
-            '_id' : id,
-            'id' : id,
+            '_id' : ObjectId(),
             'consumer_id' : consumer_id,
             'repo_id' : repo_id,
             'distributor_id' : YUM_DISTRIBUTOR_ID,
+            'deleted' : False,
         }
         new_bindings.append(binding)
 
@@ -137,10 +144,8 @@ def _unit_profile(v2_database, v1_consumer):
     if existing:
         return
 
-    id = ObjectId()
     unit_profile = {
-        '_id' : id,
-        'id' : id,
+        '_id' : ObjectId(),
         'consumer_id' : consumer_id,
         'content_type' : RPM_TYPE,
         'profile' : v1_consumer['package_profile']
