@@ -167,7 +167,7 @@ class ApplicabilityManager(object):
         Parse units and return a dictionary of all units to be considered for applicability
         keyed by unit_type_id
 
-        :param units: user provided filter to select units
+        :param units: unit identifiers keyed by unit-type-id specified by user
         :type units: dict
 
         :return: if specific units are specified, return the same units. If units dict are empty, 
@@ -182,15 +182,25 @@ class ApplicabilityManager(object):
         if units is not None:
             result_units = units
             for unit_type_id, repo_unit_list in units.items():
-                # If unit_list is empty for a unit_type, consider all units of specific type
+                # Get unit type specific collection
+                collection = content_query_manager.get_content_unit_collection(type_id=unit_type_id)
+                
                 if not repo_unit_list:
+                    # If unit_list is empty for a unit_type, consider all units of specific type
+                    criteria = UnitAssociationCriteria(unit_fields = ['unit_id'])
                     for repo_id in repo_ids:
-                        criteria = UnitAssociationCriteria(unit_fields = ['unit_id'])
                         repo_units = repo_unit_association_query_manager.get_units_by_type(repo_id, unit_type_id, criteria)
                         # Get unit metadata for each unit from type specific collection
-                        collection = content_query_manager.get_content_unit_collection(type_id=unit_type_id)
                         repo_unit_keys = [collection.find_one({'_id': u['unit_id']}) for u in repo_units]
                         result_units.setdefault(unit_type_id, []).extend(repo_unit_keys)
+                else:
+                    for repo_unit in repo_unit_list:
+                        criteria = UnitAssociationCriteria(unit_filters=repo_unit, unit_fields = ['unit_id'])
+                        for repo_id in repo_ids:
+                            repo_units = repo_unit_association_query_manager.get_units_by_type(repo_id, unit_type_id, criteria)
+                            # Get unit metadata for each unit from type specific collection
+                            repo_unit_keys = [collection.find_one({'_id': u['unit_id']}) for u in repo_units]
+                            result_units.setdefault(unit_type_id, []).extend(repo_unit_keys)
         else:
             # If units are not specified, consider all units in repo_ids list.
             result_units = {}
