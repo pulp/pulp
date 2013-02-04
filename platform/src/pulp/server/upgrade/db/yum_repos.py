@@ -43,7 +43,9 @@ SKIP_GPG_KEYS = False
 
 # Location to load when looking for static server.conf configuration, should
 # only be changed by unit tests not running on a full installation.
-# Note: need to figure out what happens to this file when doing an upgrade
+# This file is deleted in the normal v1 upgrade. The functionality remains in
+# this script (it won't break if it's not present) in the event Katello wants
+# to add their own backup/restore step to retain this file.
 V1_SERVER_CONF = '/etc/pulp/pulp.conf'
 
 # Root directory in which GPG keys are located

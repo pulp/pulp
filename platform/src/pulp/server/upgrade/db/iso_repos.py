@@ -42,7 +42,7 @@ SKIP_SERVER_CONF = False
 
 # Location to load when looking for static server.conf configuration, should
 # only be changed by unit tests not running on a full installation.
-# Note: need to figure out what happens to this file when doing an upgrade
+# See note in yum_repos about a similar constant.
 V1_SERVER_CONF = '/etc/pulp/pulp.conf'
 
 
