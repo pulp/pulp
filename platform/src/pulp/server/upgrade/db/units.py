@@ -83,7 +83,7 @@ DEFAULT_OWNER_ID = 'yum_importer'
 # confirmed time to the time the upgrade is run. Also, this is one of the few
 # places I call into our code from the upgrade process; my hope is that we'll
 # never change how UTC is generated, which is probably a safe bet.
-DEFAULT_CREATED = dateutils.format_iso8601_datetime(dateutils.to_utc_datetime(datetime.datetime.utcnow()))
+DEFAULT_CREATED = dateutils.format_iso8601_datetime(datetime.datetime.now(tz=dateutils.utc_tz()))
 DEFAULT_UPDATED = DEFAULT_CREATED
 
 # Used when converting the v1 distribution files into v2
