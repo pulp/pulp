@@ -33,6 +33,10 @@ _INIT_REGEX = re.compile('__init__.py(c|o)?$')
 # exceptions -------------------------------------------------------------------
 
 class ConfigParsingException(Exception):
+    """
+    :ivar config_file: full path to the plugin conf file that failed to load
+    :type config_file: str
+    """
 
     def __init__(self, config_file):
         super(ConfigParsingException, self).__init__()
