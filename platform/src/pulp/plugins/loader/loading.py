@@ -30,6 +30,21 @@ _LOG = logging.getLogger(__name__)
 _CONFIG_REGEX = re.compile('.*\.(config|conf|cfg)$', re.IGNORECASE)
 _INIT_REGEX = re.compile('__init__.py(c|o)?$')
 
+# exceptions -------------------------------------------------------------------
+
+class ConfigParsingException(Exception):
+    """
+    :ivar config_file: full path to the plugin conf file that failed to load
+    :type config_file: str
+    """
+
+    def __init__(self, config_file):
+        super(ConfigParsingException, self).__init__()
+        self.config_file = config_file
+
+    def __str__(self):
+        return 'Invalid configuration file: %s' % self.config_file
+
 # plugin loading methods -------------------------------------------------------
 
 def load_plugins_from_path(path, base_class, plugin_map):
@@ -193,10 +208,16 @@ def load_plugin_config(config_file_name):
     @type config_file_name: str
     @rtype: dict
     """
-    _LOG.debug('Loading config file: %s' % config_file_name)
-    contents = read_content(config_file_name)
-    cfg = json.loads(contents)
-    return cfg
+    _LOG.info('Loading config file: %s' % config_file_name)
+
+    try:
+        contents = read_content(config_file_name)
+        cfg = json.loads(contents)
+        return cfg
+    except ValueError:
+        # ValueError is raised if the config file isn't valid JSON
+        _LOG.error('Error parsing config file: %s' % config_file_name)
+        raise ConfigParsingException(config_file_name)
 
 
 def import_module(name):
