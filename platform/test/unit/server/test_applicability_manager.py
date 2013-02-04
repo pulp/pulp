@@ -109,7 +109,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
                 self.assertEquals(args[call][5].__class__, ProfilerConduit)
                 call += 1
 
-    def test_profiler_exception(self):
+    def test_profiler_no_exception(self):
         # Setup
         self.populate()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
@@ -121,14 +121,11 @@ class ApplicabilityManagerTests(base.PulpServerTests):
                                {'name':'def'}]
                 }
         manager = factory.consumer_applicability_manager()
-        self.assertRaises(
-            PulpExecutionException,
-            manager.units_applicable,
-            self.CONSUMER_CRITERIA,
-            self.REPO_CRITERIA,
-            units)
+        result = manager.units_applicable(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, units)
+        self.assertTrue('test-1' in result.keys())
+        self.assertTrue('test-2' in result.keys())
 
-    def test_profiler_notfound(self):
+    def test_no_exception_for_profiler_notfound(self):
         # Setup
         self.populate()
         # Test
@@ -136,9 +133,6 @@ class ApplicabilityManagerTests(base.PulpServerTests):
                  'xxx': [{'name':'abc'}]
                 }
         manager = factory.consumer_applicability_manager()
-        self.assertRaises(
-            PulpExecutionException,
-            manager.units_applicable,
-            self.CONSUMER_CRITERIA,
-            self.REPO_CRITERIA,
-            units)
+        result = manager.units_applicable(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, units)
+        self.assertTrue('test-1' in result.keys())
+        self.assertTrue('test-2' in result.keys())

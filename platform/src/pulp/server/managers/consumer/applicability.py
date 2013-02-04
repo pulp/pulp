@@ -68,15 +68,7 @@ class ApplicabilityManager(object):
         """
         result = {}
         conduit = ProfilerConduit()
-
-        consumer_query_manager = managers.consumer_query_manager()
-        if consumer_criteria:
-            # Get consumer ids satisfied by specified consumer criteria
-            consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
-        else:
-            # Get all consumer ids registered to the Pulp server
-            consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
-
+        
         # Get repo ids satisfied by specified consumer criteria
         if repo_criteria:
             repo_query_manager = managers.repo_query_manager()
@@ -84,7 +76,21 @@ class ApplicabilityManager(object):
         else:
             repo_criteria_ids = None
 
+        consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
+        
+        if consumer_criteria:
+            # Get consumer ids satisfied by specified consumer criteria
+            consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+        else:
+            if repo_criteria_ids is not None:
+                # If repo_criteria is specified, get all the consumers bound to the repos
+                # satisfied by repo_criteria
+                bind_criteria = {"filters": {"repo_id": {"$in": repo_criteria_ids}}}
+                consumer_ids = [b['consumer_id'] for b in bind_manager.find_by_criteria(bind_criteria)]
+            else:
+                # Get all consumer ids registered to the Pulp server
+                consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
 
         # Iterate through each consumer to collect applicability reports
         for consumer_id in consumer_ids:
