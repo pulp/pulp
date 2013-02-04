@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     try:
         upgrader.upgrade()
-        exit_code = 0
+        exit_code = os.EX_OK
     except StepException:
         # The error details are printed by the upgrader, so no need to here
         exit_code = os.EX_SOFTWARE
