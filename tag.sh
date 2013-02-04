@@ -14,6 +14,7 @@ GIT_ROOTS="pulp pulp_rpm pulp_puppet"
 PACKAGES="
   pulp/platform/
   pulp/builtins/
+  pulp/citrus/
   pulp_rpm/
   pulp_puppet/"
 
