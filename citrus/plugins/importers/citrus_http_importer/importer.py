@@ -33,7 +33,7 @@ class CitrusHttpImporter(Importer):
         return {
             'id':'citrus_http_importer',
             'display_name':'Pulp Citrus HTTP Importer',
-            'types':['repository',]
+            'types':['node', 'repository']
         }
 
     def __init__(self):
@@ -54,12 +54,13 @@ class CitrusHttpImporter(Importer):
             reason: (str) The reason of the validation failure.
         :rtype: tuple
         """
+        errors = []
         msg = _('Missing required configuration property: %(p)s')
         for key in ('manifest_url', 'protocol'):
             value = config.get(key)
             if not value:
-                return (False, msg % dict(p=key))
-        return (True, None)
+                errors.append(msg % dict(p=key))
+        return (True, errors)
 
     def sync_repo(self, repo, conduit, config):
         """

@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../handlers
 
 from distributor import CitrusHttpDistributor
 from importer import CitrusHttpImporter
-from citrus import CitrusHandler
+from citrus import NodeHandler, RepositoryHandler
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
@@ -167,13 +167,9 @@ class PluginTestBase(WebTest):
 
     def dist_conf_with_ssl(self):
         ssl = {
-            'ca_cert':{
-                'local':os.path.join(self.upfs, 'ca.crt'),
-                'remote':os.path.join(self.downfs, 'remote', 'ca.crt')
-            },
             'client_cert':{
                 'local':os.path.join(self.upfs, 'local.crt'),
-                'remote':os.path.join(self.downfs, 'remote', 'client.crt')
+                'child':os.path.join(self.downfs, 'parent', 'client.crt')
             }
         }
         d = self.dist_conf()
@@ -411,17 +407,18 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = dict(all=True)
-            units = [{'type_id':'repository', 'unit_key':None}]
+            units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.downfs)
             container = Container(self.upfs)
             dispatcher = Dispatcher(container)
-            container.handlers[CONTENT]['repository'] = CitrusHandler(self)
+            container.handlers[CONTENT]['node'] = NodeHandler(self)
+            container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
             report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
-        report = _report[0].details['repository']
+        report = _report[0].details['node']
         self.assertTrue(report['succeeded'])
         merge_report = report['details']['merge_report']
         self.assertEqual(merge_report['added'], [self.REPO_ID])
@@ -455,18 +452,19 @@ class TestAgentPlugin(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(all=True, strategy='additive')
-            units = [{'type_id':'repository', 'unit_key':None}]
+            options = dict(strategy='additive')
+            units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.downfs)
             container = Container(self.upfs)
             dispatcher = Dispatcher(container)
-            container.handlers[CONTENT]['repository'] = CitrusHandler(self)
+            container.handlers[CONTENT]['node'] = NodeHandler(self)
+            container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
             report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
-        report = _report[0].details['repository']
+        report = _report[0].details['node']
         self.assertTrue(report['succeeded'])
         merge_report = report['details']['merge_report']
         self.assertEqual(merge_report['added'], [self.REPO_ID])
@@ -508,8 +506,8 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(all=True)
-            handler = CitrusHandler(self)
+            options = {}
+            handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
             report = handler.update(Conduit(), units, options)
             _report.append(report)
@@ -530,9 +528,7 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['add_failed']), 0)
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
-        path = os.path.join(self.downfs, 'remote', 'ca.crt')
-        self.assertTrue(os.path.exists(path))
-        path = os.path.join(self.downfs, 'remote', 'client.crt')
+        path = os.path.join(self.downfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
     @patch('pulp_citrus.handler.strategies.Bundle.cn', return_value=PULP_ID)
@@ -558,8 +554,8 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(all=True)
-            handler = CitrusHandler(self)
+            options = {}
+            handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
             os.makedirs(os.path.join(self.downfs, 'content'))
             report = handler.update(Conduit(), units, options)
@@ -611,8 +607,8 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, CITRUS_DISTRUBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
-            options = dict(all=True)
-            handler = CitrusHandler(self)
+            options = {}
+            handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.downfs)
             os.makedirs(os.path.join(self.downfs, 'content'))
             report = handler.update(Conduit(), units, options)

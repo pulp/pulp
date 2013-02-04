@@ -66,7 +66,6 @@ class DownloadListener(DownloadEventListener):
                 raise e
 
     def download_succeeded(self, report):
-        self.progress.set_action('downloaded', report.url)
         unit = self.batch.units.get(report.url)
         try:
             self.strategy.add_unit(unit)
@@ -77,3 +76,4 @@ class DownloadListener(DownloadEventListener):
     def download_failed(self, report):
         unit = self.batch.units[report.url]
         self.failed.append((unit, report.error_report))
+        self.progress.set_action('downloaded_failed', report.url)

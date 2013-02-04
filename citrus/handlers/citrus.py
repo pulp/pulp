@@ -23,16 +23,12 @@ from pulp_citrus.handler.model import RemoteBinding
 log = getLogger(__name__)
 
 
-class CitrusHandler(ContentHandler):
+class NodeHandler(ContentHandler):
 
     def update(self, conduit, units, options):
         """
-        Update the specified content units.  In citrus, the update of a
-        'repository' unit triggers repository synchronization.  The definition
-        of what synchronization means, depends on the strategy option passed.
-        The synchronization itself, is delegated to the strategy object.
-        Unit key of {} or None indicates updates update all but only if
-        (all) option is True.
+        Update the specified content units.  Each unit must be of
+        type 'node'.  Updates the entire child node.
         :param conduit: A handler conduit.
         :type conduit: pulp.agent.lib.conduit.Conduit
         :param units: A list of content unit_keys.
@@ -45,16 +41,45 @@ class CitrusHandler(ContentHandler):
         report = ContentReport()
         progress = HandlerProgress(conduit)
         progress.push_step('fetch_bindings')
-        all = options.get('all', False)
-
-        repo_ids = [key['repo_id'] for key in units if key]
-        if all:
-            bindings = RemoteBinding.fetch_all()
-        else:
-            bindings = RemoteBinding.fetch(repo_ids)
+        bindings = RemoteBinding.fetch_all()
 
         strategy_name = options.setdefault('strategy', 'mirror')
         strategy_class = find_strategy(strategy_name)
+        strategy = strategy_class(progress)
+        strategy_report = strategy.synchronize(bindings, options)
+
+        progress.end()
+        details = strategy_report.dict()
+        if strategy_report.errors:
+            report.set_failed(details)
+        else:
+            report.set_succeeded(details)
+        return report
+
+
+class RepositoryHandler(ContentHandler):
+
+    def update(self, conduit, units, options):
+        """
+        Update the specified content units.  Each unit must be
+        of type 'repository'.  Updates only the repositories specified in
+        the unit_key by repo_id.
+        :param conduit: A handler conduit.
+        :type conduit: pulp.agent.lib.conduit.Conduit
+        :param units: A list of content unit_keys.
+        :type units: list
+        :param options: Unit update options.
+        :type options: dict
+        :return: An update report.
+        :rtype: ContentReport
+        """
+        report = ContentReport()
+        progress = HandlerProgress(conduit)
+        progress.push_step('fetch_bindings')
+        repo_ids = [key['repo_id'] for key in units if key]
+        bindings = RemoteBinding.fetch(repo_ids)
+
+        strategy_class = find_strategy('additive')
         strategy = strategy_class(progress)
         strategy_report = strategy.synchronize(bindings, options)
 

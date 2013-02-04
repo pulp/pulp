@@ -32,12 +32,14 @@ class CitrusHttpDistributor(Distributor):
     The (citrus) distributor
     """
 
+    VALID_PROTOCOLS =  ('http', 'https', 'file')
+
     @classmethod
     def metadata(cls):
         return {
             'id':'citrus_http_distributor',
             'display_name':'Pulp Citrus HTTP Distributor',
-            'types':['repository',]
+            'types':['node',]
         }
 
     def validate_config(self, repo, config, related_repos):
@@ -64,9 +66,8 @@ class CitrusHttpDistributor(Distributor):
         protocol = config.get(key)
         if not protocol:
             return (False, missing_msg % {'p':key})
-        protocols = ('http', 'https', 'file')
-        if protocol not in protocols:
-            return (False, invalid_msg % {'p':key, 'v':protocols})
+        if protocol not in self.VALID_PROTOCOLS:
+            return (False, invalid_msg % {'p':key, 'v':self.VALID_PROTOCOLS})
         for key in ('http', 'https'):
             section = config.get(key)
             if not section:
