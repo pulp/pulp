@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.1.alpha
+Release: 0.2.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -406,6 +406,21 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
+- 880780 - Added config parsing exception to convey more information in the
+  event the conf file isn't valid JSON (jason.dobies@redhat.com)
+- 905548 - fix handler loading; imp.load_source() supports .py files only.
+  (jortel@redhat.com)
+- 903387 - remove /var/lib/pulp/(packages|repos) and /var/lib/pulp/published
+  (jortel@redhat.com)
+- 878234 - added consumer group itineraries and updated group content install
+  apis to return a list of call requests, also added unit tests
+  (skarmark@redhat.com)
+- 888058 - Changed model for the client-side exception handler to be overridden
+  and specified to the launcher, allowing an individual client (admin,
+  consumer, future other) to customize error messages where relevant.
+  (jason.dobies@redhat.com)
+
 * Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
 - 891423 - Added conduit calls to be able to create units on copy
   (jason.dobies@redhat.com)
