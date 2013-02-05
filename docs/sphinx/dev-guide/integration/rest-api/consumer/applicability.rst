@@ -49,9 +49,7 @@ Each *ApplicabilityReport* is an object:
 
 { 'consumer_criteria' : { 'filters': {'id': {'$in': ['sunflower', 'voyager']}},
                           'sort': [['id', 'ascending']]},
-
   'repo_criteria' : {'filters': {'id': {'$in': ['test-repo', 'unbound-repo', 'test_errata']}}},
-
   'units' : {'erratum': [{'id': 'grinder_test_4'}],
  			 'rpm': []}
 }
