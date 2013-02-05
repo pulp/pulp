@@ -62,9 +62,6 @@ DIRS = (
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
-    '/var/lib/pulp/published',
-    '/var/lib/pulp/published/http',
-    '/var/lib/pulp/published/https',
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
@@ -116,6 +113,13 @@ LINKS = (
     # Server Web Configuration
     ('platform/src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+
+    # Citrus (all)
+    ('citrus/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
+    ('citrus/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
+    ('citrus/plugins/distributors/citrus_http_distributor', DIR_PLUGINS + '/distributors/citrus_http_distributor'),
+    ('citrus/plugins/importers/citrus_http_importer', DIR_PLUGINS + '/importers/citrus_http_importer'),
+    ('citrus/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
 )
 
 def parse_cmdline():
@@ -188,18 +192,13 @@ def install(opts):
         if warning_msg:
             warnings.append(warning_msg)
 
-    # Link between pulp and apache
-    create_link(opts, '/var/lib/pulp/published', '/var/www/pub')
-
     # Grant apache write access to the pulp tools log file and pulp
     # packages dir
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
-    os.system('chown -R apache:apache /var/lib/pulp/published')
 
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
-    os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
 
     # Update for certs

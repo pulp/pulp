@@ -1,0 +1,16 @@
+{"types":[
+    {
+        "id":"repository",
+        "display_name":"Repository",
+        "description":"A Pulp Repository",
+        "unit_key":["repo_id"],
+        "search_indexes":["repo_id"]
+    },
+    {
+        "id":"node",
+        "display_name":"Pulp Node",
+        "description":"A Pulp Node",
+        "unit_key":["node_id"],
+        "search_indexes":["node_id"]
+    }
+]}

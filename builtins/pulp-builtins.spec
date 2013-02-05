@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 2.0.6
-Release: 0.19.rc
+Version: 2.1.0
+Release: 0.3.alpha
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -48,12 +48,22 @@ cp -R extensions/consumer/* %{buildroot}/%{_usr}/lib/pulp/consumer/extensions
 rm -rf %{buildroot}
 
 
+# define required pulp platform version.
+# pre-release package packages have dependencies based on both
+# version and release.
+%if %(echo %release | cut -f1 -d'.') < 1
+%global pulp_version %{version}-%{release}
+%else
+%global pulp_version %{version}
+%endif
+
+
 # ---- Admin (client) Extensions -----------------------------------------------
 
 %package admin-extensions
 Summary: The builtin admin client extensions
 Group: Development/Languages
-Requires: pulp-admin-client = %{version}
+Requires: pulp-admin-client = %{pulp_version}
 
 %description admin-extensions
 A collection of extensions used to provide generic consumer
@@ -78,7 +88,7 @@ client capabilites.
 %package consumer-extensions
 Summary: The builtin consumer client extensions
 Group: Development/Languages
-Requires: pulp-consumer-client = %{version}
+Requires: pulp-consumer-client = %{pulp_version}
 
 %description consumer-extensions
 A collection of extensions used to provide generic admin
@@ -93,6 +103,26 @@ client capabilities.
 
 
 %changelog
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
+- 
+
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
+- 
+
+* Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+- 861383 - more descriptive message on unregister when server does not exist on
+  the server. (jortel@redhat.com)
+- 883049 - check we have write permissions to cert dir before
+  register/unregister. (jortel@redhat.com)
+- 878632 - adding usage to permission grant and revoke commands to mention that
+  both role-id and login cannot be used at the same time (skarmark@redhat.com)
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+- 878107 - consumer status now mentions which pulp server the consumer is
+  registered to as well (skarmark@redhat.com)
+
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
 - 
 

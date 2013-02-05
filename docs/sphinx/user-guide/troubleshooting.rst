@@ -56,3 +56,16 @@ it, then run ``make testcert``. Be sure to answer "localhost" for the
 For production installations of Pulp, it is up to the installer to provide
 appropriate SSL certificates and configure Apache to use them.
 
+
+Sync from within /tmp fails to find files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you experience a problem where Pulp cannot find content that is in /tmp, please
+move that content outside of /tmp and try again.
+
+A sync operation can use a local filesystem path on the server by specifying the feed
+URL starting with ``file:///``. If the content is within /tmp, Apache may fail to
+read that content on distributions such as Fedora that use
+`private /tmp <http://fedoraproject.org/wiki/Features/ServicesPrivateTmp>`_ directories.
+Since /tmp is temporary and may not persist through a system reboot, it is not
+generally the best place to put important content anyway.

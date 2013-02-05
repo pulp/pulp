@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.0.6
-Release: 0.19.rc
+Version: 2.1.0
+Release: 0.3.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -95,11 +95,6 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/repos
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/packages
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/published/http
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/published/https
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
@@ -147,7 +142,7 @@ rm -rf %{buildroot}
 %package server
 Summary: The pulp platform server
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}-%{release}
+Requires: python-%{name}-common = %{version}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
@@ -189,6 +184,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
+%{_bindir}/pulp-v1-upgrade
+%{_bindir}/pulp-v1-upgrade-publish
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
@@ -227,7 +224,7 @@ A collection of components that are common between the pulp server and client.
 %package -n python-pulp-bindings
 Summary: Pulp REST bindings for python
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}-%{release}
+Requires: python-%{name}-common = %{version}
 Requires: m2crypto
 
 %description -n python-pulp-bindings
@@ -245,8 +242,8 @@ The Pulp REST API bindings for python.
 Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: m2crypto
-Requires: python-%{name}-common = %{version}-%{release}
-Requires: python-okaara >= 1.0.27
+Requires: python-%{name}-common = %{version}
+Requires: python-okaara >= 1.0.28
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
@@ -265,7 +262,7 @@ A framework for loading Pulp client extensions.
 %package -n python-pulp-agent-lib
 Summary: Pulp agent handler framework
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}-%{release}
+Requires: python-%{name}-common = %{version}
 
 %description -n python-pulp-agent-lib
 A framework for loading agent handlers that provide support
@@ -286,11 +283,11 @@ for content, bind and system specific operations.
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
-Requires: python-okaara >= 1.0.26
-Requires: python-%{name}-common = %{version}-%{release}
-Requires: python-%{name}-bindings = %{version}-%{release}
-Requires: python-%{name}-client-lib = %{version}-%{release}
-Requires: %{name}-builtins-admin-extensions = %{version}-%{release}
+Requires: python-okaara >= 1.0.28
+Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-bindings = %{version}
+Requires: python-%{name}-client-lib = %{version}
+Requires: %{name}-builtins-admin-extensions = %{version}
 Obsoletes: pulp-admin
 
 %description admin-client
@@ -312,10 +309,10 @@ synching, and to kick off remote actions on consumers.
 %package consumer-client
 Summary: Consumer tool to administer the pulp consumer.
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}-%{release}
-Requires: python-%{name}-bindings = %{version}-%{release}
-Requires: python-%{name}-client-lib = %{version}-%{release}
-Requires: %{name}-builtins-consumer-extensions = %{version}-%{release}
+Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-bindings = %{version}
+Requires: python-%{name}-client-lib = %{version}
+Requires: %{name}-builtins-consumer-extensions = %{version}
 Obsoletes: pulp-consumer
 
 %description consumer-client
@@ -337,8 +334,8 @@ A tool used to administer a pulp consumer.
 %package agent
 Summary: The Pulp agent
 Group: Development/Languages
-Requires: python-%{name}-bindings = %{version}-%{release}
-Requires: python-%{name}-agent-lib = %{version}-%{release}
+Requires: python-%{name}-bindings = %{version}
+Requires: python-%{name}-agent-lib = %{version}
 Requires: gofer >= 0.74
 
 %description agent
@@ -365,6 +362,7 @@ BuildRequires:  make
 BuildRequires:  checkpolicy
 BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
+Obsoletes: pulp-selinux-server
 
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
@@ -408,6 +406,155 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
+- 
+
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
+- 880780 - Added config parsing exception to convey more information in the
+  event the conf file isn't valid JSON (jason.dobies@redhat.com)
+- 905548 - fix handler loading; imp.load_source() supports .py files only.
+  (jortel@redhat.com)
+- 903387 - remove /var/lib/pulp/(packages|repos) and /var/lib/pulp/published
+  (jortel@redhat.com)
+- 878234 - added consumer group itineraries and updated group content install
+  apis to return a list of call requests, also added unit tests
+  (skarmark@redhat.com)
+- 888058 - Changed model for the client-side exception handler to be overridden
+  and specified to the launcher, allowing an individual client (admin,
+  consumer, future other) to customize error messages where relevant.
+  (jason.dobies@redhat.com)
+
+* Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
+- 891423 - Added conduit calls to be able to create units on copy
+  (jason.dobies@redhat.com)
+- 894467 - Parser methods need to return the value, not just validate it
+  (jason.dobies@redhat.com)
+- 889893 - added detection of still queued scheduled calls and skip re-
+  enqueueing with log message (jason.connor@gmail.com)
+- 883938 - Bumped required version of okaara in the spec
+  (jason.dobies@redhat.com)
+- 885128 - Altered two more files to use the 'db' logger. (rbarlow@redhat.com)
+- 885128 - pulp.plugins.loader.api should use the "db" logger.
+  (rbarlow@redhat.com)
+- 891423 - Added conduit calls to be able to create units on copy
+  (jason.dobies@redhat.com)
+- 891760 - added importer and distributor configs to kwargs and
+  kwargs_blacklist to prevent logging of sensitive data
+  (jason.connor@gmail.com)
+- 889320 - updating relabel script to run restorecon on /var/www/pulp_puppet
+  (skarmark@redhat.com)
+- 889320 - adding httpd_sys_content_rw_t context to /var/www/pulp_puppet
+  (skarmark@redhat.com)
+- 887959 - Removing NameVirtualHost entries from plugin httpd conf files and
+  adding it only at one place in main pulp.conf (skarmark@redhat.com)
+- 886547 - added check for deleted schedule in scheduled call complete callback
+  (jason.connor@gmail.com)
+- 882412 - Re-raising PulpException upon upload error instead of always
+  replacing exceptions with PulpExecutionException, the latter of which results
+  in an undesirable 500 HTTP response. (mhrivnak@redhat.com)
+- 875843 - added post sync/publish callbacks to cleanup importer and
+  distributor instances before calls are archived (jason.connor@gmail.com)
+- 769381 - Fixed delete confirmation message to be task centric
+  (jason.dobies@redhat.com)
+- 856762 - removing scratchpads from repo search queries (skarmark@redhat.com)
+- 886148 - used new result masking to keep full consumer package profiles from
+  showing up in the task list and log file (jason.connor@gmail.com)
+- 856762 - removing scratchpad from the repo list --details commmand for repo,
+  importer and distributor (skarmark@redhat.com)
+- 883899 - added conflict detection for call request groups in the webservices
+  execution wrapper module (jason.connor@gmail.com)
+- 876158 - Removed unused configuration values and cleaned up wording and
+  formatting of the remaining options (jason.dobies@redhat.com)
+- 882403 - Flushed out the task state to user display mapping as was always the
+  intention but never actually came to fruition. (jason.dobies@redhat.com)
+- 882422 - added the distributor_list keyword argument to the call requets
+  kwarg_blacklist to prevent it from being logged (jason.connor@gmail.com)
+- 885229 - add requires: nss-tools. (jortel@redhat.com)
+- 885098 - Use a separate logging config for pulp-manage-db.
+  (rbarlow@redhat.com)
+- 885134 - Added check to not parse an apache error as if it has the Pulp
+  structure and handling in the exception middleware for it
+  (jason.dobies@redhat.com)
+- 867464 - Renaming modules to units and a fixing a few minor output errors
+  (skarmark@redhat.com)
+- 882421 - moving unit remove command into the platform from RPM extensions so
+  it can be used by other extension families (mhrivnak@redhat.com)
+- 877147 - added check for path type when removing orphans
+  (jason.connor@gmail.com)
+- 882423 - fix upload in repo controller. (jortel@redhat.com)
+- 883568 - Reworded portion about recurrences (jason.dobies@redhat.com)
+- 883754 - The notes option was changed to have a parser, but some code using
+  it was continuing to manually parse it again, which would tank.
+  (jason.dobies@redhat.com)
+- 866996 - Added ability to hide the details link on association commands when
+  it isn't a search. (jason.dobies@redhat.com)
+- 877797 - successful call of canceling a task now returns a call report
+  through the rest api (jason.connor@gmail.com)
+- 867464 - updating general module upload command output (skarmark@redhat.com)
+- 882424 - only have 1 task, presumedly the "main" one, in a task group update
+  the last_run field (jason.connor@gmail.com)
+- 883059 - update server.conf to make server_name optional
+  (skarmark@redhat.com)
+- 883059 - updating default server config to lookup server hostname
+  (skarmark@redhat.com)
+- 862187 /var/log/pulp/db.log now includes timestamps. (rbarlow@redhat.com)
+- 883025 - Display note to copy qpid certificates to each consumer.
+  (jortel@redhat.com)
+- 880441 - Fixed call to a method that was renamed (jason.dobies@redhat.com)
+- 881120 - utilized new serialize_result call report flag to hide consumer key
+  when reporting the task information (jason.connor@gmail.com)
+- 882428 - utilizing new call report serialize_result flag to prevent the call
+  reports from being serialized and reported over the rest api
+  (jason.connor@gmail.com)
+- 882401 - added skipped as a recognized state to the cli parser
+  (jason.connor@gmail.com)
+- 862290 - Added documentation for the new ListRepositoriesCommand methods
+  (jason.dobies@redhat.com)
+- 881639 - more programmatic. (jortel@redhat.com)
+- 881389 - fixed rpm consumer bind to raise an error on non existing repos
+  (skarmark@redhat.com)
+- 827620 - updated repo, repo_group, consumer and user apis to use execute
+  instead of execute_ok (skarmark@redhat.com)
+- 878620 - fixed task group resource to return only tasks in the group instead
+  of all tasks ever run... :P (jason.connor@gmail.com)
+- 866491 - Change the source repo ID validation to be a 400, not 404
+  (jason.dobies@redhat.com)
+- 866491 - Check for repo existence and raise a 404 if not found instead of
+  leaving the task to do it (jason.dobies@redhat.com)
+- 881120 - strip the private key from returned consumer object.
+  (jortel@redhat.com)
+- 862290 - Added support in generic list repos command for listing other
+  repositories (jason.dobies@redhat.com)
+- 877914 - updating old file links from selinux installation and un-
+  installation (skarmark@redhat.com)
+- 873786 - updating enable.sh for correct amqp ports (skarmark@redhat.com)
+- 878654 - fixed error message when revoking permission from a non-existing
+  user and added unit tests (skarmark@redhat.com)
+- added database collection reaper system that will wake up periodically and
+  remove old documents from configured collections (jason.connor@gmail.com)
+- 876662 - Added middleware exception handling for when the client cannot
+  resolve the server hostname (jason.dobies@redhat.com)
+- 753680 - Taking this opportunity to quiet the logs a bit too
+  (jason.dobies@redhat.com)
+- 753680 - Increased the logging clarity and location for initialization errors
+  (jason.dobies@redhat.com)
+- 871858 - Implemented sync and publish status commands
+  (jason.dobies@redhat.com)
+- 873421 - changed a wait-time message to be more appropriate, and added a bit
+  of function parameter documentation. (mhrivnak@redhat.com)
+- 877170 - Added ability to ID validator to handle multiple inputs
+  (jason.dobies@redhat.com)
+- 877435 - Pulled the filters/order to constants and use in search
+  (jason.dobies@redhat.com)
+- 875606 - Added isodate and python-setuptools deps. Rolled into a quick audit
+  of all the requirements and changed quite a few. There were several missing
+  and several no longer applicaple. Also removed a stray import of okaara from
+  within the bindings package. (mhrivnak@redhat.com)
+- 874243 - return 404 when profile does not exist. (jortel@redhat.com)
+- 876662 - Added pretty error message when the incorrect server hostname is
+  used (jason.dobies@redhat.com)
+- 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
+
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
 - 
 

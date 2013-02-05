@@ -28,7 +28,7 @@ from pulp.server.db.model.content import ContentType
 
 TYPE_COLLECTION_PREFIX = 'units_'
 
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger('db')
 
 # -- database exceptions ------------------------------------------------------
 
@@ -290,18 +290,18 @@ def _update_indexes(type_def, unique):
     for index in index_list:
 
         if isinstance(index, (list, tuple)):
-            LOG.info('Ensuring index [%s] (unique: %s) on type definition [%s]' % (', '.join(index), unique, type_def.id))
+            LOG.debug('Ensuring index [%s] (unique: %s) on type definition [%s]' % (', '.join(index), unique, type_def.id))
             mongo_index = _create_index_keypair(index)
         else:
-            LOG.info('Ensuring index [%s] (unique: %s) on type definition [%s]' % (index, unique, type_def.id))
+            LOG.debug('Ensuring index [%s] (unique: %s) on type definition [%s]' % (index, unique, type_def.id))
             mongo_index = index
 
         index_name = collection.ensure_index(mongo_index, unique=unique, drop_dups=False)
 
         if index_name is not None:
-            LOG.info('Index [%s] created on type definition [%s]' % (index_name, type_def.id))
+            LOG.debug('Index [%s] created on type definition [%s]' % (index_name, type_def.id))
         else:
-            LOG.info('Index already existed on type definition [%s]' % type_def.id)
+            LOG.debug('Index already existed on type definition [%s]' % type_def.id)
 
 
 def _update_unit_key(type_def):

@@ -22,7 +22,7 @@ from pulp.plugins.profiler import Profiler
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
 
-_LOG = logging.getLogger(__name__)
+_LOG = logging.getLogger('db')
 
 # implicit singleton instance of PluginManager
 

@@ -34,7 +34,7 @@ from   pulp.common.config import Config
 
 # -- main execution -----------------------------------------------------------
 
-def main(config_filenames):
+def main(config_filenames, exception_handler_class=ExceptionHandler):
     """
     Entry point into the launcher. Any extra necessary values will be pulled
     from the given configuration files.
@@ -69,7 +69,7 @@ def main(config_filenames):
 
     # General UI pieces
     prompt = _create_prompt(config)
-    exception_handler = ExceptionHandler(prompt, config)
+    exception_handler = exception_handler_class(prompt, config)
 
     # REST Bindings
     username = options.username

@@ -30,7 +30,7 @@ class BindingSection(PulpCliSection):
         """
         :type  context: pulp.client.extensions.core.ClientContext
         """
-        PulpCliSection.__init__(self, 'bindings', _('search bindings'))
+        PulpCliSection.__init__(self, 'bindings', _('search consumer bindings'))
         self.context = context
         # search
         self.add_command(Search(context))

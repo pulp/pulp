@@ -19,6 +19,7 @@ import mock
 
 import base
 
+from pulp.server.compat import ObjectId
 from pulp.server.db.model.dispatch import CallResource, QueuedCall, ArchivedCall
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import call
@@ -516,4 +517,30 @@ class CoordinatorMultipleCallRejectedTests(CoordinatorTests):
 
         self.assertEqual(call_report_list[0].response, dispatch_constants.CALL_REJECTED_RESPONSE)
         self.assertEqual(call_report_list[1].response, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+# coordinator find tests -------------------------------------------------------
+
+def find_dummy_call(*args, **kwargs):
+    pass
+
+
+class CoordinatorFindCallReportsTests(CoordinatorTests):
+
+    def set_task_queue(self, task_list):
+        mocked_task_queue = mock.Mock()
+        mocked_task_queue.all_tasks = mock.Mock(return_value=task_list)
+        # this gets cleaned up by the base class tearDown method
+        dispatch_factory._task_queue = mock.Mock(return_value=mocked_task_queue)
+
+    def test_find_by_schedule_id(self):
+        schedule_id = str(ObjectId())
+        call_request = call.CallRequest(find_dummy_call)
+        call_report = call.CallReport.from_call_request(call_request)
+        call_report.schedule_id = schedule_id
+        task = Task(call_request, call_report)
+        self.set_task_queue([task])
+
+        call_report_list = self.coordinator.find_call_reports(schedule_id=schedule_id)
+        self.assertEqual(len(call_report_list), 1)
+        self.assertEqual(call_report_list[0].schedule_id, schedule_id)
 
