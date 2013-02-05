@@ -187,3 +187,6 @@ fi
 
 
 %changelog
+* Mon Feb 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
+- new package built with tito
+
