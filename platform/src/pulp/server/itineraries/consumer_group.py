@@ -32,7 +32,7 @@ def consumer_group_content_install_itinerary(consumer_group_id, units, options):
     :return: list of call requests
     :rtype: list
     """
-    consumer_group = managers.consumer_group_query_manager().find_group(consumer_group_id)
+    consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
     consumer_group_call_requests_list = []
     for consumer_id in consumer_group['consumer_ids']:
         consumer_call_requests = consumer_content_install_itinerary(consumer_id, units, options)
@@ -53,7 +53,7 @@ def consumer_group_content_update_itinerary(consumer_group_id, units, options):
     :return: list of call requests
     :rtype: list
     """
-    consumer_group = managers.consumer_group_query_manager().find_group(consumer_group_id)
+    consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
     consumer_group_call_requests_list = []
     for consumer_id in consumer_group['consumer_ids']:
         consumer_call_requests = consumer_content_update_itinerary(consumer_id, units, options)
@@ -74,7 +74,7 @@ def consumer_group_content_uninstall_itinerary(consumer_group_id, units, options
     :return: list of call requests
     :rtype: list
     """
-    consumer_group = managers.consumer_group_query_manager().find_group(consumer_group_id)
+    consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
     consumer_group_call_requests_list = []
     for consumer_id in consumer_group['consumer_ids']:
         consumer_call_requests = consumer_content_uninstall_itinerary(consumer_id, units, options)
