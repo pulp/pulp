@@ -31,8 +31,8 @@ Glossary
     more than one distributor associated with it at a given time.
 
   extension
-    Client-side command line interface plugin that provides the commands the
-    client can run.
+    Client-side command line interface plugin that provides additional commands
+    within the command-line clients.
 
   handler
     Agent plugin that implements content type specific or operating system specific
@@ -60,7 +60,7 @@ Glossary
 
   platform
     Short for the "Pulp Platform", which refers to the generic framework
-    functionality supported by Pulp. The platform has no type-specific knowledge;
+    functionality provided by Pulp. The platform has no type-specific knowledge;
     all type-specific functionality is provided through plugins to the platform.
 
   repository

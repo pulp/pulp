@@ -19,13 +19,14 @@ components:
   of how those methods function, however, is dependent on the plugin fielding
   the request.
 
-* **Client** - The platform includes the code necessary to run the command line
-  clients. Each client uses the same base code and is customized through the
+* **Client** - The platform includes both the admin and consumer clients. These
+  clients contain type-agnostic commands, such as logging in or handling events.
+  Each client can be enhanced with type-specific commands through the
   use of :term:`extensions <extension>`.
 
-* **Agent** - The agent runs on a consumer and is used to field requests sent
+* **Agent** - The agent runs on each consumer and is used to field requests sent
   from the Pulp server to that consumer. Similar to the client, the platform
-  provides the agent and relies on the use of :term:`handlers <handler>` plugins
+  provides the agent and relies on the use of :term:`handlers <handler>`
   to provide support for a particular content type.
 
 Plugins
@@ -44,7 +45,8 @@ is provided through plugins into each of the three major platform components.
   content in a repository (referred to as a :term:`distributor`).
 
 * **Extension** - The components plugged into either the admin or consumer
-  clients to provide new commands in the client for type-specific operations.
+  command line clients to provide new commands in the client for type-specific
+  operations.
 
 * **Handler** - The agent-side components that are used to field invocations
   from the server to a consumer, such as binding to a repository or installing
