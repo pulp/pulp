@@ -251,9 +251,6 @@ class ApplicabilityReport:
     This is returned to indicate the applicability of a content
     unit along with summary and details.
 
-    @ivar unit: A content unit: {type_id:<str>, unit_key:<dict>}
-    @type unit: dict
-
     @ivar summary: arbitrary value that will be returned by default as the log
                    for the call (should be short)
     @type summary: just about any serializable object (likely str or dict)
@@ -263,7 +260,6 @@ class ApplicabilityReport:
     @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, unit, summary, details=None):
-        self.unit = unit
+    def __init__(self, summary, details=None):
         self.summary = summary
         self.details = details

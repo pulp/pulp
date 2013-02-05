@@ -33,6 +33,5 @@ def profile(profile):
 
 def applicability_report(report):
     return dict(
-        unit=report.unit,
         summary=report.summary,
         details=report.details)
