@@ -177,6 +177,18 @@ def schedules():
 def sync_history(id):
     return GET('/repositories/%s/history/sync/' % id)
 
+def content_applicability():
+    criteria = { "sort": [["id", "ascending"]],
+                 "filters": {"id": {"$in": ["test-consumer"]}}}
+    units = { 
+             "rpm": [ {"filename": "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"},
+                      {"name": "pulp-dot-2.0-test"}
+                    ]
+            }
+    options = {"units":units, 
+               "consumer_criteria":criteria }
+    return POST('/pulp/api/v2/consumers/actions/content/applicability/', options)
+
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
