@@ -30,6 +30,10 @@ Glossary
     based on the desired approach of the distributor. A repository may have
     more than one distributor associated with it at a given time.
 
+  extension
+    Client-side command line interface plugin that provides additional commands
+    within the command-line clients.
+
   handler
     Agent plugin that implements content type specific or operating system specific
     operations on the consumer.
@@ -53,6 +57,11 @@ Glossary
 
     Further reading and more examples:
     http://en.wikipedia.org/wiki/ISO_8601#Time_intervals
+
+  platform
+    Short for the "Pulp Platform", which refers to the generic framework
+    functionality provided by Pulp. The platform has no type-specific knowledge;
+    all type-specific functionality is provided through plugins to the platform.
 
   repository
     A collection of content units. A repository's supported types is dictated
