@@ -65,65 +65,88 @@ Each *ApplicabilityReport* is an object:
 :sample_response:`200` ::
 
 
-{ 'sunflower': {'erratum': [{'details': {'applicable_rpms': [{'type_id': 'rpm',
-                                                              'unit_key': {'name': 'grinder_test_package.noarch'}}],
-                                         'upgrade_details': {'grinder_test_package noarch': {'available': {'arch': 'noarch',
-                                                                                                           'epoch': '0',
-                                                                                                           'filename': 'grinder_test_package-4.0-1.fc14.noarch.rpm',
-                                                                                                           'name': 'grinder_test_package',
-                                                                                                           'release': '1.fc14',
-                                                                                                           'src': 'grinder_test_package-4.0-1.fc14.src.rpm',
-                                                                                                           'sum': ['md5',
-                                                                                                                    'd89e83ed183fa55dfb0bd2eec14db93c'],
-                                                                                                           'version': '4.0'},
-                                                                                             'installed': {'arch': 'noarch',
-                                                                                                           'epoch': 0,
-                                                                                                           'name': 'grinder_test_package',
-                                                                                                           'release': '1.fc14',
-                                                                                                           'vendor': None,
-                                                                                                           'version': '3.0'}}}},
-                             'summary': {}}],
+ { 
+  'sunflower': {
+   'erratum': [
+    {'details': 
+     {'applicable_rpms': [{'type_id': 'rpm',
+        				   'unit_key': {'name': 'grinder_test_package.noarch'}}],
+      'upgrade_details': {'grinder_test_package noarch': {'available': {'arch': 'noarch',
+                                                                        'epoch': '0',
+                                                                        'filename': 'grinder_test_package-4.0-1.fc14.noarch.rpm',
+                                                                        'name': 'grinder_test_package',
+                                                                        'release': '1.fc14',
+                                                                        'src': 'grinder_test_package-4.0-1.fc14.src.rpm',
+                                                                        'sum': ['md5','d89e83ed183fa55dfb0bd2eec14db93c'],
+                                                                        'version': '4.0'},
+                                                          'installed': {'arch': 'noarch',
+                                                                        'epoch': 0,
+                                                                        'name': 'grinder_test_package',
+                                                                        'release': '1.fc14',
+                                                                        'vendor': None,
+                                                                        'version': '3.0'}}}
+     },
+     'summary': {}
+    }
+   ],
+   'rpm': [
+    {'details': 
+     {'pulp-test-package x86_64': {'available': {'arch': 'x86_64',
+                                   				 'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
+                                                 'checksumtype': 'sha256',
+                                                 'epoch': '0',
+                                                 'name': 'pulp-test-package',
+                                                 'release': '1.fc11',
+                                                 'version': '0.3.1'
+                                  },
+                                  'installed': {'arch': 'x86_64',
+                                                'epoch': 0,
+                                                'name': 'pulp-test-package',
+                                                'release': '1.fc11',
+                                                'vendor': None,
+                                                'version': '0.2.1'}}},
+     'summary': {}
+    },
+    {'details': 
+     {'grinder_test_package noarch': {'available': {'arch': 'noarch',
+                                                    'checksum': '78b6e9827dd3f3f02dd1ad16e89a3515a5b1e5ecdf522842a64315e3728aa951',
+                                                    'checksumtype': 'sha256',
+                                                    'epoch': '0',
+                                                    'name': 'grinder_test_package',
+                                                    'release': '1.fc14',
+                                                    'version': '5.0'},
+                                      'installed': {'arch': 'noarch',
+                                                    'epoch': 0,
+                                                    'name': 'grinder_test_package',
+                                                    'release': '1.fc14',
+                                                    'vendor': None,
+                                                    'version': '3.0'}
+     }
+    }
+   ]
+  },
+  'voyager': {
+   'erratum': [],
+   'rpm': [
+    {'details': 
+     {'pulp-test-package x86_64': {'available': {'arch': 'x86_64',
+                                                 'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
+                                                 'checksumtype': 'sha256',
+                                                 'epoch': '0',
+                                                 'name': 'pulp-test-package',
+                                                 'release': '1.fc11',
+                                                 'version': '0.3.1'},
+                                   'installed': {'arch': 'x86_64',
+                                                 'epoch': 0,
+                                                 'name': 'pulp-test-package',
+                                                 'release': '1.fc11',
+                                                 'vendor': None,
+                                                 'version': '0.2.1'}}
+     },
+     'summary': {}
+    }
+   ]
+  }
+ }
 
-                 'rpm': [{'details': {'pulp-test-package x86_64': {'available': {'arch': 'x86_64',
-                                                                                 'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
-                                                                                 'checksumtype': 'sha256',
-                                                                                 'epoch': '0',
-                                                                                 'name': 'pulp-test-package',
-                                                                                 'release': '1.fc11',
-                                                                                 'version': '0.3.1'},
-                                                                   'installed': {'arch': 'x86_64',
-                                                                                 'epoch': 0,
-                                                                                 'name': 'pulp-test-package',
-                                                                                 'release': '1.fc11',
-                                                                                 'vendor': None,
-                                                                                 'version': '0.2.1'}}},
-                          'summary': {}},
-                 		 {'details': {'grinder_test_package noarch': {'available': {'arch': 'noarch',
-                                                                                    'checksum': '78b6e9827dd3f3f02dd1ad16e89a3515a5b1e5ecdf522842a64315e3728aa951',
-                                                                                    'checksumtype': 'sha256',
-                                                                                    'epoch': '0',
-                                                                                    'name': 'grinder_test_package',
-                                                                                    'release': '1.fc14',
-                                                                                    'version': '5.0'},
-                                                                      'installed': {'arch': 'noarch',
-                                                                                    'epoch': 0,
-                                                                                    'name': 'grinder_test_package',
-                                                                                    'release': '1.fc14',
-                                                                                    'vendor': None,
-                                                                                    'version': '3.0'}}}]},
-  'voyager': {'erratum': [],
-              'rpm': [{'details': {'pulp-test-package x86_64': {'available': {'arch': 'x86_64',
-                                                                              'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
-                                                                              'checksumtype': 'sha256',
-                                                                              'epoch': '0',
-                                                                              'name': 'pulp-test-package',
-                                                                              'release': '1.fc11',
-                                                                              'version': '0.3.1'},
-                                                                'installed': {'arch': 'x86_64',
-                                                                              'epoch': 0,
-                                                                              'name': 'pulp-test-package',
-                                                                              'release': '1.fc11',
-                                                                              'vendor': None,
-                                                                              'version': '0.2.1'}}},
-                       'summary': {}}]}})
-}
+
