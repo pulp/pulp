@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.2.alpha
+Release: 0.3.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -406,6 +406,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
+- 
+
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
 - 880780 - Added config parsing exception to convey more information in the
   event the conf file isn't valid JSON (jason.dobies@redhat.com)
