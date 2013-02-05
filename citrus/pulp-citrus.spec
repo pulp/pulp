@@ -18,7 +18,7 @@
 
 Name: pulp-citrus
 Version: 2.1.0
-Release: 0.1.alpha
+Release: 0.2.alpha
 Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
@@ -187,6 +187,9 @@ fi
 
 
 %changelog
+* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
+- 
+
 * Mon Feb 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
 - new package built with tito
 
