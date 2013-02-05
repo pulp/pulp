@@ -175,14 +175,15 @@ class ConsumerGroupContentAction(JSONController):
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of install options.
-        @param id: A consumer group ID.
-        @type id: str
+        @param consumer_group_id: A consumer group ID.
+        @type consumer_group_id: str
         @return: list of call requests
         @rtype: list
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
+
         call_request_list = consumer_group_content_install_itinerary(consumer_group_id, units, options)
         results = []
         for call_request in call_request_list:
@@ -196,14 +197,15 @@ class ConsumerGroupContentAction(JSONController):
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of update options.
-        @param id: A consumer group ID.
-        @type id: str
+        @param consumer_group_id: A consumer group ID.
+        @type consumer_group_id: str
         @return: list of call requests
         @rtype: list
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
+
         call_request_list = consumer_group_content_update_itinerary(consumer_group_id, units, options)
         results = []
         for call_request in call_request_list:
@@ -217,14 +219,15 @@ class ConsumerGroupContentAction(JSONController):
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of uninstall options.
-        @param id: A consumer group ID.
-        @type id: str
+        @param consumer_group_id: A consumer group ID.
+        @type consumer_group_id: str
         @return: list of call requests
         @rtype: list
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
+
         call_request_list = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
         results = []
         for call_request in call_request_list:
