@@ -1,18 +1,24 @@
-Pulp Plugin Development Guide
-=============================
+Server Plugin Development Guide
+===============================
 
 Introduction
 ------------
 
 ''Describe at a high level the purpose and architecture for plugins, content types, and plugin types.''
 
-Quick Start
------------
-
-''Short example for writing a type, importer, and distributor.''
+An example of each of the components can be found on the :doc:`example` page.
 
 Documentation
 -------------
 
-''Likely a page for each of: content types, importers, distributors.''
-''Potentially a glossary, FAQ, and debugging/testing tips.''
+Details on each server-side component can be found in the pages below:
+
+.. toctree::
+   :maxdepth: 1
+
+   type_defs
+   importers
+   distributors
+   installation
+
+
