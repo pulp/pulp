@@ -6,6 +6,7 @@ Policies
 
    compatibility
    style
+   testing
    releases
    versioning
 
