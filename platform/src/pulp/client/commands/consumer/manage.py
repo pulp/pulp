@@ -27,10 +27,26 @@ CONSUMER_UPDATE_DESCRIPTION = _('changes metadata on an existing consumer')
 
 
 class ConsumerRegisterCommand(PulpCliCommand):
-    pass
+    """
+    Command to register a new consumer to a Pulp server.
+    """
+
+    def __init__(self, context, name='register', description=CONSUMER_REGISTER_DESCRIPTION):
+        super(self.__class__, self).__init__(name, description, self.register)
+        self.context = context
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_NAME)
+        self.add_option(OPTION_DESCRIPTION)
+        self.add_option(OPTION_NOTES)
+
+    def register(self, **kwargs):
+        pass
 
 
 class ConsumerUnregisterCommand(PulpCliCommand):
+    """
+    Command to unregister a consumer from a Pulp server.
+    """
 
     def __init__(self, context, name='unregister', description=CONSUMER_UNREGISTER_DESCRIPTION):
         super(self.__class__, self).__init__(name, description, self.unregister)
@@ -48,6 +64,9 @@ class ConsumerUnregisterCommand(PulpCliCommand):
 
 
 class ConsumerUpdateCommand(PulpCliCommand):
+    """
+    Command to update a registered consumer's metadata with the Pulp server.
+    """
 
     def __init__(self, context, name='update', description=CONSUMER_UPDATE_DESCRIPTION):
         super(self.__class__, self).__init__(name, description, self.update)
