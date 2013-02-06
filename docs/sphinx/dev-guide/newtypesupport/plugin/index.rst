@@ -1,5 +1,5 @@
-Server Plugin Development Guide
-===============================
+Server Plugins
+==============
 
 Introduction
 ------------
