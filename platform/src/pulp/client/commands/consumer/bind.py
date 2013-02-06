@@ -14,15 +14,14 @@
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.commands.options import OPTION_CONSUMER_ID, OPTION_REPO_ID
+from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID, OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliCommand
 
 
-CONSUMER_BIND_DESCRIPTION = _('')
-CONSUMER_UNBIND_DESCRIPTION = _('')
+CONSUMER_BIND_DESCRIPTION = _('binds a consumer to a repository')
+CONSUMER_UNBIND_DESCRIPTION = _('removes the binding between a consumer and a repository')
 
 DISTRIBUTOR_OPTION_NAME = 'distributor'
-DISTRIBUTOR_OPTION_DESCRIPTION = _('')
 
 FORCE_FLAG_NAME = 'force'
 FORCE_FLAG_DESCRIPTION = _('delete the binding immediately and discontinue tracking consumer actions')
@@ -31,13 +30,16 @@ NOT_FOUND_TAG = 'not-found'
 
 
 class ConsumerBindCommand(PulpCliCommand):
+    """
+    Bind a consumer to a repository.
+    """
 
     def __init__(self, context, name='bind', description=CONSUMER_BIND_DESCRIPTION):
         super(self.__class__, self).__init__(name, description, self.bind)
         self.context = context
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self.create_option('--' + DISTRIBUTOR_OPTION_NAME, DISTRIBUTOR_OPTION_DESCRIPTION, required=True)
+        self.create_option('--' + DISTRIBUTOR_OPTION_NAME, DESC_ID, required=True)
 
     def bind(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -68,13 +70,16 @@ class ConsumerBindCommand(PulpCliCommand):
 
 
 class ConsumerUnbindCommand(PulpCliCommand):
+    """
+    Remove a consumer-repository binding.
+    """
 
     def __init__(self, context, name='unbind', description=CONSUMER_UNBIND_DESCRIPTION):
         super(self.__class__, self).__init__(name, description, self.unbind)
         self.context = context
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self.create_option('--' + DISTRIBUTOR_OPTION_NAME, DISTRIBUTOR_OPTION_DESCRIPTION, required=True)
+        self.create_option('--' + DISTRIBUTOR_OPTION_NAME, DESC_ID, required=True)
         self.create_flag('--' + FORCE_FLAG_NAME, FORCE_FLAG_DESCRIPTION)
 
     def unbind(self, **kwargs):
