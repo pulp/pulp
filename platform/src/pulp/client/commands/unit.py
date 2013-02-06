@@ -75,7 +75,7 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand):
 
 
 type_option = PulpCliOption('--type',
-    _('restrict to one content type such as "rpm", "errata", etc.'),
+    _('restrict to one content type such as "rpm", "errata", "puppet_module", etc.'),
     required=False)
 unit_id_option = PulpCliOption('--unit-id',
     _('ID of a content unit. If specified, you must also specify a type'),
