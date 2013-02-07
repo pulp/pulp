@@ -116,7 +116,9 @@ class Upgrader(object):
     :type upgrade_files: bool
 
     :ivar files_upgrade_calls: dictates which filesystem upgrade steps will be
-          performed; see FILES_UPGRADE_CALLS for a description of the entries
+          performed; see FILES_UPGRADE_CALLS for a description of the entries.
+          if this is specified, the clean step will be skipped regardless of
+          its configured value
     :type files_upgrade_calls: list
 
     :ivar install_db: dictates if the temporary database created by the build
@@ -194,7 +196,9 @@ class Upgrader(object):
         else:
             self._install()
 
-        if not self.clean:
+        # Very dangerous to clean if the file upgrade step is skipped, so
+        # automatically skip it in that case
+        if not self.clean or not self.upgrade_files:
             self._print(_('Skipping v1 Filesystem Clean Up'))
             self._print('')
         else:
