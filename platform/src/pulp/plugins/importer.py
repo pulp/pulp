@@ -194,8 +194,18 @@ class Importer(object):
            into the repository that uses this importer
          * A user is attempting to add an orphaned unit into a repository.
 
-        This call should perform any changes to the destination repository's
-        working directory as necessary.
+        This call has two options for handling the requested units:
+         * Associate the given units with the destination repository. This will
+           link the repository with the existing unit directly; changes to the
+           unit will be reflected in all repositories that reference it.
+         * Create a new unit and save it to the repository. This would act as
+           a deep copy of sorts, creating a unique unit in the database. Keep
+           in mind that the unit key must change in order for the unit to
+           be considered different than the supplied one.
+
+        The APIs for both approaches are similar to those in the sync conduit.
+        In the case of a simple association, the init_unit step can be skipped
+        and save_unit simply called on each specified unit.
 
         The units argument is optional. If None, all units in the source
         repository should be imported. The conduit is used to query for those
