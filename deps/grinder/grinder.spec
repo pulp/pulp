@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.1.13
+Version: 0.1.14
 Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -60,6 +60,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-1
+- include filelist before files so the file cache generates dir and ghost file
+  info (pkilambi@redhat.com)
+
 * Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.13-1
 - 700945 - include the changelog and files info for rpms (pkilambi@redhat.com)
 
