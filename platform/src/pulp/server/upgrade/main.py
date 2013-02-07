@@ -105,7 +105,9 @@ class Upgrader(object):
     :type upgrade_db: bool
 
     :ivar db_upgrade_calls: dictates which database upgrade steps will be performed;
-          see DB_UPGRADE_CALLS comment above for a description of the entries
+          see DB_UPGRADE_CALLS comment above for a description of the entries.
+          if this is specified, the clean step will be skipped regardless of
+          its configured value
     :type db_upgrade_calls: list
 
     :ivar db_seeds: seeds for accessing MongoDB
@@ -196,9 +198,10 @@ class Upgrader(object):
         else:
             self._install()
 
-        # Very dangerous to clean if the file upgrade step is skipped, so
-        # automatically skip it in that case
-        if not self.clean or not self.upgrade_files:
+        # The files are used in both the upgrade DB and upgrade files step, so
+        # if either are skipped, assume they'll be run again in the future
+        # and automatically skip the clean
+        if not self.clean or not self.upgrade_files or not self.upgrade_db:
             self._print(_('Skipping v1 Filesystem Clean Up'))
             self._print('')
         else:
