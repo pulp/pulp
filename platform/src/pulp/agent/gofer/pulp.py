@@ -90,6 +90,12 @@ class Conduit(HandlerConduit):
     and agent handler frameworks.
     """
 
+    # get consumer ID
+    @property
+    def consumer_id(self):
+        bundle = Bundle()
+        return bundle.cn()
+
     def get_consumer_config(self):
         """
         Get the consumer configuration.
