@@ -101,26 +101,25 @@ class Upgrader(object):
           the file does not necessarily have to exist
     :type stream_file: str
 
-    :ivar upgrade_db: configures whether or not the DB upgrade scripts will be run
+    :ivar upgrade_db: configures whether or not the DB upgrade scripts will be run;
+          if this is False, the clean step will be skipped regardless of
+          its configured value
     :type upgrade_db: bool
 
     :ivar db_upgrade_calls: dictates which database upgrade steps will be performed;
           see DB_UPGRADE_CALLS comment above for a description of the entries.
-          if this is False, the clean step will be skipped regardless of
-          its configured value
     :type db_upgrade_calls: list
 
     :ivar db_seeds: seeds for accessing MongoDB
     :type db_seeds: str
 
     :ivar upgrade_files: configures whether or not the filesystem upgrade scripts
-                         will be run
+                         will be run; if this is False, the clean step will be
+                         skipped regardless of its configured value
     :type upgrade_files: bool
 
     :ivar files_upgrade_calls: dictates which filesystem upgrade steps will be
-          performed; see FILES_UPGRADE_CALLS for a description of the entries.
-          if this is False, the clean step will be skipped regardless of
-          its configured value
+          performed; see FILES_UPGRADE_CALLS for a description of the entries
     :type files_upgrade_calls: list
 
     :ivar install_db: dictates if the temporary database created by the build
