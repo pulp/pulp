@@ -20,5 +20,4 @@ Details on each server-side component can be found in the pages below:
    importers
    distributors
    installation
-
-
+   migrations
