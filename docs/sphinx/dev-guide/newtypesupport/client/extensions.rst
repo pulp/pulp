@@ -31,6 +31,16 @@ Framework Hook
 The starting point for an extension is a single method with the following signature::
 
  def initialize(context):
+   """
+   Entry point into the extension, called when the extension is loaded. This
+   call should make any additions or changes to the CLI required by the
+   extension. The supplied context provides the necessary hooks to access the
+   CLI instance as well as functionality for accessing the Pulp server and
+   utilities for displaying information to the user.
+
+   :param context: client context in which the extension is being loaded
+   :type  context: pulp.client.extensions.core.ClientContext
+   """
 
 The sole argument is the client context in which the extension will run (more
 information can be found in :ref:`extensions_client_context`. This method may
@@ -47,18 +57,18 @@ extension is initialized. The context is meant to provide all of the
 functionality necessary for the extension to interact with both the client
 framework and the server itself. The context contains the following pieces:
 
- * **CLI** - The cli attribute is the instance of the actual client framework
+ * ``cli`` - The cli attribute is the instance of the actual client framework
    itself. This object is used to add new sections to the client or retrieve
    existing ones.
- * **Prompt** - The prompt is a utility for writing output to the screen as well
+ * ``prompt`` - The prompt is a utility for writing output to the screen as well
    as for reading user input for interactive commands. A number of formatting
    methods are provided to provide a consistent look and feel for the client,
    such as methods to display a header or print an error message.
- * **Server Bindings** - The client framework creates and initializes an
+ * ``server`` - The client framework creates and initializes an
    instance of the server bindings to connect to the configured Pulp server.
    Extensions should use these bindings when making calls against the
    server.
- * **Client Configuration** - The client framework will load all of the
+ * ``config`` - The client framework will load all of the
    configuration files and make them accessible to the extension. A separate
    copy of the configuration is supplied to each extension, so changes may be
    made to this object without affecting other extensions.
