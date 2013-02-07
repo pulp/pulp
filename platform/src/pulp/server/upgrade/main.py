@@ -106,7 +106,7 @@ class Upgrader(object):
 
     :ivar db_upgrade_calls: dictates which database upgrade steps will be performed;
           see DB_UPGRADE_CALLS comment above for a description of the entries.
-          if this is specified, the clean step will be skipped regardless of
+          if this is False, the clean step will be skipped regardless of
           its configured value
     :type db_upgrade_calls: list
 
@@ -119,7 +119,7 @@ class Upgrader(object):
 
     :ivar files_upgrade_calls: dictates which filesystem upgrade steps will be
           performed; see FILES_UPGRADE_CALLS for a description of the entries.
-          if this is specified, the clean step will be skipped regardless of
+          if this is False, the clean step will be skipped regardless of
           its configured value
     :type files_upgrade_calls: list
 
