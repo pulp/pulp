@@ -14,7 +14,6 @@
 
 import optparse
 import os
-import shutil
 import sys
 
 WARNING_COLOR = '\033[31m'
@@ -119,6 +118,7 @@ LINKS = (
     ('citrus/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
     ('citrus/plugins/distributors/citrus_http_distributor', DIR_PLUGINS + '/distributors/citrus_http_distributor'),
     ('citrus/plugins/importers/citrus_http_importer', DIR_PLUGINS + '/importers/citrus_http_importer'),
+    ('citrus/plugins/types/citrus.json', DIR_PLUGINS + '/types/citrus.json'),
     ('citrus/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
 )
 
