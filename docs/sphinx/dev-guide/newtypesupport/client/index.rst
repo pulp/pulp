@@ -12,15 +12,13 @@ configuration values for an :term:`importer` are likely unique for each type
 of importer. Extensions are used to provide an interface catered to that
 specific configuration.
 
-An example extension can be found on the :doc:`example` page.
-
 
 Documentation
 -------------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    extensions
-   installation
+   example
 
