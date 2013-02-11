@@ -10,9 +10,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pymongo.objectid import ObjectId
 
 from base_db_upgrade import BaseDbUpgradeTests
+from pulp.server.compat import ObjectId
 from pulp.server.upgrade.model import UpgradeStepReport
 from pulp.server.upgrade.db import consumers
 
