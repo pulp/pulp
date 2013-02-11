@@ -39,4 +39,5 @@ Details on each server-side component can be found in the pages below:
    type_defs
    importers
    distributors
+   common
    example
