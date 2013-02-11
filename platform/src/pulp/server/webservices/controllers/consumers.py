@@ -595,30 +595,43 @@ class ContentApplicability(JSONController):
     Determine content applicability.
     """
 
-    #@auth_required(READ)
+    @auth_required(READ)
     def POST(self):
         """
         Determine content applicability.
-        body {criteria:<dict>, units:[{type_id:<str>,unit_key:<str>}]}
-        @return: A dict of applicability reports keyed by consumer ID.
-            Each report is:
-                {unit:<{type_id:<str>,unit_key:<str>}>,
-                 applicable:<bool>,
-                 summary:<str>,
-                 details:<?>}
-        @return: dict
+        body {
+        consumer_criteria:<dict> or None, 
+        repo_criteria:<dict> or None, 
+        units: {<type_id1> : [{<unit1>}, {<unit2}, ..]
+                <type_id2> : [{<unit1>}, {<unit2}, ..]} or None
+        }
+
+        :return: A dict of applicability reports keyed by consumer ID.
+            Each consumer report is:
+                { <unit_type_id1> : [<ApplicabilityReport>],
+                  <unit_type_id1> : [<ApplicabilityReport>]},
+                }
+                
+        :rtype: dict
         """
         body = self.params()
-        try:
-            criteria = body['criteria']
-            units = body['units']
-        except KeyError, e:
-            raise MissingValue(str(e))
-        criteria = Criteria.from_client_input(criteria)
+
+        consumer_criteria = body.get('consumer_criteria', None)
+        repo_criteria = body.get('repo_criteria', None)
+        units = body.get('units', None)
+
+        if consumer_criteria:
+            consumer_criteria = Criteria.from_client_input(consumer_criteria)
+
+        if repo_criteria:
+            repo_criteria = Criteria.from_client_input(repo_criteria)
+
         manager = managers.consumer_applicability_manager()
-        report = manager.units_applicable(criteria, units)
-        for k,v in report.items():
-            report[k] = [serialization.consumer.applicability_report(r) for r in v]
+        report = manager.units_applicable(consumer_criteria, repo_criteria, units)
+
+        for consumer_report in report.values():
+            for unit_type_id, report_list in consumer_report.items():
+                consumer_report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
         return self.ok(report)
 
 
