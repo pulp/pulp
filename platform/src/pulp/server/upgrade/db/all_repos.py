@@ -23,6 +23,7 @@ from pulp.server.compat import ObjectId
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
+from pulp.server.managers.auth.user.system import SystemUser
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
@@ -112,7 +113,7 @@ def _sync_schedules(v1_database, v2_database, report):
 
         args = [repo['id']]
         kwargs = {'overrides': {}}
-        call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs)
+        call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs, principal=SystemUser())
 
         scheduled_call_document = {
             '_id': ObjectId(),
