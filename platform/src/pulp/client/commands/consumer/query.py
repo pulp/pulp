@@ -14,18 +14,156 @@
 from gettext import gettext as _
 
 from pulp.client.commands.criteria import CriteriaCommand
-from pulp.client.extensions.extensions import (
-    PulpCliCommand, PulpCliFlag, PulpCliOption)
+from pulp.client.commands.options import OPTION_CONSUMER_ID
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
+# consumer query commands ------------------------------------------------------
 
 class ConsumerListCommand(PulpCliCommand):
-    pass
+
+    _all_fields = ['id', 'display_name', 'description', 'bindings', 'notes']
+
+    def __init__(self, context):
+        description = _('lists summary of consumers registered to the Pulp server')
+        super(self.__class__, self).__init__('list', description, self.list)
+
+        self.add_option(OPTION_FIELDS)
+
+        self.add_flag(FLAG_BINDINGS)
+        self.add_flag(FLAG_DETAILS)
+
+        self.context = context
+        self.api = context.server.consumer
+
+    def list(self, **kwargs):
+        details = kwargs.get(FLAG_DETAILS.keyword, False)
+        bindings = kwargs.get(FLAG_BINDINGS.keyword, False)
+
+        response = self.api.consumers(details=details, bindings=bindings)
+
+        filters = order = self._all_fields
+
+        if details:
+            order = self._all_fields[:2]
+            filters = None
+
+        elif kwargs[OPTION_FIELDS.keyword]:
+            filters = kwargs[OPTION_FIELDS.keyword].split(',')
+
+            if 'bindings' not in filters:
+                filters.append('bindings')
+            if 'id' not in filters:
+                filters.insert(0, 'id')
+
+        self.context.prompt.render_title(_('Consumers'))
+
+        for consumer in response.response_body:
+            _format_bindings(consumer)
+            self.context.prompt.render_document(consumer, filters=filters, order=order)
 
 
 class ConsumerSearchCommand(CriteriaCommand):
-    pass
+
+    def __init__(self, context):
+        description = _('search consumers')
+        super(self.__class__, self).__init__(self.search, 'search', description, include_search=True)
+
+        self.context = context
+        self.api = context.server.consumer_search
+
+    def search(self, **kwargs):
+        consumer_list = self.api.search(**kwargs)
+
+        for consumer in consumer_list:
+            self.context.prompt.render_document(consumer)
 
 
 class ConsumerHistoryCommand(PulpCliCommand):
-    pass
 
+    _all_fields = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
+
+    def __init__(self, context):
+        description = _('displays the history of operations on a consumer')
+        super(self.__class__, self).__init__('history', description, self.history)
+
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_EVENT_TYPE)
+        self.add_option(OPTION_LIMIT)
+        self.add_option(OPTION_SORT)
+        self.add_option(OPTION_START_DATE)
+        self.add_option(OPTION_END_DATE)
+
+        self.context = context
+        self.api = context.server.consumer_history
+
+    def history(self, **kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        event_type = kwargs[OPTION_EVENT_TYPE.keyword]
+        limit = kwargs[OPTION_LIMIT.keyword]
+        sort = kwargs[OPTION_SORT.keyword]
+        start_date = kwargs[OPTION_START_DATE.keyword]
+        end_date = kwargs[OPTION_END_DATE.keyword]
+
+        self.context.prompt.render_title(_('Consumer History [ %(c)s ]') % {'c': consumer_id})
+
+        event_list = self.api.history(consumer_id, event_type, limit, sort, start_date, end_date)
+
+        filters = order = self._all_fields
+
+        for event in event_list:
+            self.context.prompt.render_document(event, filters=filters, order=order)
+
+# options and flags ------------------------------------------------------------
+
+OPTION_FIELDS = PulpCliOption('--fields',
+                              _('comma separated list of consumer fields; if specified only the given fields will be displayed'),
+                              required=False)
+
+OPTION_EVENT_TYPE = PulpCliOption('--event-type',
+                                  _('limits displayed history entries to the given type; '
+                                    'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
+                                    '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
+                                    '"removed_from_group")'),
+                                  required=False)
+
+OPTION_LIMIT = PulpCliOption('--limit',
+                             _('limits displayed history entries to the given amount (must be greater than zero)'),
+                             required=False)
+
+OPTION_SORT = PulpCliOption('--sort',
+                            _('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'),
+                            required=False)
+
+OPTION_START_DATE = PulpCliOption('--start-date',
+                                  _('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'),
+                                  required=False)
+
+OPTION_END_DATE = PulpCliOption('--end-date',
+                                _('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'),
+                                required=False)
+
+FLAG_DETAILS = PulpCliFlag('--details', _('if specified, all the consumer information is displayed'))
+
+FLAG_BINDINGS = PulpCliFlag('--bindings', _('if specified, the bindings information is displayed'))
+
+
+# utility functions ------------------------------------------------------------
+
+def _format_bindings(consumer):
+    bindings = consumer.get('bindings')
+
+    if not bindings:
+        return
+
+    confirmed = []
+    unconfirmed = []
+
+    for binding in bindings:
+        repo_id = binding['repo_id']
+
+        if binding['deleted'] or len(binding['consumer_actions']):
+            unconfirmed.append(repo_id)
+        else:
+            confirmed.append(repo_id)
+
+    consumer['bindings'] = {'confirmed': confirmed, 'unconfirmed': unconfirmed}
