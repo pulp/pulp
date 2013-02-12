@@ -100,8 +100,10 @@ def _sync_schedules(v1_database, v2_database, report):
     repos_with_schedules = v2_repo_importer_collection.find(
         {'repo_id': {'$nin': repo_ids_without_schedules}}, fields=['repo_id'])
 
+    repo_ids_with_schedules = [r['repo_id'] for r in repos_with_schedules]
+
     repos_to_schedule = v1_repo_collection.find(
-        {'id': {'$nin': [r['repo_id'] for r in repos_with_schedules]}, 'sync_schedule': {'$ne': None}},
+        {'id': {'$nin': repo_ids_with_schedules}, 'sync_schedule': {'$ne': None}},
         fields=['id', 'sync_schedule', 'sync_options', 'last_sync'])
 
     for repo in repos_to_schedule:
@@ -158,7 +160,7 @@ def _calculate_next_run(scheduled_call):
     last_run = scheduled_call['last_run']
     if last_run is None:
         return scheduled_call['first_run']
-    now = datetime.datetime.utcnow()
+    now = datetime.utcnow()
     interval = dateutils.parse_iso8601_interval(scheduled_call['schedule'])[0]
     next_run = last_run
     while next_run < now:
