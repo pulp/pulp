@@ -204,8 +204,3 @@ Logging
 The pulp agent is implemented using Gofer plugins.  Agent handler log messages are written
 to the standard Gofer agent log at ``/var/log/gofer/agent.log``.
 
-Debugging
----------
-
-The following are instructions for running the Pulp agent within the PyCharm debugger.
-
