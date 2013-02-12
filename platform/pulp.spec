@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.4.alpha
+Release: 0.5.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -406,6 +406,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
+- 
+
 * Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
 - 908510 - Corrected imports to use compat layer (jason.dobies@redhat.com)
 - 908082 - updated SSLRenegBufferSize in apache config to 1MB
