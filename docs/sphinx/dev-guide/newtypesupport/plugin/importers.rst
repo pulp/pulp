@@ -93,8 +93,7 @@ The sections below will cover an overview of each feature. More information on t
 of how to implement them are found in the docstrings for each method.
 
 .. warning::
- It is highly recommended that importers that implement a sync method also implement support
- for cancelling the sync.
+ Importers that implement a sync method must also implement support for cancelling the sync.
 
 .. _importer_sync:
 
