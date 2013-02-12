@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.3.alpha
+Release: 0.5.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -406,6 +406,18 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
+- 
+
+* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
+- 908510 - Corrected imports to use compat layer (jason.dobies@redhat.com)
+- 908082 - updated SSLRenegBufferSize in apache config to 1MB
+  (skarmark@redhat.com)
+- 903797 - Corrected docstring for import_units (jason.dobies@redhat.com)
+- 905588 - Adding "puppet_module" as an example unit type. This should not
+  become a list of every possible unit type, but it's not unreasonable here to
+  include some mention of puppet modules. (mhrivnak@redhat.com)
+
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
 - 
 
