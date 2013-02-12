@@ -13,6 +13,8 @@
 
 from gettext import gettext as _
 
+from okaara.prompt import CLEAR_REMAINDER, COLOR_GREEN, COLOR_RED, MOVE_UP
+
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client import validators
 from pulp.client.commands.polling import PollingCommand
@@ -21,8 +23,6 @@ from pulp.client.commands.schedule import (
     DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
     UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
 from pulp.client.extensions.extensions import PulpCliFlag, PulpCliOption, PulpCliSection
-
-from okaara.prompt import CLEAR_REMAINDER, COLOR_GREEN, COLOR_RED, MOVE_UP
 
 # root section -----------------------------------------------------------------
 
@@ -62,6 +62,7 @@ class ConsumerContentInstallCommand(PollingCommand):
         self.add_flag(FLAG_REBOOT)
         self.add_flag(FLAG_IMPORT_KEYS)
 
+        self.api = context.server.consumer_content
         self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
 
     def run(self, **kwargs):
@@ -86,7 +87,7 @@ class ConsumerContentInstallCommand(PollingCommand):
 
     def install(self, consumer_id, units, options):
         try:
-            response = self.context.server.consumer_content.install(consumer_id, units=units, options=options)
+            response = self.api.install(consumer_id, units=units, options=options)
 
         except NotFoundException:
             msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
@@ -137,6 +138,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
         self.add_flag(FLAG_IMPORT_KEYS)
         self.add_flag(FLAG_ALL_CONTENT)
 
+        self.api = context.server.consumer_content
         self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
 
     def run(self, **kwargs):
@@ -172,7 +174,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
             return
 
         try:
-            response = self.context.server.consumer_content.update(consumer_id, units=units, options=options)
+            response = self.api.update(consumer_id, units=units, options=options)
 
         except NotFoundException:
             msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
@@ -225,6 +227,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
         self.add_flag(FLAG_NO_COMMIT)
         self.add_flag(FLAG_REBOOT)
 
+        self.api = context.server.consumer_content
         self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
 
     def run(self, **kwargs):
@@ -247,7 +250,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
 
     def uninstall(self, consumer_id, units, options):
         try:
-            response = self.context.server.consumer_content.uninstall(consumer_id, units=units, options=options)
+            response = self.api.uninstall(consumer_id, units=units, options=options)
 
         except NotFoundException:
             msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
@@ -423,7 +426,8 @@ class ConsumerContentSchedulesStrategy(ScheduleStrategy):
 
         units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
 
-        return self.api.add_schedule(self.action, consumer_id, schedule, units, failure_threshold, enabled, options)
+        return self.api.add_schedule(self.action, consumer_id, schedule, units,
+                                     failure_threshold, enabled, options)
 
     def delete_schedule(self, schedule_id, kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
