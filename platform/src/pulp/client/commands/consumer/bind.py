@@ -24,9 +24,10 @@ class ConsumerBindCommand(PulpCliCommand):
     Bind a consumer to a repository.
     """
 
-    def __init__(self, context):
-        description = _('binds a consumer to a repository')
-        super(self.__class__, self).__init__('bind', description, self.bind)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'bind'
+        description = description or _('binds a consumer to a repository')
+        super(self.__class__, self).__init__(name, description, self.bind)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
@@ -67,9 +68,10 @@ class ConsumerUnbindCommand(PulpCliCommand):
     Remove a consumer-repository binding.
     """
 
-    def __init__(self, context):
-        description = _('removes the binding between a consumer and a repository')
-        super(self.__class__, self).__init__('unbind', description, self.unbind)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'unbind'
+        description = description or _('removes the binding between a consumer and a repository')
+        super(self.__class__, self).__init__(name, description, self.unbind)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)

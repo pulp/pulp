@@ -17,13 +17,7 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.commands.options import (
     OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES)
-from pulp.client.extensions.extensions import (
-    PulpCliCommand, PulpCliFlag, PulpCliOption)
-
-
-CONSUMER_REGISTER_DESCRIPTION = _('')
-CONSUMER_UNREGISTER_DESCRIPTION = _('unregisters a consumer')
-CONSUMER_UPDATE_DESCRIPTION = _('changes metadata on an existing consumer')
+from pulp.client.extensions.extensions import  PulpCliCommand
 
 
 class ConsumerRegisterCommand(PulpCliCommand):
@@ -31,13 +25,17 @@ class ConsumerRegisterCommand(PulpCliCommand):
     Command to register a new consumer to a Pulp server.
     """
 
-    def __init__(self, context, name='register', description=CONSUMER_REGISTER_DESCRIPTION):
+    def __init__(self, context, name=None, description=None):
+        name = name or 'register'
+        description = description or _('')
         super(self.__class__, self).__init__(name, description, self.register)
-        self.context = context
+
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
         self.add_option(OPTION_DESCRIPTION)
         self.add_option(OPTION_NOTES)
+
+        self.context = context
 
     def register(self, **kwargs):
         pass
@@ -48,19 +46,28 @@ class ConsumerUnregisterCommand(PulpCliCommand):
     Command to unregister a consumer from a Pulp server.
     """
 
-    def __init__(self, context, name='unregister', description=CONSUMER_UNREGISTER_DESCRIPTION):
+    def __init__(self, context, name=None, description=None):
+        name = name or 'unregister'
+        description = description or _('unregisters a consumer')
         super(self.__class__, self).__init__(name, description, self.unregister)
-        self.context = context
+
         self.add_option(OPTION_CONSUMER_ID)
+
+        self.context = context
 
     def unregister(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+
         try:
             self.context.server.consumer.unregister(consumer_id)
+
         except NotFoundException:
-            self.context.prompt.write(_('Consumer [%(c)s] does not exist on the server') % {'c': consumer_id})
+            msg = _('Consumer [ %(c)s ] does not exist on the server') % {'c': consumer_id}
+            self.context.prompt.write(msg)
+
         else:
-            self.context.prompt.write(_('Consumer [%(c)s] successfully unregistered') % {'c': consumer_id})
+            msg = _('Consumer [ %(c)s ] successfully unregistered') % {'c': consumer_id}
+            self.context.prompt.write(msg)
 
 
 class ConsumerUpdateCommand(PulpCliCommand):
@@ -68,13 +75,17 @@ class ConsumerUpdateCommand(PulpCliCommand):
     Command to update a registered consumer's metadata with the Pulp server.
     """
 
-    def __init__(self, context, name='update', description=CONSUMER_UPDATE_DESCRIPTION):
+    def __init__(self, context, name=None, description=None):
+        name = name or 'update'
+        description = description or _('changes metadata on an existing consumer')
         super(self.__class__, self).__init__(name, description, self.update)
-        self.context = context
+
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
         self.add_option(OPTION_DESCRIPTION)
         self.add_option(OPTION_NOTES)
+
+        self.context = context
 
     def update(self, **kwargs):
         delta = dict((k, v) for k, v in kwargs.items() if v is not None)
@@ -90,9 +101,13 @@ class ConsumerUpdateCommand(PulpCliCommand):
 
         try:
             self.context.server.consumer.update(consumer_id, delta)
+
         except NotFoundException:
-            self.context.prompt.write(_('Consumer [%(c)s] does not exist on server') % {'c': consumer_id})
+            msg = _('Consumer [ %(c)s ] does not exist on server') % {'c': consumer_id}
+            self.context.prompt.write(msg)
+
         else:
-            self.context.prompt.write(_('Consumer [%(c)s] successfully updated') % {'c': consumer_id})
+            msg = _('Consumer [ %(c)s ] successfully updated') % {'c': consumer_id}
+            self.context.prompt.write(msg)
 
 

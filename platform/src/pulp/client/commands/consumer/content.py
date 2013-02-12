@@ -28,9 +28,10 @@ from pulp.client.extensions.extensions import PulpCliFlag, PulpCliOption, PulpCl
 
 class ConsumerContentSection(PulpCliSection):
 
-    def __init__(self, context):
-        description = _('content installation management')
-        super(self.__class__, self).__init__('content', description)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'content'
+        description = description or _('content installation management')
+        super(self.__class__, self).__init__(name, description)
 
         for section_class in (ConsumerContentInstallSection,
                               ConsumerContentUpdateSection,
@@ -40,9 +41,10 @@ class ConsumerContentSection(PulpCliSection):
 # content installation ---------------------------------------------------------
 
 class ConsumerContentInstallSection(PulpCliSection):
-    def __init__(self, context):
-        description = _('run or schedule a content unit installation task')
-        super(self.__class__, self).__init__('install', description)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'install'
+        description = description or _('run or schedule a content unit installation task')
+        super(self.__class__, self).__init__(name, description)
 
         self.add_command(ConsumerContentInstallCommand(context))
         self.add_subsection(ConsumerContentSchedulesSection(context, 'install'))
@@ -50,9 +52,10 @@ class ConsumerContentInstallSection(PulpCliSection):
 
 class ConsumerContentInstallCommand(PollingCommand):
 
-    def __init__(self, context):
-        description = _('triggers an immediate content unit install on the consumer')
-        super(self.__class__, self).__init__('run', description, self.run, context)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'run'
+        description = description or _('triggers an immediate content unit install on the consumer')
+        super(self.__class__, self).__init__(name, description, self.run, context)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_CONTENT_TYPE_ID)
@@ -115,9 +118,10 @@ class ConsumerContentInstallCommand(PollingCommand):
 
 class ConsumerContentUpdateSection(PulpCliSection):
 
-    def __init__(self, context):
-        description = _('run or schedule a content unit update task')
-        super(self.__class__, self).__init__('update', description)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'update'
+        description = description or _('run or schedule a content unit update task')
+        super(self.__class__, self).__init__(name, description)
 
         self.add_command(ConsumerContentUpdateCommand(context))
         self.add_subsection(ConsumerContentSchedulesSection(context, 'update'))
@@ -125,9 +129,10 @@ class ConsumerContentUpdateSection(PulpCliSection):
 
 class ConsumerContentUpdateCommand(PollingCommand):
 
-    def __init__(self, context):
-        description = _('triggers an immediate content unit update on a consumer')
-        super(self.__class__, self).__init__('run', description, self.run, context)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'run'
+        description = description or _('triggers an immediate content unit update on a consumer')
+        super(self.__class__, self).__init__(name, description, self.run, context)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_CONTENT_TYPE_ID)
@@ -206,9 +211,10 @@ class ConsumerContentUpdateCommand(PollingCommand):
 
 class ConsumerContentUninstallSection(PulpCliSection):
 
-    def __init__(self, context):
-        description = _('run or schedule a content unit removal task')
-        super(self.__class__, self).__init__('uninstall', description)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'uninstall'
+        description = description or _('run or schedule a content unit removal task')
+        super(self.__class__, self).__init__(name, description)
 
         self.add_command(ConsumerContentUninstallCommand(context))
         self.add_subsection(ConsumerContentSchedulesSection(context, 'uninstall'))
@@ -216,9 +222,10 @@ class ConsumerContentUninstallSection(PulpCliSection):
 
 class ConsumerContentUninstallCommand(PollingCommand):
 
-    def __init__(self, context):
-        description = _('triggers an immediate content unit removal on a consumer')
-        super(self.__class__, self).__init__('run', description, self.run, context)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'run'
+        description = description or _('triggers an immediate content unit removal on a consumer')
+        super(self.__class__, self).__init__(name, description, self.run, context)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_CONTENT_TYPE_ID)
@@ -341,9 +348,10 @@ class ConsumerContentProgressTracker(object):
 
 class ConsumerContentSchedulesSection(PulpCliSection):
 
-    def __init__(self, context, action):
-        description = _('manage consumer content %(a)s schedules') % {'a': action}
-        super(self.__class__, self).__init__('schedules', description)
+    def __init__(self, context, action, name=None, description=None):
+        name = name or 'schedules'
+        description = description or _('manage consumer content %(a)s schedules') % {'a': action}
+        super(self.__class__, self).__init__(name, description)
 
         self.add_command(ConsumerContentListScheduleCommand(context, action))
         self.add_command(ConsumerContentCreateScheduleCommand(context, action))
@@ -354,20 +362,22 @@ class ConsumerContentSchedulesSection(PulpCliSection):
 
 class ConsumerContentListScheduleCommand(ListScheduleCommand):
 
-    def __init__(self, context, action):
-        strategy = ConsumerContentSchedulesStrategy(context, action)
-        description = _('list scheduled %(a)s operations') % {'a': action}
-        super(self.__class__, self).__init__(context, strategy, description=description)
+    def __init__(self, context, action, strategy=None, name=None, description=None):
+        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        name = name or 'list'
+        description = description or _('list scheduled %(a)s operations') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
 
 class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
 
-    def __init__(self, context, action):
-        strategy = ConsumerContentSchedulesStrategy(context, action)
-        description = _('adds a new scheduled %(a)s operation') % {'a': action}
-        super(self.__class__, self).__init__(context, strategy, description=description)
+    def __init__(self, context, action, strategy=None, name=None, description=None):
+        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        name = name or 'create'
+        description = description or _('adds a new scheduled %(a)s operation') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_CONTENT_TYPE_ID)
@@ -376,30 +386,33 @@ class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
 
 class ConsumerContentDeleteScheduleCommand(DeleteScheduleCommand):
 
-    def __init__(self, context, action):
-        strategy = ConsumerContentSchedulesStrategy(context, action)
-        description = _('deletes a %(a)s schedule') % {'a': action}
-        super(self.__class__, self).__init__(context, strategy, description=description)
+    def __init__(self, context, action, strategy=None, name=None, description=None):
+        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        name = name or 'delete'
+        description = description or _('deletes a %(a)s schedule') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
 
 class ConsumerContentUpdateScheduleCommand(UpdateScheduleCommand):
 
-    def __init__(self, context, action):
-        strategy = ConsumerContentSchedulesStrategy(context, action)
-        description = _('update an existing %(a)s schedule') % {'a': action}
-        super(self.__class__, self).__init__(context, strategy, description=description)
+    def __init__(self, context, action, strategy=None, name=None, description=None):
+        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        name = name or 'update'
+        description = description or _('update an existing %(a)s schedule') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
 
 class ConsumerContentNextRunCommand(NextRunCommand):
 
-    def __init__(self, context, action):
-        strategy = ConsumerContentSchedulesStrategy(context, action)
-        description = _('displays the next scheduled %(a)s for a consumer') % {'a': action}
-        super(self.__class__, self).__init__(context, strategy, description=description)
+    def __init__(self, context, action, strategy=None, name=None, description=None):
+        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        name = name or 'next'
+        description = description or _('displays the next scheduled %(a)s for a consumer') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
 

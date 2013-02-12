@@ -23,9 +23,10 @@ class ConsumerListCommand(PulpCliCommand):
 
     _all_fields = ['id', 'display_name', 'description', 'bindings', 'notes']
 
-    def __init__(self, context):
-        description = _('lists summary of consumers registered to the Pulp server')
-        super(self.__class__, self).__init__('list', description, self.list)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'list'
+        description = description or _('lists summary of consumers registered to the Pulp server')
+        super(self.__class__, self).__init__(name, description, self.list)
 
         self.add_option(OPTION_FIELDS)
 
@@ -64,9 +65,10 @@ class ConsumerListCommand(PulpCliCommand):
 
 class ConsumerSearchCommand(CriteriaCommand):
 
-    def __init__(self, context):
-        description = _('search consumers')
-        super(self.__class__, self).__init__(self.search, 'search', description, include_search=True)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'search'
+        description = description or _('search consumers')
+        super(self.__class__, self).__init__(self.search, name, description, include_search=True)
 
         self.context = context
         self.api = context.server.consumer_search
@@ -82,9 +84,10 @@ class ConsumerHistoryCommand(PulpCliCommand):
 
     _all_fields = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
 
-    def __init__(self, context):
-        description = _('displays the history of operations on a consumer')
-        super(self.__class__, self).__init__('history', description, self.history)
+    def __init__(self, context, name=None, description=None):
+        name = name or 'history'
+        description = description or _('displays the history of operations on a consumer')
+        super(self.__class__, self).__init__(name, description, self.history)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_EVENT_TYPE)
