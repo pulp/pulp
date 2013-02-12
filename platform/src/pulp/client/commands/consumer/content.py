@@ -13,27 +13,269 @@
 
 from gettext import gettext as _
 
+from pulp.bindings.exceptions import NotFoundException
+from pulp.client import validators
 from pulp.client.commands.polling import PollingCommand
-from pulp.client.extensions.extensions import PulpCliSection
+from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID
+from pulp.client.commands.schedule import (
+    DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
+    UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
+from pulp.client.extensions.extensions import PulpCliFlag, PulpCliOption, PulpCliSection
 
 from okaara.prompt import CLEAR_REMAINDER, COLOR_GREEN, COLOR_RED, MOVE_UP
 
+# root section -----------------------------------------------------------------
+
+class ConsumerContentSection(PulpCliSection):
+
+    def __init__(self, context):
+        description = _('content installation management')
+        super(self.__class__, self).__init__('content', description)
+
+        for section_class in (ConsumerContentInstallSection,
+                              ConsumerContentUpdateSection,
+                              ConsumerContentUninstallSection):
+            self.add_subsection(section_class(context))
+
+# content installation ---------------------------------------------------------
+
+class ConsumerContentInstallSection(PulpCliSection):
+    def __init__(self, context):
+        description = _('run or schedule a content unit installation task')
+        super(self.__class__, self).__init__('install', description)
+
+        self.add_command(ConsumerContentInstallCommand(context))
+        self.add_subsection(ConsumerContentSchedulesSection(context, 'install'))
+
+
 class ConsumerContentInstallCommand(PollingCommand):
-    pass
+
+    def __init__(self, context):
+        description = _('triggers an immediate content unit install on the consumer')
+        super(self.__class__, self).__init__('run', description, self.run, context)
+
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
+        self.add_flag(FLAG_NO_COMMIT)
+        self.add_flag(FLAG_REBOOT)
+        self.add_flag(FLAG_IMPORT_KEYS)
+
+        self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
+
+    def run(self, **kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+
+        commit = not kwargs[FLAG_NO_COMMIT.keyword]
+        reboot = kwargs[FLAG_REBOOT.keyword]
+        import_keys = kwargs[FLAG_IMPORT_KEYS.keyword]
+
+        options = {'apply': commit,
+                   'reboot': reboot,
+                   'importkeys': import_keys}
+
+        def _unit_dict(unit_name):
+            return {'type_id': content_type_id,
+                    'unit_key': {'name': unit_name}}
+
+        units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
+
+        self.install(consumer_id, units, options)
+
+    def install(self, consumer_id, units, options):
+        try:
+            response = self.context.server.consumer_content.install(consumer_id, units=units, options=options)
+
+        except NotFoundException:
+            msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
+            self.context.prompt.write(msg, tag='not-found')
+
+        else:
+            task = response.response_body
+            if self.rejected(task) or self.postponed(task):
+                return
+            self.process(consumer_id, task)
+
+    def progress(self, report):
+        self.progress_tracker.display(report)
+
+    def succeeded(self, consumer_id, task):
+        if task.result['succeeded']:
+            msg = _('Install Succeeded')
+            self.context.prompt.render_success_message(msg)
+
+        else:
+            msg = _('Install Failed')
+            self.context.prompt.render_failure_message(msg)
+
+# content update ---------------------------------------------------------------
+
+class ConsumerContentUpdateSection(PulpCliSection):
+
+    def __init__(self, context):
+        description = _('run or schedule a content unit update task')
+        super(self.__class__, self).__init__('update', description)
+
+        self.add_command(ConsumerContentUpdateCommand(context))
+        self.add_subsection(ConsumerContentSchedulesSection(context, 'update'))
 
 
 class ConsumerContentUpdateCommand(PollingCommand):
-    pass
+
+    def __init__(self, context):
+        description = _('triggers an immediate content unit update on a consumer')
+        super(self.__class__, self).__init__('run', description, self.run, context)
+
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
+        self.add_flag(FLAG_NO_COMMIT)
+        self.add_flag(FLAG_REBOOT)
+        self.add_flag(FLAG_IMPORT_KEYS)
+        self.add_flag(FLAG_ALL_CONTENT)
+
+        self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
+
+    def run(self, **kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+
+        commit = not kwargs[FLAG_NO_COMMIT.keyword]
+        reboot = kwargs[FLAG_REBOOT.keyword]
+        import_keys = kwargs[FLAG_IMPORT_KEYS.keyword]
+        all_units = kwargs[FLAG_ALL_CONTENT.keyword]
+
+        options = {'apply': commit,
+                   'reboot': reboot,
+                   'importkeys': import_keys,
+                   'all': all_units}
+
+        def _unit_dict(unit_name):
+            return {'type_id': content_type_id,
+                    'unit_key': {'name': unit_name}}
+
+        if all_units:
+            units = [{'type_id': content_type_id, 'unit_key': None}]
+
+        else:
+            units = map(_unit_dict, kwargs.get(OPTION_CONTENT_UNIT.keyword) or [])
+
+        self.update(consumer_id, units, options)
+
+    def update(self, consumer_id, units, options):
+        if not units:
+            msg = _('No content units specified')
+            self.context.prompt.render_failure_message(msg)
+            return
+
+        try:
+            response = self.context.server.consumer_content.update(consumer_id, units=units, options=options)
+
+        except NotFoundException:
+            msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
+            self.context.prompt.write(msg, tag='not-found')
+
+        else:
+            task = response.response_body
+            msg = _('Update task created with id [ %(t)s ]') % {'t': task.task_id}
+            self.context.prompt.render_success_message(msg)
+
+            if self.rejected(task) or self.postponed(task):
+                return
+
+            self.process(consumer_id, task)
+
+    def progress(self, report):
+        self.progress_tracker.display(report)
+
+    def succeeded(self, consumer_id, task):
+        if task.result['succeeded']:
+            msg = _('Update Succeeded')
+            self.context.prompt.render_success_message(msg)
+
+        else:
+            msg = _('Update Failed')
+            self.context.prompt.render_failure_message(msg)
+
+# content uninstall ------------------------------------------------------------
+
+class ConsumerContentUninstallSection(PulpCliSection):
+
+    def __init__(self, context):
+        description = _('run or schedule a content unit removal task')
+        super(self.__class__, self).__init__('uninstall', description)
+
+        self.add_command(ConsumerContentUninstallCommand(context))
+        self.add_subsection(ConsumerContentSchedulesSection(context, 'uninstall'))
 
 
 class ConsumerContentUninstallCommand(PollingCommand):
-    pass
+
+    def __init__(self, context):
+        description = _('triggers an immediate content unit removal on a consumer')
+        super(self.__class__, self).__init__('run', description, self.run, context)
+
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
+        self.add_flag(FLAG_NO_COMMIT)
+        self.add_flag(FLAG_REBOOT)
+
+        self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
+
+    def run(self, **kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+
+        commit = not kwargs[FLAG_NO_COMMIT.keyword]
+        reboot = kwargs[FLAG_REBOOT.keyword]
+
+        options = {'apply': commit,
+                   'reboot': reboot}
+
+        def _unit_dict(unit_name):
+            return {'type_id': content_type_id,
+                    'unit_key': {'name': unit_name}}
+
+        units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
+
+        self.uninstall(consumer_id, units, options)
+
+    def uninstall(self, consumer_id, units, options):
+        try:
+            response = self.context.server.consumer_content.uninstall(consumer_id, units=units, options=options)
+
+        except NotFoundException:
+            msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
+            self.context.prompt.write(msg, tag='not-found')
+
+        else:
+            task = response.response_body
+            msg = _('Uninstall task created with id [ %(t)s ]') % {'t': task.task_id}
+            self.context.prompt.render_success_message(msg)
+
+            if self.rejected(task) or self.postponed(task):
+                return
+
+            self.process(consumer_id, task)
+
+    def progress(self, report):
+        self.progress_tracker.display(report)
+
+    def succeeded(self, consumer_id, task):
+        if task.result['succeeded']:
+            msg = _('Uninstall Succeeded')
+            self.context.prompt.render_success_message(msg)
+
+        else:
+            msg = _('Uninstall Failed')
+            self.context.prompt.render_failure_message(msg)
 
 # progress tracker -------------------------------------------------------------
-
-OK_TITLE = _('OK')
-FAILED_TITLE = _('FAILED')
-
 
 class ConsumerContentProgressTracker(object):
 
@@ -41,8 +283,8 @@ class ConsumerContentProgressTracker(object):
         self.prompt = prompt
         self.next_step = 0
         self.details = None
-        self.OK = prompt.color(OK_TITLE, COLOR_GREEN)
-        self.FAILED = prompt.color(FAILED_TITLE, COLOR_RED)
+        self.OK = prompt.color(_('OK'), COLOR_GREEN)
+        self.FAILED = prompt.color(_('FAILED'), COLOR_RED)
 
     def reset(self):
         self.next_step = 0
@@ -76,7 +318,6 @@ class ConsumerContentProgressTracker(object):
         status = self.OK if status else self.FAILED
         self.prompt.write('%-40s[ %s ]' % (name, status))
 
-
     def display_details(self, details):
         action = details.get('action')
         content_unit = details.get('content_unit')
@@ -93,4 +334,126 @@ class ConsumerContentProgressTracker(object):
             self.details = '+12%s: %s' % (action, error)
             self.prompt.write(self.details, COLOR_RED)
 
+# schedules section ------------------------------------------------------------
+
+class ConsumerContentSchedulesSection(PulpCliSection):
+
+    def __init__(self, context, action):
+        description = _('manage consumer content %(a)s schedules') % {'a': action}
+        super(self.__class__, self).__init__('schedules', description)
+
+        self.add_command(ConsumerContentListScheduleCommand(context, action))
+        self.add_command(ConsumerContentCreateScheduleCommand(context, action))
+        self.add_command(ConsumerContentDeleteScheduleCommand(context, action))
+        self.add_command(ConsumerContentNextRunCommand(context, action))
+
+# schedule commands ------------------------------------------------------------
+
+class ConsumerContentListScheduleCommand(ListScheduleCommand):
+
+    def __init__(self, context, action):
+        strategy = ConsumerContentSchedulesStrategy(context, action)
+        description = _('list scheduled %(a)s operations') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, description=description)
+
+        self.add_option(OPTION_CONSUMER_ID)
+
+
+class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
+
+    def __init__(self, context, action):
+        strategy = ConsumerContentSchedulesStrategy(context, action)
+        description = _('adds a new scheduled %(a)s operation') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, description=description)
+
+        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
+
+class ConsumerContentDeleteScheduleCommand(DeleteScheduleCommand):
+
+    def __init__(self, context, action):
+        strategy = ConsumerContentSchedulesStrategy(context, action)
+        description = _('deletes a %(a)s schedule') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, description=description)
+
+        self.add_option(OPTION_CONSUMER_ID)
+
+
+class ConsumerContentUpdateScheduleCommand(UpdateScheduleCommand):
+
+    def __init__(self, context, action):
+        strategy = ConsumerContentSchedulesStrategy(context, action)
+        description = _('update an existing %(a)s schedule') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, description=description)
+
+        self.add_option(OPTION_CONSUMER_ID)
+
+
+class ConsumerContentNextRunCommand(NextRunCommand):
+
+    def __init__(self, context, action):
+        strategy = ConsumerContentSchedulesStrategy(context, action)
+        description = _('displays the next scheduled %(a)s for a consumer') % {'a': action}
+        super(self.__class__, self).__init__(context, strategy, description=description)
+
+        self.add_option(OPTION_CONSUMER_ID)
+
+# schedule strategy ------------------------------------------------------------
+
+class ConsumerContentSchedulesStrategy(ScheduleStrategy):
+
+    def __init__(self, context, action):
+        super(self.__class__, self).__init__()
+
+        self.context = context
+        self.action = action
+        self.api = context.server.consumer_content_schedules
+
+    def create_schedule(self, schedule, failure_threshold, enabled, kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+
+        options = {}
+
+        def _unit_dict(unit_name):
+            return {'type_id': content_type_id,
+                    'unit_key': {'name': unit_name}}
+
+        units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
+
+        return self.api.add_schedule(self.action, consumer_id, schedule, units, failure_threshold, enabled, options)
+
+    def delete_schedule(self, schedule_id, kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        return self.api.delete_schedule(self.action, consumer_id, schedule_id)
+
+    def retrieve_schedules(self, kwargs):
+        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        return self.api.list_schedules(self.action, consumer_id)
+
+    def update_schedule(self, schedule_id, **kwargs):
+        consumer_id = kwargs.pop(OPTION_CONSUMER_ID.keyword)
+        return self.api.update_schedule(self.action, consumer_id, schedule_id, **kwargs)
+
+# common options and flags -----------------------------------------------------
+
+OPTION_CONTENT_TYPE_ID = PulpCliOption('--content-type-id',
+                                       DESC_ID,
+                                       required=True,
+                                       validate_func=validators.id_validator)
+
+OPTION_CONTENT_UNIT = PulpCliOption('--content-unit',
+                                    _('content unit id; may be repeated for multiple content units'),
+                                    required=True,
+                                    allow_multiple=True)
+
+FLAG_NO_COMMIT = PulpCliFlag('--no-commit', _('transaction not committed'))
+
+FLAG_REBOOT = PulpCliFlag('--reboot', _('reboot after successful transaction'))
+
+FLAG_IMPORT_KEYS = PulpCliFlag('--import-keys', _('import GPG keys as needed'))
+
+FLAG_ALL_CONTENT = PulpCliFlag('--all', _('update all content units'), ['-a'])
 
