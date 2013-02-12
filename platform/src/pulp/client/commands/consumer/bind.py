@@ -15,36 +15,29 @@ from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID, OPTION_REPO_ID
-from pulp.client.extensions.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
-
-CONSUMER_BIND_DESCRIPTION = _('binds a consumer to a repository')
-CONSUMER_UNBIND_DESCRIPTION = _('removes the binding between a consumer and a repository')
-
-DISTRIBUTOR_OPTION_NAME = 'distributor'
-
-FORCE_FLAG_NAME = 'force'
-FORCE_FLAG_DESCRIPTION = _('delete the binding immediately and discontinue tracking consumer actions')
-
-NOT_FOUND_TAG = 'not-found'
-
+# consumer bindings management commands ----------------------------------------
 
 class ConsumerBindCommand(PulpCliCommand):
     """
     Bind a consumer to a repository.
     """
 
-    def __init__(self, context, name='bind', description=CONSUMER_BIND_DESCRIPTION):
-        super(self.__class__, self).__init__(name, description, self.bind)
-        self.context = context
+    def __init__(self, context):
+        description = _('binds a consumer to a repository')
+        super(self.__class__, self).__init__('bind', description, self.bind)
+
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self.create_option('--' + DISTRIBUTOR_OPTION_NAME, DESC_ID, required=True)
+        self.add_option(OPTION_DISTRIBUTOR_ID)
+
+        self.context = context
 
     def bind(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        distributor_id = kwargs[DISTRIBUTOR_OPTION_NAME]
+        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
 
         try:
             response = self.context.server.bind.bind(consumer_id, repo_id, distributor_id)
@@ -60,7 +53,7 @@ class ConsumerBindCommand(PulpCliCommand):
             if 'distributor' in resources:
                 missing.append((_('Distributor'), distributor_id))
             for option_title, option_id in missing:
-                self.context.prompt.write(msg % {'t': option_title, 'i': option_id}, tag=NOT_FOUND_TAG)
+                self.context.prompt.write(msg % {'t': option_title, 'i': option_id}, tag='not-found')
 
         else:
             msg = _('Bind tasks successfully created:')
@@ -74,26 +67,30 @@ class ConsumerUnbindCommand(PulpCliCommand):
     Remove a consumer-repository binding.
     """
 
-    def __init__(self, context, name='unbind', description=CONSUMER_UNBIND_DESCRIPTION):
-        super(self.__class__, self).__init__(name, description, self.unbind)
-        self.context = context
+    def __init__(self, context):
+        description = _('removes the binding between a consumer and a repository')
+        super(self.__class__, self).__init__('unbind', description, self.unbind)
+
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self.create_option('--' + DISTRIBUTOR_OPTION_NAME, DESC_ID, required=True)
-        self.create_flag('--' + FORCE_FLAG_NAME, FORCE_FLAG_DESCRIPTION)
+        self.add_option(OPTION_DISTRIBUTOR_ID)
+
+        self.add_flag(FLAG_FORCE)
+
+        self.context = context
 
     def unbind(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        distributor_id = kwargs[DISTRIBUTOR_OPTION_NAME]
-        force = kwargs[FORCE_FLAG_NAME]
+        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
+        force = kwargs[FLAG_FORCE.keyword]
 
         try:
             response = self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
 
         except NotFoundException:
             msg = _('Binding [consumer: %(c)s, repository: %(r)s] does not exist on the server')
-            self.context.prompt.write(msg % {'c': consumer_id, 'r': repo_id}, tag=NOT_FOUND_TAG)
+            self.context.prompt.write(msg % {'c': consumer_id, 'r': repo_id}, tag='not-found')
 
         else:
             msg = _('Unbind tasks successfully created:')
@@ -101,4 +98,10 @@ class ConsumerUnbindCommand(PulpCliCommand):
             task_dicts = [dict(('task_id', t.task_id)) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
 
+# options and flags ------------------------------------------------------------
+
+OPTION_DISTRIBUTOR_ID = PulpCliOption('--distributor-id', DESC_ID, required=True)
+
+FLAG_FORCE = PulpCliFlag('--force',
+                         _('delete the binding immediately and discontinue tracking consumer actions'))
 
