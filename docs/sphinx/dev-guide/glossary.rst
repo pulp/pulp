@@ -74,8 +74,8 @@ Glossary
     its content to multiple destinations, formats, or protocols.
 
   scratchpad
-    Persisted area a plugin may store information to be retained across multiple
-    invocations. Each scratchpad is scoped to an individual plugin on a repository.
+    Persisted area in which a plugin may store information to be retained across
+    multiple invocations. Each scratchpad is scoped to an individual plugin on a repository.
 
   unit profile
     A list of :term:`content unit` installed on a :term:`consumer`.  The

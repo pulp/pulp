@@ -6,23 +6,23 @@ Plugin Conventions
 Configuration
 -------------
 
-Each call into a plugin passes in the configuration the call should use for its execution.
+Each call into a plugin passes the configuration the call should use for its execution.
 The configuration is contained in a ``pulp.plugins.config.PluginCallConfiguration`` instance.
 This object is a wrapper on top of the three different locations a configuration value
 can come from:
 
- * **Overrides** - Most calls allow the user to specify configuration values as a parameter
-   when they are invoked. These values are made available to the plugin for the operation's
-   execution, however they are not saved in the server.
- * **Repository-level** - When an importer or distributor is attached to a repository, the
-   Pulp server saves the configuration for that plugin with the repository. These
-   values are only made available to that repository when an operation is invoked. For
-   example, if an importer is configured to synchronize from an external feed, the URL
-   of that feed would be stored on a per repository basis.
- * **Plugin-level** - Each importer and distributor may be paired with a static
-   configuration file on disk. These are JSON files that are loaded by the Pulp server when
-   the plugins are initialized. Configuration values in this location are available to all
-   instances of the importer/distributor.
+* **Overrides** - Most calls allow the user to specify configuration values as a parameter
+  when they are invoked. These values are made available to the plugin for the operation's
+  execution, however they are not saved in the server.
+* **Repository-level** - When an importer or distributor is attached to a repository, the
+  Pulp server saves the configuration for that plugin with the repository. These
+  values are only used for operations on that repository. For
+  example, if an importer is configured to synchronize from an external feed, the URL
+  of that feed would be stored on a per repository basis.
+* **Plugin-level** - Each importer and distributor may be paired with a static
+  configuration file on disk. These are JSON files that are loaded by the Pulp server when
+  the plugins are initialized. Configuration values in this location are available to all
+  instances of the importer/distributor.
 
 The ``PluginCallConfiguration`` defines a method called ``get(str)`` that will retrieve
 the value for the given key. This call will check the three configuration locations in the
@@ -37,7 +37,8 @@ Life Cycle Methods
 
 Both types of plugins define a number of methods related to the lifecycle of the plugin on
 a particular repository. These methods are called when the importer/distributor is added to
-or removed from a repository.
+or removed from a repository. Examples include ``importer_added(repo, config`` and
+``distributor_removed(repo, config)``.
 
 In many cases, these methods can be ignored. The default implementation will not raise an
 error. Their usage is typically to perform any initialization in the plugin's
@@ -81,7 +82,6 @@ couple plugins together. The repository scratchpad can be accessed using ``get_r
 and ``set_repo_scratchpad(object)`` and carries the same pickle restriction as described above.
 
 
-
 .. _working_directories:
 
 Working Directories
@@ -106,13 +106,13 @@ There are two ways to install a plugin.
 Entry Points
 ^^^^^^^^^^^^
 
-The plugin may define a method that will serve as its entry point. The method must accept one
-argument and return a tuple of the following:
+The plugin may define a method that will serve as its entry point. The method must accept zero
+arguments and return a tuple of the following:
 
- * Class of the plugin itself. This must be a subclass of either ``pulp.plugins.importer.Importer``
-   or ``pulp.plugins.distributor.Distributor``.
- * Plugin-level configuration to use for that plugin. See :ref:`plugin_config` for more information
-   on the scope of these configuration values.
+* Class of the plugin itself. This must be a subclass of either ``pulp.plugins.importer.Importer``
+  or ``pulp.plugins.distributor.Distributor``.
+* Plugin-level configuration to use for that plugin. See :ref:`plugin_config` for more information
+  on the scope of these configuration values.
 
 A sample is as follows:
 
