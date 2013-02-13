@@ -272,7 +272,7 @@ def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=Non
 class FileError(Exception):
     pass
 
-def processFile(filename, relativeDir=None):
+def processFile(filename, hashtype="sha256", relativeDir=None):
     # Is this a file?
     if not os.access(filename, os.R_OK):
         raise FileError("Could not stat the file %s" % filename)
@@ -288,7 +288,7 @@ def processFile(filename, relativeDir=None):
             os.path.basename(filename))
     else:
         hash["relativePath"] = os.path.basename(filename)
-    hash['hashtype'] = "sha256" # we enforce sha256 as default checksum
+    hash['hashtype'] = hashtype
     hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
     hash['pkgname'] = os.path.basename(filename)
     # Read the header

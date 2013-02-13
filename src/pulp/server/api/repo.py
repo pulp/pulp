@@ -2027,8 +2027,11 @@ class RepoApi(BaseApi):
             if fid not in repo['files']:
                 repo['files'].append(fid)
                 changed = True
+                hashtype = 'sha256'
+                if 'sha' in fileobj['checksum']:
+                    hashtype = 'sha'
                 shared_file = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
-                                                  fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
+                                                  fileobj['filename'],fileobj['checksum'][hashtype], fileobj['filename'])
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
                                                repo['relative_path'], fileobj["filename"])
                 if not os.path.exists(file_repo_path):
@@ -2084,7 +2087,10 @@ class RepoApi(BaseApi):
                 if fileobj is None:
                     log.error("File ID [%s] does not exist" % fileid)
                     continue
-                write_str = "%s,%s,%s\n" % (fileobj['filename'], fileobj['checksum']['sha256'], \
+                hashtype = 'sha256'
+                if 'sha' in fileobj['checksum']:
+                    hashtype = 'sha'
+                write_str = "%s,%s,%s\n" % (fileobj['filename'], fileobj['checksum'][hashtype], \
                                             fileobj['size'] or 0)
                 f.write(write_str)
             f.close()

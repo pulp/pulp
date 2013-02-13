@@ -90,8 +90,11 @@ class FileApi(BaseApi):
             return
         if self.referenced(id):
             raise FileHasReferences(id)
+        hashtype = 'sha256'
+        if 'sha' in fileobj['checksum']:
+            hashtype = 'sha'
         file_path = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
-                                        fileobj['filename'], fileobj['checksum']['sha256'],
+                                        fileobj['filename'], fileobj['checksum'][hashtype],
                                         fileobj['filename'])
         self.collection.remove({'_id':id})
         if not keep_files:

@@ -56,6 +56,9 @@ class Upload(ContentAction):
         self.parser.add_option("--chunksize", dest="chunk", default=10485760, type=int,
                                help=_("chunk size to use for uploads; Default:10485760"))
         self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
+        self.parser.add_option("--hashtype", dest="hashtype", default="sha256",
+                               help=_("hashtype to use when generating hashes for package paths, default:sha256; \
+                                       for feed repos, this must match the source checksum type from repomd.xml"))
 
     def run(self):
         files = self.args
@@ -78,7 +81,9 @@ class Upload(ContentAction):
         fids = {}
         exit_code = 0
         uapi = UploadAPI()
+        files_processed = 0
         for f in files:
+            files_processed += 1
             try:
                 if not self.opts.nosig and f.endswith(".rpm") and not utils.is_signed(f):
                     msg = _("Package [%s] is not signed. Please use --nosig. Skipping " % f)
@@ -97,7 +102,7 @@ class Upload(ContentAction):
                     print msg
                 continue
             try:
-                metadata = utils.processFile(f)
+                metadata = utils.processFile(filename=f, hashtype=self.opts.hashtype)
             except utils.FileError, e:
                 msg = _('Error: %s') % e
                 log.error(msg)
@@ -121,7 +126,7 @@ class Upload(ContentAction):
                             (pobj['filename'], pobj['checksum'][pobj['checksum'].keys()[0]])
                 log.info(msg)
                 if self.opts.verbose:
-                    print msg
+                    print msg + " [%i/%i]" % (files_processed, len(files))
                 if metadata['type'] == 'rpm':
                     pids[os.path.basename(f)] = pobj['id']
                 else:
@@ -137,7 +142,7 @@ class Upload(ContentAction):
                 msg = _("Successfully uploaded [%s] to server") % metadata['pkgname']
                 log.info(msg)
                 if self.opts.verbose:
-                    print msg
+                    print msg + " [%i/%i]" % (files_processed, len(files))
             else:
                 msg = _("Error: Failed to upload [%s] to server") % metadata['pkgname']
                 log.error(msg)
