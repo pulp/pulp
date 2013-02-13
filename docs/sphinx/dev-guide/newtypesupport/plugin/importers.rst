@@ -20,7 +20,7 @@ Only one importer may be attached to a repository at a time.
 The :doc:`common` page describes behavior and APIs common to both importers and distributors.
 
 .. note::
-  Currently, the API for the client context is not published. The code can
+  Currently, the API for the base class is not published. The code can
   be found at ``Importer`` in ``platform/src/pulp/plugins/importer.py``.
 
 
@@ -195,5 +195,9 @@ changes to reflect the change. The ``remove_units`` method is called on the repo
 to allow the importer to perform any clean up steps is may need to make, such as removing any
 data it may have been storing about the unit from the working directory. In most cases, this method
 does not need to be overridden.
+
+.. warning::
+ This call should not remove the unit from its final location specified by Pulp. Pulp will handle
+ the deletion of the file itself during its orphan clean up process.
 
 
