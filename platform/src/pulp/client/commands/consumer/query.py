@@ -20,6 +20,9 @@ from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpC
 # consumer query commands ------------------------------------------------------
 
 class ConsumerListCommand(PulpCliCommand):
+    """
+    List the consumers that are currently registered with the Pulp server.
+    """
 
     _all_fields = ['id', 'display_name', 'description', 'bindings', 'notes']
 
@@ -64,6 +67,9 @@ class ConsumerListCommand(PulpCliCommand):
 
 
 class ConsumerSearchCommand(CriteriaCommand):
+    """
+    Use search criteria to display consumers with specific traits.
+    """
 
     def __init__(self, context, name=None, description=None):
         name = name or 'search'
@@ -81,6 +87,9 @@ class ConsumerSearchCommand(CriteriaCommand):
 
 
 class ConsumerHistoryCommand(PulpCliCommand):
+    """
+    List the recorded events for a give consumer.
+    """
 
     _all_fields = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
 
