@@ -6,6 +6,28 @@ Plugin Conventions
 Configuration
 -------------
 
+Validation
+^^^^^^^^^^
+
+It is up to the plugin writer to determine what configuration values are necessary for the
+plugin to function.
+
+Pulp performs no validation on the configuration for a plugin. The ``validate_config``
+method in the each plugin subclass is used to verify the user-entered values for a repository.
+This is called when the plugin is first added to the repository and on all subsequent
+configuration changes. The configuration is sent to the Pulp server as a JSON document through its
+REST APIs and will be deserialized before being passed to the plugin.
+
+This call must ensure the configuration to be used when running the plugin will be valid
+for the repository. If this call indicates an invalid configuration, the plugin will
+not be added to the repository (for the add call) or the configuration changes
+will not be saved to the database (for the update configuration call).
+
+The docstring for the method describes the format of the returned value.
+
+Format
+^^^^^^
+
 Each call into a plugin passes the configuration the call should use for its execution.
 The configuration is contained in a ``pulp.plugins.config.PluginCallConfiguration`` instance.
 This object is a wrapper on top of the three different locations a configuration value
@@ -44,6 +66,25 @@ In many cases, these methods can be ignored. The default implementation will not
 error. Their usage is typically to perform any initialization in the plugin's
 :ref:`working directory <working_directories>` that is necessary before the first plugin
 operation is invoked.
+
+
+.. _plugin_metadata:
+
+Metadata Method
+---------------
+
+Both types of plugins require a metadata method to be overridden from the base class. The
+``metadata()`` method is responsible for providing Pulp with information on how the
+plugin works. The following information must be returned from the metadata call. The docstring
+for the method describes the format of the returned value.
+
+* **ID** - Unique ID that is used to refer to this type of plugin. This must be unique
+  for all plugins installed in the Pulp server.
+* **Display Name** - User-friendly description of what the plugin does.
+* **Supported Types** - List of IDs for all content types that may be handled by the plugin.
+  If there is no type definition found for any of the IDs referenced here, the server will
+  fail to start.
+
 
 
 .. _conduits:

@@ -45,41 +45,14 @@ importer to work:
 Metadata
 ^^^^^^^^
 
-The ``metadata`` method is responsible for providing Pulp with information on how the
-plugin works. The following information must be returned from the metadata call. The docstring
-for the method describes the format of the returned value.
-
-* **ID** - Unique ID that is used to refer to this type of importer. This must be unique
-  for all importers installed in the Pulp server.
-* **Display Name** - User-friendly description of what the does.
-* **Supported Types** - List of IDs for all content types that may be handled by the importer.
-  If there is no type definition found for any of the IDs referenced here, the server will
-  fail to start.
+The importer implementation must implement the ``metadata`` method as
+:ref:`described here <plugin_metadata>`.
 
 Configuration Validation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is up to the plugin writer to determine what configuration values are necessary for an
-importer.
-
-Pulp performs no validation on the configuration for an importer. The ``validate_config``
-method in the ``Importer`` subclass is used to verify the user-entered values for a repository.
-This is called when the importer is first added to the repository and on all subsequent
-configuration changes. The configuration is sent to the Pulp server as a JSON document through its
-REST APIs and will be deserialized before being passed to the importer.
-
-This call must ensure the configuration to be used when running the importer will be valid
-for the repository. If this call indicates an invalid configuration, the importer will
-not be added to the repository (for the add importer call) or the configuration changes
-will not be saved to the database for an update call (for the update configuration call).
-
-The docstring for the method describes the format of the returned value.
-
-.. note::
-  The configuration is specified to this call in a ``PluginCallConfiguration`` instance
-  as described in the :ref:`plugin_config` section. However, there will never be
-  an override configuration in this object; this call's purpose is to validate the
-  repository-level and plugin-level configurations.
+The importer implementation must implement the ``validate_config`` method as
+:ref:`described here <plugin_config>`.
 
 
 Functionality
