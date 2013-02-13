@@ -52,7 +52,7 @@ class ConsumerContentInstallSection(PulpCliSection):
 
 class ConsumerContentInstallCommand(PollingCommand):
 
-    def __init__(self, context, name=None, description=None):
+    def __init__(self, context, name=None, description=None, progress_tracker=None):
         name = name or 'run'
         description = description or _('triggers an immediate content unit install on the consumer')
         super(self.__class__, self).__init__(name, description, self.run, context)
@@ -65,8 +65,8 @@ class ConsumerContentInstallCommand(PollingCommand):
         self.add_flag(FLAG_REBOOT)
         self.add_flag(FLAG_IMPORT_KEYS)
 
+        self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
-        self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -129,7 +129,7 @@ class ConsumerContentUpdateSection(PulpCliSection):
 
 class ConsumerContentUpdateCommand(PollingCommand):
 
-    def __init__(self, context, name=None, description=None):
+    def __init__(self, context, name=None, description=None, progress_tracker=None):
         name = name or 'run'
         description = description or _('triggers an immediate content unit update on a consumer')
         super(self.__class__, self).__init__(name, description, self.run, context)
@@ -143,8 +143,8 @@ class ConsumerContentUpdateCommand(PollingCommand):
         self.add_flag(FLAG_IMPORT_KEYS)
         self.add_flag(FLAG_ALL_CONTENT)
 
+        self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
-        self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -222,7 +222,7 @@ class ConsumerContentUninstallSection(PulpCliSection):
 
 class ConsumerContentUninstallCommand(PollingCommand):
 
-    def __init__(self, context, name=None, description=None):
+    def __init__(self, context, name=None, description=None, progress_tracker=None):
         name = name or 'run'
         description = description or _('triggers an immediate content unit removal on a consumer')
         super(self.__class__, self).__init__(name, description, self.run, context)
@@ -234,8 +234,8 @@ class ConsumerContentUninstallCommand(PollingCommand):
         self.add_flag(FLAG_NO_COMMIT)
         self.add_flag(FLAG_REBOOT)
 
+        self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
-        self.progress_tracker = ConsumerContentProgressTracker(context.prompt)
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
