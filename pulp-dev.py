@@ -114,12 +114,12 @@ LINKS = (
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
     # Citrus (all)
-    ('citrus/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
-    ('citrus/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
-    ('citrus/plugins/distributors/citrus_http_distributor', DIR_PLUGINS + '/distributors/citrus_http_distributor'),
-    ('citrus/plugins/importers/citrus_http_importer', DIR_PLUGINS + '/importers/citrus_http_importer'),
-    ('citrus/plugins/types/citrus.json', DIR_PLUGINS + '/types/citrus.json'),
-    ('citrus/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
+    ('nodes/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
+    ('nodes/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
+    ('nodes/plugins/distributors/citrus_http_distributor', DIR_PLUGINS + '/distributors/citrus_http_distributor'),
+    ('nodes/plugins/importers/citrus_http_importer', DIR_PLUGINS + '/importers/citrus_http_importer'),
+    ('nodes/plugins/types/citrus.json', DIR_PLUGINS + '/types/citrus.json'),
+    ('nodes/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
 )
 
 def parse_cmdline():
