@@ -35,9 +35,10 @@ from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
 
-
 log = getLogger(__name__)
-plugin = Plugin.find(__name__)
+# I am assuming that the argument to find() should only be the last portion of
+# the full python path
+plugin = Plugin.find(__name__.rsplit('.', 1)[-1])
 dispatcher = Dispatcher()
 cfg = plugin.cfg()
 
@@ -93,8 +94,13 @@ class Conduit(HandlerConduit):
     # get consumer ID
     @property
     def consumer_id(self):
-        bundle = Bundle()
-        return bundle.cn()
+        """
+        Get the current consumer ID
+
+        :return: The unique consumer ID of the currently running agent
+        :rtype:  str
+        """
+        return Bundle().cn()
 
     def get_consumer_config(self):
         """

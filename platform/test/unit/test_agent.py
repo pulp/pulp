@@ -1,0 +1,32 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2013 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+from logging import StreamHandler
+import unittest
+
+import mock
+
+#from pulp.common.bundle import Bundle
+
+
+class TestConduit(unittest.TestCase):
+    @mock.patch('gofer.agent.logutil.getLogger')
+    #@mock.patch.object(Bundle, 'cn')
+    def test_consumer_id(self, mock_get_logger):
+        mock_get_logger.return_value = StreamHandler(mock.MagicMock())
+        from pulp.agent.gofer.pulpplugin import Conduit
+        #mock_cn.return_value = 'consumer1'
+
+        #consumer_id = Conduit().consumer_id()
+        #self.assertEqual(consumer_id, mock_cn.return_value)
+
