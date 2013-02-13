@@ -329,13 +329,15 @@ def processFile(filename, relativeDir=None):
     hash['provides'] = [(p,) for p in h['provides']]
 
     hash['size'] = h['size']
-    hash['buildhost'] = h['buildhost']
-    hash['license'] = h['license']
-    hash['group'] = h['group']
-    hash['vendor'] = h['vendor']
+    hash['buildhost'] = encode_string_to_utf8(h['buildhost'])
+    hash['license'] = encode_string_to_utf8(h['license'])
+    hash['group'] = encode_string_to_utf8(h['group'])
+    hash['vendor'] = encode_string_to_utf8(h['vendor'])
     return hash
 
 def encode_string_to_utf8(data):
+    if not data:
+        return data
     ENCODING_LIST = ['iso-8859-1', ]
     encoded_data = None
     for code in ENCODING_LIST:
