@@ -17,13 +17,17 @@ class DownloadRequest(object):
     Representation of a request for a file download.
     """
 
-    def __init__(self, url, file_path):
+    def __init__(self, url, destination):
         """
-        :param url: url of the file to be downloaded
-        :type url: str
-        :param file_path: local path to the downloaded file
-        :type file_path: str
+        :param url:         url of the file to be downloaded
+        :type  url:         str
+        :param destination: specifies where the downloader should store the contents of the URL
+                            once they are retrieved. You can provide either a file-system path for
+                            this parameter, or an open file-like object. If you provide a file-like
+                            object, it is your responsibility to close the file after the download
+                            is finished.
+        :type  destination: str or file-like object
         """
 
-        self.url = url
-        self.file_path = file_path
+        self.url         = url
+        self.destination = destination
