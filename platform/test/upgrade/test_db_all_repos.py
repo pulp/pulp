@@ -85,10 +85,10 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
     def setUp(self):
         super(self.__class__, self).setUp()
 
-        self.v1_repo_1_id = 'errata-repo'
+        self.v1_repo_1_id = 'first-scheduled-repo'
         self.v1_repo_1_schedule = 'PT30M'
 
-        self.v1_repo_2_id = 'pulp-v1-17-64'
+        self.v1_repo_2_id = 'second-scheduled-repo'
         self.v1_repo_2_schedule = 'R6/2012-01-01T00:00:00Z/P21DT'
 
         repositories = (self.v1_repo_1_id, self.v1_repo_2_id)
@@ -98,24 +98,24 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
 
         # The v2 repository's importer needs to exist in the database otherwise
         # the schedule sanity check will fail
-        self.tmp_test_db.database.repo_importers.insert({'repo_id' : self.v1_repo_1_id})
-        self.tmp_test_db.database.repo_importers.insert({'repo_id' : self.v1_repo_2_id})
+        self.tmp_test_db.database.repo_importers.insert({'repo_id' : self.v1_repo_1_id, 'scheduled_syncs': []})
+        self.tmp_test_db.database.repo_importers.insert({'repo_id' : self.v1_repo_2_id, 'scheduled_syncs': []})
 
     def _insert_scheduled_v1_repo(self, repo_id, schedule):
-        doc = {'sync_schedule': schedule,
+        doc = {'id': repo_id,
+               'sync_schedule': schedule,
                'sync_options': None,
                'last_sync': None}
-        self.v1_test_db.database.repos.update({'_id': repo_id}, {'$set': doc}, safe=True)
+        self.v1_test_db.database.repos.insert(doc, safe=True)
 
     def _insert_scheduled_v2_repo(self, repo_id, schedule):
         importer_id = ObjectId()
         schedule_id = ObjectId()
 
-        importer_doc = {'repo_id': repo_id,
-                        'importer_id': importer_id,
+        importer_doc = {'importer_id': importer_id,
                         'importer_type_id': yum_repos.YUM_IMPORTER_TYPE_ID,
                         'scheduled_syncs': [str(schedule_id)]}
-        self.tmp_test_db.database.repo_importers.insert(importer_doc, safe=True)
+        self.tmp_test_db.database.repo_importers.update({'repo_id': repo_id}, {'$set': importer_doc}, safe=True)
 
         call_request = CallRequest(sync_with_auto_publish_itinerary, [repo_id], {'overrides': {}})
         interval, start, recurrences = dateutils.parse_iso8601_interval(schedule)
@@ -136,12 +136,28 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
     @mock.patch('pulp.server.managers.auth.principal.PrincipalManager.get_principal', SystemUser)
     @mock.patch('pulp.server.managers.factory.principal_manager', PrincipalManager)
     def test_schedule_upgrade(self):
+        v1_schedules = self.v1_test_db.database.repos.find({'sync_schedule': {'$ne': None}})
+        self.assertEqual(v1_schedules.count(), 2)
+
+        scheduled_calls = self.tmp_test_db.database.scheduled_calls.find({})
+        self.assertEqual(scheduled_calls.count(), 0)
+
         report = all_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
         self.assertTrue(report.success)
+
+        scheduled_calls = self.tmp_test_db.database.scheduled_calls.find({})
+        self.assertEqual(scheduled_calls.count(), 2)
 
     @mock.patch('pulp.server.managers.auth.principal.PrincipalManager.get_principal', SystemUser)
     @mock.patch('pulp.server.managers.factory.principal_manager', PrincipalManager)
     def test_schedule_upgrade_idempotency(self):
         self._insert_scheduled_v2_repo(self.v1_repo_1_id, self.v1_repo_1_schedule)
+
+        scheduled_calls = self.tmp_test_db.database.scheduled_calls.find({})
+        self.assertEqual(scheduled_calls.count(), 1)
+
         report = all_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
         self.assertTrue(report.success)
+
+        scheduled_calls = self.tmp_test_db.database.scheduled_calls.find({})
+        self.assertEqual(scheduled_calls.count(), 2)
