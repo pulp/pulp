@@ -112,6 +112,7 @@ cp -R srv %{buildroot}
 cp etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
 
 # Agent
+rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp etc/gofer/plugins/pulp.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
 cp -R src/pulp/agent/gofer/pulp.py %{buildroot}/%{_libdir}/gofer/plugins
 ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
@@ -178,7 +179,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %files server
 # root
 %defattr(-,root,root,-)
-%{python_sitelib}/%{name}
+%{python_sitelib}/%{name}/server/
+%{python_sitelib}/%{name}/plugins/
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
@@ -213,9 +215,10 @@ A collection of components that are common between the pulp server and client.
 
 %files -n python-pulp-common
 %defattr(-,root,root,-)
+%dir %{_usr}/lib/%{name}
+%dir %{python_sitelib}/%{name}
 %{python_sitelib}/%{name}/__init__.*
 %{python_sitelib}/%{name}/common/
-%dir %{_usr}/lib/%{name}
 %doc
 
 
@@ -270,8 +273,7 @@ for content, bind and system specific operations.
 
 %files -n python-pulp-agent-lib
 %defattr(-,root,root,-)
-%{python_sitelib}/%{name}/agent/*.py
-%{python_sitelib}/%{name}/agent/lib/
+%{python_sitelib}/%{name}/agent/
 %dir %{_sysconfdir}/%{name}/agent
 %dir %{_sysconfdir}/%{name}/agent/conf.d
 %dir %{_usr}/lib/%{name}/agent
