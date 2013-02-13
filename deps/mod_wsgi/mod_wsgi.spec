@@ -1,6 +1,6 @@
 Name:           mod_wsgi
-Version:        3.3
-Release:        4.pulp%{?dist}
+Version:        3.4
+Release:        1.pulp%{?dist}
 Summary:        A WSGI interface for Python web applications in Apache
 
 Group:          System Environment/Libraries
@@ -54,6 +54,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Feb 12 2013 Sayli Karmarkar <skarmark@redhat.com> 3.4-1.pulp
+- Moving to mod_wsgi-3.4 from 3.3 and removing patches which already have been
+  backported in 3.4 (skarmark@redhat.com)
+
 * Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 3.3-4.pulp
 - Renamed dependency RPMs (jason.dobies@redhat.com)
 
