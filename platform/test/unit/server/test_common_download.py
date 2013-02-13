@@ -313,7 +313,6 @@ class LiveCurlDownloadTests(DownloadTests):
         # The destination_file should be safe to close now (This actually does test that the
         # downloader hasn't already closed the file, because closing a file twice is an error.)
         destination_file.close()
-        print destination_file_data
         self.assertEqual(len(destination_file_data), len(expected_data))
         self.assertEqual(destination_file_data, expected_data)
 
