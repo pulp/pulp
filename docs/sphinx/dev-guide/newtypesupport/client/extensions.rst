@@ -179,7 +179,7 @@ For one-off testing purposes, the code for an extension can be placed directly
 in a specific directory without the need to install to site-packages. The entry
 point method described above is the preferred way to integrate new extensions:
 
-* Create directory in ``/var/lib/pulp/client/*/extensions/``.
+* Create directory in ``/usr/lib/pulp/admin/extensions/`` or ``/usr/lib/pulp/consumer/extensions/``
 * Add ``__init__.py`` to created directory.
 * Add ``pulp_cli.py`` or ``pulp_shell.py`` as appropriate.
 * In the above module, add a ``def initialize(context)`` method.
