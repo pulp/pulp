@@ -316,7 +316,6 @@ class LiveCurlDownloadTests(DownloadTests):
         print destination_file_data
         self.assertEqual(len(destination_file_data), len(expected_data))
         self.assertEqual(destination_file_data, expected_data)
-        pass
 
     def test_download_single(self):
         config = DownloaderConfig('http')
