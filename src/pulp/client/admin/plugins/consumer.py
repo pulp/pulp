@@ -63,15 +63,15 @@ class List(ConsumerAdminAction):
         # BY KEY ONLY
         if value is None:
             print _("Consumers with key : %s") % key
-            for con in cons:
-                key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
+            for cons in all:
+                key_value_pairs = self.consumer_api.get_keyvalues(cons["id"])
                 if key in key_value_pairs.keys():
                     Info.print_consumer(self.consumer_api, cons)
             system_exit(os.EX_OK)
         # BY KEY & VALUE
         print _("Consumers with %s : %s") % (key, value)
-        for con in cons:
-            key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
+        for cons in all:
+            key_value_pairs = self.consumer_api.get_keyvalues(cons["id"])
             if (key in key_value_pairs.keys()) and (key_value_pairs[key] == value):
                 Info.print_consumer(self.consumer_api, cons)
             system_exit(os.EX_OK)

@@ -272,7 +272,7 @@ def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=Non
 class FileError(Exception):
     pass
 
-def processFile(filename, relativeDir=None):
+def processFile(filename, hashtype="sha256", relativeDir=None):
     # Is this a file?
     if not os.access(filename, os.R_OK):
         raise FileError("Could not stat the file %s" % filename)
@@ -288,7 +288,7 @@ def processFile(filename, relativeDir=None):
             os.path.basename(filename))
     else:
         hash["relativePath"] = os.path.basename(filename)
-    hash['hashtype'] = "sha256" # we enforce sha256 as default checksum
+    hash['hashtype'] = hashtype
     hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
     hash['pkgname'] = os.path.basename(filename)
     # Read the header
@@ -329,13 +329,15 @@ def processFile(filename, relativeDir=None):
     hash['provides'] = [(p,) for p in h['provides']]
 
     hash['size'] = h['size']
-    hash['buildhost'] = h['buildhost']
-    hash['license'] = h['license']
-    hash['group'] = h['group']
-    hash['vendor'] = h['vendor']
+    hash['buildhost'] = encode_string_to_utf8(h['buildhost'])
+    hash['license'] = encode_string_to_utf8(h['license'])
+    hash['group'] = encode_string_to_utf8(h['group'])
+    hash['vendor'] = encode_string_to_utf8(h['vendor'])
     return hash
 
 def encode_string_to_utf8(data):
+    if not data:
+        return data
     ENCODING_LIST = ['iso-8859-1', ]
     encoded_data = None
     for code in ENCODING_LIST:
