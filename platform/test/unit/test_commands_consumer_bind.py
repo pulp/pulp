@@ -55,7 +55,7 @@ class BindCommandTests(base.PulpClientTests):
         expected_options = set((OPTION_CONSUMER_ID, OPTION_REPO_ID, consumer_bind.OPTION_DISTRIBUTOR_ID))
         self.assertEqual(found_options, expected_options)
 
-        self.assertEqual(self.command.bind, self.command.method)
+        self.assertEqual(self.command.run, self.command.method)
         self.assertEqual(self.command.name, 'bind')
 
     def test_bind(self):
@@ -66,7 +66,7 @@ class BindCommandTests(base.PulpClientTests):
             OPTION_REPO_ID.keyword: 'test-repo',
             consumer_bind.OPTION_DISTRIBUTOR_ID.keyword: 'yum-distributor'}
 
-        self.command.bind(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'POST')
@@ -92,7 +92,7 @@ class UnbindCommandTests(base.PulpClientTests):
         expected_options = set((OPTION_CONSUMER_ID, OPTION_REPO_ID, consumer_bind.OPTION_DISTRIBUTOR_ID, consumer_bind.FLAG_FORCE))
         self.assertEqual(found_options, expected_options)
 
-        self.assertEqual(self.command.unbind, self.command.method)
+        self.assertEqual(self.command.run, self.command.method)
 
         self.assertEqual(self.command.name, 'unbind')
 
@@ -105,7 +105,7 @@ class UnbindCommandTests(base.PulpClientTests):
             consumer_bind.OPTION_DISTRIBUTOR_ID.keyword: 'yum-distributor',
             consumer_bind.FLAG_FORCE.keyword: None}
 
-        self.command.unbind(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'DELETE')

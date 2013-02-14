@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import os
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
@@ -27,15 +28,17 @@ class ConsumerBindCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'bind'
         description = description or _('binds a consumer to a repository')
-        super(self.__class__, self).__init__(name, description, self.bind)
+        super(self.__class__, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self.add_option(OPTION_DISTRIBUTOR_ID)
 
         self.context = context
 
-    def bind(self, **kwargs):
+    def _add_distributor_option(self):
+        self.add_option(OPTION_DISTRIBUTOR_ID)
+
+    def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
@@ -46,19 +49,26 @@ class ConsumerBindCommand(PulpCliCommand):
         except NotFoundException, e:
             resources = e.extra_data['resources']
             missing = []
-            msg = _('%(t)s [%(i)s] does not exists on the server')
+            msg = _('%(t)s [ %(i)s ] does not exist on the server')
+
             if 'consumer' in resources:
                 missing.append((_('Consumer'), consumer_id))
+
             if 'repository' in resources:
                 missing.append((_('Repository'), repo_id))
+
             if 'distributor' in resources:
                 missing.append((_('Distributor'), distributor_id))
+
             for option_title, option_id in missing:
-                self.context.prompt.write(msg % {'t': option_title, 'i': option_id}, tag='not-found')
+                self.context.prompt.render_failure_message(msg % {'t': option_title, 'i': option_id}, tag='not-found')
+
+            return os.EX_DATAERR
 
         else:
             msg = _('Bind tasks successfully created:')
             self.context.prompt.render_success_message(msg)
+
             task_dicts = [dict(('task_id', str(t.task_id))) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
 
@@ -71,17 +81,20 @@ class ConsumerUnbindCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'unbind'
         description = description or _('removes the binding between a consumer and a repository')
-        super(self.__class__, self).__init__(name, description, self.unbind)
+        super(self.__class__, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self.add_option(OPTION_DISTRIBUTOR_ID)
+        self._add_distributor_option()
 
         self.add_flag(FLAG_FORCE)
 
         self.context = context
 
-    def unbind(self, **kwargs):
+    def _add_distributor_option(self):
+        self.add_option(OPTION_DISTRIBUTOR_ID)
+
+    def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
@@ -91,7 +104,7 @@ class ConsumerUnbindCommand(PulpCliCommand):
             response = self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
 
         except NotFoundException:
-            msg = _('Binding [consumer: %(c)s, repository: %(r)s] does not exist on the server')
+            msg = _('Binding [ consumer: %(c)s, repository: %(r)s ] does not exist on the server')
             self.context.prompt.write(msg % {'c': consumer_id, 'r': repo_id}, tag='not-found')
 
         else:
@@ -105,5 +118,5 @@ class ConsumerUnbindCommand(PulpCliCommand):
 OPTION_DISTRIBUTOR_ID = PulpCliOption('--distributor-id', DESC_ID, required=True)
 
 FLAG_FORCE = PulpCliFlag('--force',
-                         _('delete the binding immediately and discontinue tracking consumer actions'))
+                         _('delete the binding immediately without tracking the progress'))
 
