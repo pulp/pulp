@@ -62,7 +62,7 @@ class ListCommandTests(base.PulpClientTests):
                                 consumer_query.FLAG_DETAILS))
         self.assertEqual(found_options, expected_options)
 
-        self.assertEqual(self.command.method, self.command.list)
+        self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'list')
 
     def test_list(self):
@@ -72,7 +72,7 @@ class ListCommandTests(base.PulpClientTests):
                   consumer_query.FLAG_BINDINGS.keyword: True,
                   consumer_query.FLAG_DETAILS.keyword: False}
 
-        self.command.list(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'GET')
@@ -90,7 +90,7 @@ class SearchCommandTests(base.PulpClientTests):
         self.command = consumer_query.ConsumerSearchCommand(self.context)
 
     def test_structure(self):
-        self.assertEqual(self.command.method, self.command.search)
+        self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'search')
 
     def test_search(self):
@@ -98,7 +98,7 @@ class SearchCommandTests(base.PulpClientTests):
 
         kwargs = {}
 
-        self.command.search(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'POST')
@@ -117,7 +117,7 @@ class HistoryCommandTests(base.PulpClientTests):
                                 consumer_query.OPTION_START_DATE, consumer_query.OPTION_END_DATE))
         self.assertEqual(found_options, expected_options)
 
-        self.assertEqual(self.command.method, self.command.history)
+        self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'history')
 
     def test_history(self):
@@ -130,7 +130,7 @@ class HistoryCommandTests(base.PulpClientTests):
                   consumer_query.OPTION_START_DATE.keyword: '2013-02-14',
                   consumer_query.OPTION_END_DATE.keyword: None}
 
-        self.command.history(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'GET')
