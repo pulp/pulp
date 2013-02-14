@@ -62,7 +62,7 @@ class UnregisterCommand(base.PulpClientTests):
         expected_options = set((OPTION_CONSUMER_ID,))
         self.assertEqual(found_options, expected_options)
 
-        self.assertEqual(self.command.method, self.command.unregister)
+        self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'unregister')
 
     def test_unregister(self):
@@ -70,7 +70,7 @@ class UnregisterCommand(base.PulpClientTests):
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer'}
 
-        self.command.unregister(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'DELETE')
@@ -91,7 +91,7 @@ class UpdateCommandTests(base.PulpClientTests):
         expected_options = set((OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES))
         self.assertEqual(found_options, expected_options)
 
-        self.assertEqual(self.command.method, self.command.update)
+        self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'update')
 
     def test_update(self):
@@ -102,7 +102,7 @@ class UpdateCommandTests(base.PulpClientTests):
                   OPTION_DESCRIPTION.keyword: 'Consumer for testing',
                   OPTION_NOTES.keyword: ['a=a', 'b=b']}
 
-        self.command.update(**kwargs)
+        self.command.run(**kwargs)
 
         self.assertEqual(self.server_mock.request.call_count, 1)
         self.assertEqual(self.server_mock.request.call_args[0][0], 'PUT')

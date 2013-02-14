@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import os
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
@@ -28,7 +29,7 @@ class ConsumerRegisterCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'register'
         description = description or _('')
-        super(self.__class__, self).__init__(name, description, self.register)
+        super(self.__class__, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
@@ -37,7 +38,11 @@ class ConsumerRegisterCommand(PulpCliCommand):
 
         self.context = context
 
-    def register(self, **kwargs):
+    def run(self, **kwargs):
+        """
+        Currently there is no implementation of this command as there seems to
+        be too much client-side work that needs to get done.
+        """
         pass
 
 
@@ -49,13 +54,13 @@ class ConsumerUnregisterCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'unregister'
         description = description or _('unregisters a consumer')
-        super(self.__class__, self).__init__(name, description, self.unregister)
+        super(self.__class__, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
 
         self.context = context
 
-    def unregister(self, **kwargs):
+    def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
 
         try:
@@ -67,7 +72,7 @@ class ConsumerUnregisterCommand(PulpCliCommand):
 
         else:
             msg = _('Consumer [ %(c)s ] successfully unregistered') % {'c': consumer_id}
-            self.context.prompt.write(msg)
+            self.context.prompt.render_success_message(msg)
 
 
 class ConsumerUpdateCommand(PulpCliCommand):
@@ -78,7 +83,7 @@ class ConsumerUpdateCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'update'
         description = description or _('changes metadata on an existing consumer')
-        super(self.__class__, self).__init__(name, description, self.update)
+        super(self.__class__, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
@@ -87,7 +92,7 @@ class ConsumerUpdateCommand(PulpCliCommand):
 
         self.context = context
 
-    def update(self, **kwargs):
+    def run(self, **kwargs):
         delta = dict((k, v) for k, v in kwargs.items() if v is not None)
         consumer_id = delta.pop(OPTION_CONSUMER_ID.keyword)
 
@@ -104,10 +109,11 @@ class ConsumerUpdateCommand(PulpCliCommand):
 
         except NotFoundException:
             msg = _('Consumer [ %(c)s ] does not exist on server') % {'c': consumer_id}
-            self.context.prompt.write(msg)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
         else:
             msg = _('Consumer [ %(c)s ] successfully updated') % {'c': consumer_id}
-            self.context.prompt.write(msg)
+            self.context.prompt.render_success_message(msg)
 
 
