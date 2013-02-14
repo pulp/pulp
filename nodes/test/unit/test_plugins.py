@@ -77,9 +77,9 @@ class PluginTestBase(WebTest):
 
     def setUp(self):
         WebTest.setUp(self)
-        self.upfs = self.tmpdir('upstream-')
-        self.downfs = self.tmpdir('downstream-')
-        self.alias = (self.upfs, self.upfs)
+        self.parentfs = self.tmpdir('parent-')
+        self.childfs = self.tmpdir('child-')
+        self.alias = (self.parentfs, self.parentfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
         Repo.get_collection().remove()
@@ -97,8 +97,8 @@ class PluginTestBase(WebTest):
 
     def tearDown(self):
         WebTest.tearDown(self)
-        shutil.rmtree(self.upfs)
-        shutil.rmtree(self.downfs)
+        shutil.rmtree(self.parentfs)
+        shutil.rmtree(self.childfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
         Repo.get_collection().remove()
@@ -109,8 +109,8 @@ class PluginTestBase(WebTest):
 
     def populate(self):
         # make content/ dir.
-        os.makedirs(os.path.join(self.upfs, 'content'))
-        pulp_conf.set('server', 'storage_dir', self.upfs)
+        os.makedirs(os.path.join(self.parentfs, 'content'))
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
         # create repo
         manager = managers.repo_manager()
         manager.create_repo(self.REPO_ID)
@@ -146,12 +146,12 @@ class PluginTestBase(WebTest):
             units.append(unit)
         # CA
         self.units = units
-        path = os.path.join(self.upfs, 'ca.crt')
+        path = os.path.join(self.parentfs, 'ca.crt')
         fp = open(path, 'w+')
         fp.write(self.CA_CERT)
         fp.close()
         # client cert
-        path = os.path.join(self.upfs, 'local.crt')
+        path = os.path.join(self.parentfs, 'local.crt')
         fp = open(path, 'w+')
         fp.write(self.CLIENT_CERT)
         fp.close()
@@ -167,8 +167,8 @@ class PluginTestBase(WebTest):
     def dist_conf_with_ssl(self):
         ssl = {
             'client_cert':{
-                'local':os.path.join(self.upfs, 'local.crt'),
-                'child':os.path.join(self.downfs, 'parent', 'client.crt')
+                'local':os.path.join(self.parentfs, 'local.crt'),
+                'child':os.path.join(self.childfs, 'parent', 'client.crt')
             }
         }
         d = self.dist_conf()
@@ -181,7 +181,7 @@ class TestDistributor(PluginTestBase):
     def test_payload(self):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.upfs)
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
         # Test
         dist = NodesHttpDistributor()
         repo = Repository(self.REPO_ID)
@@ -192,7 +192,7 @@ class TestDistributor(PluginTestBase):
     def test_payload_with_ssl(self):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.upfs)
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
         # Test
         dist = NodesHttpDistributor()
         repo = Repository(self.REPO_ID)
@@ -203,7 +203,7 @@ class TestDistributor(PluginTestBase):
     def test_publish(self):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.upfs)
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
         # Test
         dist = NodesHttpDistributor()
         repo = Repository(self.REPO_ID)
@@ -231,7 +231,7 @@ class ImporterTest(PluginTestBase):
     def test_import(self):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.upfs)
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
         dist = NodesHttpDistributor()
         repo = Repository(self.REPO_ID)
         cfg = {
@@ -281,11 +281,11 @@ class BadBatch(Batch):
 
 class TestAgentPlugin(PluginTestBase):
 
-    PULP_ID = 'downstream'
+    PULP_ID = 'child'
 
     def populate(self, ssl=False):
         PluginTestBase.populate(self)
-        # register downstream
+        # register child
         manager = managers.consumer_manager()
         manager.register(self.PULP_ID)
         manager = managers.repo_importer_manager()
@@ -332,8 +332,8 @@ class TestAgentPlugin(PluginTestBase):
         protocol = distributor['config']['protocol']
         self.assertEqual(protocol, 'file')
         alias = distributor['config'][protocol]['alias']
-        self.assertEqual(alias[0], self.upfs)
-        self.assertEqual(alias[1], self.upfs)
+        self.assertEqual(alias[0], self.parentfs)
+        self.assertEqual(alias[1], self.parentfs)
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
@@ -348,7 +348,7 @@ class TestAgentPlugin(PluginTestBase):
             self.assertEqual(unit['repo_id'], self.REPO_ID)
             self.assertEqual(unit['owner_id'], HTTP_IMPORTER)
             file = '.'.join((unit_id, self.UNIT_TYPE_ID))
-            self.assertEqual(storage_path, os.path.join(self.downfs, 'content', file))
+            self.assertEqual(storage_path, os.path.join(self.childfs, 'content', file))
             self.assertTrue(os.path.exists(storage_path))
             fp = open(storage_path)
             content = fp.read()
@@ -364,7 +364,7 @@ class TestAgentPlugin(PluginTestBase):
         File system tree (example):
 
             nodes/
-            ├── downstream-2BUtUa
+            ├── child-2BUtUa
             │   ├── content
             │   │   └── test_unit.rpm
             │   └── working
@@ -375,12 +375,12 @@ class TestAgentPlugin(PluginTestBase):
             │               └── importers
             │                   └── nodes_http_importer
             ├── storage
-            └── upstream-SgASM7
+            └── Parent-SgASM7
                 ├── content
                 │   └── test_unit.rpm
                 ├── test-repo
                 │   ├── content
-                │   │   └── 3ae69ea97c -> /tmp/pulp/nodes/upstream-SgASM7/content/test_unit.rpm
+                │   │   └── 3ae69ea97c -> /tmp/pulp/nodes/Parent-SgASM7/content/test_unit.rpm
                 │   └── units.json
                 └── working
                     └── repos
@@ -394,21 +394,21 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Local.binding', binding)
-        @patch('pulp_node.handlers.strategies.Remote.binding', binding)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
-            pulp_conf.set('server', 'storage_dir', self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = dict(all=True)
             units = [{'type_id':'node', 'unit_key':None}]
-            pulp_conf.set('server', 'storage_dir', self.downfs)
-            container = Container(self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
@@ -440,21 +440,21 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Local.binding', binding)
-        @patch('pulp_node.handlers.strategies.Remote.binding', binding)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
-            pulp_conf.set('server', 'storage_dir', self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = dict(strategy='additive')
             units = [{'type_id':'node', 'unit_key':None}]
-            pulp_conf.set('server', 'storage_dir', self.downfs)
-            container = Container(self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
@@ -493,13 +493,13 @@ class TestAgentPlugin(PluginTestBase):
         self.clean = self.clean_units
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Local.binding', binding)
-        @patch('pulp_node.handlers.strategies.Remote.binding', binding)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate(ssl=True)
-            pulp_conf.set('server', 'storage_dir', self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, HTTP_DISTRIBUTOR)
@@ -507,7 +507,7 @@ class TestAgentPlugin(PluginTestBase):
             units = []
             options = {}
             handler = NodeHandler(self)
-            pulp_conf.set('server', 'storage_dir', self.downfs)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
             report = handler.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
@@ -527,7 +527,7 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['add_failed']), 0)
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
-        path = os.path.join(self.downfs, 'parent', 'client.crt')
+        path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
@@ -540,14 +540,14 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Local.binding', binding)
-        @patch('pulp_node.handlers.strategies.Remote.binding', binding)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
         @patch('pulp_node.importers.strategies.Batch', BadBatch)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
-            pulp_conf.set('server', 'storage_dir', self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, HTTP_DISTRIBUTOR)
@@ -555,8 +555,8 @@ class TestAgentPlugin(PluginTestBase):
             units = []
             options = {}
             handler = NodeHandler(self)
-            pulp_conf.set('server', 'storage_dir', self.downfs)
-            os.makedirs(os.path.join(self.downfs, 'content'))
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            os.makedirs(os.path.join(self.childfs, 'content'))
             report = handler.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
@@ -588,13 +588,13 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Local.binding', binding)
-        @patch('pulp_node.handlers.strategies.Remote.binding', binding)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate()
-            pulp_conf.set('server', 'storage_dir', self.upfs)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             cfg = {
@@ -608,8 +608,8 @@ class TestAgentPlugin(PluginTestBase):
             units = []
             options = {}
             handler = NodeHandler(self)
-            pulp_conf.set('server', 'storage_dir', self.downfs)
-            os.makedirs(os.path.join(self.downfs, 'content'))
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            os.makedirs(os.path.join(self.childfs, 'content'))
             report = handler.update(Conduit(), units, options)
             _report.append(report)
         test_handler()

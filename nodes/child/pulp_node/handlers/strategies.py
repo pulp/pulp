@@ -44,7 +44,7 @@ class HandlerStrategy(object):
 
     def synchronize(self, bindings, options):
         """
-        Synchronize local repositories based on bindings.
+        Synchronize child repositories based on bindings.
         Must be overridden by subclasses.
         :param bindings: A list of consumer binding payloads.
         :type bindings: list
@@ -65,8 +65,8 @@ class HandlerStrategy(object):
     def _add_repositories(self, bindings):
         """
         Add or update repositories based on bindings.
-          - Merge repositories found BOTH upstream and locally.
-          - Add repositories found upstream but NOT locally.
+          - Merge repositories found in BOTH parent and child.
+          - Add repositories found in the parent but NOT in the child.
         :param bindings: List of bind payloads.
         :type bindings: list
         :return: A tuple of: (added, merged, failed).
@@ -85,16 +85,16 @@ class HandlerStrategy(object):
             try:
                 repo_id = bind['repo_id']
                 details = bind['details']
-                upstream = Repository(repo_id, details)
-                local = LocalRepository.fetch(repo_id)
-                if local:
+                parent = Repository(repo_id, details)
+                child = ChildRepository.fetch(repo_id)
+                if child:
                     self.progress.set_action('merge', repo_id)
-                    local.merge(upstream)
+                    child.merge(parent)
                     merged.append(repo_id)
                 else:
                     self.progress.set_action('add', repo_id)
-                    local = LocalRepository(repo_id, upstream.details)
-                    local.add()
+                    child = ChildRepository(repo_id, parent.details)
+                    child.add()
                     added.append(repo_id)
             except Exception, e:
                 msg = _('Add/Merge repository: %(r)s failed: %(e)s')
@@ -118,7 +118,7 @@ class HandlerStrategy(object):
         for repo_id in repo_ids:
             if self.cancelled:
                 break
-            repo = LocalRepository(repo_id)
+            repo = ChildRepository(repo_id)
             try:
                 strategy = options.get('strategy')
                 report = repo.run_synchronization(self.progress, strategy)
@@ -151,7 +151,7 @@ class HandlerStrategy(object):
 
     def _delete_repositories(self, bindings):
         """
-        Delete repositories found locally but NOT upstream.
+        Delete repositories found in the child but NOT in the parent.
         :param bindings: List of bind payloads.
         :type bindings: list
         :return: A tuple of: (removed, failed).
@@ -162,15 +162,15 @@ class HandlerStrategy(object):
         removed = []
         failed = []
         self.progress.push_step('purge', len(bindings))
-        upstream = [b['repo_id'] for b in bindings]
-        local = [r.repo_id for r in LocalRepository.fetch_all()]
-        for repo_id in local:
+        parent = [b['repo_id'] for b in bindings]
+        child = [r.repo_id for r in ChildRepository.fetch_all()]
+        for repo_id in child:
             if self.cancelled:
                 break
             try:
-                if repo_id not in upstream:
+                if repo_id not in parent:
                     self.progress.set_action('delete', repo_id)
-                    repo = LocalRepository(repo_id)
+                    repo = ChildRepository(repo_id)
                     repo.delete()
                     removed.append(repo_id)
             except Exception, e:
@@ -235,7 +235,7 @@ class Mirror(HandlerStrategy):
         if options.get('purge_orphans'):
             try:
                 self.progress.push_step('purge_orphans')
-                LocalRepository.purge_orphans()
+                ChildRepository.purge_orphans()
             except Exception, e:
                 msg = repr(e)
                 report.errors.append(msg)

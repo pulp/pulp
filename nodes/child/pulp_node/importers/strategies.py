@@ -86,7 +86,7 @@ class ImporterStrategy(object):
 
     def add_unit(self, unit):
         """
-        Add the specified unit to the local inventory using the conduit.
+        Add the specified unit to the child inventory using the conduit.
         The conduit will automatically associate the unit to the repository
         to which it's pre-configured.
         :param unit: The unit to be added.
@@ -105,47 +105,47 @@ class ImporterStrategy(object):
         :return: The built inventory.
         :rtype: UnitInventory
         """
-        # fetch local units
-        local = {}
+        # fetch child units
+        child = {}
         try:
-            self.progress.push_step('fetch_local')
-            units = self._units_local()
-            local.update(units)
+            self.progress.push_step('fetch_child')
+            units = self._child_units()
+            child.update(units)
             self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Fetch local units failed for repository: %(r)s')
+            msg = _('Fetch child units failed for repository: %(r)s')
             msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
-        # fetch upstream units
-        upstream = {}
+        # fetch parent units
+        parent = {}
         try:
-            self.progress.push_step('fetch_upstream')
-            units = self._units_upstream()
-            upstream.update(units)
+            self.progress.push_step('fetch_parent')
+            units = self._parent_units()
+            parent.update(units)
             self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Fetch upstream units failed for repository: %(r)s')
+            msg = _('Fetch parent units failed for repository: %(r)s')
             msg = msg % {'r':repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
-        return UnitInventory(local, upstream)
+        return UnitInventory(child, parent)
 
     def _missing_units(self, unit_inventory):
         """
-        Determine the list of units defined upstream inventory that are
-        not in the local inventory.
-        :param unit_inventory: The inventory of both upstream and local content units.
+        Determine the list of units defined parent inventory that are
+        not in the child inventory.
+        :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         :return: The list of units to be added.
-            Each item: (unit_upstream, unit_to_be_added)
+            Each item: (parent_unit, unit_to_be_added)
         :rtype: list
         """
         new_units = []
         storage_dir = pulp_conf.get('server', 'storage_dir')
-        for unit in unit_inventory.upstream_only():
+        for unit in unit_inventory.parent_only():
             unit['metadata'].pop('_id')
             unit['metadata'].pop('_ns')
             type_id = unit['type_id']
@@ -161,18 +161,18 @@ class ImporterStrategy(object):
 
     def _add_units(self, unit_inventory):
         """
-        Determine the list of units contained in the upstream inventory
-        but are not contained in the local inventory and add them.
+        Determine the list of units contained in the parent inventory
+        but are not contained in the child inventory and add them.
         For each unit, this is performed in the following steps:
           1. Download the file (if defined) associated with the unit.
-          2. Add the unit to the local inventory.
+          2. Add the unit to the child inventory.
           3. Associate the unit to the repository.
         The unit is added only:
           1. If no file is associated with unit.
           2. The file associated with the unit is successfully downloaded.
         For units with files, the unit is added to the inventory as part of the
         transport callback.
-        :param unit_inventory: The inventory of both upstream and local content units.
+        :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         :return: The list of failed that failed to be added.
             Each item is: (unit, exception)
@@ -182,19 +182,19 @@ class ImporterStrategy(object):
         units = self._missing_units(unit_inventory)
         self.progress.push_step('add_units', len(units))
         batch = Batch()
-        for unit, local_unit in units:
+        for unit, child_unit in units:
             if self.cancelled:
                 break
             download = unit.get('_download')
             # unit has no file associated
             if not download:
                 try:
-                    self.add_unit(local_unit)
+                    self.add_unit(child_unit)
                 except Exception, e:
-                    failed.append((local_unit, e))
+                    failed.append((child_unit, e))
                 continue
             url = download['url']
-            batch.add(url, local_unit)
+            batch.add(url, child_unit)
         if not self.cancelled:
             listener = DownloadListener(self, batch)
             self.downloader.event_listener = listener
@@ -204,9 +204,9 @@ class ImporterStrategy(object):
 
     def _delete_units(self, unit_inventory):
         """
-        Determine the list of units contained in the local inventory
-        but are not contained in the upstream inventory and un-associate them.
-        :param unit_inventory: The inventory of both upstream and local content units.
+        Determine the list of units contained in the child inventory
+        but are not contained in the parent inventory and un-associate them.
+        :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         :return: The list of units that failed to be un-associated.
             Each item is: (unit, exception)
@@ -214,7 +214,7 @@ class ImporterStrategy(object):
         """
         failed = []
         succeeded = []
-        units = unit_inventory.local_only()
+        units = unit_inventory.child_only()
         self.progress.push_step('purge_units', len(units))
         for unit in units:
             if self.cancelled:
@@ -227,9 +227,9 @@ class ImporterStrategy(object):
                 failed.append((unit, e))
         return failed
 
-    def _units_local(self):
+    def _child_units(self):
         """
-        Fetch the local units using the conduit.  The conduit will
+        Fetch the child units using the conduit.  The conduit will
         restrict this search to only those associated with the repository
         to which it is pre-configured.
         :return: A dictionary of units keyed by UnitKey.
@@ -238,9 +238,9 @@ class ImporterStrategy(object):
         units = self.conduit.get_units()
         return unit_dictionary(units)
 
-    def _units_upstream(self):
+    def _parent_units(self):
         """
-        Fetch the list of units published by the upstream nodes distributor.
+        Fetch the list of units published by the parent nodes distributor.
         This is performed by reading the manifest at the URL defined in
         the configuration.
         :param repo_id: The repository ID.
@@ -260,17 +260,17 @@ class ImporterStrategy(object):
 class Mirror(ImporterStrategy):
     """
     The *mirror* strategy is used to ensure that the content units associated
-    with a repository locally exactly matches the units associated with the same
-    repository upstream.  Maintains an exact mirror.
+    with a child repository exactly matches the units associated with the same
+    repository in the parent.  Maintains an exact mirror.
     """
 
     def synchronize(self, repo_id):
         """
         Performs the following steps:
-          1. Read the (upstream) manifest.
-          2. Fetch the local units associated with the repository.
+          1. Read the (parent) manifest.
+          2. Fetch the child units associated with the repository.
           3. Add missing units.
-          4. Delete units specified locally but not upstream.
+          4. Delete units specified in the child but not in the parent.
         :param repo_id: The repository ID.
         :type repo_id: str
         :return: A synchronization report.
@@ -316,16 +316,16 @@ class Mirror(ImporterStrategy):
 class Additive(ImporterStrategy):
     """
     The I{additive} strategy is used to ensure that the content units associated
-    with a repository locally contains all of the units associated with the same
-    repository upstream.  However, any units contained in the local inventory
-    that are not contained in the upstream inventory are permitted to remain.
+    with a child repository contains all of the units associated with the same
+    repository in the parent.  However, any units contained in the child inventory
+    that are not contained in the parent inventory are permitted to remain.
     """
 
     def synchronize(self, repo_id):
         """
         Performs the following steps:
-          1. Read the (upstream) manifest.
-          2. Fetch the local units associated with the repository.
+          1. Read the (parent) manifest.
+          2. Fetch the child units associated with the repository.
           3. Add missing units.
         :param repo_id: The repository ID.
         :type repo_id: str

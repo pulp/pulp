@@ -13,10 +13,10 @@
 
 """
 Provides classes representing representing the database objects contained
-in either a local or remote pulp server.  Remote objects are read-only and
-are used for querying, comparison and merging to local objects.  Local objects
+in either a parent or child pulp server.  Parent objects are read-only and
+are used for querying, comparison and merging to child objects.  Child objects
 are used for querying, comparison and merging from remote objects. Unlike remote
-objects, local objects are also used to apply changes to the local database and
+objects, child objects are also used to apply changes to the child database and
 to trigger repository synchronization. These objects cover repositories and their
 associated plugins.  Content units are not represented here.  That is the
 responsibility of the nodes importers.
@@ -70,9 +70,9 @@ class ModelError(Exception):
 # --- pulp bindings ---------------------------------------------------------------------
 
 
-class LocalPulpBindings(PulpBindings):
+class ChildPulpBindings(PulpBindings):
     """
-    Local Pulp (REST) API.
+    Child Pulp (REST) API.
     """
 
     def __init__(self):
@@ -83,9 +83,9 @@ class LocalPulpBindings(PulpBindings):
         PulpBindings.__init__(self, connection)
 
 
-class RemotePulpBindings(PulpBindings):
+class ParentPulpBindings(PulpBindings):
     """
-    Remote Pulp (REST) API.
+    Parent Pulp (REST) API.
     """
 
     def __init__(self):
@@ -120,22 +120,22 @@ class ConsumerSSLCredentialsBundle(Bundle):
 # --- model objects ---------------------------------------------------------------------
 
 
-class Local(object):
+class Child(object):
     """
-    A Local (downstream) entity.
+    A Child (local) entity.
     :cvar binding: A REST API binding.
     :type binding: PulpBindings
     """
-    binding = LocalPulpBindings()
+    binding = ChildPulpBindings()
 
 
-class Remote(object):
+class Parent(object):
     """
-    A Remote (upstream) entity.
+    A Parent (remote) entity.
     :cvar binding: A REST API binding.
     :type binding: PulpBindings
     """
-    binding = RemotePulpBindings()
+    binding = ParentPulpBindings()
 
 
 class Repository(object):
@@ -189,9 +189,9 @@ class Repository(object):
         return 'repository: %s' % self.repo_id
 
 
-class LocalRepository(Local, Repository):
+class ChildRepository(Child, Repository):
     """
-    Represents a repository associated with the local inventory.
+    Represents a repository associated with the child inventory.
     :ivar poller: A task poller used to poll for tasks status and progress.
     :type poller: TaskPoller
     """
@@ -199,8 +199,8 @@ class LocalRepository(Local, Repository):
     @classmethod
     def fetch_all(cls):
         """
-        Fetch all repositories from the local inventory.
-        :return: A list of: LocalRepository
+        Fetch all repositories from the child inventory.
+        :return: A list of: ChildRepository
         :rtype: list
         """
         all = []
@@ -217,11 +217,11 @@ class LocalRepository(Local, Repository):
     @classmethod
     def fetch(cls, repo_id):
         """
-        Fetch a specific repository from the local inventory.
+        Fetch a specific repository from the child inventory.
         :param repo_id: Repository ID.
         :type repo_id: str
         :return: The fetched repository.
-        :rtype: LocalRepository
+        :rtype: ChildRepository
         """
         details = {}
         try:
@@ -238,7 +238,7 @@ class LocalRepository(Local, Repository):
     @classmethod
     def purge_orphans(cls):
         """
-        Purge orphaned units within the local inventory.
+        Purge orphaned units within the child inventory.
         """
         http = cls.binding.content_orphan.remove_all()
         if http.response_code != httplib.ACCEPTED:
@@ -256,7 +256,7 @@ class LocalRepository(Local, Repository):
 
     def add(self):
         """
-        Add the local repository and associated plugins..
+        Add the child repository and associated plugins..
         """
         # repository
         self.binding.repo.create(
@@ -267,18 +267,18 @@ class LocalRepository(Local, Repository):
         # distributors
         for details in self.distributors:
             dist_id = details['id']
-            dist = LocalDistributor(self.repo_id, dist_id, details)
+            dist = ChildDistributor(self.repo_id, dist_id, details)
             dist.add()
         # importers
         for details in self.importers:
             imp_id = details['id']
-            importer = LocalImporter(self.repo_id, imp_id, details)
+            importer = ChildImporter(self.repo_id, imp_id, details)
             importer.add()
         log.info('Repository: %s, added', self.repo_id)
 
     def update(self, delta):
         """
-        Update this local repository.
+        Update this child repository.
         :param delta: The properties that need to be updated.
         :type delta: dict
         """
@@ -287,107 +287,107 @@ class LocalRepository(Local, Repository):
 
     def delete(self):
         """
-        Delete the local repository.
+        Delete the child repository.
         """
         self.binding.repo.delete(self.repo_id)
         log.info('Repository: %s, deleted', self.repo_id)
 
-    def merge(self, remote):
+    def merge(self, parent):
         """
-        Merge remote repositories.
+        Merge parent repositories.
           1. Determine the delta and update the repository properties.
           2. Merge importers
           3. Merge distributors
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
         delta = {}
-        for k,v in remote.basic_properties.items():
+        for k,v in parent.basic_properties.items():
             if self.basic_properties.get(k) != v:
                 self.basic_properties[k] = v
                 delta[k] = v
         if delta:
             self.update(delta)
-        self.merge_importers(remote)
-        self.merge_distributors(remote)
+        self.merge_importers(parent)
+        self.merge_distributors(parent)
 
-    def merge_importers(self, remote):
+    def merge_importers(self, parent):
         """
         Merge importers.
-          - Delete importers associated to this local repository but not
-            associated with the remote repository.
-          - Merge importers associated with this local repository AND associated
-            with remote repository.
-          - Add importers associated with the remote repository but NOT associated
-            with this local repository.
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+          - Delete importers associated to this child repository but not
+            associated with the parent repository.
+          - Merge importers associated with this child repository AND associated
+            with parent repository.
+          - Add importers associated with the parent repository but NOT associated
+            with this child repository.
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
-        self.delete_importers(remote)
-        for details in remote.importers:
+        self.delete_importers(parent)
+        for details in parent.importers:
             imp_id = details['id']
             imp = Importer(self.repo_id, imp_id, details)
-            myimp = LocalImporter.fetch(self.repo_id, imp_id)
+            myimp = ChildImporter.fetch(self.repo_id, imp_id)
             if myimp:
                 myimp.merge(imp)
             else:
-                myimp = LocalImporter(self.repo_id, imp_id, details)
+                myimp = ChildImporter(self.repo_id, imp_id, details)
                 myimp.add()
 
-    def delete_importers(self, remote):
+    def delete_importers(self, parent):
         """
-        Delete importers associated with this local repository but not
-        associated with the remote repository.
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+        Delete importers associated with this child repository but not
+        associated with the parent repository.
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
-        remote_ids = [d['id'] for d in remote.importers]
+        parent_ids = [d['id'] for d in parent.importers]
         for details in self.importers:
             imp_id = details['id']
-            if imp_id not in remote_ids:
-                imp = LocalImporter(self.repo_id, imp_id)
+            if imp_id not in parent_ids:
+                imp = ChildImporter(self.repo_id, imp_id)
                 imp.delete()
 
-    def merge_distributors(self, remote):
+    def merge_distributors(self, parent):
         """
         Merge distributors.
-          - Delete distributors associated to this local repository but not
-            associated with the remote repository.
-          - Merge distributors associated with this local repository AND
-            associated with remote repository.
-          - Add distributors associated with the remote repository but NOT
-            associated with this local repository.
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+          - Delete distributors associated to this child repository but not
+            associated with the parent repository.
+          - Merge distributors associated with this child repository AND
+            associated with parent repository.
+          - Add distributors associated with the parent repository but NOT
+            associated with this child repository.
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
-        self.delete_distributors(remote)
-        for details in remote.distributors:
+        self.delete_distributors(parent)
+        for details in parent.distributors:
             dist_id = details['id']
             dist = Distributor(self.repo_id, dist_id, details)
-            mydist = LocalDistributor.fetch(self.repo_id, dist_id)
+            mydist = ChildDistributor.fetch(self.repo_id, dist_id)
             if mydist:
                 mydist.merge(dist)
             else:
-                mydist = LocalDistributor(self.repo_id, dist_id, details)
+                mydist = ChildDistributor(self.repo_id, dist_id, details)
                 mydist.add()
 
-    def delete_distributors(self, remote):
+    def delete_distributors(self, parent):
         """
-        Delete distributors associated with this local repository but not
-        associated with the remote repository.
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+        Delete distributors associated with this child repository but not
+        associated with the parent repository.
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
-        remote_ids = [d['id'] for d in remote.distributors]
+        parent_ids = [d['id'] for d in parent.distributors]
         for details in self.distributors:
             dist_id = details['id']
-            if dist_id not in remote_ids:
-                dist = LocalDistributor(self.repo_id, dist_id)
+            if dist_id not in parent_ids:
+                dist = ChildDistributor(self.repo_id, dist_id)
                 dist.delete()
 
     def run_synchronization(self, progress, strategy):
         """
-        Run a repo_sync() on this local repository.
+        Run a repo_sync() on this child repository.
         :param progress: A progress report.
         :type progress: pulp_node.progress.ProgressReport
         :return: The task result.
@@ -435,21 +435,21 @@ class Distributor(object):
         return 'distributor: %s.%s' % (self.repo_id, self.dist_id)
 
 
-class LocalDistributor(Local, Distributor):
+class ChildDistributor(Child, Distributor):
     """
-    Represents a repository-distributor associated with the locally inventory.
+    Represents a repository-distributor associated with the child inventory.
     """
 
     @classmethod
     def fetch(cls, repo_id, dist_id):
         """
-        Fetch the repository-distributor from the local inventory.
+        Fetch the repository-distributor from the child inventory.
         :param repo_id: The repository ID.
         :type repo_id: str
         :param dist_id: A distributor ID.
         :type dist_id: str
         :return: The fetched distributor.
-        :rtype: LocalDistributor
+        :rtype: ChildDistributor
         """
         try:
             binding = cls.binding.repo_distributor
@@ -461,7 +461,7 @@ class LocalDistributor(Local, Distributor):
 
     def add(self):
         """
-        Add this repository-distributor to the local inventory.
+        Add this repository-distributor to the child inventory.
         """
         self.binding.repo_distributor.create(
             self.repo_id,
@@ -473,7 +473,7 @@ class LocalDistributor(Local, Distributor):
 
     def update(self, delta):
         """
-        Update this repository-distributor in the local inventory.
+        Update this repository-distributor in the child inventory.
         :param delta: The properties that need to be updated.
         :type delta: dict
         """
@@ -483,20 +483,20 @@ class LocalDistributor(Local, Distributor):
 
     def delete(self):
         """
-        Delete this repository-distributor from the local inventory.
+        Delete this repository-distributor from the child inventory.
         """
         binding = self.binding.repo_distributor
         binding.delete(self.repo_id, self.dist_id)
         log.info('Distributor: %s/%s, deleted', self.repo_id, self.dist_id)
 
-    def merge(self, remote):
+    def merge(self, parent):
         """
-        Merge the distributor configuration from the remote.
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+        Merge the distributor configuration from the parent.
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
         delta = {}
-        for k,v in remote.details['config'].items():
+        for k,v in parent.details['config'].items():
             if self.details['config'].get(k) != v:
                 self.details['config'][k] = v
                 delta[k] = v
@@ -532,17 +532,17 @@ class Importer(object):
         return 'importer: %s.%s' % (self.repo_id, self.imp_id)
 
 
-class LocalImporter(Local, Importer):
+class ChildImporter(Child, Importer):
     """
-    Represents a repository-importer associated with the local inventory.
+    Represents a repository-importer associated with the child inventory.
     """
 
     @classmethod
     def fetch(cls, repo_id, imp_id):
         """
-        Fetch the repository-importer from the local inventory.
+        Fetch the repository-importer from the child inventory.
         :return: The fetched importer.
-        :rtype: LocalImporter
+        :rtype: ChildImporter
         """
         try:
             binding = cls.binding.repo_importer
@@ -554,7 +554,7 @@ class LocalImporter(Local, Importer):
 
     def add(self):
         """
-        Add this importer to the local inventory.
+        Add this importer to the child inventory.
         """
         binding = self.binding.repo_importer
         conf = self.details['config']
@@ -564,7 +564,7 @@ class LocalImporter(Local, Importer):
 
     def update(self, delta):
         """
-        Update this repository-importer in the local inventory.
+        Update this repository-importer in the child inventory.
         :param delta: The properties that need to be updated.
         :type delta: dict
         """
@@ -574,20 +574,20 @@ class LocalImporter(Local, Importer):
 
     def delete(self):
         """
-        Delete this repository-importer from the local inventory.
+        Delete this repository-importer from the child inventory.
         """
         binding = self.binding.repo_importer
         binding.delete(self.repo_id, self.imp_id)
         log.info('Importer: %s/%s, deleted', self.repo_id, self.imp_id)
 
-    def merge(self, remote):
+    def merge(self, parent):
         """
-        Merge this importer configuration from the remote importer.
-        :param remote: The remote repository.
-        :type remote: RemoteRepository
+        Merge this importer configuration from the parent importer.
+        :param parent: The parent repository.
+        :type parent: ParentRepository
         """
         delta = {}
-        for k,v in remote.details['config'].items():
+        for k,v in parent.details['config'].items():
             if self.details['config'].get(k) != v:
                 self.details['config'][k] = v
                 delta[k] = v
@@ -603,9 +603,9 @@ class Binding(object):
     pass
 
 
-class RemoteBinding(Remote):
+class ParentBinding(Parent):
     """
-    Represents a remote consumer binding to a repository.
+    Represents a parent consumer binding to a repository.
     """
 
     @classmethod
@@ -617,7 +617,7 @@ class RemoteBinding(Remote):
         """
         bundle = ConsumerSSLCredentialsBundle()
         myid = bundle.cn()
-        http = Remote.binding.bind.find_by_id(myid)
+        http = Parent.binding.bind.find_by_id(myid)
         if http.response_code == httplib.OK:
             return cls.filtered(http.response_body)
         else:
@@ -636,7 +636,7 @@ class RemoteBinding(Remote):
         bundle = ConsumerSSLCredentialsBundle()
         myid = bundle.cn()
         for repo_id in repo_ids:
-            http = Remote.binding.bind.find_by_id(myid, repo_id)
+            http = Parent.binding.bind.find_by_id(myid, repo_id)
             if http.response_code == httplib.OK:
                 binds.extend(cls.filtered(http.response_body))
             else:

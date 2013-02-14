@@ -57,39 +57,39 @@ class UniqueKey(object):
 
 class UnitInventory(object):
     """
-    The unit inventory contains both the upstream and local inventory
+    The unit inventory contains both the parent and child inventory
     of content units associated with a specific repository.  Each is contained
     within a dictionary keyed by {UnitKey} to ensure uniqueness.
-    :ivar local: The local inventory.
-    :type local: dict
-    :ivar upstream: The upstream inventory.
-    :type upstream: dict
+    :ivar child: The child inventory.
+    :type child: dict
+    :ivar parent: The parent inventory.
+    :type parent: dict
     """
 
-    def __init__(self, local, upstream):
+    def __init__(self, child, parent):
         """
-        :param local: The local inventory.
-        :type local: dict
-        :param upstream: The upstream inventory.
-        :type upstream: dict
+        :param child: The child inventory.
+        :type child: dict
+        :param parent: The parent inventory.
+        :type parent: dict
         """
-        self.local = local
-        self.upstream = upstream
+        self.child = child
+        self.parent = parent
 
-    def upstream_only(self):
+    def parent_only(self):
         """
-        Listing of units contained in the upstream inventory
-        but not contained in the local inventory.
+        Listing of units contained in the parent inventory
+        but not contained in the child inventory.
         :return: List of units that need to be added.
         :rtype: list
         """
-        return [u for k, u in self.upstream.items() if k not in self.local]
+        return [u for k, u in self.parent.items() if k not in self.child]
 
-    def local_only(self):
+    def child_only(self):
         """
-        Listing of units contained in the local inventory
-        but not contained in the upstream inventory.
+        Listing of units contained in the child inventory
+        but not contained in the parent inventory.
         :return: List of units that need to be purged.
         :rtype: list
         """
-        return [u for k, u in self.local.items() if k not in self.upstream]
+        return [u for k, u in self.child.items() if k not in self.parent]
