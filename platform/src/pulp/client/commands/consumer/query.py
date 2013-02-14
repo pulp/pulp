@@ -118,7 +118,8 @@ class ConsumerHistoryCommand(PulpCliCommand):
 
         self.context.prompt.render_title(_('Consumer History [ %(c)s ]') % {'c': consumer_id})
 
-        event_list = self.api.history(consumer_id, event_type, limit, sort, start_date, end_date)
+        response = self.api.history(consumer_id, event_type, limit, sort, start_date, end_date)
+        event_list = response.response_body
 
         filters = order = self._all_fields
 
