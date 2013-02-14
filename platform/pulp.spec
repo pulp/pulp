@@ -112,8 +112,8 @@ cp -R srv %{buildroot}
 cp etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
 
 # Agent
-cp etc/gofer/plugins/pulp.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
-cp -R src/pulp/agent/gofer/pulp.py %{buildroot}/%{_libdir}/gofer/plugins
+cp etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
+cp -R src/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # Tools
@@ -346,8 +346,8 @@ on a defined interval.
 %files agent
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
-%{_sysconfdir}/gofer/plugins/pulp.conf
-%{_libdir}/gofer/plugins/pulp.*
+%{_sysconfdir}/gofer/plugins/pulpplugin.conf
+%{_libdir}/gofer/plugins/pulpplugin.*
 %{_sysconfdir}/rc.d/init.d/pulp-agent
 %doc
 
