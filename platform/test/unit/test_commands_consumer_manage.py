@@ -12,10 +12,16 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import unittest
+from pprint import pformat
 
 import mock
 
 from pulp.client.commands.consumer import manage as consumer_manage
+from pulp.client.commands.options import (
+    OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES)
+from pulp.server.compat import json
+
+import base
 
 
 class InstantiationTests(unittest.TestCase):
@@ -43,3 +49,71 @@ class InstantiationTests(unittest.TestCase):
             consumer_manage.ConsumerUpdateCommand(self.mock_context)
         except Exception, e:
             self.fail(str(e))
+
+
+class UnregisterCommand(base.PulpClientTests):
+
+    def setUp(self):
+        super(UnregisterCommand, self).setUp()
+        self.command = consumer_manage.ConsumerUnregisterCommand(self.context)
+
+    def test_structure(self):
+        found_options = set(self.command.options)
+        expected_options = set((OPTION_CONSUMER_ID,))
+        self.assertEqual(found_options, expected_options)
+
+        self.assertEqual(self.command.method, self.command.unregister)
+        self.assertEqual(self.command.name, 'unregister')
+
+    def test_unregister(self):
+        self.server_mock.request.return_value = 201, {}
+
+        kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer'}
+
+        self.command.unregister(**kwargs)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        self.assertEqual(self.server_mock.request.call_args[0][0], 'DELETE')
+
+        url = self.server_mock.request.call_args[0][1]
+
+        self.assertTrue(url.find('test-consumer') > 0)
+
+
+class UpdateCommandTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(UpdateCommandTests, self).setUp()
+        self.command = consumer_manage.ConsumerUpdateCommand(self.context)
+
+    def test_structure(self):
+        found_options = set(self.command.options)
+        expected_options = set((OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES))
+        self.assertEqual(found_options, expected_options)
+
+        self.assertEqual(self.command.method, self.command.update)
+        self.assertEqual(self.command.name, 'update')
+
+    def test_update(self):
+        self.server_mock.request.return_value = 201, {}
+
+        kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
+                  OPTION_NAME.keyword: 'Test Consumer',
+                  OPTION_DESCRIPTION.keyword: 'Consumer for testing',
+                  OPTION_NOTES.keyword: ['a=a', 'b=b']}
+
+        self.command.update(**kwargs)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        self.assertEqual(self.server_mock.request.call_args[0][0], 'PUT')
+
+        url = self.server_mock.request.call_args[0][1]
+
+        self.assertTrue(url.find('test-consumer') > 0)
+
+        body = json.loads(self.server_mock.request.call_args[0][2])
+
+        self.assertEqual(body['delta']['display_name'], 'Test Consumer')
+        self.assertEqual(body['delta']['description'], 'Consumer for testing')
+        self.assertEqual(body['delta']['notes'], {'a': 'a', 'b': 'b'})
+

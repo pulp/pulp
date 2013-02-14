@@ -12,10 +12,16 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import unittest
+from pprint import pformat
 
 import mock
 
+from pulp.bindings.responses import Task
 from pulp.client.commands.consumer import content as consumer_content
+from pulp.client.commands.options import OPTION_CONSUMER_ID
+from pulp.server.compat import json
+
+import base
 
 
 class InstantiationTests(unittest.TestCase):
@@ -116,4 +122,149 @@ class InstantiationTests(unittest.TestCase):
             consumer_content.ConsumerContentScheduleStrategy(self.mock_context, self.action)
         except Exception, e:
             self.fail(str(e))
+
+
+POSTPONED_TASK = Task({'call_request_id': '1',
+                       'call_request_group_id': None,
+                       'call_request_tags': [],
+                       'start_time': None,
+                       'finish_time': None,
+                       'response': 'postponed',
+                       'reasons': [],
+                       'state': 'waiting',
+                       'progress': {},
+                       'result': None,
+                       'exception': None,
+                       'traceback': None})
+
+
+class InstallCommandTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(InstallCommandTests, self).setUp()
+        self.command = consumer_content.ConsumerContentInstallCommand(self.context)
+
+    def test_structure(self):
+        found_options = set(self.command.options)
+        expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
+                                consumer_content.OPTION_CONTENT_UNIT, consumer_content.FLAG_NO_COMMIT,
+                                consumer_content.FLAG_REBOOT, consumer_content.FLAG_IMPORT_KEYS))
+        self.assertEqual(found_options, expected_options)
+
+        self.assertEqual(self.command.method, self.command.run)
+        self.assertEqual(self.command.name, 'run')
+
+    def test_run(self):
+        self.server_mock.request.return_value = 201, POSTPONED_TASK
+
+        kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
+                  consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: ['test-unit'],
+                  consumer_content.FLAG_NO_COMMIT.keyword: False,
+                  consumer_content.FLAG_REBOOT.keyword: False,
+                  consumer_content.FLAG_IMPORT_KEYS.keyword: False}
+
+        self.command.run(**kwargs)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        self.assertEqual(self.server_mock.request.call_args[0][0], 'POST')
+
+        url = self.server_mock.request.call_args[0][1]
+
+        self.assertTrue(url.find('test-consumer') > 0)
+
+        body = json.loads(self.server_mock.request.call_args[0][2])
+
+        self.assertEqual(body['options']['apply'], True)
+        self.assertEqual(body['options']['reboot'], False)
+        self.assertEqual(body['options']['importkeys'], False)
+        self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': {'name': 'test-unit'}}])
+
+
+class UpdateCommandTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(UpdateCommandTests, self).setUp()
+        self.command = consumer_content.ConsumerContentUpdateCommand(self.context)
+
+    def test_structure(self):
+        found_options = set(self.command.options)
+        expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
+                                consumer_content.OPTION_CONTENT_UNIT, consumer_content.FLAG_NO_COMMIT,
+                                consumer_content.FLAG_REBOOT, consumer_content.FLAG_IMPORT_KEYS,
+                                consumer_content.FLAG_ALL_CONTENT))
+        self.assertEqual(found_options, expected_options)
+
+        self.assertEqual(self.command.method, self.command.run)
+        self.assertEqual(self.command.name, 'run')
+
+    def test_run(self):
+        self.server_mock.request.return_value = 201, POSTPONED_TASK
+
+        kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
+                  consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: [],
+                  consumer_content.FLAG_NO_COMMIT.keyword: False,
+                  consumer_content.FLAG_REBOOT.keyword: False,
+                  consumer_content.FLAG_IMPORT_KEYS.keyword: False,
+                  consumer_content.FLAG_ALL_CONTENT.keyword: True}
+
+        self.command.run(**kwargs)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        self.assertEqual(self.server_mock.request.call_args[0][0], 'POST')
+
+        url = self.server_mock.request.call_args[0][1]
+
+        self.assertTrue(url.find('test-consumer') > 0)
+
+        body = json.loads(self.server_mock.request.call_args[0][2])
+
+        self.assertEqual(body['options']['apply'], True)
+        self.assertEqual(body['options']['reboot'], False)
+        self.assertEqual(body['options']['importkeys'], False)
+        self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': None}])
+
+
+
+class UnistallCommandTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(UnistallCommandTests, self).setUp()
+        self.command = consumer_content.ConsumerContentUninstallCommand(self.context)
+
+    def test_structure(self):
+        found_options = set(self.command.options)
+        expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
+                                consumer_content.OPTION_CONTENT_UNIT, consumer_content.FLAG_NO_COMMIT,
+                                consumer_content.FLAG_REBOOT))
+        self.assertEqual(found_options, expected_options)
+
+        self.assertEqual(self.command.method, self.command.run)
+        self.assertEqual(self.command.name, 'run')
+
+    def test_run(self):
+        self.server_mock.request.return_value = 201, POSTPONED_TASK
+
+        kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
+                  consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: [],
+                  consumer_content.FLAG_NO_COMMIT.keyword: True,
+                  consumer_content.FLAG_REBOOT.keyword: False}
+
+        self.command.run(**kwargs)
+
+        self.assertEqual(self.server_mock.request.call_count, 1)
+        self.assertEqual(self.server_mock.request.call_args[0][0], 'POST')
+
+        url = self.server_mock.request.call_args[0][1]
+
+        self.assertTrue(url.find('test-consumer') > 0)
+
+        body = json.loads(self.server_mock.request.call_args[0][2])
+
+        self.assertEqual(body['options']['apply'], False)
+        self.assertEqual(body['options']['reboot'], False)
+        self.assertEqual(body['units'], [])
+
 
