@@ -11,12 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
-import mock
+from iniparse import INIConfig
+from logging import root
 import unittest
 
-from logging import root
-from iniparse import INIConfig
+import mock
 
 
 TEST_CN = 'test_cn'
@@ -53,9 +52,9 @@ class MockContext(object):
 class TestConduit(unittest.TestCase):
 
     @mock.patch('pulp.agent.lib.dispatcher.Dispatcher')
-    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
     @mock.patch('gofer.agent.plugin.Plugin.find', return_value=MockPlugin())
     @mock.patch('pulp.common.bundle.Bundle.cn', return_value=TEST_CN)
+    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
     def test_consumer_id(self, *unused):
         from pulp.agent.gofer.pulpplugin import Conduit
         conduit = Conduit()
@@ -63,9 +62,9 @@ class TestConduit(unittest.TestCase):
         self.assertEqual(consumer_id, TEST_CN)
 
     @mock.patch('pulp.agent.lib.dispatcher.Dispatcher')
-    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
     @mock.patch('gofer.agent.plugin.Plugin.find', return_value=MockPlugin())
     @mock.patch('pulp.agent.gofer.pulpplugin.Config', return_value=TEST_CONFIG)
+    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
     def test_get_consumer_config(self, *unused):
         # Don't see any value in this test but added for completeness.
         from pulp.agent.gofer.pulpplugin import Conduit
@@ -74,16 +73,13 @@ class TestConduit(unittest.TestCase):
         self.assertEqual(conf, TEST_CONFIG)
 
     @mock.patch('pulp.agent.lib.dispatcher.Dispatcher')
-    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
     @mock.patch('gofer.agent.plugin.Plugin.find', return_value=MockPlugin())
     @mock.patch('gofer.agent.rmi.Context.current', return_value=MockContext())
-    def test_update_progress(self, mock_context, *unused):
+    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
+    def test_update_progress(self, mock_get_logger, mock_context, *unused):
         from pulp.agent.gofer.pulpplugin import Conduit
         conduit = Conduit()
         report = {'a': 1}
         conduit.update_progress(report)
         self.assertEqual(report, mock_context.return_value.progress.details)
         self.assertEqual(1, mock_context.return_value.progress.report.call_count)
-
-
-
