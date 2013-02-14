@@ -16,7 +16,7 @@
 
 # ---- Pulp Nodes -------------------------------------------------------------
 
-Name: pulp-citrus
+Name: pulp-nodes
 Version: 2.1.0
 Release: 0.7.alpha
 Summary: Support for pulp nodes
@@ -34,56 +34,63 @@ BuildRequires: rpm-python
 %description
 Provides a collection of platform plugins, client extensions and agent
 handlers that provide nodes support.  Nodes provides the ability for
-downstream Pulp server to synchronize repositories and content with the
-upstream server to which it has registered as a consumer.
+a child Pulp server to synchronize repositories and content with a
+parent Pulp server to which it has registered as a consumer.
 
 %prep
 %setup -q
 
 %build
-pushd src
+pushd common
+%{__python} setup.py build
+popd
+pushd parent
+%{__python} setup.py build
+popd
+pushd child
 %{__python} setup.py build
 popd
 
 %install
 rm -rf %{buildroot}
-pushd src
+pushd common
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+pushd parent
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+pushd child
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
 # Directories
 mkdir -p /srv
 mkdir -p %{buildroot}/%{_sysconfdir}/pulp
-mkdir -p %{buildroot}/%{_usr}/lib
-mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
-mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
+mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins/types
 mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/http
 mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/https
 mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
 
 # Configuration
-cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+pushd parent
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+popd
+pushd child
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
 
-# Agent Handlers
-cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
-
-# Plugins
-cp -R plugins/* %{buildroot}/%{_usr}/lib/pulp/plugins
+# Types
+cp -R child/pulp_node/importers/types/* %{buildroot}/%{_usr}/lib/pulp/plugins/types/
 
 # WWW
 ln -s %{_var}/lib/pulp/nodes/published/http %{buildroot}/%{_var}/www/pulp/nodes
 ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
 
-# Remove egg info
-rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
-
 %clean
 rm -rf %{buildroot}
 
-%files
-%{python_sitelib}/pulp_node/
-%doc
+
+# ----------------------------------------------------------------------------
 
 
 # define required pulp platform version.
@@ -96,44 +103,73 @@ rm -rf %{buildroot}
 %endif
 
 
-# ---- Plugins -----------------------------------------------------------------
+# ---- Common ----------------------------------------------------------------
 
-%package plugins
-Summary: Pulp nodes support plugins
+%package common
+Summary: Pulp nodes common modules
 Group: Development/Languages
-Requires: %{name} = %{version}
+Requires: %{name}-common = %{version}
+Requires: pulp-server = %{pulp_version}
+Requires: python-pulp-agent-lib = %{pulp_version}
+Requires: gofer >= 0.74
+
+%description common
+Pulp nodes common modules.
+
+%files common
+%defattr(-,root,root,-)
+%dir %{python_sitelib}/pulp_node
+%{python_sitelib}/pulp_node/__init__.py*
+%{python_sitelib}/pulp_node/*.py*
+%{python_sitelib}/pulp_node_common*.egg-info
+%doc
+
+
+# ---- Parent Nodes ----------------------------------------------------------
+
+%package parent
+Summary: Pulp parent nodes support
+Group: Development/Languages
+Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 
-%description plugins
-Plugins to provide nodes support.
+%description parent
+Pulp parent nodes support.
 
-%files plugins
+%files parent
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
-%{_usr}/lib/pulp/plugins/types/nodes.json
-%{_usr}/lib/pulp/plugins/importers/nodes_http_importer/
-%{_usr}/lib/pulp/plugins/distributors/nodes_http_distributor/
 %defattr(-,apache,apache,-)
+%{python_sitelib}/pulp_node/distributors/
+%{python_sitelib}/pulp_node_parent*.egg-info
 %{_var}/lib/pulp/nodes
 %{_var}/www/pulp/nodes
 %doc
 
-# ---- Agent Handlers ----------------------------------------------------------
 
-%package handlers
-Summary: Pulp agent rpm handlers
+# ---- Child Nodes -----------------------------------------------------------
+
+%package child
+Summary: Pulp child nodes support
 Group: Development/Languages
-Requires: %{name} = %{version}
+Requires: %{name}-common = %{version}
+Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
+Requires: gofer >= 0.74
 
-%description handlers
-Pulp nodes handlers.
+%description child
+Pulp child nodes support.
 
-%files handlers
+%files child
 %defattr(-,root,root,-)
+%{python_sitelib}/pulp_node/importers/
+%{python_sitelib}/pulp_node/handlers/
+%{python_sitelib}/pulp_node_child*.egg-info
+%{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
-%{_usr}/lib/pulp/agent/handlers/nodes.py*
 %doc
+
+# ----------------------------------------------------------------------------
 
 %post
 # Generate the certificate used to access the local server.
@@ -185,26 +221,9 @@ if [ $1 -eq 0 ]; then
   rm /etc/pki/pulp/nodes/local.crt
 fi
 
+# ----------------------------------------------------------------------------
+
 
 %changelog
-* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
-- 
 
-* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.6.alpha
-- 
-
-* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
-- 
-
-* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
-- 
-
-* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
-- 
-
-* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
-- 
-
-* Mon Feb 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
-- new package built with tito
 
