@@ -147,8 +147,7 @@ class InstallCommandTests(base.PulpClientTests):
     def test_structure(self):
         found_options = set(self.command.options)
         expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
-                                consumer_content.OPTION_CONTENT_UNIT, consumer_content.FLAG_NO_COMMIT,
-                                consumer_content.FLAG_REBOOT, consumer_content.FLAG_IMPORT_KEYS))
+                                consumer_content.OPTION_CONTENT_UNIT))
         self.assertEqual(found_options, expected_options)
 
         self.assertEqual(self.command.method, self.command.run)
@@ -159,10 +158,7 @@ class InstallCommandTests(base.PulpClientTests):
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
                   consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
-                  consumer_content.OPTION_CONTENT_UNIT.keyword: ['test-unit'],
-                  consumer_content.FLAG_NO_COMMIT.keyword: False,
-                  consumer_content.FLAG_REBOOT.keyword: False,
-                  consumer_content.FLAG_IMPORT_KEYS.keyword: False}
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: ['test-unit']}
 
         self.command.run(**kwargs)
 
@@ -175,9 +171,6 @@ class InstallCommandTests(base.PulpClientTests):
 
         body = json.loads(self.server_mock.request.call_args[0][2])
 
-        self.assertEqual(body['options']['apply'], True)
-        self.assertEqual(body['options']['reboot'], False)
-        self.assertEqual(body['options']['importkeys'], False)
         self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': {'name': 'test-unit'}}])
 
 
@@ -190,9 +183,7 @@ class UpdateCommandTests(base.PulpClientTests):
     def test_structure(self):
         found_options = set(self.command.options)
         expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
-                                consumer_content.OPTION_CONTENT_UNIT, consumer_content.FLAG_NO_COMMIT,
-                                consumer_content.FLAG_REBOOT, consumer_content.FLAG_IMPORT_KEYS,
-                                consumer_content.FLAG_ALL_CONTENT))
+                                consumer_content.OPTION_CONTENT_UNIT))
         self.assertEqual(found_options, expected_options)
 
         self.assertEqual(self.command.method, self.command.run)
@@ -203,11 +194,7 @@ class UpdateCommandTests(base.PulpClientTests):
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
                   consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
-                  consumer_content.OPTION_CONTENT_UNIT.keyword: [],
-                  consumer_content.FLAG_NO_COMMIT.keyword: False,
-                  consumer_content.FLAG_REBOOT.keyword: False,
-                  consumer_content.FLAG_IMPORT_KEYS.keyword: False,
-                  consumer_content.FLAG_ALL_CONTENT.keyword: True}
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: []}
 
         self.command.run(**kwargs)
 
@@ -220,9 +207,6 @@ class UpdateCommandTests(base.PulpClientTests):
 
         body = json.loads(self.server_mock.request.call_args[0][2])
 
-        self.assertEqual(body['options']['apply'], True)
-        self.assertEqual(body['options']['reboot'], False)
-        self.assertEqual(body['options']['importkeys'], False)
         self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': None}])
 
 
@@ -236,8 +220,7 @@ class UnistallCommandTests(base.PulpClientTests):
     def test_structure(self):
         found_options = set(self.command.options)
         expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
-                                consumer_content.OPTION_CONTENT_UNIT, consumer_content.FLAG_NO_COMMIT,
-                                consumer_content.FLAG_REBOOT))
+                                consumer_content.OPTION_CONTENT_UNIT))
         self.assertEqual(found_options, expected_options)
 
         self.assertEqual(self.command.method, self.command.run)
@@ -248,9 +231,7 @@ class UnistallCommandTests(base.PulpClientTests):
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
                   consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
-                  consumer_content.OPTION_CONTENT_UNIT.keyword: [],
-                  consumer_content.FLAG_NO_COMMIT.keyword: True,
-                  consumer_content.FLAG_REBOOT.keyword: False}
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: []}
 
         self.command.run(**kwargs)
 
@@ -263,8 +244,6 @@ class UnistallCommandTests(base.PulpClientTests):
 
         body = json.loads(self.server_mock.request.call_args[0][2])
 
-        self.assertEqual(body['options']['apply'], False)
-        self.assertEqual(body['options']['reboot'], False)
         self.assertEqual(body['units'], [])
 
 
