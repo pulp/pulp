@@ -73,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.29-1
+- New version of okaara with deadlock fix (jason.dobies@redhat.com)
+
+* Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.29-1
 - Fixed deadlock when the threaded spinner times out (jason.dobies@redhat.com)
 
 * Tue Jan 08 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.28-1
