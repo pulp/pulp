@@ -32,10 +32,11 @@ class ConsumerBindCommand(PulpCliCommand):
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
+        self.add_distributor_option()
 
         self.context = context
 
-    def _add_distributor_option(self):
+    def add_distributor_option(self):
         self.add_option(OPTION_DISTRIBUTOR_ID)
 
     def run(self, **kwargs):
@@ -85,13 +86,13 @@ class ConsumerUnbindCommand(PulpCliCommand):
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
-        self._add_distributor_option()
+        self.add_distributor_option()
 
         self.add_flag(FLAG_FORCE)
 
         self.context = context
 
-    def _add_distributor_option(self):
+    def add_distributor_option(self):
         self.add_option(OPTION_DISTRIBUTOR_ID)
 
     def run(self, **kwargs):

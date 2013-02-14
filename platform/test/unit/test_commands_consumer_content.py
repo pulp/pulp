@@ -194,7 +194,7 @@ class UpdateCommandTests(base.PulpClientTests):
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
                   consumer_content.OPTION_CONTENT_TYPE_ID.keyword: 'rpm',
-                  consumer_content.OPTION_CONTENT_UNIT.keyword: []}
+                  consumer_content.OPTION_CONTENT_UNIT.keyword: ['test-unit']}
 
         self.command.run(**kwargs)
 
@@ -207,7 +207,7 @@ class UpdateCommandTests(base.PulpClientTests):
 
         body = json.loads(self.server_mock.request.call_args[0][2])
 
-        self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': None}])
+        self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': {'name': 'test-unit'}}])
 
 
 
