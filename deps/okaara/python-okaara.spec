@@ -73,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.30-1
+- New version of okaara (jason.dobies@redhat.com)
+
+* Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.30-1
 - Various clean up (jason.dobies@redhat.com)
 
 * Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.29-1
