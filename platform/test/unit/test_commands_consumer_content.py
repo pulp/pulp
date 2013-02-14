@@ -113,7 +113,7 @@ class InstantiationTests(unittest.TestCase):
 
     def test_schedules_strategy(self):
         try:
-            consumer_content.ConsumerContentSchedulesStrategy(self.mock_context, self.action)
+            consumer_content.ConsumerContentScheduleStrategy(self.mock_context, self.action)
         except Exception, e:
             self.fail(str(e))
 

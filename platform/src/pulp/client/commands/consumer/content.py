@@ -363,7 +363,7 @@ class ConsumerContentSchedulesSection(PulpCliSection):
 class ConsumerContentListScheduleCommand(ListScheduleCommand):
 
     def __init__(self, context, action, strategy=None, name=None, description=None):
-        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'list'
         description = description or _('list scheduled %(a)s operations') % {'a': action}
         super(self.__class__, self).__init__(context, strategy, name, description)
@@ -374,7 +374,7 @@ class ConsumerContentListScheduleCommand(ListScheduleCommand):
 class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
 
     def __init__(self, context, action, strategy=None, name=None, description=None):
-        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'create'
         description = description or _('adds a new scheduled %(a)s operation') % {'a': action}
         super(self.__class__, self).__init__(context, strategy, name, description)
@@ -387,7 +387,7 @@ class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
 class ConsumerContentDeleteScheduleCommand(DeleteScheduleCommand):
 
     def __init__(self, context, action, strategy=None, name=None, description=None):
-        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'delete'
         description = description or _('deletes a %(a)s schedule') % {'a': action}
         super(self.__class__, self).__init__(context, strategy, name, description)
@@ -398,7 +398,7 @@ class ConsumerContentDeleteScheduleCommand(DeleteScheduleCommand):
 class ConsumerContentUpdateScheduleCommand(UpdateScheduleCommand):
 
     def __init__(self, context, action, strategy=None, name=None, description=None):
-        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'update'
         description = description or _('update an existing %(a)s schedule') % {'a': action}
         super(self.__class__, self).__init__(context, strategy, name, description)
@@ -409,7 +409,7 @@ class ConsumerContentUpdateScheduleCommand(UpdateScheduleCommand):
 class ConsumerContentNextRunCommand(NextRunCommand):
 
     def __init__(self, context, action, strategy=None, name=None, description=None):
-        strategy = strategy or ConsumerContentSchedulesStrategy(context, action)
+        strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'next'
         description = description or _('displays the next scheduled %(a)s for a consumer') % {'a': action}
         super(self.__class__, self).__init__(context, strategy, name, description)
@@ -418,7 +418,7 @@ class ConsumerContentNextRunCommand(NextRunCommand):
 
 # schedule strategy ------------------------------------------------------------
 
-class ConsumerContentSchedulesStrategy(ScheduleStrategy):
+class ConsumerContentScheduleStrategy(ScheduleStrategy):
 
     def __init__(self, context, action):
         super(self.__class__, self).__init__()
