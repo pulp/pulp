@@ -103,11 +103,12 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                         easy_handle.report.finish_time = datetime.datetime.now()
                         easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
 
-                        self.fire_download_succeeded(easy_handle.report)
-
+                        report = easy_handle.report
                         multi_handle.remove_handle(easy_handle)
                         self._clear_easy_handle_download(easy_handle)
                         free_handles.append(easy_handle)
+
+                        self.fire_download_succeeded(report)
 
                     for easy_handle, err_code, err_msg in err_list:
                         easy_handle.report.finish_time = datetime.datetime.now()
@@ -118,11 +119,12 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                         easy_handle.report.error_report['error_code'] = err_code
                         easy_handle.report.error_report['error_message'] = err_msg
 
-                        self.fire_download_failed(easy_handle.report)
-
+                        report = easy_handle.report
                         multi_handle.remove_handle(easy_handle)
                         self._clear_easy_handle_download(easy_handle)
                         free_handles.append(easy_handle)
+                        
+                        self.fire_download_failed(report)
 
                     processed_requests += (len(ok_list) + len(err_list))
 
