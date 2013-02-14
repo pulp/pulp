@@ -12,18 +12,17 @@
 import os
 import shutil
 import tempfile
-import json
 
 from unittest import TestCase
-from pulp_citrus.http.publisher import HttpPublisher
-from pulp_citrus.manifest import Manifest
 from pulp.common.download import factory
 from pulp.common.download.config import DownloaderConfig
+from pulp_node.distributors.http.publisher import HttpPublisher
+from pulp_node.manifest import Manifest
 
 
 class TestHttp(TestCase):
 
-    TMP_ROOT = '/tmp/pulp/citrus/transport'
+    TMP_ROOT = '/tmp/pulp/nodes/transport'
 
     UNITS = [
         'test_1.unit',
@@ -57,7 +56,7 @@ class TestHttp(TestCase):
         # publish
         repo_id = 'test_repo'
         base_url = 'file://'
-        publish_dir = os.path.join(self.tmpdir, 'citrus/repos')
+        publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
         virtual_host = (publish_dir, publish_dir)
         p = HttpPublisher(base_url, virtual_host, repo_id)
         p.publish(units)

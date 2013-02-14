@@ -16,7 +16,7 @@ from base64 import b64encode
 from tempfile import mkdtemp
 from unittest import TestCase
 
-from pulp_citrus import link
+from pulp_node import link
 
 CONTENT = 'hello'
 

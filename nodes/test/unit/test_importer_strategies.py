@@ -14,7 +14,7 @@ from unittest import TestCase
 from mock import Mock, patch
 
 from pulp.plugins.model import Unit
-from pulp_citrus.importer.strategies import ImporterStrategy, Mirror
+from pulp_node.importers.strategies import ImporterStrategy, Mirror
 
 
 class TestBase(TestCase):

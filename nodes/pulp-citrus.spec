@@ -14,12 +14,12 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
-# ---- Pulp Citrus -------------------------------------------------------------
+# ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-citrus
 Version: 2.1.0
 Release: 0.7.alpha
-Summary: Support for pulp citrus
+Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
@@ -33,7 +33,7 @@ BuildRequires: rpm-python
 
 %description
 Provides a collection of platform plugins, client extensions and agent
-handlers that provide citrus support.  Citrus provides the ability for
+handlers that provide nodes support.  Nodes provides the ability for
 downstream Pulp server to synchronize repositories and content with the
 upstream server to which it has registered as a consumer.
 
@@ -57,9 +57,9 @@ mkdir -p %{buildroot}/%{_sysconfdir}/pulp
 mkdir -p %{buildroot}/%{_usr}/lib
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/pulp/agent/handlers
-mkdir -p %{buildroot}/%{_var}/lib/pulp/citrus/published/http
-mkdir -p %{buildroot}/%{_var}/lib/pulp/citrus/published/https
-mkdir -p %{buildroot}/%{_var}/www/pulp/citrus
+mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/http
+mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/https
+mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
 
 # Configuration
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
@@ -72,8 +72,8 @@ cp handlers/* %{buildroot}/%{_usr}/lib/pulp/agent/handlers
 cp -R plugins/* %{buildroot}/%{_usr}/lib/pulp/plugins
 
 # WWW
-ln -s %{_var}/lib/pulp/citrus/published/http %{buildroot}/%{_var}/www/pulp/citrus
-ln -s %{_var}/lib/pulp/citrus/published/https %{buildroot}/%{_var}/www/pulp/citrus
+ln -s %{_var}/lib/pulp/nodes/published/http %{buildroot}/%{_var}/www/pulp/nodes
+ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
@@ -82,7 +82,7 @@ rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 rm -rf %{buildroot}
 
 %files
-%{python_sitelib}/pulp_citrus/
+%{python_sitelib}/pulp_node/
 %doc
 
 
@@ -99,23 +99,23 @@ rm -rf %{buildroot}
 # ---- Plugins -----------------------------------------------------------------
 
 %package plugins
-Summary: Pulp citrus support plugins
+Summary: Pulp nodes support plugins
 Group: Development/Languages
 Requires: %{name} = %{version}
 Requires: pulp-server = %{pulp_version}
 
 %description plugins
-Plugins to provide citrus support.
+Plugins to provide nodes support.
 
 %files plugins
 %defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_citrus.conf
-%{_usr}/lib/pulp/plugins/types/citrus.json
-%{_usr}/lib/pulp/plugins/importers/citrus_http_importer/
-%{_usr}/lib/pulp/plugins/distributors/citrus_http_distributor/
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
+%{_usr}/lib/pulp/plugins/types/nodes.json
+%{_usr}/lib/pulp/plugins/importers/nodes_http_importer/
+%{_usr}/lib/pulp/plugins/distributors/nodes_http_distributor/
 %defattr(-,apache,apache,-)
-%{_var}/lib/pulp/citrus
-%{_var}/www/pulp/citrus
+%{_var}/lib/pulp/nodes
+%{_var}/www/pulp/nodes
 %doc
 
 # ---- Agent Handlers ----------------------------------------------------------
@@ -127,22 +127,22 @@ Requires: %{name} = %{version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 
 %description handlers
-Pulp citrus handlers.
+Pulp nodes handlers.
 
 %files handlers
 %defattr(-,root,root,-)
-%{_sysconfdir}/pulp/agent/conf.d/citrus.conf
-%{_usr}/lib/pulp/agent/handlers/citrus.py*
+%{_sysconfdir}/pulp/agent/conf.d/nodes.conf
+%{_usr}/lib/pulp/agent/handlers/nodes.py*
 %doc
 
 %post
 # Generate the certificate used to access the local server.
 
 PKI=/etc/pki/pulp
-PKI_CITRUS=$PKI/citrus
+PKI_CITRUS=$PKI/nodes
 CA_KEY=$PKI/ca.key
 CA_CRT=$PKI/ca.crt
-BASE='citrus'
+BASE='nodes'
 TMP=/tmp/$RANDOM
 CN='admin:admin:0'
 ORG='PULP'
@@ -180,9 +180,9 @@ cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_CITRUS/local.crt
 rm -rf $TMP
 
 %postun
-# clean up the citrus certificate.
+# clean up the nodes certificate.
 if [ $1 -eq 0 ]; then
-  rm /etc/pki/pulp/citrus/local.crt
+  rm /etc/pki/pulp/nodes/local.crt
 fi
 
 

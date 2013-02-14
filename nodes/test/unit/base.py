@@ -45,7 +45,7 @@ SerialNumber.PATH = '/tmp/sn.dat'
 
 class ServerTests(TestCase):
 
-    TMP_ROOT = '/tmp/pulp/citrus'
+    TMP_ROOT = '/tmp/pulp/nodes'
 
     @classmethod
     def setUpClass(cls):
@@ -99,7 +99,7 @@ class WebTest(ServerTests):
         cls.ORIG_HTTP_REQUEST_INFO = http.request_info
         http.request_info = request_info
         base64string = base64.encodestring('%s:%s' % cls.USER)[:-1]
-        cls.HEADERS = {'Authorization' : 'Basic %s' % base64string}
+        cls.HEADERS = {'Authorization': 'Basic %s' % base64string}
 
     @classmethod
     def tearDownClass(cls):

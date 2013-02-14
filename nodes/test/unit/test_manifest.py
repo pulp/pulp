@@ -20,7 +20,7 @@ from unittest import TestCase
 from pulp.common.download import factory
 from pulp.common.download.config import DownloaderConfig
 
-from pulp_citrus.manifest import Manifest
+from pulp_node.manifest import Manifest
 
 
 class TestManifest(TestCase):
