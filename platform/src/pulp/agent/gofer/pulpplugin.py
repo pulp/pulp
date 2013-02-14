@@ -35,7 +35,6 @@ from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
 
-
 log = getLogger(__name__)
 plugin = Plugin.find(__name__)
 dispatcher = Dispatcher()
@@ -89,6 +88,16 @@ class Conduit(HandlerConduit):
     Provides integration between the gofer progress reporting
     and agent handler frameworks.
     """
+
+    @property
+    def consumer_id(self):
+        """
+        Get the current consumer ID
+
+        :return: The unique consumer ID of the currently running agent
+        :rtype:  str
+        """
+        return Bundle().cn()
 
     def get_consumer_config(self):
         """
