@@ -175,17 +175,17 @@ Pulp child nodes support.
 # Generate the certificate used to access the local server.
 
 PKI=/etc/pki/pulp
-PKI_CITRUS=$PKI/nodes
+PKI_NODES=$PKI/nodes
 CA_KEY=$PKI/ca.key
 CA_CRT=$PKI/ca.crt
 BASE='nodes'
 TMP=/tmp/$RANDOM
 CN='admin:admin:0'
 ORG='PULP'
-ORG_UNIT='CITRUS'
+ORG_UNIT='NODES'
 
 mkdir -p $TMP
-mkdir -p $PKI_CITRUS
+mkdir -p $PKI_NODES
 
 # create client key
 openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
@@ -210,7 +210,7 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_CITRUS/local.crt
+cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/local.crt
 
 # clean
 rm -rf $TMP
