@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import os
 from gettext import gettext as _
 
 from okaara.prompt import CLEAR_REMAINDER, COLOR_GREEN, COLOR_RED, MOVE_UP
@@ -22,7 +23,7 @@ from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID
 from pulp.client.commands.schedule import (
     DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
     UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
-from pulp.client.extensions.extensions import PulpCliFlag, PulpCliOption, PulpCliSection
+from pulp.client.extensions.extensions import PulpCliOption, PulpCliSection
 
 # root section -----------------------------------------------------------------
 
@@ -58,49 +59,48 @@ class ConsumerContentInstallCommand(PollingCommand):
         super(self.__class__, self).__init__(name, description, self.run, context)
 
         self.add_option(OPTION_CONSUMER_ID)
-        self.add_option(OPTION_CONTENT_TYPE_ID)
-        self.add_option(OPTION_CONTENT_UNIT)
-
-        self.add_flag(FLAG_NO_COMMIT)
-        self.add_flag(FLAG_REBOOT)
-        self.add_flag(FLAG_IMPORT_KEYS)
+        self.add_content_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
 
+    def add_content_options(self):
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        options = self.get_install_options(kwargs)
+        units = self.get_content_units(kwargs)
+
+        try:
+            response = self.api.install(consumer_id, units=units, options=options)
+
+        except NotFoundException:
+            msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
+            self.context.prompt.render_failure_message(msg, tag='not-found')
+            return os.EX_DATAERR
+
+        else:
+            task = response.response_body
+
+            if self.rejected(task) or self.postponed(task):
+                return
+
+            self.process(consumer_id, task)
+
+    def get_install_options(self, kwargs):
+        return {}
+
+    def get_content_units(self, kwargs):
         content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
-
-        commit = not kwargs[FLAG_NO_COMMIT.keyword]
-        reboot = kwargs[FLAG_REBOOT.keyword]
-        import_keys = kwargs[FLAG_IMPORT_KEYS.keyword]
-
-        options = {'apply': commit,
-                   'reboot': reboot,
-                   'importkeys': import_keys}
 
         def _unit_dict(unit_name):
             return {'type_id': content_type_id,
                     'unit_key': {'name': unit_name}}
 
         units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
-
-        self.install(consumer_id, units, options)
-
-    def install(self, consumer_id, units, options):
-        try:
-            response = self.api.install(consumer_id, units=units, options=options)
-
-        except NotFoundException:
-            msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
-            self.context.prompt.write(msg, tag='not-found')
-
-        else:
-            task = response.response_body
-            if self.rejected(task) or self.postponed(task):
-                return
-            self.process(consumer_id, task)
+        return units
 
     def progress(self, report):
         self.progress_tracker.display(report)
@@ -135,44 +135,20 @@ class ConsumerContentUpdateCommand(PollingCommand):
         super(self.__class__, self).__init__(name, description, self.run, context)
 
         self.add_option(OPTION_CONSUMER_ID)
-        self.add_option(OPTION_CONTENT_TYPE_ID)
-        self.add_option(OPTION_CONTENT_UNIT)
-
-        self.add_flag(FLAG_NO_COMMIT)
-        self.add_flag(FLAG_REBOOT)
-        self.add_flag(FLAG_IMPORT_KEYS)
-        self.add_flag(FLAG_ALL_CONTENT)
+        self.add_content_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
 
+    def add_content_options(self):
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
-        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+        options = self.get_update_options(kwargs)
+        units = self.get_content_units(kwargs)
 
-        commit = not kwargs[FLAG_NO_COMMIT.keyword]
-        reboot = kwargs[FLAG_REBOOT.keyword]
-        import_keys = kwargs[FLAG_IMPORT_KEYS.keyword]
-        all_units = kwargs[FLAG_ALL_CONTENT.keyword]
-
-        options = {'apply': commit,
-                   'reboot': reboot,
-                   'importkeys': import_keys,
-                   'all': all_units}
-
-        def _unit_dict(unit_name):
-            return {'type_id': content_type_id,
-                    'unit_key': {'name': unit_name}}
-
-        if all_units:
-            units = [{'type_id': content_type_id, 'unit_key': None}]
-
-        else:
-            units = map(_unit_dict, kwargs.get(OPTION_CONTENT_UNIT.keyword) or [])
-
-        self.update(consumer_id, units, options)
-
-    def update(self, consumer_id, units, options):
         if not units:
             msg = _('No content units specified')
             self.context.prompt.render_failure_message(msg)
@@ -183,7 +159,8 @@ class ConsumerContentUpdateCommand(PollingCommand):
 
         except NotFoundException:
             msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
-            self.context.prompt.write(msg, tag='not-found')
+            self.context.prompt.render_failure_message(msg, tag='not-found')
+            return os.EX_DATAERR
 
         else:
             task = response.response_body
@@ -194,6 +171,19 @@ class ConsumerContentUpdateCommand(PollingCommand):
                 return
 
             self.process(consumer_id, task)
+
+    def get_update_options(self, kwargs):
+        return {}
+
+    def get_content_units(self, kwargs):
+        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+
+        def _unit_dict(unit_name):
+            return {'type_id': content_type_id,
+                    'unit_key': {'name': unit_name}}
+
+        units = map(_unit_dict, kwargs.get(OPTION_CONTENT_UNIT.keyword) or [])
+        return units
 
     def progress(self, report):
         self.progress_tracker.display(report)
@@ -228,40 +218,27 @@ class ConsumerContentUninstallCommand(PollingCommand):
         super(self.__class__, self).__init__(name, description, self.run, context)
 
         self.add_option(OPTION_CONSUMER_ID)
-        self.add_option(OPTION_CONTENT_TYPE_ID)
-        self.add_option(OPTION_CONTENT_UNIT)
-
-        self.add_flag(FLAG_NO_COMMIT)
-        self.add_flag(FLAG_REBOOT)
+        self.add_content_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
 
+    def add_content_options(self):
+        self.add_option(OPTION_CONTENT_TYPE_ID)
+        self.add_option(OPTION_CONTENT_UNIT)
+
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
-        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+        options = self.get_uninstall_options(kwargs)
+        units = self.get_content_units(kwargs)
 
-        commit = not kwargs[FLAG_NO_COMMIT.keyword]
-        reboot = kwargs[FLAG_REBOOT.keyword]
-
-        options = {'apply': commit,
-                   'reboot': reboot}
-
-        def _unit_dict(unit_name):
-            return {'type_id': content_type_id,
-                    'unit_key': {'name': unit_name}}
-
-        units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
-
-        self.uninstall(consumer_id, units, options)
-
-    def uninstall(self, consumer_id, units, options):
         try:
             response = self.api.uninstall(consumer_id, units=units, options=options)
 
         except NotFoundException:
             msg = _('Consumer [ %(c)s ] not found') % {'c': consumer_id}
-            self.context.prompt.write(msg, tag='not-found')
+            self.context.prompt.render_failure_message(msg, tag='not-found')
+            return os.EX_DATAERR
 
         else:
             task = response.response_body
@@ -272,6 +249,19 @@ class ConsumerContentUninstallCommand(PollingCommand):
                 return
 
             self.process(consumer_id, task)
+
+    def get_uninstall_options(self, kwargs):
+        return {}
+
+    def get_content_units(self, kwargs):
+        content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
+
+        def _unit_dict(unit_name):
+            return {'type_id': content_type_id,
+                    'unit_key': {'name': unit_name}}
+
+        units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
+        return units
 
     def progress(self, report):
         self.progress_tracker.display(report)
@@ -293,8 +283,8 @@ class ConsumerContentProgressTracker(object):
         self.prompt = prompt
         self.next_step = 0
         self.details = None
-        self.OK = prompt.color(_('OK'), COLOR_GREEN)
-        self.FAILED = prompt.color(_('FAILED'), COLOR_RED)
+        self.ok = prompt.color(_('OK'), COLOR_GREEN)
+        self.failed = prompt.color(_('FAILED'), COLOR_RED)
 
     def reset(self):
         self.next_step = 0
@@ -325,7 +315,7 @@ class ConsumerContentProgressTracker(object):
             self.prompt.write(name)
             return
 
-        status = self.OK if status else self.FAILED
+        status = self.ok if status else self.failed
         self.prompt.write('%-40s[ %s ]' % (name, status))
 
     def display_details(self, details):
@@ -465,12 +455,4 @@ OPTION_CONTENT_UNIT = PulpCliOption('--content-unit',
                                     _('content unit id; may be repeated for multiple content units'),
                                     required=True,
                                     allow_multiple=True)
-
-FLAG_NO_COMMIT = PulpCliFlag('--no-commit', _('transaction not committed'))
-
-FLAG_REBOOT = PulpCliFlag('--reboot', _('reboot after successful transaction'))
-
-FLAG_IMPORT_KEYS = PulpCliFlag('--import-keys', _('import GPG keys as needed'))
-
-FLAG_ALL_CONTENT = PulpCliFlag('--all', _('update all content units'), ['-a'])
 
