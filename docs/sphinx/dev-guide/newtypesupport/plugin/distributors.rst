@@ -7,7 +7,7 @@ Overview
 While an :doc:`importer <importers>` is responsible for bringing content into a repository, a
 distributor is used to expose that content from the Pulp server. The specifics for what it means
 to expose the repository, performed through an operation referred to as *publishing*, is
-dependent on the distributor's implementation. Publishing examples include serving the repository
+dependent on the distributor's goals. Publishing examples include serving the repository
 over HTTP/HTTPS, packaging it as an ISO, or using rsync to transfer it into a legacy system.
 
 Operations cannot be performed on a distributor until it is attached to a repository. When adding
@@ -70,11 +70,11 @@ Publish a Repository
 
 Methods: ``publish_repo``, ``cancel_publish_repo``
 
-The distributor's role in publishing a repository is to take the units currently in the repository,
-be it from a sync, uploaded, or copied from another repository, and make them available outside of
-the Pulp server. The approach for how that is done will vary based on needs. The typical approach
-is to serve the repository over HTTP/HTTPS. However, it is also possible to use a variety of other
-protocols depending on the nature of the content being served or the specific needs of a deployment.
+The distributor's role in publishing a repository is to take the units currently in the repository and
+make them available outside of the Pulp server. The approach for how that is done will vary based on
+needs. The typical approach is to serve the repository over HTTP/HTTPS. However, it is also possible to
+use a variety of other protocols depending on the nature of the content being served or the specific needs
+of a deployment.
 
 The :term:`conduit` passed to the publish call provides the necessary methods to query the content
 in a repository. In the event a directory of the repository's content must be created, it is
@@ -82,14 +82,15 @@ highly recommended to symlink from the unit's ``storage_path`` rather than copyi
 
 The conduit defines a ``set_progress`` call that should be used throughout the process
 to update the Pulp server with details on what has been accomplished and what remains to be
-done. The Pulp server does not require these calls; they are intended to be displayed to
-the user. The progress message must be JSON-serializable (primitives, lists, dictionaries)
-but is otherwise entirely at the discretion of the plugin writer.
+done. The Pulp server does not require these calls. The progress message must be JSON-serializable
+(primitives, lists, dictionaries) but is otherwise entirely at the discretion of the plugin writer.
+The most recent progress report is saved in the database and made available to users as a means
+to track the progress of the publish.
 
 When implementing the publish functionality, the importer's ``cancel_sync_repo`` method must be
 implemented as well. This call will be made on the same instance performing the publish, therefore
 it is valid to use an instance variable as a flag the publish process uses to determine if it should
-continue to proceed.
+continue.
 
 Consumer Payloads
 ^^^^^^^^^^^^^^^^^

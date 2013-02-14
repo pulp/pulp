@@ -114,9 +114,10 @@ outline of a common sync process.
 
 The conduit defines a ``set_progress`` call that should be used throughout the process
 to update the Pulp server with details on what has been accomplished and what remains to be
-done. The Pulp server does not require these calls; they are intended to be displayed to
-the user. The progress message must be JSON-serializable (primitives, lists, dictionaries)
-but is otherwise entirely at the discretion of the plugin writer.
+done. The Pulp server does not require these calls. The progress message must be JSON-serializable
+(primitives, lists, dictionaries) but is otherwise entirely at the discretion of the plugin writer.
+The most recent progress report is saved in the database and made available to users as a means
+to track the progress of the sync.
 
 When implementing the sync functionality, the importer's ``cancel_sync_repo`` method must be
 implemented as well. This call will be made on the same instance performing the sync, therefore

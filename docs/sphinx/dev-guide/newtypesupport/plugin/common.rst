@@ -13,7 +13,7 @@ It is up to the plugin writer to determine what configuration values are necessa
 plugin to function.
 
 Pulp performs no validation on the configuration for a plugin. The ``validate_config``
-method in the each plugin subclass is used to verify the user-entered values for a repository.
+method in each plugin subclass is used to verify the user-entered values for a repository.
 This is called when the plugin is first added to the repository and on all subsequent
 configuration changes. The configuration is sent to the Pulp server as a JSON document through its
 REST APIs and will be deserialized before being passed to the plugin.
