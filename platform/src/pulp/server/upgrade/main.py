@@ -226,12 +226,10 @@ class Upgrader(object):
             try:
                 report = db_call(v1_database, tmp_database)
             except:
-                spinner.stop()
-                spinner.clear() # temporary until okaara supports this
+                spinner.stop(clear=True)
                 raise
 
-            spinner.stop()
-            spinner.clear() # temporary until okaara supports this
+            spinner.stop(clear=True)
 
             if report is None or report.success is None:
                 # This should only happen during development if the script writer
@@ -268,12 +266,10 @@ class Upgrader(object):
             try:
                 report = upgrade_call(v1_database, tmp_database)
             except:
-                spinner.stop()
-                spinner.clear()
+                spinner.stop(clear=True)
                 raise
 
-            spinner.stop()
-            spinner.clear()
+            spinner.stop(clear=True)
 
             if report is None or report.success is None:
                 # This should only happen during development if the script writer
@@ -301,8 +297,7 @@ class Upgrader(object):
             spinner = ThreadedSpinner(self.prompt)
             spinner.start()
             self._backup_v1()
-            spinner.stop()
-            spinner.clear()
+            spinner.stop(clear=True)
         else:
             self._print(_('The v1 database will not be backed up'))
             self.prompt.write('')
@@ -313,8 +308,7 @@ class Upgrader(object):
         spinner = ThreadedSpinner(self.prompt)
         spinner.start()
         self._install_v2()
-        spinner.stop()
-        spinner.clear()
+        spinner.stop(clear=True)
 
         self.prompt.write('')
 
@@ -324,8 +318,7 @@ class Upgrader(object):
         spinner = ThreadedSpinner(self.prompt)
         spinner.start()
         self._cleanup()
-        spinner.stop()
-        spinner.clear()
+        spinner.stop(clear=True)
 
         self.prompt.write('')
 
@@ -344,12 +337,10 @@ class Upgrader(object):
             try:
                 report = upgrade_call(v1_database, tmp_database)
             except:
-                spinner.stop()
-                spinner.clear()
+                spinner.stop(clear=True)
                 raise
 
-            spinner.stop()
-            spinner.clear()
+            spinner.stop(clear=True)
 
             if report is None or report.success is None:
                 self._print(_('Clean upgrade script did not indicate the result of the step'))
