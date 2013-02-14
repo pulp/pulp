@@ -119,7 +119,6 @@ Pulp nodes common modules.
 %files common
 %defattr(-,root,root,-)
 %dir %{python_sitelib}/pulp_node
-%{python_sitelib}/pulp_node/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
 %doc
