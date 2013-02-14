@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.8.alpha
+Release: 0.9.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -409,6 +409,10 @@ exit 0
 %endif
 
 %changelog
+* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.9.alpha
+- 906426 - Create the upload directory if someone deletes it
+  (jason.dobies@redhat.com)
+
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.8.alpha
 - 
 
