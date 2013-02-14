@@ -256,8 +256,14 @@ class ContentUploadManager(object):
         files. This is necessary as a dynamic call so unit tests have the
         opportunity to change the constants entry for local storage.
 
+        This call will create the directory if it doesn't exist.
+
         @return: full path to the upload directory
         """
         storage_dir = pulp_config.config.get('server', 'storage_dir')
         upload_storage_dir = os.path.join(storage_dir, 'uploads')
+
+        if not os.path.exists(upload_storage_dir):
+            os.makedirs(upload_storage_dir)
+
         return upload_storage_dir
