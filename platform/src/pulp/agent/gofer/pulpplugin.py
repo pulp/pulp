@@ -36,9 +36,7 @@ from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
 
 log = getLogger(__name__)
-# I am assuming that the argument to find() should only be the last portion of
-# the full python path
-plugin = Plugin.find(__name__.rsplit('.', 1)[-1])
+plugin = Plugin.find(__name__)
 dispatcher = Dispatcher()
 cfg = plugin.cfg()
 
