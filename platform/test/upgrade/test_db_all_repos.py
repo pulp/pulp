@@ -90,22 +90,25 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
 
         self.v1_repo_2_id = 'second-scheduled-repo'
         self.v1_repo_2_schedule = 'R6/2012-01-01T00:00:00Z/P21DT'
+        # actually test the full freaking _calculate_next_run method :P
+        self.v1_repo_2_last_sync = '2012-01-22T00:00:00Z'
 
         repositories = (self.v1_repo_1_id, self.v1_repo_2_id)
         schedules = (self.v1_repo_1_schedule, self.v1_repo_2_schedule)
-        for repo, schedule in zip(repositories, schedules):
-            self._insert_scheduled_v1_repo(repo, schedule)
+        last_syncs = (None, self.v1_repo_2_last_sync)
+        for repo, schedule, last_sync in zip(repositories, schedules, last_syncs):
+            self._insert_scheduled_v1_repo(repo, schedule, last_sync)
 
         # The v2 repository's importer needs to exist in the database otherwise
         # the schedule sanity check will fail
         self.tmp_test_db.database.repo_importers.insert({'repo_id' : self.v1_repo_1_id, 'scheduled_syncs': []})
         self.tmp_test_db.database.repo_importers.insert({'repo_id' : self.v1_repo_2_id, 'scheduled_syncs': []})
 
-    def _insert_scheduled_v1_repo(self, repo_id, schedule):
+    def _insert_scheduled_v1_repo(self, repo_id, schedule, last_sync):
         doc = {'id': repo_id,
                'sync_schedule': schedule,
                'sync_options': None,
-               'last_sync': None}
+               'last_sync': last_sync}
         self.v1_test_db.database.repos.insert(doc, safe=True)
 
     def _insert_scheduled_v2_repo(self, repo_id, schedule):

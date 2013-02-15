@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.7.alpha
+Release: 0.10.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -113,8 +113,8 @@ cp etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
 
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
-cp etc/gofer/plugins/pulp.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
-cp -R src/pulp/agent/gofer/pulp.py %{buildroot}/%{_libdir}/gofer/plugins
+cp etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
+cp -R src/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # Tools
@@ -147,6 +147,7 @@ Requires: python-%{name}-common = %{version}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
+Requires: python-okaara >= 1.0.30
 Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
@@ -246,7 +247,7 @@ Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: m2crypto
 Requires: python-%{name}-common = %{version}
-Requires: python-okaara >= 1.0.28
+Requires: python-okaara >= 1.0.30
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
@@ -285,7 +286,7 @@ for content, bind and system specific operations.
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
-Requires: python-okaara >= 1.0.28
+Requires: python-okaara >= 1.0.30
 Requires: python-%{name}-common = %{version}
 Requires: python-%{name}-bindings = %{version}
 Requires: python-%{name}-client-lib = %{version}
@@ -348,8 +349,8 @@ on a defined interval.
 %files agent
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
-%{_sysconfdir}/gofer/plugins/pulp.conf
-%{_libdir}/gofer/plugins/pulp.*
+%{_sysconfdir}/gofer/plugins/pulpplugin.conf
+%{_libdir}/gofer/plugins/pulpplugin.*
 %{_sysconfdir}/rc.d/init.d/pulp-agent
 %doc
 
@@ -408,6 +409,16 @@ exit 0
 %endif
 
 %changelog
+* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.10.alpha
+- 
+
+* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.9.alpha
+- 906426 - Create the upload directory if someone deletes it
+  (jason.dobies@redhat.com)
+
+* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.8.alpha
+- 
+
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
 - 
 

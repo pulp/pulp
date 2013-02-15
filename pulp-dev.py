@@ -101,7 +101,7 @@ LINKS = (
     # Server Configuration
     ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
     ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf'),
-    ('platform/etc/gofer/plugins/pulp.conf', '/etc/gofer/plugins/pulp.conf'),
+    ('platform/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
     ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
     ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
     ('platform/etc/pulp/server.conf', '/etc/pulp/server.conf'),
@@ -110,7 +110,7 @@ LINKS = (
     ('platform/etc/pulp/logging', '/etc/pulp/logging'),
 
     # Server Web Configuration
-    ('platform/src/pulp/agent/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
+    ('platform/src/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
     # Pulp Nodes

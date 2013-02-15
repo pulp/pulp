@@ -125,7 +125,7 @@ def _sync_schedules(v1_database, v2_database, report):
             'failure_threshold': None,
             'consecutive_failures': 0,
             'first_run': None,
-            'last_run': repo['last_sync'],
+            'last_run': dateutils.to_naive_utc_datetime(dateutils.parse_iso8601_datetime(repo['last_sync'])),
             'next_run': None,
             'remaining_runs': None,
             'enabled': True}
