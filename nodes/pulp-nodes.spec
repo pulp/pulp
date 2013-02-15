@@ -110,7 +110,6 @@ Summary: Pulp nodes common modules
 Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
-Requires: python-pulp-agent-lib = %{pulp_version}
 Requires: gofer >= 0.74
 
 %description common
