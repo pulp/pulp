@@ -42,6 +42,7 @@ class ConsumerContentSection(PulpCliSection):
 # content installation ---------------------------------------------------------
 
 class ConsumerContentInstallSection(PulpCliSection):
+
     def __init__(self, context, name=None, description=None):
         name = name or 'install'
         description = description or _('run or schedule a content unit installation task')
@@ -52,6 +53,9 @@ class ConsumerContentInstallSection(PulpCliSection):
 
 
 class ConsumerContentInstallCommand(PollingCommand):
+    """
+    Base class that installs content of an arbitrary type to a consumer.
+    """
 
     def __init__(self, context, name=None, description=None, progress_tracker=None):
         name = name or 'run'
@@ -60,13 +64,23 @@ class ConsumerContentInstallCommand(PollingCommand):
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_content_options()
+        self.add_install_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
 
     def add_content_options(self):
+        """
+        Override this method to provide content-type specific content options.
+        """
         self.add_option(OPTION_CONTENT_TYPE_ID)
         self.add_option(OPTION_CONTENT_UNIT)
+
+    def add_install_options(self):
+        """
+        Override this method to provide content-type specific installation options.
+        """
+        pass
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -90,9 +104,16 @@ class ConsumerContentInstallCommand(PollingCommand):
             self.process(consumer_id, task)
 
     def get_install_options(self, kwargs):
+        """
+        Override this method to get content-type specific installation options
+        from the keyword arguments passed to run.
+        """
         return {}
 
     def get_content_units(self, kwargs):
+        """
+        Override this method to build custom content specification documents.
+        """
         content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
 
         def _unit_dict(unit_name):
@@ -127,6 +148,9 @@ class ConsumerContentUpdateSection(PulpCliSection):
 
 
 class ConsumerContentUpdateCommand(PollingCommand):
+    """
+    Base class that updates content of an arbitrary type to a consumer.
+    """
 
     def __init__(self, context, name=None, description=None, progress_tracker=None):
         name = name or 'run'
@@ -135,13 +159,23 @@ class ConsumerContentUpdateCommand(PollingCommand):
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_content_options()
+        self.add_update_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
 
     def add_content_options(self):
+        """
+        Override this method to provide content-type specific content options.
+        """
         self.add_option(OPTION_CONTENT_TYPE_ID)
         self.add_option(OPTION_CONTENT_UNIT)
+
+    def add_update_options(self):
+        """
+        Override this method to provide content-type specific update options.
+        """
+        pass
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -172,9 +206,16 @@ class ConsumerContentUpdateCommand(PollingCommand):
             self.process(consumer_id, task)
 
     def get_update_options(self, kwargs):
+        """
+        Override this method to get content-type specific update options
+        from the keyword arguments passed to run.
+        """
         return {}
 
     def get_content_units(self, kwargs):
+        """
+        Override this method to build custom content specification documents.
+        """
         content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
 
         def _unit_dict(unit_name):
@@ -209,6 +250,9 @@ class ConsumerContentUninstallSection(PulpCliSection):
 
 
 class ConsumerContentUninstallCommand(PollingCommand):
+    """
+    Base class that uninstalls content of an arbitrary type from a consumer.
+    """
 
     def __init__(self, context, name=None, description=None, progress_tracker=None):
         name = name or 'run'
@@ -217,13 +261,23 @@ class ConsumerContentUninstallCommand(PollingCommand):
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_content_options()
+        self.add_uninstall_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
 
     def add_content_options(self):
+        """
+        Override this method to provide content-type specific content options.
+        """
         self.add_option(OPTION_CONTENT_TYPE_ID)
         self.add_option(OPTION_CONTENT_UNIT)
+
+    def add_uninstall_options(self):
+        """
+        Override this method to provide content-type specific uninstall options.
+        """
+        pass
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -249,9 +303,16 @@ class ConsumerContentUninstallCommand(PollingCommand):
             self.process(consumer_id, task)
 
     def get_uninstall_options(self, kwargs):
+        """
+        Override this method to get content-type specific uninstall options
+        from the keyword arguments passed to run.
+        """
         return {}
 
     def get_content_units(self, kwargs):
+        """
+        Override this method to build custom content specification documents.
+        """
         content_type_id = kwargs[OPTION_CONTENT_TYPE_ID.keyword]
 
         def _unit_dict(unit_name):

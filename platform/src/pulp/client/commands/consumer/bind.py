@@ -22,7 +22,8 @@ from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpC
 
 class ConsumerBindCommand(PulpCliCommand):
     """
-    Bind a consumer to a repository.
+    Base class that binds a consumer to a repository and an arbitrary
+    distributor.
     """
 
     def __init__(self, context, name=None, description=None):
@@ -37,12 +38,17 @@ class ConsumerBindCommand(PulpCliCommand):
         self.context = context
 
     def add_distributor_option(self):
+        """
+        Override this method to a no-op to skip adding the distributor options.
+        This allows derived commands to specialize (read: hard-code) the
+        distributor types they work with.
+        """
         self.add_option(OPTION_DISTRIBUTOR_ID)
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
+        distributor_id = self.get_distributor_id(kwargs)
 
         try:
             response = self.context.server.bind.bind(consumer_id, repo_id, distributor_id)
@@ -73,10 +79,17 @@ class ConsumerBindCommand(PulpCliCommand):
             task_dicts = [dict(('task_id', str(t.task_id))) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
 
+    def get_distributor_id(self, kwargs):
+        """
+        Override this method to provide the distributor id to the run method.
+        """
+        return kwargs[OPTION_DISTRIBUTOR_ID.keyword]
+
 
 class ConsumerUnbindCommand(PulpCliCommand):
     """
-    Remove a consumer-repository binding.
+    Base class that unbinds a consumer from a repository and an arbitrary
+    distributor.
     """
 
     def __init__(self, context, name=None, description=None):
@@ -93,12 +106,17 @@ class ConsumerUnbindCommand(PulpCliCommand):
         self.context = context
 
     def add_distributor_option(self):
+        """
+        Override this method to a no-op to skip adding the distributor options.
+        This allows derived commands to specialize (read: hard-code) the
+        distributor types they work with.
+        """
         self.add_option(OPTION_DISTRIBUTOR_ID)
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
+        distributor_id = self.get_distributor_id(kwargs)
         force = kwargs[FLAG_FORCE.keyword]
 
         try:
@@ -113,6 +131,12 @@ class ConsumerUnbindCommand(PulpCliCommand):
             self.context.prompt.render_success_message(msg)
             task_dicts = [dict(('task_id', t.task_id)) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
+
+    def get_distributor_id(self, kwargs):
+        """
+        Override this method to provide the distributor id to the run method.
+        """
+        return kwargs[OPTION_DISTRIBUTOR_ID.keyword]
 
 # options and flags ------------------------------------------------------------
 
