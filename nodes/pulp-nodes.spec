@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.1.0
-Release: 0.7.alpha
+Release: 0.10.alpha
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
