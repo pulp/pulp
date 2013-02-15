@@ -26,6 +26,39 @@ from pulp_node.distributors.http.publisher import HttpPublisher
 _LOG = getLogger(__name__)
 
 
+# This should be in /etc/pulp
+DEFAULT_CONFIGURATION = {
+    'protocol': 'https',
+    'http': {
+        'alias': [
+            '/pulp/nodes/http/repos',
+            '/var/www/pulp/nodes/http/repos'
+        ]
+    },
+    'https': {
+        'alias': [
+            '/pulp/nodes/https/repos',
+            '/var/www/pulp/nodes/https/repos'
+        ],
+        'ssl': {
+            'client_cert': {
+                'local': '/etc/pki/pulp/nodes/local.crt',
+                'child': '/etc/pki/pulp/nodes/parent/client.crt'
+            }
+        }
+    }
+}
+
+
+def entry_point():
+    """
+    Entry point that pulp platform uses to load the distributor.
+    :return: distributor class and its configuration.
+    :rtype:  Distributor, {}
+    """
+    return NodesHttpDistributor, DEFAULT_CONFIGURATION
+
+
 class NodesHttpDistributor(Distributor):
     """
     The (nodes) distributor

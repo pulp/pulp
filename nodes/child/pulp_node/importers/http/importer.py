@@ -24,6 +24,15 @@ from pulp_node.importers.strategies import find_strategy
 log = getLogger(__name__)
 
 
+def entry_point():
+    """
+    Entry point that pulp platform uses to load the importer.
+    :return: importer class and its configuration
+    :rtype:  Importer, {}
+    """
+    return NodesHttpImporter, {}
+
+
 class NodesHttpImporter(Importer):
     """
     The nodes importer is used to synchronize repository content.

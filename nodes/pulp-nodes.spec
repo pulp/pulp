@@ -169,7 +169,7 @@ Pulp child nodes support.
 
 # ----------------------------------------------------------------------------
 
-%post
+%post common
 # Generate the certificate used to access the local server.
 
 PKI=/etc/pki/pulp
