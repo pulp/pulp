@@ -106,13 +106,12 @@ class ConsumerContentInstallCommand(PollingCommand):
         self.progress_tracker.display(report)
 
     def succeeded(self, consumer_id, task):
-        if task.result['succeeded']:
-            msg = _('Install Succeeded')
-            self.context.prompt.render_success_message(msg)
+        msg = _('Install Succeeded')
+        self.context.prompt.render_success_message(msg)
 
-        else:
-            msg = _('Install Failed')
-            self.context.prompt.render_failure_message(msg)
+    def failed(self, consumer_id, task):
+        msg = _('Install Failed')
+        self.context.prompt.render_failure_message(msg)
 
 # content update ---------------------------------------------------------------
 
@@ -189,13 +188,12 @@ class ConsumerContentUpdateCommand(PollingCommand):
         self.progress_tracker.display(report)
 
     def succeeded(self, consumer_id, task):
-        if task.result['succeeded']:
-            msg = _('Update Succeeded')
-            self.context.prompt.render_success_message(msg)
+        msg = _('Update Succeeded')
+        self.context.prompt.render_success_message(msg)
 
-        else:
-            msg = _('Update Failed')
-            self.context.prompt.render_failure_message(msg)
+    def failed(self, consumer_id, task):
+        msg = _('Update Failed')
+        self.context.prompt.render_failure_message(msg)
 
 # content uninstall ------------------------------------------------------------
 
@@ -267,13 +265,12 @@ class ConsumerContentUninstallCommand(PollingCommand):
         self.progress_tracker.display(report)
 
     def succeeded(self, consumer_id, task):
-        if task.result['succeeded']:
-            msg = _('Uninstall Succeeded')
-            self.context.prompt.render_success_message(msg)
+        msg = _('Uninstall Succeeded')
+        self.context.prompt.render_success_message(msg)
 
-        else:
-            msg = _('Uninstall Failed')
-            self.context.prompt.render_failure_message(msg)
+    def failed(self, consumer_id, task):
+        msg = _('Uninstall Failed')
+        self.context.prompt.render_failure_message(msg)
 
 # progress tracker -------------------------------------------------------------
 

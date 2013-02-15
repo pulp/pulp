@@ -11,123 +11,133 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-"""
-Base class for RPM admin commands.
-"""
-
 import time
 from gettext import gettext as _
+
 from pulp.client.extensions.extensions import PulpCliCommand
+
 
 class PollingCommand(PulpCliCommand):
     """
-    A I{polling} command provides support for polling tasks created during
+    A polling command provides support for polling tasks created during
     REST calls to the server.  Primarily, it polls the server for an updated
     status for the task.  Once the task is finished, it is dispatched to
-    a method based on task status.  Additionally, it stores the I{context}
+    a method based on task status.  Additionally, it stores the context
     for convenience.
-    @ivar context: The command context object.
-    @type context: See okaara.
+
+    :ivar context: The command context object.
+    :type context: See okaara.
     """
 
     def __init__(self, name, description, method, context):
         """
-        @param name: The command name.
-        @type name: str
-        @param description: The command description.
-        @type description: str
-        @param method: The command (main) method.
-        @type method: instancemethod
-        @param context: The command context object.
-        @type context: See okaara.
+        :param name: The command name.
+        :type name: str
+        :param description: The command description.
+        :type description: str
+        :param method: The command (main) method.
+        :type method: instancemethod
+        :param context: The command context object.
+        :type context: See okaara.
         """
-        PulpCliCommand.__init__(self, name, description, method)
+        super(PollingCommand, self).__init__(name, description, method)
         self.context = context
 
-    def process(self, id, task):
+    def process(self, resource_id, task):
         """
         Process the queued task by polling and waiting for it to complete.
         Once the task has completed, it is dispatched to a method based
         on the task status.  A spinner is displayed while polling.
-        @type id: The consumer ID.
-        @type id: str
-        @param task: A queued task.
-        @type task: Task
+
+        :param resource_id: The resource ID.
+        :type resource_id: str
+        :param task: A queued task.
+        :type task: Task
         """
-        prompt = self.context.prompt
-        m = 'This command may be exited via ctrl+c without affecting the install.'
-        prompt.render_paragraph(_(m))
+        msg = _('This command may be exited via ctrl+c without affecting the request.')
+        self.context.prompt.render_paragraph(msg)
+
         try:
             task = self._poll(task)
+
             if task.was_successful():
-                self.succeeded(id, task)
-                return
+                return self.succeeded(resource_id, task)
+
             if task.was_failure():
-                self.failed(id, task)
-                return
+                return self.failed(resource_id, task)
+
             if task.was_cancelled():
-                self.cancelled(id, task)
-                return
+                return self.cancelled(resource_id, task)
+
+        # graceful interrupt
         except KeyboardInterrupt:
-            # graceful interrupt
             pass
 
     def _poll(self, task):
         """
         Poll the server, waiting for a task completion.
-        @param task: A queued task.
-        @type task: Task
-        @return: The completed task.
-        @rtype: Task
+
+        :param task: A queued task.
+        :type task: Task
+        :return: The completed task.
+        :rtype: Task
         """
-        server = self.context.server
-        cfg = self.context.config
         spinner = self.context.prompt.create_spinner()
-        interval = float(cfg['output']['poll_frequency_in_seconds'])
+        interval = float(self.context.config['output']['poll_frequency_in_seconds'])
         last_hash = None
+
         while not task.is_completed():
             if task.is_waiting():
                 spinner.next(_('Waiting to begin'))
+
             else:
                 # report progress only if valid & changed
                 if task.progress:
                     _hash = hash(repr(task.progress))
+
                     if _hash != last_hash:
                         self.progress(task.progress)
                         last_hash = _hash
+
                 else:
                     spinner.next()
+
             time.sleep(interval)
-            response = server.tasks.get_task(task.task_id)
+
+            response = self.context.server.tasks.get_task(task.task_id)
             task = response.response_body
+
         if task.progress:
             self.progress(task.progress)
+
         return task
 
     def progress(self, report):
         """
         The task has reported progress
-        @param report: A progress report.
+
+        :param report: A progress report.
         """
-        pass
+        self.context.prompt.render_document(report)
 
     def rejected(self, task):
         """
         Test for rejected tasks.
         If rejected, an appropriate message is displayed for the user and
         and the test result (flag) is returned.
-        @param task: A queued task.
-        @type task: Task
-        @return: Whether the task was rejected.
-        @rtype: bool
+
+        :param task: A queued task.
+        :type task: Task
+        :return: Whether the task was rejected.
+        :rtype: bool
         """
         rejected = task.is_rejected()
+
         if rejected:
-            prompt = self.context.prompt
-            msg = 'The request was rejected by the server'
-            prompt.render_failure_message(_(msg))
-            msg = 'This is likely due to an impending delete request for the consumer.'
-            prompt.render_failure_message(_(msg))
+            msg = _('The request was rejected by the server.\n'
+                    'This is likely due to an impending delete request for the resource.')
+            self.context.prompt.render_failure_message(_(msg))
+
         return rejected
 
     def postponed(self, task):
@@ -135,55 +145,59 @@ class PollingCommand(PulpCliCommand):
         Test for postponed tasks.
         If postponed, an appropriate message is displayed for the user and
         and the test result (flag) is returned.
-        @param task: A queued task.
-        @type task: Task
-        @return: Whether the task was postponed.
-        @rtype: bool
+        :param task: A queued task.
+        :type task: Task
+        :return: Whether the task was postponed.
+        :rtype: bool
         """
         postponed = task.is_postponed()
+
         if postponed:
-            msg  = \
-                'The request to update content was accepted but postponed ' \
-                'due to one or more previous requests against the consumer.' \
-                ' This request will take place at the earliest possible time.'
-            self.context.prompt.render_paragraph(_(msg))
+            msg  = _('The request was accepted but postponed due to one or more previous requests against the resource.\n'
+                     'This request will proceed at the earliest possible time.')
+            self.context.prompt.render_paragraph(msg)
+
         return postponed
 
-    def succeeded(self, id, task):
+    def succeeded(self, resource_id, task):
         """
         Called when a task has completed with a status indicating success.
         Must be overridden by subclasses which are expected to print the
         appropriate output to the user.
-        @type id: The consumer ID.
-        @type id: str
-        @param task: A successful task.
-        @type task: Task
-        """
-        raise NotImplementedError()
 
-    def failed(self, id, task):
+        :param resource_id: The resource ID.
+        :type resource_id: str
+        :param task: A successful task.
+        :type task: Task
+        """
+        msg = _('Request Succeeded')
+        self.context.prompt.render_success_message(msg)
+
+    def failed(self, resource_id, task):
         """
         Called when a task has completed with a status indicating that it failed.
         An appropriate message is displayed to the user.
-        @type id: The consumer ID.
-        @type id: str
-        @param task: A cancelled task.
-        @type task: Task
-        """
-        prompt = self.context.prompt
-        msg = 'Request Failed'
-        prompt.render_failure_message(_(msg))
-        prompt.render_failure_message(task.exception)
 
-    def cancelled(self, id, task):
+        :param resource_id: The resource ID.
+        :type id: str
+        :param task: A cancelled task.
+        :type task: Task
+        """
+        msg = _('Request Failed')
+        self.context.prompt.render_failure_message(msg)
+        self.context.prompt.render_failure_message(task.exception)
+
+    def cancelled(self, resource_id, task):
         """
         Called when a task has completed with a status indicating
         that it was cancelled.
         An appropriate message is displayed to the user.
-        @type id: The consumer ID.
-        @type id: str
-        @param task: A cancelled task.
-        @type task: Task 
+
+        :param resource_id: The resource ID.
+        :type resource_id: str
+        :param task: A cancelled task.
+        :type task: Task
         """
-        prompt = self.context.prompt
-        prompt.render_failure_message('Request Cancelled')
+        msg = _('Request Cancelled')
+        self.context.prompt.write(msg)
+
