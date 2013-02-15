@@ -242,5 +242,10 @@ class NodesHttpDistributor(Distributor):
         :param payload: The distributor(s) payload
         :type payload: dict
         """
+        distributors = []
         manager = factory.repo_distributor_manager()
-        payload['distributors'] = manager.get_distributors(repo_id)
+        for dist in manager.get_distributors(repo_id):
+            if dist['distributor_type_id'] in constants.ALL_DISTRIBUTORS:
+                continue
+            distributors.append(dist)
+        payload['distributors'] = distributors

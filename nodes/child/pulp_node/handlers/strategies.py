@@ -99,6 +99,7 @@ class HandlerStrategy(object):
             except Exception, e:
                 msg = _('Add/Merge repository: %(r)s failed: %(e)s')
                 failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
+                log.exception(msg)
         return (added, merged, failed)
 
     def _synchronize_repositories(self, repo_ids, options):
@@ -147,6 +148,7 @@ class HandlerStrategy(object):
                 self.progress.error(msg)
                 errors.append((repo_id, msg))
                 reports[repo_id] = dict(succeeded=False, exception=msg)
+                log.exception(msg)
         return (reports, errors)
 
     def _delete_repositories(self, bindings):
@@ -176,6 +178,7 @@ class HandlerStrategy(object):
             except Exception, e:
                 msg = _('Delete repository: %(r)s failed: %(e)s')
                 failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
+                log.exception(msg)
         return (removed, failed)
 
 

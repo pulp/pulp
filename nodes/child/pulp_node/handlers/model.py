@@ -345,7 +345,7 @@ class ChildRepository(Child, Repository):
         for details in self.importers:
             imp_id = details['id']
             if imp_id not in parent_ids:
-                imp = ChildImporter(self.repo_id, imp_id)
+                imp = ChildImporter(self.repo_id, imp_id, {})
                 imp.delete()
 
     def merge_distributors(self, parent):
@@ -382,7 +382,7 @@ class ChildRepository(Child, Repository):
         for details in self.distributors:
             dist_id = details['id']
             if dist_id not in parent_ids:
-                dist = ChildDistributor(self.repo_id, dist_id)
+                dist = ChildDistributor(self.repo_id, dist_id, {})
                 dist.delete()
 
     def run_synchronization(self, progress, strategy):

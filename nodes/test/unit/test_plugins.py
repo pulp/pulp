@@ -35,6 +35,7 @@ from pulp.plugins.types import database as unit_db
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
+from pulp.server.exceptions import MissingResource
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.server.managers import factory as managers
@@ -52,10 +53,33 @@ from pulp.common.download.config import DownloaderConfig
 from pulp_node.constants import HTTP_IMPORTER, HTTP_DISTRIBUTOR
 
 
+FAKE_DISTRIBUTOR = 'test_distributor'
+
+
 class Repository(object):
 
     def __init__(self, id):
         self.id = id
+
+
+class FakeDistributor(object):
+
+    @classmethod
+    def metadata(cls):
+        return {
+            'id' : FAKE_DISTRIBUTOR,
+            'display_name' : 'Fake Distributor',
+            'types' : ['node',]
+        }
+
+    def validate_config(self, *unused):
+        return True, None
+
+    def publish_repo(self, repo, conduit, config):
+        return conduit.build_success_report('succeeded', {})
+
+    def distributor_added(self, *unused):
+        pass
 
 
 class PluginTestBase(WebTest):
@@ -90,6 +114,7 @@ class PluginTestBase(WebTest):
         plugin_api._create_manager()
         plugin_api._MANAGER.importers.add_plugin(HTTP_IMPORTER, NodesHttpImporter, {})
         plugin_api._MANAGER.distributors.add_plugin(HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
+        plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, {})
         unit_db.type_definition = \
             Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
@@ -292,19 +317,14 @@ class TestAgentPlugin(PluginTestBase):
         # add importer
         cfg = dict(manifest_url='http://apple.com', protocol='file')
         manager.set_importer(self.REPO_ID, HTTP_IMPORTER, cfg)
-        # add distributor
+        # add distributors
         if ssl:
             dist_conf = self.dist_conf_with_ssl()
         else:
             dist_conf = self.dist_conf()
-
         manager = managers.repo_distributor_manager()
-        manager.add_distributor(
-            self.REPO_ID,
-            HTTP_DISTRIBUTOR,
-            dist_conf,
-            False,
-            HTTP_DISTRIBUTOR)
+        manager.add_distributor(self.REPO_ID, HTTP_DISTRIBUTOR, dist_conf, False, HTTP_DISTRIBUTOR)
+        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, {}, False, FAKE_DISTRIBUTOR)
         # bind
         manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, HTTP_DISTRIBUTOR)
@@ -328,12 +348,8 @@ class TestAgentPlugin(PluginTestBase):
         self.assertTrue(manifest_url.endswith('%s/units.json.gz' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
-        distributor = manager.get_distributor(self.REPO_ID, HTTP_DISTRIBUTOR)
-        protocol = distributor['config']['protocol']
-        self.assertEqual(protocol, 'file')
-        alias = distributor['config'][protocol]['alias']
-        self.assertEqual(alias[0], self.parentfs)
-        self.assertEqual(alias[1], self.parentfs)
+        manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
+        self.assertRaises(MissingResource, manager.get_distributor, self.REPO_ID, HTTP_DISTRIBUTOR)
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
