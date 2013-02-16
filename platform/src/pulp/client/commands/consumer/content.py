@@ -425,7 +425,7 @@ class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
         strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'create'
         description = description or _('adds a new scheduled %(a)s operation') % {'a': action}
-        super(self.__class__, self).__init__(context, strategy, name, description)
+        super(ConsumerContentCreateScheduleCommand, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_CONTENT_TYPE_ID)
