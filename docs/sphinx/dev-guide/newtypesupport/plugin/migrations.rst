@@ -25,18 +25,19 @@ will automatically be marked as being at version 1, *without* running the migrat
 How to Register
 ---------------
 
-There are a few steps you will need to perform in order to configure your project to advertise itself to
-Pulp's migration system. First of all, you will need to create a migrations Python package in your project's
-plugin space. For example, the Pulp RPM project has its migrations at ``pulp_rpm.migrations``. You don't have
-to call it "migrations", but that's a reasonable choice of name.
+There are a few steps you will need to perform in order to configure your project to advertise
+itself to Pulp's migration system. First you will need to create a migrations Python package in
+your project's plugin space. For example, the Pulp RPM project has its migrations at
+``pulp_rpm.migrations``. You don't have to call it "migrations", but that's a reasonable choice of
+name.
 
-Secondly, you will need to use the
-`Python entry points system <http://packages.python.org/distribute/pkg_resources.html#entry-points>`_ to
-advertise your migration package to Pulp. To do that, add an entry_points argument to in your `setup()`
-function in your setup.py file, like this::
+Second, you will need to use the
+`Python entry points system <http://packages.python.org/distribute/pkg_resources.html#entry-points>`_
+to advertise your migration package to Pulp. To do that, add an entry_points argument to in your
+`setup()` function in your setup.py file, like this::
 
 	setup(<other_arguments>, entry_points = {
-    	<other_entry_points>,
+        <other_entry_points>,
         'pulp.server.db.migrations': [
             '<your_project_name> = <path.to.migrations.package>'
         ]
@@ -62,7 +63,7 @@ file. This will advertise your package's migrations to Pulp, and you will be reg
 system. Once you have installed your package, you should run ``pulp-manage-db``, and you should see some
 output that mentions your migration package::
 
-	# pulp-manage-db  
+	$ sudo pulp-manage-db  
 	Beginning database migrations.
 	Migration package pulp.server.db.migrations is up to date at version 2
 	Migration package pulp_rpm.migrations is up to date at version 4
@@ -77,25 +78,29 @@ about that next.
 Creating Migrations
 ===================
 
-In the event that you need to make an adjustment to your data in Pulp, you should write a migration script.
-There are a few rules to follow for migration scripts and if you follow them carefully, nobody gets hurt.
-Here are the rules:
+In the event that you need to make an adjustment to your data in Pulp, you should write a migration
+script. There are a few rules to follow for migration scripts, and if you follow them carefully,
+nobody gets hurt. Here are the rules:
 
 #. Migration scripts should be modules in your migrations package.
 #. Each migration module should be named starting with a version number.
-#. Your migration version numbers are significant. Pulp tracks which version each install has been migrated
-   to. It requires your migration versions to start with 1, and to be sequential with no gaps in version
-   numbers. For example, 0001_my_first_migration.py, 0002_my_second_migration.py,
-   0003_add_email_addresses_to_users.py, etc.
-#. Each migration module should have a function called migrate with this signature:
-   def migrate(\*args, \*\*kwargs).
-#. Inside your ``migrate()`` function, you can perform the necessary work to change the data in the Pulp
-   install.
+#. Your migration version numbers are significant. Pulp tracks which version each install has been
+   migrated to. It requires your migration versions to start with 1, and to be sequential with no
+   gaps in version numbers. For example, 0001_my_first_migration.py, 0002_my_second_migration.py,
+   0003_add_email_addresses_to_users.py, etc. You don't have to use leading zeros in the names, as
+   the number is processed with a regular expression that interprets it as an integer, however, the
+   advantage to using leading zeros is that programs like ``ls`` will display your migrations in
+   order when you inspect the contents of your migration package.
+#. Each migration module should have a function called "migrate" with this signature:
+   ``def migrate(*args, **kwargs)``.
+#. Inside your ``migrate()`` function, you can perform the necessary work to change the data in the
+   Pulp install.
 
 For example, your migrations package might look like this::
 
 	migrations
-	|
+ 	|
+	|-- __init__.py
 	|-- 0001_rename_user_to_username.py
 	|-- 0002_remove_spaces_from_username.py
 	|-- 0003_recalculate_unit_hashes.py
