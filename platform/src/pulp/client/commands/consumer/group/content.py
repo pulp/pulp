@@ -10,3 +10,6 @@
 # PARTICULAR PURPOSE.
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
+# XXX placeholder module only
+# to be deleted or filled in with base class implementations

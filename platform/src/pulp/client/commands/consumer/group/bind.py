@@ -11,15 +11,6 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from gettext import gettext as _
-
-from pulp.client.extensions.extensions import PulpCliCommand
-
-
-class ConsumerBindCommand(PulpCliCommand):
-    pass
-
-
-class ConsumerUnbindCommand(PulpCliCommand):
-    pass
+# XXX placeholder module only
+# to be deleted or filled in with base class implementations
 
