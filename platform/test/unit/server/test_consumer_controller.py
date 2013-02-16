@@ -900,8 +900,9 @@ class TestApplicability(base.PulpWebserviceTests):
     CONSUMER_IDS = ['test-1', 'test-2']
     FILTER = {'id':{'$in':CONSUMER_IDS}}
     SORT = [('id','ascending')]
-    CRITERIA = dict(filters=FILTER, sort=SORT)
-    UNIT = {'type_id':'errata', 'unit_key':{'name':'security-patch_123'}}
+    CONSUMER_CRITERIA = dict(filters=FILTER, sort=SORT)
+    REPO_CRITERIA = None
+    UNIT = {'errata': [{'name':'security-patch_123'}]}
     PROFILE = [1,2,3]
     SUMMARY = 'mysummary'
     DETAILS = 'mydetails'
@@ -915,9 +916,10 @@ class TestApplicability(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
         profiler = plugin_api.get_profiler_by_type('errata')[0]
-        profiler.unit_applicable = \
-            mock.Mock(side_effect=lambda i,u,c,x:
-                ApplicabilityReport(u, True, self.SUMMARY, self.DETAILS))
+        print profiler
+        profiler.units_applicable = \
+            mock.Mock(side_effect=lambda i,r,t,u,c,x:
+                [ApplicabilityReport(self.SUMMARY, self.DETAILS)])
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
@@ -933,35 +935,20 @@ class TestApplicability(base.PulpWebserviceTests):
         for id in self.CONSUMER_IDS:
             manager.create(id, 'rpm', self.PROFILE)
 
-    def test_applicability(self):
+    def test_no_missing_values_exception(self):
         # Setup
         self.populate()
         # Test
-        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        body = dict(consumer_criteria=self.CONSUMER_CRITERIA)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
-        self.assertEquals(len(body), 2)
-        for id in self.CONSUMER_IDS:
-            report = body[id]
-            self.assertEquals(report[0]['unit'], self.UNIT)
-            self.assertTrue(report[0]['applicable'])
-            self.assertEquals(report[0]['summary'], self.SUMMARY)
-            self.assertEquals(report[0]['details'], self.DETAILS)
-
-    def test_missing_values(self):
-        # Setup
-        self.populate()
-        # Test
-        body = dict(criteria=self.CRITERIA)
+        body = dict(units=self.UNIT)
         status, body = self.post(self.PATH, body)
-        self.assertEquals(status, 400)
-        body = dict(units=[self.UNIT])
-        status, body = self.post(self.PATH, body)
-        self.assertEquals(status, 400)
+        self.assertEquals(status, 200)
 
     def test_no_consumers(self):
         # Test
-        body = dict(criteria=self.CRITERIA, units=[self.UNIT])
+        body = dict(consumer_criteria=self.CONSUMER_CRITERIA, units=self.UNIT)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
         self.assertEquals(len(body), 0)

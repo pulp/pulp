@@ -247,16 +247,9 @@ class Consumer:
 
 class ApplicabilityReport:
     """
-    Returned to the pulp server at the end of a unit_applicable call.
+    Returned to the pulp server at the end of a units_applicable call.
     This is returned to indicate the applicability of a content
     unit along with summary and details.
-
-    @ivar unit: A content unit: {type_id:<str>, unit_key:<dict>}
-    @type unit: dict
-
-    @ivar applicable: Flag indicates whether the unit is
-                      applicable to the consumer.
-    @type applicable: bool
 
     @ivar summary: arbitrary value that will be returned by default as the log
                    for the call (should be short)
@@ -267,8 +260,6 @@ class ApplicabilityReport:
     @type details: just about any serializable object (likley str or dict)
     """
 
-    def __init__(self, unit, applicable, summary, details=None):
-        self.unit = unit
-        self.applicable = applicable
+    def __init__(self, summary, details=None):
         self.summary = summary
         self.details = details

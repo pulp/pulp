@@ -30,8 +30,9 @@ class ApplicabilityManagerTests(base.PulpServerTests):
     CONSUMER_IDS = ['test-1', 'test-2']
     FILTER = {'id':{'$in':CONSUMER_IDS}}
     SORT = [{'id':1}]
-    CRITERIA = Criteria(filters=FILTER, sort=SORT)
-    PROFILE = [1,2,3]
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    REPO_CRITERIA = None
+    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
 
     def setUp(self):
         base.PulpServerTests.setUp(self)
@@ -39,10 +40,10 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         UnitProfile.get_collection().remove()
         plugins._create_manager()
         mock_plugins.install()
-        profiler = plugins.get_profiler_by_type('rpm')[0]
-        profiler.unit_applicable = \
-            Mock(side_effect=lambda i,u,c,x:
-                 ApplicabilityReport(u, True, 'mysummary', 'mydetails'))
+        profiler, cfg = plugins.get_profiler_by_type('rpm')
+        profiler.units_applicable = \
+            Mock(side_effect=lambda i,r,t,u,c,x:
+                 [ApplicabilityReport('mysummary', 'mydetails')])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -58,74 +59,30 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         for id in self.CONSUMER_IDS:
             manager.create(id, 'rpm', self.PROFILE)
 
-    def test_applicability(self):
-        # Setup
-        self.populate()
-        # Test
-        units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'ksh'}},
-            {'type_id':'mock-type', 'unit_key':{'name':'abc'}},
-            {'type_id':'mock-type', 'unit_key':{'name':'def'}}
-        ]
-        manager = factory.consumer_applicability_manager()
-        applicability = manager.units_applicable(self.CRITERIA, units)
-        # verify
-        self.assertEquals(len(applicability), 2)
-        for id in self.CONSUMER_IDS:
-            for report in applicability[id]:
-                if report.unit in units[1:2]:
-                    self.assertTrue(report.applicable)
-                    self.assertEquals(report.summary, 'mysummary')
-                    self.assertEquals(report.details, 'mydetails')
-                    continue
-                if report.unit in units[2:3]:
-                    self.assertFalse(report.applicable)
-                    self.assertEquals(report.summary, 'mocked')
-                    self.assertEquals(report.details, None)
-                    continue
-        profiler, cfg = plugins.get_profiler_by_type('rpm')
-        call = 0
-        args = [c[0] for c in profiler.unit_applicable.call_args_list]
-        for id in self.CONSUMER_IDS:
-            for unit in units[0:2]:
-                self.assertEquals(args[call][0].id, id)
-                self.assertEquals(args[call][0].profiles, {'rpm':self.PROFILE})
-                self.assertEquals(args[call][1], unit)
-                self.assertEquals(args[call][2], cfg)
-                self.assertEquals(args[call][3].__class__, ProfilerConduit)
-                call += 1
-
-    def test_profiler_exception(self):
+    def test_profiler_no_exception(self):
         # Setup
         self.populate()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.unit_applicable = Mock(side_effect=KeyError)
+        profiler.units_applicable = Mock(side_effect=KeyError)
         # Test
-        units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
-            {'type_id':'rpm', 'unit_key':{'name':'ksh'}},
-            {'type_id':'mock-type', 'unit_key':{'name':'abc'}},
-            {'type_id':'mock-type', 'unit_key':{'name':'def'}}
-        ]
+        units = {'rpm': [{'name':'zsh'},
+                         {'name':'ksh'}],
+                 'mock-type': [{'name':'abc'},
+                               {'name':'def'}]
+                }
         manager = factory.consumer_applicability_manager()
-        self.assertRaises(
-            PulpExecutionException,
-            manager.units_applicable,
-            self.CRITERIA,
-            units)
+        result = manager.units_applicable(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, units)
+        self.assertTrue('test-1' in result.keys())
+        self.assertTrue('test-2' in result.keys())
 
-    def test_profiler_notfound(self):
+    def test_no_exception_for_profiler_notfound(self):
         # Setup
         self.populate()
         # Test
-        units = [
-            {'type_id':'rpm', 'unit_key':{'name':'zsh'}},
-            {'type_id':'xxx', 'unit_key':{'name':'abc'}}
-        ]
+        units = {'rpm': [{'name':'zsh'}],
+                 'xxx': [{'name':'abc'}]
+                }
         manager = factory.consumer_applicability_manager()
-        self.assertRaises(
-            PulpExecutionException,
-            manager.units_applicable,
-            self.CRITERIA,
-            units)
+        result = manager.units_applicable(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, units)
+        self.assertTrue('test-1' in result.keys())
+        self.assertTrue('test-2' in result.keys())

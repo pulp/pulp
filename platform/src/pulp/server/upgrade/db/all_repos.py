@@ -23,6 +23,7 @@ from pulp.server.compat import ObjectId
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
+from pulp.server.managers.auth.user.system import SystemUser
 from pulp.server.upgrade.model import UpgradeStepReport
 
 
@@ -99,8 +100,10 @@ def _sync_schedules(v1_database, v2_database, report):
     repos_with_schedules = v2_repo_importer_collection.find(
         {'repo_id': {'$nin': repo_ids_without_schedules}}, fields=['repo_id'])
 
+    repo_ids_with_schedules = [r['repo_id'] for r in repos_with_schedules]
+
     repos_to_schedule = v1_repo_collection.find(
-        {'id': {'$nin': [r['repo_id'] for r in repos_with_schedules]}, 'sync_schedule': {'$ne': None}},
+        {'id': {'$nin': repo_ids_with_schedules}, 'sync_schedule': {'$ne': None}},
         fields=['id', 'sync_schedule', 'sync_options', 'last_sync'])
 
     for repo in repos_to_schedule:
@@ -112,7 +115,7 @@ def _sync_schedules(v1_database, v2_database, report):
 
         args = [repo['id']]
         kwargs = {'overrides': {}}
-        call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs)
+        call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs, principal=SystemUser())
 
         scheduled_call_document = {
             '_id': ObjectId(),
@@ -122,7 +125,7 @@ def _sync_schedules(v1_database, v2_database, report):
             'failure_threshold': None,
             'consecutive_failures': 0,
             'first_run': None,
-            'last_run': repo['last_sync'],
+            'last_run': dateutils.to_naive_utc_datetime(dateutils.parse_iso8601_datetime(repo['last_sync'])),
             'next_run': None,
             'remaining_runs': None,
             'enabled': True}
@@ -157,7 +160,7 @@ def _calculate_next_run(scheduled_call):
     last_run = scheduled_call['last_run']
     if last_run is None:
         return scheduled_call['first_run']
-    now = datetime.datetime.utcnow()
+    now = datetime.utcnow()
     interval = dateutils.parse_iso8601_interval(scheduled_call['schedule'])[0]
     next_run = last_run
     while next_run < now:

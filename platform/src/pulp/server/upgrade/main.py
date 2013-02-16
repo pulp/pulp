@@ -101,18 +101,21 @@ class Upgrader(object):
           the file does not necessarily have to exist
     :type stream_file: str
 
-    :ivar upgrade_db: configures whether or not the DB upgrade scripts will be run
+    :ivar upgrade_db: configures whether or not the DB upgrade scripts will be run;
+          if this is False, the clean step will be skipped regardless of
+          its configured value
     :type upgrade_db: bool
 
     :ivar db_upgrade_calls: dictates which database upgrade steps will be performed;
-          see DB_UPGRADE_CALLS comment above for a description of the entries
+          see DB_UPGRADE_CALLS comment above for a description of the entries.
     :type db_upgrade_calls: list
 
     :ivar db_seeds: seeds for accessing MongoDB
     :type db_seeds: str
 
     :ivar upgrade_files: configures whether or not the filesystem upgrade scripts
-                         will be run
+                         will be run; if this is False, the clean step will be
+                         skipped regardless of its configured value
     :type upgrade_files: bool
 
     :ivar files_upgrade_calls: dictates which filesystem upgrade steps will be
@@ -194,7 +197,10 @@ class Upgrader(object):
         else:
             self._install()
 
-        if not self.clean:
+        # The files are used in both the upgrade DB and upgrade files step, so
+        # if either are skipped, assume they'll be run again in the future
+        # and automatically skip the clean
+        if not self.clean or not self.upgrade_files or not self.upgrade_db:
             self._print(_('Skipping v1 Filesystem Clean Up'))
             self._print('')
         else:
@@ -220,12 +226,10 @@ class Upgrader(object):
             try:
                 report = db_call(v1_database, tmp_database)
             except:
-                spinner.stop()
-                spinner.clear() # temporary until okaara supports this
+                spinner.stop(clear=True)
                 raise
 
-            spinner.stop()
-            spinner.clear() # temporary until okaara supports this
+            spinner.stop(clear=True)
 
             if report is None or report.success is None:
                 # This should only happen during development if the script writer
@@ -262,12 +266,10 @@ class Upgrader(object):
             try:
                 report = upgrade_call(v1_database, tmp_database)
             except:
-                spinner.stop()
-                spinner.clear()
+                spinner.stop(clear=True)
                 raise
 
-            spinner.stop()
-            spinner.clear()
+            spinner.stop(clear=True)
 
             if report is None or report.success is None:
                 # This should only happen during development if the script writer
@@ -295,8 +297,7 @@ class Upgrader(object):
             spinner = ThreadedSpinner(self.prompt)
             spinner.start()
             self._backup_v1()
-            spinner.stop()
-            spinner.clear()
+            spinner.stop(clear=True)
         else:
             self._print(_('The v1 database will not be backed up'))
             self.prompt.write('')
@@ -307,8 +308,7 @@ class Upgrader(object):
         spinner = ThreadedSpinner(self.prompt)
         spinner.start()
         self._install_v2()
-        spinner.stop()
-        spinner.clear()
+        spinner.stop(clear=True)
 
         self.prompt.write('')
 
@@ -318,8 +318,7 @@ class Upgrader(object):
         spinner = ThreadedSpinner(self.prompt)
         spinner.start()
         self._cleanup()
-        spinner.stop()
-        spinner.clear()
+        spinner.stop(clear=True)
 
         self.prompt.write('')
 
@@ -338,12 +337,10 @@ class Upgrader(object):
             try:
                 report = upgrade_call(v1_database, tmp_database)
             except:
-                spinner.stop()
-                spinner.clear()
+                spinner.stop(clear=True)
                 raise
 
-            spinner.stop()
-            spinner.clear()
+            spinner.stop(clear=True)
 
             if report is None or report.success is None:
                 self._print(_('Clean upgrade script did not indicate the result of the step'))

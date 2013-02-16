@@ -1,8 +1,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.1.12
-Release: 1%{?dist}
+Version: 0.1.14
+Release: 2%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
@@ -60,8 +60,16 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Wed Dec 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.12-1
-- updating grinder (pkilambi@redhat.com)
+* Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-2
+- bumping the grinder release (pkilambi@redhat.com)
+- updating the grinder tar (pkilambi@redhat.com)
+
+* Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-1
+- include filelist before files so the file cache generates dir and ghost file
+  info (pkilambi@redhat.com)
+
+* Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.13-1
+- 700945 - include the changelog and files info for rpms (pkilambi@redhat.com)
 
 * Wed Dec 19 2012 Pradeep Kilambi <pkilambi@redhat.com> 0.1.12-1
 - fix the presto parser to handle xz compressed xml files (pkilambi@redhat.com)

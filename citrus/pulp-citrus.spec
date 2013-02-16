@@ -18,7 +18,7 @@
 
 Name: pulp-citrus
 Version: 2.1.0
-Release: 0.3.alpha
+Release: 0.10.alpha
 Summary: Support for pulp citrus
 Group: Development/Languages
 License: GPLv2
@@ -187,6 +187,27 @@ fi
 
 
 %changelog
+* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.10.alpha
+- 
+
+* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.9.alpha
+- 
+
+* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.8.alpha
+- 
+
+* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
+- 
+
+* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.6.alpha
+- 
+
+* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
+- 
+
+* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
+- 
+
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
 - 
 
