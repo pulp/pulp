@@ -124,7 +124,7 @@ class PollingCommand(PulpCliCommand):
         """
         Test for rejected tasks.
         If rejected, an appropriate message is displayed for the user and
-        and the test result (flag) is returned.
+        and the test result flag is returned.
 
         :param task: A queued task.
         :type task: Task
@@ -144,7 +144,7 @@ class PollingCommand(PulpCliCommand):
         """
         Test for postponed tasks.
         If postponed, an appropriate message is displayed for the user and
-        and the test result (flag) is returned.
+        and the test result flag is returned.
         :param task: A queued task.
         :type task: Task
         :return: Whether the task was postponed.
