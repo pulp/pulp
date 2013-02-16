@@ -49,15 +49,24 @@ class HTTPStaticTestServer(object):
             self.server.handle_request()
 
     def start(self):
-        self._server_thread = threading.Thread(target=self._serve)
         self._is_running = True
+        self._server_thread = threading.Thread(target=self._serve)
+        self._server_thread.setDaemon(True)
         self._server_thread.start()
 
     def stop(self):
         self._is_running = False
-        self._send_dummy_request() # force a dummy request to exit the _serve loop
-        self._server_thread.join()
-        self._server_thread = None
+        try:
+            # force a dummy request to exit the _serve loop
+            self._send_dummy_request()
+        except:
+            # if the dummy request fails for any reason, the server thread
+            # daemonization should allow us to exit anyway
+            pass
+        else:
+            self._server_thread.join()
+        finally:
+            self._server_thread = None
 
     def _send_dummy_request(self):
         connection = httplib.HTTPConnection(self.server.server_name, self.server.server_port)

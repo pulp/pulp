@@ -37,7 +37,9 @@ Details on each server-side component can be found in the pages below:
    :maxdepth: 2
 
    type_defs
+   migrations
    importers
    distributors
    common
    example
+   installation
