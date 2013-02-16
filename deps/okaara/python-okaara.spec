@@ -3,7 +3,7 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.28
+Version:        1.0.30
 Release:        1%{?dist}
 Summary:        Python command line utilities
 
@@ -72,9 +72,14 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Tue Jan 08 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.28-1
-- 883938 - Added okaara ability to display unexpected options separately
-  (jason.dobies@redhat.com)
+* Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.30-1
+- New version of okaara (jason.dobies@redhat.com)
+
+* Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.30-1
+- Various clean up (jason.dobies@redhat.com)
+
+* Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.29-1
+- Fixed deadlock when the threaded spinner times out (jason.dobies@redhat.com)
 
 * Tue Jan 08 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.28-1
 - Added support for telling the user if an unexpected option was specified

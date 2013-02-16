@@ -36,15 +36,12 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager = manager_factory.repo_manager()
         self.importer_manager = manager_factory.repo_importer_manager()
 
-        upload_storage_dir = self.upload_manager._upload_storage_dir()
-
-        if os.path.exists(upload_storage_dir):
-            shutil.rmtree(upload_storage_dir)
-        os.makedirs(upload_storage_dir)
-
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
         mock_plugins.reset()
+
+        upload_storage_dir = self.upload_manager._upload_storage_dir()
+        shutil.rmtree(upload_storage_dir)
 
     def clean(self):
         base.PulpServerTests.clean(self)
@@ -229,9 +226,26 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
 
-        mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = InvalidValue('filename')
+        mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = InvalidValue(['filename'])
 
         upload_id = self.upload_manager.initialize_upload()
 
         # Test
         self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
+
+    # -- util method tests -----------------------------------------------------
+
+    def test_upload_dir_auto_created(self):
+        # Setup
+
+        # Make sure it definitely doesn't exist before calling this
+        upload_storage_dir = self.upload_manager._upload_storage_dir()
+        shutil.rmtree(upload_storage_dir)
+
+        # Test
+        upload_storage_dir = self.upload_manager._upload_storage_dir()
+
+        # Verify
+        self.assertTrue(os.path.exists(upload_storage_dir))
+
+
