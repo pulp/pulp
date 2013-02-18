@@ -296,6 +296,8 @@ Notice that "repo1" shows up in the "Repo Ids" field.
 Tasks
 -----
 
+.. _repo-tasks:
+
 Some operations on repositories, such as ``sync``, ``publish``, and ``delete``, may operate
 asynchronously. When you execute these operations, Pulp will give you a "task ID".
 You can use that task ID to check the status of the operation. From this section
