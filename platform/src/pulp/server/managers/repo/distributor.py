@@ -246,7 +246,7 @@ class RepoDistributorManager(object):
         distributor_instance.distributor_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
-        distributor_coll.remove(repo_distributor, safe=True)
+        distributor_coll.remove({'_id': repo_distributor['_id']}, safe=True)
 
     def update_distributor_config(self, repo_id, distributor_id, distributor_config):
         """
