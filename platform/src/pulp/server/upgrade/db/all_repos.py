@@ -125,7 +125,7 @@ def _sync_schedules(v1_database, v2_database, report):
             'failure_threshold': None,
             'consecutive_failures': 0,
             'first_run': None,
-            'last_run': dateutils.to_naive_utc_datetime(dateutils.parse_iso8601_datetime(repo['last_sync'])),
+            'last_run': None,
             'next_run': None,
             'remaining_runs': None,
             'enabled': True}
@@ -134,16 +134,20 @@ def _sync_schedules(v1_database, v2_database, report):
 
         schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, scheduled_call_document['id'])
         call_request.tags.append(schedule_tag)
+
         scheduled_call_document['serialized_call_request'] = call_request.serialize()
 
         if isinstance(repo['sync_options'], dict):
             scheduled_call_document['failure_threshold'] = repo['sync_options'].get('failure_threshold', None)
 
         interval, start, recurrences = dateutils.parse_iso8601_interval(scheduled_call_document['schedule'])
+
         scheduled_call_document['first_run'] = start or datetime.utcnow()
         scheduled_call_document['remaining_runs'] = recurrences
-
         scheduled_call_document['next_run'] = _calculate_next_run(scheduled_call_document)
+
+        if repo['last_sync'] is not None:
+            scheduled_call_document['last_run'] = dateutils.to_naive_utc_datetime(dateutils.parse_iso8601_datetime(repo['last_sync']))
 
         v2_scheduled_call_collection.insert(scheduled_call_document, safe=True)
         v2_repo_importer_collection.update({'repo_id': repo['id']},
