@@ -256,7 +256,7 @@ A role can be created and deleted by specifying a role id.
 	$ pulp-admin auth role delete --role-id consumer-admin
 	Role [consumer-admin] successfully deleted
 
-A user can be added and removed from a role using ``role user add`` and ``role user remove'' commands respectively.
+A user can be added and removed from a role using ``role user add`` and ``role user remove`` commands respectively.
 Note that both the user and the role should exist on the pulp server.
 
 ::

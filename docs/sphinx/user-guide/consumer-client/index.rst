@@ -9,7 +9,6 @@ Contents:
    :maxdepth: 2
 
    introduction
-   authentication
    register
    update
    bind
