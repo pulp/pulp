@@ -10,7 +10,8 @@
 # PARTICULAR PURPOSE.
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
+from cStringIO import StringIO
+from urlparse import urljoin
 import os
 import re
 import shutil
@@ -90,12 +91,12 @@ def mock_curl_factory():
         input_file_path = re.sub(r'^[a-z]+://localhost:8088/', '', mock_curl._opts[pycurl.URL], 1)
         input_fp = open(input_file_path, 'rb')
 
-        output_fp = mock_curl._opts[pycurl.WRITEDATA]
+        output_write_function = mock_curl._opts[pycurl.WRITEFUNCTION]
 
         progress_callback = mock_curl._opts[pycurl.PROGRESSFUNCTION]
         progress_callback(0, 0, 0, 0)
 
-        shutil.copyfileobj(input_fp, output_fp)
+        output_write_function(input_fp.read())
 
         file_size = os.fstat(input_fp.fileno())[6]
         progress_callback(file_size, file_size, 0, 0)
@@ -154,8 +155,17 @@ class FactoryTests(unittest.TestCase):
         self.assertFalse(os.path.exists(ssl_working_dir))
 
 
+class DownloadRequestTests(unittest.TestCase):
+    def test__init__(self):
+        request = DownloadRequest(
+            'http://www.theonion.com/articles/world-surrenders-to-north-korea,31265/',
+            '/fake/path')
+        self.assertEqual(request.url,
+                         'http://www.theonion.com/articles/world-surrenders-to-north-korea,31265/')
+        self.assertEqual(request.destination, '/fake/path')
+
+
 class DownloadTests(unittest.TestCase):
-    #data_dir = 'data/test_common_download/'
     data_dir = determine_relative_data_dir()
     file_list = ['100K_file', '500K_file', '1M_file']
     file_sizes = [102400, 512000, 1048576]
@@ -266,6 +276,7 @@ class MockCurlDownloadTests(DownloadTests):
 
         self.assertEqual(mock_curl.setopt.call_count, 10) # dangerous as this could easily change
 
+
 class LiveCurlDownloadTests(DownloadTests):
     # test suite that tests that pycurl is being used (mostly) correctly
 
@@ -278,6 +289,32 @@ class LiveCurlDownloadTests(DownloadTests):
     @classmethod
     def tearDownClass(cls):
         cls.http_server.stop()
+
+    def test_download_destination_file_like_object(self):
+        """
+        We want to assert that we can download URLs to file-like objects, and not just to
+        filesystem paths.
+        """
+        config = DownloaderConfig('http')
+        downloader = download_factory.get_downloader(config)
+        destination_file = StringIO()
+        request_list = [
+            DownloadRequest(urljoin('http://localhost:8088/',
+                                    self.data_dir + '/' + self.file_list[0]),
+            destination_file)]
+
+        downloader.download(request_list)
+
+        with open(os.path.join(self.data_dir, self.file_list[0])) as expected_data_file:
+            expected_data = expected_data_file.read()
+
+        destination_file.seek(0)
+        destination_file_data = destination_file.read()
+        # The destination_file should be safe to close now (This actually does test that the
+        # downloader hasn't already closed the file, because closing a file twice is an error.)
+        destination_file.close()
+        self.assertEqual(len(destination_file_data), len(expected_data))
+        self.assertEqual(destination_file_data, expected_data)
 
     def test_download_single(self):
         config = DownloaderConfig('http')
@@ -318,3 +355,40 @@ class LiveCurlDownloadTests(DownloadTests):
         self.assertEqual(listener.download_succeeded.call_count, 1)
         self.assertEqual(listener.download_failed.call_count, 0)
 
+
+class TestHTTPCurlDownloadBackend(unittest.TestCase):
+    def test__clear_easy_handle_download_filelike_destination(self):
+        # If we give a file-like object as a destination to the request on the easy_handle, this
+        # method should not close the filepointer on the handle
+        easy_handle = mock.MagicMock()
+        easy_handle.request = mock.MagicMock()
+        easy_handle.request.destination = StringIO()
+
+        filepointer = easy_handle.fp = mock.MagicMock()
+
+        http_download_backend = curl_backend.HTTPCurlDownloadBackend(mock.MagicMock())
+        http_download_backend._clear_easy_handle_download(easy_handle)
+
+        # close() should not have been called on the fp
+        self.assertEqual(filepointer.close.called, False)
+        self.assertEqual(easy_handle.fp, None)
+        self.assertEqual(easy_handle.request, None)
+        self.assertEqual(easy_handle.report, None)
+
+    def test__clear_easy_handle_download_string_destination(self):
+        # If we give a string as a destination to the request on the easy_handle, this method
+        # should try to close the filepointer on the handle
+        easy_handle = mock.MagicMock()
+        easy_handle.request = mock.MagicMock()
+        easy_handle.request.destination = '/fake/path/should/get/closed'
+
+        filepointer = easy_handle.fp = mock.MagicMock()
+
+        http_download_backend = curl_backend.HTTPCurlDownloadBackend(mock.MagicMock())
+        http_download_backend._clear_easy_handle_download(easy_handle)
+
+        # close() should have been called on the fp
+        filepointer.close.assert_called_once_with()
+        self.assertEqual(easy_handle.fp, None)
+        self.assertEqual(easy_handle.request, None)
+        self.assertEqual(easy_handle.report, None)

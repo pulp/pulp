@@ -103,11 +103,12 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                         easy_handle.report.finish_time = datetime.datetime.now()
                         easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
 
-                        self.fire_download_succeeded(easy_handle.report)
-
+                        report = easy_handle.report
                         multi_handle.remove_handle(easy_handle)
                         self._clear_easy_handle_download(easy_handle)
                         free_handles.append(easy_handle)
+
+                        self.fire_download_succeeded(report)
 
                     for easy_handle, err_code, err_msg in err_list:
                         easy_handle.report.finish_time = datetime.datetime.now()
@@ -118,11 +119,12 @@ class HTTPCurlDownloadBackend(DownloadBackend):
                         easy_handle.report.error_report['error_code'] = err_code
                         easy_handle.report.error_report['error_message'] = err_msg
 
-                        self.fire_download_failed(easy_handle.report)
-
+                        report = easy_handle.report
                         multi_handle.remove_handle(easy_handle)
                         self._clear_easy_handle_download(easy_handle)
                         free_handles.append(easy_handle)
+                        
+                        self.fire_download_failed(report)
 
                     processed_requests += (len(ok_list) + len(err_list))
 
@@ -184,10 +186,16 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         # store this on the handle so that it's easier to track
         easy_handle.request = request
         easy_handle.report = report
-        easy_handle.fp = open(request.file_path, 'wb')
+
+        # If the destination is a string, let's interpret it as a filesystem path and open a file
+        # there. Otherwise, let's treat destination as an open file-like object
+        if isinstance(request.destination, basestring):
+            easy_handle.fp = open(request.destination, 'wb')
+        else:
+            easy_handle.fp = request.destination
 
         easy_handle.setopt(pycurl.URL, request.url)
-        easy_handle.setopt(pycurl.WRITEDATA, easy_handle.fp)
+        easy_handle.setopt(pycurl.WRITEFUNCTION, easy_handle.fp.write)
 
         progress_functor = CurlDownloadProgressFunctor(report, self.fire_download_progress)
         easy_handle.setopt(pycurl.PROGRESSFUNCTION, progress_functor)
@@ -195,11 +203,15 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         return easy_handle
 
     def _clear_easy_handle_download(self, easy_handle):
+        # If the request's destination was a string, then the filepointer on the easy_handle was
+        # opened by us in _set_easy_handle_download() and we should close it now. Otherwise, we
+        # will leave it up to the caller to close their file-like object
+        if isinstance(easy_handle.request.destination, basestring):
+            easy_handle.fp.close()
+        easy_handle.fp = None
+
         easy_handle.request = None
         easy_handle.report = None
-
-        easy_handle.fp.close()
-        easy_handle.fp = None
 
         return easy_handle
 
