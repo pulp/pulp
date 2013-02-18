@@ -33,12 +33,15 @@ class JSONController(object):
 
     # http methods ------------------------------------------------------------
 
-    def OPTIONS(self):
+    def OPTIONS(self, *args, **kwargs):
         """
         Handle an OPTIONS request from the client using introspection.
 
         @return: serialized link object
         """
+        # accepts *args in order work regular expression in the url path
+        # not sure if **kwargs is needed, but better safe than sorry
+
         all_methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
         defined_methods = []
         for attr in self.__dict__:
