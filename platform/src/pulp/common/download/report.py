@@ -25,14 +25,17 @@ class DownloadReport(object):
     """
     Report object for individual downloads.
 
-    :ivar url: url requested to be downloaded
-    :ivar file_path: path to downloaded file
-    :ivar state: current state of the download (waiting, downloading, succeeded, failed, canceled)
-    :ivar total_bytes: total bytes of the file to be downloaded
+    :ivar url:              url requested to be downloaded
+    :ivar destination:      destination of the downloaded file, either a string representing the
+                            filesystem path to the file, or a file-like object
+    :ivar state:            current state of the download (waiting, downloading, succeeded, failed,
+                            canceled)
+    :ivar total_bytes:      total bytes of the file to be downloaded
     :ivar bytes_downloaded: bytes of the file downloaded so far
-    :ivar start_time: start time of the file download
-    :ivar finish_time: finish time of the file download
-    :ivar error_report: arbitrary dictionary containing debugging info in the event of a failure
+    :ivar start_time:       start time of the file download
+    :ivar finish_time:      finish time of the file download
+    :ivar error_report:     arbitrary dictionary containing debugging info in the event of a
+                            failure
     """
 
     @classmethod
@@ -44,18 +47,19 @@ class DownloadReport(object):
         :return: report for request
         :rtype: pulp.common.download.report.DownloadReport
         """
-        return cls(request.url, request.file_path)
+        return cls(request.url, request.destination)
 
-    def __init__(self, url, file_path):
+    def __init__(self, url, destination):
         """
-        :param url: url requested to be downloaded
-        :type url: str
-        :param file_path: path to downloaded file
-        :type file_path: str
+        :param url:         url requested to be downloaded
+        :type  url:         str
+        :param destination: destination of the downloaded file, either a string representing the
+                            filesystem path to the file, or a file-like object
+        :type  destination: str or file-like object
         """
 
-        self.url = url
-        self.file_path = file_path
+        self.url         = url
+        self.destination = destination
 
         self.state = DOWNLOAD_WAITING
         self.total_bytes = 0

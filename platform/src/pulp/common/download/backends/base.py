@@ -130,4 +130,3 @@ class DownloadBackend(object):
             event_listener_callback(*args, **kwargs)
         except Exception, e:
             _LOG.exception(e)
-
