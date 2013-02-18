@@ -137,7 +137,7 @@ class Profiler(object):
         examples in class documentation.
 
         :param consumer: A consumer.
-        :type consumer: L{pulp.server.plugins.model.Consumer}
+        :type consumer: L{pulp.plugins.model.Consumer}
 
         :param profile: The reported profile.
         :type profile: list
@@ -166,7 +166,7 @@ class Profiler(object):
         installed.  See: Unit Translation examples in class documentation.
 
         :param consumer: A consumer.
-        :type consumer: L{pulp.server.plugins.model.Consumer}
+        :type consumer: L{pulp.plugins.model.Consumer}
 
         :param units: A list of content units to be installed.
         :type units: list of: { type_id:<str>, unit_key:<dict> }
@@ -202,7 +202,7 @@ class Profiler(object):
         @see: Unit Translation examples in class documentation.
 
         :param consumer: A consumer.
-        :type consumer: L{pulp.server.plugins.model.Consumer}
+        :type consumer: L{pulp.plugins.model.Consumer}
 
         :param units: A list of content units to be updated.
         :type units: list of: { type_id:<str>, unit_key:<dict> }
@@ -238,7 +238,7 @@ class Profiler(object):
         @see: Unit Translation examples in class documentation.
 
         :param consumer: A consumer.
-        :type consumer: L{pulp.server.plugins.model.Consumer}
+        :type consumer: L{pulp.plugins.model.Consumer}
 
         :param units: A list of content units to be uninstalled.
         :type units: list of: { type_id:<str>, unit_key:<dict> }
@@ -268,7 +268,7 @@ class Profiler(object):
         type specific and up to the decision of the profiler.
 
         :param consumer: A consumer.
-        :type consumer: L{pulp.server.plugins.model.Consumer}
+        :type consumer: L{pulp.plugins.model.Consumer}
 
         :param repo_ids: List of repo ids to check for unit applicability
         :type repo_ids: list
