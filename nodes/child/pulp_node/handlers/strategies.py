@@ -98,7 +98,8 @@ class HandlerStrategy(object):
                     added.append(repo_id)
             except Exception, e:
                 msg = _('Add/Merge repository: %(r)s failed: %(e)s')
-                failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
+                msg = msg % {'r': repo_id, 'e': repr(e)}
+                failed.append((repo_id, msg))
                 log.exception(msg)
         return (added, merged, failed)
 
