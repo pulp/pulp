@@ -143,7 +143,7 @@ class Profiler(object):
         :type profile: list
 
         :param config: plugin configuration
-        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :type config: L{pulp.plugins.config.PluginCallConfiguration}
 
         :param conduit: provides access to relevant Pulp functionality
         :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
@@ -175,7 +175,7 @@ class Profiler(object):
         :type options: dict
         
         :param config: plugin configuration
-        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :type config: L{pulp.plugins.config.PluginCallConfiguration}
 
         :param conduit: provides access to relevant Pulp functionality
         :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
@@ -211,7 +211,7 @@ class Profiler(object):
         :type options: dict
 
         :param config: plugin configuration
-        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :type config: L{pulp.plugins.config.PluginCallConfiguration}
 
         :param conduit: provides access to relevant Pulp functionality
         :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
@@ -247,7 +247,7 @@ class Profiler(object):
         :type options: dict
         
         :param config: plugin configuration
-        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :type config: L{pulp.plugins.config.PluginCallConfiguration}
 
         :param conduit: provides access to relevant Pulp functionality
         :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
@@ -280,7 +280,7 @@ class Profiler(object):
         :type unit_keys: list of dict
 
         :param config: plugin configuration
-        :type config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        :type config: L{pulp.plugins.config.PluginCallConfiguration}
 
         :param conduit: provides access to relevant Pulp functionality
         :type conduit: L{pulp.plugins.conduits.profiler.ProfilerConduit}
