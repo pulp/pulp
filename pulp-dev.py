@@ -113,13 +113,10 @@ LINKS = (
     ('platform/src/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
-    # Citrus (all)
-    ('citrus/etc/httpd/conf.d/pulp_citrus.conf', '/etc/httpd/conf.d/pulp_citrus.conf'),
-    ('citrus/etc/pulp/agent/conf.d/citrus.conf', '/etc/pulp/agent/conf.d/citrus.conf'),
-    ('citrus/plugins/distributors/citrus_http_distributor', DIR_PLUGINS + '/distributors/citrus_http_distributor'),
-    ('citrus/plugins/importers/citrus_http_importer', DIR_PLUGINS + '/importers/citrus_http_importer'),
-    ('citrus/plugins/types/citrus.json', DIR_PLUGINS + '/types/citrus.json'),
-    ('citrus/handlers/citrus.py', '/usr/lib/pulp/agent/handlers/citrus.py'),
+    # Pulp Nodes
+    ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
+    ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
+    ('nodes/child/importer/types/node.json', DIR_PLUGINS + '/types/node.json'),
 )
 
 def parse_cmdline():
