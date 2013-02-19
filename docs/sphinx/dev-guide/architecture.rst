@@ -5,6 +5,7 @@ Pulp can be viewed as consisting of two parts, the platform (which includes both
 the server and client applications) and plugins (which provide support for a
 particular set of content types).
 
+
 Platform
 --------
 
@@ -28,6 +29,7 @@ components:
   from the Pulp server to that consumer. Similar to the client, the platform
   provides the agent and relies on the use of :term:`handlers <handler>`
   to provide support for a particular content type.
+
 
 Plugins
 -------
@@ -53,3 +55,18 @@ is provided through plugins into each of the three major platform components.
   content.
 
 
+Git Repositories
+----------------
+
+Pulp's code is stored on `GitHub <http://www.github.com>`_. The Pulp organization's
+GitHub repositories are divided into two types:
+
+* The `Pulp repository <https://github.com/pulp/pulp>`_ is used for all platform code,
+  including the server, clients, and agent. There should be no code in here that caters
+  to a specific content type. Put another way, all plugins to the platform components
+  are located outside of this repository.
+* Each type support bundle (`RPM <https://github.com/pulp/pulp_rpm>`_,
+  `Puppet <https://github.com/pulp/pulp_puppet>`_, etc.) is in its own repository.
+  Each of these repositories contains their own `setup.py` and RPM spec files,
+  as well as any other configuration files needed to support the plugins (for example,
+  httpd configuration files).
