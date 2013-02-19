@@ -3,11 +3,18 @@
 Handler Example
 ===============
 
+The following handler example provides an implementation the *content*, *bind*, and *system*
+capabilities. The choice to define all of them in a single descriptor is arbitrary. They
+could also have been defined in separate descriptors.
+
 Handler
 -------
 
-Descriptor
-^^^^^^^^^^
+Handler Descriptor
+^^^^^^^^^^^^^^^^^^
+
+Define the handler descriptor.
+
 ::
 
  [main]
@@ -19,16 +26,18 @@ Descriptor
  system=Linux
 
  [rpm]
- class=pulp_rpm.agent.handler.PackageHandler
+ class=example.agent.handler.PackageHandler
 
  [yum]
- class=pulp_rpm.agent.handler.YumBindHandler
+ class=example.agent.handler.YumBindHandler
 
  [Linux]
- class=pulp.agent.handler.LinuxHandler
+ class=example.agent.handler.LinuxHandler
 
 Content Handler
 ^^^^^^^^^^^^^^^
+
+Define the *PackageHandler* class.
 
 .. code-block:: python
 
@@ -154,6 +163,8 @@ Content Handler
 Bind Handler
 ^^^^^^^^^^^^
 
+Define the *YumBindHandler* class.
+
 .. code-block:: python
 
  from pulp.agent.lib.handler import BindHandler
@@ -225,7 +236,9 @@ Bind Handler
         return report
 
 System Handler
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+
+Define the *LinuxHandler* class.
 
 .. code-block:: python
 
@@ -264,3 +277,10 @@ System Handler
 
 Installation
 ------------
+
+The descriptor is installed into the */etc/pulp/agent/conf.d/* directory.
+
+The example handler classes are installed into *site-packages/example/agent/handler/* where
+*site-packages* can be any directory in the python path.
+
+After installation, restart the pulp-agent service.
