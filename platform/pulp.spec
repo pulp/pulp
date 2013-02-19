@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.11.alpha
+Release: 0.12.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -409,6 +409,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
+- 
+
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.11.alpha
 - 910419 - added *args and **kwargs to OPTIONS signature to handle regular
   expressions in the url path (jason.connor@gmail.com)
