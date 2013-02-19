@@ -197,7 +197,7 @@ Define the *YumBindHandler* class.
         # Update the abc.repo file here
         #
         # succeeded = <did it succeed>
-        # details = <the package profile here>
+        # details = <the details of the bind here>
         #
 
         if succeeded:
@@ -225,7 +225,7 @@ Define the *YumBindHandler* class.
         # Update a abc.repo file here
         #
         # succeeded = <did it succeed>
-        # details = <the package profile here>
+        # details = <the details of the unbind here>
         #
 
         if succeeded:
@@ -266,7 +266,7 @@ Define the *LinuxHandler* class.
         # Schedule the reboot here
         #
         # succeeded = <did it succeed>
-        # details = <the package profile here>
+        # details = <the details of the reboot here>
         #
 
         if succeeded:
