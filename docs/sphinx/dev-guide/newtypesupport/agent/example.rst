@@ -69,7 +69,7 @@ Define the *PackageHandler* class.
         # RPMs installed here
         #
         # succeeded = <did it succeed>
-        # details = <whatever you want here>
+        # details = <the details of the installed packages here>
         #
 
         if succeeded:
@@ -97,7 +97,7 @@ Define the *PackageHandler* class.
         # RPMs updated here
         #
         # succeeded = <did it succeed>
-        # details = <whatever you want here>
+        # details = <the details of the updated packages here>
         #
 
         if succeeded:
@@ -125,7 +125,7 @@ Define the *PackageHandler* class.
         # RPMs uninstalled here
         #
         # succeeded = <did it succeed>
-        # details = <whatever you want here>
+        # details = <the details of the uninstalled packages here>
         #
 
         if succeeded:
