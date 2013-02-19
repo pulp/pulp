@@ -19,7 +19,7 @@ CLI with the extension's additions.
 For this demo, the context is held in a global variable so it can be accessed
 when the command is run.
 
-::
+.. code-block:: python
 
   CONTEXT = None
   def initialize(context):
@@ -45,7 +45,7 @@ will be used on the command line directly) and a description for help text
 purposes. The ``PulpCliSection`` instance is returned from the call so it can
 be further manipulated. The CLI instance is retrieved from the client context.
 
-::
+.. code-block:: python
 
   ex_section = context.cli.create_section('example', 'Example section')
 
@@ -88,7 +88,7 @@ executed.
 The following snippet creates our demo command and ties it to the ``run_demo``
 method.
 
-::
+.. code-block:: python
 
   demo_command = ex_section.create_command('demo', 'Demo command', run_demo)
 
@@ -96,7 +96,7 @@ The referenced ``run_demo`` must be defined as a method, otherwise the extension
 will fail to load. We'll expand on this in the next section, but a simple
 implementation is as follows.
 
-::
+.. code-block:: python
 
   def run_demo(**kwargs):
     CONTEXT.prompt.write('Hello World')
@@ -112,7 +112,7 @@ by running the appropriate ``create_*`` method on the command instance.
 For the demo, we'll add an option that accepts the user's name and a flag that
 toggles whether or not the date is printed.
 
-::
+.. code-block:: python
 
   demo_command.create_option('--name', 'Name of the user', required=True)
   demo_command.create_flag('--show-date', 'If specified, the date will be displayed')
@@ -121,7 +121,7 @@ The above snippet configures the ``--name`` option as required. The client
 framework will enforce that, displaying the usage text to the user in the event it
 is not specified.
 
-::
+.. code-block:: python
 
   $ pulp-admin example demo
   Command: demo
@@ -141,7 +141,7 @@ as the key and the user input is the value (or ``True`` in the case of a flag).
 Below is the ``run_demo`` method from above, enhanced to take advantage of our
 newly added options and flags.
 
-::
+.. code-block:: python
 
   def run_demo(**kwargs):
       CONTEXT.prompt.write('Hello %s' % kwargs['name'])
@@ -182,7 +182,7 @@ When the ``pulp-admin`` script is run, the usage text will show the
 Full Example
 ------------
 
-::
+.. code-block:: python
 
   import datetime
 
