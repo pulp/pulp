@@ -1,7 +1,7 @@
 :orphan:
 
-Example
-=======
+Extension Example
+=================
 
 This example will cover creating an extension with a single command, found in
 a new section at the root of the CLI. The full command will be::
