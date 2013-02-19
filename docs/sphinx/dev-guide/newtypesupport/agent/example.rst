@@ -3,7 +3,7 @@
 Handler Example
 ===============
 
-The following handler example provides an implementation the *content*, *bind*, and *system*
+The following handler example provides an implementation of the *content*, *bind*, and *system*
 capabilities. The choice to define all of them in a single descriptor is arbitrary. They
 could also have been defined in separate descriptors.
 
@@ -137,7 +137,7 @@ Define the *PackageHandler* class.
 
     def profile(self, conduit):
         """
-        Get package profile.
+        Get the installed package profile.
         :param conduit: A handler conduit.
         :type conduit: pulp.agent.lib.conduit.Conduit
         :return: An profile report.
@@ -194,7 +194,7 @@ Define the *YumBindHandler* class.
         report = BindReport(repo_id)
 
         #
-        # Update a YUM .repo file here
+        # Update the abc.repo file here
         #
         # succeeded = <did it succeed>
         # details = <the package profile here>
@@ -222,7 +222,7 @@ Define the *YumBindHandler* class.
         report = BindReport(repo_id)
 
         #
-        # Update a YUM .repo file here
+        # Update a abc.repo file here
         #
         # succeeded = <did it succeed>
         # details = <the package profile here>
@@ -249,6 +249,7 @@ Define the *LinuxHandler* class.
  class LinuxHandler(SystemHandler):
     """
     Linux system handler
+    Provides support for operating system specific operations.
     """
 
     def reboot(self, conduit, options):
