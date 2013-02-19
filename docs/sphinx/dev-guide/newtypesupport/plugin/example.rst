@@ -20,13 +20,13 @@ stubs indicating where more complex logic would occur.
 Type Definition
 ---------------
 
-Type definitions are defined in a JSON file. Multiple types may be defined in the same definition
+Content types are defined in a JSON file. Multiple types may be defined in the same definition
 file. More information on a definition's fields can be found in the :doc:`type_defs` section.
 
 This document will use a modified version of the Puppet module type definition as an example.
 This version is simplified to use only the module name as the unit key.
 
-::
+.. code-block:: rest
 
  {"types": [
      {
@@ -49,7 +49,7 @@ Each importer must subclass the ``pulp.plugins.importer.Importer`` class. The fo
 contains the definition of that class and its implementation of the required ``metadata()`` method.
 More information on this method can be found :ref:`here <plugin_metadata>`.
 
-::
+.. code-block:: python
 
  from pulp.plugins.importer import Importer
 
@@ -59,7 +59,7 @@ More information on this method can be found :ref:`here <plugin_metadata>`.
      def metadata(cls):
          return {
              'id' : 'puppet_importer',
-             'display_name' : Puppet Importer,
+             'display_name' : 'Puppet Importer',
              'types' : ['puppet_module'],
          }
 
@@ -75,7 +75,7 @@ a simple check to ensure a feed has been provided will be performed. If the feed
 configuration is flagged as invalid and a message to be displayed to the user is returned. If
 the feed is present, the method indicates the configuration is valid (no user message is required).
 
-::
+.. code-block:: python
 
   def validate_config(self, repo, config, related_repos):
     if config.get('feed') is None:
@@ -90,18 +90,18 @@ The implementation below covers a very high-level view of what a repository sync
 conduit is used to query the server for the current contents of the repository and add new units.
 It is also used to update the server on the progress of the sync.
 
-::
+.. code-block:: python
 
   def sync_repo(self, repo, sync_conduit, config):
 
     sync_conduit.set_progress('Downloading repository metadata')
-    metadata = _fetch_repo_metadata(repo, config)
+    metadata = self._fetch_repo_metadata(repo, config)
     sync_conduit.set_progress('Metadata download complete')
 
-    new_modules = _resolve_modules_to_download(metadata, sync_conduit)
+    new_modules = self._resolve_modules_to_download(metadata, sync_conduit)
 
     sync_conduit.set_progress('Downloading modules')
-    _download_and_add_modules(new_modules, sync_conduit)
+    self._download_and_add_modules(new_modules, sync_conduit)
     sync_conduit.set_progress('Module download and import complete')
 
   def _fetch_repo_metadata(repo, config):
@@ -131,7 +131,7 @@ It is also used to update the server on the progress of the sync.
     """
     # Units currently in the repository
     module_criteria = UnitAssociationCriteria(type_ids=['puppet_module'])
-    existing_modules = self.sync_conduit.get_units(criteria=module_criteria)
+    existing_modules = sync_conduit.get_units(criteria=module_criteria)
 
     # Calculate the difference between existing_units and what is in the metadata
     module_names_to_download = # Difference logic
@@ -155,7 +155,7 @@ It is also used to update the server on the progress of the sync.
       # The relative path is the path and filename of the module. This must be unique across
       # all Puppet modules. Pulp will prefix this path as necessary to make it a full path
       # on the filesystem the file should reside.
-      relative_path = '/modules/%s' % module_name
+      relative_path = 'modules/%s' % module_name
 
       # Allow Pulp to package the unit and perform any initialization it needs. This
       # initialization includes calculating the full path it will be stored at. The return
@@ -181,7 +181,7 @@ Each distributor must subclass the ``pulp.plugins.distributor.Distributor`` clas
 contains the definition of that class and its implementation of the required ``metadata()`` method.
 More information on this method can be found :ref:`here <plugin_metadata>`.
 
-::
+.. code-block:: python
 
  from pulp.plugins.distributor import Distributor
 
@@ -191,7 +191,7 @@ More information on this method can be found :ref:`here <plugin_metadata>`.
      def metadata(cls):
          return {
              'id' : 'puppet_distributor',
-             'display_name' : Puppet Distributor,
+             'display_name' : 'Puppet Distributor',
              'types' : ['puppet_module'],
          }
 
@@ -202,30 +202,30 @@ Also similar to the importer, the distributor implementation is required to impl
 the validation will ensure that the distributor is configured to publish over at least
 HTTP or HTTPS.
 
-::
+.. code-block:: python
 
   def validate_config(self, repo, config, related_repos):
     if config.get('serve-http') is None and config.get('serve-https') is None:
-      return False, 'At least one of "serve-http" or "serve-https" must be specified`
+      return False, 'At least one of "serve-http" or "serve-https" must be specified'
 
     return True, None
 
-The ``publish_repo`` method is implemented as the entry point to the publishing operation.
+The ``publish_repo`` method is implemented to support the publishing operation.
 
 The implementation below covers a very high-level view of what a repository publish call will do. The
 conduit is used to query the server for the current contents of the repository and to update the server
 on the progress of the sync.
 
-::
+.. code-block:: python
 
   def publish_repo(self, repo, publish_conduit, config):
 
     publish_conduit.set_progress('Publishing modules')
-    _publish_modules(publish_conduit, config)
+    self._publish_modules(publish_conduit, config)
     publish_conduit.set_progress('Modules published')
 
     publish_conduit.set_progress('Generating repository metadata')
-    _generate_metadata(publish_conduit, config)
+    self._generate_metadata(publish_conduit, config)
     publish_conduit.set_progress('Metadata generation complete')
 
   def _publish_modules(publish_conduit, config):
@@ -274,7 +274,7 @@ Full Example
 Type Definition
 ^^^^^^^^^^^^^^^
 
-::
+.. code-block:: python
 
  {"types": [
      {
@@ -286,23 +286,23 @@ Type Definition
      }
  ]}
 
+
 Importer
 ^^^^^^^^
 
-::
+.. code-block:: python
 
  from pulp.plugins.importer import Importer
- from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
  class PuppetModuleImporter(Importer):
 
-     @classmethod
-     def metadata(cls):
-         return {
-             'id' : 'puppet_importer',
-             'display_name' : Puppet Importer,
-             'types' : ['puppet_module'],
-         }
+   @classmethod
+   def metadata(cls):
+       return {
+           'id' : 'puppet_importer',
+           'display_name' : 'Puppet Importer',
+           'types' : ['puppet_module'],
+       }
 
   def validate_config(self, repo, config, related_repos):
     if config.get('feed') is None:
@@ -313,13 +313,13 @@ Importer
   def sync_repo(self, repo, sync_conduit, config):
 
     sync_conduit.set_progress('Downloading repository metadata')
-    metadata = _fetch_repo_metadata(repo, config)
+    metadata = self._fetch_repo_metadata(repo, config)
     sync_conduit.set_progress('Metadata download complete')
 
-    new_modules = _resolve_modules_to_download(metadata, sync_conduit)
+    new_modules = self._resolve_modules_to_download(metadata, sync_conduit)
 
     sync_conduit.set_progress('Downloading modules')
-    _download_and_add_modules(new_modules, sync_conduit)
+    self._download_and_add_modules(new_modules, sync_conduit)
     sync_conduit.set_progress('Module download and import complete')
 
   def _fetch_repo_metadata(repo, config):
@@ -349,7 +349,7 @@ Importer
     """
     # Units currently in the repository
     module_criteria = UnitAssociationCriteria(type_ids=['puppet_module'])
-    existing_modules = self.sync_conduit.get_units(criteria=module_criteria)
+    existing_modules = sync_conduit.get_units(criteria=module_criteria)
 
     # Calculate the difference between existing_units and what is in the metadata
     module_names_to_download = # Difference logic
@@ -373,7 +373,7 @@ Importer
       # The relative path is the path and filename of the module. This must be unique across
       # all Puppet modules. Pulp will prefix this path as necessary to make it a full path
       # on the filesystem the file should reside.
-      relative_path = '/modules/%s' % module_name
+      relative_path = 'modules/%s' % module_name
 
       # Allow Pulp to package the unit and perform any initialization it needs. This
       # initialization includes calculating the full path it will be stored at. The return
@@ -388,38 +388,38 @@ Importer
       # not be specified explicitly).
       sync_conduit.save_unit(pulp_unit)
 
+
 Distributor
 ^^^^^^^^^^^
 
-::
+.. code-block:: python
 
  from pulp.plugins.distributor import Distributor
- from pulp.plugins.conduits.mixins import UnitAssociationCriteria
 
  class PuppetModuleDistributor(Distributor):
 
-     @classmethod
-     def metadata(cls):
-         return {
-             'id' : 'puppet_distributor',
-             'display_name' : Puppet Distributor,
-             'types' : ['puppet_module'],
-         }
+   @classmethod
+   def metadata(cls):
+       return {
+           'id' : 'puppet_distributor',
+           'display_name' : 'Puppet Distributor',
+           'types' : ['puppet_module'],
+       }
 
   def validate_config(self, repo, config, related_repos):
     if config.get('serve-http') is None and config.get('serve-https') is None:
-      return False, 'At least one of "serve-http" or "serve-https" must be specified`
+      return False, 'At least one of "serve-http" or "serve-https" must be specified'
 
     return True, None
 
   def publish_repo(self, repo, publish_conduit, config):
 
     publish_conduit.set_progress('Publishing modules')
-    _publish_modules(publish_conduit, config)
+    self._publish_modules(publish_conduit, config)
     publish_conduit.set_progress('Modules published')
 
     publish_conduit.set_progress('Generating repository metadata')
-    _generate_metadata(publish_conduit, config)
+    self._generate_metadata(publish_conduit, config)
     publish_conduit.set_progress('Metadata generation complete')
 
   def _publish_modules(publish_conduit, config):
@@ -451,4 +451,3 @@ Distributor
     """
 
     # Metadata file creation logic, using the conduit to retrieve the modules in the repository
-
