@@ -21,6 +21,16 @@ from pulp_node.handlers.reports import HandlerReport
 log = getLogger(__name__)
 
 
+# --- i18n ------------------------------------------------------------------------------
+
+ADD_REPOSITORY_FAILED = _('Add/Merge repository: %(r)s failed: %(e)s')
+REPOSITORY_SYNC_FAILED = _('Synchronization failed on repository: %(r)s')
+REPOSITORY_SYNC_ERROR = _('Repository: %(r)s error: %(e)s')
+REPOSITORY_DELETE_FAILED = _('Delete repository: %(r)s failed: %(e)s')
+UNEXPECTED_SYNC_RESULT = _('Unexpected result for repository: %(r)s')
+STRATEGY_UNSUPPORTED = _('Handler strategy "%(s)s" not supported')
+
+
 # --- abstract strategy -----------------------------------------------------------------
 
 
@@ -97,8 +107,7 @@ class HandlerStrategy(object):
                     child.add()
                     added.append(repo_id)
             except Exception, e:
-                msg = _('Add/Merge repository: %(r)s failed: %(e)s')
-                msg = msg % {'r': repo_id, 'e': repr(e)}
+                msg = ADD_REPOSITORY_FAILED % {'r': repo_id, 'e': repr(e)}
                 failed.append((repo_id, msg))
                 log.exception(msg)
         return (added, merged, failed)
@@ -129,21 +138,21 @@ class HandlerStrategy(object):
                 exception = details.get('exception')
                 if _report:
                     if not _report['succeeded']:
-                        msg = _('synchronization failed on repository: %(r)s')
-                        errors.append((repo_id, msg % {'r':repo_id}))
+                        msg = REPOSITORY_SYNC_FAILED % {'r': repo_id}
+                        errors.append((repo_id, msg))
                         self.progress.set_status(ProgressReport.FAILED)
                     else:
                         self.progress.set_status(ProgressReport.SUCCEEDED)
                     reports[repo_id] = report
                     continue
                 if exception:
-                    msg = _('repository: %(r)s error: %(e)s')
-                    errors.append((repo_id, msg % {'r':repo_id, 'e':exception}))
+                    msg = REPOSITORY_SYNC_ERROR % {'r': repo_id, 'e': exception}
+                    errors.append((repo_id, msg))
                     self.progress.set_status(ProgressReport.FAILED)
                     continue
                 self.progress.set_status(ProgressReport.FAILED)
-                msg = _('unexpected result for repository: %(r)s')
-                raise Exception(msg % {'r':repo_id})
+                msg = UNEXPECTED_SYNC_RESULT % {'r': repo_id}
+                raise Exception(msg)
             except Exception, e:
                 msg = repr(e)
                 self.progress.error(msg)
@@ -177,8 +186,8 @@ class HandlerStrategy(object):
                     repo.delete()
                     removed.append(repo_id)
             except Exception, e:
-                msg = _('Delete repository: %(r)s failed: %(e)s')
-                failed.append((repo_id, msg % {'r':repo_id, 'e':repr(e)}))
+                msg = REPOSITORY_DELETE_FAILED % {'r': repo_id, 'e': repr(e)}
+                failed.append((repo_id, msg))
                 log.exception(msg)
         return (removed, failed)
 
@@ -302,8 +311,8 @@ STRATEGIES = {
 class StrategyUnsupported(Exception):
 
     def __init__(self, name):
-        msg = _('handler strategy "%(s)s" not supported')
-        Exception.__init__(self, msg % {'s':name})
+        msg = STRATEGY_UNSUPPORTED % {'s': name}
+        Exception.__init__(self, msg)
 
 
 def find_strategy(name):

@@ -26,6 +26,15 @@ from pulp_node.distributors.http.publisher import HttpPublisher
 _LOG = getLogger(__name__)
 
 
+# --- i18n ------------------------------------------------------------------------------
+
+PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
+PROPERTY_INVALID = _('Property %(p)s must be: %(v)s')
+
+
+# --- configuration ---------------------------------------------------------------------
+
+
 # This should be in /etc/pulp
 DEFAULT_CONFIGURATION = {
     'protocol': 'https',
@@ -50,6 +59,9 @@ DEFAULT_CONFIGURATION = {
 }
 
 
+# --- plugin loading --------------------------------------------------------------------
+
+
 def entry_point():
     """
     Entry point that pulp platform uses to load the distributor.
@@ -57,6 +69,9 @@ def entry_point():
     :rtype:  Distributor, {}
     """
     return NodesHttpDistributor, DEFAULT_CONFIGURATION
+
+
+# --- plugin ----------------------------------------------------------------------------
 
 
 class NodesHttpDistributor(Distributor):
@@ -90,23 +105,21 @@ class NodesHttpDistributor(Distributor):
             }
           }
         """
-        missing_msg = _('Missing required configuration property: %(p)s')
-        invalid_msg = _('Property %(p)s must be: %(v)s')
         key = 'protocol'
         protocol = config.get(key)
-        valid_protocols =  ('http', 'https', 'file')
+        valid_protocols = ('http', 'https', 'file')
         if not protocol:
-            return (False, missing_msg % {'p':key})
+            return (False, PROPERTY_MISSING % {'p':key})
         if protocol not in valid_protocols:
-            return (False, invalid_msg % {'p':key, 'v':valid_protocols})
+            return (False, PROPERTY_INVALID % {'p':key, 'v':valid_protocols})
         for key in ('http', 'https'):
             section = config.get(key)
             if not section:
-                return (False, missing_msg % {'p':key})
+                return (False, PROPERTY_MISSING % {'p':key})
             key = (key, 'alias')
             alias = section.get(key[1])
             if not alias:
-                return (False, missing_msg % {'p':'.'.join(key)})
+                return (False, PROPERTY_MISSING % {'p':'.'.join(key)})
         return (True, None)
 
     def publish_repo(self, repo, conduit, config):
@@ -122,8 +135,8 @@ class NodesHttpDistributor(Distributor):
 
         :param repo: metadata describing the repository
         :type  repo: pulp.plugins.model.Repository
-        :param publish_conduit: provides access to relevant Pulp functionality
-        :type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
+        :param conduit: provides access to relevant Pulp functionality
+        :type  conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginConfiguration
         :return: report describing the publish run

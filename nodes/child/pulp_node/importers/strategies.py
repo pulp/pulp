@@ -31,6 +31,15 @@ from pulp_node.importers.download import Batch, DownloadListener
 log = getLogger(__name__)
 
 
+# --- i18n ------------------------------------------------------------------------------
+
+FETCH_CHILD_UNITS_FAILED = _('Fetch child units failed for repository: %(r)s')
+FETCH_PARENT_UNITS_FAILED = _('Fetch parent units failed for repository: %(r)s')
+ADD_UNITS_FAILED = _('Add units failed on repository: %(r)s')
+PURGE_UNITS_FAILED = _('Purge units failed on repository: %(r)s')
+STRATEGY_UNSUPPORTED = _('Importer strategy "%(s)s" not supported')
+
+
 # --- abstract strategy  ----------------------------------------------------------------
 
 
@@ -113,8 +122,7 @@ class ImporterStrategy(object):
             child.update(units)
             self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Fetch child units failed for repository: %(r)s')
-            msg = msg % {'r':repo_id}
+            msg = FETCH_CHILD_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
@@ -126,8 +134,7 @@ class ImporterStrategy(object):
             parent.update(units)
             self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Fetch parent units failed for repository: %(r)s')
-            msg = msg % {'r':repo_id}
+            msg = FETCH_PARENT_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
@@ -288,8 +295,7 @@ class Mirror(ImporterStrategy):
             else:
                 self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Add units failed on repository: %(r)s')
-            msg = msg % {'r':repo_id}
+            msg = ADD_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
@@ -304,8 +310,7 @@ class Mirror(ImporterStrategy):
             else:
                 self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Purge units failed on repository: %(r)s')
-            msg = msg % {'r':repo_id}
+            msg = PURGE_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
@@ -344,8 +349,7 @@ class Additive(ImporterStrategy):
             else:
                 self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
-            msg = _('Add units failed on repository: %(r)s')
-            msg = msg % {'r':repo_id}
+            msg = ADD_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
             self.progress.error(msg)
             raise Exception(msg)
@@ -365,8 +369,8 @@ STRATEGIES = {
 class StrategyUnsupported(Exception):
 
     def __init__(self, name):
-        msg = _('importer strategy "%(s)s" not supported')
-        Exception.__init__(self, msg % {'s':name})
+        msg = STRATEGY_UNSUPPORTED % {'s': name}
+        Exception.__init__(self, msg)
 
 
 def find_strategy(name):

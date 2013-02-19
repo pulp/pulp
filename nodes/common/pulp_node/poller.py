@@ -18,9 +18,21 @@ from pulp_node.progress import ProgressReport
 from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
+# --- i18m ------------------------------------------------------------------------------
+
+
+FETCH_TASK_FAILED = _('Fetch task %(t)s, failed: http=%(c)s')
+TASK_FAILED = _('Task %(t)s, failed: state=%(s)s')
+
+
+# --- exceptions ------------------------------------------------------------------------
+
+
 class TaskFailed(Exception):
     pass
 
+
+# --- polling ---------------------------------------------------------------------------
 
 class TaskPoller(object):
     """
@@ -69,17 +81,15 @@ class TaskPoller(object):
 
             http = self.binding.tasks.get_task(task_id)
             if http.response_code != httplib.OK:
-                msg = _('Fetch task %(t)s, failed: http=%(c)s')
-                raise Exception(msg % {'t':task_id, 'c':http.response_code})
+                msg = FETCH_TASK_FAILED % {'t': task_id, 'c': http.response_code}
+                raise Exception(msg)
 
             task = http.response_body
             last_hash = self._report_progress(progress, task, last_hash)
 
             if task.state == CALL_ERROR_STATE:
-                msg = _('Task %(t)s, failed: state=%(s)s')
-                raise TaskFailed(
-                    msg % {'t':task_id, 's':task.state},
-                    task.exception, task.traceback)
+                msg = TASK_FAILED % {'t': task_id, 's': task.state}
+                raise TaskFailed(msg, task.exception, task.traceback)
 
             if task.state in CALL_COMPLETE_STATES:
                 return task.result

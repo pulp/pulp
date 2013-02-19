@@ -24,6 +24,14 @@ from pulp_node.importers.strategies import find_strategy
 log = getLogger(__name__)
 
 
+# --- i18n ------------------------------------------------------------------------------
+
+PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
+
+
+# --- plugin loading --------------------------------------------------------------------
+
+
 def entry_point():
     """
     Entry point that pulp platform uses to load the importer.
@@ -31,6 +39,9 @@ def entry_point():
     :rtype:  Importer, {}
     """
     return NodesHttpImporter, {}
+
+
+# --- plugin ----------------------------------------------------------------------------
 
 
 class NodesHttpImporter(Importer):
@@ -65,11 +76,10 @@ class NodesHttpImporter(Importer):
         :rtype: tuple
         """
         errors = []
-        msg = _('Missing required configuration property: %(p)s')
         for key in ('manifest_url', 'protocol'):
             value = config.get(key)
             if not value:
-                errors.append(msg % dict(p=key))
+                errors.append(PROPERTY_MISSING % dict(p=key))
         return (True, errors)
 
     def sync_repo(self, repo, conduit, config):
