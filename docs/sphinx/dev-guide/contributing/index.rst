@@ -7,3 +7,4 @@ How To Contribute
    branching
    merging
    documenting
+   bugs
