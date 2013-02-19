@@ -29,7 +29,7 @@ class ConsumerBindCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'bind'
         description = description or _('binds a consumer to a repository')
-        super(self.__class__, self).__init__(name, description, self.run)
+        super(ConsumerBindCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
@@ -95,7 +95,7 @@ class ConsumerUnbindCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'unbind'
         description = description or _('removes the binding between a consumer and a repository')
-        super(self.__class__, self).__init__(name, description, self.run)
+        super(ConsumerUnbindCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)

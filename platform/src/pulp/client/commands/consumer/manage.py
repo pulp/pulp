@@ -29,7 +29,7 @@ class ConsumerRegisterCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'register'
         description = description or _('')
-        super(self.__class__, self).__init__(name, description, self.run)
+        super(ConsumerRegisterCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
@@ -54,7 +54,7 @@ class ConsumerUnregisterCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'unregister'
         description = description or _('unregisters a consumer')
-        super(self.__class__, self).__init__(name, description, self.run)
+        super(ConsumerUnregisterCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
 
@@ -83,7 +83,7 @@ class ConsumerUpdateCommand(PulpCliCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'update'
         description = description or _('changes metadata on an existing consumer')
-        super(self.__class__, self).__init__(name, description, self.run)
+        super(ConsumerUpdateCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
