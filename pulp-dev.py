@@ -116,7 +116,7 @@ LINKS = (
     # Pulp Nodes
     ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
     ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
-    ('nodes/child/importer/types/node.json', DIR_PLUGINS + '/types/node.json'),
+    ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 )
 
 def parse_cmdline():
