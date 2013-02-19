@@ -59,7 +59,7 @@ class DownloadListener(DownloadEventListener):
 
     def download_started(self, report):
         try:
-            dir_path = os.path.dirname(report.file_path)
+            dir_path = os.path.dirname(report.destination)
             os.makedirs(dir_path)
         except OSError, e:
             if e.errno != errno.EEXIST:

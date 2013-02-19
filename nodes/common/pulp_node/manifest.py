@@ -80,12 +80,12 @@ class Manifest(object):
         """
         tmp_dir = mkdtemp()
         try:
-            file_path = os.path.join(tmp_dir, self.FILE_NAME)
-            request = DownloadRequest(str(url), file_path)
+            destination = os.path.join(tmp_dir, self.FILE_NAME)
+            request = DownloadRequest(str(url), destination)
             request_list = [request]
             downloader.download(request_list)
-            File.decompress(file_path)
-            fp = open(file_path)
+            File.decompress(destination)
+            fp = open(destination)
             try:
                 return json.load(fp)
             finally:
