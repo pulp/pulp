@@ -4,7 +4,7 @@ Bugs
 Reporting
 ---------
 
-Bugs must be filed against the "Pulp" entry in the bugzilla entry's *Product* field.
+Bugs must be filed against "Pulp" in the bugzilla entry's *Product* field.
 
 Please try to select the closest corresponding component in the *Components* field.
 
@@ -51,6 +51,4 @@ Reviewer
    other means.
 
 .. note::
- When branching to fix a bug, it is suggested to branch from the most stable branch applicable.
- For example, when fixing a bug that will be in both a 2.0 release and all releases going forward,
- the branch should be cut from ``pulp-2.0`` instead of ``master``.
+  See :doc:`branching` for more information on how to create branches for bug fixes.
