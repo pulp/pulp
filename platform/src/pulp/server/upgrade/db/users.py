@@ -87,6 +87,7 @@ def _users(v1_database, v2_database):
     for v1_user in missing_v1_users:
         v2_user = {
             '_id' : ObjectId(),
+            'id' : v1_user['id'],
             'login' : v1_user['login'],
             'password' : v1_user['password'],
             'name' : v1_user['name'] or v1_user['login'],

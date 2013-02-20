@@ -45,6 +45,7 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(len(v1_users), len(v2_users))
 
         for v1_user, v2_user in zip(v1_users, v2_users):
+            self.assertEqual(v1_user['id'], v2_user['id'])
             self.assertEqual(v1_user['login'], v2_user['login'])
             self.assertEqual(v1_user['password'], v2_user['password'])
             self.assertEqual(v1_user['roles'], v2_user['roles'])
