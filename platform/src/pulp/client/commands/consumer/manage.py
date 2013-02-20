@@ -18,6 +18,7 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.commands.options import (
     OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES)
+from pulp.client.consumer_utils import load_consumer_id
 from pulp.client.extensions.extensions import  PulpCliCommand
 
 
@@ -56,9 +57,17 @@ class ConsumerUnregisterCommand(PulpCliCommand):
         description = description or _('unregisters a consumer')
         super(ConsumerUnregisterCommand, self).__init__(name, description, self.run)
 
-        self.add_option(OPTION_CONSUMER_ID)
+        self.add_consumer_option()
 
         self.context = context
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
 
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
@@ -74,6 +83,12 @@ class ConsumerUnregisterCommand(PulpCliCommand):
             msg = _('Consumer [ %(c)s ] successfully unregistered') % {'c': consumer_id}
             self.context.prompt.render_success_message(msg)
 
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
+
 
 class ConsumerUpdateCommand(PulpCliCommand):
     """
@@ -85,12 +100,20 @@ class ConsumerUpdateCommand(PulpCliCommand):
         description = description or _('changes metadata on an existing consumer')
         super(ConsumerUpdateCommand, self).__init__(name, description, self.run)
 
-        self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_NAME)
         self.add_option(OPTION_DESCRIPTION)
         self.add_option(OPTION_NOTES)
+        self.add_consumer_option()
 
         self.context = context
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
 
     def run(self, **kwargs):
         delta = dict((k, v) for k, v in kwargs.items() if v is not None)
@@ -116,4 +139,9 @@ class ConsumerUpdateCommand(PulpCliCommand):
             msg = _('Consumer [ %(c)s ] successfully updated') % {'c': consumer_id}
             self.context.prompt.render_success_message(msg)
 
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
 
