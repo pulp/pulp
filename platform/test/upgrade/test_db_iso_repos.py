@@ -75,8 +75,6 @@ class ReposUpgradeTests(BaseDbUpgradeTests):
 
             config = v2_importer['config']
             self.assertEqual(config['feed_url'], v1_repo['source']['url'])
-            self.assertEqual(config['ssl_ca_cert'], v1_repo['feed_ca'])
-            self.assertEqual(config['ssl_client_cert'], v1_repo['feed_cert'])
             self.assertTrue('skip' not in config)
             self.assertTrue('proxy_url' not in config)
             self.assertTrue('proxy_port' not in config)
@@ -197,3 +195,46 @@ class RepoUpgradeWithProxyTests(BaseDbUpgradeTests):
             self.assertEqual(config['proxy_port'], '8080')
             self.assertEqual(config['proxy_user'], 'admin')
             self.assertEqual(config['proxy_pass'], 'admin')
+
+
+class IsoRepoWithCertTests(BaseDbUpgradeTests):
+
+    # These are unsafe to run with non-unit test databases due to the reliance
+    # on the filesystem. The following flag should be used in those cases to
+    # prevent them from running.
+    ENABLED = True
+
+    def setUp(self):
+        super(IsoRepoWithCertTests, self).setUp()
+
+        # Munge each repo to point to a sample cert and CA
+        ca_cert_path = os.path.join(DATA_DIR, 'repo_related_files', 'feed_ca.crt')
+        client_cert_path = os.path.join(DATA_DIR, 'repo_related_files', 'feed_cert.crt')
+
+        v1_repos = self.v1_test_db.database.repos.find()
+        for v1_repo in v1_repos:
+            v1_repo['feed_ca'] = ca_cert_path
+            v1_repo['feed_cert'] = client_cert_path
+            self.v1_test_db.database.repos.save(v1_repo)
+
+        # Load the contents of each cert for validation later
+        f = open(ca_cert_path)
+        self.ca_cert_contents = f.read()
+        f.close()
+
+        f = open(client_cert_path)
+        self.client_cert_contents = f.read()
+        f.close()
+
+    def test_upgrade(self):
+        if not self.ENABLED:
+            return
+
+        # Test
+        iso_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        v2_repo_importers = self.tmp_test_db.database.repo_importers.find()
+        for v2_repo_importer in v2_repo_importers:
+            self.assertEqual(self.ca_cert_contents, v2_repo_importer['config']['ssl_ca_cert'])
+            self.assertEqual(self.client_cert_contents, v2_repo_importer['config']['ssl_client_cert'])

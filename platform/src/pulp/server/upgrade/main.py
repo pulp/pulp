@@ -26,7 +26,7 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from pulp.server.upgrade.db import (all_repos, cds, consumers, events, iso_repos,
                                     migrations, tasks, unit_count, units, users,
                                     yum_repos)
-from pulp.server.upgrade.filesystem import (clean, distribution, isos,
+from pulp.server.upgrade.filesystem import (clean, distribution, feed_certs, isos,
                                             permissions, repos, rpms)
 
 
@@ -54,6 +54,7 @@ FILES_UPGRADE_CALLS = (
     (distribution.upgrade, _('Distributions')),
     (isos.upgrade, _('ISOs')),
     (repos.upgrade, _('Repository Working Directories')),
+    (feed_certs.upgrade, _('Feed Certificates')),
     (permissions.upgrade, _('Filesystem Permissions')), # has to be after all content upgrades
 )
 
