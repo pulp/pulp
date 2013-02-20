@@ -156,12 +156,9 @@ def _repo_importers(v1_database, v2_database, report):
         # Being omitted will cause the yum importer to use the default, which
         # is the desired behavior of the upgrade.
 
-        # All are set below, adding here for readability
-        config = {
-            'feed_url' : None,
-            'ssl_ca_cert' : None,
-            'ssl_client_cert' : None,
-        }
+        # All are set below. To keep consistent with a fresh install, the fields aren't
+        # defaulted to None but rather omitted entirely.
+        config = {}
 
         if v1_repo['source']:  # will be None for a feedless repo
             config['feed_url'] = v1_repo['source']['url']
@@ -177,8 +174,6 @@ def _repo_importers(v1_database, v2_database, report):
             f.close()
 
             config['ssl_ca_cert'] = cert
-        else:
-            config['ssl_ca_cert'] = None
 
         if v1_repo['feed_cert']:
             if not os.path.exists(v1_repo['feed_cert']):
@@ -189,8 +184,6 @@ def _repo_importers(v1_database, v2_database, report):
             f.close()
 
             config['ssl_client_cert'] = cert
-        else:
-            config['ssl_client_cert'] = None
 
         # Load values from the static server.conf file
         if not SKIP_SERVER_CONF:

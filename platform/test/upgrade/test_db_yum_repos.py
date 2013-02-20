@@ -80,8 +80,6 @@ class ReposUpgradeNoFilesTests(BaseDbUpgradeTests):
 
             config = v2_importer['config']
             self.assertEqual(config['feed_url'], v1_repo['source']['url'])
-            self.assertEqual(config['ssl_ca_cert'], v1_repo['feed_ca'])
-            self.assertEqual(config['ssl_client_cert'], v1_repo['feed_cert'])
             self.assertTrue('skip' not in config)
             self.assertTrue('proxy_url' not in config)
             self.assertTrue('proxy_port' not in config)
