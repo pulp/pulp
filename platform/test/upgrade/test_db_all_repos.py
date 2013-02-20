@@ -108,7 +108,8 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
         doc = {'id': repo_id,
                'sync_schedule': schedule,
                'sync_options': None,
-               'last_sync': last_sync}
+               'last_sync': last_sync,
+               'relative_path' : repo_id}
         self.v1_test_db.database.repos.insert(doc, safe=True)
 
     def _insert_scheduled_v2_repo(self, repo_id, schedule):

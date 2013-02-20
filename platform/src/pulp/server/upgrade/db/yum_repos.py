@@ -156,14 +156,34 @@ def _repo_importers(v1_database, v2_database, report):
         # Being omitted will cause the yum importer to use the default, which
         # is the desired behavior of the upgrade.
 
-        config = {
-            'feed_url' : None, # set below
-            'ssl_ca_cert' : v1_repo['feed_ca'],
-            'ssl_client_cert' : v1_repo['feed_cert'],
-        }
+        # All are set below. To keep consistent with a fresh install, the fields aren't
+        # defaulted to None but rather omitted entirely.
+        config = {}
 
-        if v1_repo['source']: # will be None for a feedless repo
+        if v1_repo['source']:  # will be None for a feedless repo
             config['feed_url'] = v1_repo['source']['url']
+
+        # Load the certificate content into the database. It needs to be written to the
+        # working directory as well, but that will be done in the filesystem scripts.
+        if v1_repo['feed_ca']:
+            if not os.path.exists(v1_repo['feed_ca']):
+                continue
+
+            f = open(v1_repo['feed_ca'], 'r')
+            cert = f.read()
+            f.close()
+
+            config['ssl_ca_cert'] = cert
+
+        if v1_repo['feed_cert']:
+            if not os.path.exists(v1_repo['feed_cert']):
+                continue
+
+            f = open(v1_repo['feed_cert'], 'r')
+            cert = f.read()
+            f.close()
+
+            config['ssl_client_cert'] = cert
 
         # Load values from the static server.conf file
         if not SKIP_SERVER_CONF:
@@ -221,7 +241,7 @@ def _repo_distributors(v1_database, v2_database, report):
             'auto_publish' : True,
             'scratchpad' : None,
             'last_publish' : v1_repo['last_sync'], # in v1 sync and publish are the same, so close enough
-            'scheduled_publishes' : [], # likely don't need to revisit, the sync and auto publish will take care
+            'scheduled_publishes' : [],  # likely don't need to revisit, the sync/auto-publish will take care
         }
 
         config = {
