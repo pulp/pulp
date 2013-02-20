@@ -16,6 +16,7 @@ in a different module.
 """
 
 from ConfigParser import SafeConfigParser
+import os
 
 from pulp.server.compat import ObjectId
 from pulp.server.upgrade.model import UpgradeStepReport
@@ -144,14 +145,41 @@ def _repo_importers(v1_database, v2_database, report):
         # Being omitted will cause the yum importer to use the default, which
         # is the desired behavior of the upgrade.
 
+        # All are set below, adding here for readability
         config = {
-            'feed_url' : None, # set below
-            'ssl_ca_cert' : v1_repo['feed_ca'],
-            'ssl_client_cert' : v1_repo['feed_cert'],
+            'feed_url' : None,
+            'ssl_ca_cert' : None,
+            'ssl_client_cert' : None,
         }
 
         if v1_repo['source']: # will be None for a feedless repo
             config['feed_url'] = v1_repo['source']['url']
+
+        # Load the certificate content into the database. It needs to be written to the
+        # working directory as well, but that will be done in the filesystem scripts.
+        if v1_repo['feed_ca']:
+            if not os.path.exists(v1_repo['feed_ca']):
+                continue
+
+            f = open(v1_repo['feed_ca'], 'r')
+            cert = f.read()
+            f.close()
+
+            config['ssl_ca_cert'] = cert
+        else:
+            config['ssl_ca_cert'] = None
+
+        if v1_repo['feed_cert']:
+            if not os.path.exists(v1_repo['feed_cert']):
+                continue
+
+            f = open(v1_repo['feed_cert'], 'r')
+            cert = f.read()
+            f.close()
+
+            config['ssl_client_cert'] = cert
+        else:
+            config['ssl_client_cert'] = None
 
         # Load values from the static server.conf file
         if not SKIP_SERVER_CONF:
