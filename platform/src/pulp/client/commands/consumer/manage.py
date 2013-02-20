@@ -70,7 +70,7 @@ class ConsumerUnregisterCommand(PulpCliCommand):
         self.add_option(OPTION_CONSUMER_ID)
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = self.get_consumer_id(kwargs)
 
         try:
             self.context.server.consumer.unregister(consumer_id)
@@ -116,8 +116,8 @@ class ConsumerUpdateCommand(PulpCliCommand):
         self.add_option(OPTION_CONSUMER_ID)
 
     def run(self, **kwargs):
+        consumer_id = self.get_consumer_id(kwargs)
         delta = dict((k, v) for k, v in kwargs.items() if v is not None)
-        consumer_id = delta.pop(OPTION_CONSUMER_ID.keyword)
 
         if OPTION_NOTES.keyword in delta:
             notes_args = delta.pop(OPTION_NOTES.keyword)
@@ -143,5 +143,5 @@ class ConsumerUpdateCommand(PulpCliCommand):
         """
         Override this method to provide the consumer id to the run method.
         """
-        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
+        return kwargs.pop(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
 
