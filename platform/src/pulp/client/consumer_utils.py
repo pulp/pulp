@@ -25,17 +25,26 @@ def load_consumer_id(context):
     @return: consumer id if registered; None when not registered
     @rtype:  str, None
     """
-    consumer_cert_path = context.config['filesystem']['id_cert_dir']
-    consumer_cert_filename = context.config['filesystem']['id_cert_filename']
+    filesystem_section = context.config.get('filesystem', None)
+    if filesystem_section is None:
+        return None
+
+    consumer_cert_path = filesystem_section.get('id_cert_dir', None)
+    consumer_cert_filename = filesystem_section.get('id_cert_filename', None)
+
+    if None in (consumer_cert_path, consumer_cert_filename):
+        return None
+
     full_filename = os.path.join(consumer_cert_path, consumer_cert_filename)
     bundle = Bundle(full_filename)
-    if bundle.valid():
-        content = bundle.read()
-        x509 = X509.load_cert_string(content)
-        subject = _subject(x509)
-        return subject['CN']
-    else:
+
+    if not bundle.valid():
         return None
+
+    content = bundle.read()
+    x509 = X509.load_cert_string(content)
+    subject = _subject(x509)
+    return subject['CN']
 
 # -- private ------------------------------------------------------------------
 
