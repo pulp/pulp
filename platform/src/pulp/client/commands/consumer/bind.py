@@ -152,7 +152,7 @@ class ConsumerUnbindCommand(PulpCliCommand):
         else:
             msg = _('Unbind tasks successfully created:')
             self.context.prompt.render_success_message(msg)
-            task_dicts = [dict(('task_id', t.task_id)) for t in response.response_body]
+            task_dicts = [dict(task_id=t.task_id) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
 
     def get_consumer_id(self, kwargs):
