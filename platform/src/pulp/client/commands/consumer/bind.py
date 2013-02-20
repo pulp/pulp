@@ -16,6 +16,7 @@ from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID, OPTION_REPO_ID
+from pulp.client.consumer_utils import load_consumer_id
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
 # consumer bindings management commands ----------------------------------------
@@ -31,11 +32,19 @@ class ConsumerBindCommand(PulpCliCommand):
         description = description or _('binds a consumer to a repository')
         super(ConsumerBindCommand, self).__init__(name, description, self.run)
 
-        self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
+        self.add_consumer_option()
         self.add_distributor_option()
 
         self.context = context
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
 
     def add_distributor_option(self):
         """
@@ -46,7 +55,7 @@ class ConsumerBindCommand(PulpCliCommand):
         self.add_option(OPTION_DISTRIBUTOR_ID)
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = self.get_consumer_id(kwargs)
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         distributor_id = self.get_distributor_id(kwargs)
 
@@ -76,8 +85,14 @@ class ConsumerBindCommand(PulpCliCommand):
             msg = _('Bind tasks successfully created:')
             self.context.prompt.render_success_message(msg)
 
-            task_dicts = [dict(('task_id', str(t.task_id))) for t in response.response_body]
+            task_dicts = [dict(task_id=str(t.task_id)) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
+
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
 
     def get_distributor_id(self, kwargs):
         """
@@ -97,13 +112,21 @@ class ConsumerUnbindCommand(PulpCliCommand):
         description = description or _('removes the binding between a consumer and a repository')
         super(ConsumerUnbindCommand, self).__init__(name, description, self.run)
 
-        self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_REPO_ID)
+        self.add_consumer_option()
         self.add_distributor_option()
 
         self.add_flag(FLAG_FORCE)
 
         self.context = context
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
 
     def add_distributor_option(self):
         """
@@ -114,7 +137,7 @@ class ConsumerUnbindCommand(PulpCliCommand):
         self.add_option(OPTION_DISTRIBUTOR_ID)
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = self.get_consumer_id(kwargs)
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         distributor_id = self.get_distributor_id(kwargs)
         force = kwargs[FLAG_FORCE.keyword]
@@ -129,8 +152,14 @@ class ConsumerUnbindCommand(PulpCliCommand):
         else:
             msg = _('Unbind tasks successfully created:')
             self.context.prompt.render_success_message(msg)
-            task_dicts = [dict(('task_id', t.task_id)) for t in response.response_body]
+            task_dicts = [dict(task_id=str(t.task_id)) for t in response.response_body]
             self.context.prompt.render_document_list(task_dicts)
+
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
 
     def get_distributor_id(self, kwargs):
         """
