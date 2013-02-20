@@ -16,6 +16,7 @@ from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID, OPTION_REPO_ID
+from pulp.client.consumer_utils import load_consumer_id
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
 # consumer bindings management commands ----------------------------------------
@@ -91,7 +92,7 @@ class ConsumerBindCommand(PulpCliCommand):
         """
         Override this method to provide the consumer id to the run method.
         """
-        return kwargs[OPTION_CONSUMER_ID.keyword]
+        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
 
     def get_distributor_id(self, kwargs):
         """
@@ -158,7 +159,7 @@ class ConsumerUnbindCommand(PulpCliCommand):
         """
         Override this method to provide the consumer id to the run method.
         """
-        return kwargs[OPTION_CONSUMER_ID.keyword]
+        return kwargs.get(OPTION_CONSUMER_ID.keyword, load_consumer_id(self.context))
 
     def get_distributor_id(self, kwargs):
         """
