@@ -60,7 +60,7 @@ class ConsumerListCommand(PulpCliCommand):
             if 'id' not in filters:
                 filters.insert(0, 'id')
 
-        self.context.prompt.render_title(_('Consumers'))
+        self.context.prompt.render_title(self.get_title())
 
         for consumer in consumer_list:
             _format_bindings(consumer)
@@ -72,6 +72,9 @@ class ConsumerListCommand(PulpCliCommand):
 
         response = self.api.consumers(details=details, bindings=bindings)
         return response.response_body
+
+    def get_title(self):
+        return _('Consumers')
 
 
 

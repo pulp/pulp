@@ -9,11 +9,18 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from setuptools import setup, find_packages
 
-HTTP_DISTRIBUTOR = 'nodes_http_distributor'
-HTTP_IMPORTER = 'nodes_http_importer'
-
-ALL_IMPORTERS = [HTTP_IMPORTER]
-ALL_DISTRIBUTORS = [HTTP_DISTRIBUTOR]
-
-NODE_NOTE_KEY = '_child-node'
+setup(
+    name='pulp_node_admin_extensions',
+    version='2.1.0',
+    license='GPLv2+',
+    packages=find_packages(exclude=['test', 'test.*']),
+    author='Pulp Team',
+    author_email='pulp-list@redhat.com',
+    entry_points={
+        'pulp.extensions.admin': [
+            'repo_admin = pulp_node.extensions.admin.commands:initialize',
+        ]
+    }
+)
