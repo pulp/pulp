@@ -18,6 +18,7 @@ your particular area of interest.
 .. toctree::
    :maxdepth: 3
 
+   dev_setup
    branching
    merging
    documenting
