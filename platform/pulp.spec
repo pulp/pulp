@@ -103,7 +103,11 @@ mkdir -p %{buildroot}/%{_bindir}
 cp -R etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
 
 # Apache Configuration
+%if 0%{?fedora} >= 18
+cp etc/httpd/conf.d/pulp_f18.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
+%else
 cp etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+%endif
 
 # Pulp Web Services
 cp -R srv %{buildroot}
