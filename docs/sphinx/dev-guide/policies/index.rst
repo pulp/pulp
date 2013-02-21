@@ -7,8 +7,9 @@ Policies
    compatibility
    style
    testing
-   releases
    versioning
+   releases
+   build_rpms
 
 
 These policies apply to code that is supported by the Pulp Team. Third-party
