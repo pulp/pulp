@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.12.alpha
+Release: 0.13.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -409,6 +409,12 @@ exit 0
 %endif
 
 %changelog
+* Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
+- 913205 - Removed config options if they aren't relevant
+  (jason.dobies@redhat.com)
+- 913205 - Corrected storage of feed certificates on upgrade
+  (jason.dobies@redhat.com)
+
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
 - 
 
