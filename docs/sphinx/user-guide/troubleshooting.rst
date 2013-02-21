@@ -69,3 +69,13 @@ read that content on distributions such as Fedora that use
 `private /tmp <http://fedoraproject.org/wiki/Features/ServicesPrivateTmp>`_ directories.
 Since /tmp is temporary and may not persist through a system reboot, it is not
 generally the best place to put important content anyway.
+
+
+apr_sockaddr_info_get() failed error when starting apache on F18
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may run into apr_sockaddr_info_get() failed error when starting apache on F18.
+This is because of incorrect hostname configuration. Make sure your /etc/hosts file
+contains hostname of your machine as returned by 'hostname' command. If not, update
+/etc/hosts and run 'apachectl restart'. 
+
