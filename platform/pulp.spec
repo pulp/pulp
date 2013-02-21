@@ -365,7 +365,7 @@ BuildRequires:  make
 BuildRequires:  checkpolicy
 BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
-Conflicts: pulp-selinux-server
+Obsoletes: pulp-selinux-server
 
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
@@ -378,15 +378,20 @@ Requires(postun): /usr/sbin/semodule
 %description    selinux
 SELinux policy for Pulp's components
 
-%post selinux
+#%post selinux
 # Enable SELinux policy modules
-if /usr/sbin/selinuxenabled ; then
- %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
-fi
+#if /usr/sbin/selinuxenabled ; then
+# %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+#fi
 
 # restorcecon wasn't reading new file contexts we added when running under 'post' so moved to 'posttrans'
 # Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
 %posttrans selinux
+if [ $1 -gt 1 ]; then
+ if /usr/sbin/selinuxenabled ; then
+  %{_datadir}/pulp/selinux/server/enable.sh %{_datadir}
+ fi
+fi
 if /usr/sbin/selinuxenabled ; then
  %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
 fi
