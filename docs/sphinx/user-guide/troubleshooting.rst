@@ -76,6 +76,6 @@ apr_sockaddr_info_get() failed error when starting apache on F18
 
 You may run into apr_sockaddr_info_get() failed error when starting apache on F18.
 This is because of incorrect hostname configuration. Make sure your /etc/hosts file
-contains hostname of your machine as returned by 'hostname' command. If not, update
+contains the hostname of your machine as returned by the 'hostname' command. If not, update
 /etc/hosts and run 'apachectl restart'. 
 
