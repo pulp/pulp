@@ -365,7 +365,7 @@ BuildRequires:  make
 BuildRequires:  checkpolicy
 BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
-Obsoletes: pulp-selinux-server
+Conflicts: pulp-selinux-server
 
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
