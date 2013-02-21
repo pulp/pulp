@@ -15,7 +15,6 @@
 import optparse
 import os
 import sys
-import platform
 
 WARNING_COLOR = '\033[31m'
 WARNING_RESET = '\033[0m'
@@ -181,8 +180,8 @@ def getlinks():
     # Get links for httpd conf files according to distro
     pre_f18_apache_conf = ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf')
     f18_apache_conf = ('platform/etc/httpd/conf.d/pulp_f18.conf', '/etc/httpd/conf.d/pulp.conf')
-    distname, version, id = platform.dist()
-    if distname == 'fedora' and version == '18':
+    s, n, r, v, m = os.uname()
+    if 'fc18' in r:
         src, dst = f18_apache_conf
     else:
         src, dst = pre_f18_apache_conf
