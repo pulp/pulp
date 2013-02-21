@@ -89,7 +89,7 @@ Define the *PackageHandler* class.
         :param options: Unit update options.
         :type options: dict
         :return: An update report.
-        :rtype: PackageReport
+        :rtype: ContentReport
         """
         report = ContentReport()
 
@@ -285,3 +285,7 @@ The example handler classes are installed into *site-packages/example/agent/hand
 *site-packages* can be any directory in the python path.
 
 After installation, restart the pulp-agent service.
+
+.. note::
+ The pulp-agent service is actually a symlink to the goferd service.  This is because the pulp
+ agent is a plugin that runs within the gofer agent daemon.
