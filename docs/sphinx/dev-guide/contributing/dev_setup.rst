@@ -4,7 +4,12 @@ Developer Setup
 Source Code
 ^^^^^^^^^^^
 
-Pulp's code is stored on `GitHub <http://www.github.com/pulp>`_. Follow the instructions on
+Pulp's code is stored on `GitHub <http://www.github.com/pulp>`_. The repositories should be forked
+into your personal GitHub account where all work will be done. Changes are
+submitted to the Pulp team through the pull request process outlined in :doc:`merging`.
+
+
+Follow the instructions on
 that site for checking out each repository with the appropriate level of access (Read+Write v.
 Read-Only). In most cases, Read-Only will be sufficient; contributions will be done through
 pull requests into the Pulp repositories as described in :doc:`merging`.
@@ -20,7 +25,7 @@ the latest dependencies according to the spec file.
 #. Install the main Pulp groups to get all of the dependencies.
    ``$ sudo yum install @pulp-server @pulp-admin @pulp-consumer``
 #. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked
-   out code. ``sudo yum remove pulp-\* python-pulp\*``
+   out code. ``$ sudo yum remove pulp-\* python-pulp\*``
 
 The only caveat to this approach is that these dependencies will need to be maintained after this
 initial setup. Leaving the testing builds repository enabled will cause them to be automatically
