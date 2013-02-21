@@ -15,6 +15,7 @@
 import optparse
 import os
 import sys
+import platform
 
 WARNING_COLOR = '\033[31m'
 WARNING_RESET = '\033[0m'
@@ -100,7 +101,6 @@ LINKS = (
 
     # Server Configuration
     ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
-    ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf'),
     ('platform/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
     ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
     ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
@@ -177,6 +177,17 @@ def getlinks():
             src = l
             dst = os.path.join('/', l)
         links.append((src, dst))
+    
+    # Get links for httpd conf files according to distro
+    pre_f18_apache_conf = ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf')
+    f18_apache_conf = ('platform/etc/httpd/conf.d/pulp_f18.conf', '/etc/httpd/conf.d/pulp.conf')
+    distname, version, id = platform.dist()
+    if distname == 'fedora' and version == '18':
+        src, dst = f18_apache_conf
+    else:
+        src, dst = pre_f18_apache_conf
+    links.append((src, dst))
+    
     return links
 
 
