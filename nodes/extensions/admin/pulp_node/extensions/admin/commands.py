@@ -13,6 +13,8 @@ import os
 
 from gettext import gettext as _
 
+from pulp.bindings.exceptions import NotFoundException
+
 from pulp.client.validators import id_validator
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
@@ -21,9 +23,12 @@ from pulp.client.commands.consumer.query import ConsumerListCommand
 from pulp.client.commands.consumer.bind import ConsumerBindCommand, ConsumerUnbindCommand
 from pulp.client.commands.consumer.content import ConsumerContentUpdateCommand
 from pulp.client.commands.options import DESC_ID, OPTION_REPO_ID, OPTION_CONSUMER_ID
+from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
+from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
+from pulp_node.extensions.admin.rendering import PublishRenderer, missing_resources
 from pulp_node.extensions.common import ensure_node_section
-from pulp_node.constants import HTTP_DISTRIBUTOR, NODE_NOTE_KEY
+from pulp_node.constants import HTTP_DISTRIBUTOR, ALL_DISTRIBUTORS, NODE_NOTE_KEY
 
 
 # --- constants -----------------------------------------------------------------------------------
@@ -36,7 +41,8 @@ DISABLE_NAME = _('disable')
 SYNC_NAME = _('sync')
 PUBLISH_NAME = _('publish')
 
-LIST_DESCRIPTION = _('list child nodes')
+NODE_LIST_DESCRIPTION = _('list child nodes')
+REPO_LIST_DESCRIPTION = _('list node enabled repositories')
 ACTIVATE_DESCRIPTION = _('activate a consumer as a child node')
 DEACTIVATE_DESCRIPTION = _('deactivate a child node')
 BIND_DESCRIPTION = _('bind a child node to a repository')
@@ -47,7 +53,7 @@ DISABLE_DESCRIPTION = _('disables binding to a repository by a child node')
 REPO_DESCRIPTION = _('repository related commands')
 AUTO_PUBLISH_DESCRIPTION = _('auto publish flag')
 SYNC_DESCRIPTION = _('child node synchronization commands')
-PUBLISH_DESCRIPTION = _('publish nodes content')
+PUBLISH_DESCRIPTION = _('publishing commands')
 
 ACTIVATED_NOTE = {NODE_NOTE_KEY: True}
 DEACTIVATED_NOTE = {NODE_NOTE_KEY: None}
@@ -70,9 +76,15 @@ def initialize(context):
     node_section.add_command(NodeDeactivateCommand(context))
     node_section.add_command(NodeBindCommand(context))
     node_section.add_command(NodeUnbindCommand(context))
+
     repo_section = node_section.create_subsection(REPO_NAME, REPO_DESCRIPTION)
     repo_section.add_command(NodeRepoEnableCommand(context))
     repo_section.add_command(NodeRepoDisableCommand(context))
+    repo_section.add_command(NodeListRepositoriesCommand(context))
+
+    publish_section = repo_section.create_subsection(PUBLISH_NAME, PUBLISH_DESCRIPTION)
+    publish_section.add_command(NodeRepoPublishCommand(context))
+
     sync_section = node_section.create_subsection(SYNC_NAME, SYNC_DESCRIPTION)
     sync_section.add_command(NodeUpdateCommand(context))
 
@@ -83,7 +95,7 @@ def initialize(context):
 class NodeListCommand(ConsumerListCommand):
 
     def __init__(self, context):
-        super(NodeListCommand, self).__init__(context, description=LIST_DESCRIPTION)
+        super(NodeListCommand, self).__init__(context, description=NODE_LIST_DESCRIPTION)
 
     def get_title(self):
         return _('Child Nodes')
@@ -95,6 +107,24 @@ class NodeListCommand(ConsumerListCommand):
             if notes.get(NODE_NOTE_KEY, False):
                 nodes.append(consumer)
         return nodes
+
+
+class NodeListRepositoriesCommand(ListRepositoriesCommand):
+
+    def __init__(self, context):
+        super(NodeListRepositoriesCommand, self).__init__(context, description=REPO_LIST_DESCRIPTION)
+
+    def get_repositories(self, query_params, **kwargs):
+        enabled = []
+        _super = super(NodeListRepositoriesCommand, self)
+        repositories = _super.get_repositories(query_params, **kwargs)
+        for repository in repositories:
+            repo_id = repository['id']
+            http = self.context.server.repo_distributor.distributors(repo_id)
+            for dist in http.response_body:
+                if dist['distributor_type_id'] in ALL_DISTRIBUTORS:
+                    enabled.append(repository)
+        return enabled
 
 
 class NodeBindCommand(ConsumerBindCommand):
@@ -133,6 +163,13 @@ class NodeUnbindCommand(ConsumerUnbindCommand):
         return HTTP_DISTRIBUTOR
 
 
+class NodeRepoPublishCommand(RunPublishRepositoryCommand):
+
+    def __init__(self, context):
+        renderer = PublishRenderer(context)
+        super(NodeRepoPublishCommand, self).__init__(context, renderer, HTTP_DISTRIBUTOR)
+
+
 class NodeActivateCommand(PulpCliCommand):
 
     def __init__(self, context):
@@ -143,7 +180,12 @@ class NodeActivateCommand(PulpCliCommand):
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         delta = {'notes': ACTIVATED_NOTE}
-        self.context.server.consumer.update(consumer_id, delta)
+        try:
+            self.context.server.consumer.update(consumer_id, delta)
+        except NotFoundException, e:
+            msg = missing_resources(e)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
 
 class NodeDeactivateCommand(PulpCliCommand):
@@ -156,7 +198,12 @@ class NodeDeactivateCommand(PulpCliCommand):
     def run(self, **kwargs):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         delta = {'notes': DEACTIVATED_NOTE}
-        self.context.server.consumer.update(consumer_id, delta)
+        try:
+            self.context.server.consumer.update(consumer_id, delta)
+        except NotFoundException, e:
+            msg = missing_resources(e)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
 
 class NodeRepoEnableCommand(PulpCliCommand):
@@ -170,12 +217,13 @@ class NodeRepoEnableCommand(PulpCliCommand):
     def run(self, **kwargs):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         auto_publish = convert_boolean_arguments([AUTO_PUBLISH_OPTION.keyword], kwargs)
-        self.context.server.repo_distributor.create(
-            repo_id,
-            HTTP_DISTRIBUTOR,
-            {},
-            auto_publish,
-            HTTP_DISTRIBUTOR)
+        binding = self.context.server.repo_distributor
+        try:
+            binding.create(repo_id, HTTP_DISTRIBUTOR, {}, auto_publish, HTTP_DISTRIBUTOR)
+        except NotFoundException, e:
+            msg = missing_resources(e)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
 
 class NodeRepoDisableCommand(PulpCliCommand):
@@ -187,7 +235,12 @@ class NodeRepoDisableCommand(PulpCliCommand):
 
     def run(self, **kwargs):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        self.context.server.repo_distributor.delete(repo_id, HTTP_DISTRIBUTOR)
+        try:
+            self.context.server.repo_distributor.delete(repo_id, HTTP_DISTRIBUTOR)
+        except NotFoundException, e:
+            msg = missing_resources(e)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
 
 class NodeUpdateCommand(ConsumerContentUpdateCommand):
@@ -200,14 +253,3 @@ class NodeUpdateCommand(ConsumerContentUpdateCommand):
 
     def get_consumer_id(self, kwargs):
         return kwargs[NODE_ID_OPTION.keyword]
-
-
-class NodeRepoPublishCommand(PulpCliCommand):
-
-    def __init__(self, context):
-        super(NodeRepoPublishCommand, self).__init__(PUBLISH_NAME, PUBLISH_DESCRIPTION, self.run)
-        self.add_option(OPTION_REPO_ID)
-        self.context = context
-
-    def run(self, **kwargs):
-        repo_id = kwargs[OPTION_REPO_ID.keyword]
