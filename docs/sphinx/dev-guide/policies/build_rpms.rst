@@ -6,10 +6,10 @@ Each build is done against a git tag. The steps are done per git repository and 
 
 ::
 
- cd <git repo root>
- tito tag
- git push && git push --tags
- tito build --rpm
+ $ cd <git repo root>
+ $ tito tag
+ $ git push && git push --tags
+ $ tito build --rpm
 
 The tito output will indicate the directory the RPMs are built into. The ``--srpm`` flag can be
 passed to tito to request SRPMs be built as well.
