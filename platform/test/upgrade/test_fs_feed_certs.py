@@ -81,3 +81,52 @@ class FeedCertificateTests(BaseDbUpgradeTests):
 
         self.assertEqual(found, contents)
 
+
+class NoFeedCertificateTests(BaseDbUpgradeTests):
+    """
+    None of the v1 repos are configured with feed certificates. This test is to
+    show that the filesystem upgrade step will gracefully handle when it has nothing
+    to do.
+    """
+
+    def setUp(self):
+        super(NoFeedCertificateTests, self).setUp()
+
+        # This script occurs after the DB is upgraded, so simulate the
+        # necessary preconditions
+        yum_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        iso_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        all_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # This script also relies on the working directories to be created
+        self.tmp_dir = tempfile.mkdtemp(prefix='no-feeds-fs-unit-test')
+        repos.WORKING_DIR_ROOT = self.tmp_dir
+        repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+    def tearDown(self):
+        super(NoFeedCertificateTests, self).tearDown()
+        shutil.rmtree(self.tmp_dir)
+
+    def test_upgrade(self):
+        # Test
+        report = feed_certs.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        self.assertTrue(report is not None)
+        self.assertTrue(report.success)
+
+        # Primarily, the upgrade shouldn't error if the repo doesn't contain certs. Also
+        # check to make sure it's not writing cert files anyway.
+
+        all_repo_importers = self.tmp_test_db.database.repo_importers.find({})
+        self.assertTrue(all_repo_importers.count() > 0)
+        for repo_importer in all_repo_importers:
+            importer_working_dir = repos.importer_working_dir(repo_importer['importer_type_id'],
+                                                              repo_importer['repo_id'],
+                                                              mkdir=False)
+
+            expected_cert_path = os.path.join(importer_working_dir, 'ssl_ca_cert')
+            self.assertTrue(not os.path.exists(expected_cert_path))
+
+            expected_cert_path = os.path.join(importer_working_dir, 'ssl_client_cert')
+            self.assertTrue(not os.path.exists(expected_cert_path))
