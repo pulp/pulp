@@ -1,10 +1,13 @@
-Pulp v2 Developer Guide
+Pulp Developer Guide
 =======================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   rest-api/index
-   events/index
-   client/index
+   contributing/index
+   architecture
+   conventions/index
+   policies/index
+   newtypesupport/index
+   integration/index
    glossary
