@@ -271,6 +271,13 @@ class NodeUpdateCommand(ConsumerContentUpdateCommand):
     def get_consumer_id(self, kwargs):
         return kwargs[NODE_ID_OPTION.keyword]
 
+    def add_content_options(self):
+        pass
+
+    def get_content_units(self, kwargs):
+        unit = dict(type_id='node', unit_key=None)
+        return [unit]
+
     def progress(self, report):
         self.context.prompt.write(str(report))
 

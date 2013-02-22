@@ -62,12 +62,26 @@ class ConsumerContentInstallCommand(PollingCommand):
         description = description or _('triggers an immediate content unit install on the consumer')
         super(ConsumerContentInstallCommand, self).__init__(name, description, self.run, context)
 
-        self.add_option(OPTION_CONSUMER_ID)
+        self.add_consumer_option()
         self.add_content_options()
         self.add_install_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
+
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get[OPTION_CONSUMER_ID.keyword]
 
     def add_content_options(self):
         """
@@ -83,7 +97,7 @@ class ConsumerContentInstallCommand(PollingCommand):
         pass
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = self.get_consumer_id(kwargs)
         options = self.get_install_options(kwargs)
         units = self.get_content_units(kwargs)
 
@@ -157,12 +171,26 @@ class ConsumerContentUpdateCommand(PollingCommand):
         description = description or _('triggers an immediate content unit update on a consumer')
         super(ConsumerContentUpdateCommand, self).__init__(name, description, self.run, context)
 
-        self.add_option(OPTION_CONSUMER_ID)
+        self.add_consumer_option()
         self.add_content_options()
         self.add_update_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
+
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get[OPTION_CONSUMER_ID.keyword]
 
     def add_content_options(self):
         """
@@ -178,7 +206,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
         pass
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = self.get_consumer_id(kwargs)
         options = self.get_update_options(kwargs)
         units = self.get_content_units(kwargs)
 
@@ -259,12 +287,26 @@ class ConsumerContentUninstallCommand(PollingCommand):
         description = description or _('triggers an immediate content unit removal on a consumer')
         super(ConsumerContentUninstallCommand, self).__init__(name, description, self.run, context)
 
-        self.add_option(OPTION_CONSUMER_ID)
+        self.add_consumer_option()
         self.add_content_options()
         self.add_uninstall_options()
 
         self.progress_tracker = progress_tracker or ConsumerContentProgressTracker(context.prompt)
         self.api = context.server.consumer_content
+
+    def add_consumer_option(self):
+        """
+        Override this method to a no-op to skip adding the consumer id option.
+        This allows commands (such as the consumer command) to find the consumer
+        id via other means than a command line option.
+        """
+        self.add_option(OPTION_CONSUMER_ID)
+
+    def get_consumer_id(self, kwargs):
+        """
+        Override this method to provide the consumer id to the run method.
+        """
+        return kwargs.get[OPTION_CONSUMER_ID.keyword]
 
     def add_content_options(self):
         """
@@ -280,7 +322,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
         pass
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = self.get_consumer_id(kwargs)
         options = self.get_uninstall_options(kwargs)
         units = self.get_content_units(kwargs)
 
