@@ -1,5 +1,7 @@
 User APIs
-=============
+=========
+
+.. _user:
 
 .. toctree::
    :maxdepth: 3

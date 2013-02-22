@@ -4,6 +4,7 @@ REST API
 .. toctree::
    :maxdepth: 2
 
+   authentication
    consumer/index
    consumer/group/index
    repo/index
