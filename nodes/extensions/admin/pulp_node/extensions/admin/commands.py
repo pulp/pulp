@@ -26,12 +26,12 @@ from pulp.client.commands.options import DESC_ID, OPTION_REPO_ID, OPTION_CONSUME
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
-from pulp_node.extensions.admin.rendering import PublishRenderer, missing_resources
-from pulp_node.extensions.common import ensure_node_section
+from pulp_node.extension import PublishRenderer, render_missing_resources
+from pulp_node.extension import ensure_node_section
 from pulp_node.constants import HTTP_DISTRIBUTOR, ALL_DISTRIBUTORS, NODE_NOTE_KEY
 
 
-# --- constants -----------------------------------------------------------------------------------
+# --- constants --------------------------------------------------------------
 
 REPO_NAME = _('repo')
 ACTIVATE_NAME = _('activate')
@@ -41,29 +41,29 @@ DISABLE_NAME = _('disable')
 SYNC_NAME = _('sync')
 PUBLISH_NAME = _('publish')
 
-NODE_LIST_DESCRIPTION = _('list child nodes')
-REPO_LIST_DESCRIPTION = _('list node enabled repositories')
-ACTIVATE_DESCRIPTION = _('activate a consumer as a child node')
-DEACTIVATE_DESCRIPTION = _('deactivate a child node')
-BIND_DESCRIPTION = _('bind a child node to a repository')
-UNBIND_DESCRIPTION = _('removes the binding between a child node and a repository')
-UPDATE_DESCRIPTION = _('triggers an immediate synchronization of a child node')
-ENABLE_DESCRIPTION = _('enables binding to a repository by a child node')
-DISABLE_DESCRIPTION = _('disables binding to a repository by a child node')
-REPO_DESCRIPTION = _('repository related commands')
-AUTO_PUBLISH_DESCRIPTION = _('auto publish flag')
-SYNC_DESCRIPTION = _('child node synchronization commands')
-PUBLISH_DESCRIPTION = _('publishing commands')
+NODE_LIST_DESC = _('list child nodes')
+REPO_LIST_DESC = _('list node enabled repositories')
+ACTIVATE_DESC = _('activate a consumer as a child node')
+DEACTIVATE_DESC = _('deactivate a child node')
+BIND_DESC = _('bind a child node to a repository')
+UNBIND_DESC = _('removes the binding between a child node and a repository')
+UPDATE_DESC = _('triggers an immediate synchronization of a child node')
+ENABLE_DESC = _('enables binding to a repository by a child node')
+DISABLE_DESC = _('disables binding to a repository by a child node')
+REPO_DESC = _('repository related commands')
+AUTO_PUBLISH_DESC = _('auto publish flag')
+SYNC_DESC = _('child node synchronization commands')
+PUBLISH_DESC = _('publishing commands')
 
 ACTIVATED_NOTE = {NODE_NOTE_KEY: True}
 DEACTIVATED_NOTE = {NODE_NOTE_KEY: None}
 
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
-AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESCRIPTION, required=False)
+AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False)
 
 
 
-# --- extension loading ---------------------------------------------------------------------------
+# --- extension loading ------------------------------------------------------
 
 @priority()
 def initialize(context):
@@ -77,25 +77,25 @@ def initialize(context):
     node_section.add_command(NodeBindCommand(context))
     node_section.add_command(NodeUnbindCommand(context))
 
-    repo_section = node_section.create_subsection(REPO_NAME, REPO_DESCRIPTION)
+    repo_section = node_section.create_subsection(REPO_NAME, REPO_DESC)
     repo_section.add_command(NodeRepoEnableCommand(context))
     repo_section.add_command(NodeRepoDisableCommand(context))
     repo_section.add_command(NodeListRepositoriesCommand(context))
 
-    publish_section = repo_section.create_subsection(PUBLISH_NAME, PUBLISH_DESCRIPTION)
+    publish_section = repo_section.create_subsection(PUBLISH_NAME, PUBLISH_DESC)
     publish_section.add_command(NodeRepoPublishCommand(context))
 
-    sync_section = node_section.create_subsection(SYNC_NAME, SYNC_DESCRIPTION)
+    sync_section = node_section.create_subsection(SYNC_NAME, SYNC_DESC)
     sync_section.add_command(NodeUpdateCommand(context))
 
 
-# --- commands ------------------------------------------------------------------------------------
+# --- listing ----------------------------------------------------------------
 
 
 class NodeListCommand(ConsumerListCommand):
 
     def __init__(self, context):
-        super(NodeListCommand, self).__init__(context, description=NODE_LIST_DESCRIPTION)
+        super(NodeListCommand, self).__init__(context, description=NODE_LIST_DESC)
 
     def get_title(self):
         return _('Child Nodes')
@@ -108,11 +108,17 @@ class NodeListCommand(ConsumerListCommand):
                 nodes.append(consumer)
         return nodes
 
+    def format_bindings(self, consumer):
+        key = 'bindings'
+        bindings = consumer.get(key)
+        if bindings:
+            consumer[key] = [b['repo_id'] for b in bindings]
+
 
 class NodeListRepositoriesCommand(ListRepositoriesCommand):
 
     def __init__(self, context):
-        super(NodeListRepositoriesCommand, self).__init__(context, description=REPO_LIST_DESCRIPTION)
+        super(NodeListRepositoriesCommand, self).__init__(context, description=REPO_LIST_DESC)
 
     def get_repositories(self, query_params, **kwargs):
         enabled = []
@@ -127,10 +133,13 @@ class NodeListRepositoriesCommand(ListRepositoriesCommand):
         return enabled
 
 
+# --- bind -------------------------------------------------------------------
+
+
 class NodeBindCommand(ConsumerBindCommand):
 
     def __init__(self, context):
-        super(NodeBindCommand, self).__init__(context, description=BIND_DESCRIPTION)
+        super(NodeBindCommand, self).__init__(context, description=BIND_DESC)
 
     def add_consumer_option(self):
         self.add_option(NODE_ID_OPTION)
@@ -148,7 +157,7 @@ class NodeBindCommand(ConsumerBindCommand):
 class NodeUnbindCommand(ConsumerUnbindCommand):
 
     def __init__(self, context):
-        super(NodeUnbindCommand, self).__init__(context, description=UNBIND_DESCRIPTION)
+        super(NodeUnbindCommand, self).__init__(context, description=UNBIND_DESC)
 
     def add_consumer_option(self):
         self.add_option(NODE_ID_OPTION)
@@ -163,6 +172,9 @@ class NodeUnbindCommand(ConsumerUnbindCommand):
         return HTTP_DISTRIBUTOR
 
 
+# --- publish ----------------------------------------------------------------
+
+
 class NodeRepoPublishCommand(RunPublishRepositoryCommand):
 
     def __init__(self, context):
@@ -170,10 +182,13 @@ class NodeRepoPublishCommand(RunPublishRepositoryCommand):
         super(NodeRepoPublishCommand, self).__init__(context, renderer, HTTP_DISTRIBUTOR)
 
 
+# --- activation -------------------------------------------------------------
+
+
 class NodeActivateCommand(PulpCliCommand):
 
     def __init__(self, context):
-        super(NodeActivateCommand, self).__init__(ACTIVATE_NAME, ACTIVATE_DESCRIPTION, self.run)
+        super(NodeActivateCommand, self).__init__(ACTIVATE_NAME, ACTIVATE_DESC, self.run)
         self.add_option(OPTION_CONSUMER_ID)
         self.context = context
 
@@ -183,15 +198,14 @@ class NodeActivateCommand(PulpCliCommand):
         try:
             self.context.server.consumer.update(consumer_id, delta)
         except NotFoundException, e:
-            msg = missing_resources(e)
-            self.context.prompt.render_failure_message(msg)
+            render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
 
 
 class NodeDeactivateCommand(PulpCliCommand):
 
     def __init__(self, context):
-        super(NodeDeactivateCommand, self).__init__(DEACTIVATE_NAME, DEACTIVATE_DESCRIPTION, self.run)
+        super(NodeDeactivateCommand, self).__init__(DEACTIVATE_NAME, DEACTIVATE_DESC, self.run)
         self.add_option(OPTION_CONSUMER_ID)
         self.context = context
 
@@ -201,15 +215,17 @@ class NodeDeactivateCommand(PulpCliCommand):
         try:
             self.context.server.consumer.update(consumer_id, delta)
         except NotFoundException, e:
-            msg = missing_resources(e)
-            self.context.prompt.render_failure_message(msg)
+            render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
+
+
+# --- enable -----------------------------------------------------------------
 
 
 class NodeRepoEnableCommand(PulpCliCommand):
 
     def __init__(self, context):
-        super(NodeRepoEnableCommand, self).__init__(ENABLE_NAME, ENABLE_DESCRIPTION, self.run)
+        super(NodeRepoEnableCommand, self).__init__(ENABLE_NAME, ENABLE_DESC, self.run)
         self.add_option(OPTION_REPO_ID)
         self.add_option(AUTO_PUBLISH_OPTION)
         self.context = context
@@ -221,15 +237,14 @@ class NodeRepoEnableCommand(PulpCliCommand):
         try:
             binding.create(repo_id, HTTP_DISTRIBUTOR, {}, auto_publish, HTTP_DISTRIBUTOR)
         except NotFoundException, e:
-            msg = missing_resources(e)
-            self.context.prompt.render_failure_message(msg)
+            render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
 
 
 class NodeRepoDisableCommand(PulpCliCommand):
 
     def __init__(self, context):
-        super(NodeRepoDisableCommand, self).__init__(DISABLE_NAME, DISABLE_DESCRIPTION, self.run)
+        super(NodeRepoDisableCommand, self).__init__(DISABLE_NAME, DISABLE_DESC, self.run)
         self.add_option(OPTION_REPO_ID)
         self.context = context
 
@@ -238,18 +253,26 @@ class NodeRepoDisableCommand(PulpCliCommand):
         try:
             self.context.server.repo_distributor.delete(repo_id, HTTP_DISTRIBUTOR)
         except NotFoundException, e:
-            msg = missing_resources(e)
-            self.context.prompt.render_failure_message(msg)
+            render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
+
+
+# --- synchronization --------------------------------------------------------
 
 
 class NodeUpdateCommand(ConsumerContentUpdateCommand):
 
     def __init__(self, context):
-        super(NodeUpdateCommand, self).__init__(context, description=UPDATE_DESCRIPTION)
+        super(NodeUpdateCommand, self).__init__(context, description=UPDATE_DESC)
 
     def add_consumer_option(self):
         self.add_option(NODE_ID_OPTION)
 
     def get_consumer_id(self, kwargs):
         return kwargs[NODE_ID_OPTION.keyword]
+
+    def progress(self, report):
+        self.context.prompt.write(str(report))
+
+    def succeeded(self, consumer_id, task):
+        self.context.prompt.write(str(task.result))

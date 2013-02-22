@@ -11,15 +11,24 @@
 
 from gettext import gettext as _
 
+from pulp.client.commands.repo.sync_publish import StatusRenderer
 
-# --- constants -------------------------------------------------------------------------
+
+# --- constants --------------------------------------------------------------
 
 
 SECTION_NAME = _('node')
 SECTION_DESCRIPTION = _('pulp nodes related commands')
 
+RESOURCE_TYPES = {
+    'consumer': _('Consumer'),
+    'repository': _('Repository')
+}
 
-# --- utils -----------------------------------------------------------------------------
+MISSING_RESOURCE = _('%(type)s [%(id)s] not found')
+
+
+# --- utils ------------------------------------------------------------------
 
 def ensure_node_section(cli):
     """
@@ -32,3 +41,25 @@ def ensure_node_section(cli):
     if section is None:
         section = cli.create_section(SECTION_NAME, SECTION_DESCRIPTION)
     return section
+
+
+# --- rendering --------------------------------------------------------------
+
+
+def render_missing_resources(prompt, exception):
+    for _type, _id in exception.extra_data['resources'].items():
+        _type = RESOURCE_TYPES.get(_type, _type)
+        msg = MISSING_RESOURCE % {'type': _type, 'id': _id}
+        prompt.render_failure_message(msg)
+
+
+# --- classes ----------------------------------------------------------------
+
+
+class PublishRenderer(StatusRenderer):
+
+    def __init__(self, context):
+        super(PublishRenderer, self).__init__(context)
+
+    def display_report(self, progress_report):
+        pass # nothing to report

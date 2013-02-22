@@ -50,6 +50,9 @@ popd
 pushd child
 %{__python} setup.py build
 popd
+pushd extensions/admin
+%{__python} setup.py build
+popd
 
 %install
 rm -rf %{buildroot}
@@ -60,6 +63,9 @@ pushd parent
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 pushd child
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+pushd extensions/admin
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
@@ -90,7 +96,7 @@ ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
 rm -rf %{buildroot}
 
 
-# ----------------------------------------------------------------------------
+# --- macros -----------------------------------------------------------------
 
 
 # define required pulp platform version.
@@ -118,6 +124,8 @@ Pulp nodes common modules.
 %files common
 %defattr(-,root,root,-)
 %dir %{python_sitelib}/pulp_node
+%dir %{python_sitelib}/pulp_node/extensions
+%{python_sitelib}/pulp_node/extensions/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
 %doc
@@ -139,7 +147,9 @@ Pulp parent nodes support.
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
 %{python_sitelib}/pulp_node/distributors/
+%{python_sitelib}/pulp_node/extensions/admin/
 %{python_sitelib}/pulp_node_parent*.egg-info
+%{python_sitelib}/pulp_node_admin_extensions*.egg-info
 %{_var}/lib/pulp/nodes
 %{_var}/www/pulp/nodes
 %doc
