@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.12.alpha
+Release: 0.13.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -103,7 +103,11 @@ mkdir -p %{buildroot}/%{_bindir}
 cp -R etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
 
 # Apache Configuration
+%if 0%{?fedora} >= 18
+cp etc/httpd/conf.d/pulp_f18.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
+%else
 cp etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+%endif
 
 # Pulp Web Services
 cp -R srv %{buildroot}
@@ -365,7 +369,7 @@ BuildRequires:  make
 BuildRequires:  checkpolicy
 BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
-Obsoletes: pulp-selinux-server
+Conflicts: pulp-selinux-server
 
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
@@ -409,6 +413,12 @@ exit 0
 %endif
 
 %changelog
+* Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
+- 913205 - Removed config options if they aren't relevant
+  (jason.dobies@redhat.com)
+- 913205 - Corrected storage of feed certificates on upgrade
+  (jason.dobies@redhat.com)
+
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
 - 
 
