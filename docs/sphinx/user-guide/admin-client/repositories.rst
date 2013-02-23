@@ -219,7 +219,7 @@ and that we want to copy all of them to the repository "bar".
   $ pulp-admin rpm repo copy rpm --from-repo-id=foo --to-repo-id=bar
   Progress on this task can be viewed using the commands under "repo tasks".
 
-  $ foo-admin repo tasks list --repo-id=foo
+  $ pulp-admin repo tasks list --repo-id=foo
   +----------------------------------------------------------------------+
                                    Tasks
   +----------------------------------------------------------------------+
