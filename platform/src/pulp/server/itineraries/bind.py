@@ -117,39 +117,40 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_c
 
     # notify agent
 
-    tags = [
-        resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent_bind')
-    ]
+    if notify_agent:
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag('agent_bind')
+        ]
 
-    args = [
-        consumer_id,
-        repo_id,
-        distributor_id,
-        agent_options
-    ]
+        args = [
+            consumer_id,
+            repo_id,
+            distributor_id,
+            agent_options
+        ]
 
-    agent_request = CallRequest(
-        agent_manager.bind,
-        args,
-        weight=0,
-        asynchronous=True,
-        archive=True,
-        tags=tags)
+        agent_request = CallRequest(
+            agent_manager.bind,
+            args,
+            weight=0,
+            asynchronous=True,
+            archive=True,
+            tags=tags)
 
-    agent_request.add_life_cycle_callback(
-        dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
-        bind_succeeded)
+        agent_request.add_life_cycle_callback(
+            dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
+            bind_succeeded)
 
-    agent_request.add_life_cycle_callback(
-        dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK,
-        bind_failed)
+        agent_request.add_life_cycle_callback(
+            dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK,
+            bind_failed)
 
-    call_requests.append(agent_request)
+        call_requests.append(agent_request)
 
-    agent_request.depends_on(bind_request.id)
+        agent_request.depends_on(bind_request.id)
 
     return call_requests
 

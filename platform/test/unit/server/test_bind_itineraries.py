@@ -172,6 +172,51 @@ class TestBind(PulpItineraryTests):
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertEqual(len(bind['consumer_actions']), 0)
 
+    def test_bind_no_notify_agent(self):
+        # Setup
+        self.populate()
+
+        # Test
+        options = {}
+        itinerary = bind_itinerary(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            False,
+            self.BINDING_CONFIG,
+            options)
+        call_reports = self.coordinator.execute_multiple_calls(itinerary)
+
+        # Verify
+        self.assertEqual(len(call_reports), 1)
+        self.assertEqual(call_reports[0].call_request_tags, self.BIND_TAGS)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # run task #1 (actual bind)
+        self.run_next()
+
+        # verify bind created
+        manager = factory.consumer_bind_manager()
+        binds = manager.find_by_consumer(self.CONSUMER_ID)
+        self.assertEquals(len(binds), 1)
+        bind = binds[0]
+        self.assertEqual(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(bind['repo_id'], self.REPO_ID)
+        self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEqual(bind['notify_agent'], False)
+        self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
+
+        # run task #2 (notify consumer)
+        try:
+            self.run_next()
+            self.fail('Second task to bind found')
+        except Exception:
+            pass  # the agent notify shouldn't trigger
+
+        # verify agent was not notified
+        self.assertTrue(not mock_agent.Consumer.bind.called)
+
     @patch('pulp.server.managers.consumer.bind.BindManager.bind', side_effect=Exception())
     def test_bind_failed(self, mock_bind):
 
@@ -499,4 +544,3 @@ class TestBind(PulpItineraryTests):
         self.assertEqual(actions[0]['action'], Bind.Action.UNBIND)
         self.assertEqual(actions[0]['status'], Bind.Status.FAILED)
         self.assertTrue(isinstance(actions[0]['timestamp'], float))
-
