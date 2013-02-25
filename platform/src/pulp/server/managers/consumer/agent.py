@@ -262,13 +262,13 @@ class AgentManager(object):
 
     def __bindings(self, bindings):
         """
-        Build the bindings needed by the agent.
-        @param bindings: A list of binding IDs.
-          Each binding is:
-            {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @type bindings: list
-        @return A list of agent bindings.
-          Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
+        Build the bindings needed by the agent. The returned bindings will be
+        the payload created by the appropriate distributor.
+
+        @param bindings: a list of binding object retrieved from the database
+        @type  bindings: list
+
+        @return list of binding objects to send to the agent
         @rtype: list
         """
         agent_bindings = []
