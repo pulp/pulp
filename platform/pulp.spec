@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.13.alpha
+Release: 0.14.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -413,6 +413,14 @@ exit 0
 %endif
 
 %changelog
+* Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
+- 909493 - adding a separate apache2.4 compatible pulp apache conf file for F18
+  (skarmark@redhat.com)
+- 909493 - adding a different httpd2.4 compatible pulp config file for f18
+  build (skarmark@redhat.com)
+- 908676 - make pulp-selinux conflict with pulp-selinux-server instead of
+  obsoleting pulp-selinux-server (skarmark@redhat.com)
+
 * Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
 - 913205 - Removed config options if they aren't relevant
   (jason.dobies@redhat.com)
