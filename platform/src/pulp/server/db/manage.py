@@ -19,7 +19,7 @@ import sys
 from pulp.plugins.loader.api import load_content_types
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
-from pulp.server import config, logs
+from pulp.server import config
 
 
 connection.initialize()
@@ -56,37 +56,37 @@ def migrate_database(options):
     migration_packages = models.get_migration_packages()
     for migration_package in migration_packages:
         if migration_package.current_version > migration_package.latest_available_version:
-            raise DataError(_('The database for migration package %(p)s is at version %(v)s, ' +\
-                              'which is larger than the latest version available, %(a)s.')%({
-                                'p': migration_package.name, 'v': migration_package.current_version,
-                                'a': migration_package.latest_available_version}))
+            msg = _('The database for migration package %(p)s is at version %(v)s, which is larger than the '
+                    'latest version available, %(a)s.')
+            msg = msg % ({'p': migration_package.name, 'v': migration_package.current_version,
+                          'a': migration_package.latest_available_version})
+            raise DataError(msg)
         if migration_package.current_version == migration_package.latest_available_version:
-            message = _('Migration package %(p)s is up to date at version %(v)s'%({
-                'p': migration_package.name,
-                'v': migration_package.latest_available_version}))
+            message = _('Migration package %(p)s is up to date at version %(v)s')
+            message = message % {'p': migration_package.name, 'v': migration_package.latest_available_version}
             logger.info(message)
             print message
             continue
 
         try:
             for migration in migration_package.unapplied_migrations:
-                message = _('Applying %(p)s version %(v)s'%({
-                    'p': migration_package.name, 'v': migration.version}))
+                message = _('Applying %(p)s version %(v)s')
+                message = message % {'p': migration_package.name, 'v': migration.version}
                 print message
                 logger.info(message)
                 # We pass in !options.test to stop the apply_migration method from updating the
                 # package's current version when the --test flag is set
                 migration_package.apply_migration(migration,
                                                   update_current_version=not options.test)
-                message = _('Migration to %(p)s version %(v)s complete.'%(
-                    {'p': migration_package.name, 'v': migration_package.current_version}))
+                message = _('Migration to %(p)s version %(v)s complete.')
+                message = message % {'p': migration_package.name, 'v': migration_package.current_version}
                 print message
                 logger.info(message)
         except Exception, e:
             # If an Exception is raised while applying the migrations, we should log and print it,
             # and then continue with the other packages.
-            error_message = _('Applying migration %(m)s failed.')%(
-                              {'m': migration.name})
+            error_message = _('Applying migration %(m)s failed.')
+            error_message = error_message % {'m': migration.name}
             print >> sys.stderr, str(error_message), _(' See log for details.')
             logger.critical(error_message)
             logger.critical(str(e))

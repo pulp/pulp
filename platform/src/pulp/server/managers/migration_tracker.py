@@ -11,6 +11,7 @@
 
 from pulp.server.db.model.migration_tracker import MigrationTracker
 
+
 class DoesNotExist(Exception):
     """
     This Exception is raised when the manager is asked to retrieve a MigrationTracker that is not
