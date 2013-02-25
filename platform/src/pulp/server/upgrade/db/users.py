@@ -103,9 +103,10 @@ def _permissions(v1_database, v2_database, v1_consumer_user_logins):
 
     for v1_permission in missing_v1_permissions:
         # Before migrating v1 permissions remove v1 consumer users from each of the permissions
-        for user, permissions in v1_permission['users']:
-            if user in v1_consumer_user_logins:
-                del v1_permission['users'][user]
+        if v1_consumer_user_logins:
+            for user, permissions in v1_permission['users']:
+                if user in v1_consumer_user_logins:
+                    del v1_permission['users'][user]
 
         v2_permission = {
             '_id' : ObjectId(),
