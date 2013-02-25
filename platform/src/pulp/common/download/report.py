@@ -49,17 +49,19 @@ class DownloadReport(object):
         """
         return cls(request.url, request.destination)
 
-    def __init__(self, url, destination):
+    def __init__(self, url, destination, data=None):
         """
         :param url:         url requested to be downloaded
         :type  url:         str
         :param destination: destination of the downloaded file, either a string representing the
                             filesystem path to the file, or a file-like object
         :type  destination: str or file-like object
+        :param data:        arbitrary data attached to the request instance
         """
 
-        self.url         = url
+        self.url = url
         self.destination = destination
+        self.data = data
 
         self.state = DOWNLOAD_WAITING
         self.total_bytes = 0
