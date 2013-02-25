@@ -55,7 +55,7 @@ unbind_failed = bind_failed
 # -- itineraries -------------------------------------------------------------------------
 
 
-def bind_itinerary(consumer_id, repo_id, distributor_id, options):
+def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
     """
     Get the bind itinerary:
       1. Create the binding on the server.
@@ -66,8 +66,12 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
     @type repo_id: str
     @param distributor_id: A distributor ID.
     @type distributor_id: str
-    @param options: Bind options passed to the agent handler.
-    @type options: dict
+    @param agent_options: Bind options passed to the agent handler.
+    @type agent_options: dict
+    @param notify_agent: indicates if the agent should be sent a message about the new binding
+    @type  notify_agent: bool
+    @param binding_config: configuration options to use when generating the payload for this binding
+
     @return: A list of call_requests.
     @rtype list
     """
@@ -98,6 +102,8 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
         consumer_id,
         repo_id,
         distributor_id,
+        notify_agent,
+        binding_config,
     ]
 
     bind_request = CallRequest(
@@ -122,7 +128,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
         consumer_id,
         repo_id,
         distributor_id,
-        options
+        agent_options
     ]
 
     agent_request = CallRequest(

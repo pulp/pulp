@@ -251,13 +251,15 @@ class Bindings(JSONController):
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
+        binding_config = body.get('binding_config', None)
         options = body.get('options', {})
+        notify_agent = body.get('notify_agent', True)
 
         managers.repo_query_manager().get_repository(repo_id)
         managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
 
         # bind
-        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, options)
+        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
         execution.execute_multiple(call_requests)
 
 

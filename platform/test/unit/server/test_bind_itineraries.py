@@ -28,6 +28,8 @@ class TestBind(PulpItineraryTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {'b' : 'b'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
     QUERY = dict(
         consumer_id=CONSUMER_ID,
@@ -97,7 +99,7 @@ class TestBind(PulpItineraryTests):
 
     def populate(self):
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -120,6 +122,8 @@ class TestBind(PulpItineraryTests):
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
+            self.NOTIFY_AGENT,
+            self.BINDING_CONFIG,
             options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
@@ -141,6 +145,8 @@ class TestBind(PulpItineraryTests):
         self.assertEqual(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(bind['repo_id'], self.REPO_ID)
         self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
+        self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
         # run task #2 (notify consumer)
         self.run_next()
@@ -178,6 +184,8 @@ class TestBind(PulpItineraryTests):
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
+            self.NOTIFY_AGENT,
+            self.BINDING_CONFIG,
             options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
@@ -211,6 +219,8 @@ class TestBind(PulpItineraryTests):
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
+            self.NOTIFY_AGENT,
+            self.BINDING_CONFIG,
             options)
         call_reports = self.coordinator.execute_multiple_calls(itinerary)
 
@@ -230,6 +240,8 @@ class TestBind(PulpItineraryTests):
         self.assertEqual(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEqual(bind['repo_id'], self.REPO_ID)
         self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
+        self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
         # run task #2 (notify consumer)
         self.run_next()
@@ -267,7 +279,8 @@ class TestBind(PulpItineraryTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
         # Test
         options = {}
@@ -333,7 +346,8 @@ class TestBind(PulpItineraryTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                            self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
         # Test
         options = {}
@@ -372,7 +386,8 @@ class TestBind(PulpItineraryTests):
         self.populate()
         manager = factory.consumer_bind_manager()
 
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
         # Test
         options = {}
@@ -419,7 +434,8 @@ class TestBind(PulpItineraryTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                            self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
         # Test
         options = {}

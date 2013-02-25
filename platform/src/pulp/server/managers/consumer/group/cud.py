@@ -252,14 +252,14 @@ class ConsumerGroupManager(object):
 
     # bind ------------------------------------------------------------
 
-    def bind(self, consumer_group_id, repo_id, distributor_id):
+    def bind(self, consumer_group_id, repo_id, distributor_id, notify_agent, binding_config):
         group_collection = validate_existing_consumer_group(consumer_group_id)
         consumer_group = group_collection.find_one({'id': consumer_group_id})
         bind_manager = manager_factory.consumer_bind_manager()
 
         binds = []
         for consumer_id in consumer_group['consumer_ids']:
-            bind = bind_manager.bind(consumer_id, repo_id, distributor_id)
+            bind = bind_manager.bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
             binds.append(bind)
 
         return binds

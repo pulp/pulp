@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
-#
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
 # 2 of the License (GPLv2) or (at your option) any later version.
@@ -40,6 +39,8 @@ class ConsumerTest(base.PulpWebserviceTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {'b' : 'b'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
     def setUp(self):
@@ -83,7 +84,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         """
         # Setup
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -94,7 +95,8 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         params = {'bindings':True}
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
@@ -117,7 +119,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         """
         # Setup
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -128,7 +130,8 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         params = {'details':True}
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
@@ -226,6 +229,8 @@ class ConsumersTest(base.PulpWebserviceTests):
     CONSUMER_IDS = ('test-consumer_1', 'test-consumer_2')
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {'c' : 'c'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
     def setUp(self):
@@ -249,7 +254,7 @@ class ConsumersTest(base.PulpWebserviceTests):
     def populate(self, bindings=False):
         if bindings:
             manager = factory.repo_manager()
-            repo = manager.create_repo(self.REPO_ID)
+            manager.create_repo(self.REPO_ID)
             manager = factory.repo_distributor_manager()
             manager.add_distributor(
                 self.REPO_ID,
@@ -257,25 +262,26 @@ class ConsumersTest(base.PulpWebserviceTests):
                 {},
                 True,
                 distributor_id=self.DISTRIBUTOR_ID)
-        for id in self.CONSUMER_IDS:
+        for consumer_id in self.CONSUMER_IDS:
             manager = factory.consumer_manager()
-            manager.register(id)
+            manager.register(consumer_id)
             if bindings:
                 manager = factory.consumer_bind_manager()
-                manager.bind(id, self.REPO_ID, self.DISTRIBUTOR_ID)
+                manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID,
+                             self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
     def validate(self, body, bindings=False):
         if bindings:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
             fetched = dict([(c['id'],c) for c in body])
-            for id in self.CONSUMER_IDS:
-                consumer = fetched[id]
-                self.assertEquals(consumer['id'], id)
+            for consumer_id in self.CONSUMER_IDS:
+                consumer = fetched[consumer_id]
+                self.assertEquals(consumer['id'], consumer_id)
                 self.assertTrue('_href' in consumer)
                 self.assertTrue('bindings' in consumer)
                 bindings = consumer['bindings']
                 self.assertEquals(len(bindings), 1)
-                self.assertEquals(bindings[0]['consumer_id'], id)
+                self.assertEquals(bindings[0]['consumer_id'], consumer_id)
                 self.assertEquals(bindings[0]['repo_id'], self.REPO_ID)
                 self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
                 self.assertEquals(bindings[0]['deleted'], False)
@@ -284,9 +290,9 @@ class ConsumersTest(base.PulpWebserviceTests):
         else:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
             fetched = dict([(c['id'],c) for c in body])
-            for id in self.CONSUMER_IDS:
-                consumer = fetched[id]
-                self.assertEquals(consumer['id'], id)
+            for consumer_id in self.CONSUMER_IDS:
+                consumer = fetched[consumer_id]
+                self.assertEquals(consumer['id'], consumer_id)
                 self.assertTrue('_href' in consumer)
                 self.assertFalse('bindings' in body)
 
@@ -449,6 +455,8 @@ class BindTest(base.PulpWebserviceTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {'a' : 'a'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
     QUERY = dict(
         consumer_id=CONSUMER_ID,
@@ -483,7 +491,7 @@ class BindTest(base.PulpWebserviceTests):
 
     def populate(self):
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -500,7 +508,8 @@ class BindTest(base.PulpWebserviceTests):
         self.populate()
         # Test
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         path = '/v2/consumers/%s/bindings/%s/%s/' % \
             (self.CONSUMER_ID,
@@ -519,7 +528,8 @@ class BindTest(base.PulpWebserviceTests):
         self.populate()
         # Test
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
         status, body = self.get(path)
@@ -538,7 +548,8 @@ class BindTest(base.PulpWebserviceTests):
         self.populate()
         # Test
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         path = '/v2/consumers/%s/bindings/%s/' % (self.CONSUMER_ID, self.REPO_ID)
         status, body = self.get(path)
@@ -560,7 +571,8 @@ class BindTest(base.PulpWebserviceTests):
 
         # Test
         path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
-        body = dict(repo_id=self.REPO_ID, distributor_id=self.DISTRIBUTOR_ID,)
+        body = dict(repo_id=self.REPO_ID, distributor_id=self.DISTRIBUTOR_ID,
+                    notify_agent=self.NOTIFY_AGENT, binding_config=self.BINDING_CONFIG)
         status, body = self.post(path, body)
 
         # Verify
@@ -574,6 +586,8 @@ class BindTest(base.PulpWebserviceTests):
                 self.CONSUMER_ID,
                 self.REPO_ID,
                 self.DISTRIBUTOR_ID,
+                self.NOTIFY_AGENT,
+                self.BINDING_CONFIG,
                 {})
 
     def test_bind_missing_consumer(self):
@@ -616,7 +630,8 @@ class BindTest(base.PulpWebserviceTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
         # Test
         path = '/v2/consumers/%s/bindings/%s/%s/' % \
@@ -644,7 +659,8 @@ class BindTest(base.PulpWebserviceTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
         # Test
         path = '/v2/consumers/%s/bindings/%s/%s/' %\
@@ -688,13 +704,14 @@ class BindTest(base.PulpWebserviceTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         manager.action_pending(
             self.CONSUMER_ID,
             self.REPO_ID,
             self.DISTRIBUTOR_ID,
             Bind.Action.BIND,
-            0)
+            '0')
 
         # Test
         criteria = {'filters':
@@ -879,16 +896,12 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(body['profile'], self.PROFILE_1)
 
     def test_get_by_type_not_found(self):
-        # Setup
-        manager = factory.consumer_profile_manager()
         # Test
         path = '/v2/consumers/%s/profiles/unknown/' % self.CONSUMER_ID
         status, body = self.get(path)
         self.assertEqual(status, 404)
 
     def test_delete_not_found(self):
-        # Setup
-        manager = factory.consumer_profile_manager()
         # Test
         path = '/v2/consumers/%s/profiles/unknown/' % self.CONSUMER_ID
         status, body = self.delete(path)
@@ -929,11 +942,11 @@ class TestApplicability(base.PulpWebserviceTests):
 
     def populate(self):
         manager = factory.consumer_manager()
-        for id in self.CONSUMER_IDS:
-            manager.register(id)
+        for consumer_id in self.CONSUMER_IDS:
+            manager.register(consumer_id)
         manager = factory.consumer_profile_manager()
-        for id in self.CONSUMER_IDS:
-            manager.create(id, 'rpm', self.PROFILE)
+        for consumer_id in self.CONSUMER_IDS:
+            manager.create(consumer_id, 'rpm', self.PROFILE)
 
     def test_no_missing_values_exception(self):
         # Setup

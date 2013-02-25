@@ -12,15 +12,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains bind management classes
+Contains binding management classes
 """
+
 from time import time
 from logging import getLogger
 
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server.db.model.consumer import Bind
-from pulp.server.exceptions import MissingResource
+from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 
 
@@ -44,7 +45,7 @@ class BindManager(object):
             distributor_id=distributor_id,
         )
 
-    def bind(self, consumer_id, repo_id, distributor_id):
+    def bind(self, consumer_id, repo_id, distributor_id, notify_agent, binding_config):
         """
         Bind consumer to a specific distributor associated with
         a repository.  This call is idempotent.
@@ -58,18 +59,27 @@ class BindManager(object):
         @rtype: SON
         @raise MissingResource: when given consumer does not exist.
         """
+        # Validation
+
+        # ensure notify_agent is a boolean
+        if not isinstance(notify_agent, bool):
+            raise InvalidValue(['notify_agent'])
+
         # ensure the consumer is valid
         manager = factory.consumer_manager()
         manager.get_consumer(consumer_id)
+
         # ensure the repository & distributor are valid
         manager = factory.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
+
         # perform the bind
         collection = Bind.get_collection()
         try:
-            bind = Bind(consumer_id, repo_id, distributor_id)
+            bind = Bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
             collection.save(bind, safe=True)
         except DuplicateKeyError:
+            self._update_binding(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
             self.__reset_bind(consumer_id, repo_id, distributor_id)
         # fetch the inserted/updated bind
         bind = self.get_bind(consumer_id, repo_id, distributor_id)
@@ -79,11 +89,27 @@ class BindManager(object):
         manager.record_event(consumer_id, 'repo_bound', details)
         return bind
 
+    def _update_binding(self, consumer_id, repo_id, distributor_id, notify_agent, binding_config):
+        """
+        Workaround to the way bindings rely on a duplicate key error for supporting rebind.
+        This call makes sure the existing binding is updated with the new values for
+        notifying the agent and the binding's configuration.
+
+        The parameters are the values passed to the bind() call.
+        """
+
+        collection = Bind.get_collection()
+        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        binding = collection.find_one(query)
+        binding['notify_agent'] = notify_agent
+        binding['binding_config'] = binding_config
+        collection.save(binding, safe=True)
+
     def __reset_bind(self, consumer_id, repo_id, distributor_id):
         """
         Reset the bind.
         This means resetting the deleted flag and consumer requests.
-        Only (deleted) bindings will be reset.
+        Only deleted bindings will be reset.
         @param consumer_id: uniquely identifies the consumer.
         @type consumer_id: str
         @param repo_id: uniquely identifies the repository.

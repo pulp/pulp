@@ -177,6 +177,8 @@ def distributor_update_itinerary(repo_id, distributor_id, config):
             bind['consumer_id'],
             bind['repo_id'],
             bind['distributor_id'],
+            bind['notify_agent'],
+            bind['binding_config'],
             options)
         if bind_requests:
             bind_requests[0].depends_on(update_request.id)
