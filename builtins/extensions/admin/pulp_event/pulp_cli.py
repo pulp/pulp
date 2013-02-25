@@ -156,11 +156,11 @@ class RestApiSection(GenericSection):
         m = _('full URL to invoke to send the event info')
         url_option = PulpCliOption('--url', m, required=True)
 
-        m = _('optional username to be passed as basic auth credentials when'
+        m = _('optional username to be passed as basic auth credentials when '
               'the HTTP call is invoked.')
         username_option = PulpCliOption('--username', m, required=False)
 
-        m = _('optional password to be passed as basic auth credentials when'
+        m = _('optional password to be passed as basic auth credentials when '
               'the HTTP call is invoked.')
         password_option = PulpCliOption('--password', m, required=False)
 
