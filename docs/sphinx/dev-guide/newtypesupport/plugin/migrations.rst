@@ -9,18 +9,8 @@ configure your project's migrations.
 Registration
 ============
 
-Whether or not you plan to write any migrations, it is very important that you configure your project so that
-Pulp's migration system is aware of it. This is important because Pulp only tracks schema versions on projects
-that it knows about, and Pulp will always automatically migrate users to the latest available version the
-first time it becomes aware of any particular project on a user's system. This is done so that new users of
-a project don't need to run historical migrations on their new, empty database. By registering your project
-with Pulp before you have any migrations, you can ensure that anyone who installs your project will be marked
-as being at schema version 0 for your project.
-
-To illustrate why this is important, suppose that you did not register with Pulp's migration system, and
-suppose that some users have installed your package. Now suppose that you do want to make a schema change, so
-you write a migration at version 1. Now when you configure your project to register with Pulp, those users
-will automatically be marked as being at version 1, *without* running the migration for version 1.
+In order to write migrations for your Pulp plugin, you will need to register your plugin's
+migrations package with the Pulp server.
 
 How to Register
 ---------------
@@ -88,13 +78,18 @@ nobody gets hurt. Here are the rules:
    migrated to. It requires your migration versions to start with 1, and to be sequential with no
    gaps in version numbers. For example, 0001_my_first_migration.py, 0002_my_second_migration.py,
    0003_add_email_addresses_to_users.py, etc. You don't have to use leading zeros in the names, as
-   the number is processed with a regular expression that interprets it as an integer, however, the
+   the number is processed with a regular expression that interprets it as an integer. However, the
    advantage to using leading zeros is that programs like ``ls`` will display your migrations in
    order when you inspect the contents of your migration package.
 #. Each migration module should have a function called "migrate" with this signature:
    ``def migrate(*args, **kwargs)``.
 #. Inside your ``migrate()`` function, you can perform the necessary work to change the data in the
    Pulp install.
+#. Your ``migrate()`` function must be written in such a way that it will not fail for a new
+   installation. New installations will start at migration version 0, and all migrations up to the
+   most recent migration will be applied by the system. Therefore, you must not assume that there
+   is data in the database, or on the filesystem. Your migration script should detect what work, if
+   any, needs to be done before performing any operations.
 
 For example, your migrations package might look like this::
 
