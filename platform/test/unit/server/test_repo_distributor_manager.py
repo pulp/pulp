@@ -500,34 +500,47 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     def test_create_bind_payload(self):
         # Setup
-        self.repo_manager.create_repo('repo-a')
-        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True, distributor_id='dist-1')
+        repo_id = 'repo-a'
+        distributor_id = 'dist-1'
+        binding_config = {'a' : 'a'}
+
+        self.repo_manager.create_repo(repo_id)
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True,
+                                                 distributor_id=distributor_id)
 
         expected_payload = {'payload' : 'stuff'}
         mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value = expected_payload
 
         # Test
-        payload = self.distributor_manager.create_bind_payload('repo-a', 'dist-1')
+        payload = self.distributor_manager.create_bind_payload(repo_id, distributor_id, binding_config)
 
         # Verify
         self.assertEqual(payload, expected_payload)
+
+        call_args = mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.call_args[0]
+        self.assertEqual(call_args[0].id, repo_id)
+        self.assertTrue(isinstance(call_args[1], PluginCallConfiguration))
+        self.assertEqual(call_args[2], binding_config)
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value = None
 
     def test_create_bind_payload_missing_repo(self):
         # Test
-        self.assertRaises(exceptions.MissingResource, self.distributor_manager.create_bind_payload, 'missing', 'also missing')
+        self.assertRaises(exceptions.MissingResource, self.distributor_manager.create_bind_payload,
+                          'missing', 'also missing', 'irrelevant')
 
     def test_create_bind_payload_distributor_error(self):
         # Setup
         self.repo_manager.create_repo('repo-a')
-        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True,
+                                                 distributor_id='dist-1')
 
         mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.side_effect = Exception()
 
         # Test
-        self.assertRaises(exceptions.PulpExecutionException, self.distributor_manager.create_bind_payload, 'repo-a', 'dist-1')
+        self.assertRaises(exceptions.PulpExecutionException, self.distributor_manager.create_bind_payload,
+                          'repo-a', 'dist-1', 'config')
 
     # -- get ------------------------------------------------------------------
 

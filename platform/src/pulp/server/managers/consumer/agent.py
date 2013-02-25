@@ -60,7 +60,9 @@ class AgentManager(object):
 
     def bind(self, consumer_id, repo_id, distributor_id, options):
         """
-        Request the agent to perform the specified bind.
+        Request the agent to perform the specified bind. This method will be called
+        after the server-side representation of the binding has been created.
+
         @param consumer_id: The consumer ID.
         @type consumer_id: str
         @param repo_id: A repository ID.
@@ -71,16 +73,20 @@ class AgentManager(object):
         @type options: dict
         """
         # agent request
-        manager = managers.consumer_manager()
-        consumer = manager.get_consumer(consumer_id)
-        binding = dict(repo_id=repo_id, distributor_id=distributor_id)
-        bindings = self.__bindings([binding])
+        consumer_manager = managers.consumer_manager()
+        binding_manager = managers.consumer_bind_manager()
+
+        consumer = consumer_manager.get_consumer(consumer_id)
+        binding = binding_manager.get_bind(consumer_id, repo_id, distributor_id)
+
+        agent_bindings = self.__bindings([binding])
         agent = PulpAgent(consumer)
-        agent.consumer.bind(bindings, options)
+        agent.consumer.bind(agent_bindings, options)
+
         # request tracking
         action_id = factory.context().call_request_id
-        manager = managers.consumer_bind_manager()
-        manager.action_pending(
+        consumer_manager = managers.consumer_bind_manager()
+        consumer_manager.action_pending(
             consumer_id,
             repo_id,
             distributor_id,
@@ -274,7 +280,8 @@ class AgentManager(object):
                 binding['distributor_id'])
             details = manager.create_bind_payload(
                 binding['repo_id'],
-                binding['distributor_id'])
+                binding['distributor_id'],
+                binding['binding_config'])
             type_id = distributor['distributor_type_id']
             agent_binding = dict(type_id=type_id, repo_id=repo_id, details=details)
             agent_bindings.append(agent_binding)

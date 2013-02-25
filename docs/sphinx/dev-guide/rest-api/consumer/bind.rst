@@ -15,6 +15,11 @@ in the following steps:
 
 Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
 
+The distributor may support configuration options that it may use for that particular
+binding. These options would be used when generating the payload that is sent to consumers
+so they may access the repository. See the individual distributor's documentation for
+more information on the format.
+
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/bindings/`
 | :permission:`create`
@@ -23,6 +28,8 @@ Each step is represented by a :ref:`call_report` in the returned :ref:`call_repo
 * :param:`repo_id,string,unique identifier for the repository`
 * :param:`distributor_id,string,identifier for the distributor`
 * :param:`?options,object,options passed to the handler on the consumer`
+* :param:`?notify_agent,bool,indicates if the consumer should be sent a message about the new binding; defaults to true if unspecified`
+* :param:`?binding_config,object,options to be used by the distributor for this binding`
 
 | :response_list:`_`
 

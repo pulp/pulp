@@ -1000,7 +1000,7 @@ class RepoDistributorTests(RepoPluginsTests):
         consumer_id = 'xxx'
         repo_id = 'test-repo'
         distributor_id='yyy'
-        notify_agent = False
+        notify_agent = True
         binding_config = {'c' : 'c'}
 
         bind = dict(

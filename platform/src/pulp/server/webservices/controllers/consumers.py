@@ -202,7 +202,7 @@ class ConsumerSearch(SearchController):
 
 class Bindings(JSONController):
     """
-    Consumer I{bindings} represents the collection of
+    Consumer bindings represents the collection of
     objects used to associate a consumer and a repo-distributor
     association.  Users wanting to create this association will
     create an object in this collection.  Both bind and unbind
