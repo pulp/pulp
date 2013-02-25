@@ -69,16 +69,6 @@ def initialize(context):
     unregister_command = UnregisterCommand(context, 'unregister', _(d))
     context.cli.add_command(unregister_command)
 
-    # Bind Command
-    d = 'binds this consumer to a repository distributor for consuming published content'
-    bind_command = BindCommand(context, 'bind', _(d))
-    context.cli.add_command(bind_command)
-
-    # Unbind Command
-    d = 'unbinds this consumer from a repository distributor'
-    unbind_command = UnbindCommand(context, 'unbind', _(d))
-    context.cli.add_command(unbind_command)
-
     # History Retrieval Command
     d = 'lists history of this consumer'
     context.cli.add_command(HistoryCommand(context, 'history', _(d)))
@@ -213,55 +203,6 @@ class UnregisterCommand(PulpCliCommand):
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
         if os.path.exists(cert_filename):
             os.remove(cert_filename)
-
-class BindCommand(PulpCliCommand):
-
-    def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.bind)
-        self.context = context
-        self.prompt = context.prompt
-
-        self.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
-        self.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
-
-    def bind(self, **kwargs):
-        consumer_id = load_consumer_id(self.context)
-        if not consumer_id:
-            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
-            return
-        repo_id = kwargs['repo-id']
-        distributor_id = kwargs['distributor-id']
-        try:
-            self.context.server.bind.bind(consumer_id, repo_id, distributor_id)
-            self.prompt.render_success_message('Consumer [%s] successfully bound to repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
-        except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
-
-class UnbindCommand(PulpCliCommand):
-
-    def __init__(self, context, name, description):
-        PulpCliCommand.__init__(self, name, description, self.unbind)
-        self.context = context
-        self.prompt = context.prompt
-
-        self.add_option(PulpCliOption('--repo-id', 'repository id', required=True))
-        self.add_option(PulpCliOption('--distributor-id', 'distributor id', required=True))
-        self.add_option(PulpCliFlag('--force', _('delete the binding immediately and discontinue tracking consumer actions')))
-
-
-    def unbind(self, **kwargs):
-        consumer_id = load_consumer_id(self.context)
-        if not consumer_id:
-            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
-            return
-        repo_id = kwargs['repo-id']
-        distributor_id = kwargs['distributor-id']
-        force = kwargs['force']
-        try:
-            self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
-            self.prompt.render_success_message('Consumer [%s] successfully unbound from repository distributor [%s : %s]' % (consumer_id, repo_id, distributor_id))
-        except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
 class HistoryCommand(PulpCliCommand):
 
