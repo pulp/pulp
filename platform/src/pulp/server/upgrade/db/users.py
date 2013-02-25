@@ -13,12 +13,11 @@
 from pulp.server.compat import ObjectId
 from pulp.server.upgrade.model import UpgradeStepReport
 
-
 def upgrade(v1_database, v2_database):
 
     _roles(v1_database, v2_database)
-    _permissions(v1_database, v2_database)
-    _users(v1_database, v2_database)
+    v1_consumer_users = _users(v1_database, v2_database)
+    _permissions(v1_database, v2_database, v1_consumer_users)
 
     report = UpgradeStepReport()
     report.succeeded()
@@ -41,6 +40,12 @@ def _roles(v1_database, v2_database):
         if existing is not None:
             continue
 
+        # Skip adding default consumer-users role from v1 database to v2 
+        # since it is no longer required in v2
+
+        if v1_role['name'] == 'consumer-users':
+            continue
+
         v2_role = {
             '_id' : ObjectId(),
             'id' : v1_role['name'],
@@ -54,37 +59,22 @@ def _roles(v1_database, v2_database):
         v2_roles_coll.insert(v2_roles_to_add, safe=True)
 
 
-def _permissions(v1_database, v2_database):
-    v1_coll = v1_database.permissions
-    v2_coll = v2_database.permissions
-
-    # Idempotency: The resource can be used as a uniqueness check
-    v2_resources = [x['resource'] for x in list(v2_coll.find({}, {'resource' : 1}))]
-    missing_v1_permissions = list(v1_coll.find({'resource' : {'$nin' : v2_resources}}))
-
-    v2_permissions_to_add = []
-    for v1_permission in missing_v1_permissions:
-        v2_permission = {
-            '_id' : ObjectId(),
-            'resource' : v1_permission['resource'],
-            'users' : v1_permission['users'],
-        }
-        v2_permissions_to_add.append(v2_permission)
-
-    if v2_permissions_to_add:
-        v2_coll.insert(v2_permissions_to_add, safe=True)
-
-
 def _users(v1_database, v2_database):
     v1_coll = v1_database.users
     v2_coll = v2_database.users
-
+    
     # Idempotency: Check already upgraded users by login
     v2_logins = [x['login'] for x in list(v2_coll.find({}, {'login' : 1}))]
     missing_v1_users = list(v1_coll.find({'login' : {'$nin' : v2_logins}}))
 
     v2_users_to_add = []
+    v1_consumer_user_logins = []
+
     for v1_user in missing_v1_users:
+        if 'consumer-users' in v1_user['roles']:
+            v1_consumer_user_logins.append(v1_user['login'])
+            continue
+
         v2_user = {
             '_id' : ObjectId(),
             'id' : v1_user['id'],
@@ -97,4 +87,33 @@ def _users(v1_database, v2_database):
 
     if v2_users_to_add:
         v2_coll.insert(v2_users_to_add, safe=True)
+    
+    return v1_consumer_user_logins
 
+
+def _permissions(v1_database, v2_database, v1_consumer_user_logins):
+    v1_coll = v1_database.permissions
+    v2_coll = v2_database.permissions
+
+    # Idempotency: The resource can be used as a uniqueness check
+    v2_resources = [x['resource'] for x in list(v2_coll.find({}, {'resource' : 1}))]
+    missing_v1_permissions = list(v1_coll.find({'resource' : {'$nin' : v2_resources}}))
+
+    v2_permissions_to_add = []
+
+    for v1_permission in missing_v1_permissions:
+        # Before migrating v1 permissions remove v1 consumer users from each of the permissions
+        if v1_consumer_user_logins:
+            for user, permissions in v1_permission['users']:
+                if user in v1_consumer_user_logins:
+                    del v1_permission['users'][user]
+
+        v2_permission = {
+            '_id' : ObjectId(),
+            'resource' : v1_permission['resource'],
+            'users' : v1_permission['users'],
+        }
+        v2_permissions_to_add.append(v2_permission)
+
+    if v2_permissions_to_add:
+        v2_coll.insert(v2_permissions_to_add, safe=True)
