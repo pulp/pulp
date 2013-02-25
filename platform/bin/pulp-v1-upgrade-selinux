@@ -15,9 +15,9 @@
 # in this software or its documentation.
 
 echo ""
-echo "Upgrading selinux policy"
+echo "Upgrading selinux policy.."
 /usr/share/pulp/selinux/server/enable.sh
 
-echo "Relabeling filesystem according to upgraded selinux policy"
+echo "Relabeling filesystem according to the upgraded selinux policy.."
 /usr/share/pulp/selinux/server/relabel.sh
 echo ""
