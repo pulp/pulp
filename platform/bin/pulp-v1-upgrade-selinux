@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/bash
 #
 # Pulp Upgrade Utility
 # Copyright (c) 2013 Red Hat, Inc.
@@ -14,21 +14,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import subprocess
+echo ""
+echo "Upgrading selinux policy"
+/usr/share/pulp/selinux/server/enable.sh
 
-from okaara.prompt import Prompt
-
-if __name__=='__main__':
-    cmd_selinux_enable = "/usr/share/pulp/selinux/server/enable.sh"
-    cmd_selinux_relabel = "/usr/share/pulp/selinux/server/relabel.sh"
-    prompt = Prompt()
-
-    prompt.write("Upgrading selinux policy")
-    ret = subprocess.call(cmd_selinux_enable)
-    if ret == 1:
-        prompt.write("Upgrading selinux policy failed")
-
-    prompt.write("Relabeling filesystem according to upgraded selinux policy")
-    ret = subprocess.call(cmd_selinux_relabel)
-    if ret == 1:
-        prompt.write("Relabeling filesystem failed")
+echo "Relabeling filesystem according to upgraded selinux policy"
+/usr/share/pulp/selinux/server/relabel.sh
+echo ""
