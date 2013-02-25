@@ -192,6 +192,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-v1-upgrade
+%{_bindir}/pulp-v1-upgrade-selinux
 %{_bindir}/pulp-v1-upgrade-publish
 # apache
 %defattr(-,apache,apache,-)
@@ -369,7 +370,7 @@ BuildRequires:  make
 BuildRequires:  checkpolicy
 BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
-Conflicts: pulp-selinux-server
+Obsoletes: pulp-selinux-server
 
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
