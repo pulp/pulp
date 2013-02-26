@@ -53,7 +53,7 @@ class RepoDistributorManager(object):
         distributor = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
 
         if distributor is None:
-            raise MissingResource(distributor_id)
+            raise MissingResource(distributor=distributor_id)
 
         return distributor
 
