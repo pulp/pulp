@@ -116,8 +116,8 @@ class TestManageDB(MigrationTest):
            data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.manage.logger')
-    @patch('pulp.server.db.manage._start_logging')
-    def test_current_version_too_high(self, mocked_start_logging, mocked_logger, mocked_stderr):
+    @patch('logging.config.fileConfig')
+    def test_current_version_too_high(self, mocked_file_config, mocked_logger, mocked_stderr):
         """
         Set the current package version higher than latest available version, then sit back and eat
         popcorn.
@@ -147,8 +147,8 @@ class TestManageDB(MigrationTest):
            data.test_migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.manage.logger')
-    @patch('pulp.server.db.manage._start_logging')
-    def test_migrate(self, start_logging_mock, logger_mock, mocked_apply_migration, mocked_stderr):
+    @patch('logging.config.fileConfig')
+    def test_migrate(self, file_config_mock, logger_mock, mocked_apply_migration, mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
         in the correct order.
