@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
-#
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
 # 2 of the License (GPLv2) or (at your option) any later version.
@@ -12,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import datetime
 import httplib
 import re
@@ -48,6 +46,7 @@ from pulp.server.itineraries.repository import (
     unbind_itinerary,
 )
 
+
 class RepoControllersTests(base.PulpWebserviceTests):
 
     def setUp(self):
@@ -59,6 +58,7 @@ class RepoControllersTests(base.PulpWebserviceTests):
         Repo.get_collection().remove(safe=True)
 
 class RepoSearchTests(RepoControllersTests):
+
     @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_basic_search(self, mock_query, mock_params):
@@ -1000,22 +1000,22 @@ class RepoDistributorTests(RepoPluginsTests):
         consumer_id = 'xxx'
         repo_id = 'test-repo'
         distributor_id='yyy'
+        notify_agent = True
+        binding_config = {'c' : 'c'}
 
         bind = dict(
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
+            distributor_id=distributor_id,
+            notify_agent=notify_agent,
+            binding_config=binding_config)
 
         mock_find.return_value = [bind, bind]
 
         # Setup
         self.repo_manager.create_repo(repo_id)
-        self.distributor_manager.add_distributor(
-            repo_id,
-            'dummy-distributor',
-            {},
-            True,
-            distributor_id)
+        self.distributor_manager.add_distributor(repo_id, 'dummy-distributor', {}, True,
+                                                 distributor_id)
 
         # Test
         new_config = {'key' : 'updated'}
@@ -1031,7 +1031,8 @@ class RepoDistributorTests(RepoPluginsTests):
 
         # verify itineraries called
         mock_update_itinerary.assert_called_with(repo_id, distributor_id, new_config)
-        mock_bind_itinerary.assert_called_with(consumer_id, repo_id, distributor_id, {})
+        mock_bind_itinerary.assert_called_with(consumer_id, repo_id, distributor_id, notify_agent,
+                                               binding_config, {})
 
     def test_update_bad_request(self):
         """

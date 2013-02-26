@@ -77,7 +77,7 @@ def create_consumers(prefix, num, repo_id):
         else:
             profile = get_odd_profile()
         PROFILE_MGR.update(consumer_id, TYPE_ID_RPM, profile)
-        CONSUMER_BIND_MGR.bind(consumer_id, repo_id, TYPE_ID_DISTRIBUTOR_YUM)
+        CONSUMER_BIND_MGR.bind(consumer_id, repo_id, TYPE_ID_DISTRIBUTOR_YUM, True, None)
         print "Created consumer: [%s] bound to [%s]" % (consumer_id, repo_id)
 
 if __name__ == "__main__":

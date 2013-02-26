@@ -62,7 +62,8 @@ def serialize(bind, include_details=True):
     if include_details:
         details = repo_distributor_manager.create_bind_payload(
             bind['repo_id'],
-            bind['distributor_id'])
+            bind['distributor_id'],
+            bind['binding_config'])
         serialized['details'] = details
 
     return serialized
