@@ -147,9 +147,7 @@ Pulp parent nodes support.
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
 %{python_sitelib}/pulp_node/distributors/
-%{python_sitelib}/pulp_node/extensions/admin/
 %{python_sitelib}/pulp_node_parent*.egg-info
-%{python_sitelib}/pulp_node_admin_extensions*.egg-info
 %{_var}/lib/pulp/nodes
 %{_var}/www/pulp/nodes
 %doc
@@ -176,6 +174,26 @@ Pulp child nodes support.
 %{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
 %doc
+
+
+# ---- Admin Extension -------------------------------------------------------
+
+%package admin-extensions
+Summary: Pulp parent nodes support
+Group: Development/Languages
+Requires: %{name}-common = %{version}
+Requires: python-pulp-rpm-extension = %{pulp_version}
+Requires: pulp-admin-client = %{pulp_version}
+
+%description admin-extensions
+Pulp parent nodes admin client extensions.
+
+%files admin-extensions
+%defattr(-,root,root,-)
+%{python_sitelib}/pulp_node/extensions/admin/
+%{python_sitelib}/pulp_node_admin_extensions*.egg-info
+%doc
+
 
 # ----------------------------------------------------------------------------
 
