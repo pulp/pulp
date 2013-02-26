@@ -69,6 +69,7 @@ REPO_DISABLED = _('Repository disabled')
 NODE_ACTIVATED = _('Consumer activated as child node')
 NODE_DEACTIVATED = _('Child node deactivated')
 
+
 # --- extension loading ------------------------------------------------------
 
 @priority()

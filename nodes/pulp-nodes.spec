@@ -53,6 +53,9 @@ popd
 pushd extensions/admin
 %{__python} setup.py build
 popd
+pushd extensions/consumer
+%{__python} setup.py build
+popd
 
 %install
 rm -rf %{buildroot}
@@ -66,6 +69,9 @@ pushd child
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 pushd extensions/admin
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+pushd extensions/consumer
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
@@ -160,6 +166,7 @@ Summary: Pulp child nodes support
 Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
+Requires: pulp-consumer-client = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 Requires: gofer >= 0.74
 
@@ -171,6 +178,8 @@ Pulp child nodes support.
 %{python_sitelib}/pulp_node/importers/
 %{python_sitelib}/pulp_node/handlers/
 %{python_sitelib}/pulp_node_child*.egg-info
+%{python_sitelib}/pulp_node/extensions/consumer/
+%{python_sitelib}/pulp_node_consumer_extensions*.egg-info
 %{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
 %doc
@@ -182,18 +191,16 @@ Pulp child nodes support.
 Summary: Pulp parent nodes support
 Group: Development/Languages
 Requires: %{name}-common = %{version}
-Requires: python-pulp-rpm-extension = %{pulp_version}
 Requires: pulp-admin-client = %{pulp_version}
 
 %description admin-extensions
-Pulp parent nodes admin client extensions.
+Pulp nodes admin client extensions.
 
 %files admin-extensions
 %defattr(-,root,root,-)
 %{python_sitelib}/pulp_node/extensions/admin/
 %{python_sitelib}/pulp_node_admin_extensions*.egg-info
 %doc
-
 
 # ----------------------------------------------------------------------------
 
