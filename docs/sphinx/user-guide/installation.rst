@@ -16,6 +16,10 @@ Client
   to the server. admin-client can be run from any machine that can access the server's
   REST API, but the consumer-client must be run on a consumer.
 
+Additional steps are needed for upgrading Pulp 1.1 installations. More information can be found
+in the :doc:`v1_upgrade` section of this guide.
+
+
 Supported Operating Systems
 ---------------------------
 Server
