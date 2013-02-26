@@ -19,7 +19,10 @@ from pulp.common.download import factory
 from pulp.common.download.config import DownloaderConfig
 
 from pulp_node import constants
+from pulp_node.progress import RepositoryProgress
+from pulp_node.importers.reports import ProgressListener
 from pulp_node.importers.strategies import find_strategy
+
 
 log = getLogger(__name__)
 
@@ -99,7 +102,10 @@ class NodesHttpImporter(Importer):
             downloader = self._downloader(config)
             strategy_name = config.get('strategy')
             strategy_class = find_strategy(strategy_name)
-            self.strategy = strategy_class(conduit, config, downloader)
+            listener = ProgressListener(conduit)
+            progress = RepositoryProgress(repo.id, listener)
+            self.strategy = strategy_class(conduit, config, downloader, progress)
+            progress.begin_importing()
             report = self.strategy.synchronize(repo.id)
             details = dict(report=report.dict())
         except Exception, e:

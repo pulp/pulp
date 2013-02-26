@@ -26,8 +26,10 @@ from pulp.client.commands.options import DESC_ID, OPTION_REPO_ID, OPTION_CONSUME
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
-from pulp_node.extension import PublishRenderer, render_missing_resources
+from pulp_node.extension import render_missing_resources
 from pulp_node.extension import ensure_node_section
+from pulp_node.extensions.admin.rendering import *
+
 from pulp_node.constants import HTTP_DISTRIBUTOR, ALL_DISTRIBUTORS, NODE_NOTE_KEY
 
 
@@ -61,7 +63,11 @@ DEACTIVATED_NOTE = {NODE_NOTE_KEY: None}
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
 AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False)
 
+REPO_ENABLED = _('Repository enabled')
+REPO_DISABLED = _('Repository disabled')
 
+NODE_ACTIVATED = _('Consumer activated as child node')
+NODE_DEACTIVATED = _('Child node deactivated')
 
 # --- extension loading ------------------------------------------------------
 
@@ -197,6 +203,7 @@ class NodeActivateCommand(PulpCliCommand):
         delta = {'notes': ACTIVATED_NOTE}
         try:
             self.context.server.consumer.update(consumer_id, delta)
+            self.context.prompt.render_success_message(NODE_ACTIVATED)
         except NotFoundException, e:
             render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
@@ -214,6 +221,7 @@ class NodeDeactivateCommand(PulpCliCommand):
         delta = {'notes': DEACTIVATED_NOTE}
         try:
             self.context.server.consumer.update(consumer_id, delta)
+            self.context.prompt.render_success_message(NODE_DEACTIVATED)
         except NotFoundException, e:
             render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
@@ -236,6 +244,7 @@ class NodeRepoEnableCommand(PulpCliCommand):
         binding = self.context.server.repo_distributor
         try:
             binding.create(repo_id, HTTP_DISTRIBUTOR, {}, auto_publish, HTTP_DISTRIBUTOR)
+            self.context.prompt.render_success_message(REPO_ENABLED)
         except NotFoundException, e:
             render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
@@ -252,6 +261,7 @@ class NodeRepoDisableCommand(PulpCliCommand):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         try:
             self.context.server.repo_distributor.delete(repo_id, HTTP_DISTRIBUTOR)
+            self.context.prompt.render_success_message(REPO_DISABLED)
         except NotFoundException, e:
             render_missing_resources(self.context.prompt, e)
             return os.EX_DATAERR
@@ -263,7 +273,10 @@ class NodeRepoDisableCommand(PulpCliCommand):
 class NodeUpdateCommand(ConsumerContentUpdateCommand):
 
     def __init__(self, context):
-        super(NodeUpdateCommand, self).__init__(context, description=UPDATE_DESC)
+        super(NodeUpdateCommand, self).__init__(
+            context,
+            progress_tracker=ProgressTracker(context.prompt),
+            description=UPDATE_DESC)
 
     def add_consumer_option(self):
         self.add_option(NODE_ID_OPTION)
@@ -278,8 +291,7 @@ class NodeUpdateCommand(ConsumerContentUpdateCommand):
         unit = dict(type_id='node', unit_key=None)
         return [unit]
 
-    def progress(self, report):
-        self.context.prompt.write(str(report))
-
     def succeeded(self, consumer_id, task):
-        self.context.prompt.write(str(task.result))
+        details = task.result['details'].values()[0]['details']
+        r = UpdateRenderer(self.context.prompt, details)
+        r.render()

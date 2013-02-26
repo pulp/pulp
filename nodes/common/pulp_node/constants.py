@@ -10,10 +10,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
+# --- distributors -----------------------------------------------------------
+
+
 HTTP_DISTRIBUTOR = 'nodes_http_distributor'
 HTTP_IMPORTER = 'nodes_http_importer'
 
 ALL_IMPORTERS = [HTTP_IMPORTER]
 ALL_DISTRIBUTORS = [HTTP_DISTRIBUTOR]
+
+
+# --- consumer notes ---------------------------------------------------------
 
 NODE_NOTE_KEY = '_child-node'

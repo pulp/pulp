@@ -11,8 +11,6 @@
 
 from gettext import gettext as _
 
-from pulp.client.commands.repo.sync_publish import StatusRenderer
-
 
 # --- constants --------------------------------------------------------------
 
@@ -51,15 +49,3 @@ def render_missing_resources(prompt, exception):
         _type = RESOURCE_TYPES.get(_type, _type)
         msg = MISSING_RESOURCE % {'type': _type, 'id': _id}
         prompt.render_failure_message(msg)
-
-
-# --- classes ----------------------------------------------------------------
-
-
-class PublishRenderer(StatusRenderer):
-
-    def __init__(self, context):
-        super(PublishRenderer, self).__init__(context)
-
-    def display_report(self, progress_report):
-        pass # nothing to report

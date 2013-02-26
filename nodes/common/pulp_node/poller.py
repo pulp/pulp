@@ -14,7 +14,6 @@ import httplib
 from time import sleep
 from gettext import gettext as _
 
-from pulp_node.progress import ProgressReport
 from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
@@ -71,7 +70,7 @@ class TaskPoller(object):
         :param task_id: A task ID.
         :type task_id: str
         :param progress: A progress reporting object.
-        :type pulp_node.progress.ProgressReport
+        :type progress: pulp_node.progress.RepositoryProgress
         :return: The task result.
         """
         last_hash = 0
@@ -98,7 +97,7 @@ class TaskPoller(object):
         """
         Update the progress report only if the progress in the task has changed.
         :param progress: A progress reporting object.
-        :type pulp_node.progress.ProgressReport
+        :type progress: pulp_node.progress.RepositoryProgress
         :param task: A task
         :type task: Task
         :param last_hash: The hash of the last reported progress.
@@ -110,8 +109,6 @@ class TaskPoller(object):
         if _hash != last_hash:
             if task.progress:
                 reported = task.progress.values()[0]
-                report = ProgressReport()
-                report.steps = reported['steps']
-                report.action = reported['action']
-                progress.set_nested_report(report)
+                progress.__dict__.update(reported)
+                progress.updated()
         return _hash

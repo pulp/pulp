@@ -389,7 +389,7 @@ class ChildRepository(Child, Repository):
         """
         Run a repo_sync() on this child repository.
         :param progress: A progress report.
-        :type progress: pulp_node.progress.ProgressReport
+        :type progress: pulp_node.progress.RepositoryProgress
         :return: The task result.
         """
         conf = dict(strategy=strategy)

@@ -41,15 +41,15 @@ class NodeHandler(ContentHandler):
         """
         report = ContentReport()
         progress = HandlerProgress(conduit)
-        progress.push_step('fetch_bindings')
         bindings = ParentBinding.fetch_all()
 
         strategy_name = options.setdefault('strategy', 'mirror')
         strategy_class = find_strategy(strategy_name)
         strategy = strategy_class(progress)
+        progress.started(bindings)
         strategy_report = strategy.synchronize(bindings, options)
 
-        progress.end()
+        progress.finished()
         details = strategy_report.dict()
         if strategy_report.errors:
             report.set_failed(details)
@@ -76,7 +76,7 @@ class RepositoryHandler(ContentHandler):
         """
         report = ContentReport()
         progress = HandlerProgress(conduit)
-        progress.push_step('fetch_bindings')
+        progress.begin_step('fetch_bindings')
         repo_ids = [key['repo_id'] for key in units if key]
         bindings = ParentBinding.fetch(repo_ids)
 
