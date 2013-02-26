@@ -24,14 +24,15 @@ class RepoSearchCommand(CriteriaCommand):
     """
     Searches for repositories using the normal criteria search features
     """
-    def __init__(self, context, repo_type):
+    def __init__(self, context, repo_type, name=None):
         """
         :type context:      pulp.client.extensions.core.ClientContext
         :param repo_type:   value identifying the type of repository. Each set of
                             extensions is responsible for providing this value.
         :type  repo_type:   str
         """
-        super(RepoSearchCommand, self).__init__(self.run, name='search',
+        name = name or 'search'
+        super(RepoSearchCommand, self).__init__(self.run, name=name,
                                                 description=DESC_SEARCH,
                                                 include_search=True)
 
