@@ -8,10 +8,9 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from gettext import gettext as _
 from optparse import OptionParser
-import logging
+import logging.config
 import traceback
 import os
 import sys
@@ -108,6 +107,7 @@ def main():
         return os.EX_DATAERR
     except Exception, e:
         print >> sys.stderr, str(e)
+        print >> sys.stderr, ''.join(traceback.format_exception(*sys.exc_info()))
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_SOFTWARE
