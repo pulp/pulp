@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.14.alpha
+Release: 0.15.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -414,6 +414,12 @@ exit 0
 %endif
 
 %changelog
+* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
+- 908676 - adding pulp-v1-upgrade-selinux script to enable new selinux policy
+  and relabel filesystem after v1 upgrade (skarmark@redhat.com)
+- 908676 - adding obsoletes back again for pulp-selinux-server since pulp v1
+  has a dependency on this package (skarmark@redhat.com)
+
 * Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
 - 909493 - adding a separate apache2.4 compatible pulp apache conf file for F18
   (skarmark@redhat.com)
