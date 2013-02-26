@@ -105,7 +105,7 @@ class ImporterStrategy(object):
         :type unit: Unit
         """
         self.conduit.save_unit(unit)
-        self.progress.unit_added()
+        self.progress.unit_added(unit.storage_path)
 
     # --- protected ---------------------------------------------------------------------
 

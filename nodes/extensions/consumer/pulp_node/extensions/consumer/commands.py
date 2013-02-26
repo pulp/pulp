@@ -22,14 +22,16 @@ from pulp.client.consumer_utils import load_consumer_id
 
 from pulp_node import constants
 from pulp_node.extension import ensure_node_section
-from pulp_node.extension import render_missing_resources
+from pulp_node.extension import missing_resources
 
 
-# --- constants --------------------------------------------------------------
-
+# --- names ------------------------------------------------------------------
 
 ACTIVATE_NAME = _('activate')
 DEACTIVATE_NAME = _('deactivate')
+
+
+# --- descriptions -----------------------------------------------------------
 
 BIND_DESC = _('bind a child node to a repository')
 UNBIND_DESC = _('removes the binding between a child node and a repository')
@@ -37,11 +39,21 @@ ACTIVATE_DESC = _('activate a consumer as a child node')
 DEACTIVATE_DESC = _('deactivate a child node')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 
+
+# --- notes ------------------------------------------------------------------
+
 ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
 DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
 
+
+# --- messages ---------------------------------------------------------------
+
 NODE_ACTIVATED = _('Consumer activated as child node')
 NODE_DEACTIVATED = _('Child node deactivated')
+RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
+
+
+# --- options ----------------------------------------------------------------
 
 STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
                                 default=constants.ADDITIVE_STRATEGY)
@@ -63,7 +75,6 @@ def initialize(context):
 
 # --- activation -------------------------------------------------------------
 
-
 class NodeActivateCommand(PulpCliCommand):
 
     def __init__(self, context):
@@ -77,7 +88,12 @@ class NodeActivateCommand(PulpCliCommand):
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_ACTIVATED)
         except NotFoundException, e:
-            render_missing_resources(self.context.prompt, e)
+            for _id, _type in missing_resources(e):
+                if _type == 'consumer':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 
@@ -94,12 +110,16 @@ class NodeDeactivateCommand(PulpCliCommand):
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_DEACTIVATED)
         except NotFoundException, e:
-            render_missing_resources(self.context.prompt, e)
+            for _id, _type in missing_resources(e):
+                if _type == 'consumer':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 
 # --- bind -------------------------------------------------------------------
-
 
 class NodeBindCommand(ConsumerBindCommand):
 

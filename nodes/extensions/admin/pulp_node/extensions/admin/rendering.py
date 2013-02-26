@@ -81,7 +81,7 @@ class ProgressTracker:
         unit_add = report['unit_add']
         total = unit_add['total']
         completed = unit_add['completed']
-        details = unit_add['details']
+        details = unit_add['details'] or ''
         message = '\n'.join(
             (STEP_FIELD % {'s': state},
              ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})

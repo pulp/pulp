@@ -11,19 +11,16 @@
 
 from gettext import gettext as _
 
+from pulp.bindings.exceptions import NotFoundException
+
+from pulp_node import constants
+
 
 # --- constants --------------------------------------------------------------
 
 
 SECTION_NAME = _('node')
 SECTION_DESCRIPTION = _('pulp nodes related commands')
-
-RESOURCE_TYPES = {
-    'consumer': _('Consumer'),
-    'repository': _('Repository')
-}
-
-MISSING_RESOURCE = _('%(type)s [%(id)s] not found')
 
 
 # --- utils ------------------------------------------------------------------
@@ -41,11 +38,31 @@ def ensure_node_section(cli):
     return section
 
 
-# --- rendering --------------------------------------------------------------
+def node_activated(context, node_id):
+    """
+    Get whether a node has been activated.
+    :param context: A client context.
+    :type context: pulp.client.extensions.core.ClientContext
+    :param node_id: The ID of the node being checked.
+    :return: True if activated.
+    :rtype: bool
+    """
+    try:
+        http = context.server.consumer.consumer(node_id)
+        consumer = http.response_body
+        notes = consumer['notes']
+        return notes.get(constants.NODE_NOTE_KEY)
+    except NotFoundException:
+        return False
 
 
-def render_missing_resources(prompt, exception):
+def missing_resources(exception):
+    """
+    Generator use to get missing resources specified by an exception.
+    :param exception: A NotFoundException exception.
+    :type exception: pulp.bindings.exceptions.NotFoundException
+    :return: generator of: (id, type)
+    :rtype: tuple
+    """
     for _type, _id in exception.extra_data['resources'].items():
-        _type = RESOURCE_TYPES.get(_type, _type)
-        msg = MISSING_RESOURCE % {'type': _type, 'id': _id}
-        prompt.render_failure_message(msg)
+        yield _id, _type

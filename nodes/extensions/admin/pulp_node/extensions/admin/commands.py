@@ -27,12 +27,12 @@ from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
 from pulp_node import constants
-from pulp_node.extension import render_missing_resources
+from pulp_node.extension import missing_resources, node_activated
 from pulp_node.extension import ensure_node_section
 from pulp_node.extensions.admin.rendering import *
 
 
-# --- constants --------------------------------------------------------------
+# --- names ------------------------------------------------------------------
 
 REPO_NAME = _('repo')
 ACTIVATE_NAME = _('activate')
@@ -41,6 +41,9 @@ ENABLE_NAME = _('enable')
 DISABLE_NAME = _('disable')
 SYNC_NAME = _('sync')
 PUBLISH_NAME = _('publish')
+
+
+# --- descriptions -----------------------------------------------------------
 
 NODE_LIST_DESC = _('list child nodes')
 REPO_LIST_DESC = _('list node enabled repositories')
@@ -57,19 +60,28 @@ SYNC_DESC = _('child node synchronization commands')
 PUBLISH_DESC = _('publishing commands')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 
+
+# --- notes ------------------------------------------------------------------
+
 ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
 DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
 
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
 AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False)
+
+
+# --- options ----------------------------------------------------------------
+
 STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
                                 default=constants.ADDITIVE_STRATEGY)
 
+# --- messages ---------------------------------------------------------------
+
 REPO_ENABLED = _('Repository enabled')
 REPO_DISABLED = _('Repository disabled')
-
 NODE_ACTIVATED = _('Consumer activated as child node')
 NODE_DEACTIVATED = _('Child node deactivated')
+RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
 
 
 # --- extension loading ------------------------------------------------------
@@ -99,7 +111,6 @@ def initialize(context):
 
 
 # --- listing ----------------------------------------------------------------
-
 
 class NodeListCommand(ConsumerListCommand):
 
@@ -144,7 +155,6 @@ class NodeListRepositoriesCommand(ListRepositoriesCommand):
 
 # --- bind -------------------------------------------------------------------
 
-
 class NodeBindCommand(ConsumerBindCommand):
 
     def __init__(self, context):
@@ -184,7 +194,6 @@ class NodeUnbindCommand(ConsumerUnbindCommand):
 
 # --- publish ----------------------------------------------------------------
 
-
 class NodeRepoPublishCommand(RunPublishRepositoryCommand):
 
     def __init__(self, context):
@@ -193,7 +202,6 @@ class NodeRepoPublishCommand(RunPublishRepositoryCommand):
 
 
 # --- activation -------------------------------------------------------------
-
 
 class NodeActivateCommand(PulpCliCommand):
 
@@ -209,7 +217,12 @@ class NodeActivateCommand(PulpCliCommand):
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_ACTIVATED)
         except NotFoundException, e:
-            render_missing_resources(self.context.prompt, e)
+            for _id, _type in missing_resources(e):
+                if _type == 'consumer':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 
@@ -227,12 +240,16 @@ class NodeDeactivateCommand(PulpCliCommand):
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_DEACTIVATED)
         except NotFoundException, e:
-            render_missing_resources(self.context.prompt, e)
+            for _id, _type in missing_resources(e):
+                if _type == 'consumer':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 
 # --- enable -----------------------------------------------------------------
-
 
 class NodeRepoEnableCommand(PulpCliCommand):
 
@@ -255,7 +272,12 @@ class NodeRepoEnableCommand(PulpCliCommand):
                 constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_ENABLED)
         except NotFoundException, e:
-            render_missing_resources(self.context.prompt, e)
+            for _id, _type in missing_resources(e):
+                if _type == 'repository':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Repository'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 
@@ -272,12 +294,16 @@ class NodeRepoDisableCommand(PulpCliCommand):
             self.context.server.repo_distributor.delete(repo_id, constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_DISABLED)
         except NotFoundException, e:
-            render_missing_resources(self.context.prompt, e)
+            for _id, _type in missing_resources(e):
+                if _type == 'repository':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Repository'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 
 # --- synchronization --------------------------------------------------------
-
 
 class NodeUpdateCommand(ConsumerContentUpdateCommand):
 
