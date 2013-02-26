@@ -20,6 +20,15 @@ ALL_IMPORTERS = [HTTP_IMPORTER]
 ALL_DISTRIBUTORS = [HTTP_DISTRIBUTOR]
 
 
+# --- strategies -------------------------------------------------------------
+
+STRATEGY_KEYWORD = 'strategy'
+ADDITIVE_STRATEGY = 'additive'
+MIRROR_STRATEGY = 'mirror'
+STRATEGIES = [ADDITIVE_STRATEGY, MIRROR_STRATEGY]
+DEFAULT_STRATEGY = ADDITIVE_STRATEGY
+
+
 # --- consumer notes ---------------------------------------------------------
 
 NODE_NOTE_KEY = '_child-node'

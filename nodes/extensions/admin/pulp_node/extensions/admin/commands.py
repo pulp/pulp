@@ -26,11 +26,10 @@ from pulp.client.commands.options import DESC_ID, OPTION_REPO_ID, OPTION_CONSUME
 from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
+from pulp_node import constants
 from pulp_node.extension import render_missing_resources
 from pulp_node.extension import ensure_node_section
 from pulp_node.extensions.admin.rendering import *
-
-from pulp_node.constants import HTTP_DISTRIBUTOR, ALL_DISTRIBUTORS, NODE_NOTE_KEY
 
 
 # --- constants --------------------------------------------------------------
@@ -56,12 +55,15 @@ REPO_DESC = _('repository related commands')
 AUTO_PUBLISH_DESC = _('auto publish flag')
 SYNC_DESC = _('child node synchronization commands')
 PUBLISH_DESC = _('publishing commands')
+STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 
-ACTIVATED_NOTE = {NODE_NOTE_KEY: True}
-DEACTIVATED_NOTE = {NODE_NOTE_KEY: None}
+ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
+DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
 
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
 AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False)
+STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
+                                default=constants.ADDITIVE_STRATEGY)
 
 REPO_ENABLED = _('Repository enabled')
 REPO_DISABLED = _('Repository disabled')
@@ -111,7 +113,7 @@ class NodeListCommand(ConsumerListCommand):
         nodes = []
         for consumer in super(NodeListCommand, self).get_consumer_list(kwargs):
             notes = consumer['notes']
-            if notes.get(NODE_NOTE_KEY, False):
+            if notes.get(constants.NODE_NOTE_KEY, False):
                 nodes.append(consumer)
         return nodes
 
@@ -135,7 +137,7 @@ class NodeListRepositoriesCommand(ListRepositoriesCommand):
             repo_id = repository['id']
             http = self.context.server.repo_distributor.distributors(repo_id)
             for dist in http.response_body:
-                if dist['distributor_type_id'] in ALL_DISTRIBUTORS:
+                if dist['distributor_type_id'] in constants.ALL_DISTRIBUTORS:
                     enabled.append(repository)
         return enabled
 
@@ -147,6 +149,7 @@ class NodeBindCommand(ConsumerBindCommand):
 
     def __init__(self, context):
         super(NodeBindCommand, self).__init__(context, description=BIND_DESC)
+        self.add_option(STRATEGY_OPTION)
 
     def add_consumer_option(self):
         self.add_option(NODE_ID_OPTION)
@@ -158,7 +161,7 @@ class NodeBindCommand(ConsumerBindCommand):
         pass
 
     def get_distributor_id(self, kwargs):
-        return HTTP_DISTRIBUTOR
+        return constants.HTTP_DISTRIBUTOR
 
 
 class NodeUnbindCommand(ConsumerUnbindCommand):
@@ -176,7 +179,7 @@ class NodeUnbindCommand(ConsumerUnbindCommand):
         pass
 
     def get_distributor_id(self, kwargs):
-        return HTTP_DISTRIBUTOR
+        return constants.HTTP_DISTRIBUTOR
 
 
 # --- publish ----------------------------------------------------------------
@@ -186,7 +189,7 @@ class NodeRepoPublishCommand(RunPublishRepositoryCommand):
 
     def __init__(self, context):
         renderer = PublishRenderer(context)
-        super(NodeRepoPublishCommand, self).__init__(context, renderer, HTTP_DISTRIBUTOR)
+        super(NodeRepoPublishCommand, self).__init__(context, renderer, constants.HTTP_DISTRIBUTOR)
 
 
 # --- activation -------------------------------------------------------------
@@ -214,11 +217,11 @@ class NodeDeactivateCommand(PulpCliCommand):
 
     def __init__(self, context):
         super(NodeDeactivateCommand, self).__init__(DEACTIVATE_NAME, DEACTIVATE_DESC, self.run)
-        self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(NODE_ID_OPTION)
         self.context = context
 
     def run(self, **kwargs):
-        consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
+        consumer_id = kwargs[NODE_ID_OPTION.keyword]
         delta = {'notes': DEACTIVATED_NOTE}
         try:
             self.context.server.consumer.update(consumer_id, delta)
@@ -244,7 +247,12 @@ class NodeRepoEnableCommand(PulpCliCommand):
         auto_publish = convert_boolean_arguments([AUTO_PUBLISH_OPTION.keyword], kwargs)
         binding = self.context.server.repo_distributor
         try:
-            binding.create(repo_id, HTTP_DISTRIBUTOR, {}, auto_publish, HTTP_DISTRIBUTOR)
+            binding.create(
+                repo_id,
+                constants.HTTP_DISTRIBUTOR,
+                {},
+                auto_publish,
+                constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_ENABLED)
         except NotFoundException, e:
             render_missing_resources(self.context.prompt, e)
@@ -261,7 +269,7 @@ class NodeRepoDisableCommand(PulpCliCommand):
     def run(self, **kwargs):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         try:
-            self.context.server.repo_distributor.delete(repo_id, HTTP_DISTRIBUTOR)
+            self.context.server.repo_distributor.delete(repo_id, constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_DISABLED)
         except NotFoundException, e:
             render_missing_resources(self.context.prompt, e)
@@ -286,7 +294,10 @@ class NodeUpdateCommand(ConsumerContentUpdateCommand):
         return kwargs[NODE_ID_OPTION.keyword]
 
     def add_content_options(self):
-        pass
+        self.add_option(STRATEGY_OPTION)
+
+    def get_update_options(self, kwargs):
+        return {constants.STRATEGY_KEYWORD: kwargs[STRATEGY_OPTION.keyword]}
 
     def get_content_units(self, kwargs):
         unit = dict(type_id='node', unit_key=None)

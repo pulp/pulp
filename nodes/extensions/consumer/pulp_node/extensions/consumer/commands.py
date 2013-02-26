@@ -16,13 +16,13 @@ from gettext import gettext as _
 from pulp.bindings.exceptions import NotFoundException
 
 from pulp.client.extensions.decorator import priority
-from pulp.client.extensions.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliOption, PulpCliCommand
 from pulp.client.commands.consumer.bind import ConsumerBindCommand, ConsumerUnbindCommand
 from pulp.client.consumer_utils import load_consumer_id
 
+from pulp_node import constants
 from pulp_node.extension import ensure_node_section
 from pulp_node.extension import render_missing_resources
-from pulp_node.constants import HTTP_DISTRIBUTOR, NODE_NOTE_KEY
 
 
 # --- constants --------------------------------------------------------------
@@ -35,12 +35,16 @@ BIND_DESC = _('bind a child node to a repository')
 UNBIND_DESC = _('removes the binding between a child node and a repository')
 ACTIVATE_DESC = _('activate a consumer as a child node')
 DEACTIVATE_DESC = _('deactivate a child node')
+STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 
-ACTIVATED_NOTE = {NODE_NOTE_KEY: True}
-DEACTIVATED_NOTE = {NODE_NOTE_KEY: None}
+ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
+DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
 
 NODE_ACTIVATED = _('Consumer activated as child node')
 NODE_DEACTIVATED = _('Child node deactivated')
+
+STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
+                                default=constants.ADDITIVE_STRATEGY)
 
 
 # --- extension loading ------------------------------------------------------
@@ -101,6 +105,7 @@ class NodeBindCommand(ConsumerBindCommand):
 
     def __init__(self, context):
         super(NodeBindCommand, self).__init__(context, description=BIND_DESC)
+        self.add_option(STRATEGY_OPTION)
 
     def add_consumer_option(self):
         pass
@@ -112,7 +117,7 @@ class NodeBindCommand(ConsumerBindCommand):
         pass
 
     def get_distributor_id(self, kwargs):
-        return HTTP_DISTRIBUTOR
+        return constants.HTTP_DISTRIBUTOR
 
 
 class NodeUnbindCommand(ConsumerUnbindCommand):
@@ -130,4 +135,4 @@ class NodeUnbindCommand(ConsumerUnbindCommand):
         pass
 
     def get_distributor_id(self, kwargs):
-        return HTTP_DISTRIBUTOR
+        return constants.HTTP_DISTRIBUTOR

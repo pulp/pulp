@@ -22,6 +22,7 @@ from logging import getLogger
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
+from pulp_node import constants
 from pulp_node.manifest import Manifest
 from pulp_node.importers.reports import ImporterReport
 from pulp_node.importers.inventory import UnitInventory, unit_dictionary
@@ -344,8 +345,8 @@ class Additive(ImporterStrategy):
 
 
 STRATEGIES = {
-    'mirror' : Mirror,
-    'additive': Additive,
+    constants.MIRROR_STRATEGY: Mirror,
+    constants.ADDITIVE_STRATEGY: Additive,
 }
 
 

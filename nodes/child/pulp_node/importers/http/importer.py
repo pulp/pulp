@@ -100,7 +100,7 @@ class NodesHttpImporter(Importer):
         """
         try:
             downloader = self._downloader(config)
-            strategy_name = config.get('strategy')
+            strategy_name = config.get(constants.STRATEGY_KEYWORD)
             strategy_class = find_strategy(strategy_name)
             listener = ProgressListener(conduit)
             progress = RepositoryProgress(repo.id, listener)

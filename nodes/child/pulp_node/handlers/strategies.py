@@ -13,6 +13,7 @@
 from gettext import gettext as _
 from logging import getLogger
 
+from pulp_node import constants
 from pulp_node.handlers.model import *
 from pulp_node.handlers.reports import HandlerReport, HandlerProgress
 
@@ -126,7 +127,7 @@ class HandlerStrategy(object):
                 break
             repo = ChildRepository(repo_id)
             try:
-                strategy = options.get('strategy')
+                strategy = options.get(constants.STRATEGY_KEYWORD)
                 progress = self.progress.find_report(repo_id)
                 report = repo.run_synchronization(progress, strategy)
                 details = report['details']
@@ -296,8 +297,8 @@ class Additive(HandlerStrategy):
 
 
 STRATEGIES = {
-    'mirror' : Mirror,
-    'additive' : Additive,
+    constants.MIRROR_STRATEGY: Mirror,
+    constants.ADDITIVE_STRATEGY: Additive,
 }
 
 
