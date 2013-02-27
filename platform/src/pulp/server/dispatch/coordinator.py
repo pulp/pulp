@@ -34,8 +34,9 @@ from pulp.server.util import subdict, TopologicalSortError, topological_sort
 _LOG = logging.getLogger(__name__)
 
 _VALID_SEARCH_CRITERIA = frozenset(('call_request_id', 'call_request_group_id',
-                                    'schedule_id', 'state', 'callable_name',
-                                    'args', 'kwargs', 'resources', 'tags'))
+                                    'call_request_id_list', 'schedule_id',
+                                    'state', 'callable_name', 'args', 'kwargs',
+                                    'resources', 'tags'))
 
 
 # coordinator class ------------------------------------------------------------
@@ -408,6 +409,7 @@ class Coordinator(object):
         Supported criteria:
          * call_request_id
          * call_request_group_id
+         * call_request_id_list
          * schedule_id
          * state
          * callable_name
@@ -439,6 +441,7 @@ class Coordinator(object):
         Supported criteria:
          * call_request_id
          * call_request_group_id
+         * call_request_id_list
          * schedule_id
          * state
          * callable_name
@@ -648,6 +651,8 @@ def task_matches_criteria(task, criteria):
     if 'call_request_id' in criteria and criteria['call_request_id'] != task.call_request.id:
         return False
     if 'call_request_group_id' in criteria and criteria['call_request_group_id'] != task.call_request.group_id:
+        return False
+    if 'call_request_id_list' in criteria and task.call_request.id not in criteria['call_request_id_list']:
         return False
     if 'schedule_id' in criteria and criteria['schedule_id'] != task.call_report.schedule_id:
         return False
