@@ -50,7 +50,7 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
     agent, consumer_groups, consumers, contents, dispatch, events, permissions,
-    plugins, repo_groups, repositories, roles, root_actions, users)
+    plugins, repo_groups, repositories, roles, root_actions, status, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
@@ -70,6 +70,7 @@ URLS = (
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
     '/v2/roles', roles.application,
+    '/v2/status', status.application,
     '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,
