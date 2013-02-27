@@ -250,7 +250,7 @@ class RepoResource(JSONController):
         repo = query_manager.find_by_id(id)
 
         if repo is None:
-            raise exceptions.MissingResource(id)
+            raise exceptions.MissingResource(repo=id)
 
         repo.update(serialization.link.current_link_obj())
 

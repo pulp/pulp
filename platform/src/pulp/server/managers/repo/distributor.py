@@ -73,7 +73,7 @@ class RepoDistributorManager(object):
 
         repo = Repo.get_collection().find_one({'id' : repo_id})
         if repo is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id)
 
         distributors = list(RepoDistributor.get_collection().find({'repo_id' : repo_id}))
         return distributors
@@ -136,7 +136,7 @@ class RepoDistributorManager(object):
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id)
 
         if not plugin_api.is_valid_distributor(distributor_type_id):
             raise InvalidValue(['distributor_type_id'])
@@ -228,11 +228,11 @@ class RepoDistributorManager(object):
         # Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingResource(distributor_id)
+            raise MissingResource(distributor=distributor_id)
 
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']
@@ -277,11 +277,11 @@ class RepoDistributorManager(object):
         # Input Validation
         repo = repo_coll.find_one({'id' : repo_id})
         if repo is None:
-            raise MissingResource(repo_id)
+            raise MissingResource(repository=repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
-            raise MissingResource(distributor_id)
+            raise MissingResource(distributor=distributor_id)
 
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)

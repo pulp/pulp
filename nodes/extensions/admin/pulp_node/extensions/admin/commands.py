@@ -298,8 +298,11 @@ class NodeRepoDisableCommand(PulpCliCommand):
                 if _type == 'repository':
                     msg = RESOURCE_MISSING_ERROR % {'t': _('Repository'), 'id': _id}
                     self.context.prompt.render_failure_message(msg)
-                else:
-                    raise
+                if _type == 'distributor':
+                    msg = RESOURCE_MISSING_ERROR % {'t': _('Distributor'), 'id': _id}
+                    self.context.prompt.render_failure_message(msg)
+                    continue
+                raise
             return os.EX_DATAERR
 
 
