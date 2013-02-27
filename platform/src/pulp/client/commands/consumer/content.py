@@ -415,7 +415,7 @@ class ConsumerContentProgressTracker(object):
             self.prompt.write(name)
             return
 
-        status = self.ok if status else self.failed
+        status = (status and self.ok) or self.failed
         self.prompt.write('%-40s[ %s ]' % (name, status))
 
     def display_details(self, details):

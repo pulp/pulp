@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.13.alpha
+Release: 0.18.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -192,6 +192,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-v1-upgrade
+%{_bindir}/pulp-v1-upgrade-selinux
 %{_bindir}/pulp-v1-upgrade-publish
 # apache
 %defattr(-,apache,apache,-)
@@ -369,7 +370,7 @@ BuildRequires:  make
 BuildRequires:  checkpolicy
 BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
-Conflicts: pulp-selinux-server
+Obsoletes: pulp-selinux-server
 
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
@@ -413,6 +414,29 @@ exit 0
 %endif
 
 %changelog
+* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
+- 
+
+* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
+- 915795 - Fix logging import statemet in pulp-manage-db. (rbarlow@redhat.com)
+
+* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
+- 
+
+* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
+- 908676 - adding pulp-v1-upgrade-selinux script to enable new selinux policy
+  and relabel filesystem after v1 upgrade (skarmark@redhat.com)
+- 908676 - adding obsoletes back again for pulp-selinux-server since pulp v1
+  has a dependency on this package (skarmark@redhat.com)
+
+* Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
+- 909493 - adding a separate apache2.4 compatible pulp apache conf file for F18
+  (skarmark@redhat.com)
+- 909493 - adding a different httpd2.4 compatible pulp config file for f18
+  build (skarmark@redhat.com)
+- 908676 - make pulp-selinux conflict with pulp-selinux-server instead of
+  obsoleting pulp-selinux-server (skarmark@redhat.com)
+
 * Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
 - 913205 - Removed config options if they aren't relevant
   (jason.dobies@redhat.com)

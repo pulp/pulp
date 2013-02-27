@@ -36,14 +36,14 @@ def upgrade(v1_database, v2_database):
         repo_working_dir = repos.importer_working_dir(repo_importer['importer_type_id'], repo_importer['repo_id'])
 
         # CA certificate
-        if repo_importer['config']['ssl_ca_cert']:
+        if repo_importer['config'].get('ssl_ca_cert', None):
             filename = os.path.join(repo_working_dir, 'ssl_ca_cert')
             f = open(filename, 'w')
             f.write(repo_importer['config']['ssl_ca_cert'])
             f.close()
 
         # Client Certificate
-        if repo_importer['config']['ssl_client_cert']:
+        if repo_importer['config'].get('ssl_client_cert', None):
             filename = os.path.join(repo_working_dir, 'ssl_client_cert')
             f = open(filename, 'w')
             f.write(repo_importer['config']['ssl_client_cert'])

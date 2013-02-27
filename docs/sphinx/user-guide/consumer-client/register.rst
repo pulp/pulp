@@ -39,6 +39,12 @@ The ``-u`` and the ``-p`` flags supply the HTTP Basic Auth *username* and
 server. If the ``-p`` flag is not supplied, the command line client will ask for
 the password interactively.
 
+.. warning::
+ Entering a password on the command line with the ``-p`` option is less secure
+ than giving it interactively. The password will be visible to all users on the
+ system for as long as the process is running by looking at the process list.
+ It will also be stored in your bash history.
+
 
 Post-Registration Authentication
 --------------------------------

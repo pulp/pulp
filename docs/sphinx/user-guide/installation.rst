@@ -16,6 +16,10 @@ Client
   to the server. admin-client can be run from any machine that can access the server's
   REST API, but the consumer-client must be run on a consumer.
 
+Additional steps are needed for upgrading Pulp 1.1 installations. More information can be found
+in the :doc:`v1_upgrade` section of this guide.
+
+
 Supported Operating Systems
 ---------------------------
 Server
@@ -211,7 +215,13 @@ repositories.
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
-4. Start the agent:
+4. Set the agent to start at boot:
+
+::
+
+  $ sudo chkconfig pulp-agent on
+
+5. Start the agent:
 
 ::
 

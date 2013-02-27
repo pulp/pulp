@@ -202,7 +202,7 @@ class ConsumerSearch(SearchController):
 
 class Bindings(JSONController):
     """
-    Consumer I{bindings} represents the collection of
+    Consumer bindings represents the collection of
     objects used to associate a consumer and a repo-distributor
     association.  Users wanting to create this association will
     create an object in this collection.  Both bind and unbind
@@ -251,13 +251,15 @@ class Bindings(JSONController):
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
+        binding_config = body.get('binding_config', None)
         options = body.get('options', {})
+        notify_agent = body.get('notify_agent', True)
 
         managers.repo_query_manager().get_repository(repo_id)
         managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
 
         # bind
-        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, options)
+        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
         execution.execute_multiple(call_requests)
 
 

@@ -95,6 +95,12 @@ class MigrationModule(object):
         """
         return cmp(self.version, other_module.version)
 
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return str(self.name)
+
 
 class MigrationPackage(object):
     """
@@ -127,7 +133,14 @@ class MigrationPackage(object):
         # version that has been applied
         self._migration_tracker = migration_tracker_manager.get_or_create(
             name=self.name,
-            defaults={'version': self.latest_available_version})
+            defaults={'version': 0})
+
+        # Calculate the latest available version
+        available_versions = self.available_versions
+        if available_versions:
+            self.latest_available_version = available_versions[-1]
+        else:
+            self.latest_available_version = 0
 
     def apply_migration(self, migration, update_current_version=True):
         """
@@ -142,8 +155,9 @@ class MigrationPackage(object):
         :type  update_current_version: bool
         """
         if update_current_version and migration.version != self.current_version + 1:
-            raise Exception(('Cannot apply migration %s, because the next migration version is '
-                '%s.')%(migration.name, self.current_version + 1))
+            msg = _('Cannot apply migration %s, because the next migration version is %s.')
+            msg = msg % (migration.name, self.current_version + 1)
+            raise Exception(msg)
         migration.migrate()
         if update_current_version:
             self._migration_tracker.version = migration.version
@@ -171,22 +185,6 @@ class MigrationPackage(object):
         return self._migration_tracker.version
 
     @property
-    def latest_available_version(self):
-        """
-        Return the version of the highest migration found in this package.
-
-        :rtype: int
-        """
-        # If there aren't any versions available because this package is empty, we should return 0.
-        # This means that we need to require migration writers not to create versions that are less
-        # than 1.
-        available_versions = self.available_versions
-        if available_versions:
-            return available_versions[-1]
-        else:
-            return 0
-
-    @property
     def migrations(self):
         """
         Finds all available migration modules for the MigrationPackage,
@@ -200,14 +198,17 @@ class MigrationPackage(object):
         migration_modules = []
         for module_name in module_names:
             try:
-                module_name = '%s.%s'%(self.name, module_name)
+                module_name = '%s.%s' % (self.name, module_name)
                 migration_modules.append(MigrationModule(module_name))
             except MigrationModule.MissingMigrate:
-                logger.debug(_("The module %(m)s doesn't have a migrate function. "
-                              "It will be ignored.")%{'m': module_name})
+                msg = _("The module %(m)s doesn't have a migrate function. It will be ignored.")
+                msg = msg % {'m': module_name}
+                logger.debug(msg)
             except MigrationModule.MissingVersion:
-                logger.debug(_("The module %(m)s doesn't conform to the migration package naming "
-                               "conventions. It will be ignored.")%{'m': module_name})
+                msg = _("The module %(m)s doesn't conform to the migration package naming conventions. It "
+                        "will be ignored.")
+                msg = msg % {'m': module_name}
+                logger.debug(msg)
         migration_modules.sort()
         # We should have migrations starting at version 1, which each module version being exactly
         # one larger than the migration preceeding it.
@@ -215,15 +216,18 @@ class MigrationPackage(object):
         for module in migration_modules:
             if module.version == 0:
                 error_message = _('0 is a reserved migration version number, but the '
-                                  'module %(n)s has been assigned that version.')%{'n': module.name}
+                                  'module %(n)s has been assigned that version.')
+                error_message = error_message % {'n': module.name}
                 raise self.__class__.DuplicateVersions(error_message)
             if module.version == last_version:
                 error_message = _('There are two migration modules that share version %(v)s in '
-                                  '%(n)s.')%{'v': module.version, 'n': self.name}
+                                  '%(n)s.')
+                error_message = error_message % {'v': module.version, 'n': self.name}
                 raise self.__class__.DuplicateVersions(error_message)
             if module.version != last_version + 1:
-                raise self.__class__.MissingVersion(_('Migration version %(v)s is '
-                    'missing in %(n)s.')%({'v': last_version + 1, 'n': self.name}))
+                msg = _('Migration version %(v)s is missing in %(n)s.')
+                msg = msg % ({'v': last_version + 1, 'n': self.name})
+                raise self.__class__.MissingVersion(msg)
             last_version = module.version
         return migration_modules
 
@@ -277,8 +281,8 @@ def check_package_versions():
     errors = []
     for package in get_migration_packages():
         if package.current_version != package.latest_available_version:
-            error_message = _("%(p)s hasn't been updated to the latest available migration.")%(
-                              {'p': package.name})
+            error_message = _("%(p)s hasn't been updated to the latest available migration.")
+            error_message = error_message % {'p': package.name}
             logger.error(error_message)
             errors.append(error_message)
     if errors:

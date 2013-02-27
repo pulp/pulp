@@ -162,7 +162,7 @@ class Distributor(object):
         """
         raise NotImplementedError()
 
-    def create_consumer_payload(self, repo, config):
+    def create_consumer_payload(self, repo, config, binding_config):
         """
         Called when a consumer binds to a repository using this distributor.
         This call should return a dictionary describing all data the consumer
@@ -178,10 +178,16 @@ class Distributor(object):
         @param config: plugin configuration
         @type  config: pulp.plugins.config.PluginCallConfiguration
 
+        @param binding_config: configuration applicable only for the specific
+               consumer the payload is generated for; this will be None
+               if there are no specific options for the consumer in question
+        @type  binding_config: object or None
+
         @return: dictionary of relevant data
         @rtype:  dict
         """
         return {}
+
 
 class GroupDistributor(object):
     """

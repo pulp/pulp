@@ -55,7 +55,7 @@ unbind_failed = bind_failed
 # -- itineraries -------------------------------------------------------------------------
 
 
-def bind_itinerary(consumer_id, repo_id, distributor_id, options):
+def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
     """
     Get the bind itinerary:
       1. Create the binding on the server.
@@ -66,8 +66,12 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
     @type repo_id: str
     @param distributor_id: A distributor ID.
     @type distributor_id: str
-    @param options: Bind options passed to the agent handler.
-    @type options: dict
+    @param agent_options: Bind options passed to the agent handler.
+    @type agent_options: dict
+    @param notify_agent: indicates if the agent should be sent a message about the new binding
+    @type  notify_agent: bool
+    @param binding_config: configuration options to use when generating the payload for this binding
+
     @return: A list of call_requests.
     @rtype list
     """
@@ -98,6 +102,8 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
         consumer_id,
         repo_id,
         distributor_id,
+        notify_agent,
+        binding_config,
     ]
 
     bind_request = CallRequest(
@@ -111,39 +117,40 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     # notify agent
 
-    tags = [
-        resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent_bind')
-    ]
+    if notify_agent:
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag('agent_bind')
+        ]
 
-    args = [
-        consumer_id,
-        repo_id,
-        distributor_id,
-        options
-    ]
+        args = [
+            consumer_id,
+            repo_id,
+            distributor_id,
+            agent_options
+        ]
 
-    agent_request = CallRequest(
-        agent_manager.bind,
-        args,
-        weight=0,
-        asynchronous=True,
-        archive=True,
-        tags=tags)
+        agent_request = CallRequest(
+            agent_manager.bind,
+            args,
+            weight=0,
+            asynchronous=True,
+            archive=True,
+            tags=tags)
 
-    agent_request.add_life_cycle_callback(
-        dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
-        bind_succeeded)
+        agent_request.add_life_cycle_callback(
+            dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK,
+            bind_succeeded)
 
-    agent_request.add_life_cycle_callback(
-        dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK,
-        bind_failed)
+        agent_request.add_life_cycle_callback(
+            dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK,
+            bind_failed)
 
-    call_requests.append(agent_request)
+        call_requests.append(agent_request)
 
-    agent_request.depends_on(bind_request.id)
+        agent_request.depends_on(bind_request.id)
 
     return call_requests
 

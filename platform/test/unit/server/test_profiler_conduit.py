@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
-#
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
 # 2 of the License (GPLv2) or (at your option) any later version.
@@ -11,9 +10,6 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-# Python
-import mock
 
 import mock_plugins
 import base
@@ -26,7 +22,7 @@ from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
 from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.conduits.profiler import ProfilerConduit, ProfilerConduitException
+from pulp.plugins.conduits.profiler import ProfilerConduit
 
 # -- test cases ---------------------------------------------------------------
 
@@ -35,6 +31,8 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'test-distributor'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {'x' : 'x'}
     TYPE_1_DEF = TypeDefinition('type-1', 'Type 1', 'One', ['key-1'], [], [])
     TYPE_2_DEF = TypeDefinition('type-2', 'Type 2', 'Two', ['key-2'], [], [])
     PROFILE = { 'name':'zsh', 'version':'1.0'}
@@ -78,7 +76,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     def populate_repository(self):
         config = {'key1' : 'value1', 'key2' : None}
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -89,10 +87,8 @@ class BaseProfilerConduitTests(base.PulpServerTests):
 
     def populate_bindings(self):
         manager = factory.consumer_bind_manager()
-        manager.bind(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
     def populate_units(self, key, typedef):
         for i in range(1,10):

@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 2.1.0
-Release: 0.13.alpha
+Release: 0.18.alpha
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -103,6 +103,22 @@ client capabilities.
 
 
 %changelog
+* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
+- 
+
+* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
+- 911704 - fixing a typo in the help text for the "event listener http create"
+  command (mhrivnak@redhat.com)
+
+* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
+- 
+
+* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
+- 
+
+* Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
+- 
+
 * Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
 - 
 

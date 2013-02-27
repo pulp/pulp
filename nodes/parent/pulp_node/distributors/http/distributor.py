@@ -186,7 +186,7 @@ class NodesHttpDistributor(Distributor):
     def cancel_publish_repo(self, call_report, call_request):
         pass
 
-    def create_consumer_payload(self, repo, config):
+    def create_consumer_payload(self, repo, config, binding_config):
         """
         Called when a consumer binds to a repository using this distributor.
         This call should return a dictionary describing all data the consumer

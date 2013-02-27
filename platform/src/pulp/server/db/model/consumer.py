@@ -22,8 +22,8 @@ class Consumer(Model):
     """
     Represents a consumer of the content on Pulp server.
 
-    @ivar id: uniquely identifies the consumer
-    @type id: str
+    @ivar consumer_id: uniquely identifies the consumer
+    @type consumer_id: str
 
     @ivar display_name: user-friendly name of the consumer
     @type display_name: str
@@ -45,10 +45,10 @@ class Consumer(Model):
     unique_indices = ('id',)
     search_indices = ('notes',)
 
-    def __init__(self, id, display_name, description=None, notes=None, capabilities=None, certificate=None):
+    def __init__(self, consumer_id, display_name, description=None, notes=None, capabilities=None, certificate=None):
         super(Consumer, self).__init__()
 
-        self.id = id
+        self.id = consumer_id
         self.display_name = display_name
         self.description = description
         self.notes = notes or {}
@@ -60,18 +60,24 @@ class Consumer(Model):
 class Bind(Model):
     """
     Represents consumer binding to a repo/distributor.
-    @ivar consumer_id: uniquely identifies the consumer.
-    @type consumer_id: str
-    @ivar repo_id: uniquely identifies the repository.
-    @type repo_id: str
-    @ivar distributor_id: uniquely identifies a distributor.
-    @type distributor_id: str
-    @ivar consumer_actions: Tracks consumer bind/unbind actions.
-      Each entry: {id:<str>, action:<str>, status:<str>}
-        Status: (pending|succeeded|failed)
-        Action: (bind|unbind)
-    @ivar deleted: Indicates the bind has been deleted.
-    @type deleted: bool
+
+    Each consumer action entry will be of the format: {id:<str>, action:<str>, status:<str>}
+    * Status: (pending|succeeded|failed)
+    * Action: (bind|unbind)
+
+    :ivar consumer_id: uniquely identifies the consumer.
+    :type consumer_id: str
+    :ivar repo_id: uniquely identifies the repository
+    :type repo_id: str
+    :ivar distributor_id: uniquely identifies a distributor
+    :type distributor_id: str
+    :ivar notify_agent: indicates if the agent should be sent a message informing it of the binding
+    :type notify_agent: bool
+    :ivar binding_config: value only applicable to this particular binding
+    :type binding_config: object
+    :ivar consumer_actions: tracks consumer bind/unbind actions; see above for format
+    :ivar deleted: indicates the bind has been deleted
+    :type deleted: bool
     """
     collection_name = 'consumer_bindings'
     unique_indices = (
@@ -92,19 +98,33 @@ class Bind(Model):
         SUCCEEDED = 'succeeded'
         FAILED = 'failed'
 
-    def __init__(self, consumer_id, repo_id, distributor_id):
+    def __init__(self, consumer_id, repo_id, distributor_id, notify_agent, binding_config):
         """
-        @param consumer_id: uniquely identifies the consumer.
-        @type consumer_id: str
-        @param repo_id: uniquely identifies the repository.
-        @type repo_id: str
-        @param distributor_id: uniquely identifies a distributor.
-        @type distributor_id: str
+        :param consumer_id: uniquely identifies the consumer.
+        :type consumer_id: str
+        :param repo_id: uniquely identifies the repository.
+        :type repo_id: str
+        :param distributor_id: uniquely identifies a distributor.
+        :type distributor_id: str
+        :ivar notify_agent: controls whether or not the consumer agent will be sent a message
+                            about the binding
+        ;type notify_agent: bool
+        :ivar binding_config: configuration to pass the distributor during payload creation for this
+                              binding
+        :type binding_config: object
         """
         super(Bind, self).__init__()
+
+        # Required, Unique
         self.consumer_id = consumer_id
         self.repo_id = repo_id
         self.distributor_id = distributor_id
+
+        # Configuration
+        self.notify_agent = notify_agent
+        self.binding_config = binding_config
+
+        # State
         self.consumer_actions = []
         self.deleted = False
 
@@ -145,7 +165,7 @@ class ConsumerHistoryEvent(Model):
     Represents a consumer history event.
 
     @ivar consumer_id: identifies the consumer
-    @type id: str
+    @type consumer_id: str
 
     @ivar originator: consumer or username of the admin who initiated the event
     @type originator: str
@@ -153,7 +173,7 @@ class ConsumerHistoryEvent(Model):
     @param type: event type
                  current supported event types: 'consumer_registered', 'consumer_unregistered', 'repo_bound', 'repo_unbound',
                  'content_unit_installed', 'content_unit_uninstalled', 'unit_profile_changed', 'added_to_group', 'removed_from_group'
-    @type type: str
+    @type  type: str
 
     @param details: event details
     @type details: dict
@@ -161,12 +181,12 @@ class ConsumerHistoryEvent(Model):
     collection_name = 'consumer_history'
     search_indices = ('consumer_id', 'originator', 'type', )
 
-    def __init__(self, consumer_id, originator, type, details):
+    def __init__(self, consumer_id, originator, event_type, details):
         super(ConsumerHistoryEvent, self).__init__()
 
         self.consumer_id = consumer_id
         self.originator = originator
-        self.type = type
+        self.type = event_type
         self.details = details
         now = datetime.datetime.now(dateutils.utc_tz())
         self.timestamp = dateutils.format_iso8601_datetime(now)

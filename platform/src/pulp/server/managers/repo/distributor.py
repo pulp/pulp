@@ -343,7 +343,7 @@ class RepoDistributorManager(object):
 
         return repo_distributor
 
-    def create_bind_payload(self, repo_id, distributor_id):
+    def create_bind_payload(self, repo_id, distributor_id, binding_config):
         """
         Requests the distributor plugin to generate the consumer bind payload.
 
@@ -352,6 +352,10 @@ class RepoDistributorManager(object):
 
         @param distributor_id: identifies the distributor
         @type  distributor_id: str
+
+        @param binding_config: configuration applicable only to the binding whose
+               payload is being created; may be None
+        @type  binding_config: object or None
 
         @return: payload object to pass to the consumer
         @rtype:  dict
@@ -373,7 +377,7 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
 
         try:
-            payload = distributor_instance.create_consumer_payload(transfer_repo, call_config)
+            payload = distributor_instance.create_consumer_payload(transfer_repo, call_config, binding_config)
             return payload
         except Exception:
             _LOG.exception('Exception raised from distributor [%s] generating consumer payload' % distributor_id)

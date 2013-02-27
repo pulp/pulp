@@ -14,6 +14,10 @@ Glossary
     A JSON object describing metadata, progress information, and the final result
     of any asynchronous task being executed by Pulp.
 
+  conduit
+    Object passed to a plugin when it is invoked. The conduit contains methods the plugin
+    should use to access the Pulp Server or Pulp Agent.
+
   consumer
     A managed system that is the consumer of content.  Consumption refers
     to the installation of software contained within a :term:`repository` and
@@ -29,6 +33,10 @@ Glossary
     for consumption. The process by which a distributor publishes content varies
     based on the desired approach of the distributor. A repository may have
     more than one distributor associated with it at a given time.
+
+  extension
+    Client-side command line interface plugin that provides additional commands
+    within the command-line clients.
 
   handler
     Agent plugin that implements content type specific or operating system specific
@@ -54,11 +62,20 @@ Glossary
     Further reading and more examples:
     http://en.wikipedia.org/wiki/ISO_8601#Time_intervals
 
+  platform
+    Short for the "Pulp Platform", which refers to the generic framework
+    functionality provided by Pulp. The platform has no type-specific knowledge;
+    all type-specific functionality is provided through plugins to the platform.
+
   repository
     A collection of content units. A repository's supported types is dictated
     by the configured :term:`importer`. A repository may have multiple
     :term:`distributors <distributor>` associated which are used to publish
     its content to multiple destinations, formats, or protocols.
+
+  scratchpad
+    Persisted area in which a plugin may store information to be retained across
+    multiple invocations. Each scratchpad is scoped to an individual plugin on a repository.
 
   unit profile
     A list of :term:`content unit` installed on a :term:`consumer`.  The
