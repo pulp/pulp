@@ -25,6 +25,8 @@ class TestDeletes(PulpItineraryTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {'d' : 'd'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
     def setUp(self):
@@ -47,18 +49,15 @@ class TestDeletes(PulpItineraryTests):
 
     def populate(self):
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
-        manager.add_distributor(
-            self.REPO_ID,
-            self.DISTRIBUTOR_TYPE_ID,
-            {},
-            True,
-            distributor_id=self.DISTRIBUTOR_ID)
+        manager.add_distributor(self.REPO_ID, self.DISTRIBUTOR_TYPE_ID, {}, True,
+                                distributor_id=self.DISTRIBUTOR_ID)
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
         manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
     def test_repo_delete(self):
 

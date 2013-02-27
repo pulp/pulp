@@ -35,6 +35,9 @@ class AgentManagerTests(base.PulpServerTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'mock-distributor'
+    NOTIFY_AGENT = True
+    BINDING_CONFIG = {}
+
     REPOSITORY = {'id':REPO_ID}
     DETAILS = {}
     OPTIONS = { 'xxx' : 123 }
@@ -86,7 +89,8 @@ class AgentManagerTests(base.PulpServerTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         manager = factory.consumer_agent_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
@@ -112,7 +116,8 @@ class AgentManagerTests(base.PulpServerTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
         manager = factory.consumer_agent_manager()
         manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)

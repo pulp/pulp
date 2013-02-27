@@ -315,7 +315,7 @@ class TestAgentPlugin(PluginTestBase):
         manager.register(self.PULP_ID)
         manager = managers.repo_importer_manager()
         # add importer
-        cfg = dict(manifest_url='http://apple.com', protocol='file')
+        cfg = dict(manifest_url='http://redhat.com', protocol='file')
         manager.set_importer(self.REPO_ID, HTTP_IMPORTER, cfg)
         # add distributors
         if ssl:
@@ -327,7 +327,7 @@ class TestAgentPlugin(PluginTestBase):
         manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, {}, False, FAKE_DISTRIBUTOR)
         # bind
         manager = managers.consumer_bind_manager()
-        manager.bind(self.PULP_ID, self.REPO_ID, HTTP_DISTRIBUTOR)
+        manager.bind(self.PULP_ID, self.REPO_ID, HTTP_DISTRIBUTOR, True, None)
 
     def clean(self):
         Bind.get_collection().remove()
