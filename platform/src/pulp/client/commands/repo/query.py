@@ -43,7 +43,7 @@ class RepoSearchCommand(CriteriaCommand):
     def run(self, **kwargs):
         self.prompt.render_title(_('Repositories'))
 
-        # Limit to only RPM repositories
+        # Limit to only repositories of a specific type
         if kwargs.get('str-eq', None) is None:
             kwargs['str-eq'] = []
         kwargs['str-eq'].append(['notes.%s' % constants.REPO_NOTE_TYPE_KEY, self.repo_type])
