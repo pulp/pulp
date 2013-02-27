@@ -17,7 +17,7 @@ class DownloadRequest(object):
     Representation of a request for a file download.
     """
 
-    def __init__(self, url, destination):
+    def __init__(self, url, destination, data=None):
         """
         :param url:         url of the file to be downloaded
         :type  url:         str
@@ -27,7 +27,10 @@ class DownloadRequest(object):
                             object, it is your responsibility to close the file after the download
                             is finished.
         :type  destination: str or file-like object
+        :param data:        arbitrary data to be passed back as part of the
+                            reports to the listener callbacks
         """
 
-        self.url         = url
+        self.url = url
         self.destination = destination
+        self.data = data
