@@ -19,6 +19,5 @@ An unauthenticated resource that shows the current status of the pulp server.
 
 :sample_response:`200` ::
 
-    {"pulp_status": "honky-dory",
-     "api_version": "2"}
+    {"api_version": "2"}
 

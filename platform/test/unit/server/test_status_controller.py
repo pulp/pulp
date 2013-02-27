@@ -21,5 +21,4 @@ class StatusControllerTests(base.PulpWebserviceTests):
         status, body = self.get('/v2/status/')
 
         self.assertEqual(status, 200)
-        self.assertTrue('pulp_status' in body)
         self.assertTrue('api_version' in body)

@@ -24,8 +24,7 @@ from pulp.server.webservices.controllers.base import JSONController
 class StatusController(JSONController):
 
     def GET(self):
-        status_data = {'api_version': '2',
-                       'pulp_status': 'honky-dory'}
+        status_data = {'api_version': '2'}
         return self.ok(status_data)
 
 # web.py application -----------------------------------------------------------
