@@ -215,7 +215,13 @@ repositories.
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
-4. Start the agent:
+4. Set the agent to start at boot:
+
+::
+
+  $ sudo chkconfig pulp-agent on
+
+5. Start the agent:
 
 ::
 
