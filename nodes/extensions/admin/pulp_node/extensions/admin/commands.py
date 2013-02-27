@@ -85,8 +85,8 @@ STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
 
 # --- messages ---------------------------------------------------------------
 
-REPO_ENABLED = _('Repository enabled')
-REPO_DISABLED = _('Repository disabled')
+REPO_ENABLED = _('Repository enabled.')
+REPO_DISABLED = _('Repository disabled.')
 NODE_ACTIVATED = _('Consumer activated as child node')
 NODE_DEACTIVATED = _('Child node deactivated')
 BIND_SUCCEEDED = _('Node bind succeeded.')
@@ -98,6 +98,11 @@ NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.
 NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled.  Nothing done.')
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
+
+BIND_WARNING = \
+    _('Note: repository [ %(r)s ] may be included in node synchronization.')
+UNBIND_WARNING = \
+    _('Warning: repository [ %(r)s ] will NOT be included in node synchronization')
 
 
 # --- extension loading ------------------------------------------------------
@@ -232,6 +237,8 @@ class NodeBindCommand(BindingCommand):
                 notify_agent=False,
                 binding_config=binding_config)
             self.context.prompt.render_success_message(BIND_SUCCEEDED)
+            warning = BIND_WARNING % dict(r=repo_id)
+            self.context.prompt.render_warning_message(warning)
         except NotFoundException, e:
             unhandled = self.missing_resources(self.context.prompt, e)
             for _id, _type in unhandled:
@@ -260,6 +267,8 @@ class NodeUnbindCommand(BindingCommand):
         try:
             self.context.server.bind.unbind(node_id, repo_id, dist_id)
             self.context.prompt.render_success_message(UNBIND_SUCCEEDED)
+            warning = UNBIND_WARNING % dict(r=repo_id)
+            self.context.prompt.render_warning_message(warning)
         except NotFoundException, e:
             unhandled = self.missing_resources(self.context.prompt, e)
             for _id, _type in unhandled:

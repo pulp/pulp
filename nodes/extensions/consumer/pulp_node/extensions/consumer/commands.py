@@ -66,6 +66,11 @@ NOT_ACTIVATED_ERROR = _('This consumer not activated as a node.  See: \'node act
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
 
+BIND_WARNING = \
+    _('Note: repository [ %(r)s ] may be included in node synchronization.')
+UNBIND_WARNING = \
+    _('Warning: repository [ %(r)s ] will NOT be included in node synchronization')
+
 
 # --- options ----------------------------------------------------------------
 
@@ -195,6 +200,8 @@ class NodeBindCommand(BindingCommand):
                 notify_agent=False,
                 binding_config=binding_config)
             self.context.prompt.render_success_message(BIND_SUCCEEDED)
+            warning = BIND_WARNING % dict(r=repo_id)
+            self.context.prompt.render_warning_message(warning)
         except NotFoundException, e:
             unhandled = self.missing_resources(self.context.prompt, e)
             for _id, _type in unhandled:
@@ -222,6 +229,8 @@ class NodeUnbindCommand(BindingCommand):
         try:
             self.context.server.bind.unbind(node_id, repo_id, dist_id)
             self.context.prompt.render_success_message(UNBIND_SUCCEEDED)
+            warning = UNBIND_WARNING % dict(r=repo_id)
+            self.context.prompt.render_warning_message(warning)
         except NotFoundException, e:
             unhandled = self.missing_resources(self.context.prompt, e)
             for _id, _type in unhandled:
