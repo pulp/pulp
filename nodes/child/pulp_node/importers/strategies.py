@@ -105,7 +105,7 @@ class ImporterStrategy(object):
         :type unit: Unit
         """
         self.conduit.save_unit(unit)
-        self.progress.unit_added(unit.storage_path)
+        self.progress.unit_added(details=unit.storage_path)
 
     # --- protected ---------------------------------------------------------------------
 
@@ -251,7 +251,7 @@ class ImporterStrategy(object):
         :rtype: dict
         """
         self.progress.begin_manifest_download()
-        url = self.config.get('manifest_url')
+        url = self.config.get(constants.MANIFEST_URL_KEYWORD)
         manifest = Manifest()
         units = manifest.read(url, self.downloader)
         return unit_dictionary(units)

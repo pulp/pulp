@@ -30,9 +30,15 @@ log = getLogger(__name__)
 # --- i18n ------------------------------------------------------------------------------
 
 PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
+STRATEGY_UNSUPPORTED = _('Strategy %(s)s not supported')
 
 
 # --- plugin loading --------------------------------------------------------------------
+
+
+DEFAULT_CONFIGURATION = {
+    constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY,
+}
 
 
 def entry_point():
@@ -41,7 +47,7 @@ def entry_point():
     :return: importer class and its configuration
     :rtype:  Importer, {}
     """
-    return NodesHttpImporter, {}
+    return NodesHttpImporter, DEFAULT_CONFIGURATION
 
 
 # --- plugin ----------------------------------------------------------------------------
@@ -79,11 +85,22 @@ class NodesHttpImporter(Importer):
         :rtype: tuple
         """
         errors = []
-        for key in ('manifest_url', 'protocol'):
+
+        for key in (constants.MANIFEST_URL_KEYWORD,
+                    constants.PROTOCOL_KEYWORD,
+                    constants.STRATEGY_KEYWORD):
             value = config.get(key)
             if not value:
-                errors.append(PROPERTY_MISSING % dict(p=key))
-        return (True, errors)
+                msg = PROPERTY_MISSING % dict(p=key)
+                errors.append(msg)
+
+        strategy = config.get(constants.STRATEGY_KEYWORD)
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_UNSUPPORTED % strategy
+            errors.append(msg)
+
+        valid = not bool(errors)
+        return (valid, errors)
 
     def sync_repo(self, repo, conduit, config):
         """
@@ -126,11 +143,11 @@ class NodesHttpImporter(Importer):
         :return: A configured downloader
         :rtype: pulp.common.download.backends.base.DownloadBackend
         """
-        ssl = config.get('ssl', {})
+        ssl = config.get(constants.SSL_KEYWORD, {})
         conf = DownloaderConfig(
             'https',
-            ssl_ca_cert_path=self._safe_str(ssl.get('ca_cert')),
-            ssl_client_cert_path=self._safe_str(ssl.get('client_cert')),
+            ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
+            ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
             ssl_verify_host=0,
             ssl_verify_peer=0)
         downloader = factory.get_downloader(conf)

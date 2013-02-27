@@ -14,7 +14,7 @@ from unittest import TestCase
 from mock import Mock
 
 from pulp.plugins.model import Unit
-from pulp_node.importers.strategies import ImporterStrategy, Mirror
+from pulp_node.importers.strategies import ImporterStrategy
 from pulp_node.importers.reports import ProgressListener
 from pulp_node.progress import RepositoryProgress
 
@@ -27,7 +27,7 @@ class TestBase(TestCase):
         conduit = 1
         config = 2
         downloader = 3
-        progress = RepositoryProgress(ProgressListener(conduit), repo_id)
+        progress = RepositoryProgress(repo_id, ProgressListener(conduit))
         # Test
         strategy = ImporterStrategy(conduit, config, downloader, progress)
         # Verify

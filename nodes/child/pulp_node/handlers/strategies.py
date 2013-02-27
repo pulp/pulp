@@ -127,9 +127,8 @@ class HandlerStrategy(object):
                 break
             repo = ChildRepository(repo_id)
             try:
-                strategy = options.get(constants.STRATEGY_KEYWORD)
                 progress = self.progress.find_report(repo_id)
-                report = repo.run_synchronization(progress, strategy)
+                report = repo.run_synchronization(progress)
                 details = report['details']
                 _report = details.get('report')
                 exception = details.get('exception')

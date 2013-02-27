@@ -96,6 +96,7 @@ NOT_BOUND_NOTHING_DONE = _('Node not bound to repository.  Nothing done.')
 NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node.  See: \'node activate\' command.')
 NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.')
 NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled.  Nothing done.')
+STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
 
 
@@ -211,14 +212,25 @@ class NodeBindCommand(BindingCommand):
         node_id = kwargs[NODE_ID_OPTION.keyword]
         dist_id = constants.HTTP_DISTRIBUTOR
         strategy = kwargs[STRATEGY_OPTION.keyword]
+        binding_config = {constants.STRATEGY_KEYWORD: strategy}
 
         if not node_activated(self.context, node_id):
             msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
             self.context.prompt.render_failure_message(msg)
             return
 
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
+
         try:
-            self.context.server.bind.bind(node_id, repo_id, dist_id)
+            self.context.server.bind.bind(
+                node_id,
+                repo_id,
+                dist_id,
+                notify_agent=False,
+                binding_config=binding_config)
             self.context.prompt.render_success_message(BIND_SUCCEEDED)
         except NotFoundException, e:
             unhandled = self.missing_resources(self.context.prompt, e)

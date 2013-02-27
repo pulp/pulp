@@ -385,15 +385,14 @@ class ChildRepository(Child, Repository):
                 dist = ChildDistributor(self.repo_id, dist_id, {})
                 dist.delete()
 
-    def run_synchronization(self, progress, strategy):
+    def run_synchronization(self, progress):
         """
         Run a repo_sync() on this child repository.
         :param progress: A progress report.
         :type progress: pulp_node.progress.RepositoryProgress
         :return: The task result.
         """
-        conf = dict(strategy=strategy)
-        http = self.binding.repo_actions.sync(self.repo_id, conf)
+        http = self.binding.repo_actions.sync(self.repo_id, {})
         if http.response_code == httplib.ACCEPTED:
             task = http.response_body[0]
             return self.poller.join(task.task_id, progress)
