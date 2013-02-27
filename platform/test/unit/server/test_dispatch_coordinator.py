@@ -544,3 +544,12 @@ class CoordinatorFindCallReportsTests(CoordinatorTests):
         self.assertEqual(len(call_report_list), 1)
         self.assertEqual(call_report_list[0].schedule_id, schedule_id)
 
+    def test_find_by_call_request_id_list(self):
+        call_request = call.CallRequest(find_dummy_call)
+        task = Task(call_request)
+        self.set_task_queue([task])
+
+        call_report_list = self.coordinator.find_call_reports(call_request_id_list=[call_request.id])
+        self.assertEqual(len(call_report_list), 1)
+        self.assertEqual(call_report_list[0].call_request_id, call_request.id)
+
