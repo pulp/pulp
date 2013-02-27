@@ -44,6 +44,7 @@ def node_activated(context, node_id):
     :param context: A client context.
     :type context: pulp.client.extensions.core.ClientContext
     :param node_id: The ID of the node being checked.
+    :param node_id: str
     :return: True if activated.
     :rtype: bool
     """
@@ -52,6 +53,26 @@ def node_activated(context, node_id):
         consumer = http.response_body
         notes = consumer['notes']
         return notes.get(constants.NODE_NOTE_KEY)
+    except NotFoundException:
+        return False
+
+
+def repository_enabled(context, repo_id):
+    """
+    Get whether a repository is enabled.
+    :param context: A client context.
+    :type context: pulp.client.extensions.core.ClientContext
+    :param repo_id: The ID of the repository being checked.
+    :param repo_id: str
+    :return: True if enabled.
+    :rtype: bool
+    """
+    try:
+        http = context.server.repo_distributor.distributors(repo_id)
+        for dist in http.response_body:
+            if dist['distributor_type_id'] in constants.ALL_DISTRIBUTORS:
+                return True
+        return False
     except NotFoundException:
         return False
 

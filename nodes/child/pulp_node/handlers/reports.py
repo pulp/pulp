@@ -15,14 +15,11 @@ from pulp_node.progress import RepositoryProgress
 class MergeReport(object):
     """
     Repository merge report.
-    :ivar added: List of added repositories
-        Each item is a repo_id.
+    :ivar added: List of added repositories by repo_id.
     :type added: list
-    :ivar merged: List of merged repositories.
-        Each item is a repo_id.
+    :ivar merged: List of merged repositories by repo_id.
     :type merged: list
-    :ivar removed: List of removed repositories.
-        Each item is a repo_id.
+    :ivar removed: List of removed repositories by repo_id.
     :type removed: list
     """
 
@@ -125,8 +122,9 @@ class HandlerProgress(object):
 
     def updated(self, report):
         """
-        Notification that the report has been updated.
-        Reported using the conduit.
+        Notification that a repository progress report has been updated.
+        :param report: The update repository progress report.
+        :type report: RepositoryProgress
         """
         for i in range(0, len(self.progress)):
             if self.progress[i].repo_id == report.repo_id:
@@ -135,6 +133,10 @@ class HandlerProgress(object):
             break
 
     def _updated(self):
+        """
+        Notification that the report has been updated.
+        Reported using the conduit.
+        """
         self.conduit.update_progress(self.dict())
 
     def dict(self):

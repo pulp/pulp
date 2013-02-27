@@ -19,16 +19,15 @@ from pulp.client.validators import id_validator
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.commands.polling import PollingCommand
 from pulp.client.commands.consumer.query import ConsumerListCommand
-from pulp.client.commands.consumer.content import ConsumerContentUpdateCommand
 from pulp.client.commands.options import DESC_ID, OPTION_REPO_ID, OPTION_CONSUMER_ID
-from pulp.client.commands.repo.sync_publish import RunPublishRepositoryCommand
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
 from pulp_node import constants
-from pulp_node.extension import missing_resources, node_activated
+from pulp_node.extension import missing_resources, node_activated, repository_enabled
 from pulp_node.extension import ensure_node_section
-from pulp_node.extensions.admin.rendering import PublishRenderer, ProgressTracker, UpdateRenderer
+from pulp_node.extensions.admin.rendering import ProgressTracker, UpdateRenderer
 
 
 # --- resources --------------------------------------------------------------
@@ -49,6 +48,7 @@ SYNC_NAME = _('sync')
 PUBLISH_NAME = _('publish')
 BIND_NAME = _('bind')
 UNBIND_NAME = _('unbind')
+UPDATE_NAME = _('run')
 
 
 # --- descriptions -----------------------------------------------------------
@@ -75,7 +75,7 @@ ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
 DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
 
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
-AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False)
+AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
 
 
 # --- options ----------------------------------------------------------------
@@ -87,10 +87,13 @@ STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
 
 REPO_ENABLED = _('Repository enabled.')
 REPO_DISABLED = _('Repository disabled.')
-NODE_ACTIVATED = _('Consumer activated as child node')
-NODE_DEACTIVATED = _('Child node deactivated')
+PUBLISH_SUCCEEDED = _('Publish succeeded.')
+PUBLISH_FAILED = _('Publish failed.  See: pulp.log for details.')
+NODE_ACTIVATED = _('Consumer activated as child node.')
+NODE_DEACTIVATED = _('Child node deactivated.')
 BIND_SUCCEEDED = _('Node bind succeeded.')
 UNBIND_SUCCEEDED = _('Node unbind succeeded')
+ALREADY_ENABLED = _('Repository already enabled.  Nothing done.')
 BIND_FAILED_NOT_ENABLED = _('Repository not enabled.  See: \'node repo enable\' command.')
 NOT_BOUND_NOTHING_DONE = _('Node not bound to repository.  Nothing done.')
 NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node.  See: \'node activate\' command.')
@@ -103,6 +106,12 @@ BIND_WARNING = \
     _('Note: repository [ %(r)s ] may be included in node synchronization.')
 UNBIND_WARNING = \
     _('Warning: repository [ %(r)s ] will NOT be included in node synchronization')
+
+ENABLE_WARNING = \
+    _('Note: repository may not be available for node synchronization until published.')
+
+AUTO_PUBLISH_WARNING = \
+    _('Warning: enabling with auto-publish may degrade repository synchronization performance.')
 
 
 # --- extension loading ------------------------------------------------------
@@ -174,13 +183,37 @@ class NodeListRepositoriesCommand(ListRepositoriesCommand):
         return enabled
 
 
-# --- publish ----------------------------------------------------------------
+# --- publishing -------------------------------------------------------------
 
-class NodeRepoPublishCommand(RunPublishRepositoryCommand):
+class NodeRepoPublishCommand(PollingCommand):
 
     def __init__(self, context):
-        renderer = PublishRenderer(context)
-        super(NodeRepoPublishCommand, self).__init__(context, renderer, constants.HTTP_DISTRIBUTOR)
+        super(NodeRepoPublishCommand, self).__init__(PUBLISH_NAME, PUBLISH_DESC, self.run, context)
+        self.add_option(OPTION_REPO_ID)
+
+    def run(self, **kwargs):
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+
+        try:
+            http = self.context.server.repo_actions.publish(repo_id, constants.HTTP_DISTRIBUTOR, {})
+            task = http.response_body
+            if self.rejected(task) or self.postponed(task):
+                return
+            self.process(repo_id, task)
+        except NotFoundException, e:
+            for _id, _type in missing_resources(e):
+                if _type == 'repo_id':
+                    msg = RESOURCE_MISSING_ERROR % dict(t=REPOSITORY, id=_id)
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
+            return os.EX_DATAERR
+
+    def succeeded(self, resource_id, task):
+        self.context.prompt.render_success_message(PUBLISH_SUCCEEDED)
+
+    def failed(self, resource_id, task):
+        self.context.prompt.render_failure_message(PUBLISH_FAILED)
 
 
 # --- bind -------------------------------------------------------------------
@@ -349,9 +382,16 @@ class NodeRepoEnableCommand(PulpCliCommand):
 
     def run(self, **kwargs):
 
+        convert_boolean_arguments([AUTO_PUBLISH_OPTION.keyword], kwargs)
+
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        auto_publish = convert_boolean_arguments([AUTO_PUBLISH_OPTION.keyword], kwargs)
+        auto_publish = kwargs[AUTO_PUBLISH_OPTION.keyword]
         binding = self.context.server.repo_distributor
+
+        if repository_enabled(self.context, repo_id):
+            msg = ALREADY_ENABLED
+            self.context.prompt.render_success_message(msg)
+            return
 
         try:
             binding.create(
@@ -361,6 +401,9 @@ class NodeRepoEnableCommand(PulpCliCommand):
                 auto_publish,
                 constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_ENABLED)
+            self.context.prompt.render_warning_message(ENABLE_WARNING)
+            if auto_publish:
+                self.context.prompt.render_warning_message(AUTO_PUBLISH_WARNING)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'repository':
@@ -401,29 +444,47 @@ class NodeRepoDisableCommand(PulpCliCommand):
 
 # --- synchronization --------------------------------------------------------
 
-class NodeUpdateCommand(ConsumerContentUpdateCommand):
+class NodeUpdateCommand(PollingCommand):
 
     def __init__(self, context):
-        super(NodeUpdateCommand, self).__init__(
-            context,
-            progress_tracker=ProgressTracker(context.prompt),
-            description=UPDATE_DESC)
-
-    def add_consumer_option(self):
+        super(NodeUpdateCommand, self).__init__(UPDATE_NAME, UPDATE_DESC, self.run, context)
         self.add_option(NODE_ID_OPTION)
-
-    def get_consumer_id(self, kwargs):
-        return kwargs[NODE_ID_OPTION.keyword]
-
-    def add_content_options(self):
         self.add_option(STRATEGY_OPTION)
+        self.tracker = ProgressTracker(self.context.prompt)
 
-    def get_update_options(self, kwargs):
-        return {constants.STRATEGY_KEYWORD: kwargs[STRATEGY_OPTION.keyword]}
+    def run(self, **kwargs):
+        node_id = kwargs[NODE_ID_OPTION.keyword]
+        strategy = kwargs[STRATEGY_OPTION.keyword]
+        options = {constants.STRATEGY_KEYWORD: strategy}
+        units = [dict(type_id='node', unit_key=None)]
 
-    def get_content_units(self, kwargs):
-        unit = dict(type_id='node', unit_key=None)
-        return [unit]
+        if not node_activated(self.context, node_id):
+            msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
+            self.context.prompt.render_failure_message(msg)
+            return
+
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
+
+        try:
+            http = self.context.server.consumer_content.update(node_id, units=units, options=options)
+            task = http.response_body
+            if self.rejected(task) or self.postponed(task):
+                return
+            self.process(node_id, task)
+        except NotFoundException, e:
+            for _id, _type in missing_resources(e):
+                if _type == 'consumer':
+                    msg = RESOURCE_MISSING_ERROR % dict(t=NODE, id=_id)
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
+            return os.EX_DATAERR
+
+    def progress(self, report):
+        self.tracker.display(report)
 
     def succeeded(self, consumer_id, task):
         details = task.result['details'].values()[0]['details']

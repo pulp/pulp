@@ -37,15 +37,6 @@ REPOSITORIES_FAILED = _('The following repositories had errors:')
 # --- rendering --------------------------------------------------------------
 
 
-class PublishRenderer(StatusRenderer):
-
-    def __init__(self, context):
-        super(PublishRenderer, self).__init__(context)
-
-    def display_report(self, progress_report):
-        pass  # nothing to report
-
-
 class ProgressTracker:
 
     def __init__(self, prompt):

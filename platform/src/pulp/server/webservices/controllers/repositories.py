@@ -841,6 +841,10 @@ class RepoPublish(JSONController):
     @auth_required(EXECUTE)
     def POST(self, repo_id):
 
+        # validation
+        manager = manager_factory.repo_query_manager()
+        manager.get_repository(repo_id)
+
         # Params
         params = self.params()
         distributor_id = params.get('id', None)
