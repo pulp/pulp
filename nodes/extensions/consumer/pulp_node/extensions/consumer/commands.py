@@ -21,8 +21,13 @@ from pulp.client.commands.consumer.bind import ConsumerBindCommand, ConsumerUnbi
 from pulp.client.consumer_utils import load_consumer_id
 
 from pulp_node import constants
-from pulp_node.extension import ensure_node_section
+from pulp_node.extension import ensure_node_section, node_activated
 from pulp_node.extension import missing_resources
+
+
+# --- resources --------------------------------------------------------------
+
+REPOSITORY = _('Repository')
 
 
 # --- names ------------------------------------------------------------------
@@ -82,15 +87,17 @@ class NodeActivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
         consumer_id = load_consumer_id(self.context)
         delta = {'notes': ACTIVATED_NOTE}
+
         try:
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_ACTIVATED)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    msg = _('This consumer not registered.')
                     self.context.prompt.render_failure_message(msg)
                 else:
                     raise
@@ -104,15 +111,22 @@ class NodeDeactivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
         consumer_id = load_consumer_id(self.context)
         delta = {'notes': DEACTIVATED_NOTE}
+
+        if not node_activated(self.context, consumer_id):
+            msg = _('This consumer is not activated as a node.  Nothing done.')
+            self.context.prompt.render_success_message(msg)
+            return
+
         try:
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_DEACTIVATED)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    msg = _('This consumer is not registered.')
                     self.context.prompt.render_failure_message(msg)
                 else:
                     raise

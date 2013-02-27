@@ -29,8 +29,14 @@ from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 from pulp_node import constants
 from pulp_node.extension import missing_resources, node_activated
 from pulp_node.extension import ensure_node_section
-from pulp_node.extensions.admin.rendering import *
+from pulp_node.extensions.admin.rendering import PublishRenderer, ProgressTracker, UpdateRenderer
 
+
+# --- resources --------------------------------------------------------------
+
+CONSUMER = _('Consumer')
+REPOSITORY = _('Repository')
+NODE = _('Node')
 
 # --- names ------------------------------------------------------------------
 
@@ -211,15 +217,17 @@ class NodeActivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         delta = {'notes': ACTIVATED_NOTE}
+
         try:
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_ACTIVATED)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    msg = RESOURCE_MISSING_ERROR % {'t': CONSUMER, 'id': _id}
                     self.context.prompt.render_failure_message(msg)
                 else:
                     raise
@@ -234,15 +242,22 @@ class NodeDeactivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
         consumer_id = kwargs[NODE_ID_OPTION.keyword]
         delta = {'notes': DEACTIVATED_NOTE}
+
+        if not node_activated(self.context, consumer_id):
+            msg = _('%s is not activated as a node.  Nothing done.' % CONSUMER)
+            self.context.prompt.render_success_message(msg)
+            return
+
         try:
             self.context.server.consumer.update(consumer_id, delta)
             self.context.prompt.render_success_message(NODE_DEACTIVATED)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Consumer'), 'id': _id}
+                    msg = RESOURCE_MISSING_ERROR % {'t': CONSUMER, 'id': _id}
                     self.context.prompt.render_failure_message(msg)
                 else:
                     raise
@@ -260,9 +275,11 @@ class NodeRepoEnableCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         auto_publish = convert_boolean_arguments([AUTO_PUBLISH_OPTION.keyword], kwargs)
         binding = self.context.server.repo_distributor
+
         try:
             binding.create(
                 repo_id,
@@ -274,7 +291,7 @@ class NodeRepoEnableCommand(PulpCliCommand):
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'repository':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Repository'), 'id': _id}
+                    msg = RESOURCE_MISSING_ERROR % {'t': REPOSITORY, 'id': _id}
                     self.context.prompt.render_failure_message(msg)
                 else:
                     raise
@@ -289,18 +306,21 @@ class NodeRepoDisableCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
         repo_id = kwargs[OPTION_REPO_ID.keyword]
+
         try:
             self.context.server.repo_distributor.delete(repo_id, constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_DISABLED)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'repository':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Repository'), 'id': _id}
+                    msg = RESOURCE_MISSING_ERROR % {'t': REPOSITORY, 'id': _id}
                     self.context.prompt.render_failure_message(msg)
+                    continue
                 if _type == 'distributor':
-                    msg = RESOURCE_MISSING_ERROR % {'t': _('Distributor'), 'id': _id}
-                    self.context.prompt.render_failure_message(msg)
+                    msg = _('%s not enabled.  Nothing done.' % REPOSITORY)
+                    self.context.prompt.render_success_message(msg)
                     continue
                 raise
             return os.EX_DATAERR
