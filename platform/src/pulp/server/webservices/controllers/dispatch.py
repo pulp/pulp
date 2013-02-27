@@ -71,14 +71,11 @@ class TaskCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        valid_filters = ['tag']
+        valid_filters = ['tag', 'id']
         filters = self.filters(valid_filters)
         criteria = {'tags': filters.get('tag', [])}
-        # support legacy search criteria
-        if 'task_id' in criteria:
-            criteria['call_request_id'] = criteria.pop('task_id')
-        if 'task_group_id' in criteria:
-            criteria['call_request_group_id'] = criteria.pop('task_group_id')
+        if 'id' in filters:
+            criteria['call_request_id_list'] = filters['id']
         coordinator = dispatch_factory.coordinator()
         call_reports = coordinator.find_call_reports(**criteria)
         serialized_call_reports = [c.serialize() for c in call_reports]
