@@ -15,3 +15,5 @@ REST API
    user/index
    role/index
    permission/index
+   status
+
