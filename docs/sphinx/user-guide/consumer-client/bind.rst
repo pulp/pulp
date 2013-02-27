@@ -13,11 +13,13 @@ Bind
 ----
 
 Binding to a server requires the consumer to first register. Then a bind command
-can be issued for a specific repository.
+can be issued for a specific repository. Similar to the ``pulp-admin`` command,
+type-specific operations such as ``bind`` are located under a section bearing
+the type's name.
 
 ::
 
-  $ pulp-consumer bind --repo-id=zoo
+  $ pulp-consumer rpm bind --repo-id=zoo
   Bind tasks successfully created:
 
   Task Id: 6e48ce85-60a0-4bf6-b2bb-9617eb7b3ef3
@@ -55,7 +57,7 @@ Unbinding is equally simple.
 
 ::
 
-  $ pulp-consumer unbind --repo-id=zoo
+  $ pulp-consumer rpm unbind --repo-id=zoo
   Unbind tasks successfully created:
 
   Task Id: 0c02d974-cf00-44b7-9b63-cdadfc9bfab7
