@@ -10,7 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from mock import patch, Mock
+from mock import patch
 
 from base import ClientTests, Response
 
@@ -210,7 +210,7 @@ class TestEnableCommands(ClientTests):
         # Verify
         self.assertFalse(mock_binding.called)
 
-    @patch('pulp_node.extensions.admin.commands.repository_enabled', return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(REPO_DISABLE_API, return_value=(200, {}))
     def test_disable(self, mock_binding, *unused):
         # Test
