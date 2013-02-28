@@ -69,16 +69,23 @@ PUBLISH_DESC = _('publishing commands')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 
 
+# --- titles -----------------------------------------------------------------
+
+NODE_LIST_TITLE = _('Child Nodes')
+REPO_LIST_TITLE = _('Enabled Repositories')
+
+
 # --- notes ------------------------------------------------------------------
 
 ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
 DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
 
-NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
-AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
-
 
 # --- options ----------------------------------------------------------------
+
+NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
+
+AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
 
 STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
                                 default=constants.ADDITIVE_STRATEGY)
@@ -148,7 +155,7 @@ class NodeListCommand(ConsumerListCommand):
         super(NodeListCommand, self).__init__(context, description=NODE_LIST_DESC)
 
     def get_title(self):
-        return _('Child Nodes')
+        return NODE_LIST_TITLE
 
     def get_consumer_list(self, kwargs):
         nodes = []
@@ -168,7 +175,10 @@ class NodeListCommand(ConsumerListCommand):
 class NodeListRepositoriesCommand(ListRepositoriesCommand):
 
     def __init__(self, context):
-        super(NodeListRepositoriesCommand, self).__init__(context, description=REPO_LIST_DESC)
+        super(NodeListRepositoriesCommand, self).__init__(
+            context,
+            description=REPO_LIST_DESC,
+            repos_title=REPO_LIST_TITLE)
 
     def get_repositories(self, query_params, **kwargs):
         enabled = []
@@ -214,103 +224,6 @@ class NodeRepoPublishCommand(PollingCommand):
 
     def failed(self, resource_id, task):
         self.context.prompt.render_failure_message(PUBLISH_FAILED)
-
-
-# --- bind -------------------------------------------------------------------
-
-class BindingCommand(PulpCliCommand):
-
-    def missing_resources(self, prompt, exception):
-        unhandled = []
-        for _id, _type in missing_resources(exception):
-            if _type == 'consumer_id':
-                msg = RESOURCE_MISSING_ERROR % dict(t=NODE, id=_id)
-                prompt.render_failure_message(msg)
-                continue
-            if _type == 'repo_id':
-                msg = RESOURCE_MISSING_ERROR % dict(t=REPOSITORY, id=_id)
-                prompt.render_failure_message(msg)
-                continue
-            unhandled.append((_id, _type))
-        return unhandled
-
-
-class NodeBindCommand(BindingCommand):
-
-    def __init__(self, context):
-        super(NodeBindCommand, self).__init__(BIND_NAME, BIND_DESC, self.run)
-        self.add_option(OPTION_REPO_ID)
-        self.add_option(NODE_ID_OPTION)
-        self.add_option(STRATEGY_OPTION)
-        self.context = context
-
-    def run(self, **kwargs):
-
-        repo_id = kwargs[OPTION_REPO_ID.keyword]
-        node_id = kwargs[NODE_ID_OPTION.keyword]
-        dist_id = constants.HTTP_DISTRIBUTOR
-        strategy = kwargs[STRATEGY_OPTION.keyword]
-        binding_config = {constants.STRATEGY_KEYWORD: strategy}
-
-        if not node_activated(self.context, node_id):
-            msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
-            self.context.prompt.render_failure_message(msg)
-            return
-
-        if strategy not in constants.STRATEGIES:
-            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
-            self.context.prompt.render_failure_message(msg)
-            return os.EX_DATAERR
-
-        try:
-            self.context.server.bind.bind(
-                node_id,
-                repo_id,
-                dist_id,
-                notify_agent=False,
-                binding_config=binding_config)
-            self.context.prompt.render_success_message(BIND_SUCCEEDED)
-            warning = BIND_WARNING % dict(r=repo_id)
-            self.context.prompt.render_warning_message(warning)
-        except NotFoundException, e:
-            unhandled = self.missing_resources(self.context.prompt, e)
-            for _id, _type in unhandled:
-                if _type == 'distributor':
-                    msg = BIND_FAILED_NOT_ENABLED
-                    self.context.prompt.render_failure_message(msg)
-                else:
-                    raise
-            return os.EX_DATAERR
-
-
-class NodeUnbindCommand(BindingCommand):
-
-    def __init__(self, context):
-        super(NodeUnbindCommand, self).__init__(UNBIND_NAME, UNBIND_DESC, self.run)
-        self.add_option(OPTION_REPO_ID)
-        self.add_option(NODE_ID_OPTION)
-        self.context = context
-
-    def run(self, **kwargs):
-
-        repo_id = kwargs[OPTION_REPO_ID.keyword]
-        node_id = kwargs[NODE_ID_OPTION.keyword]
-        dist_id = constants.HTTP_DISTRIBUTOR
-
-        try:
-            self.context.server.bind.unbind(node_id, repo_id, dist_id)
-            self.context.prompt.render_success_message(UNBIND_SUCCEEDED)
-            warning = UNBIND_WARNING % dict(r=repo_id)
-            self.context.prompt.render_warning_message(warning)
-        except NotFoundException, e:
-            unhandled = self.missing_resources(self.context.prompt, e)
-            for _id, _type in unhandled:
-                if _type == 'bind_id':
-                    msg = NOT_BOUND_NOTHING_DONE
-                    self.context.prompt.render_success_message(msg)
-                else:
-                    raise
-            return os.EX_DATAERR
 
 
 # --- activation -------------------------------------------------------------
@@ -439,6 +352,103 @@ class NodeRepoDisableCommand(PulpCliCommand):
                     self.context.prompt.render_success_message(msg)
                     continue
                 raise
+            return os.EX_DATAERR
+
+
+# --- bind -------------------------------------------------------------------
+
+class BindingCommand(PulpCliCommand):
+
+    def missing_resources(self, prompt, exception):
+        unhandled = []
+        for _id, _type in missing_resources(exception):
+            if _type == 'consumer_id':
+                msg = RESOURCE_MISSING_ERROR % dict(t=NODE, id=_id)
+                prompt.render_failure_message(msg)
+                continue
+            if _type == 'repo_id':
+                msg = RESOURCE_MISSING_ERROR % dict(t=REPOSITORY, id=_id)
+                prompt.render_failure_message(msg)
+                continue
+            unhandled.append((_id, _type))
+        return unhandled
+
+
+class NodeBindCommand(BindingCommand):
+
+    def __init__(self, context):
+        super(NodeBindCommand, self).__init__(BIND_NAME, BIND_DESC, self.run)
+        self.add_option(OPTION_REPO_ID)
+        self.add_option(NODE_ID_OPTION)
+        self.add_option(STRATEGY_OPTION)
+        self.context = context
+
+    def run(self, **kwargs):
+
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+        node_id = kwargs[NODE_ID_OPTION.keyword]
+        dist_id = constants.HTTP_DISTRIBUTOR
+        strategy = kwargs[STRATEGY_OPTION.keyword]
+        binding_config = {constants.STRATEGY_KEYWORD: strategy}
+
+        if not node_activated(self.context, node_id):
+            msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
+            self.context.prompt.render_failure_message(msg)
+            return
+
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
+
+        try:
+            self.context.server.bind.bind(
+                node_id,
+                repo_id,
+                dist_id,
+                notify_agent=False,
+                binding_config=binding_config)
+            self.context.prompt.render_success_message(BIND_SUCCEEDED)
+            warning = BIND_WARNING % dict(r=repo_id)
+            self.context.prompt.render_warning_message(warning)
+        except NotFoundException, e:
+            unhandled = self.missing_resources(self.context.prompt, e)
+            for _id, _type in unhandled:
+                if _type == 'distributor':
+                    msg = BIND_FAILED_NOT_ENABLED
+                    self.context.prompt.render_failure_message(msg)
+                else:
+                    raise
+            return os.EX_DATAERR
+
+
+class NodeUnbindCommand(BindingCommand):
+
+    def __init__(self, context):
+        super(NodeUnbindCommand, self).__init__(UNBIND_NAME, UNBIND_DESC, self.run)
+        self.add_option(OPTION_REPO_ID)
+        self.add_option(NODE_ID_OPTION)
+        self.context = context
+
+    def run(self, **kwargs):
+
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+        node_id = kwargs[NODE_ID_OPTION.keyword]
+        dist_id = constants.HTTP_DISTRIBUTOR
+
+        try:
+            self.context.server.bind.unbind(node_id, repo_id, dist_id)
+            self.context.prompt.render_success_message(UNBIND_SUCCEEDED)
+            warning = UNBIND_WARNING % dict(r=repo_id)
+            self.context.prompt.render_warning_message(warning)
+        except NotFoundException, e:
+            unhandled = self.missing_resources(self.context.prompt, e)
+            for _id, _type in unhandled:
+                if _type == 'bind_id':
+                    msg = NOT_BOUND_NOTHING_DONE
+                    self.context.prompt.render_success_message(msg)
+                else:
+                    raise
             return os.EX_DATAERR
 
 

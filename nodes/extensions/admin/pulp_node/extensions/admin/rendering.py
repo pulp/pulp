@@ -136,7 +136,6 @@ class UpdateRenderer(object):
             for repo_id in failed_repositories:
                 self.prompt.write('- %s' % repo_id)
 
-
     @property
     def repo_ids(self):
         return self.added + self.merged + self.removed
