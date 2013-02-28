@@ -377,6 +377,7 @@ def compare_packages(pkgA, pkgB):
      return 1: pkgA is newer than pkgB
      return 0: pkgA equals pkgB
      return -1: pkgB is newer than pkgA
+     return None: name or arch of pkgA differs from pkgB, e.g. different package
     """
     def build_evr(pkg):
         evr = [pkg["epoch"], pkg["version"], pkg["release"]]
@@ -384,6 +385,9 @@ def compare_packages(pkgA, pkgB):
         if evr[0] == "":
             evr[0] = None
         return evr
+
+    if pkgA["name"] != pkgB["name"] or pkgA["arch"] != pkgB["arch"]:
+        return None
 
     evrA, evrB = (build_evr(pkgA), build_evr(pkgB))
     return rpm.labelCompare(evrA, evrB)

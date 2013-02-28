@@ -694,17 +694,27 @@ class ConsumerApi(BaseApi):
                         #if errata pkg not in installed profile, update is not
                         # applicable move on
                         continue
-                    for ppkg in pkg_profile_dict:
-                        if epkg_info['name'] != ppkg['name']:
-                            continue
 
-                        status = compare_packages(epkg_info, ppkg)
-                        if status == 1:
-                            # erratum pkg is newer, add to update list
-                            if not applicable_errata.has_key(erratumid):
-                                applicable_errata[erratumid] = {'packages' : [],
-                                                                'reboot_suggested' : erratum['reboot_suggested']}
-                            applicable_errata[erratumid]['packages'].append(pkg)
+                    errata_pkg_applicable = False
+                    for ppkg in pkg_profile_dict:
+                        status = compare_packages(ppkg, epkg_info)
+                        # different package, move on
+                        if status is None:
+                            continue
+                        # newer pkg than errata pkg found -> skip errata
+                        elif status >= 0:
+                            errata_pkg_applicable = False
+                            break
+                        # older pkg found, errata might be applicable if no newer pkg is found later on
+                        errata_pkg_applicable = True
+
+                    # applicable erratum found? -> add to update list
+                    if errata_pkg_applicable:
+                        if not applicable_errata.has_key(erratumid):
+                            applicable_errata[erratumid] = {'packages' : [],
+                                                            'reboot_suggested' : erratum['reboot_suggested']}
+                        applicable_errata[erratumid]['packages'].append(pkg)
+
         return applicable_errata
     
 
