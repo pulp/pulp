@@ -15,6 +15,7 @@ from gettext import gettext as _
 
 from pulp.common.download.backends.curl import (
     HTTPCurlDownloadBackend, HTTPSCurlDownloadBackend)
+from pulp.common.download.backends.event import HTTPEventletDownloadBackend
 
 # download backends and management ---------------------------------------------
 
@@ -30,6 +31,7 @@ class NoBackendForProtocol(Exception):
 
 _BACKENDS = {
     'http': HTTPCurlDownloadBackend,
+    #'http': HTTPEventletDownloadBackend,
     'https': HTTPSCurlDownloadBackend,
 }
 
