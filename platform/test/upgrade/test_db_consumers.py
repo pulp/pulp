@@ -160,8 +160,8 @@ class ConsumerGroupUpgradeTests(BaseDbUpgradeTests):
 
         # Throw away existing consumers and groups; I forget what the unit test database
         # looks like but I doubt it has a proper set up to test this
-        self.v1_test_db.database.consumers.remove({})
-        self.v1_test_db.database.consumergroups.remove({})
+        self.v1_test_db.database.consumers.remove({}, safe=True)
+        self.v1_test_db.database.consumergroups.remove({}, safe=True)
 
         for i in range(0, 10):
             consumer = {
