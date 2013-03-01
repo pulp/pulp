@@ -16,6 +16,7 @@ cover
 */sphinx/*/_build
 .DS_Store
 *,cover
+tags
 
 # Ninja IDE
 *.nja
