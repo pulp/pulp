@@ -118,6 +118,7 @@ class TestListCommands(ClientTests):
 
 class TestPublishCommand(ClientTests):
 
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch('pulp.client.commands.polling.PollingCommand.postponed')
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
     @patch('pulp.client.commands.polling.PollingCommand.process')
@@ -128,7 +129,23 @@ class TestPublishCommand(ClientTests):
         keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID, constants.HTTP_DISTRIBUTOR, {})
+
+
+    @patch(REPO_ENABLED_CHECK, return_value=False)
+    @patch('pulp.client.commands.polling.PollingCommand.postponed')
+    @patch('pulp.client.commands.polling.PollingCommand.rejected')
+    @patch('pulp.client.commands.polling.PollingCommand.process')
+    @patch(PUBLISH_API, return_value=Response(200, {}))
+    def test_publish_not_enabled(self, mock_binding, *unused):
+        # Test
+        command = NodeRepoPublishCommand(self.context)
+        keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
+        command.run(**keywords)
+        # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertFalse(mock_binding.called)
 
 
 class TestActivationCommands(ClientTests):
@@ -140,7 +157,8 @@ class TestActivationCommands(ClientTests):
         keywords = {OPTION_CONSUMER_ID.keyword: NODE_ID}
         command.run(**keywords)
         # Verify
-        delta = {'notes':{constants.NODE_NOTE_KEY: True}}
+        delta = {'notes': {constants.NODE_NOTE_KEY: True}}
+        self.assertTrue(OPTION_CONSUMER_ID in command.options)
         mock_binding.assert_called_with(NODE_ID, delta)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
@@ -151,7 +169,8 @@ class TestActivationCommands(ClientTests):
         keywords = {NODE_ID_OPTION.keyword: NODE_ID}
         command.run(**keywords)
         # Verify
-        delta = {'notes':{constants.NODE_NOTE_KEY: None}}
+        delta = {'notes': {constants.NODE_NOTE_KEY: None}}
+        self.assertTrue(NODE_ID_OPTION in command.options)
         mock_activated.assert_called_with(self.context, NODE_ID)
         mock_binding.assert_called_with(NODE_ID, delta)
 
@@ -163,6 +182,7 @@ class TestActivationCommands(ClientTests):
         keywords = {NODE_ID_OPTION.keyword: NODE_ID}
         command.run(**keywords)
         # Verify
+        self.assertTrue(NODE_ID_OPTION in command.options)
         mock_activated.assert_called_with(self.context, NODE_ID)
         self.assertFalse(mock_binding.called)
 
@@ -180,6 +200,8 @@ class TestEnableCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(AUTO_PUBLISH_OPTION in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR, {},
                                         True, constants.HTTP_DISTRIBUTOR)
 
@@ -194,6 +216,8 @@ class TestEnableCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(AUTO_PUBLISH_OPTION in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR, {},
                                         False, constants.HTTP_DISTRIBUTOR)
 
@@ -205,9 +229,11 @@ class TestEnableCommands(ClientTests):
         keywords = {
             OPTION_REPO_ID.keyword: REPOSITORY_ID,
             AUTO_PUBLISH_OPTION.keyword: 'true',
-            }
+        }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(AUTO_PUBLISH_OPTION in command.options)
         self.assertFalse(mock_binding.called)
 
     @patch(REPO_ENABLED_CHECK, return_value=True)
@@ -218,6 +244,7 @@ class TestEnableCommands(ClientTests):
         keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR)
         
         
@@ -235,6 +262,9 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
         mock_binding.assert_called_with(
             NODE_ID,
             REPOSITORY_ID,
@@ -254,6 +284,9 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
         mock_binding.assert_called_with(
             NODE_ID,
             REPOSITORY_ID,
@@ -273,6 +306,9 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
         self.assertFalse(mock_binding.called)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
@@ -286,4 +322,6 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(NODE_ID_OPTION in command.options)
         mock_binding.assert_called_with(NODE_ID, REPOSITORY_ID, constants.HTTP_DISTRIBUTOR)

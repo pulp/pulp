@@ -62,7 +62,7 @@ class TestActivationCommands(ClientTests):
         command = NodeActivateCommand(self.context)
         command.run()
         # Verify
-        delta = {'notes':{constants.NODE_NOTE_KEY: True}}
+        delta = {'notes': {constants.NODE_NOTE_KEY: True}}
         mock_binding.assert_called_with(NODE_ID, delta)
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
@@ -73,7 +73,7 @@ class TestActivationCommands(ClientTests):
         command = NodeDeactivateCommand(self.context)
         command.run()
         # Verify
-        delta = {'notes':{constants.NODE_NOTE_KEY: None}}
+        delta = {'notes': {constants.NODE_NOTE_KEY: None}}
         mock_activated.assert_called_with(self.context, NODE_ID)
         mock_binding.assert_called_with(NODE_ID, delta)
 
@@ -103,6 +103,8 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
         mock_binding.assert_called_with(
             NODE_ID,
             REPOSITORY_ID,
@@ -122,6 +124,8 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
         mock_binding.assert_called_with(
             NODE_ID,
             REPOSITORY_ID,
@@ -141,6 +145,8 @@ class TestBindCommands(ClientTests):
         }
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
         self.assertFalse(mock_binding.called)
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
@@ -152,4 +158,5 @@ class TestBindCommands(ClientTests):
         keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
         command.run(**keywords)
         # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(NODE_ID, REPOSITORY_ID, constants.HTTP_DISTRIBUTOR)
