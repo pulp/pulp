@@ -104,3 +104,44 @@ to use. This information is referred to as a *consumer payload*.
 
 Each time a consumer binds to a repository's distributor, the ``create_consumer_payload`` method
 is called. The format of the payload is up to the plugin writer.
+
+Hosting Static Content
+----------------------
+
+You may host static content within the ``/pulp`` URL path. The convention with
+existing plugins is to allow content to be published over http, https, or both
+by symlinking content into corresponding directories on the filesystem. To
+accomplish this, you must create a basic Apache configuration.
+
+Most of your configuration can go in a standard Apache config file like this one:
+
+::
+
+    # /etc/httpd/conf.d/pulp_puppet.conf
+
+    # SSL-related directives can go right in the global config space. The
+    # corresponding non-SSL Alias directive must go in a separate config file.
+    Alias /pulp/puppet /var/www/pulp_puppet/https/repos
+
+    # directory where repos published for HTTPS get symlinked
+    <Directory /var/www/pulp_puppet/https/repos>
+        Options FollowSymLinks Indexes
+    </Directory>
+
+    # directory where repos published for HTTP get symlinked
+    <Directory /var/www/pulp_puppet/http/repos>
+        Options FollowSymLinks Indexes
+    </Directory>
+
+However, directives such as Alias statements that are specific to the
+``<VirtualHost *:80>`` block provided by the platform must go in a separate file.
+All files within ``/etc/pulp/vhosts80/`` have their directives "Included" in one
+``<VirtualHost *:80>`` block.
+
+::
+
+    # /etc/pulp/vhosts80/puppet.conf
+
+    # Directives in this file get included in the one authoritative
+    # <VirtualHost *:80> block provided by the platform.
+    Alias /pulp/puppet /var/www/pulp_puppet/http/repos
