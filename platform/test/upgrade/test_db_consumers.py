@@ -152,3 +152,70 @@ class ConsumersUpgradeTests(BaseDbUpgradeTests):
                 profile = profile_coll.find_one({'consumer_id' : v1_consumer['id']})
                 self.assertTrue(profile is not None)
 
+
+class ConsumerGroupUpgradeTests(BaseDbUpgradeTests):
+
+    def setUp(self):
+        super(ConsumerGroupUpgradeTests, self).setUp()
+
+        # Throw away existing consumers and groups; I forget what the unit test database
+        # looks like but I doubt it has a proper set up to test this
+        self.v1_test_db.database.consumers.remove({})
+        self.v1_test_db.database.consumergroups.remove({})
+
+        for i in range(0, 10):
+            consumer = {
+                'id' : 'consumer-%s' % i,
+                'description' : 'description-%s' % i,
+                'key_value_pairs' : {'key' : 'value-%s' % i},
+                'capabilities' : {},
+                'certificate' : 'cert',
+                'repoids' : [],
+                'package_profile' : '',
+            }
+            self.v1_test_db.database.consumers.insert(consumer, safe=True)
+
+        # Divide the consumers across two groups, leaving consumer-0 out of a group
+        for i in range(1, 3):
+            group_x = {
+                'id' : 'group-%s' % i,
+                'description' : 'desc-%s' % i,
+                'key_value_pairs' : {'key' : 'value-%s' % i},
+                'consumerids' : ['consumer-%s' % x for x in range(i, 10, 2)]
+            }
+            self.v1_test_db.database.consumergroups.insert(group_x, safe=True)
+
+    def test_update(self):
+
+        # Test
+        consumers.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        v2_coll = self.tmp_test_db.database.consumer_groups
+        all_groups_cursor = v2_coll.find({})
+        self.assertEqual(2, all_groups_cursor.count())
+
+        for i in range(1, 3):
+            group_x = v2_coll.find_one({'id' : 'group-%s' % i})
+            self.assertTrue(group_x is not None)
+            self.assertEqual(group_x['display_name'], 'group-%s' % i)
+            self.assertEqual(group_x['description'], 'desc-%s' % i)
+            self.assertEqual(group_x['notes'], {'key' : 'value-%s' % i})
+            self.assertEqual(group_x['scratchpad'], None)
+            expected_consumers = ['consumer-%s' % i for i in range(i, 10, 2)]
+            self.assertEqual(group_x['consumer_ids'], expected_consumers)
+
+        # Make sure consumer-0 isn't stuffed into a group by accident
+        zero_groups = v2_coll.find({'$in' : {'consumer_ids' : 'consumer-0'}})
+        self.assertEqual(0, zero_groups.count())
+
+    def test_update_idempotency(self):
+
+        # Test
+        consumers.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        consumers.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        v2_coll = self.tmp_test_db.database.consumer_groups
+        all_groups_cursor = v2_coll.find({})
+        self.assertEqual(2, all_groups_cursor.count())
