@@ -63,7 +63,9 @@ The ``history`` command shows the most recent operations first.
 List
 ----
 
-This command retrieves a list of consumers.
+This command retrieves a list of consumers. "Confirmed" bindings are those for
+which the agent on the remote consumer has performed a bind action. "Unconfirmed"
+bindings are waiting for that remote action to take place.
 
 ::
 
