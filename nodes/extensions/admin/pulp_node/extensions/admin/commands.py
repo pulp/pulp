@@ -139,9 +139,7 @@ def initialize(context):
     repo_section.add_command(NodeRepoEnableCommand(context))
     repo_section.add_command(NodeRepoDisableCommand(context))
     repo_section.add_command(NodeListRepositoriesCommand(context))
-
-    publish_section = repo_section.create_subsection(PUBLISH_NAME, PUBLISH_DESC)
-    publish_section.add_command(NodeRepoPublishCommand(context))
+    repo_section.add_command(NodeRepoPublishCommand(context))
 
     sync_section = node_section.create_subsection(SYNC_NAME, SYNC_DESC)
     sync_section.add_command(NodeUpdateCommand(context))
