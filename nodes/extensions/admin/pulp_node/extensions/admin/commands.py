@@ -101,9 +101,9 @@ NODE_DEACTIVATED = _('Child node deactivated.')
 BIND_SUCCEEDED = _('Node bind succeeded.')
 UNBIND_SUCCEEDED = _('Node unbind succeeded')
 ALREADY_ENABLED = _('Repository already enabled.  Nothing done.')
-BIND_FAILED_NOT_ENABLED = _('Repository not enabled.  See: \'node repo enable\' command.')
+FAILED_NOT_ENABLED = _('Repository not enabled.  See: the \'node repo enable\' command.')
 NOT_BOUND_NOTHING_DONE = _('Node not bound to repository.  Nothing done.')
-NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node.  See: \'node activate\' command.')
+NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node.  See: the \'node activate\' command.')
 NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.')
 NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled.  Nothing done.')
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
@@ -139,9 +139,7 @@ def initialize(context):
     repo_section.add_command(NodeRepoEnableCommand(context))
     repo_section.add_command(NodeRepoDisableCommand(context))
     repo_section.add_command(NodeListRepositoriesCommand(context))
-
-    publish_section = repo_section.create_subsection(PUBLISH_NAME, PUBLISH_DESC)
-    publish_section.add_command(NodeRepoPublishCommand(context))
+    repo_section.add_command(NodeRepoPublishCommand(context))
 
     sync_section = node_section.create_subsection(SYNC_NAME, SYNC_DESC)
     sync_section.add_command(NodeUpdateCommand(context))
@@ -203,6 +201,11 @@ class NodeRepoPublishCommand(PollingCommand):
 
     def run(self, **kwargs):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
+
+        if not repository_enabled(self.context, repo_id):
+            msg = FAILED_NOT_ENABLED
+            self.context.prompt.render_success_message(msg)
+            return
 
         try:
             http = self.context.server.repo_actions.publish(repo_id, constants.HTTP_DISTRIBUTOR, {})
@@ -415,7 +418,7 @@ class NodeBindCommand(BindingCommand):
             unhandled = self.missing_resources(self.context.prompt, e)
             for _id, _type in unhandled:
                 if _type == 'distributor':
-                    msg = BIND_FAILED_NOT_ENABLED
+                    msg = FAILED_NOT_ENABLED
                     self.context.prompt.render_failure_message(msg)
                 else:
                     raise
