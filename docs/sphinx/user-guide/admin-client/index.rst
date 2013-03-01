@@ -8,6 +8,7 @@ Contents:
 
    introduction
    authentication
+   consumer
    events
    repositories
    orphan
