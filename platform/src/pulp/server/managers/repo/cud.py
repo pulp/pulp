@@ -334,18 +334,24 @@ class RepoManager(object):
         return repo
 
     @staticmethod
-    def update_unit_count(repo_id, delta):
+    def update_unit_count(repo_id, unit_type_id, delta):
         """
-        Updates the total count of units associated with the repo.
+        Updates the total count of units associated with the repo. Each repo has
+        an attribute 'content_unit_counts' that looks like this:
+
+        {'rpm': 12, 'srpm': 3}
 
         @param repo_id: identifies the repo
         @type  repo_id: str
+
+        @param unit_type_id: identifies the unit type to update
+        @type  unit_type_id: str
 
         @param delta: amount by which to change the total count
         @type  delta: int
         """
         spec = {'id' : repo_id}
-        operation = {'$inc' : {'content_unit_count': delta}}
+        operation = {'$inc' : {'content_unit_counts.%s' % unit_type_id: delta}}
         repo_coll = Repo.get_collection()
 
         if delta:
@@ -455,6 +461,40 @@ class RepoManager(object):
 
         repo['scratchpad'] = contents
         repo_coll.save(repo, safe=True)
+
+    @staticmethod
+    def rebuild_content_unit_counts(repo_ids=None):
+        """
+        WARNING: This might take a long time, and it should not be used unless
+        absolutely necessary. Not responsible for melted servers.
+
+        This will iterate through the given repositories, which defaults to ALL
+        repositories, and recalculate the content unit counts for each content
+        type.
+
+        :param repo_ids:    list of repository IDs. DEFAULTS TO ALL REPO IDs!!!
+        :type  repo_ids:    list
+        """
+        association_collection = RepoContentUnit.get_collection()
+        repo_collection = Repo.get_collection()
+
+        # default to all repos if none were specified
+        if not repo_ids:
+            repo_ids = [repo['id'] for repo in repo_collection.find(fields=['id'])]
+
+        _LOG.info('regenerating content unit counts for %d repositories' % len(repo_ids))
+
+        for repo_id in repo_ids:
+            _LOG.debug('regenerating content unit count for repository "%s"' % repo_id)
+            counts = {}
+            cursor = association_collection.find({'repo_id':repo_id})
+            type_ids = cursor.distinct('unit_type_id')
+            cursor.close()
+            for type_id in type_ids:
+                spec = {'repo_id': repo_id, 'unit_type_id': type_id}
+                counts[type_id] = association_collection.find(spec).count()
+            repo_collection.update({'id': repo_id}, {'$set':{'content_unit_counts': counts}}, safe=True)
+
 
 # -- functions ----------------------------------------------------------------
 
