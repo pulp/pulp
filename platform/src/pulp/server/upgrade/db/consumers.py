@@ -35,6 +35,7 @@ def upgrade(v1_database, v2_database):
 
     _consumer_history(v1_database, v2_database)
     _consumers(v1_database, v2_database)
+    _consumer_groups(v1_database, v2_database)
 
     report = UpgradeStepReport()
     report.succeeded()
@@ -151,3 +152,28 @@ def _unit_profile(v2_database, v1_consumer):
         'profile' : v1_consumer['package_profile']
     }
     v2_coll.insert(unit_profile, safe=True)
+
+
+def _consumer_groups(v1_database, v2_database):
+    v1_coll = v1_database.consumergroups  # seriously, no underscore
+    v2_coll = v2_database.consumer_groups
+
+    # Idempotency: By consumer group ID
+    v1_group_ids = [x['id'] for x in v1_coll.find({}, {'id' : 1})]
+    v2_existing_ids = [x['id'] for x in v2_coll.find({}, {'id' : 1})]
+    ids_to_add = set(v1_group_ids) - set(v2_existing_ids)
+
+    for group_id in ids_to_add:
+        v1_group = v1_coll.find_one({'id' : group_id})
+        v2_group = {
+            '_id' : ObjectId(),
+            'id' : v1_group['id'],
+            'display_name' : v1_group['id'],  # no display name in v1
+            'description' : v1_group['description'],
+            'consumer_ids' : v1_group['consumerids'],  # again, no underscores
+            'notes' : v1_group['key_value_pairs'],
+            'scratchpad' : None, # no idea why this is in the model, this doesn't make any sense
+        }
+
+        # Likely a small amount of groups, not worried about batching the inserts
+        v2_coll.insert(v2_group, safe=True)
