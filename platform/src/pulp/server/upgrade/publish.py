@@ -58,7 +58,7 @@ def run_publish():
     for index, task in enumerate(distributors_to_publish):
         repo_id, data = task
         _publish(repo_id, data)
-        bar.render(index, len(distributors_to_publish)-1)
+        bar.render(index + 1, len(distributors_to_publish))
     p.write('')
 
     # Poll until the publish requests are finished
