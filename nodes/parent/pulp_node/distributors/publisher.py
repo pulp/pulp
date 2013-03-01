@@ -97,12 +97,9 @@ class FilePublisher(Publisher):
         files associated to the unit.storage_path.
         :param units: A list of units to publish.
         :type units: list
-        :return: The manifest and links created.
-        :rtype: tuple(2)
         """
-        links = self.link(units)
-        manifest = self.write_manifest(units)
-        return (manifest, links)
+        self.link(units)
+        self.write_manifest(units)
 
     def write_manifest(self, units):
         """
