@@ -76,6 +76,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
@@ -108,6 +109,7 @@ cp etc/httpd/conf.d/pulp_f18.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.
 %else
 cp etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 %endif
+rm %{buildroot}/%{_sysconfdir}/%{name}/vhosts80/.gitignore
 
 # Pulp Web Services
 cp -R srv %{buildroot}
@@ -189,6 +191,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
+%dir %{_sysconfdir}/%{name}/vhosts80
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-v1-upgrade

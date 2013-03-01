@@ -33,6 +33,7 @@ DIRS = (
     '/etc/pulp/importer',
     '/etc/pulp/agent',
     '/etc/pulp/agent/conf.d',
+    '/etc/pulp/vhosts80',
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
