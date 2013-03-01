@@ -109,7 +109,6 @@ cp etc/httpd/conf.d/pulp_f18.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.
 %else
 cp etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 %endif
-rm %{buildroot}/%{_sysconfdir}/%{name}/vhosts80/.gitignore
 
 # Pulp Web Services
 cp -R srv %{buildroot}
