@@ -52,8 +52,6 @@ class ProgressTracker:
             repo_id = r['repo_id']
             r = self._find(repo_id, reports)
             self._render(r, pb)
-            if in_progress and repo_id != in_progress[-1]['repo_id']:
-                pb.render(1, 1)
         for i in range(len(self.snapshot), len(in_progress)):
             r = in_progress[i]
             pb = self.prompt.create_progress_bar()
@@ -84,8 +82,10 @@ class ProgressTracker:
              ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})
         )
         if total < 1:
-            # prevent divide by zero
-            pb.render(1, 1)
+            if state == RepositoryProgress.FINISHED:
+                pb.render(1, 1)
+            else:
+                pb.render(0.01, 1)
         else:
             pb.render(completed, total, message)
         return pb

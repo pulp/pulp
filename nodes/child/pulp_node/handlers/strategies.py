@@ -129,6 +129,7 @@ class HandlerStrategy(object):
             try:
                 progress = self.progress.find_report(repo_id)
                 report = repo.run_synchronization(progress)
+                progress.finished()
                 details = report['details']
                 _report = details.get('report')
                 exception = details.get('exception')
