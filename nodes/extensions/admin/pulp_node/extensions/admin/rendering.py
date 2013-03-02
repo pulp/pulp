@@ -46,11 +46,14 @@ class ProgressTracker:
 
     def display(self, report):
         reports = report['progress']
+        in_progress = self._in_progress(reports)
         if self.snapshot:
             r, pb = self.snapshot[-1]
-            r = self._find(r['repo_id'], reports)
+            repo_id = r['repo_id']
+            r = self._find(repo_id, reports)
             self._render(r, pb)
-        in_progress = self._in_progress(reports)
+            if in_progress and repo_id != in_progress[-1]['repo_id']:
+                pb.render(1, 1)
         for i in range(len(self.snapshot), len(in_progress)):
             r = in_progress[i]
             pb = self.prompt.create_progress_bar()
@@ -81,6 +84,7 @@ class ProgressTracker:
              ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})
         )
         if total < 1:
+            # prevent divide by zero
             pb.render(1, 1)
         else:
             pb.render(completed, total, message)
