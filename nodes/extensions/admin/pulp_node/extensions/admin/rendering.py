@@ -20,6 +20,7 @@ from pulp_node.progress import RepositoryProgress
 REPOSITORY_FIELD = _('(%(n)d/%(t)d) Repository: %(id)s')
 STEP_FIELD = _('Step: %(s)s')
 ADD_UNIT_FIELD = _('(%(n)d/%(t)d) Add unit: %(d)s')
+
 PROGRESS_STATES = {
     RepositoryProgress.PENDING: _('Pending'),
     RepositoryProgress.DOWNLOADING_MANIFEST: _('Downloading Manifest'),
@@ -45,11 +46,14 @@ class ProgressTracker:
 
     def display(self, report):
         reports = report['progress']
+        in_progress = self._in_progress(reports)
         if self.snapshot:
             r, pb = self.snapshot[-1]
-            r = self._find(r['repo_id'], reports)
+            repo_id = r['repo_id']
+            r = self._find(repo_id, reports)
             self._render(r, pb)
-        in_progress = self._in_progress(reports)
+            if in_progress and repo_id != in_progress[-1]['repo_id']:
+                pb.render(1, 1)
         for i in range(len(self.snapshot), len(in_progress)):
             r = in_progress[i]
             pb = self.prompt.create_progress_bar()
@@ -73,11 +77,14 @@ class ProgressTracker:
         total = unit_add['total']
         completed = unit_add['completed']
         details = unit_add['details'] or ''
+        if '/' in details:
+            details = details.rsplit('/', 1)[1]
         message = '\n'.join(
             (STEP_FIELD % {'s': state},
              ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})
         )
         if total < 1:
+            # prevent divide by zero
             pb.render(1, 1)
         else:
             pb.render(completed, total, message)

@@ -113,12 +113,12 @@ class HandlerProgress(object):
         :type repo_id: str
         :return The report if found.
         :rtype RepositoryProgress
-        :raise KeyError
+        :raise ValueError
         """
         for p in self.progress:
             if p.repo_id == repo_id:
                 return p
-        raise KeyError(repo_id)
+        raise ValueError(repo_id)
 
     def updated(self, report):
         """
@@ -126,8 +126,8 @@ class HandlerProgress(object):
         :param report: The update repository progress report.
         :type report: RepositoryProgress
         """
-        for i in range(0, len(self.progress)):
-            if self.progress[i].repo_id == report.repo_id:
+        for i, p in enumerate(self.progress):
+            if p.repo_id == report.repo_id:
                 self.progress[i] = report
             self._updated()
             break
