@@ -88,10 +88,12 @@ class ProgressTracker:
             details = details.rsplit('/', 1)[1]
 
         # message part of the progress bar
-        message = '\n'.join(
-            (STEP_FIELD % {'s': PROGRESS_STATES[state]},
-             ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})
-        )
+        if state == RepositoryProgress.ADDING_UNITS:
+            message = '\n'.join(
+                (STEP_FIELD % {'s': PROGRESS_STATES[state]},
+                 ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details}))
+        else:
+            message = None
 
         # prevent divide by zero and make sure the progress bar and
         # make sure the progress bar shows complete when the report is finished.
