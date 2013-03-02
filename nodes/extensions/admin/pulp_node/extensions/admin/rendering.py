@@ -125,7 +125,7 @@ class UpdateRenderer(object):
                 failed_repositories.append(repo_id)
                 continue
 
-            if not imp_report['succeeded']:
+            if not imp_report['details']['report']['succeeded']:
                 failed_repositories.append(repo_id)
                 continue
 
