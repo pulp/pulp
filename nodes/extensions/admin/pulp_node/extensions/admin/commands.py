@@ -39,16 +39,16 @@ REPOSITORY = _('Repository')
 
 # --- names ------------------------------------------------------------------
 
-REPO_NAME = _('repo')
-ACTIVATE_NAME = _('activate')
-DEACTIVATE_NAME = _('deactivate')
-ENABLE_NAME = _('enable')
-DISABLE_NAME = _('disable')
-SYNC_NAME = _('sync')
-PUBLISH_NAME = _('publish')
-BIND_NAME = _('bind')
-UNBIND_NAME = _('unbind')
-UPDATE_NAME = _('run')
+REPO_NAME = 'repo'
+ACTIVATE_NAME = 'activate'
+DEACTIVATE_NAME = 'deactivate'
+ENABLE_NAME = 'enable'
+DISABLE_NAME = 'disable'
+SYNC_NAME = 'sync'
+PUBLISH_NAME = 'publish'
+BIND_NAME = 'bind'
+UNBIND_NAME = 'unbind'
+UPDATE_NAME = 'run'
 
 
 # --- descriptions -----------------------------------------------------------
@@ -110,12 +110,13 @@ STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
 
 BIND_WARNING = \
-    _('Note: repository [ %(r)s ] may be included in node synchronization.')
+    _('Note: Repository [ %(r)s ] will be included in node synchronization.')
 UNBIND_WARNING = \
-    _('Warning: repository [ %(r)s ] will NOT be included in node synchronization')
+    _('Warning: Repository [ %(r)s ] will NOT be included in node synchronization')
 
 ENABLE_WARNING = \
-    _('Note: repository may not be available for node synchronization until published.')
+    _('Note: Repository [ %(r)s ] will not be available for node synchronization until published.'
+      '  See: the \'node repo publish\' command.')
 
 AUTO_PUBLISH_WARNING = \
     _('Warning: enabling with auto-publish may degrade repository synchronization performance.')
@@ -317,7 +318,7 @@ class NodeRepoEnableCommand(PulpCliCommand):
                 auto_publish,
                 constants.HTTP_DISTRIBUTOR)
             self.context.prompt.render_success_message(REPO_ENABLED)
-            self.context.prompt.render_warning_message(ENABLE_WARNING)
+            self.context.prompt.render_warning_message(ENABLE_WARNING % dict(r=repo_id))
             if auto_publish:
                 self.context.prompt.render_warning_message(AUTO_PUBLISH_WARNING)
         except NotFoundException, e:
@@ -397,7 +398,7 @@ class NodeBindCommand(BindingCommand):
         if not node_activated(self.context, node_id):
             msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
             self.context.prompt.render_failure_message(msg)
-            return
+            return os.EX_USAGE
 
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
@@ -474,7 +475,7 @@ class NodeUpdateCommand(PollingCommand):
         if not node_activated(self.context, node_id):
             msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
             self.context.prompt.render_failure_message(msg)
-            return
+            return os.EX_USAGE
 
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)

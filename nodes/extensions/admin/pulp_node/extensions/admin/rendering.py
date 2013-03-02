@@ -20,6 +20,7 @@ from pulp_node.progress import RepositoryProgress
 REPOSITORY_FIELD = _('(%(n)d/%(t)d) Repository: %(id)s')
 STEP_FIELD = _('Step: %(s)s')
 ADD_UNIT_FIELD = _('(%(n)d/%(t)d) Add unit: %(d)s')
+
 PROGRESS_STATES = {
     RepositoryProgress.PENDING: _('Pending'),
     RepositoryProgress.DOWNLOADING_MANIFEST: _('Downloading Manifest'),
@@ -73,6 +74,8 @@ class ProgressTracker:
         total = unit_add['total']
         completed = unit_add['completed']
         details = unit_add['details'] or ''
+        if '/' in details:
+            details = details.rsplit('/', 1)[1]
         message = '\n'.join(
             (STEP_FIELD % {'s': state},
              ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})

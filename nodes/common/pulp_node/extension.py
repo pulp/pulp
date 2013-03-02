@@ -19,7 +19,7 @@ from pulp_node import constants
 # --- constants --------------------------------------------------------------
 
 
-SECTION_NAME = _('node')
+SECTION_NAME = 'node'
 SECTION_DESCRIPTION = _('pulp nodes related commands')
 
 
@@ -52,7 +52,7 @@ def node_activated(context, node_id):
         http = context.server.consumer.consumer(node_id)
         consumer = http.response_body
         notes = consumer['notes']
-        return notes.get(constants.NODE_NOTE_KEY)
+        return notes.get(constants.NODE_NOTE_KEY, False)
     except NotFoundException:
         return False
 

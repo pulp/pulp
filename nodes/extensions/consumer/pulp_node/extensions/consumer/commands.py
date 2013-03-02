@@ -33,10 +33,10 @@ REPOSITORY = _('Repository')
 
 # --- names ------------------------------------------------------------------
 
-ACTIVATE_NAME = _('activate')
-DEACTIVATE_NAME = _('deactivate')
-BIND_NAME = _('bind')
-UNBIND_NAME = _('unbind')
+ACTIVATE_NAME = 'activate'
+DEACTIVATE_NAME = 'deactivate'
+BIND_NAME = 'bind'
+UNBIND_NAME = 'unbind'
 
 
 # --- descriptions -----------------------------------------------------------
@@ -62,14 +62,15 @@ BIND_SUCCEEDED = _('Node bind succeeded.')
 UNBIND_SUCCEEDED = _('Node unbind succeeded')
 BIND_FAILED_NOT_ENABLED = _('Repository not enabled.  See: \'node repo enable\' command.')
 NOT_BOUND_NOTHING_DONE = _('Node not bound to repository.  Nothing done.')
+NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.')
 NOT_ACTIVATED_ERROR = _('This consumer not activated as a node.  See: \'node activate\' command.')
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
 
 BIND_WARNING = \
-    _('Note: repository [ %(r)s ] may be included in node synchronization.')
+    _('Note: Repository [ %(r)s ] will be included in node synchronization.')
 UNBIND_WARNING = \
-    _('Warning: repository [ %(r)s ] will NOT be included in node synchronization')
+    _('Warning: Repository [ %(r)s ] will NOT be included in node synchronization')
 
 
 # --- options ----------------------------------------------------------------
@@ -130,7 +131,7 @@ class NodeDeactivateCommand(PulpCliCommand):
         delta = {'notes': DEACTIVATED_NOTE}
 
         if not node_activated(self.context, consumer_id):
-            msg = _('This consumer is not activated as a node.  Nothing done.')
+            msg = NOT_ACTIVATED_NOTHING_DONE
             self.context.prompt.render_success_message(msg)
             return
 
@@ -185,7 +186,7 @@ class NodeBindCommand(BindingCommand):
         if not node_activated(self.context, node_id):
             msg = NOT_ACTIVATED_ERROR
             self.context.prompt.render_failure_message(msg)
-            return
+            return os.EX_USAGE
 
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
