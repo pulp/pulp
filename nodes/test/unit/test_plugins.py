@@ -604,6 +604,53 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify(0)
 
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_nothing_updated(self, *unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        :see: test_handler for directory tree details.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.importers.strategies.Batch', BadBatch)
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.ADDITIVE_STRATEGY)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            handler = NodeHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            os.makedirs(os.path.join(self.childfs, 'content'))
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        merge_report = report.details['merge_report']
+        self.assertEqual(merge_report['added'], [])
+        self.assertEqual(merge_report['merged'], [self.REPO_ID])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report.details['importer_reports'][self.REPO_ID]
+        self.assertEqual(importer_report['added_count'], 0)
+        self.assertEqual(importer_report['removed_count'], 0)
+        details = importer_report['details']['report']
+        self.assertTrue(details['succeeded'])
+        self.assertEqual(len(details['add_failed']), 0)
+        self.assertEqual(len(details['delete_failed']), 0)
+
+
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     @patch('pulp_node.importers.strategies.Mirror._add_units', side_effect=Exception())
     def test_importer_exception(self, *unused):

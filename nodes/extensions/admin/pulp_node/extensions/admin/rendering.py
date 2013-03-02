@@ -46,12 +46,18 @@ class ProgressTracker:
 
     def display(self, report):
         reports = report['progress']
-        in_progress = self._in_progress(reports)
+
+        # On the 2nd+ report, update the last in-progress report.
         if self.snapshot:
             r, pb = self.snapshot[-1]
             repo_id = r['repo_id']
             r = self._find(repo_id, reports)
             self._render(r, pb)
+
+        # The latency in polling can causes gaps in the reported progress.
+        # This includes the gap between never having processed a report and receiving
+        # the 1st report.  Here, we get caught up in all cases.
+        in_progress = self._in_progress(reports)
         for i in range(len(self.snapshot), len(in_progress)):
             r = in_progress[i]
             pb = self.prompt.create_progress_bar()
@@ -70,17 +76,25 @@ class ProgressTracker:
         return [r for r in reports if r['state'] != RepositoryProgress.PENDING]
 
     def _render(self, report, pb):
-        state = PROGRESS_STATES[report['state']]
+        state = report['state']
         unit_add = report['unit_add']
         total = unit_add['total']
         completed = unit_add['completed']
         details = unit_add['details'] or ''
+
+        # just display the file part of paths because the directory
+        # is not interesting and clutters up the display.
         if '/' in details:
             details = details.rsplit('/', 1)[1]
+
+        # message part of the progress bar
         message = '\n'.join(
-            (STEP_FIELD % {'s': state},
+            (STEP_FIELD % {'s': PROGRESS_STATES[state]},
              ADD_UNIT_FIELD % {'n': completed, 't': total, 'd': details})
         )
+
+        # prevent divide by zero and make sure the progress bar and
+        # make sure the progress bar shows complete when the report is finished.
         if total < 1:
             if state == RepositoryProgress.FINISHED:
                 pb.render(1, 1)
@@ -88,6 +102,7 @@ class ProgressTracker:
                 pb.render(0.01, 1)
         else:
             pb.render(completed, total, message)
+
         return pb
 
 
@@ -105,11 +120,14 @@ class UpdateRenderer(object):
         documents = []
         failed_repositories = []
         for repo_id in sorted(self.repo_ids):
-            imp_report = self.importer_reports[repo_id]
-            errors = len(imp_report['details']['report']['add_failed'])
-
-            if errors:
+            imp_report = self.importer_reports.get(repo_id)
+            if not imp_report:
                 failed_repositories.append(repo_id)
+                continue
+
+            if not imp_report['succeeded']:
+                failed_repositories.append(repo_id)
+                continue
 
             document = {
                 'repository': {
@@ -120,7 +138,6 @@ class UpdateRenderer(object):
                     'added': imp_report['added_count'],
                     'updated': imp_report['updated_count'],
                     'removed': imp_report['removed_count'],
-                    'errors': len(imp_report['details']['report']['add_failed'])
                 }
 
             }
