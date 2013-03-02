@@ -11,8 +11,11 @@
 
 """
 Provides classes for managing the content unit manifest.
-The unit(s) manifest is a json encoded file containing a list of all
-content units associated with a pulp repository.
+The manifest is a json encoded file that defines content units
+associated with repository.  The total list of units is stored in separate
+json encoded files.  The manifest contains a list of those file names and
+the total count of units.  For performance reasons, the manifest and the unit
+files are compressed.
 """
 
 import os
@@ -45,7 +48,7 @@ class Manifest(object):
     """
 
     FILE_NAME = 'manifest.json.gz'
-    UNITS_PER_FILE = 2000
+    UNITS_PER_FILE = 1500
 
     def write(self, dir_path, units):
         """

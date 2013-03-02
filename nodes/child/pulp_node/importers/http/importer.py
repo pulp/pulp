@@ -26,6 +26,9 @@ from pulp_node.importers.strategies import find_strategy
 
 log = getLogger(__name__)
 
+# download concurrency
+MAX_CONCURRENCY = 20
+
 
 # --- i18n ------------------------------------------------------------------------------
 
@@ -146,6 +149,7 @@ class NodesHttpImporter(Importer):
         ssl = config.get(constants.SSL_KEYWORD, {})
         conf = DownloaderConfig(
             'https',
+            max_concurrent=MAX_CONCURRENCY,
             ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
             ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
             ssl_verify_host=0,
