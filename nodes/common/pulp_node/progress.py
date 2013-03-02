@@ -78,6 +78,14 @@ class RepositoryProgress(object):
         self.unit_add['details'] = details
         self.updated()
 
+    def finished(self):
+        """
+        Update the report to reflect that the synchronization has finished.
+        Set state=FINISHED.
+        """
+        self.state = self.FINISHED
+        self.updated()
+
     def updated(self):
         """
         The report has changed.  Notify the listener.
