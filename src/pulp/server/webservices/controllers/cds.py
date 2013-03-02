@@ -25,6 +25,7 @@ from pulp.server import async
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
 from pulp.server.api.cds import CdsApi
+from pulp.server.api.repo import RepoApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDATE,
@@ -41,6 +42,7 @@ from pulp.server.agent import CdsAgent
 
 cds_api = CdsApi()
 cds_history_api = CdsHistoryApi()
+repo_api = RepoApi()
 log = logging.getLogger(__name__)
 
 # restful controllers ---------------------------------------------------------
@@ -254,8 +256,15 @@ class CdsSyncActions(JSONController):
         except validation.timeout.UnsupportedTimeoutInterval, e:
             return self.bad_request(msg=e.args[0])
 
+        repo_id = None
+        if 'repo_id' in params:
+            repo_id = params['repo_id']
+            repo = repo_api.repository(repo_id)
+            if repo is None:
+                return self.not_found('Repository with ID [%s] could not be found' % repo_id)
+
         # Kick off the async task
-        task = async.run_async(cds_api.cds_sync, [id], timeout=timeout, unique=True)
+        task = async.run_async(cds_api.cds_sync, [id, repo_id], timeout=timeout, unique=True)
 
         # If no task was returned, the uniqueness check was tripped which means
         # there's already a sync running for this CDS.
