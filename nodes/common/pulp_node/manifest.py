@@ -48,7 +48,7 @@ class Manifest(object):
     """
 
     FILE_NAME = 'manifest.json.gz'
-    UNITS_PER_FILE = 1500
+    UNITS_PER_FILE = 1000
 
     def write(self, dir_path, units):
         """
