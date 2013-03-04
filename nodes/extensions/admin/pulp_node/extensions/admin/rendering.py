@@ -123,6 +123,17 @@ class UpdateRenderer(object):
         failed_repositories = []
         for repo_id in sorted(self.repo_ids):
             imp_report = self.importer_reports.get(repo_id)
+
+            if repo_id in self.removed:
+                document = {
+                    'repository': {
+                        'name': repo_id,
+                        'action': self.action(repo_id)
+                    }
+                }
+                documents.append(document)
+                continue
+
             if not imp_report:
                 failed_repositories.append(repo_id)
                 continue
