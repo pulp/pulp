@@ -22,10 +22,12 @@ from pulp.common.download.config import DownloaderConfig
 
 from pulp_node.manifest import Manifest
 
+Manifest.UNITS_PER_FILE = 2
+
 
 class TestManifest(TestCase):
 
-    NUM_UNITS = 5000
+    NUM_UNITS = 10
 
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()

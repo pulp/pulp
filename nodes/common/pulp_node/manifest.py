@@ -54,7 +54,7 @@ class Manifest(object):
         """
         Write a manifest file containing the specified
         content units into the indicated directory.  The file json
-        encoded and compressed using GZIP.
+        encoded and compressed using gzip.
         :param dir_path: The fully qualified path to a directory.
             The directory will be created as necessary.
         :type dir_path: str
@@ -78,7 +78,7 @@ class Manifest(object):
             json.dump(manifest, fp, indent=2)
         finally:
             fp.close()
-        File.compress(path)
+        compress(path)
 
     def _write_units(self, path, units):
         """
@@ -91,7 +91,7 @@ class Manifest(object):
             json.dump(units, fp, indent=2)
         finally:
             fp.close()
-        File.compress(path)
+        compress(path)
 
     def read(self, url, downloader):
         """
@@ -128,8 +128,7 @@ class Manifest(object):
             request = DownloadRequest(str(url), destination)
             request_list = [request]
             downloader.download(request_list)
-            File.decompress(destination)
-            fp = open(destination)
+            fp = gzip.open(destination)
             try:
                 return json.load(fp)
             finally:
@@ -157,8 +156,6 @@ class Manifest(object):
             request_list.append(request)
         downloader.download(request_list)
         unit_files = [r.destination for r in request_list]
-        for path in unit_files:
-            File.decompress(path)
         total_units = manifest['total_units']
         return UnitsIterator(tmp_dir, total_units, unit_files)
 
@@ -190,36 +187,45 @@ class UnitsIterator:
         Reads files as necessary to provide an aggregated list of units.
         :return: The next unit.
         :rtype: dict
+        :raise StopIteration when empty.
         """
         if self.unit_index < len(self.units):
             unit = self.units[self.unit_index]
             self.unit_index += 1
             return unit
-        if self.file_index < len(self.unit_files):
-            self.unit_index = 1
-            path = self.unit_files[self.file_index]
-            self.units = self._read(path)
-            self.file_index += 1
-            if self.units:
-                return self.units[0]
-        self.close()
-        raise StopIteration()
+        else:
+            self.load()
+            return self.next()
 
-    def _read(self, path):
-        fp = open(path)
+    def load(self):
+        """
+        Load the next units file and populate the list of units.
+        :raise StopIteration when empty.
+        """
+        self.units = []
+        self.unit_index = 0
+        if self.file_index < len(self.unit_files):
+            path = self.unit_files[self.file_index]
+            self.units = self.read(path)
+            self.file_index += 1
+        if not len(self.units):
+            shutil.rmtree(self.tmp_dir, ignore_errors=True)
+            raise StopIteration()
+
+    def read(self, path):
+        """
+        Read and json un-encode the units file at the specified path.
+        :param path: Path to a json file containing a list of units.
+        :type path: str
+        """
+        fp = gzip.open(path)
         try:
             return json.load(fp)
         finally:
             fp.close()
 
-    def close(self):
-        try:
-            shutil.rmtree(self.tmp_dir)
-        except OSError:
-            pass
-
     def __del__(self):
-        self.close()
+        shutil.rmtree(self.tmp_dir, ignore_errors=True)
 
     def __len__(self):
         return self.total_units
@@ -244,62 +250,37 @@ def split_list(list_in, num_lists):
     return [list_in[x:x + num_lists] for x in xrange(0, len(list_in), num_lists)]
 
 
-class File(object):
-
-    @staticmethod
-    def compress(file_path):
-        """
-        In-place file compression using gzip.
-        :param file_path: A fully qualified file path.
-        :type file_path: str
-        """
-        tmp_path = mktemp()
-        shutil.move(file_path, tmp_path)
-        fp_in = open(tmp_path)
+def compress(file_path):
+    """
+    In-place file compression using gzip.
+    :param file_path: A fully qualified file path.
+    :type file_path: str
+    """
+    tmp_path = mktemp()
+    shutil.move(file_path, tmp_path)
+    fp_in = open(tmp_path)
+    try:
+        fp_out = gzip.open(file_path, 'wb')
         try:
-            fp_out = gzip.open(file_path, 'wb')
-            try:
-                File.copy(fp_in, fp_out)
-            finally:
-                fp_out.close()
+            copy(fp_in, fp_out)
         finally:
-            fp_in.close()
-            os.unlink(tmp_path)
-
-    @staticmethod
-    def decompress(file_path):
-        """
-        In-place file decompression using gzip.
-        :param file_path: A fully qualified file path.
-        :type file_path: str
-        """
-        tmp_path = mktemp()
-        shutil.move(file_path, tmp_path)
-        fp_in = gzip.open(tmp_path)
-        try:
-            fp_out = open(file_path, 'wb')
-            try:
-                File.copy(fp_in, fp_out)
-            finally:
-                fp_out.close()
-        finally:
-            fp_in.close()
-            os.unlink(tmp_path)
-
-    @staticmethod
-    def copy(fp_in, fp_out):
-        """
-        Buffered copy between open file pointers.
-        :param fp_in: Input file.
-        :type fp_in: file-like
-        :param fp_out: Output file.
-        :type fp_out: file-like
-        """
-        while True:
-            buf = fp_in.read(0x100000)
-            if buf:
-                fp_out.write(buf)
-            else:
-                break
+            fp_out.close()
+    finally:
+        fp_in.close()
+        os.unlink(tmp_path)
 
 
+def copy(fp_in, fp_out):
+    """
+    Buffered copy between open file pointers using a 1 MB buffer.
+    :param fp_in: Input file.
+    :type fp_in: file-like
+    :param fp_out: Output file.
+    :type fp_out: file-like
+    """
+    while True:
+        buf = fp_in.read(0x100000)  # 1MB
+        if buf:
+            fp_out.write(buf)
+        else:
+            break
