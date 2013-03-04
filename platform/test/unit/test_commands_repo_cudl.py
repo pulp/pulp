@@ -239,7 +239,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertTrue('distributors=True' in url)
 
         render_kwargs = mock_call.call_args[1]
-        expected = ['id', 'display_name', 'description', 'content_unit_count',
+        expected = ['id', 'display_name', 'description', 'content_unit_counts',
                     'notes', 'importers', 'distributors']
         self.assertEqual(render_kwargs['filters'], expected)
         self.assertEqual(render_kwargs['order'], expected)

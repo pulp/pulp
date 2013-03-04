@@ -54,7 +54,7 @@ class Repo(Model):
     collection_name = 'repos'
     unique_indices = ('id',)
 
-    def __init__(self, id, display_name, description=None, notes=None, content_unit_count=0):
+    def __init__(self, id, display_name, description=None, notes=None, content_unit_counts=None):
         super(Repo, self).__init__()
 
         self.id = id
@@ -62,7 +62,7 @@ class Repo(Model):
         self.description = description
         self.notes = notes or {}
         self.scratchpad = {} # default to dict in hopes the plugins will just add/remove from it
-        self.content_unit_count = content_unit_count
+        self.content_unit_counts = content_unit_counts or {}
 
         # Timeline
         # TODO: figure out how to track repo modified states

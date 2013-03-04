@@ -131,7 +131,7 @@ class RepoUnitAssociationManager(object):
         # update the count of associated units on the repo object
         if update_unit_count and not similar_exists:
             manager = manager_factory.repo_manager()
-            manager.update_unit_count(repo_id, 1)
+            manager.update_unit_count(repo_id, unit_type_id, 1)
 
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
@@ -172,7 +172,7 @@ class RepoUnitAssociationManager(object):
         # update the count of associated units on the repo object
         if unique_count:
             manager_factory.repo_manager().update_unit_count(
-                repo_id, unique_count)
+                repo_id, unit_type_id, unique_count)
 
     def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None, import_config_override=None):
         """
@@ -375,7 +375,7 @@ class RepoUnitAssociationManager(object):
             if not unique_count:
                 continue
 
-            repo_manager.update_unit_count(repo_id, -unique_count)
+            repo_manager.update_unit_count(repo_id, unit_type_id, -unique_count)
 
         if notify_plugins:
             remove_from_importer(repo_id, unassociate_units)

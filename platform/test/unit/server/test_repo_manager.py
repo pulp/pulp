@@ -51,6 +51,49 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
 
+    @mock.patch('pulp.server.db.model.repository.Repo.get_collection')
+    @mock.patch('pulp.server.db.model.repository.RepoContentUnit.get_collection')
+    def test_rebuild_content_unit_counts(self, mock_get_assoc_col, mock_get_repo_col):
+        # platform migration 0004 has a test for this that uses live data
+
+        repo_col = mock_get_repo_col.return_value
+        find = mock_get_assoc_col.return_value.find
+        cursor = find.return_value
+        cursor.distinct.return_value = ['rpm', 'srpm']
+        cursor.count.return_value = 6
+
+        self.manager.rebuild_content_unit_counts(['repo1'])
+
+        # once to get the type_ids, then once more for each of the 2 types
+        self.assertEqual(find.call_count, 3)
+        find.assert_any_call({'repo_id': 'repo1'})
+        find.assert_any_call({'repo_id': 'repo1', 'unit_type_id': 'rpm'})
+        find.assert_any_call({'repo_id': 'repo1', 'unit_type_id': 'srpm'})
+
+        self.assertEqual(repo_col.update.call_count, 1)
+        repo_col.update.assert_called_once_with(
+            {'id': 'repo1'},
+            {'$set': {'content_unit_counts': {'rpm':6, 'srpm': 6}}},
+            safe=True
+        )
+
+    @mock.patch('pulp.server.db.model.repository.Repo.get_collection')
+    @mock.patch('pulp.server.db.model.repository.RepoContentUnit.get_collection')
+    def test_rebuild_default_all_repos(self, mock_get_assoc_col, mock_get_repo_col):
+        repo_col = mock_get_repo_col.return_value
+        repo_col.find.return_value = [{'id': 'repo1'}, {'id': 'repo2'}]
+
+        assoc_col = mock_get_assoc_col.return_value
+        # don't return any type IDs
+        assoc_col.find.return_value.distinct.return_value = []
+
+        self.manager.rebuild_content_unit_counts()
+
+        # makes sure it found these 2 repos and tried to operate on them
+        assoc_col.find.assert_any_call({'repo_id': 'repo1'})
+        assoc_col.find.assert_any_call({'repo_id': 'repo2'})
+        self.assertEqual(assoc_col.find.call_count, 2)
+
     def test_create(self):
         """
         Tests creating a repo with valid data is successful.
@@ -502,20 +545,17 @@ class RepoManagerTests(base.PulpAsyncServerTests):
 
     def test_update_unit_count_missing_repo(self):
         self.assertRaises(exceptions.PulpExecutionException,
-            self.manager.update_unit_count, 'foo', '2')
+            self.manager.update_unit_count, 'foo','rpm', '2')
 
     @mock.patch.object(Repo, 'get_collection')
     def test_update_unit_count(self, mock_get_collection):
         mock_update = mock.MagicMock()
         mock_get_collection.return_value.update = mock_update
 
-        ARGS = ('repo-123', 7)
-        EXPECT = ({'id': 'repo-123'}, {'$inc': {'content_unit_count': 7}})
+        ARGS = ('repo-123', 'rpm', 7)
 
         self.manager.update_unit_count(*ARGS)
-        #mock_update.assert_called_once_with(*EXPECT, safe=True)
-        # if the data passed to mock is a var in this case the test fails.. weird..
-        mock_update.assert_called_once_with({'id': 'repo-123'}, {'$inc': {'content_unit_count': 7}}, safe=True)
+        mock_update.assert_called_once_with({'id': 'repo-123'}, {'$inc': {'content_unit_counts.rpm': 7}}, safe=True)
 
     def test_update_unit_count_with_db(self):
         """
@@ -527,12 +567,12 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         # create repo, verify count of 0
         self.manager.create_repo(REPO_ID)
         repo = Repo.get_collection().find_one({'id' : REPO_ID})
-        self.assertEqual(repo['content_unit_count'], 0)
+        self.assertEqual(repo['content_unit_counts'], {})
 
         # increase unit count, verify result
-        self.manager.update_unit_count(REPO_ID, 3)
+        self.manager.update_unit_count(REPO_ID, 'rpm', 3)
         repo = Repo.get_collection().find_one({'id' : REPO_ID})
-        self.assertEqual(repo['content_unit_count'], 3)
+        self.assertEqual(repo['content_unit_counts']['rpm'], 3)
 
 
 class UtilityMethodsTests(unittest.TestCase):
