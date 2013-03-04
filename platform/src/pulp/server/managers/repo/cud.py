@@ -337,7 +337,9 @@ class RepoManager(object):
     def update_unit_count(repo_id, unit_type_id, delta):
         """
         Updates the total count of units associated with the repo. Each repo has
-        an attribute 'content_unit_counts' that looks like this:
+        an attribute 'content_unit_counts' which is a dict where keys are
+        content type IDs, and values are the number of content units of that
+        type in the repository.
 
         {'rpm': 12, 'srpm': 3}
 
@@ -471,6 +473,9 @@ class RepoManager(object):
         This will iterate through the given repositories, which defaults to ALL
         repositories, and recalculate the content unit counts for each content
         type.
+
+        This method is called from platform migration 0004, so consult that
+        migration before changing this method.
 
         :param repo_ids:    list of repository IDs. DEFAULTS TO ALL REPO IDs!!!
         :type  repo_ids:    list
