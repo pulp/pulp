@@ -52,46 +52,25 @@ class Manifest(object):
 
     def write(self, dir_path, units):
         """
-        Write a manifest file containing the specified
-        content units into the indicated directory.  The file json
-        encoded and compressed using gzip.
+        Write a manifest file as a json encoded file that defines content units
+        associated with repository.  The total list of units is stored in separate
+        json encoded files.  The manifest contains a list of those file names and
+        the total count of units.  For performance reasons, the manifest and the unit
+        files are compressed.
         :param dir_path: The fully qualified path to a directory.
             The directory will be created as necessary.
         :type dir_path: str
         :param units: A list of content units. Each is a dictionary.
         :type units: list
+        :raise IOError on I/O errors.
+        :raise ValueError on json encoding errors
         """
-        path = os.path.join(dir_path, self.FILE_NAME)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        fp = open(path, 'w+')
-        try:
-            n = 0
-            unit_files = []
-            for _units in split_list(units, self.UNITS_PER_FILE):
-                file_name = 'units-%d.json.gz' % n
-                _path = os.path.join(dir_path, file_name)
-                self._write_units(_path, _units)
-                unit_files.append(file_name)
-                n += 1
-            manifest = dict(total_units=len(units), unit_files=unit_files)
-            json.dump(manifest, fp, indent=2)
-        finally:
-            fp.close()
-        compress(path)
-
-    def _write_units(self, path, units):
-        """
-        Write a json file containing the specified units.
-        :param path: The file path.
-        :param units: A list of units.
-        """
-        fp = open(path, 'w+')
-        try:
-            json.dump(units, fp, indent=2)
-        finally:
-            fp.close()
-        compress(path)
+        unit_files = self._write_unit_files(dir_path, units)
+        manifest = dict(total_units=len(units), unit_files=unit_files)
+        path = os.path.join(dir_path, self.FILE_NAME)
+        write_json_encoded(manifest, path)
 
     def read(self, url, downloader):
         """
@@ -103,7 +82,7 @@ class Manifest(object):
         :type downloader: pulp.common.download.backends.base.DownloadBackend
         :return: The contents of the manifest document which is a
             list of content units.  Each unit is a dictionary.
-        :rtype: list
+        :rtype: UnitsIterator
         :raise HTTPError, URL errors.
         :raise ValueError, json decoding errors
         """
@@ -111,6 +90,29 @@ class Manifest(object):
         base_url = url.rsplit('/', 1)[0]
         iterator = self._units_iterator(base_url, manifest, downloader)
         return iterator
+
+    def _write_unit_files(self, dir_path, units):
+        """
+        Write the list units into json encoded and compressed files.
+        The units list is split into sub-lists based on UNITS_PER_FILE.
+        :param dir_path: The directory path to where the files are to be written.
+        :type dir_path: str
+        :param units: A list of content units.
+        :type units: list
+        :return: The list of file names created.
+        :rtype: list
+        :raise IOError on I/O errors.
+        :raise ValueError on json encoding errors
+        """
+        n = 0
+        unit_files = []
+        for _units in split_list(units, self.UNITS_PER_FILE):
+            file_name = 'units-%d.json.gz' % n
+            path = os.path.join(dir_path, file_name)
+            write_json_encoded(_units, path)
+            unit_files.append(file_name)
+            n += 1
+        return unit_files
 
     def _read_manifest(self, url, downloader):
         """
@@ -121,6 +123,8 @@ class Manifest(object):
         :type downloader: pulp.common.download.backends.base.DownloadBackend
         :return: The manifest.
         :rtype: dict
+        :raise HTTPError, URL errors.
+        :raise ValueError, json decoding errors
         """
         tmp_dir = mkdtemp()
         try:
@@ -146,6 +150,7 @@ class Manifest(object):
         :param downloader: The downloader to use.
         :return: An initialized iterator.
         :rtype: UnitsIterator
+        :raise HTTPError, URL errors.
         """
         request_list = []
         tmp_dir = mkdtemp()
@@ -188,6 +193,8 @@ class UnitsIterator:
         :return: The next unit.
         :rtype: dict
         :raise StopIteration when empty.
+        :raise IOError on I/O errors.
+        :raise ValueError on json decoding errors
         """
         if self.unit_index < len(self.units):
             unit = self.units[self.unit_index]
@@ -201,6 +208,8 @@ class UnitsIterator:
         """
         Load the next units file and populate the list of units.
         :raise StopIteration when empty.
+        :raise IOError on I/O errors.
+        :raise ValueError on json decoding errors
         """
         self.units = []
         self.unit_index = 0
@@ -217,6 +226,8 @@ class UnitsIterator:
         Read and json un-encode the units file at the specified path.
         :param path: Path to a json file containing a list of units.
         :type path: str
+        :raise IOError on I/O errors.
+        :raise ValueError on json decoding errors
         """
         fp = gzip.open(path)
         try:
@@ -250,11 +261,33 @@ def split_list(list_in, num_lists):
     return [list_in[x:x + num_lists] for x in xrange(0, len(list_in), num_lists)]
 
 
+def write_json_encoded(object_in, path, compressed=True):
+    """
+    Write the python object using json encoding to the specified path.
+    :param object_in: An object to write.
+    :type object_in: object
+    :param path: A fully qualified path.
+    :type path: str
+    :param compressed: Indicated the written files should be gzipped.
+    :type compressed: bool
+    :raise IOError on I/O errors.
+    :raise ValueError on json encoding errors
+    """
+    fp = open(path, 'w+')
+    try:
+        json.dump(object_in, fp, indent=2)
+    finally:
+        fp.close()
+    if compressed:
+        compress(path)
+
+
 def compress(file_path):
     """
     In-place file compression using gzip.
     :param file_path: A fully qualified file path.
     :type file_path: str
+    :raise IOError on I/O errors.
     """
     tmp_path = mktemp()
     shutil.move(file_path, tmp_path)
@@ -277,6 +310,7 @@ def copy(fp_in, fp_out):
     :type fp_in: file-like
     :param fp_out: Output file.
     :type fp_out: file-like
+    :raise IOError on I/O errors.
     """
     while True:
         buf = fp_in.read(0x100000)  # 1MB
