@@ -22,10 +22,12 @@ from pulp.common.download.config import DownloaderConfig
 
 from pulp_node.manifest import Manifest
 
+Manifest.UNITS_PER_FILE = 2
+
 
 class TestManifest(TestCase):
 
-    NUM_UNITS = 200
+    NUM_UNITS = 10
 
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
@@ -45,34 +47,22 @@ class TestManifest(TestCase):
         manifest = Manifest()
         units = []
         for i in range(0, self.NUM_UNITS):
-            units.append({i:i+1})
+            units.append({i: i + 1})
         manifest.write(self.tmp_dir, units)
         # Verify
         path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
         self.assertTrue(os.path.exists(path))
         fp = gzip.open(path)
         s = fp.read()
-        units_in = json.loads(s)
-        self.verify(units, units_in)
-
-    def test_read(self):
-        # Setup
-        units = []
-        for i in range(0, self.NUM_UNITS):
-            units.append({i:i+1})
-        s = json.dumps(units)
-        path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
-        fp = gzip.open(path, 'wb')
-        fp.write(s)
         fp.close()
-        # Test
-        cfg = DownloaderConfig('http')
-        downloader = factory.get_downloader(cfg)
-        manifest = Manifest()
-        path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
-        url = 'file://%s' % path
-        units_in = manifest.read(url, downloader)
-        # Verify
+        manifest = json.loads(s)
+        units_in = []
+        for unit_file in manifest['unit_files']:
+            path = os.path.join(self.tmp_dir, unit_file)
+            fp = gzip.open(path)
+            units_in.extend(json.load(fp))
+            fp.close()
+        self.assertEqual(manifest['total_units'], self.NUM_UNITS)
         self.verify(units, units_in)
 
     def test_round_trip(self):
@@ -87,6 +77,6 @@ class TestManifest(TestCase):
         manifest = Manifest()
         path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
         url = 'file://%s' % path
-        units_in = manifest.read(url, downloader)
+        units_in = list(manifest.read(url, downloader))
         # Verify
         self.verify(units, units_in)

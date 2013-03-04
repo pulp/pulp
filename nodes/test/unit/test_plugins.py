@@ -241,7 +241,7 @@ class TestDistributor(PluginTestBase):
         manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
-        units = manifest.read(url, downloader)
+        units = list(manifest.read(url, downloader))
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
             unit = units[n]
@@ -356,7 +356,7 @@ class TestAgentPlugin(PluginTestBase):
         manager = managers.repo_importer_manager()
         importer = manager.get_importer(self.REPO_ID)
         manifest_url = importer['config'][constants.MANIFEST_URL_KEYWORD]
-        self.assertTrue(manifest_url.endswith('%s/units.json.gz' % self.REPO_ID))
+        self.assertTrue(manifest_url.endswith('%s/manifest.json.gz' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
         manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
