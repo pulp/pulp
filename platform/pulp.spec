@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.18.alpha
+Release: 0.19.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -416,6 +416,18 @@ exit 0
 %endif
 
 %changelog
+* Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
+- 855053 - repository unit counts are now tracked per-unit-type. Also wrote a
+  migration that will convert previously-created repositories to have the new
+  style of unit counts. (mhrivnak@redhat.com)
+- 902514 - removing NameVirtualHost because we weren't using it, and adding one
+  authoritative <VirtualHost *:80> block for all plugins to use, since apache
+  will only let us use one. (mhrivnak@redhat.com)
+- 873782 - added non-authenticate status resource at /v2/status/
+  (jason.connor@gmail.com)
+- 860089 - added ability to filter tasks using ?id=...&id=...
+  (jason.connor@gmail.com)
+
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
 - 
 
