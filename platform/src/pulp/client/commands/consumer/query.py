@@ -60,10 +60,10 @@ class ConsumerListCommand(PulpCliCommand):
             if 'id' not in filters:
                 filters.insert(0, 'id')
 
-        self.context.prompt.render_title(_('Consumers'))
+        self.context.prompt.render_title(self.get_title())
 
         for consumer in consumer_list:
-            _format_bindings(consumer)
+            self.format_bindings(consumer)
             self.context.prompt.render_document(consumer, filters=filters, order=order)
 
     def get_consumer_list(self, kwargs):
@@ -73,6 +73,27 @@ class ConsumerListCommand(PulpCliCommand):
         response = self.api.consumers(details=details, bindings=bindings)
         return response.response_body
 
+    def get_title(self):
+        return _('Consumers')
+
+    def format_bindings(self, consumer):
+        bindings = consumer.get('bindings')
+
+        if not bindings:
+            return
+
+        confirmed = []
+        unconfirmed = []
+
+        for binding in bindings:
+            repo_id = binding['repo_id']
+
+            if binding['deleted'] or len(binding['consumer_actions']):
+                unconfirmed.append(repo_id)
+            else:
+                confirmed.append(repo_id)
+
+        consumer['bindings'] = {'confirmed': confirmed, 'unconfirmed': unconfirmed}
 
 
 class ConsumerSearchCommand(CriteriaCommand):
@@ -174,25 +195,3 @@ OPTION_END_DATE = PulpCliOption('--end-date',
 FLAG_DETAILS = PulpCliFlag('--details', _('if specified, all of the consumer information is displayed'))
 
 FLAG_BINDINGS = PulpCliFlag('--bindings', _('if specified, the bindings information is displayed'))
-
-
-# utility functions ------------------------------------------------------------
-
-def _format_bindings(consumer):
-    bindings = consumer.get('bindings')
-
-    if not bindings:
-        return
-
-    confirmed = []
-    unconfirmed = []
-
-    for binding in bindings:
-        repo_id = binding['repo_id']
-
-        if binding['deleted'] or len(binding['consumer_actions']):
-            unconfirmed.append(repo_id)
-        else:
-            confirmed.append(repo_id)
-
-    consumer['bindings'] = {'confirmed': confirmed, 'unconfirmed': unconfirmed}

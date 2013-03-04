@@ -14,138 +14,88 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-class ProgressReport(object):
+class RepositoryProgress(object):
     """
-    Represents a progress report.
-    :ivar step: A list package steps.
-        Each step is: [name, status, num_actions]
-          name - the name of the step.
-          status - the status of the step.
-          action_ratio - a tuple (<completed>, <total>) representing
-            the ratio of complete and total actions to included in a step.
-    :type step: tuple
-    :ivar details: Details about actions taking place
-        in the current step.
-    :cvar PENDING: The step is pending.
-    :cvar SUCCEEDED: The step is finished and succeeded.
-    :cvar FAILED: The step is finished and failed.
+    Tracks the progress of a repository in the pulp nodes synchronization process.
     """
 
-    PENDING = None
-    SUCCEEDED = True
-    FAILED = False
+    PENDING = 'pending'
+    IMPORTING = 'import_started'
+    DOWNLOADING_MANIFEST = 'downloading_manifest'
+    ADDING_UNITS = 'adding_units'
+    FINISHED = 'import_finished'
 
-    def __init__(self, parent=None):
+    def __init__(self, repo_id, listener=None):
         """
-        :param parent: An optional parent report.
-        :type parent: ProgressReport
+        :param repo_id: A repository ID.
+        :type repo_id: str
+        :param listener: Progress change listener.  An object that supports
+            a method updated() with this object as a parameter.  The listener is
+            is notified each time the report has changed.
+        :type listener: object
         """
-        self.steps = []
-        self.action = {}
-        self.nested_report = None
-        self.parent = parent
-        if parent:
-            parent.nested_report = self
+        self.repo_id = repo_id
+        self.listener = listener
+        self.state = self.PENDING
+        self.unit_add = dict(total=0, completed=0, details=None)
 
-    def push_step(self, name, total_actions=0):
+    def begin_importing(self):
         """
-        Push the specified step.
-        First, update the last status to SUCCEEDED.
-        :param name: The step name to push.
-        :type name: str
-        :param total_actions: Number of anticipated actions to complete the step.
-        :type total_actions: int
+        Update the report to reflect that the importer has stared synchronizing.
+        Set state=IMPORTING.
         """
-        self.set_status(self.SUCCEEDED)
-        self.steps.append([name, self.PENDING, [0, total_actions]])
-        self.action = {}
-        self.nested_report = None
-        self._updated()
+        self.state = self.IMPORTING
+        self.updated()
 
-    def set_status(self, status):
+    def begin_manifest_download(self):
         """
-        Update the status of the current step.
-        :param status: The status.
-        :type status: bool
+        Update the report to reflect that the importer has started downloading the manifest.
+        Set state=DOWNLOADING_MANIFEST.
         """
-        if not self.steps:
-            return
-        last = self.current_step()
-        if last[1] is self.PENDING:
-            last[1] = status
-            self.action = {}
-            self.nested_report = None
-            self._updated()
+        self.state = self.DOWNLOADING_MANIFEST
+        self.updated()
 
-    def set_action(self, action, subject):
+    def begin_adding_units(self, total):
         """
-        Set the specified package action for the current step.  If the action_ratio
-        has been specified, update the number of completed actions.
-        Reminder: action_ratio is a tuple of (<completed>/<total>) actions.
-        representation of a nested ProgressReport.
-        :param action: The action being performed.
-        :type action: str
-        :param subject: The subject of the action.
-        :type subject: object
+        Update the report to reflect that the importer has stared adding/downloading units.
+        Set state=ADDING_UNITS.  Updates the total number of units expected to be added.
+        :param total: The expected total number of units to be added.
+        :type total: int
         """
-        action_ratio = self.current_step()[2]
-        if action_ratio[0] < action_ratio[1]:
-            action_ratio[0] += 1
-        self.action = dict(action=action, subject=subject)
-        self._updated()
+        self.state = self.ADDING_UNITS
+        self.unit_add['total'] = total
+        self.updated()
 
-    def set_nested_report(self, report):
+    def unit_added(self, added=1, details=None):
         """
-        Set the nested progress report for the current step.
-        :param report: A progress report
-        :type report: ProgressReport
+        Update the report to reflect that one or more units have been added.
+        :param added: The number of units added since last reported.
+        :type added: int
+        :param details: Details (optional) about the unit added.
+        :type details: object
         """
-        report.parent = self
-        self.nested_report = report
-        self._updated()
+        self.unit_add['completed'] += added
+        self.unit_add['details'] = details
+        self.updated()
 
-    def error(self, msg):
+    def finished(self):
         """
-        Report an error on the current step.
-        :param msg: The error message to report.
-        :type msg: str
+        Update the report to reflect that the synchronization has finished.
+        Set state=FINISHED.
         """
-        self.set_status(self.FAILED)
-        self.action = dict(error=msg)
-        self._updated()
+        self.state = self.FINISHED
+        self.updated()
 
-    def end(self):
+    def updated(self):
         """
-        End progress reporting.
+        The report has changed.  Notify the listener.
         """
-        self.set_status(self.SUCCEEDED)
-
-    def current_step(self):
-        """
-        Get the current step.
-        :return: The current step: [name, status, action_ratio]
-        :rtype: list
-        """
-        return self.steps[-1]
+        if self.listener is not None:
+            self.listener.updated(self)
 
     def dict(self):
-        """
-        Dictionary representation.
-        :return: self as a dictionary.
-        :rtype: dict
-        """
-        if self.nested_report:
-            nested_report = self.nested_report.dict()
-        else:
-            nested_report = {}
-        return dict(steps=self.steps, action=self.action, nested_report=nested_report)
-
-    def _updated(self):
-        """
-        Notification that the report has been updated.
-        Designed to be overridden and reported.
-        """
-        if self.parent:
-            self.parent._updated()
-        else:
-            log.debug('PROGRESS: %s', self.dict())
+        return dict(
+            repo_id=self.repo_id,
+            state=self.state,
+            unit_add=self.unit_add
+        )

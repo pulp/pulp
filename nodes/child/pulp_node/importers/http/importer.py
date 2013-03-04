@@ -19,17 +19,29 @@ from pulp.common.download import factory
 from pulp.common.download.config import DownloaderConfig
 
 from pulp_node import constants
+from pulp_node.progress import RepositoryProgress
+from pulp_node.importers.reports import ProgressListener
 from pulp_node.importers.strategies import find_strategy
 
+
 log = getLogger(__name__)
+
+# download concurrency
+MAX_CONCURRENCY = 20
 
 
 # --- i18n ------------------------------------------------------------------------------
 
 PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
+STRATEGY_UNSUPPORTED = _('Strategy %(s)s not supported')
 
 
 # --- plugin loading --------------------------------------------------------------------
+
+
+DEFAULT_CONFIGURATION = {
+    constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY,
+}
 
 
 def entry_point():
@@ -38,7 +50,7 @@ def entry_point():
     :return: importer class and its configuration
     :rtype:  Importer, {}
     """
-    return NodesHttpImporter, {}
+    return NodesHttpImporter, DEFAULT_CONFIGURATION
 
 
 # --- plugin ----------------------------------------------------------------------------
@@ -76,11 +88,22 @@ class NodesHttpImporter(Importer):
         :rtype: tuple
         """
         errors = []
-        for key in ('manifest_url', 'protocol'):
+
+        for key in (constants.MANIFEST_URL_KEYWORD,
+                    constants.PROTOCOL_KEYWORD,
+                    constants.STRATEGY_KEYWORD):
             value = config.get(key)
             if not value:
-                errors.append(PROPERTY_MISSING % dict(p=key))
-        return (True, errors)
+                msg = PROPERTY_MISSING % dict(p=key)
+                errors.append(msg)
+
+        strategy = config.get(constants.STRATEGY_KEYWORD)
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_UNSUPPORTED % strategy
+            errors.append(msg)
+
+        valid = not bool(errors)
+        return (valid, errors)
 
     def sync_repo(self, repo, conduit, config):
         """
@@ -97,9 +120,12 @@ class NodesHttpImporter(Importer):
         """
         try:
             downloader = self._downloader(config)
-            strategy_name = config.get('strategy')
+            strategy_name = config.get(constants.STRATEGY_KEYWORD)
             strategy_class = find_strategy(strategy_name)
-            self.strategy = strategy_class(conduit, config, downloader)
+            listener = ProgressListener(conduit)
+            progress = RepositoryProgress(repo.id, listener)
+            self.strategy = strategy_class(conduit, config, downloader, progress)
+            progress.begin_importing()
             report = self.strategy.synchronize(repo.id)
             details = dict(report=report.dict())
         except Exception, e:
@@ -120,11 +146,12 @@ class NodesHttpImporter(Importer):
         :return: A configured downloader
         :rtype: pulp.common.download.backends.base.DownloadBackend
         """
-        ssl = config.get('ssl', {})
+        ssl = config.get(constants.SSL_KEYWORD, {})
         conf = DownloaderConfig(
             'https',
-            ssl_ca_cert_path=self._safe_str(ssl.get('ca_cert')),
-            ssl_client_cert_path=self._safe_str(ssl.get('client_cert')),
+            max_concurrent=MAX_CONCURRENCY,
+            ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
+            ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
             ssl_verify_host=0,
             ssl_verify_peer=0)
         downloader = factory.get_downloader(conf)

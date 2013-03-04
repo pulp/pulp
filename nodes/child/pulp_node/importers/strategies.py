@@ -22,8 +22,9 @@ from logging import getLogger
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
+from pulp_node import constants
 from pulp_node.manifest import Manifest
-from pulp_node.importers.reports import ImporterReport, ImporterProgress
+from pulp_node.importers.reports import ImporterReport
 from pulp_node.importers.inventory import UnitInventory, unit_dictionary
 from pulp_node.importers.download import Batch, DownloadListener
 
@@ -57,10 +58,10 @@ class ImporterStrategy(object):
     :ivar downloader: A fully configured file downloader.
     :type downloader: pulp.common.download.backends.base.DownloadBackend
     :ivar progress: A progress reporting object.
-    :type progress: ImporterProgress
+    :type progress: RepositoryProgress
     """
 
-    def __init__(self, conduit, config, downloader):
+    def __init__(self, conduit, config, downloader, progress):
         """
         :param conduit: Provides access to relevant Pulp functionality.
         :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
@@ -68,12 +69,14 @@ class ImporterStrategy(object):
         :type config: pulp.server.plugins.config.PluginCallConfiguration
         :param downloader: A fully configured file downloader.
         :type downloader: pulp.common.download.backends.base.DownloadBackend
+        :param progress: A progress reporting object.
+        :type progress: pulp_node.importers.reports.RepositoryProgress
         """
         self.cancelled = False
         self.conduit = conduit
         self.config = config
         self.downloader = downloader
-        self.progress = ImporterProgress(conduit)
+        self.progress = progress
 
     def synchronize(self, repo_id):
         """
@@ -102,7 +105,7 @@ class ImporterStrategy(object):
         :type unit: Unit
         """
         self.conduit.save_unit(unit)
-        self.progress.set_action('unit_added', str(unit.unit_key))
+        self.progress.unit_added(details=unit.storage_path)
 
     # --- protected ---------------------------------------------------------------------
 
@@ -117,26 +120,20 @@ class ImporterStrategy(object):
         # fetch child units
         child = {}
         try:
-            self.progress.push_step('fetch_child')
             units = self._child_units()
             child.update(units)
-            self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = FETCH_CHILD_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
-            self.progress.error(msg)
             raise Exception(msg)
         # fetch parent units
         parent = {}
         try:
-            self.progress.push_step('fetch_parent')
             units = self._parent_units()
             parent.update(units)
-            self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = FETCH_PARENT_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
-            self.progress.error(msg)
             raise Exception(msg)
         return UnitInventory(child, parent)
 
@@ -187,7 +184,7 @@ class ImporterStrategy(object):
         """
         failed = []
         units = self._missing_units(unit_inventory)
-        self.progress.push_step('add_units', len(units))
+        self.progress.begin_adding_units(len(units))
         batch = Batch()
         for unit, child_unit in units:
             if self.cancelled:
@@ -222,12 +219,10 @@ class ImporterStrategy(object):
         failed = []
         succeeded = []
         units = unit_inventory.child_only()
-        self.progress.push_step('purge_units', len(units))
         for unit in units:
             if self.cancelled:
                 break
             try:
-                self.progress.set_action('delete_unit', unit.unit_key)
                 self.conduit.remove_unit(unit)
                 succeeded.append(unit)
             except Exception, e:
@@ -255,7 +250,8 @@ class ImporterStrategy(object):
         :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
-        url = self.config.get('manifest_url')
+        self.progress.begin_manifest_download()
+        url = self.config.get(constants.MANIFEST_URL_KEYWORD)
         manifest = Manifest()
         units = manifest.read(url, self.downloader)
         return unit_dictionary(units)
@@ -291,13 +287,9 @@ class Mirror(ImporterStrategy):
             failed = self._add_units(unit_inventory)
             if failed:
                 add_failed.extend(failed)
-                self.progress.set_status(ImporterProgress.FAILED)
-            else:
-                self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = ADD_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
-            self.progress.error(msg)
             raise Exception(msg)
 
         # delete extra units
@@ -306,13 +298,9 @@ class Mirror(ImporterStrategy):
             failed = self._delete_units(unit_inventory)
             if failed:
                 delete_failed.extend(failed)
-                self.progress.set_status(ImporterProgress.FAILED)
-            else:
-                self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = PURGE_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
-            self.progress.error(msg)
             raise Exception(msg)
 
         return ImporterReport(add_failed, delete_failed)
@@ -345,13 +333,9 @@ class Additive(ImporterStrategy):
             failed = self._add_units(unit_inventory)
             if failed:
                 add_failed.extend(failed)
-                self.progress.set_status(ImporterProgress.FAILED)
-            else:
-                self.progress.set_status(ImporterProgress.SUCCEEDED)
         except Exception:
             msg = ADD_UNITS_FAILED % {'r': repo_id}
             log.exception(msg)
-            self.progress.error(msg)
             raise Exception(msg)
 
         return ImporterReport(add_failed, [])
@@ -361,8 +345,8 @@ class Additive(ImporterStrategy):
 
 
 STRATEGIES = {
-    'mirror' : Mirror,
-    'additive': Additive,
+    constants.MIRROR_STRATEGY: Mirror,
+    constants.ADDITIVE_STRATEGY: Additive,
 }
 
 
@@ -379,7 +363,7 @@ def find_strategy(name):
     :param name: A strategy name.
     :type name: str
     :return: A strategy class.
-    :rtype: HandlerStrategy
+    :rtype: callable
     :raise: StrategyUnsupported when not found.
     """
     try:
