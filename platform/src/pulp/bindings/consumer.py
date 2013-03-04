@@ -147,19 +147,24 @@ class BindingsAPI(PulpAPI):
 
     BASE_PATH = '/v2/consumers/%s/bindings/'
 
-    def find_by_id(self, id, repoid=None):
-        path = self.BASE_PATH % id
-        if repoid:
-            path += '%s/' % repoid
+    def find_by_id(self, consumer_id, repo_id=None):
+        path = self.BASE_PATH % consumer_id
+        if repo_id:
+            path += '%s/' % repo_id
         return self.server.GET(path)
     
-    def bind(self, id, repo_id, distributor_id):
-        path = self.BASE_PATH % id
-        data = {'repo_id' : repo_id, 'distributor_id' : distributor_id}
+    def bind(self, consumer_id, repo_id, distributor_id, notify_agent=True, binding_config=None):
+        path = self.BASE_PATH % consumer_id
+        data = {
+            'repo_id' :repo_id,
+            'distributor_id' :distributor_id,
+            'notify_agent': notify_agent,
+            'binding_config': binding_config
+        }
         return self.server.POST(path, data)
     
-    def unbind(self, id, repo_id, distributor_id, force=False):
-        path = self.BASE_PATH % id + "%s/" % repo_id + "%s/" % distributor_id
+    def unbind(self, consumer_id, repo_id, distributor_id, force=False):
+        path = self.BASE_PATH % consumer_id + "%s/" % repo_id + "%s/" % distributor_id
         body = dict(force=force)
         return self.server.DELETE(path, body)
 

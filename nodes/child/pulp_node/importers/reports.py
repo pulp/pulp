@@ -10,8 +10,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-from pulp_node.progress import ProgressReport
-
 # --- utils -----------------------------------------------------------------------------
 
 def key_and_repr(units):
@@ -63,10 +61,9 @@ class ImporterReport(object):
         return self.__dict__
 
 
-class ImporterProgress(ProgressReport):
+class ProgressListener(object):
     """
-    Progress report provides integration between the nodes progress
-    report and the plugin progress reporting facility.
+    Progress listener provides integration with plugin progress reporting facility.
     :ivar conduit: The importer conduit.
     :type  conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
     """
@@ -75,13 +72,11 @@ class ImporterProgress(ProgressReport):
         """
         :param conduit: The importer conduit.
         :type  conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
-            """
+        """
         self.conduit = conduit
-        ProgressReport.__init__(self)
 
-    def _updated(self):
+    def updated(self, report):
         """
         Send progress report using the conduit when the report is updated.
         """
-        ProgressReport._updated(self)
-        self.conduit.set_progress(self.dict())
+        self.conduit.set_progress(report.dict())

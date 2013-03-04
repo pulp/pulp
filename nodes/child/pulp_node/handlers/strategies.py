@@ -13,9 +13,9 @@
 from gettext import gettext as _
 from logging import getLogger
 
+from pulp_node import constants
 from pulp_node.handlers.model import *
-from pulp_node.progress import ProgressReport
-from pulp_node.handlers.reports import HandlerReport
+from pulp_node.handlers.reports import HandlerReport, HandlerProgress
 
 
 log = getLogger(__name__)
@@ -47,7 +47,7 @@ class HandlerStrategy(object):
     def __init__(self, progress):
         """
         :param progress: A progress reporting object.
-        :type progress: ProgressReport
+        :type progress: HandlerProgress
         """
         self.cancelled = False
         self.progress = progress
@@ -88,7 +88,6 @@ class HandlerStrategy(object):
         added = []
         merged = []
         failed = []
-        self.progress.push_step('merge', len(bindings))
         for bind in bindings:
             if self.cancelled:
                 break
@@ -98,11 +97,9 @@ class HandlerStrategy(object):
                 parent = Repository(repo_id, details)
                 child = ChildRepository.fetch(repo_id)
                 if child:
-                    self.progress.set_action('merge', repo_id)
                     child.merge(parent)
                     merged.append(repo_id)
                 else:
-                    self.progress.set_action('add', repo_id)
                     child = ChildRepository(repo_id, parent.details)
                     child.add()
                     added.append(repo_id)
@@ -125,14 +122,14 @@ class HandlerStrategy(object):
         """
         errors = []
         reports = {}
-        self.progress.push_step('synchronize', len(repo_ids))
         for repo_id in repo_ids:
             if self.cancelled:
                 break
             repo = ChildRepository(repo_id)
             try:
-                strategy = options.get('strategy')
-                report = repo.run_synchronization(self.progress, strategy)
+                progress = self.progress.find_report(repo_id)
+                report = repo.run_synchronization(progress)
+                progress.finished()
                 details = report['details']
                 _report = details.get('report')
                 exception = details.get('exception')
@@ -140,22 +137,16 @@ class HandlerStrategy(object):
                     if not _report['succeeded']:
                         msg = REPOSITORY_SYNC_FAILED % {'r': repo_id}
                         errors.append((repo_id, msg))
-                        self.progress.set_status(ProgressReport.FAILED)
-                    else:
-                        self.progress.set_status(ProgressReport.SUCCEEDED)
                     reports[repo_id] = report
                     continue
                 if exception:
                     msg = REPOSITORY_SYNC_ERROR % {'r': repo_id, 'e': exception}
                     errors.append((repo_id, msg))
-                    self.progress.set_status(ProgressReport.FAILED)
                     continue
-                self.progress.set_status(ProgressReport.FAILED)
                 msg = UNEXPECTED_SYNC_RESULT % {'r': repo_id}
                 raise Exception(msg)
             except Exception, e:
                 msg = repr(e)
-                self.progress.error(msg)
                 errors.append((repo_id, msg))
                 reports[repo_id] = dict(succeeded=False, exception=msg)
                 log.exception(msg)
@@ -173,7 +164,6 @@ class HandlerStrategy(object):
         """
         removed = []
         failed = []
-        self.progress.push_step('purge', len(bindings))
         parent = [b['repo_id'] for b in bindings]
         child = [r.repo_id for r in ChildRepository.fetch_all()]
         for repo_id in child:
@@ -181,7 +171,6 @@ class HandlerStrategy(object):
                 break
             try:
                 if repo_id not in parent:
-                    self.progress.set_action('delete', repo_id)
                     repo = ChildRepository(repo_id)
                     repo.delete()
                     removed.append(repo_id)
@@ -225,6 +214,15 @@ class Mirror(HandlerStrategy):
             msg = repr(e)
             report.errors.append(msg)
 
+        # delete repositories
+        try:
+            removed, failed = self._delete_repositories(bindings)
+            merge_report.removed.extend(removed)
+            report.errors.extend(failed)
+        except Exception, e:
+            msg = repr(e)
+            report.errors.append(msg)
+
         # synchronize repositories
         try:
             repo_ids = merge_report.added + merge_report.merged
@@ -235,25 +233,14 @@ class Mirror(HandlerStrategy):
             msg = repr(e)
             report.errors.append(msg)
 
-        # delete repositories
-        try:
-            removed, failed = self._delete_repositories(bindings)
-            merge_report.removed.extend(removed)
-            report.errors.extend(failed)
-        except Exception, e:
-            msg = repr(e)
-            report.errors.append(msg)
-
         # remove orphans
         if options.get('purge_orphans'):
             try:
-                self.progress.push_step('purge_orphans')
                 ChildRepository.purge_orphans()
             except Exception, e:
                 msg = repr(e)
                 report.errors.append(msg)
 
-        self.progress.set_status(ProgressReport.SUCCEEDED)
         return report
 
 
@@ -295,7 +282,14 @@ class Additive(HandlerStrategy):
             msg = repr(e)
             report.errors.append(msg)
 
-        self.progress.set_status(ProgressReport.SUCCEEDED)
+        # remove orphans
+        if options.get('purge_orphans'):
+            try:
+                ChildRepository.purge_orphans()
+            except Exception, e:
+                msg = repr(e)
+                report.errors.append(msg)
+
         return report
 
 
@@ -303,8 +297,8 @@ class Additive(HandlerStrategy):
 
 
 STRATEGIES = {
-    'mirror' : Mirror,
-    'additive' : Additive,
+    constants.MIRROR_STRATEGY: Mirror,
+    constants.ADDITIVE_STRATEGY: Additive,
 }
 
 
@@ -321,7 +315,7 @@ def find_strategy(name):
     :param name: A strategy name.
     :type name: str
     :return: A strategy class.
-    :rtype: HandlerStrategy
+    :rtype: callable
     :raise: StrategyUnsupported on not found.
     """
     try:
