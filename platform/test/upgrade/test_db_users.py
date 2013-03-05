@@ -27,9 +27,10 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         self.assertTrue(isinstance(report, UpgradeStepReport))
         self.assertTrue(report.success)
 
-        # Verify Roles
-        v1_roles = list(self.v1_test_db.database.roles.find().sort('name', 1))
+        # Verify that all the roles except for consumer-users role are added to v2 db
+        v1_roles = list(self.v1_test_db.database.roles.find({ 'name': { '$ne' : 'consumer-users'}}).sort('name', 1))
         v2_roles = list(self.tmp_test_db.database.roles.find().sort('display_name', 1))
+
         self.assertEqual(len(v1_roles), len(v2_roles))
 
         for v1_role, v2_role in zip(v1_roles, v2_roles):
@@ -39,8 +40,8 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
             self.assertEqual(v1_role['permissions'], v2_role['permissions'])
             self.assertTrue('name' not in v2_role)
 
-        # Verify Users
-        v1_users = list(self.v1_test_db.database.users.find().sort('login', 1))
+        # Verify that all the users except for consumer user are added to v2 db
+        v1_users = list(self.v1_test_db.database.users.find({ 'roles': { '$ne' : ['consumer-users']}}).sort('login', 1))
         v2_users = list(self.tmp_test_db.database.users.find().sort('login', 1))
         self.assertEqual(len(v1_users), len(v2_users))
 
@@ -62,7 +63,10 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
         for v1_perm, v2_perm in zip(v1_perms, v2_perms):
             self.assertTrue(isinstance(v2_perm['_id'], ObjectId))
             self.assertEqual(v1_perm['resource'], v2_perm['resource'])
-            self.assertEqual(v1_perm['users'], v2_perm['users'])
+            # Check for all permissions except for ones related to consumer users
+            if v1_perm['resource'] not in ['/consumers/','/repositories/','/errata/','/consumers/prosperity/']:
+                self.assertEqual(v1_perm['users'], v2_perm['users'])
+
 
     def test_users_resumed(self):
         # Setup
@@ -78,11 +82,13 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
 
         v1_roles = list(self.v1_test_db.database.roles.find())
         v2_roles = list(self.tmp_test_db.database.roles.find())
-        self.assertEqual(len(v1_roles), len(v2_roles))
+        # Verify that all the roles except for consumer-users role are added to v2 db
+        self.assertEqual(len(v1_roles), len(v2_roles)+1)
 
         v1_users = list(self.v1_test_db.database.users.find())
         v2_users = list(self.tmp_test_db.database.users.find())
-        self.assertEqual(len(v1_users), len(v2_users))
+        # Verify that all the users except for consumer user are added to v2 db
+        self.assertEqual(len(v1_users), len(v2_users)+1)
 
         v1_perms = list(self.v1_test_db.database.permissions.find())
         v2_perms = list(self.tmp_test_db.database.permissions.find())
@@ -101,11 +107,13 @@ class UsersUpgradeTests(BaseDbUpgradeTests):
 
         v1_roles = list(self.v1_test_db.database.roles.find())
         v2_roles = list(self.tmp_test_db.database.roles.find())
-        self.assertEqual(len(v1_roles), len(v2_roles))
+        # Verify that all the roles except for consumer-users role are added to v2 db
+        self.assertEqual(len(v1_roles), len(v2_roles)+1)
 
         v1_users = list(self.v1_test_db.database.users.find())
         v2_users = list(self.tmp_test_db.database.users.find())
-        self.assertEqual(len(v1_users), len(v2_users))
+        # Verify that all the users except for consumer user are added to v2 db
+        self.assertEqual(len(v1_users), len(v2_users)+1)
 
         v1_perms = list(self.v1_test_db.database.permissions.find())
         v2_perms = list(self.tmp_test_db.database.permissions.find())
