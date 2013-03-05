@@ -52,8 +52,10 @@ class Context(local):
         self.clear_cancel_control_hook = self._clear_cancel_control_hook
 
     def _report_progress(self, progress):
-        msg = _('report_progress called on cleared dispatch context: %(p)s')
-        _LOG.debug(msg % {'p': pformat(progress)})
+        #msg = _('report_progress called on cleared dispatch context: %(p)s')
+        #_LOG.debug(msg % {'p': pformat(progress)})
+        # this has been turned into a no-op as it's much too common an occurrence
+        pass
 
     def _set_cancel_control_hook(self, hook):
         msg = _('set_cancel_control_hook called on cleared dispatch context: %(p)s')
