@@ -81,7 +81,7 @@ class ConsumerContentInstallCommand(PollingCommand):
         """
         Override this method to provide the consumer id to the run method.
         """
-        return kwargs.get[OPTION_CONSUMER_ID.keyword]
+        return kwargs[OPTION_CONSUMER_ID.keyword]
 
     def add_content_options(self):
         """
@@ -190,7 +190,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
         """
         Override this method to provide the consumer id to the run method.
         """
-        return kwargs.get[OPTION_CONSUMER_ID.keyword]
+        return kwargs[OPTION_CONSUMER_ID.keyword]
 
     def add_content_options(self):
         """
@@ -306,7 +306,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
         """
         Override this method to provide the consumer id to the run method.
         """
-        return kwargs.get[OPTION_CONSUMER_ID.keyword]
+        return kwargs[OPTION_CONSUMER_ID.keyword]
 
     def add_content_options(self):
         """

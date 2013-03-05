@@ -170,7 +170,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.add_distributor('fake', 'mock-distributor', {}, True)
             self.fail('No exception thrown for an invalid repo ID')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake' == e.resources['resource_id'])
+            self.assertTrue('fake' == e.resources['repository'])
             print(e) # for coverage
 
     def test_add_distributor_no_distributor(self):
@@ -333,7 +333,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         try:
             self.distributor_manager.remove_distributor('empty', 'non-existent')
         except exceptions.MissingResource, e:
-            self.assertTrue('non-existent' == e.resources['resource_id'])
+            self.assertTrue('non-existent' == e.resources['distributor'])
 
     def test_remove_distributor_no_repo(self):
         """
@@ -345,7 +345,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.remove_distributor('fake-repo', 'irrelevant')
             self.fail('No exception thrown for an invalid repo ID')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake-repo' == e.resources['resource_id'])
+            self.assertTrue('fake-repo' == e.resources['repository'])
             print(e) # for coverage
 
     # -- update ---------------------------------------------------------------
@@ -390,7 +390,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.update_distributor_config('not-there', 'doesnt-matter', {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('not-there' == e.resources['resource_id'])
+            self.assertTrue('not-there' == e.resources['repository'])
 
     def test_update_missing_distributor(self):
         """
@@ -405,7 +405,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.update_distributor_config('empty', 'missing', {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('missing' == e.resources['resource_id'])
+            self.assertTrue('missing' == e.resources['distributor'])
 
     def test_update_validate_exception(self):
         """
@@ -573,7 +573,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.get_distributor('fake', 'irrelevant')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('irrelevant' == e.resources['resource_id'])
+            self.assertTrue('irrelevant' == e.resources['distributor'])
 
     def test_get_distributor_missing_distributor(self):
         """
@@ -588,7 +588,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.get_distributor('empty', 'irrelevant')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('irrelevant' == e.resources['resource_id'])
+            self.assertTrue('irrelevant' == e.resources['distributor'])
 
     def test_get_distributors(self):
         """
@@ -633,7 +633,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.get_distributors('fake')
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue('fake' == e.resources['resource_id'])
+            self.assertTrue('fake' == e.resources['repository'])
 
     # -- scratchpad -----------------------------------------------------------
 
