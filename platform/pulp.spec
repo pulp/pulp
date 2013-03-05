@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.19.alpha
+Release: 0.20.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -416,6 +416,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Mar 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.20.beta
+- 
+
 * Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
 - 855053 - repository unit counts are now tracked per-unit-type. Also wrote a
   migration that will convert previously-created repositories to have the new
