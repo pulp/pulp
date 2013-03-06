@@ -336,6 +336,8 @@ def _drpms(v1_database, v2_database, report):
                 new_drpm = {
                     "_id" : drpm_id,
                     "_storage_path" : os.path.join(DIR_DRPM, drpm.filename),
+                    "_content_type_id" : 'drpm',
+
                     "checksumtype" : drpm.checksum_type,
                     "sequence" : drpm.sequence,
                     "checksum" : drpm.checksum,
@@ -387,6 +389,8 @@ def _errata(v1_database, v2_database, report):
         new_erratum = {
             '_id' : erratum_id,
             '_storage_path' : None,
+            '_content_type_id' : 'erratum',
+
             'description' : v1_erratum['description'],
             'from_str' : v1_erratum['from_str'],
             'id' : v1_erratum['id'],
@@ -450,6 +454,7 @@ def _distributions(v1_database, v2_database, report):
         new_distro = {
             '_id' : str(uuid.uuid4()),
             '_content_type_id' : 'distribution',
+
             'id' : v1_distro['id'],
             'arch' : v1_distro['arch'],
             'version' : v1_distro['version'],
@@ -595,6 +600,7 @@ def _package_groups(v1_database, v2_database, report):
                 '_id' : v2_group_id,
                 '_storage_path' : None,
                 '_content_type_id' : 'package_group',
+
                 'conditional_package_names' : v1_group['conditional_package_names'],
                 'default' : v1_group['default'],
                 'default_package_names' : v1_group['default_package_names'],
@@ -658,6 +664,7 @@ def _package_group_categories(v1_database, v2_database, report):
                 '_id' : category_id,
                 '_storage_path' : None,
                 '_content_type_id' : 'package_category',
+
                 'description' : v1_category['description'],
                 'display_order' : v1_category['display_order'],
                 'id' : v1_category['id'],
@@ -701,6 +708,7 @@ def _isos(v1_database, v2_database, report):
         v2_iso = {
             '_id' : new_iso_id,
             '_content_type_id' : 'iso',
+
             'name' : v1_file['filename'],
             'size' : v1_file['size'],
         }

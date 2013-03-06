@@ -224,6 +224,7 @@ class PackagesUpgradeTests(BaseDbUpgradeTests):
                 self.assertEqual(ass['created'], units.DEFAULT_CREATED)
                 self.assertEqual(ass['updated'], units.DEFAULT_UPDATED)
 
+
 class DRPMUpgradeTests(BaseDbUpgradeTests):
 
     def setUp(self):
@@ -231,8 +232,8 @@ class DRPMUpgradeTests(BaseDbUpgradeTests):
         new_repo = {
                 'id' : 'test_drpm_repo',
                 'content_types' : 'yum',
-                'repomd_xml_path' : os.path.join(V1_REPOS_DIR,
-                    'repos/pulp/pulp/demo_repos/test_drpm_repo/repodata/repomd.xml'),
+                'repomd_xml_path' : os.path.join(
+                    V1_REPOS_DIR, 'repos/pulp/pulp/demo_repos/test_drpm_repo/repodata/repomd.xml'),
                 'relative_path' : 'repos/pulp/pulp/demo_repos/test_drpm_repo/',
             }
         if self.v1_test_db.database.repos.find_one({'id' : 'test_drpm_repo'}):
@@ -262,6 +263,8 @@ class DRPMUpgradeTests(BaseDbUpgradeTests):
         self.assertEqual(len(v1_drpms), v2_drpms.count())
         for drpm in v1_drpms:
             v2_drpm = self.tmp_test_db.database.units_drpm.find_one({'filename' : drpm.filename})
+            self.assertTrue(isinstance(v2_drpm['_id'], basestring))
+            self.assertEqual(v2_drpm['_content_type_id'], 'drpm')
             self.assertEqual(v2_drpm["checksumtype"],  drpm.checksum_type)
             self.assertEqual(v2_drpm["sequence"], drpm.sequence)
             self.assertEqual(v2_drpm["checksum"], drpm.checksum)
@@ -398,6 +401,7 @@ class ErrataUpgradeTests(BaseDbUpgradeTests):
         for v1_erratum, v2_erratum in zip(v1_errata, v2_errata):
             self.assertTrue(isinstance(v2_erratum['_id'], basestring))
             self.assertEqual(v2_erratum['_storage_path'], None)
+            self.assertEqual(v2_erratum['_content_type_id'], 'erratum')
 
             for k in ('description', 'from_str', 'id', 'issued', 'pkglist',
                       'pushcount', 'reboot_suggested', 'references', 'release',
