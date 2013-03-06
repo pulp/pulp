@@ -30,8 +30,8 @@ class NoBackendForProtocol(Exception):
 
 
 _BACKENDS = {
-    'http': HTTPCurlDownloadBackend,
-    #'http': HTTPEventletDownloadBackend,
+    #'http': HTTPCurlDownloadBackend,
+    'http': HTTPEventletDownloadBackend,
     'https': HTTPSCurlDownloadBackend,
 }
 
