@@ -161,3 +161,10 @@ class ClientTests(TestCase):
             self.exception_handler)
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli
+
+
+class Response:
+
+    def __init__(self, code, body):
+        self.response_code = code
+        self.response_body = body

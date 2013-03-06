@@ -109,7 +109,8 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
                'sync_schedule': schedule,
                'sync_options': None,
                'last_sync': last_sync,
-               'relative_path' : repo_id}
+               'relative_path' : repo_id,
+               'clone_ids' : []}
         self.v1_test_db.database.repos.insert(doc, safe=True)
 
     def _insert_scheduled_v2_repo(self, repo_id, schedule):
@@ -165,3 +166,65 @@ class RepoScheduledSyncUpgradeTests(BaseDbUpgradeTests):
 
         scheduled_calls = self.tmp_test_db.database.scheduled_calls.find({})
         self.assertEqual(scheduled_calls.count(), 2)
+
+
+class CloneHandlingTests(BaseDbUpgradeTests):
+
+    def setUp(self):
+        super(CloneHandlingTests, self).setUp()
+
+        # Create two repositories, a parent and a child
+        v1_parent_repo = {'id' : 'parent',
+                          'clone_ids' : ['child'],
+                          'relative_path' : 'parent',
+                          'content_types' : ['yum'],
+                          'last_sync' : None,
+                          'feed_ca' : None,
+                          'feed_cert' : None,
+                          'source' : {'url' : 'parent-feed'}}
+        v1_child_repo = {'id' : 'child',
+                         'clone_ids' : [],
+                         'relative_path' : 'child-feed',
+                         'content_types' : ['yum'],
+                         'last_sync' : None,
+                         'feed_ca' : None,
+                         'feed_cert' : None,
+                         'source' : {'url' : 'child-feed'}}
+
+        self.v1_test_db.database.repos.insert(v1_parent_repo, safe=True)
+        self.v1_test_db.database.repos.insert(v1_child_repo, safe=True)
+
+        # This step runs after the yum repos step in the main script, so simulate that here
+        yum_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+    def test_upgrade(self):
+        # Test
+        all_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        v2_coll = self.tmp_test_db.database.repo_importers
+
+        #   Make sure we didn't wipe out all of the feed URLs
+        v2_parent_repo_importer = v2_coll.find_one({'repo_id' : 'parent'})
+        self.assertEqual(v2_parent_repo_importer['config']['feed_url'], 'parent-feed')
+
+        #   This one should be empty
+        v2_child_repo_importer = v2_coll.find_one({'repo_id' : 'child'})
+        self.assertEqual(v2_child_repo_importer['config']['feed_url'], None)
+
+    def test_upgrade_idempotency(self):
+        # Test
+        all_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+        all_repos.upgrade(self.v1_test_db.database, self.tmp_test_db.database)
+
+        # Verify
+        v2_coll = self.tmp_test_db.database.repo_importers
+
+        #   Make sure we didn't wipe out all of the feed URLs
+        v2_parent_repo_importer = v2_coll.find_one({'repo_id' : 'parent'})
+        self.assertEqual(v2_parent_repo_importer['config']['feed_url'], 'parent-feed')
+
+        #   This one should be empty
+        v2_child_repo_importer = v2_coll.find_one({'repo_id' : 'child'})
+        self.assertEqual(v2_child_repo_importer['config']['feed_url'], None)
+

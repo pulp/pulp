@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.18.alpha
+Release: 0.19.alpha
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -76,6 +76,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
@@ -189,6 +190,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
+%dir %{_sysconfdir}/%{name}/vhosts80
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-v1-upgrade
@@ -414,6 +416,18 @@ exit 0
 %endif
 
 %changelog
+* Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
+- 855053 - repository unit counts are now tracked per-unit-type. Also wrote a
+  migration that will convert previously-created repositories to have the new
+  style of unit counts. (mhrivnak@redhat.com)
+- 902514 - removing NameVirtualHost because we weren't using it, and adding one
+  authoritative <VirtualHost *:80> block for all plugins to use, since apache
+  will only let us use one. (mhrivnak@redhat.com)
+- 873782 - added non-authenticate status resource at /v2/status/
+  (jason.connor@gmail.com)
+- 860089 - added ability to filter tasks using ?id=...&id=...
+  (jason.connor@gmail.com)
+
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
 - 
 

@@ -223,7 +223,7 @@ class ListRepositoriesCommand(PulpCliCommand):
         self.prompt.render_title(self.repos_title)
 
         # Default flags to render_document_list
-        filters = ['id', 'display_name', 'description', 'content_unit_count']
+        filters = ['id', 'display_name', 'description', 'content_unit_counts']
         order = filters
 
         query_params = {}

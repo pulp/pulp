@@ -16,6 +16,7 @@ from logging import getLogger
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
 
+from pulp_node import constants
 from pulp_node.handlers.strategies import find_strategy
 from pulp_node.handlers.reports import HandlerProgress
 from pulp_node.handlers.model import ParentBinding
@@ -41,15 +42,15 @@ class NodeHandler(ContentHandler):
         """
         report = ContentReport()
         progress = HandlerProgress(conduit)
-        progress.push_step('fetch_bindings')
         bindings = ParentBinding.fetch_all()
 
-        strategy_name = options.setdefault('strategy', 'mirror')
+        strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         strategy_class = find_strategy(strategy_name)
         strategy = strategy_class(progress)
+        progress.started(bindings)
         strategy_report = strategy.synchronize(bindings, options)
 
-        progress.end()
+        progress.finished()
         details = strategy_report.dict()
         if strategy_report.errors:
             report.set_failed(details)
@@ -76,15 +77,15 @@ class RepositoryHandler(ContentHandler):
         """
         report = ContentReport()
         progress = HandlerProgress(conduit)
-        progress.push_step('fetch_bindings')
         repo_ids = [key['repo_id'] for key in units if key]
         bindings = ParentBinding.fetch(repo_ids)
 
-        strategy_class = find_strategy('additive')
+        strategy_class = find_strategy(constants.ADDITIVE_STRATEGY)
         strategy = strategy_class(progress)
+        progress.started(bindings)
         strategy_report = strategy.synchronize(bindings, options)
 
-        progress.end()
+        progress.finished()
         details = strategy_report.dict()
         if strategy_report.errors:
             report.set_failed(details)

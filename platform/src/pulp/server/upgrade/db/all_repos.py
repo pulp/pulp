@@ -31,11 +31,32 @@ def upgrade(v1_database, v2_database):
 
     report = UpgradeStepReport()
 
+    clone_success = _handle_clones(v1_database, v2_database, report)
     group_success = _repo_groups(v1_database, v2_database, report)
     sync_schedule_success = _sync_schedules(v1_database, v2_database, report)
 
-    report.success = (group_success and sync_schedule_success)
+    report.success = (clone_success and group_success and sync_schedule_success)
     return report
+
+
+def _handle_clones(v1_database, v2_database, report):
+    v1_coll = v1_database.repos
+    v2_coll = v2_database.repo_importers
+
+    # Idempotency: The remove call will take care of it.
+
+    repos_with_clone_query = {'clone_ids' : {'$ne' : []}}
+    clone_cursor = v1_coll.find(repos_with_clone_query, {'clone_ids' : 1})
+
+    clone_ids = []
+    for clone_list in clone_cursor:
+        clone_ids += clone_list['clone_ids']
+    clone_ids = list(set(clone_ids))
+
+    # Set the feed_url to None for all of the cloned repos
+    v2_coll.update({'repo_id' : {'$in' : clone_ids}}, {'$set' : {'config.feed_url' : None}}, safe=True)
+
+    return True
 
 
 def _repo_groups(v1_database, v2_database, report):

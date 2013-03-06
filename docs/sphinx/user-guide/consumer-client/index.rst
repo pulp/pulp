@@ -14,3 +14,4 @@ Contents:
    bind
    history
    status
+   repositories

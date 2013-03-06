@@ -11,26 +11,31 @@
 
 
 from unittest import TestCase
-from mock import Mock, patch
+from mock import Mock
 
 from pulp.plugins.model import Unit
-from pulp_node.importers.strategies import ImporterStrategy, Mirror
+from pulp_node.importers.strategies import ImporterStrategy
+from pulp_node.importers.reports import ProgressListener
+from pulp_node.progress import RepositoryProgress
 
 
 class TestBase(TestCase):
 
     def test_abstract(self):
         # Setup
+        repo_id = 'foo'
         conduit = 1
         config = 2
         downloader = 3
+        progress = RepositoryProgress(repo_id, ProgressListener(conduit))
         # Test
-        strategy = ImporterStrategy(conduit, config, downloader)
+        strategy = ImporterStrategy(conduit, config, downloader, progress)
         # Verify
         self.assertEqual(conduit, strategy.conduit)
         self.assertEqual(config, strategy.config)
         self.assertEqual(downloader, strategy.downloader)
-        self.assertEqual(conduit, strategy.progress.conduit)
+        self.assertEqual(progress, strategy.progress)
+        self.assertEqual(strategy.progress.listener.conduit, conduit)
         self.assertRaises(NotImplementedError, strategy.synchronize, None)
 
 

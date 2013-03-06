@@ -10,8 +10,35 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
+# --- plugins ----------------------------------------------------------------
+
+
 HTTP_DISTRIBUTOR = 'nodes_http_distributor'
 HTTP_IMPORTER = 'nodes_http_importer'
 
 ALL_IMPORTERS = [HTTP_IMPORTER]
 ALL_DISTRIBUTORS = [HTTP_DISTRIBUTOR]
+
+
+# --- strategies -------------------------------------------------------------
+
+ADDITIVE_STRATEGY = 'additive'
+MIRROR_STRATEGY = 'mirror'
+STRATEGIES = [ADDITIVE_STRATEGY, MIRROR_STRATEGY]
+DEFAULT_STRATEGY = ADDITIVE_STRATEGY
+
+
+# --- keywords ---------------------------------------------------------------
+
+STRATEGY_KEYWORD = 'strategy'
+PROTOCOL_KEYWORD = 'protocol'
+MANIFEST_URL_KEYWORD = 'manifest_url'
+
+SSL_KEYWORD = 'ssl'
+CA_CERT_KEYWORD = 'ca_cert'
+CLIENT_CERT_KEYWORD = 'client_cert'
+
+
+# --- consumer notes ---------------------------------------------------------
+
+NODE_NOTE_KEY = '_child-node'

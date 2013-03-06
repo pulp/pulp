@@ -382,7 +382,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(
             self.repo_id, 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
 
-        mock_call.assert_called_once_with(self.repo_id, 1)
+        mock_call.assert_called_once_with(self.repo_id, 'type-1', 1)
 
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_unit_count')
     def test_associate_by_id_does_not_call_update_unit_count(self, mock_call):
@@ -414,7 +414,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_all_by_ids(
             self.repo_id, 'type-1', IDS, OWNER_TYPE_USER, 'admin')
 
-        mock_call.assert_called_once_with(self.repo_id, len(IDS))
+        mock_call.assert_called_once_with(self.repo_id, 'type-1', len(IDS))
 
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_unit_count')
     def test_associate_all_non_unique(self, mock_call):
@@ -427,7 +427,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_all_by_ids(
             self.repo_id, 'type-1', IDS, OWNER_TYPE_USER, 'admin')
 
-        mock_call.assert_called_once_with(self.repo_id, 2)
+        mock_call.assert_called_once_with(self.repo_id, 'type-1', 2)
 
     def test_unassociate_all(self):
         """
@@ -461,10 +461,12 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         self.assertEqual(2, mock_call.call_count)
         self.assertEqual(mock_call.call_args_list[0][0][0], self.repo_id)
-        self.assertEqual(mock_call.call_args_list[0][0][1], 1)
+        self.assertEqual(mock_call.call_args_list[1][0][1], self.unit_type_id)
+        self.assertEqual(mock_call.call_args_list[0][0][2], 1)
 
         self.assertEqual(mock_call.call_args_list[1][0][0], self.repo_id)
-        self.assertEqual(mock_call.call_args_list[1][0][1], -1)
+        self.assertEqual(mock_call.call_args_list[1][0][1], self.unit_type_id)
+        self.assertEqual(mock_call.call_args_list[1][0][2], -1)
 
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_unit_count')
     def test_unassociate_by_id_non_unique(self, mock_call):

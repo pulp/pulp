@@ -250,7 +250,7 @@ class RepoResource(JSONController):
         repo = query_manager.find_by_id(id)
 
         if repo is None:
-            raise exceptions.MissingResource(id)
+            raise exceptions.MissingResource(repo=id)
 
         repo.update(serialization.link.current_link_obj())
 
@@ -840,6 +840,10 @@ class RepoPublish(JSONController):
 
     @auth_required(EXECUTE)
     def POST(self, repo_id):
+
+        # validation
+        manager = manager_factory.repo_query_manager()
+        manager.get_repository(repo_id)
 
         # Params
         params = self.params()

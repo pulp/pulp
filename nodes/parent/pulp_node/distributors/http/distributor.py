@@ -37,7 +37,7 @@ PROPERTY_INVALID = _('Property %(p)s must be: %(v)s')
 
 # This should be in /etc/pulp
 DEFAULT_CONFIGURATION = {
-    'protocol': 'https',
+    constants.PROTOCOL_KEYWORD: 'https',
     'http': {
         'alias': [
             '/pulp/nodes/http/repos',
@@ -49,8 +49,8 @@ DEFAULT_CONFIGURATION = {
             '/pulp/nodes/https/repos',
             '/var/www/pulp/nodes/https/repos'
         ],
-        'ssl': {
-            'client_cert': {
+        constants.SSL_KEYWORD: {
+            constants.CLIENT_CERT_KEYWORD: {
                 'local': '/etc/pki/pulp/nodes/local.crt',
                 'child': '/etc/pki/pulp/nodes/parent/client.crt'
             }
@@ -105,7 +105,7 @@ class NodesHttpDistributor(Distributor):
             }
           }
         """
-        key = 'protocol'
+        key = constants.PROTOCOL_KEYWORD
         protocol = config.get(key)
         valid_protocols = ('http', 'https', 'file')
         if not protocol:
@@ -145,8 +145,8 @@ class NodesHttpDistributor(Distributor):
         units = conduit.get_units()
         publisher = self.publisher(repo, config)
         units = self._prepare_units(units)
-        manifest, links = publisher.publish(units)
-        details = dict(manifest=manifest, links=links)
+        publisher.publish(units)
+        details = dict(unit_count=len(units))
         return conduit.build_success_report('succeeded', details)
 
     def _prepare_units(self, units):
@@ -176,7 +176,7 @@ class NodesHttpDistributor(Distributor):
         :type  config: pulp.plugins.config.PluginConfiguration
         :return: The configured publisher.
         """
-        protocol = config.get('protocol')
+        protocol = config.get(constants.PROTOCOL_KEYWORD)
         host = pulp_conf.get('server', 'server_name')
         section = config.get(protocol)
         alias = section.get('alias')
@@ -199,12 +199,14 @@ class NodesHttpDistributor(Distributor):
         :type  repo: pulp.plugins.model.Repository
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
+        :param binding_config: The configuration stored on the binding.
+        :type binding_config: dict
         :return: dictionary of relevant data
         :rtype:  dict
         """
         payload = {}
         self._add_repository(repo.id, payload)
-        self._add_importers(repo, config, payload)
+        self._add_importers(repo, config, binding_config or {}, payload)
         self._add_distributors(repo.id, payload)
         return payload
 
@@ -219,17 +221,19 @@ class NodesHttpDistributor(Distributor):
         manager = factory.repo_query_manager()
         payload['repository'] = manager.get_repository(repo_id)
 
-    def _add_importers(self, repo, config, payload):
+    def _add_importers(self, repo, config, binding_config, payload):
         """
         Add the nodes importer.
         :param repo: A repo object.
         :type repo: pulp.plugins.model.Repository
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
+        :param binding_config: The configuration stored on the binding.
+        :type binding_config: dict
         :param payload: The bind payload.
         :type payload: dict
         """
-        conf = self._importer_conf(repo, config)
+        conf = self._importer_conf(repo, config, binding_config)
         importer = {
             'id': constants.HTTP_IMPORTER,
             'importer_type_id': constants.HTTP_IMPORTER,
@@ -237,26 +241,30 @@ class NodesHttpDistributor(Distributor):
         }
         payload['importers'] = [importer]
 
-    def _importer_conf(self, repo, config):
+    def _importer_conf(self, repo, config, binding_config):
         """
         Build the nodes importer configuration.
         :param repo: A repo object.
         :type repo: pulp.plugins.model.Repository
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
+        :param binding_config: The configuration stored on the binding.
+        :type binding_config: dict
         :return: The importer configuration.
         :rtype: dict
         """
         publisher = self.publisher(repo, config)
-        protocol = config.get('protocol')
+        protocol = config.get(constants.PROTOCOL_KEYWORD)
         manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
         protocol_section = config.get(protocol)
         ssl_dict = protocol_section.get('ssl', {})
         ssl_conf = self._ssl_conf(ssl_dict)
+        strategy = binding_config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
         conf = {
-            'manifest_url' : manifest_url,
-            'protocol' : protocol,
-            'ssl' : ssl_conf,
+            constants.STRATEGY_KEYWORD: strategy,
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.PROTOCOL_KEYWORD: protocol,
+            constants.SSL_KEYWORD: ssl_conf,
         }
         return conf
 
@@ -273,7 +281,7 @@ class NodesHttpDistributor(Distributor):
         if not ssl_dict:
             return {}
         conf = {}
-        for key in ('client_cert',):
+        for key in (constants.CLIENT_CERT_KEYWORD,):
             value = ssl_dict.get(key)
             path = value['local']
             path_out = value['child']
