@@ -25,6 +25,7 @@ from pulp.common.download.backends.base import DownloadBackend
 # taken from python documentation <http://docs.python.org/2.6/library/socket.html#socket.socket.recv>
 DEFAULT_BUFFER_SIZE = 4096
 
+# based on empirical observation
 DEFAULT_MAX_CONCURRENT = 100
 
 _LOG = getLogger(__name__)
@@ -46,20 +47,22 @@ class HTTPEventletDownloadBackend(DownloadBackend):
         # fetch closure --------------------------------------------------------
 
         def _fetch(request):
-            # get the appropriate report and set the corresponding information for it
+            # get the appropriate report
             report = report_dict[request]
 
+            # once we're canceled, short-circuit these calls as there's no way
+            # to interrupt the imap call
             if self.is_cancelled:
                 report.state = download_report.DOWNLOAD_CANCELED
                 return report
 
+            # and set the corresponding information for it
             report.state = download_report.DOWNLOAD_DOWNLOADING
             report.start_time = datetime.utcnow()
             self.fire_download_started(report)
 
             # setup the destination file handle
             file_handle = request.destination
-
             if isinstance(request.destination, basestring):
                 file_handle = open(request.destination, 'wb')
 
@@ -138,7 +141,7 @@ def download_request_to_urllib2_request(config, download_request):
     urllib2_request = urllib2.Request(download_request.url)
     # TODO (jconnor 2013-02-06) add ssl support
     # TODO (jconnor 2013-02-06) add proxy support
-    # TODO (jconnor 2013-02-06) add throttling support
+    # TODO (jconnor 2013-02-06) add throttling support, if possible
     return urllib2_request
 
 
