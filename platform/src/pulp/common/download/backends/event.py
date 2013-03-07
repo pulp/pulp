@@ -46,23 +46,32 @@ class HTTPEventletDownloadBackend(DownloadBackend):
         # fetch closure --------------------------------------------------------
 
         def _fetch(request):
+            # get the appropriate report and set the corresponding information for it
             report = report_dict[request]
+
+            if self.is_cancelled:
+                report.state = download_report.DOWNLOAD_CANCELED
+                return report
+
             report.state = download_report.DOWNLOAD_DOWNLOADING
             report.start_time = datetime.utcnow()
             self.fire_download_started(report)
 
+            # setup the destination file handle
             file_handle = request.destination
 
             if isinstance(request.destination, basestring):
                 file_handle = open(request.destination, 'wb')
 
+            # make the request to the server and process the response
             try:
                 urllib2_request = download_request_to_urllib2_request(self.config, request)
                 response = urllib2.urlopen(urllib2_request)
                 info = response.info()
                 set_response_info(info, report)
 
-                while True:
+                # individual file download i/o loop
+                while not self.is_cancelled:
                     body = response.read(self.buffer_size)
                     if not body:
                         break
@@ -73,19 +82,27 @@ class HTTPEventletDownloadBackend(DownloadBackend):
                     report.bytes_downloaded += bytes
                     self.fire_download_progress(report)
 
+                else:
+                    # the only way we don't break out of the i/o loop, is if
+                    # we were canceled
+                    report.state = download_report.DOWNLOAD_CANCELED
+
             except Exception, e:
                 report.state = download_report.DOWNLOAD_FAILED
                 _LOG.exception(e)
 
             else:
-                report.state = download_report.DOWNLOAD_SUCCEEDED
+                # don't overwrite the state if we were canceled
+                if report.state is download_report.DOWNLOAD_DOWNLOADING:
+                    report.state = download_report.DOWNLOAD_SUCCEEDED
 
             finally:
                 report.finish_time = datetime.utcnow()
-
+                # close the file handle if we opened it
                 if file_handle is not request.destination:
                     file_handle.close()
 
+            # return the appropriately filled out report
             return report
 
         # download implementation ----------------------------------------------
@@ -119,10 +136,14 @@ class HTTPEventletDownloadBackend(DownloadBackend):
 
 def download_request_to_urllib2_request(config, download_request):
     urllib2_request = urllib2.Request(download_request.url)
+    # TODO (jconnor 2013-02-06) add ssl support
+    # TODO (jconnor 2013-02-06) add proxy support
+    # TODO (jconnor 2013-02-06) add throttling support
     return urllib2_request
 
 
 def set_response_info(info, report):
+    # XXX (jconnor 2013-02-06) is there anything else we need?
     content_length = info.dict.get('content-length', 0)
     report.total_bytes = int(content_length)
 
