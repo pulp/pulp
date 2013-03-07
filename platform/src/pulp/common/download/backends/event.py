@@ -52,7 +52,7 @@ class HTTPEventletDownloadBackend(DownloadBackend):
 
             # once we're canceled, short-circuit these calls as there's no way
             # to interrupt the imap call
-            if self.is_cancelled:
+            if self.is_canceled:
                 report.state = download_report.DOWNLOAD_CANCELED
                 return report
 
@@ -74,7 +74,7 @@ class HTTPEventletDownloadBackend(DownloadBackend):
                 set_response_info(info, report)
 
                 # individual file download i/o loop
-                while not self.is_cancelled:
+                while not self.is_canceled:
                     body = response.read(self.buffer_size)
                     if not body:
                         break

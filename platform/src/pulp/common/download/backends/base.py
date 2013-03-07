@@ -41,7 +41,7 @@ class DownloadBackend(object):
         """
         self.config = config
         self.event_listener = event_listener or DownloadEventListener()
-        self.is_cancelled = False
+        self.is_canceled = False
 
     # download api -------------------------------------------------------------
 
@@ -63,7 +63,7 @@ class DownloadBackend(object):
 
         NOTE: it is up the ``download`` implementation to honor this flag.
         """
-        self.is_cancelled = True
+        self.is_canceled = True
 
     # events api ---------------------------------------------------------------
 
