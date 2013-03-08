@@ -181,7 +181,7 @@ class Heartbeat:
 class RegistrationMonitor:
     """
     Monitor the registration (consumer) certificate for changes.
-    When a change is detected, the bus attachement is changed
+    When a change is detected, the bus attachment is changed
     as appropriate.  When removed, we set our UUID to None which
     will cause us to detach.  When changed, our UUID is changed
     which causes a detach/attach to be sure we are attached with
