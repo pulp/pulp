@@ -81,7 +81,7 @@ class ConsumerX509Bundle(Bundle):
         try:
             return Bundle.cn(self)
         except X509Error:
-            log.debug('certificate: %s, not valid', self.path)
+            log.warn('certificate: %s, not valid', self.path)
 
 
 class PulpBindings(Bindings):
