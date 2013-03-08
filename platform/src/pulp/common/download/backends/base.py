@@ -51,7 +51,7 @@ class DownloadBackend(object):
         request list.
 
         :param request_list: list of download requests
-        :type request_list: list of pulp.common.download.request.DownloadRequest
+        :type request_list: iterator of pulp.common.download.request.DownloadRequest
         :return: list of download reports corresponding the the download requests
         :rtype: list of pulp.common.download.report.DownloadReport
         """

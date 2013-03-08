@@ -11,7 +11,6 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from collections import defaultdict
 from datetime import datetime
 from logging import getLogger
 
@@ -25,7 +24,7 @@ from pulp.common.download.backends.base import DownloadBackend
 # taken from python documentation <http://docs.python.org/2.6/library/socket.html#socket.socket.recv>
 DEFAULT_BUFFER_SIZE = 4096
 
-# based on empirical observation
+# "optimal" concurrency, based purely on anecdotal evidence
 DEFAULT_MAX_CONCURRENT = 100
 
 _LOG = getLogger(__name__)
@@ -33,6 +32,14 @@ _LOG = getLogger(__name__)
 # eventlet downloader backend --------------------------------------------------
 
 class HTTPEventletDownloadBackend(DownloadBackend):
+    """
+    Backend that is optimized for downloading large quantities of files.
+
+    This backend does *not* support the event listener batch callbacks.
+    Its download method also returns None instead of a list of reports.
+    Both of these deviations keep the backend itself from adding the memory
+    overhead.
+    """
 
     @property
     def buffer_size(self):
@@ -44,86 +51,10 @@ class HTTPEventletDownloadBackend(DownloadBackend):
 
     def download(self, request_list):
 
-        # fetch closure --------------------------------------------------------
-
-        def _fetch(request):
-            # get the appropriate report
-            report = report_dict[request]
-
-            # once we're canceled, short-circuit these calls as there's no way
-            # to interrupt the imap call
-            if self.is_canceled:
-                report.state = download_report.DOWNLOAD_CANCELED
-                return report
-
-            # and set the corresponding information for it
-            report.state = download_report.DOWNLOAD_DOWNLOADING
-            report.start_time = datetime.utcnow()
-            self.fire_download_started(report)
-
-            # setup the destination file handle
-            file_handle = request.destination
-            if isinstance(request.destination, basestring):
-                file_handle = open(request.destination, 'wb')
-
-            # make the request to the server and process the response
-            try:
-                urllib2_request = download_request_to_urllib2_request(self.config, request)
-                response = urllib2.urlopen(urllib2_request)
-                info = response.info()
-                set_response_info(info, report)
-
-                # individual file download i/o loop
-                while not self.is_canceled:
-                    body = response.read(self.buffer_size)
-                    if not body:
-                        break
-
-                    file_handle.write(body)
-
-                    bytes = len(body)
-                    report.bytes_downloaded += bytes
-                    self.fire_download_progress(report)
-
-                else:
-                    # the only way we don't break out of the i/o loop, is if
-                    # we were canceled
-                    report.state = download_report.DOWNLOAD_CANCELED
-
-            except Exception, e:
-                report.state = download_report.DOWNLOAD_FAILED
-                _LOG.exception(e)
-
-            else:
-                # don't overwrite the state if we were canceled
-                if report.state is download_report.DOWNLOAD_DOWNLOADING:
-                    report.state = download_report.DOWNLOAD_SUCCEEDED
-
-            finally:
-                report.finish_time = datetime.utcnow()
-                # close the file handle if we opened it
-                if file_handle is not request.destination:
-                    file_handle.close()
-
-            # return the appropriately filled out report
-            return report
-
-        # download implementation ----------------------------------------------
-
-        # XXX (jconnor 2013-03-06) is this going to blow our benefits from using
-        # generators as the request list?
-        report_dict = dict((request, download_report.DownloadReport.from_download_request(request))
-                           for request in request_list)
-        # it would be much cooler to have a "lazy" default dict, where the lazy
-        # instantiates the report from the request key on demand
-        #report_dict = defaultdict(download_report.DownloadReport.from_download_request).fromkeys(request_list)
-
-        self.fire_batch_started(report_dict.itervalues())
-
         pool = GreenPool(size=self.max_concurrent)
 
         # main i/o loop
-        for report in pool.imap(_fetch, request_list):
+        for report in pool.imap(self._fetch, request_list):
             # event callbacks called here to keep them from gumming up the
             # concurrent fetch calls
             if report.state is download_report.DOWNLOAD_SUCCEEDED:
@@ -131,9 +62,67 @@ class HTTPEventletDownloadBackend(DownloadBackend):
             else:
                 self.fire_download_failed(report)
 
-        self.fire_batch_finished(report_dict.itervalues())
+    def _fetch(self, request):
+        # create the report
+        report = download_report.DownloadReport.from_download_request(request)
 
-        return report_dict.values()
+        # once we're canceled, short-circuit these calls as there's no way
+        # to interrupt the imap call's iterations
+        if self.is_canceled:
+            report.state = download_report.DOWNLOAD_CANCELED
+            return report
+
+        # and set the corresponding information for it
+        report.state = download_report.DOWNLOAD_DOWNLOADING
+        report.start_time = datetime.utcnow()
+        self.fire_download_started(report)
+
+        # setup the destination file handle
+        file_handle = request.destination
+        if isinstance(request.destination, basestring):
+            file_handle = open(request.destination, 'wb')
+
+        # make the request to the server and process the response
+        try:
+            urllib2_request = download_request_to_urllib2_request(self.config, request)
+            response = urllib2.urlopen(urllib2_request)
+            info = response.info()
+            set_response_info(info, report)
+
+            # individual file download i/o loop
+            while not self.is_canceled:
+                body = response.read(self.buffer_size)
+                if not body:
+                    break
+
+                file_handle.write(body)
+
+                bytes = len(body)
+                report.bytes_downloaded += bytes
+                self.fire_download_progress(report)
+
+            else:
+                # the only way we don't break out of the i/o loop, is if
+                # we were canceled
+                report.state = download_report.DOWNLOAD_CANCELED
+
+        except Exception, e:
+            report.state = download_report.DOWNLOAD_FAILED
+            _LOG.exception(e)
+
+        else:
+            # don't overwrite the state if we were canceled
+            if report.state is download_report.DOWNLOAD_DOWNLOADING:
+                report.state = download_report.DOWNLOAD_SUCCEEDED
+
+        finally:
+            report.finish_time = datetime.utcnow()
+            # close the file handle if we opened it
+            if file_handle is not request.destination:
+                file_handle.close()
+
+        # return the appropriately filled out report
+        return report
 
 # utilities --------------------------------------------------------------------
 
