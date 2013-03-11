@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.20.beta
+Release: 0.21.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -416,6 +416,10 @@ exit 0
 %endif
 
 %changelog
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.21.beta
+- 918600 - _content_type_id wasn't being set for erratum and drpm
+  (jason.dobies@redhat.com)
+
 * Tue Mar 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.20.beta
 - 
 
