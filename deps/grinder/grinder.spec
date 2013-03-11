@@ -64,6 +64,12 @@ rm -rf $RPM_BUILD_ROOT
 - Default to _not_ sending incremental progress reports as an item downloads
   This means if you are downloading a 100MB file you will only see a progress
   update when the item completes You will not see progress as the actual bits
+  are downloading.  Helps to ease an issue seen with Pulp 2.0.8
+
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-1
+- Default to _not_ sending incremental progress reports as an item downloads
+  This means if you are downloading a 100MB file you will only see a progress
+  update when the item completes You will not see progress as the actual bits
   are downloading. (jwmatthews@gmail.com)
 
 * Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-1
