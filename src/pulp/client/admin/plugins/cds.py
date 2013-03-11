@@ -365,11 +365,18 @@ class Sync(CDSAction):
         self.parser.add_option('--hostname', dest='hostname',
                                help=_('CDS hostname (required)'))
 
+        self.parser.add_option("--repoid", dest="repoid",
+                       help=_("repo identifier"))
+
     def run(self):
         hostname = self.get_required_option('hostname')
+        repoid = self.opts.repoid
 
-        self.cds_api.sync(hostname)
-        print(_('Sync for CDS [%s] started' % hostname))
+        self.cds_api.sync(hostname, repoid)
+        if repoid:
+            print(_('Synchronizing of repository [%s] on CDS [%s] started' % (repoid,hostname)))
+        else:
+            print(_('Synchronizing for CDS [%s] started' % hostname))
         print(_('Use "cds status" to check on the progress'))
 
 class Status(CDSAction):

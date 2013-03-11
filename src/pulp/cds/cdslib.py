@@ -123,6 +123,7 @@ class CdsLib(object):
         error_messages = [] # keeps a running total of errors encountered to send back to the server
 
         # Unpack the necessary data
+        global_sync = sync_data['global_sync']
         repos = sync_data['repos']
         base_url = sync_data['repo_base_url']
         repo_cert_bundles = sync_data['repo_cert_bundles']
@@ -164,12 +165,13 @@ class CdsLib(object):
             log.exception('Error updating global cert bundle')
             error_messages.append('Error updating global certificate bundle')
 
-        # Clean up any repos that were once synchronized but are no longer associated with the CDS
-        try:
-            self._delete_removed_repos(repos)
-        except Exception:
-            log.exception('Error performing old repo cleanup')
-            error_messages.append('One or more previously synchronized repositories could not be deleted')
+        # if it's a global sync, clean up any repos that were once synchronized but are no longer associated with the CDS
+        if global_sync:
+            try:
+                self._delete_removed_repos(repos)
+            except Exception:
+                log.exception('Error performing old repo cleanup')
+                error_messages.append('One or more previously synchronized repositories could not be deleted')
 
         # Sync each repo specified, allowing the syncs to proceed if one or more fails
         successfully_syncced_repos = []
@@ -181,7 +183,8 @@ class CdsLib(object):
                 log.exception('Error performing repo sync')
                 error_messages.append('Error synchronizing repository [%s]' % repo['id'])
 
-            # Write it out per repo in case something drastically awful happens
+            # if it's a global sync,
+            # write it out per repo in case something drastically awful happens
             # so we have a best effort record
 
             # The only potential wonkiness is if the sync failed because the packages
@@ -189,11 +192,12 @@ class CdsLib(object):
             # since not having the file will mean no syncced repos and if we can't
             # write to the packages location, there's a solid chance we don't in fact
             # have any repos.
-            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
-            for r in successfully_syncced_repos:
-                repos_file.write(os.path.join('repos', r['relative_path']))
-                repos_file.write('\n')
-            repos_file.close()
+            if global_sync:
+                repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
+                for r in successfully_syncced_repos:
+                    repos_file.write(os.path.join('repos', r['relative_path']))
+                    repos_file.write('\n')
+                repos_file.close()
 
         # If no repos were specified, make sure the CDS repo list file does not
         # contain references to any CDS instances

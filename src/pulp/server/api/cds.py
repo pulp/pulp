@@ -480,7 +480,7 @@ class CdsApi(BaseApi):
             if cds['cluster_id'] is not None and apply_to_cluster:
                 self._apply_cds_repos_to_cluster(cds)
             
-    def cds_sync(self, cds_hostname):
+    def cds_sync(self, cds_hostname, repo_id=None):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
         regardless of when its next scheduled sync would be. The CDS will be brought up to
@@ -495,7 +495,10 @@ class CdsApi(BaseApi):
 
         @raise PulpException: if the CDS does not exist
         '''
-        log.info('Synchronizing CDS [%s]' % cds_hostname)
+        if repo_id:
+            log.info('Synchronizing repository [%s] on CDS [%s]' % (repo_id, cds_hostname))
+        else:
+            log.info('Synchronizing CDS [%s]' % cds_hostname)
 
         # Entity load and sanity check on the arguments
         cds = self.cds(cds_hostname)
@@ -523,11 +526,16 @@ class CdsApi(BaseApi):
         repos = []
         repo_cert_bundles = {}
 
-        for repo_id in cds['repo_ids']:
-            repo = self._repocollection().find_one({'id' : repo_id}, fields=REPO_FIELDS)
+        if repo_id is None:
+            repo_ids = cds['repo_ids']
+        else:
+            repo_ids = [repo_id]
+
+        for r_id in repo_ids:
+            repo = self._repocollection().find_one({'id' : r_id}, fields=REPO_FIELDS)
 
             # Load the repo cert bundle
-            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
+            bundle = repo_cert_utils.read_consumer_cert_bundle(r_id)
             repo_cert_bundles[repo['id']] = bundle
 
             repos.append(repo)
@@ -549,7 +557,14 @@ class CdsApi(BaseApi):
             cluster_id = None
             member_hostnames = None
 
+        # global_sync = true means we completey synchronizing CDS and PULP, set to false if we sync a single repo only
+        if repo_id:
+            global_sync = False
+        else:
+            global_sync = True
+
         payload = {
+            'global_sync'	 : global_sync,
             'repos'              : repos,
             'repo_base_url'      : repo_base_url,
             'repo_cert_bundles'  : repo_cert_bundles,

@@ -85,8 +85,10 @@ class CDSAPI(PulpAPI):
         path = '/cds/%s/unassociate/' % hostname
         return self.server.POST(path, data)[1]
 
-    def sync(self, hostname):
+    def sync(self, hostname, repo_id=None):
         data = {}
+        if repo_id:
+          data = {'repo_id' : repo_id}
         path = '/cds/%s/sync/' % hostname
         return self.server.POST(path, data)[1]
 
