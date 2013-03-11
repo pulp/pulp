@@ -36,7 +36,6 @@ class ConsumerList(List):
 
     def run(self):
         consumerid = self.consumerid
-        repoid = self.opts.repoid
 
         List.run(self, consumerid)
 
