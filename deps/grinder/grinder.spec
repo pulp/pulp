@@ -1,8 +1,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.1.14
-Release: 2%{?dist}
+Version: 0.1.15
+Release: 1%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
 Group: Development/Tools
@@ -60,9 +60,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-2
-- bumping the grinder release (pkilambi@redhat.com)
-- updating the grinder tar (pkilambi@redhat.com)
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-1
+- Default to _not_ sending incremental progress reports as an item downloads
+  This means if you are downloading a 100MB file you will only see a progress
+  update when the item completes You will not see progress as the actual bits
+  are downloading. (jwmatthews@gmail.com)
 
 * Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-1
 - include filelist before files so the file cache generates dir and ghost file
