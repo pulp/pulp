@@ -60,6 +60,12 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-2
+- add the grinder tarball. (jortel@redhat.com)
+- Automatic commit of package [grinder] minor release [0.1.15-1].
+  (jortel@redhat.com)
+- grinder 0.1.15. (jortel@redhat.com)
+
 * Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-1
 - Default to _not_ sending incremental progress reports as an item downloads
   This means if you are downloading a 100MB file you will only see a progress
