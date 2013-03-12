@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.1.14
+Version: 0.1.15
 Release: 2%{?dist}
 Summary: A tool for synchronizing content from yum repositories
 
@@ -60,9 +60,23 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-2
-- bumping the grinder release (pkilambi@redhat.com)
-- updating the grinder tar (pkilambi@redhat.com)
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-2
+- add the grinder tarball. (jortel@redhat.com)
+- Automatic commit of package [grinder] minor release [0.1.15-1].
+  (jortel@redhat.com)
+- grinder 0.1.15. (jortel@redhat.com)
+
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-1
+- Default to _not_ sending incremental progress reports as an item downloads
+  This means if you are downloading a 100MB file you will only see a progress
+  update when the item completes You will not see progress as the actual bits
+  are downloading.  Helps to ease an issue seen with Pulp 2.0.8
+
+* Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-1
+- Default to _not_ sending incremental progress reports as an item downloads
+  This means if you are downloading a 100MB file you will only see a progress
+  update when the item completes You will not see progress as the actual bits
+  are downloading. (jwmatthews@gmail.com)
 
 * Thu Feb 07 2013 Pradeep Kilambi <pkilambi@redhat.com> 0.1.14-1
 - include filelist before files so the file cache generates dir and ghost file
