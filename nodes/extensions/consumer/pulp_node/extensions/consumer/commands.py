@@ -131,8 +131,7 @@ class NodeDeactivateCommand(PulpCliCommand):
         delta = {'notes': DEACTIVATED_NOTE}
 
         if not node_activated(self.context, consumer_id):
-            msg = NOT_ACTIVATED_NOTHING_DONE
-            self.context.prompt.render_success_message(msg)
+            self.context.prompt.render_success_message(NOT_ACTIVATED_NOTHING_DONE)
             return
 
         try:
