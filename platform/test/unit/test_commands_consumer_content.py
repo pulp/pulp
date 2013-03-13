@@ -12,16 +12,16 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import unittest
-from pprint import pformat
 
 import mock
 
-from pulp.bindings.responses import Task
+from pulp.bindings.responses import Task, STATE_FINISHED
 from pulp.client.commands.consumer import content as consumer_content
 from pulp.client.commands.options import OPTION_CONSUMER_ID
 from pulp.server.compat import json
 
 import base
+from task_simulator import TaskSimulator
 
 
 class InstantiationTests(unittest.TestCase):
@@ -154,6 +154,14 @@ class InstallCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'run')
 
     def test_run(self):
+        # Setup
+        sim = TaskSimulator()
+        sim.install(self.bindings)
+
+        fake_progress_report = {'steps' : [('name', 'status')], 'details' : {}}
+
+        sim.add_task_state('1', STATE_FINISHED, progress_report=fake_progress_report)
+
         self.server_mock.request.return_value = 201, POSTPONED_TASK
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
@@ -190,6 +198,13 @@ class UpdateCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'run')
 
     def test_run(self):
+        # Setup
+        sim = TaskSimulator()
+        sim.install(self.bindings)
+
+        fake_progress_report = {'steps' : [('name', 'status')], 'details' : {}}
+
+        sim.add_task_state('1', STATE_FINISHED, progress_report=fake_progress_report)
         self.server_mock.request.return_value = 201, POSTPONED_TASK
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
@@ -227,6 +242,14 @@ class UnistallCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'run')
 
     def test_run(self):
+        # Setup
+        sim = TaskSimulator()
+        sim.install(self.bindings)
+
+        fake_progress_report = {'steps' : [('name', 'status')], 'details' : {}}
+
+        sim.add_task_state('1', STATE_FINISHED, progress_report=fake_progress_report)
+
         self.server_mock.request.return_value = 201, POSTPONED_TASK
 
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',

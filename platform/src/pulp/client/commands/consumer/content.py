@@ -112,10 +112,7 @@ class ConsumerContentInstallCommand(PollingCommand):
         else:
             task = response.response_body
 
-            if self.rejected(task) or self.postponed(task):
-                return
-
-            self.process(consumer_id, task)
+            self.poll([task])
 
     def get_install_options(self, kwargs):
         """
@@ -137,14 +134,14 @@ class ConsumerContentInstallCommand(PollingCommand):
         units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
         return units
 
-    def progress(self, report):
-        self.progress_tracker.display(report)
+    def progress(self, task):
+        self.progress_tracker.display(task.progress)
 
-    def succeeded(self, consumer_id, task):
+    def succeeded(self, task):
         msg = _('Install Succeeded')
         self.context.prompt.render_success_message(msg)
 
-    def failed(self, consumer_id, task):
+    def failed(self, task):
         msg = _('Install Failed')
         self.context.prompt.render_failure_message(msg)
 
@@ -228,10 +225,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
             msg = _('Update task created with id [ %(t)s ]') % {'t': task.task_id}
             self.context.prompt.render_success_message(msg)
 
-            if self.rejected(task) or self.postponed(task):
-                return
-
-            self.process(consumer_id, task)
+            self.poll([task])
 
     def get_update_options(self, kwargs):
         """
@@ -253,14 +247,14 @@ class ConsumerContentUpdateCommand(PollingCommand):
         units = map(_unit_dict, kwargs.get(OPTION_CONTENT_UNIT.keyword) or [])
         return units
 
-    def progress(self, report):
-        self.progress_tracker.display(report)
+    def progress(self, task):
+        self.progress_tracker.display(task.progress)
 
-    def succeeded(self, consumer_id, task):
+    def succeeded(self, task):
         msg = _('Update Succeeded')
         self.context.prompt.render_success_message(msg)
 
-    def failed(self, consumer_id, task):
+    def failed(self, task):
         msg = _('Update Failed')
         self.context.prompt.render_failure_message(msg)
 
@@ -339,10 +333,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
             msg = _('Uninstall task created with id [ %(t)s ]') % {'t': task.task_id}
             self.context.prompt.render_success_message(msg)
 
-            if self.rejected(task) or self.postponed(task):
-                return
-
-            self.process(consumer_id, task)
+            self.poll([task])
 
     def get_uninstall_options(self, kwargs):
         """
@@ -364,14 +355,14 @@ class ConsumerContentUninstallCommand(PollingCommand):
         units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
         return units
 
-    def progress(self, report):
-        self.progress_tracker.display(report)
+    def progress(self, task):
+        self.progress_tracker.display(task.progress)
 
-    def succeeded(self, consumer_id, task):
+    def succeeded(self, task):
         msg = _('Uninstall Succeeded')
         self.context.prompt.render_success_message(msg)
 
-    def failed(self, consumer_id, task):
+    def failed(self, task):
         msg = _('Uninstall Failed')
         self.context.prompt.render_failure_message(msg)
 

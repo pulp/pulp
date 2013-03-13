@@ -72,7 +72,7 @@ class TaskSimulator(object):
 
     # -- configuration methods ------------------------------------------------------------------------------
 
-    def add_task_state(self, task_id, state, response=responses.RESPONSE_ACCEPTED):
+    def add_task_state(self, task_id, state, response=responses.RESPONSE_ACCEPTED, progress_report=None):
         """
         Adds a new state entry for the given task ID. If the there are currently no states listed for
         the given ID, this call will cause the new task ID to be created and thus returned from the
@@ -89,6 +89,7 @@ class TaskSimulator(object):
         new_task_dict['call_request_id'] = task_id
         new_task_dict['state'] = state
         new_task_dict['response'] = response
+        new_task_dict['progress'] = progress_report
 
         new_task = responses.Task(new_task_dict)
         task_list_for_id = self.tasks_by_id.setdefault(task_id, [])
