@@ -166,10 +166,17 @@ class NodeListCommand(ConsumerListCommand):
         return nodes
 
     def format_bindings(self, consumer):
+        formatted = {}
         key = 'bindings'
-        bindings = consumer.get(key)
-        if bindings:
-            consumer[key] = [b['repo_id'] for b in bindings]
+        for b in consumer.get(key, []):
+            repo_id = b['repo_id']
+            strategy = b['binding_config'].get('strategy', constants.DEFAULT_STRATEGY)
+            repo_ids = formatted.get(strategy)
+            if repo_ids is None:
+                repo_ids = []
+                formatted[strategy] = repo_ids
+            repo_ids.append(repo_id)
+        consumer[key] = formatted
 
 
 class NodeListRepositoriesCommand(ListRepositoriesCommand):
