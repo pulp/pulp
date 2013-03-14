@@ -204,7 +204,7 @@ class PulpPrompt(Prompt):
         @type  message: str
         """
 
-        self.write(message, color=COLOR_WARNING, tag=tag)
+        self.write(message, tag=tag)
         self.render_spacer()
 
     def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0, step=2, omit_hidden=True):

@@ -60,12 +60,13 @@ NODE_ACTIVATED = _('Consumer activated as child node')
 NODE_DEACTIVATED = _('Child node deactivated')
 BIND_SUCCEEDED = _('Node bind succeeded.')
 UNBIND_SUCCEEDED = _('Node unbind succeeded')
-BIND_FAILED_NOT_ENABLED = _('Repository not enabled.  See: \'node repo enable\' command.')
-NOT_BOUND_NOTHING_DONE = _('Node not bound to repository.  Nothing done.')
-NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.')
-NOT_ACTIVATED_ERROR = _('This consumer not activated as a node.  See: \'node activate\' command.')
+BIND_FAILED_NOT_ENABLED = _('Repository not enabled. See: \'node repo enable\' command.')
+NOT_BOUND_NOTHING_DONE = _('Node not bound to repository. Nothing done.')
+NOT_ACTIVATED_NOTHING_DONE = _('This consumer is not activated as a node. Nothing done.')
+NOT_ACTIVATED_ERROR = _('This consumer is not activated as a node.  See: \'node activate\' command.')
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
+NOT_REGISTERED_MESSAGE = _('This consumer is not registered.')
 
 BIND_WARNING = \
     _('Note: Repository [ %(r)s ] will be included in node synchronization.')
@@ -112,8 +113,7 @@ class NodeActivateCommand(PulpCliCommand):
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
-                    msg = _('This consumer not registered.')
-                    self.context.prompt.render_failure_message(msg)
+                    self.context.prompt.render_failure_message(NOT_REGISTERED_MESSAGE)
                 else:
                     raise
             return os.EX_DATAERR
@@ -131,8 +131,7 @@ class NodeDeactivateCommand(PulpCliCommand):
         delta = {'notes': DEACTIVATED_NOTE}
 
         if not node_activated(self.context, consumer_id):
-            msg = NOT_ACTIVATED_NOTHING_DONE
-            self.context.prompt.render_success_message(msg)
+            self.context.prompt.render_success_message(NOT_ACTIVATED_NOTHING_DONE)
             return
 
         try:
@@ -141,8 +140,7 @@ class NodeDeactivateCommand(PulpCliCommand):
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
-                    msg = _('This consumer is not registered.')
-                    self.context.prompt.render_failure_message(msg)
+                    self.context.prompt.render_failure_message(NOT_REGISTERED_MESSAGE)
                 else:
                     raise
             return os.EX_DATAERR
