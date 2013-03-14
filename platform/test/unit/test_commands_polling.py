@@ -13,12 +13,11 @@
 import mock
 
 import base
-from task_simulator import TaskSimulator
 
 from pulp.bindings.responses import (STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
-                                     STATE_RUNNING, STATE_SKIPPED, RESPONSE_ACCEPTED,
-                                     RESPONSE_POSTPONED, RESPONSE_REJECTED)
+                                     STATE_RUNNING, STATE_SKIPPED, RESPONSE_POSTPONED, RESPONSE_REJECTED)
 from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED
+from pulp.devel.unit.task_simulator import TaskSimulator
 
 
 def noop(**kwargs):

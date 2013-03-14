@@ -18,6 +18,11 @@ import optparse
 import os
 import sys
 
+# Needed due to the fact that the pulp package root is defined in two python packages.
+# There's a warning message that will be displayed if this is loaded after those, so
+# this workaround removes it.
+import pkg_resources
+
 from pulp.server.upgrade.main import Upgrader, StepException, V1_BACKUP_DATABASE_NAME
 
 

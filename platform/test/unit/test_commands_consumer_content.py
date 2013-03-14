@@ -18,10 +18,10 @@ import mock
 from pulp.bindings.responses import Task, STATE_FINISHED
 from pulp.client.commands.consumer import content as consumer_content
 from pulp.client.commands.options import OPTION_CONSUMER_ID
+from pulp.devel.unit.task_simulator import TaskSimulator
 from pulp.server.compat import json
 
 import base
-from task_simulator import TaskSimulator
 
 
 class InstantiationTests(unittest.TestCase):
