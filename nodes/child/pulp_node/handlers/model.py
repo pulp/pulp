@@ -602,7 +602,7 @@ class Binding(object):
     pass
 
 
-class ParentBinding(Parent):
+class ParentBinding(Parent, Binding):
     """
     Represents a parent consumer binding to a repository.
     """
@@ -653,3 +653,42 @@ class ParentBinding(Parent):
         :rtype: list
         """
         return [b for b in binds if b['type_id'] in constants.ALL_DISTRIBUTORS]
+
+
+class Node(object):
+    """
+    Represents a pulp node.
+    """
+    pass
+
+
+class ParentNode(Parent, Node):
+    """
+    Represents a child node in the parent.
+    """
+
+    @classmethod
+    def fetch(cls):
+        """
+        Fetch this node from the parent.
+        :return: This node.
+        :rtype: dict
+        """
+        bundle = ConsumerSSLCredentialsBundle()
+        myid = bundle.cn()
+        http = Parent.binding.consumer.consumer(myid)
+        if http.response_code == httplib.OK:
+            return http.response_body
+        else:
+            raise Exception('Node not found in parent.')
+
+    @classmethod
+    def get_strategy(cls):
+        """
+        Get this node's update strategy.
+        :return: The node level strategy for this node.
+        :rtype: str
+        """
+        node = cls.fetch()
+        notes = node.get('notes', {})
+        return notes.get(constants.STRATEGY_NOTE_KEY, constants.DEFAULT_STRATEGY)
