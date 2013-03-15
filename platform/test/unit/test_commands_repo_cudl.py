@@ -13,13 +13,14 @@
 
 import mock
 
-from pulp.common.compat import json
-
 import base
 
+from pulp.bindings.responses import STATE_FINISHED
 from pulp.client.commands.repo import cudl
 from pulp.client.commands.options import OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_TITLE
+from pulp.common.compat import json
+from pulp.devel.unit.task_simulator import TaskSimulator
 
 
 class CreateRepositoryCommandTests(base.PulpClientTests):
@@ -89,25 +90,27 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'delete')
         self.assertEqual(self.command.description, cudl.DESC_DELETE)
 
-    def test_run(self):
+    @mock.patch('pulp.client.commands.polling.PollingCommand.poll')
+    def test_run(self, mock_poll):
         # Setup
         data = {
             OPTION_REPO_ID.keyword : 'test-repo',
         }
 
-        self.server_mock.request.return_value = 200, {}
+        sim = TaskSimulator()
+        sim.add_task_state('123', STATE_FINISHED)
+
+        mock_binding_delete = mock.MagicMock().delete
+        mock_binding_delete.return_value = sim.get_all_tasks()
+        self.bindings.repo.delete = mock_binding_delete
 
         # Test
         self.command.run(**data)
 
         # Verify
-        self.assertEqual(1, self.server_mock.request.call_count)
-        self.assertEqual('DELETE', self.server_mock.request.call_args[0][0])
-        url = self.server_mock.request.call_args[0][1]
-        self.assertTrue(url.endswith('/repositories/test-repo/'))
-
-        self.assertEqual(1, len(self.prompt.get_write_tags()))
-        self.assertEqual('queued', self.prompt.get_write_tags()[0])
+        self.assertEqual(1, mock_binding_delete.call_count)
+        self.assertEqual('test-repo', mock_binding_delete.call_args[0][0])
+        self.assertEqual(1, mock_poll.call_count)
 
     def test_run_not_found(self):
         # Setup
