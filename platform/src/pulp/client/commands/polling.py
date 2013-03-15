@@ -69,7 +69,7 @@ class PollingCommand(PulpCliCommand):
         in order until completion. If an error state is encountered, polling of the remaining
         tests will be stopped.
 
-        This method is intended to handle all tast states, from waiting to rejected. The
+        This method is intended to handle all task states, from waiting to rejected. The
         appropriate message method below will be called depending on the state encounteres.
         Subclasses should override these methods as necessary to customize the message displayed.
 
@@ -79,7 +79,7 @@ class PollingCommand(PulpCliCommand):
         :param task_list: list of task reports received from the initial call to the server
         :type  task_list: list of pulp.bindings.responses.Task
 
-        :return: the final task reports for all of the
+        :return: the final task reports for all of the tasks
         """
 
         # I'm not sure the server has the potential to return an empty list of tasks if nothing
