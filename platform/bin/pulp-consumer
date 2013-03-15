@@ -14,6 +14,11 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+# Needed due to the fact that the pulp package root is defined in two python packages.
+# There's a warning message that will be displayed if this is loaded after those, so
+# this workaround removes it.
+import pkg_resources
+
 from pulp.client.clients.consumer import main
 
 
