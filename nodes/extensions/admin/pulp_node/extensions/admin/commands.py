@@ -63,7 +63,8 @@ UPDATE_DESC = _('triggers an immediate synchronization of a child node')
 ENABLE_DESC = _('enables binding to a repository by a child node')
 DISABLE_DESC = _('disables binding to a repository by a child node')
 REPO_DESC = _('repository related commands')
-AUTO_PUBLISH_DESC = _('auto publish flag')
+AUTO_PUBLISH_DESC = _('if "true", the nodes information will be automatically published each '
+                      'time the repository is synchronized; defaults to "true"')
 SYNC_DESC = _('child node synchronization commands')
 PUBLISH_DESC = _('publishing commands')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
@@ -211,9 +212,7 @@ class NodeRepoPublishCommand(PollingCommand):
         try:
             http = self.context.server.repo_actions.publish(repo_id, constants.HTTP_DISTRIBUTOR, {})
             task = http.response_body
-            if self.rejected(task) or self.postponed(task):
-                return
-            self.process(repo_id, task)
+            self.poll([task])
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'repo_id':
@@ -223,10 +222,10 @@ class NodeRepoPublishCommand(PollingCommand):
                     raise
             return os.EX_DATAERR
 
-    def succeeded(self, resource_id, task):
+    def succeeded(self, task):
         self.context.prompt.render_success_message(PUBLISH_SUCCEEDED)
 
-    def failed(self, resource_id, task):
+    def failed(self, task):
         self.context.prompt.render_failure_message(PUBLISH_FAILED)
 
 
@@ -485,9 +484,7 @@ class NodeUpdateCommand(PollingCommand):
         try:
             http = self.context.server.consumer_content.update(node_id, units=units, options=options)
             task = http.response_body
-            if self.rejected(task) or self.postponed(task):
-                return
-            self.process(node_id, task)
+            self.poll([task])
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':
@@ -497,10 +494,10 @@ class NodeUpdateCommand(PollingCommand):
                     raise
             return os.EX_DATAERR
 
-    def progress(self, report):
-        self.tracker.display(report)
+    def progress(self, task):
+        self.tracker.display(task.progress)
 
-    def succeeded(self, consumer_id, task):
+    def succeeded(self, task):
         details = task.result['details'].values()[0]['details']
         r = UpdateRenderer(self.context.prompt, details)
         r.render()
