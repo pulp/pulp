@@ -85,7 +85,7 @@ class TaskSimulator(object):
         your code is polling until completion, don't be surprised to find some form of index out of bounds
         error crop up.
         """
-        new_task_dict = copy.copy(TASK_TEMPLATE)
+        new_task_dict = copy.deepcopy(TASK_TEMPLATE)
         new_task_dict['call_request_id'] = task_id
         new_task_dict['state'] = state
         new_task_dict['response'] = response
