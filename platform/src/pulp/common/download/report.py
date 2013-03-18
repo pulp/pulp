@@ -47,7 +47,7 @@ class DownloadReport(object):
         :return: report for request
         :rtype: pulp.common.download.report.DownloadReport
         """
-        return cls(request.url, request.destination)
+        return cls(request.url, request.destination, request.data)
 
     def __init__(self, url, destination, data=None):
         """

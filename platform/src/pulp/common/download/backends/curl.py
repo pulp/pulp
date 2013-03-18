@@ -52,6 +52,9 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         return self.config.max_concurrent or DEFAULT_MAX_CONCURRENT
 
     def download(self, request_list):
+        # in case a generator is passed in, cast to a list, which is required by
+        # the next statement
+        request_list = list(request_list)
 
         # this list is backwards so we can pop() efficiently and maintain the original order
         request_queue = [(r, download_report.DownloadReport.from_download_request(r))
@@ -194,7 +197,8 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         else:
             easy_handle.fp = request.destination
 
-        easy_handle.setopt(pycurl.URL, request.url)
+        # pycurl complains in un-helpful ways if the url is unicode
+        easy_handle.setopt(pycurl.URL, str(request.url))
         easy_handle.setopt(pycurl.WRITEFUNCTION, easy_handle.fp.write)
 
         progress_functor = CurlDownloadProgressFunctor(report, self.fire_download_progress)
