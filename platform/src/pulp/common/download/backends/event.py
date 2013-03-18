@@ -97,8 +97,8 @@ class HTTPEventletDownloadBackend(DownloadBackend):
 
                 file_handle.write(body)
 
-                bytes = len(body)
-                report.bytes_downloaded += bytes
+                bytes_read = len(body)
+                report.bytes_downloaded += bytes_read
                 self.fire_download_progress(report)
 
             else:
