@@ -14,7 +14,7 @@ import shutil
 import tempfile
 
 from unittest import TestCase
-from pulp.common.download import factory
+from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 from pulp_node.distributors.http.publisher import HttpPublisher
 from pulp_node.manifest import Manifest
@@ -62,7 +62,7 @@ class TestHttp(TestCase):
         p.publish(units)
         # verify
         conf = DownloaderConfig('http')
-        downloader = factory.get_downloader(conf)
+        downloader = HTTPSCurlDownloader(conf)
         manifest_path = p.manifest_path()
         manifest = Manifest()
         url = 'file://'+manifest_path

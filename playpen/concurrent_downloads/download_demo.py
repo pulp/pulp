@@ -16,8 +16,8 @@ import sys
 from datetime import datetime
 from tempfile import mkdtemp
 
-from pulp.common.download import factory as download_factory
 from pulp.common.download.config import DownloaderConfig
+from pulp.common.download.downloaders.curl import HTTPCurlDownloader
 from pulp.common.download.listener import DownloadEventListener
 from pulp.common.download.request import DownloadRequest
 
@@ -57,7 +57,7 @@ class DemoEventListener(DownloadEventListener):
 def demo(demo_name):
 
     downloader_config = DownloaderConfig(protocol='http', max_concurrent=None)
-    downloader = download_factory.get_downloader(downloader_config, DemoEventListener())
+    downloader = HTTPCurlDownloader(downloader_config, DemoEventListener())
 
     storage_dir = mkdtemp(prefix=demo_name)
     url_list = URLS_MAP[demo_name]()

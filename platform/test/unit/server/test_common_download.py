@@ -21,7 +21,6 @@ import unittest
 import mock
 import pycurl
 
-from pulp.common.download import factory as download_factory
 from pulp.common.download.downloaders import curl as curl_backend
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.request import DownloadRequest
@@ -138,13 +137,13 @@ class FactoryTests(unittest.TestCase):
 
     def test_http_factory(self):
         config = DownloaderConfig('http')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
 
         self.assertTrue(isinstance(downloader, curl_backend.HTTPCurlDownloader))
 
     def test_https_factory(self):
         config = DownloaderConfig('https')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
 
         self.assertTrue(isinstance(downloader, curl_backend.HTTPSCurlDownloader))
 
@@ -190,7 +189,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_single_file(self):
         config = DownloaderConfig('http')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
@@ -215,7 +214,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_multi_file(self):
         config = DownloaderConfig('http')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()
         downloader.download(request_list)
 
@@ -249,7 +248,7 @@ class MockCurlDownloadTests(DownloadTests):
     def test_download_event_listener(self):
         config = DownloaderConfig('http')
         listener = MockEventListener()
-        downloader = download_factory.get_downloader(config, listener)
+        downloader = curl_backend.HTTPSCurlDownloader(config, listener)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
@@ -264,7 +263,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_https_download(self):
         config = DownloaderConfig('https')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
 
         for attr in ('ssl_working_dir', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key'):
             self.assertTrue(hasattr(downloader, attr))
@@ -296,7 +295,7 @@ class LiveCurlDownloadTests(DownloadTests):
         filesystem paths.
         """
         config = DownloaderConfig('http')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
         destination_file = StringIO()
         request_list = [
             DownloadRequest(urljoin('http://localhost:8088/',
@@ -318,7 +317,7 @@ class LiveCurlDownloadTests(DownloadTests):
 
     def test_download_single(self):
         config = DownloaderConfig('http')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
@@ -332,7 +331,7 @@ class LiveCurlDownloadTests(DownloadTests):
 
     def test_download_multiple(self):
         config = DownloaderConfig('http')
-        downloader = download_factory.get_downloader(config)
+        downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()
 
         try:
@@ -344,7 +343,7 @@ class LiveCurlDownloadTests(DownloadTests):
     def test_download_even_listener(self):
         config = DownloaderConfig('http')
         listener = MockEventListener()
-        downloader = download_factory.get_downloader(config, listener)
+        downloader = curl_backend.HTTPSCurlDownloader(config, listener)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
