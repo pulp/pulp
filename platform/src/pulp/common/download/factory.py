@@ -13,9 +13,9 @@
 
 from gettext import gettext as _
 
-from pulp.common.download.backends.curl import (
-    HTTPCurlDownloadBackend, HTTPSCurlDownloadBackend)
-from pulp.common.download.backends.event import HTTPEventletDownloadBackend
+from pulp.common.download.downloaders.curl import (
+    HTTPCurlDownloader, HTTPSCurlDownloader)
+from pulp.common.download.downloaders.event import HTTPEventletDownloader
 
 # download backends and management ---------------------------------------------
 
@@ -31,8 +31,8 @@ class NoBackendForProtocol(Exception):
 
 _BACKENDS = {
     #'http': HTTPCurlDownloadBackend,
-    'http': HTTPEventletDownloadBackend,
-    'https': HTTPSCurlDownloadBackend,
+    'http': HTTPEventletDownloader,
+    'https': HTTPSCurlDownloader,
 }
 
 # downloader factory methods ---------------------------------------------------
@@ -54,7 +54,7 @@ def get_downloader(downloader_config, event_listener=None):
     :param event_listener: event listener instance providing callbacks for downloader events
     :type event_listener: pulp.common.download.listener.DownloadEventListener
     :return: configured download backend instance coupled to the event listener
-    :rtype: pulp.common.download.backends.base.DownloadBackend
+    :rtype: pulp.common.download.downloaders.base.PulpDownloader
     """
 
     # XXX keeping this protocol based for the time being; in the future we may

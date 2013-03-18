@@ -20,7 +20,7 @@ import tempfile
 import pycurl
 
 from pulp.common.download import report as download_report
-from pulp.common.download.backends.base import DownloadBackend
+from pulp.common.download.downloaders.base import PulpDownloader
 
 # default constants ------------------------------------------------------------
 
@@ -45,7 +45,7 @@ DEFAULT_SSL_VERIFY_HOST = 2
 
 # curl-based http download backend ---------------------------------------------
 
-class HTTPCurlDownloadBackend(DownloadBackend):
+class HTTPCurlDownloader(PulpDownloader):
 
     @property
     def max_concurrent(self):
@@ -217,7 +217,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
 # curl-based https download backend --------------------------------------------
 
-class HTTPSCurlDownloadBackend(HTTPCurlDownloadBackend):
+class HTTPSCurlDownloader(HTTPCurlDownloader):
 
     def __init__(self, config, event_listener=None):
         super(self.__class__, self).__init__(config, event_listener)

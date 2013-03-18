@@ -19,7 +19,7 @@ from pulp.common.download.listener import DownloadEventListener
 _LOG = logging.getLogger(__name__)
 
 
-class DownloadBackend(object):
+class PulpDownloader(object):
     """
     Abstract backend base class for downloader implementations. This class
     provides the base APIs required of any concrete downloader class.

@@ -144,7 +144,7 @@ class NodesHttpImporter(Importer):
         :param config: The importer configuration.
         :param config: pulp.plugins.config.PluginCallConfiguration
         :return: A configured downloader
-        :rtype: pulp.common.download.backends.base.DownloadBackend
+        :rtype: pulp.common.download.downloaders.base.PulpDownloader
         """
         ssl = config.get(constants.SSL_KEYWORD, {})
         conf = DownloaderConfig(

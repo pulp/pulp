@@ -22,7 +22,7 @@ import mock
 import pycurl
 
 from pulp.common.download import factory as download_factory
-from pulp.common.download.backends import curl as curl_backend
+from pulp.common.download.downloaders import curl as curl_backend
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.request import DownloadRequest
 
@@ -140,13 +140,13 @@ class FactoryTests(unittest.TestCase):
         config = DownloaderConfig('http')
         downloader = download_factory.get_downloader(config)
 
-        self.assertTrue(isinstance(downloader, curl_backend.HTTPCurlDownloadBackend))
+        self.assertTrue(isinstance(downloader, curl_backend.HTTPCurlDownloader))
 
     def test_https_factory(self):
         config = DownloaderConfig('https')
         downloader = download_factory.get_downloader(config)
 
-        self.assertTrue(isinstance(downloader, curl_backend.HTTPSCurlDownloadBackend))
+        self.assertTrue(isinstance(downloader, curl_backend.HTTPSCurlDownloader))
 
         ssl_working_dir = downloader.ssl_working_dir
         self.assertTrue(os.path.exists(ssl_working_dir))
@@ -366,7 +366,7 @@ class TestHTTPCurlDownloadBackend(unittest.TestCase):
 
         filepointer = easy_handle.fp = mock.MagicMock()
 
-        http_download_backend = curl_backend.HTTPCurlDownloadBackend(mock.MagicMock())
+        http_download_backend = curl_backend.HTTPCurlDownloader(mock.MagicMock())
         http_download_backend._clear_easy_handle_download(easy_handle)
 
         # close() should not have been called on the fp
@@ -384,7 +384,7 @@ class TestHTTPCurlDownloadBackend(unittest.TestCase):
 
         filepointer = easy_handle.fp = mock.MagicMock()
 
-        http_download_backend = curl_backend.HTTPCurlDownloadBackend(mock.MagicMock())
+        http_download_backend = curl_backend.HTTPCurlDownloader(mock.MagicMock())
         http_download_backend._clear_easy_handle_download(easy_handle)
 
         # close() should have been called on the fp

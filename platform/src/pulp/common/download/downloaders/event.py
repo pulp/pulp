@@ -18,7 +18,7 @@ from eventlet import GreenPool
 from eventlet.green import urllib2
 
 from pulp.common.download import report as download_report
-from pulp.common.download.backends.base import DownloadBackend
+from pulp.common.download.downloaders.base import PulpDownloader
 
 
 # taken from python documentation <http://docs.python.org/2.6/library/socket.html#socket.socket.recv>
@@ -31,7 +31,7 @@ _LOG = getLogger(__name__)
 
 # eventlet downloader backend --------------------------------------------------
 
-class HTTPEventletDownloadBackend(DownloadBackend):
+class HTTPEventletDownloader(PulpDownloader):
     """
     Backend that is optimized for downloading large quantities of files.
 
