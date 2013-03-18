@@ -20,7 +20,7 @@ class DownloaderConfig(object):
 
     Currently supported configuration values are:
 
-     * protocol: network protocol to use (http, https)
+     * protocol: network protocol to use (http, https) - **DEPRECATED**
      * max_concurrent: maximum number of downloads to run concurrently
      * basic_auth_username: http basic auth username (basic_auth_password must also be provided)
      * basic_auth_password: http basic auth password (basic_auth_username must also be provided)
@@ -30,19 +30,16 @@ class DownloaderConfig(object):
      * ssl_client_cert_path: path to a ssl client cert (incompatible with ssl_client_cert)
      * ssl_client_key: client private key for secure connections (https protocol only)
      * ssl_client_key_path: path to a ssl client key (incompatible with ssl_client_key)
-     * ssl_verify_host: integer telling the downloader what level of verificaiton to use, 0 means no verificaiton
-     * ssl_verify_peer: integer telling the downloader what level of verificaiton to use, 0 means no verificaiton
+     * ssl_verify_host: integer telling the downloader what level of verification to use, 0 means no verification
+     * ssl_verify_peer: integer telling the downloader what level of verification to use, 0 means no verification
     """
 
-    def __init__(self, protocol, **kwargs):
+    def __init__(self, **kwargs):
         """
         :param protocol: network protocol to use
         :type protocol: str
         :param kwargs: keyword arguments representing the downloader's configuration
         """
-
-        self.protocol = protocol.lower()
-
         max_concurrent = kwargs.pop('max_concurrent', None)
         if not (max_concurrent > 0 or max_concurrent is None):
             raise AttributeError('max_concurrent must be greater than 0')

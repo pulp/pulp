@@ -72,7 +72,7 @@ class TestManifest(TestCase):
         for i in range(0, self.NUM_UNITS):
             units.append({i:i+1})
         manifest.write(self.tmp_dir, units)
-        cfg = DownloaderConfig('http')
+        cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
         manifest = Manifest()
         path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)

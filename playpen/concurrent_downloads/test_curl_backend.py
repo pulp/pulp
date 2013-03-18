@@ -69,7 +69,7 @@ def main():
 
         print '%s: download %d files from %s' % (name.upper(), len(url_list), url_list[0].rsplit('/', 1)[0])
 
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         download_dir = tempfile.mkdtemp(prefix=name+'-')
         request_list = [DownloadRequest(url, os.path.join(download_dir, _filename_from_url(url))) for url in url_list]
 

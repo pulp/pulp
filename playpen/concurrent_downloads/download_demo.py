@@ -56,7 +56,7 @@ class DemoEventListener(DownloadEventListener):
 
 def demo(demo_name):
 
-    downloader_config = DownloaderConfig(protocol='http', max_concurrent=None)
+    downloader_config = DownloaderConfig(max_concurrent=None)
     downloader = HTTPCurlDownloader(downloader_config, DemoEventListener())
 
     storage_dir = mkdtemp(prefix=demo_name)

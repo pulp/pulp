@@ -236,7 +236,7 @@ class TestDistributor(PluginTestBase):
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, self.dist_conf())
         # Verify
-        conf = DownloaderConfig('http')
+        conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
         manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())

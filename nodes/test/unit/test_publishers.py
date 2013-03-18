@@ -61,7 +61,7 @@ class TestHttp(TestCase):
         p = HttpPublisher(base_url, virtual_host, repo_id)
         p.publish(units)
         # verify
-        conf = DownloaderConfig('http')
+        conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
         manifest_path = p.manifest_path()
         manifest = Manifest()

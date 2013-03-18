@@ -136,13 +136,13 @@ def determine_relative_data_dir():
 class FactoryTests(unittest.TestCase):
 
     def test_http_factory(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
 
         self.assertTrue(isinstance(downloader, curl_backend.HTTPCurlDownloader))
 
     def test_https_factory(self):
-        config = DownloaderConfig('https')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
 
         self.assertTrue(isinstance(downloader, curl_backend.HTTPSCurlDownloader))
@@ -188,7 +188,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_single_file(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
@@ -213,7 +213,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_multi_file(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()
         downloader.download(request_list)
@@ -246,7 +246,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_event_listener(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         listener = MockEventListener()
         downloader = curl_backend.HTTPSCurlDownloader(config, listener)
         request_list = self._download_requests()[:1]
@@ -262,7 +262,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_https_download(self):
-        config = DownloaderConfig('https')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
 
         for attr in ('ssl_working_dir', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key'):
@@ -294,7 +294,7 @@ class LiveCurlDownloadTests(DownloadTests):
         We want to assert that we can download URLs to file-like objects, and not just to
         filesystem paths.
         """
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
         destination_file = StringIO()
         request_list = [
@@ -316,7 +316,7 @@ class LiveCurlDownloadTests(DownloadTests):
         self.assertEqual(destination_file_data, expected_data)
 
     def test_download_single(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
@@ -330,7 +330,7 @@ class LiveCurlDownloadTests(DownloadTests):
         self.assertEqual(input_file_size, output_file_size)
 
     def test_download_multiple(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         downloader = curl_backend.HTTPSCurlDownloader(config)
         request_list = self._download_requests()
 
@@ -341,7 +341,7 @@ class LiveCurlDownloadTests(DownloadTests):
             self.fail(str(e))
 
     def test_download_even_listener(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         listener = MockEventListener()
         downloader = curl_backend.HTTPSCurlDownloader(config, listener)
         request_list = self._download_requests()[:1]
