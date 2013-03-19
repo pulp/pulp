@@ -29,6 +29,7 @@ from gettext import gettext as _
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client import arg_utils
 from pulp.client.commands.options import OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES, OPTION_REPO_ID
+from pulp.client.commands.polling import PollingCommand
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
 # -- constants ----------------------------------------------------------------
@@ -62,47 +63,51 @@ class CreateRepositoryCommand(PulpCliCommand):
 
     def run(self, **kwargs):
         # Collect input
-        id = kwargs[OPTION_REPO_ID.keyword]
-        name = id
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+        name = repo_id
         if OPTION_NAME.keyword in kwargs:
             name = kwargs[OPTION_NAME.keyword]
         description = kwargs[OPTION_DESCRIPTION.keyword]
         notes = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
 
         # Call the server
-        self.context.server.repo.create(id, name, description, notes)
+        self.context.server.repo.create(repo_id, name, description, notes)
         msg = _('Repository [%(r)s] successfully created')
-        self.prompt.render_success_message(msg % {'r' : id})
+        self.prompt.render_success_message(msg % {'r' : repo_id})
 
 
-class DeleteRepositoryCommand(PulpCliCommand):
+class DeleteRepositoryCommand(PollingCommand):
     """
-    Deletes a repository from the Pulp server.
+    Deletes a repository from the Pulp server. This command uses the polling behavior of its
+    superclass.
     """
 
     def __init__(self, context, name='delete', description=DESC_DELETE, method=None):
-        self.context = context
-        self.prompt = context.prompt
-
         if method is None:
             method = self.run
 
-        super(DeleteRepositoryCommand, self).__init__(name, description, method)
+        super(DeleteRepositoryCommand, self).__init__(name, description, method, context)
 
         self.add_option(OPTION_REPO_ID)
 
+        self.repo_id = None  # set when the command is run
+
     def run(self, **kwargs):
-        id = kwargs[OPTION_REPO_ID.keyword]
+        self.repo_id = kwargs[OPTION_REPO_ID.keyword]
 
         try:
-            self.context.server.repo.delete(id)
-            msg = _('The request to delete repository [%(r)s] has been received '
-                    'by the server. The progress of the task can be viewed '
-                    'using the commands under "repo tasks"')
-            self.prompt.write(msg % {'r' : id}, tag='queued')
+            task_list = self.context.server.repo.delete(self.repo_id).response_body
+            delete_task = task_list[0]  # ignore the unbind tasks for the purposes of this command
+            self.poll([delete_task])
+
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
-            self.prompt.write(msg % {'r' : id}, tag='not-found')
+            self.prompt.write(msg % {'r' : self.repo_id}, tag='not-found')
+
+    def succeeded(self, task):
+        msg = _('Repository [%(r)s] successfully deleted')
+        msg = msg % {'r' : self.repo_id}
+        self.prompt.render_success_message(msg)
 
 
 class UpdateRepositoryCommand(PulpCliCommand):
