@@ -12,11 +12,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from _socket import gaierror
+from socket import error as socket_error
 from M2Crypto.SSL.Checker import WrongHost
 
 import base
 import pulp.bindings.exceptions as exceptions
-from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
+from pulp.client.extensions.core import TAG_FAILURE
 import pulp.client.extensions.exceptions as handler
 from pulp.client.arg_utils import InvalidConfig
 
@@ -95,6 +96,12 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
         code = self.exception_handler.handle_exception(gaierror())
         self.assertEqual(code, handler.CODE_UNKNOWN_HOST)
+        self.assertEqual(1, len(self.prompt.tags))
+        self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
+        code = self.exception_handler.handle_exception(socket_error())
+        self.assertEqual(code, handler.CODE_SOCKET_ERROR)
         self.assertEqual(1, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
@@ -311,3 +318,21 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         # Verify
         self.assertEqual(code, handler.CODE_UNEXPECTED)
         self.assertTrue('unexpected' in self.recorder.lines[0])
+
+    def test_socket_error(self):
+        # Test
+        e = socket_error()
+        code = self.exception_handler.handle_socket_error(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_SOCKET_ERROR)
+        self.assertTrue('refused' not in self.recorder.lines[0])
+
+    def test_socket_error_connection_refused(self):
+        # Test
+        e = socket_error(111)
+        code = self.exception_handler.handle_socket_error(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_SOCKET_ERROR)
+        self.assertTrue('refused' in self.recorder.lines[0])
