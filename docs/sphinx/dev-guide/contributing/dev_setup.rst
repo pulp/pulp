@@ -44,6 +44,7 @@ Any changes made in the working copy will be immediately deployed in the site-pa
 and installed scripts. Setup scripts can be found in the following locations:
 
 * ``<pulp root>/platform/src``
+* ``<pulp root>/pulp_devel``
 * ``<pulp_rpm root>/rpm-support/src``
 * ``<pulp_puppet root>/pulp_puppet_common``
 * ``<pulp_puppet root>/pulp_puppet_extensions_admin``
