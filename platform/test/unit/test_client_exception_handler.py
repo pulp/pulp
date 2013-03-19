@@ -327,6 +327,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         # Verify
         self.assertEqual(code, handler.CODE_SOCKET_ERROR)
         self.assertTrue('refused' not in self.recorder.lines[0])
+        self.assertEqual([TAG_FAILURE], self.prompt.get_write_tags())
 
     def test_socket_error_connection_refused(self):
         # Test
@@ -336,3 +337,4 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         # Verify
         self.assertEqual(code, handler.CODE_SOCKET_ERROR)
         self.assertTrue('refused' in self.recorder.lines[0])
+        self.assertEqual([TAG_FAILURE], self.prompt.get_write_tags())
