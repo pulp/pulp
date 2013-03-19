@@ -21,8 +21,9 @@ import unittest
 import mock
 import pycurl
 
-from pulp.common.download.downloaders import curl as curl_backend
 from pulp.common.download.config import DownloaderConfig
+from pulp.common.download.downloaders import curl as curl_downloader
+from pulp.common.download.downloaders import event as eventlet_downloader
 from pulp.common.download.request import DownloadRequest
 
 from http_static_test_server import HTTPStaticTestServer
@@ -133,27 +134,6 @@ def determine_relative_data_dir():
 
 # test suite -------------------------------------------------------------------
 
-class FactoryTests(unittest.TestCase):
-
-    def test_http_factory(self):
-        config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
-
-        self.assertTrue(isinstance(downloader, curl_backend.HTTPCurlDownloader))
-
-    def test_https_factory(self):
-        config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
-
-        self.assertTrue(isinstance(downloader, curl_backend.HTTPSCurlDownloader))
-
-        ssl_working_dir = downloader.ssl_working_dir
-        self.assertTrue(os.path.exists(ssl_working_dir))
-
-        del downloader
-        self.assertFalse(os.path.exists(ssl_working_dir))
-
-
 class DownloadRequestTests(unittest.TestCase):
     def test__init__(self):
         request = DownloadRequest(
@@ -181,6 +161,30 @@ class DownloadTests(unittest.TestCase):
         return [DownloadRequest(protocol + '://localhost:8088/' + self.data_dir + f, os.path.join(self.storage_dir, f))
                 for f in self.file_list]
 
+# curl downloader tests --------------------------------------------------------
+
+class CurlInstantiationTests(unittest.TestCase):
+
+    def test_http_downloader(self):
+        config = DownloaderConfig()
+        try:
+            curl_downloader.HTTPSCurlDownloader(config)
+        except Exception, e:
+            self.fail(str(e))
+
+    def test_https_downloader(self):
+        config = DownloaderConfig()
+        try:
+            downloader = curl_downloader.HTTPSCurlDownloader(config)
+        except Exception, e:
+            self.fail(str(e))
+
+        ssl_working_dir = downloader.ssl_working_dir
+        self.assertTrue(os.path.exists(ssl_working_dir))
+
+        del downloader
+        self.assertFalse(os.path.exists(ssl_working_dir))
+
 
 class MockCurlDownloadTests(DownloadTests):
     # test suite that really tests the download framework built on top of pycurl
@@ -189,12 +193,12 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_single_file(self):
         config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
+        downloader = curl_downloader.HTTPSCurlDownloader(config)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
         self.assertEqual(len(pycurl.CurlMulti.mock_objs), 1)
-        self.assertEqual(len(pycurl.Curl.mock_objs), curl_backend.DEFAULT_MAX_CONCURRENT)
+        self.assertEqual(len(pycurl.Curl.mock_objs), curl_downloader.DEFAULT_MAX_CONCURRENT)
 
         mock_multi_curl = pycurl.CurlMulti.mock_objs[0]
 
@@ -207,14 +211,14 @@ class MockCurlDownloadTests(DownloadTests):
 
         mock_curl = pycurl.Curl.mock_objs[-1] # curl objects are used from back of the list
 
-        self.assertEqual(mock_curl.setopt.call_count, 8) # also dangerous for the same reasons
+        self.assertEqual(mock_curl.setopt.call_count, 10) # also dangerous for the same reasons
         self.assertEqual(mock_curl.perform.call_count, 1)
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_multi_file(self):
         config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
+        downloader = curl_downloader.HTTPSCurlDownloader(config)
         request_list = self._download_requests()
         downloader.download(request_list)
 
@@ -232,7 +236,7 @@ class MockCurlDownloadTests(DownloadTests):
         mock_curl_multi = pycurl.CurlMulti.mock_objs[0]
         self.assertEqual(mock_curl_multi.perform.call_count, 1)
 
-        num_unused_curl_objs = max(0, curl_backend.DEFAULT_MAX_CONCURRENT - len(self.file_list))
+        num_unused_curl_objs = max(0, curl_downloader.DEFAULT_MAX_CONCURRENT - len(self.file_list))
         unused_mock_curl_objs = pycurl.Curl.mock_objs[:num_unused_curl_objs]
 
         for mock_curl in unused_mock_curl_objs:
@@ -248,7 +252,7 @@ class MockCurlDownloadTests(DownloadTests):
     def test_download_event_listener(self):
         config = DownloaderConfig()
         listener = MockEventListener()
-        downloader = curl_backend.HTTPSCurlDownloader(config, listener)
+        downloader = curl_downloader.HTTPSCurlDownloader(config, listener)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
@@ -263,7 +267,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_https_download(self):
         config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
+        downloader = curl_downloader.HTTPSCurlDownloader(config)
 
         for attr in ('ssl_working_dir', 'ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key'):
             self.assertTrue(hasattr(downloader, attr))
@@ -279,15 +283,17 @@ class MockCurlDownloadTests(DownloadTests):
 class LiveCurlDownloadTests(DownloadTests):
     # test suite that tests that pycurl is being used (mostly) correctly
 
-    http_server = HTTPStaticTestServer()
+    http_server = None
 
     @classmethod
     def setUpClass(cls):
+        cls.http_server = HTTPStaticTestServer()
         cls.http_server.start()
 
     @classmethod
     def tearDownClass(cls):
         cls.http_server.stop()
+        cls.http_server = None
 
     def test_download_destination_file_like_object(self):
         """
@@ -295,7 +301,7 @@ class LiveCurlDownloadTests(DownloadTests):
         filesystem paths.
         """
         config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
+        downloader = curl_downloader.HTTPSCurlDownloader(config)
         destination_file = StringIO()
         request_list = [
             DownloadRequest(urljoin('http://localhost:8088/',
@@ -317,7 +323,7 @@ class LiveCurlDownloadTests(DownloadTests):
 
     def test_download_single(self):
         config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
+        downloader = curl_downloader.HTTPSCurlDownloader(config)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
@@ -331,7 +337,7 @@ class LiveCurlDownloadTests(DownloadTests):
 
     def test_download_multiple(self):
         config = DownloaderConfig()
-        downloader = curl_backend.HTTPSCurlDownloader(config)
+        downloader = curl_downloader.HTTPSCurlDownloader(config)
         request_list = self._download_requests()
 
         try:
@@ -340,10 +346,10 @@ class LiveCurlDownloadTests(DownloadTests):
         except Exception, e:
             self.fail(str(e))
 
-    def test_download_even_listener(self):
+    def test_download_event_listener(self):
         config = DownloaderConfig()
         listener = MockEventListener()
-        downloader = curl_backend.HTTPSCurlDownloader(config, listener)
+        downloader = curl_downloader.HTTPSCurlDownloader(config, listener)
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
@@ -365,7 +371,7 @@ class TestHTTPCurlDownloadBackend(unittest.TestCase):
 
         filepointer = easy_handle.fp = mock.MagicMock()
 
-        http_download_backend = curl_backend.HTTPCurlDownloader(mock.MagicMock())
+        http_download_backend = curl_downloader.HTTPCurlDownloader(mock.MagicMock())
         http_download_backend._clear_easy_handle_download(easy_handle)
 
         # close() should not have been called on the fp
@@ -383,7 +389,7 @@ class TestHTTPCurlDownloadBackend(unittest.TestCase):
 
         filepointer = easy_handle.fp = mock.MagicMock()
 
-        http_download_backend = curl_backend.HTTPCurlDownloader(mock.MagicMock())
+        http_download_backend = curl_downloader.HTTPCurlDownloader(mock.MagicMock())
         http_download_backend._clear_easy_handle_download(easy_handle)
 
         # close() should have been called on the fp
@@ -391,3 +397,82 @@ class TestHTTPCurlDownloadBackend(unittest.TestCase):
         self.assertEqual(easy_handle.fp, None)
         self.assertEqual(easy_handle.request, None)
         self.assertEqual(easy_handle.report, None)
+
+# evenetlet downloader tests ---------------------------------------------------
+
+class EventletDownloaderInstantiationTests(unittest.TestCase):
+
+    def test_instantiation(self):
+        config =  DownloaderConfig()
+        try:
+            eventlet_downloader.HTTPEventletDownloader(config)
+        except Exception, e:
+            self.fail(str(e))
+
+
+class LiveEventletDownloaderTests(DownloadTests):
+
+    http_server = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.http_server = HTTPStaticTestServer()
+        cls.http_server.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.http_server.stop()
+        cls.http_server = None
+
+    def test_download_single(self):
+        config = DownloaderConfig()
+        downloader = eventlet_downloader.HTTPEventletDownloader(config)
+        request_list = self._download_requests()[:1]
+        downloader.download(request_list)
+
+        input_file_name = self.file_list[0]
+        input_file_size = self.file_sizes[0]
+
+        output_file_path = os.path.join(self.storage_dir, input_file_name)
+        output_file_size = os.path.getsize(output_file_path)
+
+        self.assertEqual(input_file_size, output_file_size)
+
+    def test_download_multiple(self):
+        downloader = eventlet_downloader.HTTPEventletDownloader(DownloaderConfig())
+        request_list = self._download_requests()
+
+        try:
+            downloader.download(request_list)
+
+        except Exception, e:
+            self.fail(str(e))
+
+    def test_file_like_destination(self):
+        downloader = eventlet_downloader.HTTPEventletDownloader(DownloaderConfig())
+        request_list = self._download_requests()[:1]
+        request_list[0].destination = StringIO()
+        downloader.download(request_list)
+
+        contents = request_list[0].destination.getvalue()
+
+        self.assertEqual(len(contents), self.file_sizes[0])
+
+        try:
+            request_list[0].destination.close()
+        except Exception, e:
+            self.fail(str(e))
+
+    def test_download_event_listener(self):
+        listener = MockEventListener()
+        downloader = eventlet_downloader.HTTPEventletDownloader(DownloaderConfig(), listener)
+        request_list = self._download_requests()[:1]
+        downloader.download(request_list)
+
+        self.assertEqual(listener.batch_started.call_count, 0) # batch not supported
+        self.assertEqual(listener.batch_finished.call_count, 0)
+        self.assertEqual(listener.download_started.call_count, 1)
+        self.assertNotEqual(listener.download_progress.call_count, 0) # not sure how many times
+        self.assertEqual(listener.download_succeeded.call_count, 1)
+        self.assertEqual(listener.download_failed.call_count, 0)
+
