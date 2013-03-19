@@ -270,7 +270,10 @@ class OrphanCollection(JSONController):
     @auth_required(READ)
     def GET(self):
         orphan_manager = factory.content_orphan_manager()
-        orphans = orphan_manager.list_all_orphans()
+        # NOTE this can still potentially stomp on memory, but hopefully the
+        # _with_search_indexes methods will reduce the foot print enough that
+        # we'll never see this bug again
+        orphans = list(orphan_manager.generate_all_orphans_with_search_indexes())
         map(lambda o: o.update(serialization.link.child_link_obj(o['_content_type_id'], o['_id'])), orphans)
         return self.ok(orphans)
 
@@ -287,7 +290,10 @@ class OrphanTypeSubCollection(JSONController):
     @auth_required(READ)
     def GET(self, content_type):
         orphan_manager = factory.content_orphan_manager()
-        orphans = orphan_manager.list_orphans_by_type(content_type)
+        # NOTE this can still potentially stomp on memory, but hopefully the
+        # _with_search_indexes methods will reduce the foot print enough that
+        # we'll never see this bug again
+        orphans = list(orphan_manager.generate_orphans_by_type_with_search_indexes(content_type))
         map(lambda o: o.update(serialization.link.child_link_obj(o['_id'])), orphans)
         return self.ok(orphans)
 
