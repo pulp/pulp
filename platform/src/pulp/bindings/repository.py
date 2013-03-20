@@ -311,7 +311,7 @@ class RepositoryUnitAPI(PulpAPI):
         """
         criteria = {
             'filters': {'unit': SearchAPI.compose_filters(**kwargs)},
-            'type_ids' : kwargs['type_ids'],
+            'type_ids' : kwargs.get('type_ids', None),
         }
 
         # build the association filters
@@ -361,7 +361,7 @@ class RepositoryUnitAPI(PulpAPI):
         data = {'criteria': criteria}
         return self.server.POST(path, data)
 
-    def copy(self, source_repo_id, destination_repo_id, **kwargs):
+    def copy(self, source_repo_id, destination_repo_id, override_config=None, **kwargs):
         """
         Perform a search of RepoContentUnits in the source repo, and copy the
         results to the destination repo.
@@ -375,10 +375,7 @@ class RepositoryUnitAPI(PulpAPI):
 
         :return:    server response
         """
-        override_config = {}
-        if 'resursive' in kwargs and kwargs['recursive']:
-            override_config['recursive'] = kwargs['recursive']
-
+        override_config = override_config or {}
         criteria = self._generate_search_criteria(**kwargs)
         data = {
             'source_repo_id' : source_repo_id,

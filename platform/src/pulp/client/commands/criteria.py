@@ -68,13 +68,11 @@ class CriteriaCommand(PulpCliCommand):
         :param include_search: if True, the command will add all non-filter
                                criteria options such as limit, seek, sort, etc.
         :type  include_search: bool
-
         """
         name = name or kwargs.pop('name', None) or 'search'
         description = description or kwargs.pop('description', None) or _SEARCH_DESCRIPTION
 
-        super(CriteriaCommand, self).__init__(name, description,
-            method, *args, **kwargs)
+        PulpCliCommand.__init__(self, name, description, method, **kwargs)
 
         # Hang on to these so unit tests can verify the command is configuration
         self.filtering = filtering
@@ -261,7 +259,7 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
         @param method: method that should be invoked when the command is executed
         @type  method: callable
         """
-        super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
+        CriteriaCommand.__init__(self, method, *args, **kwargs)
 
         self.add_option(PulpCliOption('--repo-id',
             _('identifies the repository to search within'), required=True))
