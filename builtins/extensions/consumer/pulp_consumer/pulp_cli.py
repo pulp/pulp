@@ -14,12 +14,15 @@
 import os
 
 from gettext import gettext as _
+from M2Crypto.X509 import X509Error
 
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions import exceptions
 from pulp.client import validators
+
 
 # -- framework hook -----------------------------------------------------------
 
@@ -94,10 +97,10 @@ class RegisterCommand(PulpCliCommand):
         # Check if this consumer is already registered
         existing_consumer = load_consumer_id(self.context)
         if existing_consumer:
-            m = 'This system has already been registered as a consumer. Please ' \
-            'use the unregister command to remove the consumer before attempting ' \
-            'to reregister.'
-            self.prompt.render_failure_message(_(m))
+            m = _('This system has already been registered as a consumer. Please '
+                  'use the unregister command to remove the consumer before attempting '
+                  'to re-register.')
+            self.prompt.render_failure_message(m)
             return
 
         # Get other consumer parameters
@@ -114,8 +117,8 @@ class RegisterCommand(PulpCliCommand):
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         if not os.access(id_cert_dir, os.W_OK):
             msg = _("Write permission is required for %(d)s to perform this operation.")
-            self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
-            return os.EX_NOPERM
+            self.prompt.render_failure_message(msg % {'d': id_cert_dir})
+            return exceptions.CODE_PERMISSIONS_EXCEPTION
 
         # Call the server
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
@@ -128,6 +131,7 @@ class RegisterCommand(PulpCliCommand):
         f.close()
 
         self.prompt.render_success_message('Consumer [%s] successfully registered' % id)
+
 
 class UpdateCommand(PulpCliCommand):
 
@@ -161,6 +165,7 @@ class UpdateCommand(PulpCliCommand):
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
+
 class UnregisterCommand(PulpCliCommand):
 
     def __init__(self, context, name, description):
@@ -173,29 +178,69 @@ class UnregisterCommand(PulpCliCommand):
         self.create_flag('--force', _(d))
 
     def unregister(self, **kwargs):
-        consumer_id = load_consumer_id(self.context)
-        if not consumer_id:
-            self.context.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
-            return
+
+        force = kwargs['force']
 
         # Check write permissions to cert directory
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         if not os.access(id_cert_dir, os.W_OK):
             msg = _("Write permission is required for %(d)s to perform this operation.")
-            self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
-            return os.EX_NOPERM
+            self.prompt.render_failure_message(msg % {'d': id_cert_dir})
+            return exceptions.CODE_PERMISSIONS_EXCEPTION
 
+        # Get the consumer ID
+        try:
+            consumer_id = load_consumer_id(self.context)
+            if not consumer_id:
+                msg = _('This consumer is not registered to the Pulp server.')
+                self.context.prompt.render_failure_message(msg)
+                return exceptions.CODE_NOT_FOUND
+        except X509Error:
+            self.context.logger.exception('Consumer certificate not valid.')
+            if force:
+                self._delete_cert()
+                msg = _('Consumer certificate deleted.')
+                self.context.prompt.render_success_message(msg)
+                self._forced_warning()
+                return os.EX_OK
+            else:
+                msg = _('Consumer certificate not valid. Please retry using the --force option.')
+                self.context.prompt.render_failure_message(msg)
+                return os.EX_DATAERR
+
+        # Unregister on the server
+        forced = True
         try:
             self.context.server.consumer.unregister(consumer_id)
-            self._delete_cert()
-            self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
+            forced = False
         except NotFoundException:
-            if kwargs['force']:
-                self._delete_cert()
-                self.context.prompt.render_success_message('Consumer [%s] successfully unregistered' % consumer_id)
-            else:
+            if not force:
                 msg = _('This consumer does not exist on the server. Please retry using the --force option.')
                 self.prompt.render_failure_message(msg)
+                return exceptions.CODE_NOT_FOUND
+        except X509Error:
+            self.context.logger.exception('SSL connection failed.')
+            if not force:
+                msg = _('SSL connection failed. This error may be ignored by using the --force option.')
+                self.prompt.render_failure_message(msg)
+                return os.EX_OSERR
+        except Exception:
+            self.context.logger.exception('Unregistration failed')
+            if not force:
+                msg = _('Unregistration failed on the server. This error may be ignored by using the --force option.')
+                self.prompt.render_failure_message(msg)
+                return exceptions.CODE_UNEXPECTED
+
+        # Unregister locally
+        self._delete_cert()
+        msg = 'Consumer [%(c)s] successfully unregistered' % dict(c=consumer_id)
+        self.context.prompt.render_success_message(msg)
+        if forced:
+            self._forced_warning()
+
+    def _forced_warning(self):
+        msg = _('Warning: The unregistration was not coordinated with the server.')
+        self.context.prompt.render_warning_message(msg)
 
     def _delete_cert(self):
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
@@ -203,6 +248,7 @@ class UnregisterCommand(PulpCliCommand):
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
         if os.path.exists(cert_filename):
             os.remove(cert_filename)
+
 
 class HistoryCommand(PulpCliCommand):
 
