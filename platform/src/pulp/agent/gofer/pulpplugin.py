@@ -75,7 +75,8 @@ class ConsumerX509Bundle(Bundle):
         """
         Get the common name (CN) part of the certificate subject.
         Returns None, if the certificate is invalid.
-        :return The common name (CN) part of the certificate subject.
+        :return The common name (CN) part of the certificate subject or None when
+            the certificate is not found or invalid.
         :rtype: str
         """
         try:
@@ -117,7 +118,7 @@ class Conduit(HandlerConduit):
         """
         Get the consumer configuration.
         :return: The consumer configuration object.
-        :rtype: L{pulp.common.config.Config}
+        :rtype: pulp.common.config.Config
         """
         paths = ['/etc/pulp/consumer/consumer.conf']
         overrides = os.path.expanduser('~/.pulp/consumer.conf')
@@ -151,7 +152,7 @@ class Heartbeat:
         """
         Get the cached producer.
         :return: A producer.
-        :rtype: L{Producer}
+        :rtype: Producer
         """
         if not cls.__producer:
             broker = plugin.getbroker()
@@ -187,7 +188,7 @@ class RegistrationMonitor:
     which causes a detach/attach to be sure we are attached with
     the correct UUID.
     @cvar pmon: A path monitor object.
-    :type pmon: L{PathMonitor}
+    :type pmon: PathMonitor
     """
 
     pmon = PathMonitor()
@@ -376,10 +377,10 @@ class Profile:
         bindings = PulpBindings()
         report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
-        for typeid, profile_report in report.details.items():
+        for type_id, profile_report in report.details.items():
             if not profile_report['succeeded']:
                 continue
             details = profile_report['details']
-            http = bindings.profile.send(consumer_id, typeid, details)
-            log.debug('profile (%s), reported: %d', typeid, http.response_code)
+            http = bindings.profile.send(consumer_id, type_id, details)
+            log.debug('profile (%s), reported: %d', type_id, http.response_code)
         return report.dict()
