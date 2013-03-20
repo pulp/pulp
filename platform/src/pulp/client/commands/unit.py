@@ -92,13 +92,13 @@ class OrphanUnitListCommand(PulpCliCommand):
 
         self.add_option(type_option)
 
-        m = _('only display the summary as a count of orphaned units of each content type')
-        summary_flag = PulpCliFlag('--summary', m, ('-s',))
-        self.add_flag(summary_flag)
+        m = _('include a detailed list of the individual orphaned units')
+        details_flag = PulpCliFlag('--details', m)
+        self.add_flag(details_flag)
 
     def run(self, **kwargs):
         content_type = kwargs.get('type', None)
-        summary_only = kwargs.get('summary', False)
+        show_details = kwargs.get('details', False)
 
         if content_type is not None:
             orphans = self.context.server.content_orphan.orphans_by_type(content_type).response_body
@@ -111,7 +111,7 @@ class OrphanUnitListCommand(PulpCliCommand):
             orphan_type = orphan['_content_type_id']
             summary[orphan_type] = summary.get(orphan_type, 0) + 1
 
-            if not summary_only:
+            if show_details:
                 # set the 'id' if it's not already there
                 orphan.setdefault('id', orphan.get('_id', None))
                 self.prompt.render_document(orphan)
