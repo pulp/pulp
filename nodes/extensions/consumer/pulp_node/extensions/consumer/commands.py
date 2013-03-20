@@ -48,12 +48,6 @@ DEACTIVATE_DESC = _('deactivate a child node')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 
 
-# --- notes ------------------------------------------------------------------
-
-ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
-DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
-
-
 # --- messages ---------------------------------------------------------------
 
 NODE_ACTIVATED = _('Consumer activated as child node')
@@ -100,12 +94,19 @@ class NodeActivateCommand(PulpCliCommand):
 
     def __init__(self, context):
         super(NodeActivateCommand, self).__init__(ACTIVATE_NAME, ACTIVATE_DESC, self.run)
+        self.add_option(STRATEGY_OPTION)
         self.context = context
 
     def run(self, **kwargs):
 
         consumer_id = load_consumer_id(self.context)
-        delta = {'notes': ACTIVATED_NOTE}
+        strategy = kwargs[STRATEGY_OPTION.keyword]
+        delta = {'notes': {constants.NODE_NOTE_KEY: True, constants.STRATEGY_NOTE_KEY: strategy}}
+
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
         try:
             self.context.server.consumer.update(consumer_id, delta)
@@ -128,7 +129,7 @@ class NodeDeactivateCommand(PulpCliCommand):
     def run(self, **kwargs):
 
         consumer_id = load_consumer_id(self.context)
-        delta = {'notes': DEACTIVATED_NOTE}
+        delta = {'notes': {constants.NODE_NOTE_KEY: None, constants.STRATEGY_NOTE_KEY: None}}
 
         if not node_activated(self.context, consumer_id):
             self.context.prompt.render_success_message(NOT_ACTIVATED_NOTHING_DONE)

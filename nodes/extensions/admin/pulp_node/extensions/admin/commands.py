@@ -76,12 +76,6 @@ NODE_LIST_TITLE = _('Child Nodes')
 REPO_LIST_TITLE = _('Enabled Repositories')
 
 
-# --- notes ------------------------------------------------------------------
-
-ACTIVATED_NOTE = {constants.NODE_NOTE_KEY: True}
-DEACTIVATED_NOTE = {constants.NODE_NOTE_KEY: None}
-
-
 # --- options ----------------------------------------------------------------
 
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
@@ -151,6 +145,11 @@ def initialize(context):
 
 class NodeListCommand(ConsumerListCommand):
 
+    STRATEGY_FIELD = 'update_strategy'
+
+    _ALL_FIELDS = ConsumerListCommand._ALL_FIELDS[0:-1] \
+        + [STRATEGY_FIELD] + ConsumerListCommand._ALL_FIELDS[-1:]
+
     def __init__(self, context):
         super(NodeListCommand, self).__init__(context, description=NODE_LIST_DESC)
 
@@ -161,8 +160,11 @@ class NodeListCommand(ConsumerListCommand):
         nodes = []
         for consumer in super(NodeListCommand, self).get_consumer_list(kwargs):
             notes = consumer['notes']
-            if notes.get(constants.NODE_NOTE_KEY, False):
-                nodes.append(consumer)
+            if not notes.get(constants.NODE_NOTE_KEY):
+                continue
+            consumer[self.STRATEGY_FIELD] = \
+                notes.get(constants.STRATEGY_NOTE_KEY, constants.DEFAULT_STRATEGY)
+            nodes.append(consumer)
         return nodes
 
     def format_bindings(self, consumer):
@@ -238,12 +240,19 @@ class NodeActivateCommand(PulpCliCommand):
     def __init__(self, context):
         super(NodeActivateCommand, self).__init__(ACTIVATE_NAME, ACTIVATE_DESC, self.run)
         self.add_option(OPTION_CONSUMER_ID)
+        self.add_option(STRATEGY_OPTION)
         self.context = context
 
     def run(self, **kwargs):
 
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
-        delta = {'notes': ACTIVATED_NOTE}
+        strategy = kwargs[STRATEGY_OPTION.keyword]
+        delta = {'notes': {constants.NODE_NOTE_KEY: True, constants.STRATEGY_NOTE_KEY: strategy}}
+
+        if strategy not in constants.STRATEGIES:
+            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_DATAERR
 
         try:
             self.context.server.consumer.update(consumer_id, delta)
@@ -268,7 +277,7 @@ class NodeDeactivateCommand(PulpCliCommand):
     def run(self, **kwargs):
 
         consumer_id = kwargs[NODE_ID_OPTION.keyword]
-        delta = {'notes': DEACTIVATED_NOTE}
+        delta = {'notes': {constants.NODE_NOTE_KEY: None, constants.STRATEGY_NOTE_KEY: None}}
 
         if not node_activated(self.context, consumer_id):
             msg = NOT_ACTIVATED_NOTHING_DONE % dict(t=CONSUMER)
@@ -464,13 +473,10 @@ class NodeUpdateCommand(PollingCommand):
     def __init__(self, context):
         super(NodeUpdateCommand, self).__init__(UPDATE_NAME, UPDATE_DESC, self.run, context)
         self.add_option(NODE_ID_OPTION)
-        self.add_option(STRATEGY_OPTION)
         self.tracker = ProgressTracker(self.context.prompt)
 
     def run(self, **kwargs):
         node_id = kwargs[NODE_ID_OPTION.keyword]
-        strategy = kwargs[STRATEGY_OPTION.keyword]
-        options = {constants.STRATEGY_KEYWORD: strategy}
         units = [dict(type_id='node', unit_key=None)]
 
         if not node_activated(self.context, node_id):
@@ -478,13 +484,8 @@ class NodeUpdateCommand(PollingCommand):
             self.context.prompt.render_failure_message(msg)
             return os.EX_USAGE
 
-        if strategy not in constants.STRATEGIES:
-            msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
-            self.context.prompt.render_failure_message(msg)
-            return os.EX_DATAERR
-
         try:
-            http = self.context.server.consumer_content.update(node_id, units=units, options=options)
+            http = self.context.server.consumer_content.update(node_id, units=units, options={})
             task = http.response_body
             if self.rejected(task) or self.postponed(task):
                 return
