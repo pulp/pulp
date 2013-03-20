@@ -122,7 +122,7 @@ class HandlerStrategy(object):
         """
         errors = []
         reports = {}
-        for repo_id in repo_ids:
+        for repo_id in sorted(repo_ids):
             if self.cancelled:
                 break
             repo = ChildRepository(repo_id)
