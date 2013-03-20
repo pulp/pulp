@@ -110,13 +110,14 @@ class ProgressTracker:
 
 class UpdateRenderer(object):
 
-    def __init__(self, prompt, details):
+    def __init__(self, prompt, report):
         self.prompt = prompt
-        self.merge_report = details['merge_report']
+        self.succeeded = report['succeeded']
+        self.merge_report = report['details']['merge_report']
         self.added = self.merge_report['added']
         self.merged = self.merge_report['merged']
         self.removed = self.merge_report['removed']
-        self.importer_reports = details['importer_reports']
+        self.importer_reports = report['details']['importer_reports']
 
     def render(self):
         documents = []
@@ -159,10 +160,10 @@ class UpdateRenderer(object):
 
         self.prompt.write('\n\n')
 
-        if failed_repositories:
-            self.prompt.render_success_message(FAILED_MSG)
-        else:
+        if self.succeeded:
             self.prompt.render_success_message(SUCCEEDED_MSG)
+        else:
+            self.prompt.render_failure_message(FAILED_MSG)
 
         self.prompt.render_title(SYNC_TITLE)
         self.prompt.render_document_list(documents, order=['repository'])

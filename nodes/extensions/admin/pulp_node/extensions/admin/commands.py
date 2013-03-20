@@ -502,6 +502,6 @@ class NodeUpdateCommand(PollingCommand):
         self.tracker.display(report)
 
     def succeeded(self, consumer_id, task):
-        details = task.result['details'].values()[0]['details']
-        r = UpdateRenderer(self.context.prompt, details)
+        report = task.result['details'].values()[0]
+        r = UpdateRenderer(self.context.prompt, report)
         r.render()
