@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.21.beta
+Release: 0.23.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -210,12 +210,14 @@ Pulp provides replication, access, and accounting for software repositories.
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
 %dir %{_var}/log/%{name}
-%{_sysconfdir}/pki/%{name}/
+%dir %{_sysconfdir}/pki/%{name}
 %{_var}/lib/%{name}/
 %{_usr}/lib/%{name}/plugins/distributors
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
 %{_usr}/lib/%{name}/plugins/types
+%{_sysconfdir}/pki/%{name}/ca.key
+%{_sysconfdir}/pki/%{name}/ca.crt
 /srv/%{name}/webservices.wsgi
 %doc
 
@@ -342,10 +344,11 @@ A tool used to administer a pulp consumer.
 %defattr(-,root,root,-)
 %dir %{_sysconfdir}/%{name}/consumer
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
+%dir %{_sysconfdir}/pki/%{name}/consumer/
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
-%config(noreplace) %{_sysconfdir}/pki/%{name}/consumer
 %{_bindir}/%{name}-consumer
+%ghost %{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 %doc
 
 
@@ -356,6 +359,7 @@ Summary: The Pulp agent
 Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
+Requires: %{name}-consumer-client = %{pulp_version}
 Requires: gofer >= 0.74
 
 %description agent
@@ -426,6 +430,12 @@ exit 0
 %endif
 
 %changelog
+* Thu Mar 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.23.beta
+- 
+
+* Thu Mar 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.22.beta
+- 918782 - render warning messages as normal colored text. (jortel@redhat.com)
+
 * Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.21.beta
 - 918600 - _content_type_id wasn't being set for erratum and drpm
   (jason.dobies@redhat.com)
