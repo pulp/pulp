@@ -215,7 +215,7 @@ class UnregisterCommand(PulpCliCommand):
             if not force:
                 msg = _('This consumer does not exist on the server. Please retry using the --force option.')
                 self.prompt.render_failure_message(msg)
-                return os.EX_DATAERR
+                return exceptions.CODE_NOT_FOUND
             else:
                 forced = True
         except X509Error:
