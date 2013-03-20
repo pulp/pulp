@@ -45,7 +45,7 @@ log = getLogger(__name__)
 
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
-DISTRIBUTOR_PLUGIN_MISSING = _('\nA distributor of type [%(t)s] is referenced in a repository '
+DISTRIBUTOR_PLUGIN_MISSING = _('A distributor of type [%(t)s] is referenced in a repository '
                                'binding but is not installed and loaded.  It must be installed '
                                'for node synchronization to succeed.  Please make sure that ALL '
                                'plugins installed on the parent node are installed on the child '
@@ -481,7 +481,7 @@ class ChildDistributor(Child, Distributor):
             log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
         except BadRequestException, e:
             if 'distributor_type_id' in e.extra_data['property_names']:
-                e.error_message += DISTRIBUTOR_PLUGIN_MISSING % dict(t=type_id)
+                e.error_message = DISTRIBUTOR_PLUGIN_MISSING % dict(t=type_id)
             raise
 
     def update(self, delta):

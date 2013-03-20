@@ -706,7 +706,6 @@ class TestAgentPlugin(PluginTestBase):
             self.verify(0)
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
-    @patch('pulp_node.importers.strategies.Mirror._add_units', side_effect=Exception())
     def test_plugins_missing(self, *unused):
         """
         Test the end-to-end collaboration of:
