@@ -19,7 +19,8 @@ from M2Crypto.X509 import X509Error
 from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions import exceptions
 from pulp.client import validators
 
 
@@ -192,7 +193,7 @@ class UnregisterCommand(PulpCliCommand):
             if not consumer_id:
                 msg = _('This consumer is not registered to the Pulp server.')
                 self.context.prompt.render_failure_message(msg)
-                return os.EX_DATAERR
+                return exceptions.CODE_NOT_FOUND
         except X509Error:
             self.context.logger.exception('Consumer certificate not valid.')
             if force:
@@ -230,7 +231,7 @@ class UnregisterCommand(PulpCliCommand):
             if not force:
                 msg = _('Unregistration failed on the server. This error may be ignored by using the --force option.')
                 self.prompt.render_failure_message(msg)
-                return os.EX_UNAVAILABLE
+                return exceptions.CODE_UNEXPECTED
             else:
                 forced = True
 
