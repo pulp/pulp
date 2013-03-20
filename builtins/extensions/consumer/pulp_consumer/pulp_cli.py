@@ -209,32 +209,27 @@ class UnregisterCommand(PulpCliCommand):
                 return os.EX_DATAERR
 
         # Unregister on the server
-        forced = False
+        forced = True
         try:
             self.context.server.consumer.unregister(consumer_id)
+            forced = False
         except NotFoundException:
             if not force:
                 msg = _('This consumer does not exist on the server. Please retry using the --force option.')
                 self.prompt.render_failure_message(msg)
                 return exceptions.CODE_NOT_FOUND
-            else:
-                forced = True
         except X509Error:
             self.context.logger.exception('SSL connection failed.')
             if not force:
                 msg = _('SSL connection failed. This error may be ignored by using the --force option.')
                 self.prompt.render_failure_message(msg)
                 return os.EX_OSERR
-            else:
-                forced = True
         except Exception:
             self.context.logger.exception('Unregistration failed')
             if not force:
                 msg = _('Unregistration failed on the server. This error may be ignored by using the --force option.')
                 self.prompt.render_failure_message(msg)
                 return exceptions.CODE_UNEXPECTED
-            else:
-                forced = True
 
         # Unregister locally
         self._delete_cert()
