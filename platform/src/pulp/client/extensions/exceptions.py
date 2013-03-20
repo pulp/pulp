@@ -320,7 +320,7 @@ class ExceptionHandler:
         # specifically and be generic about everything else.
 
         if len(e.args) > 0 and e[0] == 111:
-            msg = _('The connection was refused when attempting to contact the server [%(server)s].'
+            msg = _('The connection was refused when attempting to contact the server [%(server)s]. '
                     'Check the client configuration to ensure the server hostname is correct.')
             data = {'server' : self.config['server']['host']}
             msg = msg % data
