@@ -92,30 +92,38 @@ class OrphanUnitListCommand(PulpCliCommand):
 
         self.add_option(type_option)
 
-        m = _('include a count of how many orphaned units exist of each type')
+        m = _('only display the summary as a count of orphaned units of each content type')
         summary_flag = PulpCliFlag('--summary', m, ('-s',))
         self.add_flag(summary_flag)
 
     def run(self, **kwargs):
-        content_type = kwargs.get('type')
-        if content_type:
+        content_type = kwargs.get('type', None)
+        summary_only = kwargs.get('summary', False)
+
+        if content_type is not None:
             orphans = self.context.server.content_orphan.orphans_by_type(content_type).response_body
         else:
             orphans = self.context.server.content_orphan.orphans().response_body
+
         summary = {}
+
         for orphan in orphans:
             orphan_type = orphan['_content_type_id']
             summary[orphan_type] = summary.get(orphan_type, 0) + 1
-            orphan['id'] = orphan.get('_id', None)
-            self.prompt.render_document(orphan)
 
-        if kwargs.get('summary'):
-            order = summary.keys()
-            order.sort()
-            order.append('Total')
-            summary['Total'] = sum(summary.values())
-            self.prompt.render_title(_('Summary'))
-            self.prompt.render_document(summary, order=order)
+            if not summary_only:
+                # set the 'id' if it's not already there
+                orphan.setdefault('id', orphan.get('_id', None))
+                self.prompt.render_document(orphan)
+
+        order = summary.keys()
+        order.sort()
+        order.append('Total')
+
+        summary['Total'] = sum(summary.values())
+
+        self.prompt.render_title(_('Summary'))
+        self.prompt.render_document(summary, order=order)
 
 
 class OrphanUnitRemoveCommand(PulpCliCommand):

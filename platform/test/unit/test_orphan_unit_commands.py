@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2012 Red Hat, Inc.
+# Copyright © 2012-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -47,8 +47,9 @@ class TestList(base.PulpClientTests):
         self.command.run()
 
         mock_orphans.assert_called_once_with()
-        mock_render.assert_called_once_with(
+        mock_render.assert_any_call(
             {'_id' : 'foo', 'id' : 'foo', '_content_type_id': 'rpm'})
+        self.assertEqual(mock_render.call_count, 2)
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
     @mock.patch('pulp.bindings.content.OrphanContentAPI.orphans_by_type')
@@ -59,8 +60,9 @@ class TestList(base.PulpClientTests):
         self.command.run(**{'type' : 'foo'})
 
         mock_orphans.assert_called_once_with('foo')
-        mock_render.assert_called_once_with(
+        mock_render.assert_any_call(
                 {'_id' : 'foo', 'id' : 'foo', '_content_type_id': 'rpm'})
+        self.assertEqual(mock_render.call_count, 2)
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
     @mock.patch('pulp.bindings.content.OrphanContentAPI.orphans')
