@@ -150,3 +150,21 @@ def database():
     @rtype:  L{pymongo.database.Database}
     """
     return _database
+
+def flush_database(asynchronous=True, lock=False):
+    """
+    Utility to flush any pending writes to the database.
+
+    If `asynchronous` is true, then the flush will happen asynchronously.
+    If `lock` is true, then the database will lock while it is flushed.
+
+    NOTE: `asynchronous` and `lock` may both be false, but only one may be true.
+
+    :param asynchronous: toggle asynchronous behaviour in the flush command
+    :type asynchronous: bool
+    :param lock: toggle database lock in the flush command
+    :type lock: bool
+    """
+    assert not (asynchronous and lock)
+    _connection.fsync(asyc=asynchronous, lock=lock)
+

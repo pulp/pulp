@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2012 Red Hat, Inc.
+# Copyright © 2012-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License as
 # published by the Free Software Foundation; either version 2 of the License
@@ -16,6 +16,7 @@ import shutil
 import string
 import tempfile
 import traceback
+from pprint import pformat
 
 import base
 
@@ -25,8 +26,6 @@ from pulp.plugins.types.model import TypeDefinition
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.content.orphan import OrphanManager
-
-import mock_plugins
 
 # globals and constants --------------------------------------------------------
 
@@ -64,6 +63,13 @@ def gen_content_unit_with_directory(content_type_id, content_root, name=None):
     unit_id = content_manager.add_content_unit(content_type_id, None, unit)
     unit['_id'] = unit_id
     return unit
+
+
+def gen_shitload_of_content_units(content_type_id, content_root, num_units):
+    unit_name_format = '%%s-%%0%dd' % len(str(num_units))
+    for i in xrange(1, num_units+1):
+        unit_name = unit_name_format % (content_type_id, i)
+        gen_content_unit(content_type_id, content_root, unit_name)
 
 
 def associate_content_unit_with_repo(content_unit):
@@ -120,6 +126,9 @@ class OrphanManagerTests(base.PulpServerTests):
         contents = os.listdir(self.content_root)
         return len(contents)
 
+
+class OrphanManagerGeneratorTests(OrphanManagerTests):
+
     # utilities test methods ---------------------------------------------------
 
     def test_content_creation(self):
@@ -128,81 +137,128 @@ class OrphanManagerTests(base.PulpServerTests):
         self.assertTrue(os.path.exists(content_unit['_storage_path']))
         self.assertTrue(self.number_of_files_in_content_root() == 1)
 
-    # list test methods --------------------------------------------------------
+    # generator test methods ---------------------------------------------------
 
-    def test_list_one_orphan(self):
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 0)
+    def test_list_one_orphan_using_generators(self):
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 0, pformat(orphans))
+
         content_unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 1)
-        self.assertTrue(orphans[0]['_id'] == content_unit['_id'])
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 1)
+        self.assertEqual(content_unit['_id'], orphans[0]['_id'])
 
-    def test_list_two_orphans(self):
+    def test_list_two_orphans_using_generators(self):
         unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 2)
 
-    def test_list_orphans_by_type(self):
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 2)
+
+    def test_list_two_orphans_using_generators_with_search_indexes(self):
         unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
-        orphans_1 = self.orphan_manager.list_orphans_by_type(PHONY_TYPE_1.id)
-        self.assertTrue(len(orphans_1) == 1)
-        orphans_2 = self.orphan_manager.list_orphans_by_type(PHONY_TYPE_2.id)
-        self.assertTrue(len(orphans_2) == 1)
 
-    def test_get_orphan(self):
+        orphans = list(self.orphan_manager.generate_all_orphans_with_search_indexes())
+        self.assertEqual(len(orphans), 2)
+
+    def test_list_orphans_by_type_using_generators(self):
+        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
+
+        orphans_1 = list(self.orphan_manager.generate_orphans_by_type(PHONY_TYPE_1.id))
+        self.assertEqual(len(orphans_1), 1)
+
+        orphans_2 = list(self.orphan_manager.generate_orphans_by_type(PHONY_TYPE_2.id))
+        self.assertEqual(len(orphans_2), 1)
+
+    def test_get_orphan_using_generators(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        orphan = self.orphan_manager.get_orphan(PHONY_TYPE_1.id, unit['_id'])
-        self.assertTrue(orphan['_id'] == unit['_id'])
 
-    def test_get_missing_orphan(self):
+        orphan = self.orphan_manager.get_orphan(PHONY_TYPE_1.id, unit['_id'])
+        self.assertEqual(orphan['_id'], unit['_id'])
+
+    def test_get_missing_orphan_using_generators(self):
         self.assertRaises(pulp_exceptions.MissingResource,
                           self.orphan_manager.get_orphan,
                           PHONY_TYPE_1.id, 'non-existent')
 
-    def test_associated_unit(self):
+    def test_associated_units_using_generators(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         associate_content_unit_with_repo(unit)
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 0)
+
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 0)
+
         unassociate_content_unit_from_repo(unit)
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 1)
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 1)
 
-    # delete test methods ------------------------------------------------------
+    # delete with generator test methods ---------------------------------------
 
-    def test_delete_one_orphan(self):
+    def test_delete_one_orphan_using_generators(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        self.orphan_manager.delete_all_orphans()
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 0)
-        self.assertTrue(self.number_of_files_in_content_root() == 0)
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 1)
 
-    def test_delete_one_orphan_with_directory(self):
+        self.orphan_manager.delete_all_orphans()
+
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 0)
+        self.assertEqual(self.number_of_files_in_content_root(), 0)
+
+    def test_delete_one_orphan_with_directory_using_generators(self):
         unit = gen_content_unit_with_directory(PHONY_TYPE_1.id, self.content_root)
-        self.orphan_manager.delete_all_orphans()
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 0)
-        self.assertTrue(self.number_of_files_in_content_root() == 0)
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 1)
 
-    def test_delete_by_type(self):
+        self.orphan_manager.delete_all_orphans()
+
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 0)
+        self.assertEqual(self.number_of_files_in_content_root(), 0)
+
+    # NOTE this test is disabled for normal test runs
+    def _test_delete_using_generators_performance_single_content_type(self):
+        num_units = 30000
+        gen_shitload_of_content_units(PHONY_TYPE_1.id, self.content_root, num_units)
+        self.assertEqual(self.number_of_files_in_content_root(), num_units)
+
+        self.orphan_manager.delete_all_orphans()
+        self.assertEqual(self.number_of_files_in_content_root(), 0)
+
+    # NOTE this test is disabled for normal test runs
+    def _test_delete_using_generators_performance_multiple_content_types(self):
+        type_1_num_units = 15000
+        type_2_num_units = 15000
+        gen_shitload_of_content_units(PHONY_TYPE_1.id, self.content_root, type_1_num_units)
+        gen_shitload_of_content_units(PHONY_TYPE_2.id, self.content_root, type_2_num_units)
+        self.assertEqual(self.number_of_files_in_content_root(), type_1_num_units+type_2_num_units)
+
+        self.orphan_manager.delete_all_orphans()
+        self.assertEqual(self.number_of_files_in_content_root(), 0)
+
+    def test_delete_by_type_using_generators(self):
         unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
-        self.assertTrue(self.number_of_files_in_content_root() == 2)
+        self.assertEqual(self.number_of_files_in_content_root(), 2)
+
         self.orphan_manager.delete_orphans_by_type(PHONY_TYPE_1.id)
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 1)
+
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 1)
         self.assertFalse(os.path.exists(unit_1['_storage_path']))
         self.assertTrue(os.path.exists(unit_2['_storage_path']))
 
-    def test_delete_by_id(self):
+    def test_delete_by_id_using_generators(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+
         json_obj = {'content_type_id': unit['_content_type_id'],
                     'unit_id': unit['_id']}
         self.orphan_manager.delete_orphans_by_id([json_obj])
-        orphans = self.orphan_manager.list_all_orphans()
-        self.assertTrue(len(orphans) == 0)
-        self.assertTrue(self.number_of_files_in_content_root() == 0)
+
+        orphans = list(self.orphan_manager.generate_all_orphans())
+        self.assertEqual(len(orphans), 0)
+        self.assertEqual(self.number_of_files_in_content_root(), 0)
+
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2012 Red Hat, Inc.
+# Copyright © 2012-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -17,11 +17,11 @@ import re
 import shutil
 from gettext import gettext as _
 
-from pulp.server import config as pulp_config
 from pulp.plugins.types import database as content_types_db
+from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.db import connection as db_connection
 from pulp.server.db.model.repository import RepoContentUnit
-from pulp.server.managers import factory as manager_factory
 
 
 _LOG = logging.getLogger(__name__)
@@ -29,120 +29,188 @@ _LOG = logging.getLogger(__name__)
 
 class OrphanManager(object):
 
-    def list_all_orphans(self):
+    # generator-based api ------------------------------------------------------
+
+    def generate_all_orphans(self, fields=None):
         """
-        List all content units that are not associated with a repository.
-        @return: list of content units
-        @rtype:  list
+        Return an generator of all orphaned content units.
+
+        If fields is not specified, only the `_id` field will be present.
+
+        :param fields: list of fields to include in each content unit
+        :type fields: list or None
+        :return: generator of orphaned content units
+        :rtype: generator
         """
 
-        # iterate through all types and get the orphaned units for each
-        orphaned_units = []
-        content_query_manager = manager_factory.content_query_manager()
-        content_types = content_query_manager.list_content_types()
-        for content_type in content_types:
-            orphaned_units_of_type = self.list_orphans_by_type(content_type)
-            orphaned_units.extend(orphaned_units_of_type)
-        return orphaned_units
+        for content_type_id in content_types_db.all_type_ids():
+            for content_unit in self.generate_orphans_by_type(content_type_id, fields):
+                yield content_unit
 
-    def list_orphans_by_type(self, content_type):
+    def generate_all_orphans_with_search_indexes(self):
         """
-        List all content units of a given type that are not associated with a repository.
-        @param content_type: content type of orphaned units
-        @type  content_type: str
-        @return: list of content units of the given type
-        @rtype:  list
+        Return an generator of all orphaned content units.
+
+        Each orphan will contain the fields specified in the content type
+        definition's search indexes.
+
+        :return: generator of orphaned content units
+        :rtype: generator
         """
 
-        # find units of this type that are associated with one or more repositories
-        associated_collection = RepoContentUnit.get_collection()
-        associated_units = associated_collection.find({'unit_type_id': content_type}, fields=['unit_id'])
-        associated_unit_ids = set(d['unit_id'] for d in associated_units)
+        for content_type_id in content_types_db.all_type_ids():
+            for content_unit in self.generate_orphans_by_type_with_search_indexes(content_type_id):
+                yield content_unit
 
-        # find units that are not associated with any repositories
-        units_collection = content_types_db.type_units_collection(content_type)
-        spec = {'_id': {'$nin': list(associated_unit_ids)}}
-        orphaned_units = units_collection.find(spec)
-        return list(orphaned_units)
+    def generate_orphans_by_type(self, content_type_id, fields=None):
+        """
+        Return an generator of all orphaned content units of the given content type.
 
-    def get_orphan(self, content_type, content_id):
+        If fields is not specified, only the `_id` field will be present.
+
+        :param content_type_id: id of the content type
+        :type content_type_id: basestring
+        :param fields: list of fields to include in each content unit
+        :type fields: list or None
+        :return: generator of orphaned content units for the given content type
+        :rtype: generator
         """
-        Get a single orphaned content unit.
-        @param content_type: content type of the orphan
-        @type  content_type: str
-        @param content_id: content id of the orphan
-        @type  content_id: str
-        """
-        orphans = self.list_orphans_by_type(content_type)
-        for orphan in orphans:
-            if content_id != orphan['_id']:
+
+        # XXX (jconnor 2013-03-19) this overrides pymongo's notion that None is
+        # equivalent to all fields; but do we care?
+        fields = fields if fields is not None else ['_id']
+        content_units_collection = content_types_db.type_units_collection(content_type_id)
+        repo_content_units_collection = RepoContentUnit.get_collection()
+
+        for content_unit in content_units_collection.find({}, fields=fields):
+
+            repo_content_units_cursor = repo_content_units_collection.find({'unit_id': content_unit['_id']})
+
+            if repo_content_units_cursor.count() > 0:
                 continue
-            return orphan
-        raise pulp_exceptions.MissingResource(content_type=content_type, content_id=content_id)
 
-    def delete_all_orphans(self):
+            yield content_unit
+
+    def generate_orphans_by_type_with_search_indexes(self, content_type_id):
+        """
+        Return an generator of all orphaned content units of the given content type.
+
+        Each content unit will contain the fields specified in the content type
+        definition's search indexes.
+
+        :param content_type_id: id of the content type
+        :type content_type_id: basestring
+        :return: generator of orphaned content units for the given content type
+        :rtype: generator
+        """
+        content_type_definition = content_types_db.type_definition(content_type_id)
+        fields = ['_content_type_id']
+        fields.extend(content_type_definition['search_indexes'])
+
+        for content_unit in self.generate_orphans_by_type(content_type_id, fields):
+            yield  content_unit
+
+    def get_orphan(self, content_type_id, content_unit_id):
+        """
+        Look up a single orphaned content unit by content type and unit id.
+
+        :param content_type_id: id of the content type
+        :type content_type_id: basestring
+        :param content_unit_id: id of the content unit
+        :type content_unit_id: basestring
+        :return: orphaned content unit
+        :rtype: SON
+        :raises MissingResource: if no orphaned content unit corresponds to the
+                                 given content type and unit id
+        """
+
+        for content_unit in self.generate_orphans_by_type(content_type_id):
+
+            if content_unit['_id'] != content_unit_id:
+                continue
+
+            return content_unit
+
+        raise pulp_exceptions.MissingResource(content_type=content_type_id, content_unit=content_unit_id)
+
+    def delete_all_orphans(self, flush=True):
         """
         Delete all orphaned content units.
+
+        :param flush: flush the database updates to disk on completion
+        :type flush: bool
         """
 
-        # iterate through the types and delete all orphans of each type
-        content_query_manager = manager_factory.content_query_manager()
-        content_types = content_query_manager.list_content_types()
-        for content_type in content_types:
-            self.delete_orphans_by_type(content_type)
+        for content_type_id in content_types_db.all_type_ids():
+            self.delete_orphans_by_type(content_type_id, flush=False)
 
-    def delete_orphans_by_type(self, content_type):
+        if flush:
+            db_connection.flush_database()
+
+    def delete_orphans_by_id(self, content_unit_list, flush=True):
         """
-        Delete all orphaned content units of the given content type.
-        @param content_type: content type of the orphans to delete
-        @type  content_type: str
+        Delete the given orphaned content units.
+
+        Each content unit in the content unit list must be a mapping object with
+        the fields `content_type_id` and `unit_id` present.
+
+        :param content_unit_list: list of orphaned content units to delete
+        :type content_unit_list: iterable of mapping objects
+        :param flush: flush the database updates to disk on completion
+        :type flush: bool
         """
 
-        orphaned_units = self.list_orphans_by_type(content_type)
-        if not orphaned_units:
-            return
-        collection = content_types_db.type_units_collection(content_type)
-        spec = {'_id': {'$in': [o['_id'] for o in orphaned_units]}}
-        collection.remove(spec, safe=True)
-        orphaned_paths = [o['_storage_path'] for o in orphaned_units if o['_storage_path'] is not None]
-        for path in orphaned_paths:
-            self.delete_orphaned_file(path)
+        content_units_by_content_type = {}
 
-    def delete_orphans_by_id(self, orphans):
-        """
-        Delete a list of orphaned content units by their content type and unit ids.
-        @param orphans: list of documents with 'content_type' and 'content_id' keys
-        @type  orphans: list
-        """
-        # XXX this does no validation of the orphans
-
-        # munge the orphans into something more programmatic-ly convenient
-        orphans_by_id = {}
-        for o in orphans:
-            if 'content_type_id' not in o or 'unit_id' not in o:
+        for content_unit in content_unit_list:
+            if 'content_type_id' not in content_unit or 'unit_id' not in content_unit:
                 raise pulp_exceptions.InvalidValue(['content_type_id', 'unit_id'])
-            id_list = orphans_by_id.setdefault(o['content_type_id'], [])
-            id_list.append(o['unit_id'])
 
-        # iterate through the types and ids
-        content_query_manager = manager_factory.content_query_manager()
-        for content_type, content_id_list in orphans_by_id.items():
+            content_unit_id_list = content_units_by_content_type.setdefault(content_unit['content_type_id'], [])
+            content_unit_id_list.append(content_unit['unit_id'])
 
-            # build a list of the on-disk contents
-            orphaned_paths = []
-            for unit_id in content_id_list:
-                content_unit = content_query_manager.get_content_unit_by_id(content_type, unit_id, model_fields=['_storage_path'])
-                if content_unit['_storage_path'] is not None:
-                    orphaned_paths.append(content_unit['_storage_path'])
+        for content_type_id, content_unit_id_list in content_units_by_content_type.items():
+            self.delete_orphans_by_type(content_type_id, content_unit_id_list, flush=False)
 
-            # remove the orphans from the db
-            collection = content_types_db.type_units_collection(content_type)
-            spec = {'_id': {'$in': content_id_list}}
-            collection.remove(spec, safe=True)
+        if flush:
+            db_connection.flush_database()
 
-            # delete the on-disk contents
-            for path in orphaned_paths:
-                self.delete_orphaned_file(path)
+    def delete_orphans_by_type(self, content_type_id, content_unit_ids=None, flush=True):
+        """
+        Delete the orphaned content units for the given content type.
+
+        If the content_unit_ids parameter is not None, is acts as a filter of
+        the specific orphaned content units that may be deleted.
+
+        NOTE: this method deletes the content unit's bits from disk, if applicable.
+
+        :param content_type_id: id of the content type
+        :type content_type_id: basestring
+        :param content_unit_ids: list of content unit ids to delete; None means delete them all
+        :type content_unit_ids: iterable or None
+        :param flush: flush the database updates to disk on completion
+        :type flush: bool
+        """
+
+        content_units_collection = content_types_db.type_units_collection(content_type_id)
+
+        for content_unit in self.generate_orphans_by_type(content_type_id, fields=['_storage_path']):
+
+            if content_unit_ids is not None and content_unit['_id'] not in content_unit_ids:
+                continue
+
+            content_units_collection.remove(content_unit['_id'], safe=False)
+
+            storage_path = content_unit.get('_storage_path', None)
+            if storage_path is not None:
+                self.delete_orphaned_file(storage_path)
+
+        # this forces the database to flush any cached changes to the disk
+        # in the background; for example: the unsafe deletes in the loop above
+        if flush:
+            db_connection.flush_database()
+
+    # physical bits utility ----------------------------------------------------
 
     def delete_orphaned_file(self, path):
         """
