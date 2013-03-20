@@ -149,7 +149,7 @@ rm -rf %{buildroot}
 Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{version}
-Requires: pymongo >= 1.9
+Requires: pymongo >= 2.1.1
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.30
