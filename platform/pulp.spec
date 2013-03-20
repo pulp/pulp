@@ -217,6 +217,7 @@ Summary: Pulp common python packages
 Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
+Requires: python-iniparse
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
