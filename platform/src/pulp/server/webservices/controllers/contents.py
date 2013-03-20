@@ -273,7 +273,7 @@ class OrphanCollection(JSONController):
         # NOTE this can still potentially stomp on memory, but hopefully the
         # _with_search_indexes methods will reduce the foot print enough that
         # we'll never see this bug again
-        orphans = list(orphan_manager.generate_all_orphans_with_search_indexes())
+        orphans = list(orphan_manager.generate_all_orphans_with_unit_keys())
         map(lambda o: o.update(serialization.link.child_link_obj(o['_content_type_id'], o['_id'])), orphans)
         return self.ok(orphans)
 
@@ -293,7 +293,7 @@ class OrphanTypeSubCollection(JSONController):
         # NOTE this can still potentially stomp on memory, but hopefully the
         # _with_search_indexes methods will reduce the foot print enough that
         # we'll never see this bug again
-        orphans = list(orphan_manager.generate_orphans_by_type_with_search_indexes(content_type))
+        orphans = list(orphan_manager.generate_orphans_by_type_with_unit_keys(content_type))
         map(lambda o: o.update(serialization.link.child_link_obj(o['_id'])), orphans)
         return self.ok(orphans)
 

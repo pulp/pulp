@@ -47,7 +47,7 @@ class OrphanManager(object):
             for content_unit in self.generate_orphans_by_type(content_type_id, fields):
                 yield content_unit
 
-    def generate_all_orphans_with_search_indexes(self):
+    def generate_all_orphans_with_unit_keys(self):
         """
         Return an generator of all orphaned content units.
 
@@ -59,7 +59,7 @@ class OrphanManager(object):
         """
 
         for content_type_id in content_types_db.all_type_ids():
-            for content_unit in self.generate_orphans_by_type_with_search_indexes(content_type_id):
+            for content_unit in self.generate_orphans_by_type_with_unit_keys(content_type_id):
                 yield content_unit
 
     def generate_orphans_by_type(self, content_type_id, fields=None):
@@ -76,8 +76,6 @@ class OrphanManager(object):
         :rtype: generator
         """
 
-        # XXX (jconnor 2013-03-19) this overrides pymongo's notion that None is
-        # equivalent to all fields; but do we care?
         fields = fields if fields is not None else ['_id']
         content_units_collection = content_types_db.type_units_collection(content_type_id)
         repo_content_units_collection = RepoContentUnit.get_collection()
@@ -91,7 +89,7 @@ class OrphanManager(object):
 
             yield content_unit
 
-    def generate_orphans_by_type_with_search_indexes(self, content_type_id):
+    def generate_orphans_by_type_with_unit_keys(self, content_type_id):
         """
         Return an generator of all orphaned content units of the given content type.
 
@@ -104,8 +102,8 @@ class OrphanManager(object):
         :rtype: generator
         """
         content_type_definition = content_types_db.type_definition(content_type_id)
-        fields = ['_content_type_id']
-        fields.extend(content_type_definition['search_indexes'])
+        fields = ['_id', '_content_type_id']
+        fields.extend(content_type_definition['unit_key'])
 
         for content_unit in self.generate_orphans_by_type(content_type_id, fields):
             yield  content_unit
@@ -137,6 +135,8 @@ class OrphanManager(object):
         """
         Delete all orphaned content units.
 
+        NOTE: `flush` should not be set to False unless you know what you're doing
+
         :param flush: flush the database updates to disk on completion
         :type flush: bool
         """
@@ -153,6 +153,8 @@ class OrphanManager(object):
 
         Each content unit in the content unit list must be a mapping object with
         the fields `content_type_id` and `unit_id` present.
+
+        NOTE: `flush` should not be set to False unless you know what you're doing
 
         :param content_unit_list: list of orphaned content units to delete
         :type content_unit_list: iterable of mapping objects
@@ -183,6 +185,7 @@ class OrphanManager(object):
         the specific orphaned content units that may be deleted.
 
         NOTE: this method deletes the content unit's bits from disk, if applicable.
+        NOTE: `flush` should not be set to False unless you know what you're doing
 
         :param content_type_id: id of the content type
         :type content_type_id: basestring
@@ -194,7 +197,7 @@ class OrphanManager(object):
 
         content_units_collection = content_types_db.type_units_collection(content_type_id)
 
-        for content_unit in self.generate_orphans_by_type(content_type_id, fields=['_storage_path']):
+        for content_unit in self.generate_orphans_by_type(content_type_id, fields=['_id', '_storage_path']):
 
             if content_unit_ids is not None and content_unit['_id'] not in content_unit_ids:
                 continue

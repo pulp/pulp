@@ -65,7 +65,7 @@ def gen_content_unit_with_directory(content_type_id, content_root, name=None):
     return unit
 
 
-def gen_shitload_of_content_units(content_type_id, content_root, num_units):
+def gen_buttload_of_content_units(content_type_id, content_root, num_units):
     unit_name_format = '%%s-%%0%dd' % len(str(num_units))
     for i in xrange(1, num_units+1):
         unit_name = unit_name_format % (content_type_id, i)
@@ -159,7 +159,7 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
 
-        orphans = list(self.orphan_manager.generate_all_orphans_with_search_indexes())
+        orphans = list(self.orphan_manager.generate_all_orphans_with_unit_keys())
         self.assertEqual(len(orphans), 2)
 
     def test_list_orphans_by_type_using_generators(self):
@@ -221,7 +221,7 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
     # NOTE this test is disabled for normal test runs
     def _test_delete_using_generators_performance_single_content_type(self):
         num_units = 30000
-        gen_shitload_of_content_units(PHONY_TYPE_1.id, self.content_root, num_units)
+        gen_buttload_of_content_units(PHONY_TYPE_1.id, self.content_root, num_units)
         self.assertEqual(self.number_of_files_in_content_root(), num_units)
 
         self.orphan_manager.delete_all_orphans()
@@ -231,8 +231,8 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
     def _test_delete_using_generators_performance_multiple_content_types(self):
         type_1_num_units = 15000
         type_2_num_units = 15000
-        gen_shitload_of_content_units(PHONY_TYPE_1.id, self.content_root, type_1_num_units)
-        gen_shitload_of_content_units(PHONY_TYPE_2.id, self.content_root, type_2_num_units)
+        gen_buttload_of_content_units(PHONY_TYPE_1.id, self.content_root, type_1_num_units)
+        gen_buttload_of_content_units(PHONY_TYPE_2.id, self.content_root, type_2_num_units)
         self.assertEqual(self.number_of_files_in_content_root(), type_1_num_units+type_2_num_units)
 
         self.orphan_manager.delete_all_orphans()
