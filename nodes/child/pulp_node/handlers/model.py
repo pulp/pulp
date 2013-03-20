@@ -595,14 +595,7 @@ class ChildImporter(Child, Importer):
             self.update(delta)
 
 
-class Binding(object):
-    """
-    Represents a consumer binding to a repository.
-    """
-    pass
-
-
-class ParentBinding(Parent, Binding):
+class ParentBinding(Parent):
     """
     Represents a parent consumer binding to a repository.
     """
@@ -655,16 +648,9 @@ class ParentBinding(Parent, Binding):
         return [b for b in binds if b['type_id'] in constants.ALL_DISTRIBUTORS]
 
 
-class Node(object):
+class ParentNode(Parent):
     """
-    Represents a pulp node.
-    """
-    pass
-
-
-class ParentNode(Parent, Node):
-    """
-    Represents a child node in the parent.
+    Represents a node (consumer) in the parent node's inventory.
     """
 
     @classmethod
