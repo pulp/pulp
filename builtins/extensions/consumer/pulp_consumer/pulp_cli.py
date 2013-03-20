@@ -97,10 +97,10 @@ class RegisterCommand(PulpCliCommand):
         # Check if this consumer is already registered
         existing_consumer = load_consumer_id(self.context)
         if existing_consumer:
-            m = 'This system has already been registered as a consumer. Please ' \
-            'use the unregister command to remove the consumer before attempting ' \
-            'to reregister.'
-            self.prompt.render_failure_message(_(m))
+            m = _('This system has already been registered as a consumer. Please '
+                  'use the unregister command to remove the consumer before attempting '
+                  'to re-register.')
+            self.prompt.render_failure_message(m)
             return
 
         # Get other consumer parameters
@@ -117,8 +117,8 @@ class RegisterCommand(PulpCliCommand):
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         if not os.access(id_cert_dir, os.W_OK):
             msg = _("Write permission is required for %(d)s to perform this operation.")
-            self.prompt.render_failure_message(msg % {'d' : id_cert_dir})
-            return os.EX_NOPERM
+            self.prompt.render_failure_message(msg % {'d': id_cert_dir})
+            return exceptions.CODE_PERMISSIONS_EXCEPTION
 
         # Call the server
         consumer = self.context.server.consumer.register(id, name, description, notes).response_body
@@ -131,6 +131,7 @@ class RegisterCommand(PulpCliCommand):
         f.close()
 
         self.prompt.render_success_message('Consumer [%s] successfully registered' % id)
+
 
 class UpdateCommand(PulpCliCommand):
 
@@ -185,7 +186,7 @@ class UnregisterCommand(PulpCliCommand):
         if not os.access(id_cert_dir, os.W_OK):
             msg = _("Write permission is required for %(d)s to perform this operation.")
             self.prompt.render_failure_message(msg % {'d': id_cert_dir})
-            return os.EX_NOPERM
+            return exceptions.CODE_PERMISSIONS_EXCEPTION
 
         # Get the consumer ID
         try:
