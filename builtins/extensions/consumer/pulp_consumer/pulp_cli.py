@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import socket
 
 from gettext import gettext as _
 from M2Crypto.X509 import X509Error
@@ -164,6 +163,7 @@ class UpdateCommand(PulpCliCommand):
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
+
 class UnregisterCommand(PulpCliCommand):
 
     def __init__(self, context, name, description):
@@ -215,14 +215,6 @@ class UnregisterCommand(PulpCliCommand):
                 msg = _('This consumer does not exist on the server. Please retry using the --force option.')
                 self.prompt.render_failure_message(msg)
                 return os.EX_DATAERR
-            else:
-                forced = True
-        except socket.error:
-            self.context.logger.exception('Server connection failed.')
-            if not force:
-                msg = _('Server connection failed. This error may be ignored by using the --force option.')
-                self.prompt.render_failure_message(msg)
-                return os.EX_OSERR
             else:
                 forced = True
         except X509Error:
