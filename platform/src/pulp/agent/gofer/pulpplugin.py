@@ -21,6 +21,8 @@ import os
 from hashlib import sha256
 from logging import getLogger
 
+from M2Crypto.X509 import X509Error
+
 from gofer.decorators import *
 from gofer.agent.plugin import Plugin
 from gofer.messaging import Topic
@@ -28,7 +30,7 @@ from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
 from gofer.agent.rmi import Context
 
-from pulp.common.bundle import Bundle as BundleImpl
+from pulp.common.bundle import Bundle
 from pulp.common.config import Config
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.agent.lib.conduit import Conduit as HandlerConduit
@@ -40,17 +42,17 @@ plugin = Plugin.find(__name__)
 dispatcher = Dispatcher()
 cfg = plugin.cfg()
 
-#
-# Utils
-#
+
+# --- utils ------------------------------------------------------------------
+
 
 def secret():
     """
     Get the shared secret used for auth of RMI requests.
-    @return: The sha256 for the certificate
-    @rtype: str
+    :return: The sha256 for the certificate
+    :rtype: str
     """
-    bundle = Bundle()
+    bundle = ConsumerX509Bundle()
     content = bundle.read()
     crt = bundle.split(content)[1]
     if content:
@@ -61,14 +63,27 @@ def secret():
         return None
 
 
-class Bundle(BundleImpl):
+class ConsumerX509Bundle(Bundle):
     """
     Consumer certificate (bundle)
     """
 
     def __init__(self):
-        BundleImpl.__init__(self, cfg.rest.clientcert)
-        
+        Bundle.__init__(self, cfg.rest.clientcert)
+
+    def cn(self):
+        """
+        Get the common name (CN) part of the certificate subject.
+        Returns None, if the certificate is invalid.
+        :return The common name (CN) part of the certificate subject or None when
+            the certificate is not found or invalid.
+        :rtype: str
+        """
+        try:
+            return Bundle.cn(self)
+        except X509Error:
+            log.warn('certificate: %s, not valid', self.path)
+
 
 class PulpBindings(Bindings):
     """
@@ -93,17 +108,17 @@ class Conduit(HandlerConduit):
     def consumer_id(self):
         """
         Get the current consumer ID
-
         :return: The unique consumer ID of the currently running agent
         :rtype:  str
         """
-        return Bundle().cn()
+        bundle = ConsumerX509Bundle()
+        return bundle.cn()
 
     def get_consumer_config(self):
         """
         Get the consumer configuration.
-        @return: The consumer configuration object.
-        @rtype: L{pulp.common.config.Config}
+        :return: The consumer configuration object.
+        :rtype: pulp.common.config.Config
         """
         paths = ['/etc/pulp/consumer/consumer.conf']
         overrides = os.path.expanduser('~/.pulp/consumer.conf')
@@ -115,16 +130,15 @@ class Conduit(HandlerConduit):
     def update_progress(self, report):
         """
         Send the updated progress report.
-        @param report: A handler progress report.
-        @type report: object
+        :param report: A handler progress report.
+        :type report: object
         """
         context = Context.current()
         context.progress.details = report
         context.progress.report()
 
-#
-# Actions
-#
+# --- actions ----------------------------------------------------------------
+
 
 class Heartbeat:
     """
@@ -137,8 +151,8 @@ class Heartbeat:
     def producer(cls):
         """
         Get the cached producer.
-        @return: A producer.
-        @rtype: L{Producer}
+        :return: A producer.
+        :rtype: Producer
         """
         if not cls.__producer:
             broker = plugin.getbroker()
@@ -156,25 +170,25 @@ class Heartbeat:
         """
         topic = Topic('heartbeat')
         delay = int(cfg.heartbeat.seconds)
-        bundle = Bundle()
-        myid = bundle.cn()
-        if myid:
+        bundle = ConsumerX509Bundle()
+        consumer_id = bundle.cn()
+        if consumer_id:
             p = self.producer()
-            body = dict(uuid=myid, next=delay)
+            body = dict(uuid=consumer_id, next=delay)
             p.send(topic, ttl=delay, heartbeat=body)
-        return myid
+        return consumer_id
 
 
 class RegistrationMonitor:
     """
     Monitor the registration (consumer) certificate for changes.
-    When a change is detected, the bus attachement is changed
+    When a change is detected, the bus attachment is changed
     as appropriate.  When removed, we set our UUID to None which
     will cause us to detach.  When changed, our UUID is changed
     which causes a detach/attach to be sure we are attached with
     the correct UUID.
     @cvar pmon: A path monitor object.
-    @type pmon: L{PathMonitor}
+    :type pmon: PathMonitor
     """
 
     pmon = PathMonitor()
@@ -194,15 +208,15 @@ class RegistrationMonitor:
     def changed(cls, path):
         """
         A change in the pulp certificate has been detected.
-        When deleted: disconnect from qpid.
+        When deleted: disconnect from qpid by setting the UUID to None.
         When added/updated: reconnect to qpid.
-        @param path: The changed file (ignored).
-        @type path: str
+        :param path: The changed file (ignored).
+        :type path: str
         """
         log.info('changed: %s', path)
-        bundle = Bundle()
-        myid = bundle.cn()
-        plugin.setuuid(myid)
+        bundle = ConsumerX509Bundle()
+        consumer_id = bundle.cn()
+        plugin.setuuid(consumer_id)
 
 
 class Synchronization:
@@ -225,13 +239,12 @@ class Synchronization:
         """
         Get registration status.
         """
-        bundle = Bundle()
-        myid = bundle.cn()
-        return (myid is not None)
+        bundle = ConsumerX509Bundle()
+        consumer_id = bundle.cn()
+        return (consumer_id is not None)
 
-#
-# API
-#
+# --- API --------------------------------------------------------------------
+
 
 class Consumer:
     """
@@ -246,7 +259,7 @@ class Consumer:
         The consumer bundle is deleted.  Then, all handlers
         are requested to perform a clean().
         """
-        bundle = Bundle()
+        bundle = ConsumerX509Bundle()
         bundle.delete()
         conduit = Conduit()
         report = dispatcher.clean(conduit)
@@ -257,14 +270,14 @@ class Consumer:
         """
         Bind to the specified repository ID.
         Delegated to content handlers.
-        @param bindings: A list of bindings to add/update.
+        :param bindings: A list of bindings to add/update.
           Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
             The 'details' are at the discretion of the distributor.
-        @type bindings: list
-        @param options: Bind options.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: DispatchReport
+        :type bindings: list
+        :param options: Bind options.
+        :type options: dict
+        :return: A dispatch report.
+        :rtype: DispatchReport
         """
         conduit = Conduit()
         report = dispatcher.bind(conduit, bindings, options)
@@ -275,13 +288,13 @@ class Consumer:
         """
         Unbind to the specified repository ID.
         Delegated to content handlers.
-        @param bindings: A list of bindings to be removed.
+        :param bindings: A list of bindings to be removed.
           Each binding is: {type_id:<str>, repo_id:<str>}
-        @type bindings: list
-        @param options: Unbind options.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: DispatchReport
+        :type bindings: list
+        :param options: Unbind options.
+        :type options: dict
+        :return: A dispatch report.
+        :rtype: DispatchReport
         """
         conduit = Conduit()
         report = dispatcher.unbind(conduit, bindings, options)
@@ -298,13 +311,13 @@ class Content:
         """
         Install the specified content units using the specified options.
         Delegated to content handlers.
-        @param units: A list of content units to be installed.
-        @type units: list of:
+        :param units: A list of content units to be installed.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Install options; based on unit type.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: DispatchReport
+        :param options: Install options; based on unit type.
+        :type options: dict
+        :return: A dispatch report.
+        :rtype: DispatchReport
         """
         conduit = Conduit()
         report = dispatcher.install(conduit, units, options)
@@ -315,13 +328,13 @@ class Content:
         """
         Update the specified content units using the specified options.
         Delegated to content handlers.
-        @param units: A list of content units to be updated.
-        @type units: list of:
+        :param units: A list of content units to be updated.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Update options; based on unit type.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: DispatchReport
+        :param options: Update options; based on unit type.
+        :type options: dict
+        :return: A dispatch report.
+        :rtype: DispatchReport
         """
         conduit = Conduit()
         report = dispatcher.update(conduit, units, options)
@@ -332,13 +345,13 @@ class Content:
         """
         Uninstall the specified content units using the specified options.
         Delegated to content handlers.
-        @param units: A list of content units to be uninstalled.
-        @type units: list of:
+        :param units: A list of content units to be uninstalled.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Uninstall options; based on unit type.
-        @type options: dict
-        @return: A dispatch report.
-        @rtype: DispatchReport
+        :param options: Uninstall options; based on unit type.
+        :type options: dict
+        :return: A dispatch report.
+        :rtype: DispatchReport
         """
         conduit = Conduit()
         report = dispatcher.uninstall(conduit, units, options)
@@ -355,19 +368,19 @@ class Profile:
         """
         Send the content profile(s) to the server.
         Delegated to the handlers.
-        @return: A dispatch report.
-        @rtype: DispatchReport
+        :return: A dispatch report.
+        :rtype: DispatchReport
         """
-        bundle = Bundle()
-        myid = bundle.cn()
+        bundle = ConsumerX509Bundle()
+        consumer_id = bundle.cn()
         conduit = Conduit()
         bindings = PulpBindings()
         report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
-        for typeid, profile_report in report.details.items():
+        for type_id, profile_report in report.details.items():
             if not profile_report['succeeded']:
                 continue
             details = profile_report['details']
-            http = bindings.profile.send(myid, typeid, details)
-            log.debug('profile (%s), reported: %d', typeid, http.response_code)
+            http = bindings.profile.send(consumer_id, type_id, details)
+            log.debug('profile (%s), reported: %d', type_id, http.response_code)
         return report.dict()
