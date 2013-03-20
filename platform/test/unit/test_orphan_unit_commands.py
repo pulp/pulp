@@ -44,7 +44,7 @@ class TestList(base.PulpClientTests):
         mock_orphans.return_value.response_body =\
             [{'_id': 'foo', '_content_type_id': 'rpm'}]
 
-        self.command.run()
+        self.command.run(details=True)
 
         mock_orphans.assert_called_once_with()
         mock_render.assert_any_call(
@@ -57,7 +57,7 @@ class TestList(base.PulpClientTests):
         mock_orphans.return_value.response_body =\
             [{'_id': 'foo', '_content_type_id': 'rpm'}]
 
-        self.command.run(**{'type' : 'foo'})
+        self.command.run(**{'type' : 'foo', 'details': True})
 
         mock_orphans.assert_called_once_with('foo')
         mock_render.assert_any_call(
