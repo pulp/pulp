@@ -60,9 +60,15 @@ class TestActivationCommands(ClientTests):
     def test_activate(self, mock_binding, *unused):
         # Test
         command = NodeActivateCommand(self.context)
-        command.run()
+        keywords = {STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY}
+        command.run(**keywords)
         # Verify
-        delta = {'notes': {constants.NODE_NOTE_KEY: True}}
+        delta = {
+            'notes': {
+                constants.NODE_NOTE_KEY: True,
+                constants.STRATEGY_NOTE_KEY: constants.DEFAULT_STRATEGY
+            }
+        }
         mock_binding.assert_called_with(NODE_ID, delta)
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
@@ -73,7 +79,12 @@ class TestActivationCommands(ClientTests):
         command = NodeDeactivateCommand(self.context)
         command.run()
         # Verify
-        delta = {'notes': {constants.NODE_NOTE_KEY: None}}
+        delta = {
+            'notes': {
+                constants.NODE_NOTE_KEY: None,
+                constants.STRATEGY_NOTE_KEY: None
+            }
+        }
         mock_activated.assert_called_with(self.context, NODE_ID)
         mock_binding.assert_called_with(NODE_ID, delta)
 
