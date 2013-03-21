@@ -125,6 +125,9 @@ ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 # Tools
 cp bin/* %{buildroot}/%{_bindir}
 
+# Ghost
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
+
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
