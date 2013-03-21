@@ -68,30 +68,37 @@ Each *ApplicabilityReport* is an object:
  { 
   'sunflower': {
    'erratum': [
-    {'details': 
-     {'applicable_rpms': [{'type_id': 'rpm', 'unit_key': {'name': 'grinder_test_package.noarch'}}],
-      'upgrade_details': 
-       {'grinder_test_package noarch': {
-        'available': {
-         'arch': 'noarch',
-         'epoch': '0',
-         'filename': 'grinder_test_package-4.0-1.fc14.noarch.rpm',
-         'name': 'grinder_test_package',
-         'release': '1.fc14',
-         'src': 'grinder_test_package-4.0-1.fc14.src.rpm',
-         'sum': ['md5','d89e83ed183fa55dfb0bd2eec14db93c'],
-         'version': '4.0'
-        },
-        'installed': {
-         'arch': 'noarch',
-         'epoch': 0,
-         'name': 'grinder_test_package',
-         'release': '1.fc14',
-         'vendor': None,
-         'version': '3.0'
-        }
-       }
-      }
+    {'details': {
+      '_content_type_id': 'erratum',
+      '_id': '9a825663-2f03-456e-b55b-f77dbbc5fcb8',
+      '_ns': 'units_erratum',
+      'description': None,
+      'from_str': 'pulp-list@redhat.com',
+      'id': 'grinder_test_4',
+      'issued': '2010-11-7 00:00:00',
+      'pkglist': [{'name': 'F14 Pulp Test Packages',
+                   'packages': [{'arch': 'noarch',
+                                 'epoch': '0',
+                                 'filename': 'grinder_test_package-4.0-1.fc14.noarch.rpm',
+                                 'name': 'grinder_test_package',
+                                 'release': '1.fc14',
+                                 'src': 'grinder_test_package-4.0-1.fc14.src.rpm',
+                                 'sum': ['md5', 'd89e83ed183fa55dfb0bd2eec14db93c'],
+                                 'version': '4.0'}],
+                   'short': 'F14PTP'}],
+      'pushcount': 1,
+      'reboot_suggested': False,
+      'references': [],
+      'release': '',
+      'rights': '',
+      'severity': '',
+      'solution': '',
+      'status': 'final',
+      'summary': '',
+      'title': 'Test Errata referring to grinder_test_package-4.0',
+      'type': 'enhancements',
+      'updated': '2012-7-25 00:00:00',
+      'version': '1'
      },
      'summary': {}
     }
