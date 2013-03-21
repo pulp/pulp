@@ -71,7 +71,7 @@ class DownloaderConfig(object):
 
     def __getattr__(self, item):
         """
-        This allows us to retrieve configuration parameter from this object with getattr()
+        This allows us to retrieve configuration parameters from this object with getattr()
         or by accessing the attributes by name.
         """
         return self.__dict__.get(item, None)
