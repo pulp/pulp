@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.0
-Release: 0.23.beta
+Release: 0.24.beta
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -431,6 +431,26 @@ exit 0
 %endif
 
 %changelog
+* Thu Mar 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.24.beta
+- 918160 - changed --summary flag to *only* display the  summary
+  (jason.connor@gmail.com)
+- 916794 - 918160 - 920792 - new generator approach to orphan management to
+  keep us from stomping on memory (jason.connor@gmail.com)
+- 923402 - Clarifications to the help text in logging config files
+  (jason.dobies@redhat.com)
+- 923402 - Reduce logging level from DEBUG to INFO (jason.dobies@redhat.com)
+- 923406 - fixing typo in repo copy bindings causing recursive copy to never
+  run (skarmark@redhat.com)
+- 922214 - adding selinux context for all files under /srv/pulp instead of
+  individual files (skarmark@redhat.com)
+- 919155 - Added better test assertions (jason.dobies@redhat.com)
+- 919155 - Added handling for connection refused errors
+  (jason.dobies@redhat.com)
+- 911166 - Use pulp_version macro for consistency and conditional requires on
+  both version and release for pre-release packages only. (jortel@redhat.com)
+- 908934 - Fix /etc/pki/pulp and /etc/pki/pulp/consumer ownership.
+  (jortel@redhat.com)
+
 * Thu Mar 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.23.beta
 - 
 
