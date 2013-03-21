@@ -122,11 +122,14 @@ def upgrade(v1_database, v2_database):
     srpms_success = _srpms(v1_database, v2_database, report)
     drpms_success = _drpms(v1_database, v2_database, report)
     errata_success = _errata(v1_database, v2_database, report)
+    groups_success = _package_groups(v1_database, v2_database, report)
+    categories_success = _package_group_categories(v1_database, v2_database, report)
     distributions_success = _distributions(v1_database, v2_database, report)
     iso_success = _isos(v1_database, v2_database, report)
 
     report.success = (init_types_success and init_associations_success and
                       rpms_success and srpms_success and drpms_success and
+                      groups_success and categories_success and
                       errata_success and distributions_success and iso_success)
     return report
 
