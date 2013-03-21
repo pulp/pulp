@@ -54,3 +54,91 @@ and *Consumer* support installed.
 Installation
 ------------
 
+Since Pulp nodes *are* Pulp servers, the installation instructions for *Nodes* support
+assumes that the :ref:`server installation <server_installation>` has been completed.  Next,
+following the instructions below on each server depending on its intended role within the
+node topology.
+
+Parent
+^^^^^^
+
+1. Install the node parent package.
+
+::
+
+  $ sudo yum install pulp-node-parent
+
+2. Restart Apache.
+
+::
+
+ $ sudo service httpd restart
+
+
+Child
+^^^^^
+
+A child node is Pulp server + a Pulp consumer.  Installing the *Nodes* child support
+installs the pulp-consumer package group as a dependency.
+
+1. Install the node child package.
+
+::
+
+ $ sudo yum install pulp-node-child
+
+2. Restart Apache.
+::
+
+ $ sudo service httpd restart
+
+3. Restart the Pulp Agent
+
+::
+
+ $ sudo service pulp-agent restart
+
+
+Admin Client Extensions
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The admin extensions provide *Nodes* specific commands used to perform nodes administration.
+These tasks include the following:
+
+ * Child node activation.
+ * Child node deactivation.
+ * List child nodes.
+ * Enable repositories for node binding.
+ * Disable repositories for node binding.
+ * List enabled repositories.
+ * Bind a child node to a repository.
+ * Unbind a child node from a repository.
+ * Initiate repository publishing of *Nodes* content.
+ * Initiate child node synchronization.
+
+Install the *Nodes* admin client extensions.
+
+::
+
+ $ sudo yum install pulp-node-admin-extensions
+
+
+
+Registration & Activation
+-------------------------
+
+Once the *Nodes* child support has been installed on a Pulp server it can be registered to a
+parent server.  This is accomplished using the Pulp Consumer client.  As we've mentioned, a child
+node is both a Pulp server and a Pulp consumer.  To register:
+
+1. edit the /etc/pulp/consumer/consumer.conf file and set the ``host`` property in the ``[server]``
+section to the hostname or IP address of the Pulp server to be use as the child node's parent.
+
+
+Binding To Repositories
+-----------------------
+
+
+
+Troubleshooting
+---------------
