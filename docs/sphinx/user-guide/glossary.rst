@@ -58,6 +58,11 @@ Glossary
     an optional start time, and a time interval. More information can be
     found :ref:`in the conventions section of this guide <date-and-time>`.
 
+  node
+    A Pulp node is a Pulp server that has either a parent or child relationship
+    to another Pulp server.  Parent nodes provide content to child nodes.  Child
+    nodes consume content from a parent node as registered :term:`consumers <consumer>`.
+
   registration
     The association of a :term:`consumer` to a Pulp server.  Once registered,
     a consumer is added to Pulp's inventory and may be :term:`bound <binding>` to
