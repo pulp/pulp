@@ -27,11 +27,12 @@ import socket
 import httplib
 
 from logging import getLogger
+from gettext import gettext as _
 
 from pulp.common.bundle import Bundle
 from pulp.common.config import Config
 from pulp.bindings.bindings import Bindings as PulpBindings
-from pulp.bindings.exceptions import NotFoundException
+from pulp.bindings.exceptions import NotFoundException, BadRequestException
 from pulp.bindings.server import PulpConnection
 
 from pulp_node.poller import TaskPoller
@@ -43,6 +44,12 @@ log = getLogger(__name__)
 
 
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
+
+DISTRIBUTOR_PLUGIN_MISSING = _('A distributor of type [%(t)s] is referenced in a repository '
+                               'binding but is not installed and loaded.  It must be installed '
+                               'for node synchronization to succeed.  Please make sure that ALL '
+                               'plugins installed on the parent node are installed on the child '
+                               'node as well.')
 
 
 # --- utils -----------------------------------------------------------------------------
@@ -462,13 +469,20 @@ class ChildDistributor(Child, Distributor):
         """
         Add this repository-distributor to the child inventory.
         """
-        self.binding.repo_distributor.create(
-            self.repo_id,
-            self.details['distributor_type_id'],
-            self.details['config'],
-            self.details['auto_publish'],
-            self.dist_id)
-        log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
+        type_id = self.details['distributor_type_id']
+
+        try:
+            self.binding.repo_distributor.create(
+                self.repo_id,
+                type_id,
+                self.details['config'],
+                self.details['auto_publish'],
+                self.dist_id)
+            log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
+        except BadRequestException, e:
+            if 'distributor_type_id' in e.extra_data['property_names']:
+                e.error_message = DISTRIBUTOR_PLUGIN_MISSING % dict(t=type_id)
+            raise
 
     def update(self, delta):
         """
@@ -595,13 +609,6 @@ class ChildImporter(Child, Importer):
             self.update(delta)
 
 
-class Binding(object):
-    """
-    Represents a consumer binding to a repository.
-    """
-    pass
-
-
 class ParentBinding(Parent):
     """
     Represents a parent consumer binding to a repository.
@@ -653,3 +660,35 @@ class ParentBinding(Parent):
         :rtype: list
         """
         return [b for b in binds if b['type_id'] in constants.ALL_DISTRIBUTORS]
+
+
+class ParentNode(Parent):
+    """
+    Represents a node (consumer) in the parent node's inventory.
+    """
+
+    @classmethod
+    def fetch(cls):
+        """
+        Fetch this node from the parent.
+        :return: This node.
+        :rtype: dict
+        """
+        bundle = ConsumerSSLCredentialsBundle()
+        myid = bundle.cn()
+        http = Parent.binding.consumer.consumer(myid)
+        if http.response_code == httplib.OK:
+            return http.response_body
+        else:
+            raise Exception('Node not found in parent.')
+
+    @classmethod
+    def get_strategy(cls):
+        """
+        Get this node's update strategy.
+        :return: The node level strategy for this node.
+        :rtype: str
+        """
+        node = cls.fetch()
+        notes = node.get('notes', {})
+        return notes.get(constants.STRATEGY_NOTE_KEY, constants.DEFAULT_STRATEGY)

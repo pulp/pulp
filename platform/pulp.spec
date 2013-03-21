@@ -125,6 +125,9 @@ ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/
 # Tools
 cp bin/* %{buildroot}/%{_bindir}
 
+# Ghost
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
+
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
@@ -143,13 +146,23 @@ cd -
 rm -rf %{buildroot}
 
 
+# define required pulp platform version.
+# pre-release package packages have dependencies based on both
+# version and release.
+%if %(echo %release | cut -f1 -d'.') < 1
+%global pulp_version %{version}-%{release}
+%else
+%global pulp_version %{version}
+%endif
+
+
 # ---- Server ------------------------------------------------------------------
 
 %package server
 Summary: The pulp platform server
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
-Requires: pymongo >= 1.9
+Requires: python-%{name}-common = %{pulp_version}
+Requires: pymongo >= 2.1.1
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.30
@@ -200,12 +213,14 @@ Pulp provides replication, access, and accounting for software repositories.
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
 %dir %{_var}/log/%{name}
-%{_sysconfdir}/pki/%{name}/
+%dir %{_sysconfdir}/pki/%{name}
 %{_var}/lib/%{name}/
 %{_usr}/lib/%{name}/plugins/distributors
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
 %{_usr}/lib/%{name}/plugins/types
+%{_sysconfdir}/pki/%{name}/ca.key
+%{_sysconfdir}/pki/%{name}/ca.crt
 /srv/%{name}/webservices.wsgi
 %doc
 
@@ -217,6 +232,7 @@ Summary: Pulp common python packages
 Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
+Requires: python-iniparse
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -235,7 +251,7 @@ A collection of components that are common between the pulp server and client.
 %package -n python-pulp-bindings
 Summary: Pulp REST bindings for python
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-common = %{pulp_version}
 Requires: m2crypto
 
 %description -n python-pulp-bindings
@@ -253,7 +269,7 @@ The Pulp REST API bindings for python.
 Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: m2crypto
-Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-common = %{pulp_version}
 Requires: python-okaara >= 1.0.30
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
@@ -273,7 +289,7 @@ A framework for loading Pulp client extensions.
 %package -n python-pulp-agent-lib
 Summary: Pulp agent handler framework
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
+Requires: python-%{name}-common = %{pulp_version}
 
 %description -n python-pulp-agent-lib
 A framework for loading agent handlers that provide support
@@ -294,10 +310,10 @@ for content, bind and system specific operations.
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
 Requires: python-okaara >= 1.0.30
-Requires: python-%{name}-common = %{version}
-Requires: python-%{name}-bindings = %{version}
-Requires: python-%{name}-client-lib = %{version}
-Requires: %{name}-builtins-admin-extensions = %{version}
+Requires: python-%{name}-common = %{pulp_version}
+Requires: python-%{name}-bindings = %{pulp_version}
+Requires: python-%{name}-client-lib = %{pulp_version}
+Requires: %{name}-builtins-admin-extensions = %{pulp_version}
 Obsoletes: pulp-admin
 
 %description admin-client
@@ -319,10 +335,10 @@ synching, and to kick off remote actions on consumers.
 %package consumer-client
 Summary: Consumer tool to administer the pulp consumer.
 Group: Development/Languages
-Requires: python-%{name}-common = %{version}
-Requires: python-%{name}-bindings = %{version}
-Requires: python-%{name}-client-lib = %{version}
-Requires: %{name}-builtins-consumer-extensions = %{version}
+Requires: python-%{name}-common = %{pulp_version}
+Requires: python-%{name}-bindings = %{pulp_version}
+Requires: python-%{name}-client-lib = %{pulp_version}
+Requires: %{name}-builtins-consumer-extensions = %{pulp_version}
 Obsoletes: pulp-consumer
 
 %description consumer-client
@@ -332,10 +348,11 @@ A tool used to administer a pulp consumer.
 %defattr(-,root,root,-)
 %dir %{_sysconfdir}/%{name}/consumer
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
+%dir %{_sysconfdir}/pki/%{name}/consumer/
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
-%config(noreplace) %{_sysconfdir}/pki/%{name}/consumer
 %{_bindir}/%{name}-consumer
+%ghost %{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 %doc
 
 
@@ -344,8 +361,9 @@ A tool used to administer a pulp consumer.
 %package agent
 Summary: The Pulp agent
 Group: Development/Languages
-Requires: python-%{name}-bindings = %{version}
-Requires: python-%{name}-agent-lib = %{version}
+Requires: python-%{name}-bindings = %{pulp_version}
+Requires: python-%{name}-agent-lib = %{pulp_version}
+Requires: %{name}-consumer-client = %{pulp_version}
 Requires: gofer >= 0.74
 
 %description agent

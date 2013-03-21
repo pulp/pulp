@@ -26,6 +26,7 @@ react to it in the extension itself.
 """
 
 from _socket import gaierror
+from socket import error as socket_error
 from gettext import gettext as _
 import logging
 from M2Crypto.SSL.Checker import WrongHost
@@ -47,6 +48,7 @@ CODE_UNEXPECTED = os.EX_SOFTWARE
 CODE_INVALID_CONFIG = os.EX_DATAERR
 CODE_WRONG_HOST = os.EX_DATAERR
 CODE_UNKNOWN_HOST = os.EX_CONFIG
+CODE_SOCKET_ERROR = os.EX_CONFIG
 
 LOG = logging.getLogger(__name__)
 
@@ -90,6 +92,7 @@ class ExceptionHandler:
             (InvalidConfig,         self.handle_invalid_config),
             (WrongHost,             self.handle_wrong_host),
             (gaierror,              self.handle_unknown_host),
+            (socket_error,          self.handle_socket_error),
             (PulpServerException,   self.handle_server_error),
             (ApacheServerException, self.handle_apache_error),
         )
@@ -301,6 +304,33 @@ class ExceptionHandler:
 
         self.prompt.render_failure_message(msg)
         return CODE_UNKNOWN_HOST
+
+    def handle_socket_error(self, e):
+        """
+        Handles anything coming out of the socket layer exception handling, most notabley
+        the connection refused error.
+
+        @return: appropriate exit code for this error
+
+        """
+        self._log_client_exception(e)
+
+        # In this exception, the first argument is an error code. Admittedly, I don't
+        # know all of them. But 111 is "Connection refused", so we can handle that one
+        # specifically and be generic about everything else.
+
+        if len(e.args) > 0 and e[0] == 111:
+            msg = _('The connection was refused when attempting to contact the server [%(server)s]. '
+                    'Check the client configuration to ensure the server hostname is correct.')
+            data = {'server' : self.config['server']['host']}
+            msg = msg % data
+        else:
+            msg = _('An error occurred attempting to contact the server. More information '
+                    'can be found in the client log file %(l)s.')
+            msg = msg % {'l' : self._log_filename()}
+
+        self.prompt.render_failure_message(msg)
+        return CODE_SOCKET_ERROR
 
     def handle_apache_error(self, e):
         """

@@ -9,6 +9,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from operator import itemgetter
+
 from pulp_node.progress import RepositoryProgress
 
 
@@ -92,7 +94,7 @@ class HandlerProgress(object):
         :type bindings: list
         """
         self.state = self.STARTED
-        for bind in bindings:
+        for bind in sorted(bindings, key=itemgetter('repo_id')):
             repo_id = bind['repo_id']
             p = RepositoryProgress(repo_id, self)
             self.progress.append(p)

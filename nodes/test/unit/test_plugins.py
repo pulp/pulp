@@ -290,11 +290,12 @@ class ImporterTest(PluginTestBase):
 
 class TestStrategy:
 
-    def __init__(self, tester):
+    def __init__(self, tester, **cleaning_options):
         self.tester = tester
+        self.cleaning_options = cleaning_options
 
     def __call__(self, progress):
-        self.tester.clean()
+        self.tester.clean(**self.cleaning_options)
         return Mirror(progress)
 
 
@@ -313,7 +314,7 @@ class TestAgentPlugin(PluginTestBase):
         PluginTestBase.populate(self)
         # register child
         manager = managers.consumer_manager()
-        manager.register(self.PULP_ID)
+        manager.register(self.PULP_ID, notes={constants.STRATEGY_NOTE_KEY: strategy})
         manager = managers.repo_importer_manager()
         # add importer
         importer_conf = {
@@ -340,13 +341,18 @@ class TestAgentPlugin(PluginTestBase):
         manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
 
-    def clean(self):
+    def clean(self, just_units=False, purge_plugins=False):
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        if just_units:
+            return
         Bind.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         RepoImporter.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
+        if purge_plugins:
+            plugin_api._MANAGER.importers.plugins = {}
+            plugin_api._MANAGER.distributors.plugins = {}
 
     def verify(self, num_units=PluginTestBase.NUM_UNITS):
         # repository
@@ -432,14 +438,13 @@ class TestAgentPlugin(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.MIRROR_STRATEGY)
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            report = dispatcher.update(Conduit(), units, {})
             _report.append(report)
         test_handler()
         time.sleep(2)
@@ -478,14 +483,13 @@ class TestAgentPlugin(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.ADDITIVE_STRATEGY)
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            report = dispatcher.update(Conduit(), units, {})
             _report.append(report)
         test_handler()
         time.sleep(2)
@@ -504,10 +508,6 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(len(details['delete_failed']), 0)
         self.verify()
 
-    def clean_units(self):
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge(self, unused):
         """
@@ -517,12 +517,11 @@ class TestAgentPlugin(PluginTestBase):
         :see: test_handler for directory tree details.
         """
         _report = []
-        self.clean = self.clean_units
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.Child.binding', binding)
         @patch('pulp_node.handlers.strategies.Parent.binding', binding)
-        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, just_units=True))
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY, ssl=True)
@@ -532,10 +531,9 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
-            report = handler.update(Conduit(), units, options)
+            report = handler.update(Conduit(), units, {})
             _report.append(report)
         test_handler()
         time.sleep(2)
@@ -580,11 +578,10 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, options)
+            report = handler.update(Conduit(), units, {})
             _report.append(report)
         test_handler()
         time.sleep(2)
@@ -620,18 +617,17 @@ class TestAgentPlugin(PluginTestBase):
         @patch('pulp_node.importers.strategies.Batch', BadBatch)
         def test_handler(*unused):
             # publish
-            self.populate(constants.ADDITIVE_STRATEGY)
+            self.populate(constants.MIRROR_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, options)
+            report = handler.update(Conduit(), units, {})
             _report.append(report)
         test_handler()
         time.sleep(2)
@@ -680,6 +676,57 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
+            handler = NodeHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            os.makedirs(os.path.join(self.childfs, 'content'))
+            report = handler.update(Conduit(), units, {})
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0]
+        self.assertFalse(report.succeeded)
+        errors = report.details['errors']
+        self.assertEqual(len(errors), 1)
+        merge_report = report.details['merge_report']
+        self.assertEqual(merge_report['added'], [self.REPO_ID])
+        self.assertEqual(merge_report['merged'], [])
+        self.assertEqual(merge_report['removed'], [])
+        importer_report = report.details['importer_reports'].get(self.REPO_ID)
+        if importer_report:
+            self.assertFalse(importer_report['succeeded'])
+            exception = importer_report['exception']
+            self.assertTrue(len(exception) > 0)
+            self.verify(0)
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_plugins_missing(self, *unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        :see: test_handler for directory tree details.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, purge_plugins=True))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            cfg = {
+                'protocol':'file',
+                'http':{'alias':self.alias},
+                'https':{'alias':self.alias},
+                'file':{'alias':self.alias},
+            }
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            units = []
             options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
@@ -694,7 +741,7 @@ class TestAgentPlugin(PluginTestBase):
         errors = report.details['errors']
         self.assertEqual(len(errors), 1)
         merge_report = report.details['merge_report']
-        self.assertEqual(merge_report['added'], [self.REPO_ID])
+        self.assertEqual(merge_report['added'], [])
         self.assertEqual(merge_report['merged'], [])
         self.assertEqual(merge_report['removed'], [])
         importer_report = report.details['importer_reports'].get(self.REPO_ID)

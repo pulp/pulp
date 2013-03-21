@@ -376,6 +376,7 @@ class RepositoryUnitAPI(PulpAPI):
         :return:    server response
         """
         override_config = override_config or {}
+
         criteria = self._generate_search_criteria(**kwargs)
         data = {
             'source_repo_id' : source_repo_id,
