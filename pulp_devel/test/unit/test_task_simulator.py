@@ -14,6 +14,8 @@ import unittest
 
 import mock
 
+from pulp.bindings.responses import Response, Task
+from pulp.devel.unit import task_simulator
 from pulp.devel.unit.task_simulator import TaskSimulator
 
 
@@ -105,5 +107,10 @@ class TaskSimulatorTests(unittest.TestCase):
             task = all_tasks[i]
             self.assertEqual(task.task_id, 'task-%s' % i)
 
+    def test_create_fake_task(self):
+        # Test
+        response = task_simulator.create_fake_task_response()
 
-
+        # Verify
+        self.assertTrue(isinstance(response, Response))
+        self.assertTrue(isinstance(response.response_body, Task))

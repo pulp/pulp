@@ -159,3 +159,16 @@ class TaskSimulator(object):
 
         return response
 
+
+def create_fake_task_response():
+    """
+    Returns a Response object that can be used as a mock return from a bindings call
+    that is expected to return a task. The values for the task will be the same as
+    those found in TASK_TEMPLATE.
+
+    :return: response object with the parsed Task object in its response_body
+    :rtype:  Response
+    """
+    task = responses.Task(TASK_TEMPLATE)
+    response = responses.Response('202', task)
+    return response

@@ -24,6 +24,12 @@ from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, Pul
 
 DESC_COPY = _('copies modules from one repository into another')
 
+DESC_FROM_REPO = _('source repository from which units will be copied')
+OPTION_FROM_REPO = PulpCliOption('--from-repo-id', DESC_FROM_REPO, aliases=['-f'], required=True)
+
+DESC_TO_REPO = _('destination repository to copy units into')
+OPTION_TO_REPO = PulpCliOption('--to-repo-id', DESC_TO_REPO, aliases=['-t'], required=True)
+
 OPTION_TYPE = PulpCliOption('--type',
                             _('restrict to one content type such as "rpm", "errata", "puppet_module", etc.'),
                             required=False)
@@ -58,11 +64,8 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
         # specific variations on it
         self.options = [opt for opt in self.options if opt.name != '--repo-id']
 
-        m = 'source repository from which units will be copied'
-        self.create_option('--from-repo-id', _(m), ['-f'], required=True)
-
-        m = 'destination repository to copy units into'
-        self.create_option('--to-repo-id', _(m), ['-t'], required=True)
+        self.add_option(OPTION_FROM_REPO)
+        self.add_option(OPTION_TO_REPO)
 
     def run(self, **kwargs):
         from_repo = kwargs['from-repo-id']
@@ -94,10 +97,9 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
         the user is not prompted for but still need to be in the criteria. In most cases,
         this method need not be overridden.
 
-        By default, this call will add in the type_id value specified at instantiation time.
-        Overriding this method should take care to ensure type_id is present in the returned
-        dict. See RepositoryUnitAPI._generate_search_criteria for more information on what
-        keys are utilitized.
+        By default, this call will add in the type_id value specified at instantiation time
+        (if one was set). See RepositoryUnitAPI._generate_search_criteria for more information
+        on what keys are utilitized.
 
         This call must modify the specified dict; its return value is ignored.
 
@@ -106,7 +108,7 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
 
         :return:
         """
-        if 'type_ids' not in user_input:
+        if 'type_ids' not in user_input and self.type_id is not None:
             user_input['type_ids'] = [self.type_id]
 
     def generate_override_config(self, **kwargs):
