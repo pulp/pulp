@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.1.0
-Release: 0.23.beta
+Release: 0.24.beta
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -258,6 +258,18 @@ fi
 
 
 %changelog
+* Thu Mar 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.24.beta
+- 922229 - fix progress rendering. rendering depends on bindings processed in a
+  determined order.  Perhaps fragile and should revisit progress rendering.
+  (jortel@redhat.com)
+- 919118 - use succeeded flag to render success message or not.
+  (jortel@redhat.com)
+- 919134 - Add explaination to BadRequest raised when distributor not
+  installed. (jortel@redhat.com)
+- 919200 - move node level update strategy to consumer note.
+  (jortel@redhat.com)
+- 919177 - display bindings collated by strategy. (jortel@redhat.com)
+
 * Thu Mar 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.23.beta
 - 921159 - Better description of --auto-publish. (jortel@redhat.com)
 - 921107 - Fix grammatical error in node activate message. (jortel@redhat.com)
