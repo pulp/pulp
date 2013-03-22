@@ -348,9 +348,10 @@ Anywhere Using Admin Client
  $ pulp-admin node sync --node-id child-1
 
 
-Troubleshooting
----------------
+Tips & Troubleshooting
+----------------------
 
 1. Make sure httpd was restarted after installing *Nodes* packages on both the parent and child.
 2. Make sure pulp-agent restarted after installing *Nodes* packages on the child.
 3. Make sure that *Nodes* enabled repositories have been published.
+4. Make sure that ALL plugins installed on the parent are installed on the child.
