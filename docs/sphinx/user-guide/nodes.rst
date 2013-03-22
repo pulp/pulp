@@ -222,7 +222,22 @@ Child Synchronization
 
 A child node's repositories and their content can be synchronized with the parent. Technically,
 this action is seen by the parent as a content update on one of it's consumers. But, for most
-users, the term synchronization is easier to grasp.
+users, the term synchronization is easier to grasp.  During this process, the following objects
+and properties are replicated to the child node:
+
+* Repositories
+
+ * description
+ * notes
+
+* Distributors
+
+ * configuration (includes certificates and other credentials)
+
+* Content Units
+
+ * metadata
+ * associated files (bits)
 
 Strategies
 ^^^^^^^^^^
@@ -259,7 +274,7 @@ Running
 ^^^^^^^
 
 The synchronization of a child node can be initiated using the admin client. This results in a
-request being sent to the agent on the child node which performs a *full* update. A *partial*
+request being sent to the agent on the child node which performs the update. A *partial*
 synchronization can be initiated by doing a regular repository synchronization on the child node.
 This will synchronize only the content of the repository.
 
