@@ -112,6 +112,8 @@ class PollingCommand(PulpCliCommand):
 
                 # Display the appropriate message based on the result of the task
 
+                self.prompt.render_spacer(1)
+
                 if task.was_successful():
                     self.succeeded(task)
 
@@ -120,6 +122,8 @@ class PollingCommand(PulpCliCommand):
 
                 if task.was_cancelled():
                     self.cancelled(task)
+
+                self.prompt.render_spacer(1)
 
                 completed_task_list.append(task)
 

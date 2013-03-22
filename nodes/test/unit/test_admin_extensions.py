@@ -88,7 +88,7 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 7)
+        self.assertEqual(len(lines), 8)
         self.assertTrue(NODE_LIST_TITLE in lines[1])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
@@ -154,10 +154,18 @@ class TestActivationCommands(ClientTests):
     def test_activate(self, mock_binding):
         # Test
         command = NodeActivateCommand(self.context)
-        keywords = {OPTION_CONSUMER_ID.keyword: NODE_ID}
+        keywords = {
+            OPTION_CONSUMER_ID.keyword: NODE_ID,
+            STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY
+        }
         command.run(**keywords)
         # Verify
-        delta = {'notes': {constants.NODE_NOTE_KEY: True}}
+        delta = {
+            'notes': {
+                constants.NODE_NOTE_KEY: True,
+                constants.STRATEGY_NOTE_KEY: constants.DEFAULT_STRATEGY
+            }
+        }
         self.assertTrue(OPTION_CONSUMER_ID in command.options)
         mock_binding.assert_called_with(NODE_ID, delta)
 
@@ -169,7 +177,7 @@ class TestActivationCommands(ClientTests):
         keywords = {NODE_ID_OPTION.keyword: NODE_ID}
         command.run(**keywords)
         # Verify
-        delta = {'notes': {constants.NODE_NOTE_KEY: None}}
+        delta = {'notes': {constants.NODE_NOTE_KEY: None, constants.STRATEGY_NOTE_KEY: None}}
         self.assertTrue(NODE_ID_OPTION in command.options)
         mock_activated.assert_called_with(self.context, NODE_ID)
         mock_binding.assert_called_with(NODE_ID, delta)

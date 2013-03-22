@@ -42,3 +42,4 @@ CLIENT_CERT_KEYWORD = 'client_cert'
 # --- consumer notes ---------------------------------------------------------
 
 NODE_NOTE_KEY = '_child-node'
+STRATEGY_NOTE_KEY = '_node-update-strategy'

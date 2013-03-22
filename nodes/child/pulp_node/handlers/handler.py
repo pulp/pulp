@@ -19,7 +19,7 @@ from pulp.agent.lib.report import ContentReport
 from pulp_node import constants
 from pulp_node.handlers.strategies import find_strategy
 from pulp_node.handlers.reports import HandlerProgress
-from pulp_node.handlers.model import ParentBinding
+from pulp_node.handlers.model import ParentBinding, ParentNode
 
 
 log = getLogger(__name__)
@@ -44,7 +44,7 @@ class NodeHandler(ContentHandler):
         progress = HandlerProgress(conduit)
         bindings = ParentBinding.fetch_all()
 
-        strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
+        strategy_name = ParentNode.get_strategy()
         strategy_class = find_strategy(strategy_name)
         strategy = strategy_class(progress)
         progress.started(bindings)
