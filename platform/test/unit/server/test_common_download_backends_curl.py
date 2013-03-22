@@ -14,9 +14,11 @@
 import mock
 import unittest
 
-from pulp.common.download.config import DownloaderConfig
-from pulp.common.download.backends.curl import HTTPCurlDownloadBackend
 import pycurl
+
+from pulp.common.download.backends.curl import HTTPCurlDownloadBackend
+from pulp.common.download.config import DownloaderConfig
+from test_common_download import DownloadTests, mock_curl_factory, mock_curl_multi_factory, MockObjFactory
 
 
 class TestAddProxyConfiguration(unittest.TestCase):
@@ -139,3 +141,45 @@ class TestBuildEasyHandle(unittest.TestCase):
         easy_handle = curl_downloader._build_easy_handle()
 
         _add_proxy_configuration.assert_called_with(easy_handle)
+
+
+class TestDownload(DownloadTests):
+    """
+    This suite of tests are for the HTTPCurlDownloadBackend.download() method.
+    """
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    def test_is_canceled_false(self):
+        """
+        In this test, we leave the is_cancelled boolean unset on the downloader, and we verify that the main
+        loop executes once. Because our pycurl mocks "download" the entire file in one go, it will only
+        execute one time, which means we can simply count that the select() call was made exactly once.
+        """
+        config = DownloaderConfig(protocol='http')
+        curl_downloader = HTTPCurlDownloadBackend(config)
+        request_list = self._download_requests()[:1]
+
+        curl_downloader.download(request_list)
+
+        mock_multi_curl = pycurl.CurlMulti.mock_objs[0]
+        # The call_count on the select() should be 1 since our pycurl Mock "downloads" the file in one go
+        self.assertEqual(mock_multi_curl.select.call_count, 1)
+
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    def test_is_canceled_true(self):
+        """
+        In this test, we set the is_cancelled boolean on the downloader, and we verify that the main loop
+        does not execute.
+        """
+        config = DownloaderConfig(protocol='http')
+        curl_downloader = HTTPCurlDownloadBackend(config)
+        # Let's go ahead and set the cancellation flag, so the loop should not execute
+        curl_downloader.cancel()
+        request_list = self._download_requests()[:1]
+
+        curl_downloader.download(request_list)
+
+        mock_multi_curl = pycurl.CurlMulti.mock_objs[0]
+        # Because we cancelled the download, the call_count on the select() should be 0
+        self.assertEqual(mock_multi_curl.select.call_count, 0)
