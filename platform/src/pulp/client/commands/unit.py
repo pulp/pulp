@@ -41,7 +41,7 @@ OPTION_UNIT_ID = PulpCliOption('--unit-id',
 class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
 
     def __init__(self, context, name='copy', description=DESC_COPY, method=None,
-                 type_id=None, *args, **kwargs):
+                 type_id=None, **kwargs):
 
         # Handle odd constructor in UnitAssociationCriteriaCommand
         kwargs['name'] = name
@@ -50,22 +50,20 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
         # We're not searching, we're using it to specify units
         kwargs['include_search'] = False
 
-        if method is None:
-            method = self.run
+        method = method or self.run
 
         PollingCommand.__init__(self, name, description, method, context)
-        UnitAssociationCriteriaCommand.__init__(self, method, *args, **kwargs)
+        UnitAssociationCriteriaCommand.__init__(self, method, **kwargs)
 
         self.type_id = type_id
         self.context = context
         self.prompt = context.prompt
 
-        # Remove the default repo-id option that's added by the criteria, we have
-        # specific variations on it
-        self.options = [opt for opt in self.options if opt.name != '--repo-id']
-
         self.add_option(OPTION_FROM_REPO)
         self.add_option(OPTION_TO_REPO)
+
+    def add_repo_id_option(self):
+        pass  # use from-repo-id and to-repo-id instead
 
     def run(self, **kwargs):
         from_repo = kwargs['from-repo-id']
@@ -91,7 +89,7 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
 
     def modify_user_input(self, user_input):
         """
-        Hook to modify the user inputted values that are passed to the copy call. The copy
+        Hook to modify the user entered values that are passed to the copy call. The copy
         call will take care of translating the contents of this dict into a Pulp criteria
         document. Overridden implementations may use this opportunity to add in fields that
         the user is not prompted for but still need to be in the criteria. In most cases,
@@ -108,7 +106,7 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
 
         :return:
         """
-        if 'type_ids' not in user_input and self.type_id is not None:
+        if self.type_id is not None:
             user_input['type_ids'] = [self.type_id]
 
     def generate_override_config(self, **kwargs):

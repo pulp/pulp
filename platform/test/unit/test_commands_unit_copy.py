@@ -42,7 +42,8 @@ class UnitCopyCommandTests(base.PulpClientTests):
 
     def test_structure(self):
         # Ensure all of the expected options are there
-        self.assertTrue(OPTION_REPO_ID not in self.command.options)
+        repo_id_options = [o for o in self.command.options if o.keyword == 'repo-id']
+        self.assertEqual(0, len(repo_id_options))
         self.assertTrue(unit_commands.OPTION_FROM_REPO in self.command.options)
         self.assertTrue(unit_commands.OPTION_TO_REPO in self.command.options)
 
