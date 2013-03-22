@@ -55,7 +55,7 @@ class PollingCommand(PulpCliCommand):
         :param poll_frequency_in_seconds: time between polling calls to the server
         :type  poll_frequency_in_seconds: float
         """
-        super(PollingCommand, self).__init__(name, description, method)
+        PulpCliCommand.__init__(self, name, description, method)
         self.context = context
         self.prompt = context.prompt
 
