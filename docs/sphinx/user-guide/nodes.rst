@@ -6,8 +6,8 @@ Overview
 --------
 
 The *Pulp Nodes* concept describes the relationship between two Pulp servers for the purpose of
-sharing content.  In this relationship, one is designated the *parent* and the other is designated
-the *child*.  The *child* node consumes content that is provided by the *parent* node.
+sharing content. In this relationship, one is designated the *parent* and the other is designated
+the *child*. The *child* node consumes content that is provided by the *parent* node.
 It is important to understand that a child :term:`node` is a complete and fully functional Pulp
 server capable of operating autonomously.
 
@@ -22,7 +22,7 @@ The following terms are used when discussing *Nodes*:
     as a :term:`consumer`.
 
   child node
-    A Pulp node that consumes content from another Pulp server.  The child node must be
+    A Pulp node that consumes content from another Pulp server. The child node must be
     registered as a consumer to the parent and been activated as a child node.
 
   node activation
@@ -35,7 +35,7 @@ The following terms are used when discussing *Nodes*:
 Node Topologies
 ^^^^^^^^^^^^^^^
 
-Pulp nodes may be related to form tree structures.  Intermediate nodes may be designated
+Pulp nodes may be related to form tree structures. Intermediate nodes may be designated
 as both a parent and child node.
 
 .. image:: images/node-topology.png
@@ -44,8 +44,8 @@ as both a parent and child node.
 Node Anatomy
 ^^^^^^^^^^^^
 
-The anatomy of both parent and child nodes is simple.  Parent nodes are Pulp servers
-that have the *Nodes* support installed.  A Child node is a Pulp server with both the *Nodes*
+The anatomy of both parent and child nodes is simple. Parent nodes are Pulp servers
+that have the *Nodes* support installed. A Child node is a Pulp server with both the *Nodes*
 and *Consumer* support installed.
 
 .. image:: images/node-anatomy.png
@@ -55,12 +55,14 @@ Installation
 ------------
 
 Since Pulp nodes *are* Pulp servers, the installation instructions for *Nodes* support
-assumes that the :ref:`server installation <server_installation>` has been completed.  Next,
+assumes that the :ref:`server installation <server_installation>` has been completed. Next,
 following the instructions below on each server depending on its intended role within the
 node topology.
 
 Parent
 ^^^^^^
+
+To install *Nodes* parent support, follow the instructions below.
 
 1. Install the node parent package.
 
@@ -78,8 +80,7 @@ Parent
 Child
 ^^^^^
 
-A child node is Pulp server + a Pulp consumer.  Installing the *Nodes* child support
-installs the pulp-consumer package group as a dependency.
+To install *Nodes* child support, follow the instructions below.
 
 1. Install the node child package.
 
@@ -88,6 +89,7 @@ installs the pulp-consumer package group as a dependency.
  $ sudo yum install pulp-node-child
 
 2. Restart Apache.
+
 ::
 
  $ sudo service httpd restart
@@ -97,6 +99,10 @@ installs the pulp-consumer package group as a dependency.
 ::
 
  $ sudo service pulp-agent restart
+
+
+.. note:: Installing the *Nodes* child support installs the pulp-consumer package
+          group as a dependency.
 
 
 Admin Client Extensions
@@ -123,22 +129,228 @@ Install the *Nodes* admin client extensions.
  $ sudo yum install pulp-node-admin-extensions
 
 
+Enabling Repositories
+---------------------
+
+In Pulp *Nodes*, there is a concept of enabling and disabling repositories for use with child
+nodes. Repositories must be *enabled* before being referenced in node bindings.
+
+Repositories may be enabled using the admin client. See ``node repo`` commands for details.
+
+::
+
+ $ pulp-admin node repo enable --repo-id <repo-id>
+
+::
+
+ $ pulp-admin node repo disable --repo-id <repo-id>
+
+Listing the enabled repositories can be done using the admin client. See: the ``node repo list``
+for details.
+
+::
+
+ $ pulp-admin node repo list
+
+
+Repository Publishing
+---------------------
+
+After a repository has been enabled, it MUST be published before synchronizing content
+to child nodes. Publishing a *Nodes* enabled repository generates the data necessary for
+repository content synchronization with child nodes. If auto-publishing is enabled, a normal
+repository synchronization will result in publishing this data.
+
+The *Nodes* information can be manually published using the admin client.
+See: the ``node repo publish`` for details.
+
+::
+
+ $ pulp-admin node repo publish --repo-id <repo-id>
+
 
 Registration & Activation
 -------------------------
 
 Once the *Nodes* child support has been installed on a Pulp server it can be registered to a
-parent server.  This is accomplished using the Pulp Consumer client.  As we've mentioned, a child
-node is both a Pulp server and a Pulp consumer.  To register:
+parent server. This is accomplished using the Pulp Consumer client. As mentioned, a child
+node is both a Pulp server and a consumer that is registered to the parent node.
 
-1. edit the /etc/pulp/consumer/consumer.conf file and set the ``host`` property in the ``[server]``
-section to the hostname or IP address of the Pulp server to be use as the child node's parent.
+On the child Pulp server:
+
+1. Edit the ``/etc/pulp/consumer/consumer.conf`` file and set the ``host`` property in
+   the ``[server]`` section to the hostname or IP address of the Pulp server to be use as
+   the child node's parent.
+
+2. Register to the parent server has a consumer.
+
+::
+
+ $ sudo pulp-consumer -u <userid> -p <password> register --consumer-id <id>
+
+3. Active the Pulp server as a child node. See: the ``node activate`` command for details.
+
+::
+
+ $ sudo pulp-consumer node activate
 
 
 Binding To Repositories
 -----------------------
 
+The selection of content to be replicated to child nodes is defined by repository bindings.
+Using the *Nodes* ``bind`` and ``unbind`` commands, user create an association between the
+child node and *Nodes* enabled repositories.
+
+Examples:
+
+::
+
+ $ pulp-admin node bind --node-id <node-id> --repo-id <repo-id>
+
+::
+
+ $ pulp-consumer node bind --repo-id
+
+
+Child Synchronization
+---------------------
+
+A child node's repositories and their content can be synchronized with it's parent. Technically,
+this action is seen by the parent as a content update on one of it's consumers. But, for most
+users, the term synchronization is easier to grasp.
+
+Strategies
+^^^^^^^^^^
+
+During child node synchronization, named strategies determine how the synchronization
+is performed and what the desired effect will be. Strategies are incorporated at two levels
+during node synchronization.
+
+The first is the *node* level which determines how the collection of repository objects are
+synchronized. Depending on the selected strategy, repositories are created, updated or deleted
+to match the set of repositories to which the node is associated by bindings.
+
+The second is the *repository* level which determines how each repository's content is
+synchronized. Depending on the selected strategy, content units are created, updated or deleted
+to match the content contained in the repository on the parent.
+
+Current, there are two supported strategies.
+
+ additive
+   Results in objects present in the parent that not in the child to be created or updated
+   as necessary. This strategy should be used when objects created locally in the child
+   should be preserved.
+
+ mirror
+   Results in objects present in the parent that not in the child to be created or updated
+   as necessary. Any object present in the child that do not exist in the parent are removed.
+   This strategy should be used when the desired effect of synchronization is for the child
+   repositories are to be an exact mirror of those on the parent.
+
+.. note:: The ``additive`` strategy is the default.
+
+
+Running
+^^^^^^^
+
+The synchronization of a child node can be initiated using the admin client. This results in a
+request being sent to the agent on the child node which performs a *full* update. A *partial*
+synchronization can be initiated by doing a regular repository synchronization on the child node.
+This will synchronize only the content of the repository.
+
+The synchronization can be requested using the admin client. See: the ``node syc`` command.
+
+::
+
+ $ pulp-admin node sync --node-id <node-id>
+
+
+Quick Start
+-----------
+
+This assumes there are two Pulp servers up and running, the following steps could generally be
+followed to get a basic *Nodes* parent and child setup going. To simplify the writeup, it's
+assumed that the parent server's hostname is ``parent.redhat.com`` and it has a repository
+named ``pulp-goodness`` that we want to share with our child.
+
+On The Parent
+^^^^^^^^^^^^^
+
+On the Pulp server to be used as the parent node.
+
+1. Install the pulp-node-parent package.
+
+::
+
+  $ sudo yum install pulp-node-parent
+  $ sudo service httpd restart
+
+2. Enable the ``pulp-goodness`` repository.
+
+::
+
+ $ pulp-admin node repo enable --repo-id pulp-goodness
+
+3. Publish the ``pulp-goodness`` repository.
+
+::
+
+ $ pulp-admin node repo publish --repo-id pulp-goodness
+
+
+On The Child
+^^^^^^^^^^^^
+
+On the Pulp server to be used as the child node.
+
+1. Install the pulp-node-child package.
+
+::
+
+  $ sudo yum install pulp-node-child
+  $ sudo service httpd restart && service pulp-agent restart
+
+2. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
+
+::
+
+ [server]
+ host = parent.redhat.com
+
+3. Register as a consumer.
+
+::
+
+ $ pulp-consumer -u admin -p admin register --consumer-id child-1
+
+4. Activate the node.
+
+::
+
+ $ pulp-consumer node activate
+
+
+5. Bind to the ``pulp-goodness`` repository.
+
+::
+
+ $ pulp-consumer node bind --repo-id pulp-goodness
+
+
+Anywhere Using Admin Client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1. Synchronize the child.
+
+::
+
+ $ pulp-admin node sync --node-id child-1
 
 
 Troubleshooting
 ---------------
+
+1. Make sure httpd was restarted after installing *Nodes* packages on both the parent and child.
+2. Make sure pulp-agent restarted after installing *Nodes* packages on the child.
+3. Make sure that *Nodes* enabled repositories have been published.
