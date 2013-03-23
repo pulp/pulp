@@ -1,3 +1,4 @@
+.. _pulp_nodes:
 
 Nodes
 =====
@@ -12,6 +13,8 @@ It is important to understand that a child :term:`node` is a complete and fully 
 server capable of operating autonomously.
 
 The following terms are used when discussing *Nodes*:
+
+.. glossary::
 
   node
     A Pulp server that has the *Nodes* support installed and has a content sharing
@@ -153,6 +156,8 @@ for details.
  $ pulp-admin node repo list
 
 
+.. _node_repository_publishing:
+
 Repository Publishing
 ---------------------
 
@@ -199,6 +204,8 @@ On the child Pulp server:
  $ sudo pulp-consumer node activate
 
 
+.. _node_binding:
+
 Binding To Repositories
 -----------------------
 
@@ -216,6 +223,8 @@ Examples:
 
  $ pulp-consumer node bind --repo-id <repo-id>
 
+
+.. _node_synchronization:
 
 Child Synchronization
 ---------------------
@@ -238,6 +247,9 @@ and properties are replicated to the child node:
 
  * metadata
  * associated files (bits)
+
+
+.. _node_strategies:
 
 Strategies
 ^^^^^^^^^^
