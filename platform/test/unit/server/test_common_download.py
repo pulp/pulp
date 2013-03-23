@@ -267,7 +267,7 @@ class MockCurlDownloadTests(DownloadTests):
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
     def test_download_aggregating_event_listener(self):
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         listener = AggregatingEventListener()
         downloader = curl_downloader.HTTPCurlDownloader(config, listener)
         request_list = self._download_requests()

@@ -15,7 +15,7 @@ import mock
 import unittest
 
 from pulp.common.download.config import DownloaderConfig
-from pulp.common.download.backends.curl import HTTPCurlDownloadBackend
+from pulp.common.download.downloaders.curl import HTTPCurlDownloader
 import pycurl
 
 
@@ -34,7 +34,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         should just not make any calls to setopt() at all, which is what we assert here.
         """
         config = DownloaderConfig(protocol='http')
-        curl_downloader = HTTPCurlDownloadBackend(config)
+        curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
         curl_downloader._add_proxy_configuration(easy_handle)
@@ -51,7 +51,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         proxy_port = '3128'
         config = DownloaderConfig(protocol='http', proxy_url=proxy_url,
                                   proxy_port=proxy_port)
-        curl_downloader = HTTPCurlDownloadBackend(config)
+        curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
         curl_downloader._add_proxy_configuration(easy_handle)
@@ -70,7 +70,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         """
         proxy_url = u'http://proxy.com/server/'
         config = DownloaderConfig(protocol='http', proxy_url=proxy_url)
-        curl_downloader = HTTPCurlDownloadBackend(config)
+        curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
         curl_downloader._add_proxy_configuration(easy_handle)
@@ -92,7 +92,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         proxy_password = u'1luvpr0xysrvrs'
         config = DownloaderConfig(protocol='http', proxy_url=proxy_url, proxy_username=proxy_username,
                                   proxy_password=proxy_password)
-        curl_downloader = HTTPCurlDownloadBackend(config)
+        curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
         curl_downloader._add_proxy_configuration(easy_handle)
@@ -125,7 +125,7 @@ class TestBuildEasyHandle(unittest.TestCase):
     This test suite tests the _build_easy_handle() method.
     """
     @mock.patch('pycurl.Curl', mock.MagicMock)
-    @mock.patch('pulp.common.download.backends.curl.HTTPCurlDownloadBackend'
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader'
                 '._add_proxy_configuration')
     def test__build_easy_handle_calls__add_proxy_configuration(self,
                                                                _add_proxy_configuration):
@@ -134,7 +134,7 @@ class TestBuildEasyHandle(unittest.TestCase):
         _add_proxy_configuration().
         """
         config = DownloaderConfig(protocol='http')
-        curl_downloader = HTTPCurlDownloadBackend(config)
+        curl_downloader = HTTPCurlDownloader(config)
 
         easy_handle = curl_downloader._build_easy_handle()
 
