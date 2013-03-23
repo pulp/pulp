@@ -11,7 +11,6 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from datetime import datetime
 from logging import getLogger
 
 from eventlet import GreenPool
@@ -21,15 +20,18 @@ from pulp.common.download import report as download_report
 from pulp.common.download.downloaders.base import PulpDownloader
 
 
-# taken from python documentation <http://docs.python.org/2.6/library/socket.html#socket.socket.recv>
-DEFAULT_BUFFER_SIZE = 4096
-
 # "optimal" concurrency, based purely on anecdotal evidence
-DEFAULT_MAX_CONCURRENT = 100
+DEFAULT_MAX_CONCURRENT = 7
+
+# taken from python's socket._fileobject wrapper
+DEFAULT_BUFFER_SIZE = 8192
+NO_RETURN_BUFFER_SIZE = -1
+
+DEFAULT_MAX_PROGRESS_CALLS = 10
 
 _LOG = getLogger(__name__)
 
-# eventlet downloader backend --------------------------------------------------
+# eventlet downloader ----------------------------------------------------------
 
 class HTTPEventletDownloader(PulpDownloader):
     """
@@ -40,10 +42,6 @@ class HTTPEventletDownloader(PulpDownloader):
     Both of these deviations keep the backend itself from adding the memory
     overhead.
     """
-
-    @property
-    def buffer_size(self):
-        return self.config.buffer_size or DEFAULT_BUFFER_SIZE
 
     @property
     def max_concurrent(self):
@@ -63,24 +61,19 @@ class HTTPEventletDownloader(PulpDownloader):
                 self.fire_download_failed(report)
 
     def _fetch(self, request):
-        # create the report
         report = download_report.DownloadReport.from_download_request(request)
+        report.download_started()
 
         # once we're canceled, short-circuit these calls as there's no way
         # to interrupt the imap call's iterations
         if self.is_canceled:
-            report.state = download_report.DOWNLOAD_CANCELED
+            report.download_canceled()
             return report
 
-        # and set the corresponding information for it
-        report.state = download_report.DOWNLOAD_DOWNLOADING
-        report.start_time = datetime.utcnow()
         self.fire_download_started(report)
 
-        # setup the destination file handle
-        file_handle = request.destination
-        if isinstance(request.destination, basestring):
-            file_handle = open(request.destination, 'wb')
+        file_handle = request.initialize_file_handle()
+        buffer_size = calculate_buffer_size(report, DEFAULT_MAX_PROGRESS_CALLS-1)
 
         # make the request to the server and process the response
         try:
@@ -89,9 +82,11 @@ class HTTPEventletDownloader(PulpDownloader):
             info = response.info()
             set_response_info(info, report)
 
+            self.fire_download_progress(report) # fire an initial progress event
+
             # individual file download i/o loop
             while not self.is_canceled:
-                body = response.read(self.buffer_size)
+                body = response.read(buffer_size)
                 if not body:
                     break
 
@@ -99,32 +94,46 @@ class HTTPEventletDownloader(PulpDownloader):
 
                 bytes_read = len(body)
                 report.bytes_downloaded += bytes_read
+                # this is guaranteed to fire at least one (final) progress event
                 self.fire_download_progress(report)
 
             else:
-                # the only way we don't break out of the i/o loop, is if
-                # we were canceled
-                report.state = download_report.DOWNLOAD_CANCELED
+                # we didn't break out of the i/o loop only if we were cancelled
+                report.download_canceled()
 
         except Exception, e:
-            report.state = download_report.DOWNLOAD_FAILED
+            report.download_failed()
             _LOG.exception(e)
 
         else:
-            # don't overwrite the state if we were canceled
-            if report.state is download_report.DOWNLOAD_DOWNLOADING:
-                report.state = download_report.DOWNLOAD_SUCCEEDED
+            report.download_succeeded()
 
         finally:
-            report.finish_time = datetime.utcnow()
-            # close the file handle if we opened it
-            if file_handle is not request.destination:
-                file_handle.close()
+            request.finalize_file_handle()
 
         # return the appropriately filled out report
         return report
 
 # utilities --------------------------------------------------------------------
+
+def calculate_buffer_size(report, max_progress_calls=DEFAULT_MAX_PROGRESS_CALLS):
+    # if we've been unable to determine the size of the download, return a
+    # buffer size that won't bother with reporting the progress
+    if not report.total_bytes or report.total_bytes < 1:
+        return NO_RETURN_BUFFER_SIZE
+
+    # return a buffer size that allows for a maximum number of progress calls,
+    # but don't bother returning a buffer size smaller than the default;
+    # the read() operation won't honor it anyway
+
+    divisor = max_progress_calls
+    if report.total_bytes % divisor != 0:
+        divisor -= 1
+
+    potential_buffer_size = report.total_bytes / divisor
+    buffer_size = max(potential_buffer_size, DEFAULT_BUFFER_SIZE)
+    return buffer_size
+
 
 def download_request_to_urllib2_request(config, download_request):
     urllib2_request = urllib2.Request(download_request.url)
@@ -136,7 +145,8 @@ def download_request_to_urllib2_request(config, download_request):
 
 def set_response_info(info, report):
     # XXX (jconnor 2013-02-06) is there anything else we need?
-    content_length = info.dict.get('content-length', 0)
-    report.total_bytes = int(content_length)
+    content_length = info.dict.get('content-length', None)
+    if content_length is not None:
+        report.total_bytes = int(content_length)
 
 

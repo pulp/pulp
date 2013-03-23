@@ -34,3 +34,31 @@ class DownloadRequest(object):
         self.url = url
         self.destination = destination
         self.data = data
+
+        self._file_handle = None
+
+    def initialize_file_handle(self):
+        """
+        Returns a file handle for the request's destination.
+
+        :return: file-like object for writing the download to
+        """
+        # if the destination is already a file-like object, return it
+        if hasattr(self.destination, 'write'):
+            return self.destination
+
+        self._file_handle = open(self.destination, 'wb') # cache the handle
+        return self._file_handle
+
+    def finalize_file_handle(self):
+        """
+        Cleanup the request destination's file handle. This is a no-op if the
+        file handle wasn't create with the initialize_file_handle method.
+        """
+        # don't close the file handle if it wasn't opened by get_file_handle
+        if self._file_handle in (None, self.destination):
+            return
+
+        self._file_handle.close()
+        self._file_handle = None
+
