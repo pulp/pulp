@@ -24,6 +24,7 @@ import pycurl
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.downloaders import curl as curl_downloader
 from pulp.common.download.downloaders import event as eventlet_downloader
+from pulp.common.download.listener import AggregatingEventListener
 from pulp.common.download.request import DownloadRequest
 
 from http_static_test_server import HTTPStaticTestServer
@@ -262,6 +263,19 @@ class MockCurlDownloadTests(DownloadTests):
         self.assertEqual(listener.download_progress.call_count, 2) # this one only tests the mock curl
         self.assertEqual(listener.download_succeeded.call_count, 1)
         self.assertEqual(listener.download_failed.call_count, 0)
+
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    def test_download_aggregating_event_listener(self):
+        config = DownloaderConfig('http')
+        listener = AggregatingEventListener()
+        downloader = curl_downloader.HTTPCurlDownloader(config, listener)
+        request_list = self._download_requests()
+        downloader.download(request_list)
+
+        self.assertEqual(len(listener.succeeded_reports), 3)
+        self.assertEqual(len(listener.failed_reports), 0)
+        self.assertEqual(len(list(listener.all_reports)), 3)
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))

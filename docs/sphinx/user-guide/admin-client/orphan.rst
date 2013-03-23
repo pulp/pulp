@@ -25,58 +25,27 @@ Listing Orphaned Content Units
 The **pulp-admin** command line client provides the ``orphan`` section and the
 ``list`` command to inspect the orphaned content units on your server::
 
- $ pulp-admin orphan list
+ $ pulp-admin orphan list --details
  Arch:          noarch
- Buildhost:     kramer.local.rm-rf.ca
  Checksum:      7e9cad8b2cd436079fd524803ec7fa209a666ecdda05c6f9c8c5ee70cdea9ce6
  Checksumtype:  sha256
- Description:   Tito is a tool for managing tarballs, rpms, and builds for
-                projects using git.
  Epoch:         0
- Filename:      tito-0.4.9-1.fc16.noarch.rpm
  Id:            a0079ca2-1d4f-4d01-8307-3f183f1843a6
- License:       GPLv2
  Name:          tito
- Provides:      [[u'tito', u'EQ', [u'0', u'0.4.9', u'1.fc16']]]
- Relativepath:  tito-0.4.9-1.fc16.noarch.rpm
  Release:       1.fc16
- Repodata:
-   Filelists:  <package
-              pkgid="7e9cad8b2cd436079fd524803ec7fa209a666ecdda05c6f9c8c5ee70cdea
-              9ce6" name="tito" arch="noarch">     <version epoch="0" ver="0.4.9"
-              rel="1.fc16"/>      <file>/usr/bin/generate-patches.pl</file>
-
-              [snip]
-
-              </package>
-   Other:      <package
-              pkgid="7e9cad8b2cd436079fd524803ec7fa209a666ecdda05c6f9c8c5ee70cdea
-              9ce6" name="tito" arch="noarch">     <version epoch="0" ver="0.4.9"
-
-              [snip]
-
-              Attempt to copy local Sources during releases.
-              (dgoodwin@redhat.com)</changelog>  </package>
-   Primary:    <package type="rpm">   <name>tito</name>   <arch>noarch</arch>
-              <version epoch="0" ver="0.4.9" rel="1.fc16"/>   <checksum
-
-              [snip]
-
-              <file>/usr/bin/tito</file>   </format> </package>
- Requires:      [[u'rpmlint', None, [None, None, None]], [u'rpm-build', None,
-
-                [snip]
-
-                [u'/usr/bin/python', None, [None, None, None]],
-                [u'/usr/bin/perl', None, [None, None, None]]]
- Vendor:
  Version:       0.4.9
 
+ +----------------------------------------------------------------------+
+                                 Summary
+ +----------------------------------------------------------------------+
+
+ RPM:    1
+ Total:  1
 
 You can filter the list by content type by using the ``--type=<type>`` flag.
 
-You can also use the ``--summary`` flag to append the orphaned content unit types
-and their corresponding unit counts.
+You can use the ``--details`` flag to list the individual orphaned content
+units. Otherwise only the **Summary** section is displayed.
 
 
 Removing Orphaned Content Units

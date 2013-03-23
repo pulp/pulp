@@ -20,25 +20,39 @@ class DownloaderConfig(object):
 
     Currently supported configuration values are:
 
-     * protocol: network protocol to use (http, https) - **DEPRECATED**
-     * max_concurrent: maximum number of downloads to run concurrently
-     * basic_auth_username: http basic auth username (basic_auth_password must also be provided)
-     * basic_auth_password: http basic auth password (basic_auth_username must also be provided)
-     * ssl_ca_cert: certificate authority cert for secure connections (https protocol only)
-     * ssl_ca_cert_path: path to a ssl ca cert (incompatible with ssl_ca_cert)
-     * ssl_client_cert: client certificate for secure connections (https protocol only)
+     * max_concurrent:       maximum number of downloads to run concurrently
+     * basic_auth_username:  http basic auth username (basic_auth_password must also be
+                             provided)
+     * basic_auth_password:  http basic auth password (basic_auth_username must also be
+                             provided)
+     * ssl_ca_cert:          certificate authority cert for secure connections (https
+                             protocol only)
+     * ssl_ca_cert_path:     path to a ssl ca cert (incompatible with ssl_ca_cert)
+     * ssl_client_cert:      client certificate for secure connections (https protocol
+                             only)
      * ssl_client_cert_path: path to a ssl client cert (incompatible with ssl_client_cert)
-     * ssl_client_key: client private key for secure connections (https protocol only)
-     * ssl_client_key_path: path to a ssl client key (incompatible with ssl_client_key)
-     * ssl_verify_host: integer telling the downloader what level of verification to use, 0 means no verification
-     * ssl_verify_peer: integer telling the downloader what level of verification to use, 0 means no verification
+     * ssl_client_key:       client private key for secure connections (https protocol
+                             only)
+     * ssl_client_key_path:  path to a ssl client key (incompatible with ssl_client_key)
+     * ssl_verify_host:      integer telling the downloader what level of verificaiton to
+                             use. 0 means no verificaiton
+     * ssl_verify_peer:      integer telling the downloader what level of verificaiton to
+                             use. 0 means no verificaiton
+     * proxy_url             A string representing the URL of a proxy server that should
+                             be used while retrieving content. It should be of the form
+                             <scheme>://<hostname>/ where the scheme is http or https.
+     * proxy_port            The port on the proxy server to connect to. This should be
+                             an integer value.
+     * proxy_username        The username to use when authenticating with the proxy server
+     * proxy_password        The password to use when authenticating with the proxy server
     """
 
     def __init__(self, **kwargs):
         """
-        :param protocol: network protocol to use
-        :type protocol: str
-        :param kwargs: keyword arguments representing the downloader's configuration
+        :param kwargs:   keyword arguments representing the downloader's configuration.
+                         See the DownloaderConfig's docblock for a list of supported
+                         options.
+        :type  kwargs:   dict
         """
         max_concurrent = kwargs.pop('max_concurrent', None)
         if not (max_concurrent > 0 or max_concurrent is None):
@@ -50,5 +64,8 @@ class DownloaderConfig(object):
         self.__dict__.update(kwargs)
 
     def __getattr__(self, item):
+        """
+        This allows us to retrieve configuration parameters from this object with getattr()
+        or by accessing the attributes by name.
+        """
         return self.__dict__.get(item, None)
-

@@ -19,9 +19,10 @@ except ImportError:
 
 from okaara.cli import CommandUsage, OptionGroup
 
+from pulp.client import parsers
 from pulp.client import validators
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
-from pulp.client import parsers
+
 
 _LIMIT_DESCRIPTION = _('max number of items to return')
 _SKIP_DESCRIPTION = _('number of items to skip')
@@ -47,6 +48,7 @@ Example: $ pulp-admin repo search --gt='content_unit_count=0'
 ALL_CRITERIA_ARGS = ('filters', 'after', 'before', 'str-eq', 'int-eq', 'match',
                      'in', 'not', 'gt', 'gte', 'lt', 'lte')
 
+
 class CriteriaCommand(PulpCliCommand):
     """
     Provides arguments for accepting a Pulp criteria. This can be used for both
@@ -68,13 +70,11 @@ class CriteriaCommand(PulpCliCommand):
         :param include_search: if True, the command will add all non-filter
                                criteria options such as limit, seek, sort, etc.
         :type  include_search: bool
-
         """
         name = name or kwargs.pop('name', None) or 'search'
         description = description or kwargs.pop('description', None) or _SEARCH_DESCRIPTION
 
-        super(CriteriaCommand, self).__init__(name, description,
-            method, *args, **kwargs)
+        PulpCliCommand.__init__(self, name, description, method, **kwargs)
 
         # Hang on to these so unit tests can verify the command is configuration
         self.filtering = filtering
@@ -261,10 +261,9 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
         @param method: method that should be invoked when the command is executed
         @type  method: callable
         """
-        super(UnitAssociationCriteriaCommand, self).__init__(method, *args, **kwargs)
+        CriteriaCommand.__init__(self, method, *args, **kwargs)
 
-        self.add_option(PulpCliOption('--repo-id',
-            _('identifies the repository to search within'), required=True))
+        self.add_repo_id_option()
 
         m = _('matches units added to the source repository on or after the given time; '
             'specified as a timestamp in iso8601 format')
@@ -275,6 +274,13 @@ class UnitAssociationCriteriaCommand(CriteriaCommand):
             'specified as a timestamp in iso8601 format')
         self.create_option('--before', m, ['-b'], required=False,
             allow_multiple=False, parse_func=parsers.iso8601)
+
+    def add_repo_id_option(self):
+        """
+        Override this method to a no-op to skip adding the repo id option.
+        """
+        self.add_option(PulpCliOption('--repo-id',
+                                      _('identifies the repository to search within'), required=True))
 
 
 class DisplayUnitAssociationsCommand(UnitAssociationCriteriaCommand):
