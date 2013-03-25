@@ -15,7 +15,7 @@ from logging import getLogger
 from gettext import gettext as _
 
 from pulp.plugins.importer import Importer
-from pulp.common.download import factory
+from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 
 from pulp_node import constants
@@ -144,17 +144,16 @@ class NodesHttpImporter(Importer):
         :param config: The importer configuration.
         :param config: pulp.plugins.config.PluginCallConfiguration
         :return: A configured downloader
-        :rtype: pulp.common.download.backends.base.DownloadBackend
+        :rtype: pulp.common.download.downloaders.base.PulpDownloader
         """
         ssl = config.get(constants.SSL_KEYWORD, {})
         conf = DownloaderConfig(
-            'https',
             max_concurrent=MAX_CONCURRENCY,
             ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
             ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
             ssl_verify_host=0,
             ssl_verify_peer=0)
-        downloader = factory.get_downloader(conf)
+        downloader = HTTPSCurlDownloader(conf)
         return downloader
 
     def _safe_str(self, s):

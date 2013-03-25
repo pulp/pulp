@@ -15,8 +15,8 @@ import os
 import sys
 import tempfile
 
-from pulp.common.download import factory as download_factory
 from pulp.common.download.config import DownloaderConfig
+from pulp.common.download.downloaders.curl import HTTPCurlDownloader
 from pulp.common.download.listener import DownloadEventListener
 from pulp.common.download.request import DownloadRequest
 
@@ -69,11 +69,11 @@ def main():
 
         print '%s: download %d files from %s' % (name.upper(), len(url_list), url_list[0].rsplit('/', 1)[0])
 
-        config = DownloaderConfig('http')
+        config = DownloaderConfig()
         download_dir = tempfile.mkdtemp(prefix=name+'-')
         request_list = [DownloadRequest(url, os.path.join(download_dir, _filename_from_url(url))) for url in url_list]
 
-        downloader = download_factory.get_downloader(config, TestDownloadEventListener())
+        downloader = HTTPCurlDownloader(config, TestDownloadEventListener())
         downloader.download(request_list)
 
 # ------------------------------------------------------------------------------

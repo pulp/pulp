@@ -48,7 +48,7 @@ from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import Manifest
 from pulp_node.handlers.strategies import Mirror
 from pulp_node.importers.download import Batch
-from pulp.common.download import factory
+from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 from pulp_node import constants
 
@@ -236,8 +236,8 @@ class TestDistributor(PluginTestBase):
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, self.dist_conf())
         # Verify
-        conf = DownloaderConfig('http')
-        downloader = factory.get_downloader(conf)
+        conf = DownloaderConfig()
+        downloader = HTTPSCurlDownloader(conf)
         manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))

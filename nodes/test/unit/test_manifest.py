@@ -17,7 +17,7 @@ import json
 
 from unittest import TestCase
 
-from pulp.common.download import factory
+from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 
 from pulp_node.manifest import Manifest
@@ -72,8 +72,8 @@ class TestManifest(TestCase):
         for i in range(0, self.NUM_UNITS):
             units.append({i:i+1})
         manifest.write(self.tmp_dir, units)
-        cfg = DownloaderConfig('http')
-        downloader = factory.get_downloader(cfg)
+        cfg = DownloaderConfig()
+        downloader = HTTPSCurlDownloader(cfg)
         manifest = Manifest()
         path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
         url = 'file://%s' % path
