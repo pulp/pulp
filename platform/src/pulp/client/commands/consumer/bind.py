@@ -11,10 +11,8 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-import os
 from gettext import gettext as _
 
-from pulp.bindings.exceptions import NotFoundException
 from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID, OPTION_REPO_ID
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.consumer_utils import load_consumer_id
@@ -94,19 +92,19 @@ class ConsumerBindCommand(PollingCommand):
         action_tag = action_tags[0]
 
         handler = handlers[action_tag]
-        handler(task)
+        handler()
 
-    def _render_bind_header(self, task):
+    def _render_bind_header(self):
         """
         Displays the task header for the bind task.
         """
-        self.prompt.write('-- Updating Pulp Server --', tag='bind-header')
+        self.prompt.write(_('-- Updating Pulp Server --'), tag='bind-header')
 
-    def _render_agent_bind_header(self, task):
+    def _render_agent_bind_header(self):
         """
         Displays the task header for the agent's bind task.
         """
-        self.prompt.write('-- Notifying the Consumer --', tag='agent-bind-header')
+        self.prompt.write(_('-- Notifying the Consumer --'), tag='agent-bind-header')
 
 
 class ConsumerUnbindCommand(PollingCommand):
@@ -177,22 +175,22 @@ class ConsumerUnbindCommand(PollingCommand):
         action_tag = action_tags[0]
 
         handler = handlers[action_tag]
-        handler(task)
+        handler()
 
-    def _render_unbind_header(self, task):
+    def _render_unbind_header(self):
         """
         Displays the task header for the unbind task.
         """
-        self.prompt.write('-- Updating Pulp Server --', tag='unbind-header')
+        self.prompt.write(_('-- Updating Pulp Server --'), tag='unbind-header')
 
-    def _render_agent_unbind_header(self, task):
+    def _render_agent_unbind_header(self):
         """
         Displays the task header for the agent's unbind task.
         """
-        self.prompt.write('-- Notifying the Consumer --', tag='agent-unbind-header')
+        self.prompt.write(_('-- Notifying the Consumer --'), tag='agent-unbind-header')
 
-    def _render_delete_binding_header(self, task):
+    def _render_delete_binding_header(self):
         """
         Displays the task header for the second update to the server's database.
         """
-        self.prompt.write('-- Pulp Server Clean Up --', tag='delete-header')
+        self.prompt.write(_('-- Pulp Server Clean Up --'), tag='delete-header')
