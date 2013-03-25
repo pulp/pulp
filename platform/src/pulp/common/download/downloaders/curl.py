@@ -70,7 +70,7 @@ class HTTPCurlDownloader(PulpDownloader):
         self.fire_batch_started([i[1] for i in request_queue[::-1]])
 
         # main request processing loop
-        while processed_requests < total_requests and not self.is_cancelled:
+        while processed_requests < total_requests and not self.is_canceled:
 
             try:
 

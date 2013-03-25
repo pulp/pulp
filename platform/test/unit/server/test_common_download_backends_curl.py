@@ -149,9 +149,9 @@ class TestDownload(DownloadTests):
     """
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
-    def test_is_cancelled_false(self):
+    def test_is_canceled_false(self):
         """
-        In this test, we leave the is_cancelled boolean unset on the downloader, and we verify that the main
+        In this test, we leave the is_canceled boolean unset on the downloader, and we verify that the main
         loop executes once. Because our pycurl mocks "download" the entire file in one go, it will only
         execute one time, which means we can simply count that the select() call was made exactly once.
         """
@@ -167,9 +167,9 @@ class TestDownload(DownloadTests):
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
-    def test_is_cancelled_true(self):
+    def test_is_canceled_true(self):
         """
-        In this test, we set the is_cancelled boolean on the downloader, and we verify that the main loop
+        In this test, we set the is_canceled boolean on the downloader, and we verify that the main loop
         does not execute.
         """
         config = DownloaderConfig()
