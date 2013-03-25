@@ -56,7 +56,7 @@ class ImporterStrategy(object):
     :ivar config: The plugin configuration.
     :type config: pulp.server.plugins.config.PluginCallConfiguration
     :ivar downloader: A fully configured file downloader.
-    :type downloader: pulp.common.download.backends.base.DownloadBackend
+    :type downloader: pulp.common.download.downloaders.base.PulpDownloader
     :ivar progress: A progress reporting object.
     :type progress: RepositoryProgress
     """
@@ -68,7 +68,7 @@ class ImporterStrategy(object):
         :param config: The plugin configuration.
         :type config: pulp.server.plugins.config.PluginCallConfiguration
         :param downloader: A fully configured file downloader.
-        :type downloader: pulp.common.download.backends.base.DownloadBackend
+        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
         :param progress: A progress reporting object.
         :type progress: pulp_node.importers.reports.RepositoryProgress
         """

@@ -20,7 +20,6 @@ class DownloaderConfig(object):
 
     Currently supported configuration values are:
 
-     * protocol:             network protocol to use (http, https)
      * max_concurrent:       maximum number of downloads to run concurrently
      * basic_auth_username:  http basic auth username (basic_auth_password must also be
                              provided)
@@ -48,18 +47,13 @@ class DownloaderConfig(object):
      * proxy_password        The password to use when authenticating with the proxy server
     """
 
-    def __init__(self, protocol, **kwargs):
+    def __init__(self, **kwargs):
         """
-        :param protocol: network protocol to use
-        :type  protocol: str
         :param kwargs:   keyword arguments representing the downloader's configuration.
                          See the DownloaderConfig's docblock for a list of supported
                          options.
         :type  kwargs:   dict
         """
-
-        self.protocol = protocol.lower()
-
         max_concurrent = kwargs.pop('max_concurrent', None)
         if not (max_concurrent > 0 or max_concurrent is None):
             raise AttributeError('max_concurrent must be greater than 0')

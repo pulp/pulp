@@ -79,7 +79,7 @@ class Manifest(object):
         :param url: The URL to download the manifest.
         :type url: str
         :param downloader: A fully configured file downloader.
-        :type downloader: pulp.common.download.backends.base.DownloadBackend
+        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
         :return: The contents of the manifest document which is a
             list of content units.  Each unit is a dictionary.
         :rtype: UnitsIterator
@@ -120,7 +120,7 @@ class Manifest(object):
         :param url: The URL for the manifest.
         :type url: str
         :param downloader: The downloader to use.
-        :type downloader: pulp.common.download.backends.base.DownloadBackend
+        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
         :return: The manifest.
         :rtype: dict
         :raise HTTPError, URL errors.

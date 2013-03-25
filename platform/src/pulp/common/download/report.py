@@ -11,6 +11,10 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from datetime import datetime
+
+from pulp.common import dateutils
+
 # download states --------------------------------------------------------------
 
 DOWNLOAD_WAITING = 'waiting'
@@ -30,7 +34,8 @@ class DownloadReport(object):
                             filesystem path to the file, or a file-like object
     :ivar state:            current state of the download (waiting, downloading, succeeded, failed,
                             canceled)
-    :ivar total_bytes:      total bytes of the file to be downloaded
+    :ivar total_bytes:      total bytes of the file to be downloaded, None if this could not be
+                            determined
     :ivar bytes_downloaded: bytes of the file downloaded so far
     :ivar start_time:       start time of the file download
     :ivar finish_time:      finish time of the file download
@@ -64,8 +69,60 @@ class DownloadReport(object):
         self.data = data
 
         self.state = DOWNLOAD_WAITING
-        self.total_bytes = 0
+        self.total_bytes = None
         self.bytes_downloaded = 0
         self.start_time = None
         self.finish_time = None
         self.error_report = {}
+
+    # state management methods -------------------------------------------------
+
+    def download_started(self):
+        """
+        Mark the report as having started.
+
+        This method is "re-entrant" in the sense that it is only changes the
+        report's state the first time it is called. Subsequent calls amount to
+        no-ops.
+        """
+        if self.state is not DOWNLOAD_WAITING:
+            return
+        self.state = DOWNLOAD_DOWNLOADING
+        self.start_time = datetime.now(tz=dateutils.utc_tz())
+
+    def download_succeeded(self):
+        """
+        Mark the report as having succeeded.
+
+        This method is "re-entrant" in the sense that it is only changes the
+        report's state the first time it is called. Subsequent calls to this
+        method or download_failed or download_canceled amount to no-ops.
+        """
+        self._download_finished(DOWNLOAD_SUCCEEDED)
+
+    def download_failed(self):
+        """
+        Mark the report as having failed.
+
+        This method is "re-entrant" in the sense that it is only changes the
+        report's state the first time it is called. Subsequent calls to this
+        method or download_succeeded or download_canceled amount to no-ops.
+        """
+        self._download_finished(DOWNLOAD_FAILED)
+
+    def download_canceled(self):
+        """
+        Mark the report as having been canceled.
+
+        This method is "re-entrant" in the sense that it is only changes the
+        report's state the first time it is called. Subsequent calls to this
+        method or download_succeeded or download_failed amount to no-ops.
+        """
+        self._download_finished(DOWNLOAD_CANCELED)
+
+    def _download_finished(self, state):
+        if self.state is not DOWNLOAD_DOWNLOADING:
+            return
+        self.state = state
+        self.finish_time = datetime.now(tz=dateutils.utc_tz())
+

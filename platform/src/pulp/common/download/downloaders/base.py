@@ -19,7 +19,7 @@ from pulp.common.download.listener import DownloadEventListener
 _LOG = logging.getLogger(__name__)
 
 
-class DownloadBackend(object):
+class PulpDownloader(object):
     """
     Abstract backend base class for downloader implementations. This class
     provides the base APIs required of any concrete downloader class.
@@ -41,7 +41,7 @@ class DownloadBackend(object):
         """
         self.config = config
         self.event_listener = event_listener or DownloadEventListener()
-        self.is_cancelled = False
+        self.is_canceled = False
 
     # download api -------------------------------------------------------------
 
@@ -51,7 +51,7 @@ class DownloadBackend(object):
         request list.
 
         :param request_list: list of download requests
-        :type request_list: list of pulp.common.download.request.DownloadRequest
+        :type request_list: iterator of pulp.common.download.request.DownloadRequest
         :return: list of download reports corresponding the the download requests
         :rtype: list of pulp.common.download.report.DownloadReport
         """
@@ -63,7 +63,7 @@ class DownloadBackend(object):
 
         NOTE: it is up the ``download`` implementation to honor this flag.
         """
-        self.is_cancelled = True
+        self.is_canceled = True
 
     # events api ---------------------------------------------------------------
 
