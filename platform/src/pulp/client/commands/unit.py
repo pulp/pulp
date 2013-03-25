@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2012 Red Hat, Inc.
+# Copyright © 2012-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -23,6 +23,7 @@ from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, Pul
 
 
 DESC_COPY = _('copies modules from one repository into another')
+DESC_REMOVE = _('remove copied or uploaded units from a repository')
 
 DESC_FROM_REPO = _('source repository from which units will be copied')
 OPTION_FROM_REPO = PulpCliOption('--from-repo-id', DESC_FROM_REPO, aliases=['-f'], required=True)
@@ -121,43 +122,55 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
         return {}
 
 
-class UnitRemoveCommand(UnitAssociationCriteriaCommand):
-    def __init__(self, context, type_id, *args, **kwargs):
-        self.context = context
-        self.type_id = type_id
+class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
+
+    def __init__(self, context, name='remove', description=DESC_REMOVE, method=None, type_id=None, **kwargs):
+
+        # Handle odd constructor in UnitAssociationCriteriaCommand
+        kwargs['name'] = name
+        kwargs['description'] = description
+
+        # We're not searching, we're using it to specify units
         kwargs['include_search'] = False
-        if not kwargs.get('method'):
-            kwargs['method'] = self.remove
 
-        super(UnitRemoveCommand, self).__init__(*args, **kwargs)
+        method = method or self.run
 
-    def remove(self, **kwargs):
-        """
-        Handles the remove operation for units of the given type.
+        PollingCommand.__init__(self, name, description, method, context)
+        UnitAssociationCriteriaCommand.__init__(self, method, **kwargs)
 
-        :param type_id: type of unit being removed
-        :type  type_id: str
-        :param kwargs: CLI options as input by the user and parsed by the framework
-        :type  kwargs: dict
-        """
-        super(UnitRemoveCommand, self).ensure_criteria(kwargs)
+        self.type_id = type_id
+
+    def run(self, **kwargs):
+        self.ensure_criteria(kwargs)
 
         repo_id = kwargs.pop(OPTION_REPO_ID.keyword)
-        kwargs['type_ids'] = [self.type_id] # so it will be added to the criteria
+        self.modify_user_input(kwargs)
 
         response = self.context.server.repo_unit.remove(repo_id, **kwargs)
+        task = response.response_body
+        self.poll([task])
 
-        progress_msg = _('Progress on this task can be viewed using the '
-                         'commands under "repo tasks".')
+    def modify_user_input(self, user_input):
+        """
+        Hook to modify the user entered values that are passed to the remove call. The remove
+        bindings call will take care of translating the contents of this dict into a Pulp criteria
+        document. Overridden implementations may use this opportunity to add in fields that
+        the user is not prompted for but still need to be in the criteria. In most cases,
+        this method need not be overridden.
 
-        if response.response_body.is_postponed():
-            d = _('Unit removal postponed due to another operation on the destination '
-                  'repository. ')
-            d += progress_msg
-            self.context.prompt.render_paragraph(d)
-            self.context.prompt.render_reasons(response.response_body.reasons)
-        else:
-            self.context.prompt.render_paragraph(progress_msg)
+        By default, this call will add in the type_id value specified at instantiation time
+        (if one was set). See RepositoryUnitAPI._generate_search_criteria for more information
+        on what keys are utilitized.
+
+        This call must modify the specified dict; its return value is ignored.
+
+        :param user_input: dict of command option keywords to user inputted values
+        :type  user_input: dict
+
+        :return:
+        """
+        if self.type_id is not None:
+            user_input['type_ids'] = [self.type_id]
 
 
 class OrphanUnitListCommand(PulpCliCommand):

@@ -13,10 +13,8 @@
 import mock
 
 import base
-
 from pulp.bindings.exceptions import BadRequestException
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand
-from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.commands.polling import PollingCommand
 import pulp.client.commands.unit as unit_commands
 from pulp.devel.unit import task_simulator

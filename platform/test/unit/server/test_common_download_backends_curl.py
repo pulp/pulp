@@ -14,26 +14,29 @@
 import mock
 import unittest
 
+import pycurl
+
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.downloaders.curl import HTTPCurlDownloader
-import pycurl
+
+from test_common_download import DownloadTests, mock_curl_factory, mock_curl_multi_factory, MockObjFactory
 
 
 class TestAddProxyConfiguration(unittest.TestCase):
     """
-    This test module tests the HTTPCurlDownloadBackend._add_proxy_configuration method.
+    This test module tests the HTTPCurlDownloader._add_proxy_configuration method.
     It asserts that the proxy related settings are all appropriately handed
     to pycurl. It uses Mocks to make these assertions, and we will trust that the proxy
     features in pycurl are tested by that project.
     """
     def test_no_proxy_settings(self):
         """
-        Test the HTTPCurlDownloadBackend._add_proxy_configuration method for the case
+        Test the HTTPCurlDownloader._add_proxy_configuration method for the case
         when there are no proxy settings. It should not make any calls that are proxy
         related. In fact, due to the nature of the _add_proxy_configuration method, it
         should just not make any calls to setopt() at all, which is what we assert here.
         """
-        config = DownloaderConfig(protocol='http')
+        config = DownloaderConfig()
         curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
@@ -49,8 +52,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         """
         proxy_url = u'http://proxy.com/server/'
         proxy_port = '3128'
-        config = DownloaderConfig(protocol='http', proxy_url=proxy_url,
-                                  proxy_port=proxy_port)
+        config = DownloaderConfig(proxy_url=proxy_url, proxy_port=proxy_port)
         curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
@@ -69,7 +71,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         Test correct behavior when only proxy_url is set.
         """
         proxy_url = u'http://proxy.com/server/'
-        config = DownloaderConfig(protocol='http', proxy_url=proxy_url)
+        config = DownloaderConfig(proxy_url=proxy_url)
         curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
 
@@ -90,7 +92,7 @@ class TestAddProxyConfiguration(unittest.TestCase):
         proxy_url = u'http://proxy.com/server/'
         proxy_username = u'steve'
         proxy_password = u'1luvpr0xysrvrs'
-        config = DownloaderConfig(protocol='http', proxy_url=proxy_url, proxy_username=proxy_username,
+        config = DownloaderConfig(proxy_url=proxy_url, proxy_username=proxy_username,
                                   proxy_password=proxy_password)
         curl_downloader = HTTPCurlDownloader(config)
         easy_handle = mock.MagicMock()
@@ -133,9 +135,51 @@ class TestBuildEasyHandle(unittest.TestCase):
         This test simply asserts that _build_easy_handle() passes the easy_handle to
         _add_proxy_configuration().
         """
-        config = DownloaderConfig(protocol='http')
+        config = DownloaderConfig()
         curl_downloader = HTTPCurlDownloader(config)
 
         easy_handle = curl_downloader._build_easy_handle()
 
         _add_proxy_configuration.assert_called_with(easy_handle)
+
+
+class TestDownload(DownloadTests):
+    """
+    This suite of tests are for the HTTPCurlDownloader.download() method.
+    """
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    def test_is_cancelled_false(self):
+        """
+        In this test, we leave the is_cancelled boolean unset on the downloader, and we verify that the main
+        loop executes once. Because our pycurl mocks "download" the entire file in one go, it will only
+        execute one time, which means we can simply count that the select() call was made exactly once.
+        """
+        config = DownloaderConfig()
+        curl_downloader = HTTPCurlDownloader(config)
+        request_list = self._download_requests()[:1]
+
+        curl_downloader.download(request_list)
+
+        mock_multi_curl = pycurl.CurlMulti.mock_objs[0]
+        # The call_count on the select() should be 1 since our pycurl Mock "downloads" the file in one go
+        self.assertEqual(mock_multi_curl.select.call_count, 1)
+
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    def test_is_cancelled_true(self):
+        """
+        In this test, we set the is_cancelled boolean on the downloader, and we verify that the main loop
+        does not execute.
+        """
+        config = DownloaderConfig()
+        curl_downloader = HTTPCurlDownloader(config)
+        # Let's go ahead and set the cancellation flag, so the loop should not execute
+        curl_downloader.cancel()
+        request_list = self._download_requests()[:1]
+
+        curl_downloader.download(request_list)
+
+        mock_multi_curl = pycurl.CurlMulti.mock_objs[0]
+        # Because we cancelled the download, the call_count on the select() should be 0
+        self.assertEqual(mock_multi_curl.select.call_count, 0)
