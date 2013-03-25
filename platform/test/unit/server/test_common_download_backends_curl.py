@@ -128,6 +128,22 @@ class TestBuildEasyHandle(unittest.TestCase):
     """
     @mock.patch('pycurl.Curl', mock.MagicMock)
     @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader'
+                '._add_connection_configuration')
+    def test__build_easy_handle_calls__add_connection_configuration(self,
+                                                                    _add_connection_configuration):
+        """
+        This test simply asserts that _build_easy_handle() passes the easy_handle to
+        _add_connection_configuration().
+        """
+        config = DownloaderConfig()
+        curl_downloader = HTTPCurlDownloader(config)
+
+        easy_handle = curl_downloader._build_easy_handle()
+
+        _add_connection_configuration.assert_called_with(easy_handle)
+
+    @mock.patch('pycurl.Curl', mock.MagicMock)
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader'
                 '._add_proxy_configuration')
     def test__build_easy_handle_calls__add_proxy_configuration(self,
                                                                _add_proxy_configuration):
@@ -141,6 +157,43 @@ class TestBuildEasyHandle(unittest.TestCase):
         easy_handle = curl_downloader._build_easy_handle()
 
         _add_proxy_configuration.assert_called_with(easy_handle)
+
+
+class TestAddConnectionConfiguration(unittest.TestCase):
+    """
+    Test the HTTPCurlDownloader._add_connection_configuration() method.
+    """
+    @mock.patch('pycurl.Curl', mock.MagicMock)
+    def test_max_speed_set(self):
+        """
+        Assert that the max speed gets passed to pycurl when it is set.
+        """
+        # Let's try specifying the max speed as a string of a valid integer, to verify that we correctly
+        # cast it to an integer.
+        max_speed = '57'
+        config = DownloaderConfig(max_speed=max_speed)
+        curl_downloader = HTTPCurlDownloader(config)
+        easy_handle = mock.MagicMock()
+
+        curl_downloader._add_connection_configuration(easy_handle)
+
+        # Make sure that the max_speed setting was passed to our easy_handle
+        easy_handle.setopt.assert_any_call(pycurl.MAX_RECV_SPEED_LARGE, int(max_speed))
+
+    @mock.patch('pycurl.Curl', mock.MagicMock)
+    def test_max_speed_unset(self):
+        """
+        Assert that the max speed does not get passed to pycurl when it is not set.
+        """
+        # Let's leave max_speed out of this config
+        config = DownloaderConfig()
+        curl_downloader = HTTPCurlDownloader(config)
+
+        easy_handle = curl_downloader._build_easy_handle()
+
+        # Now let's assert that MAX_RECV_SPEED_LARGE wasn't passed to setopt
+        setopt_setting_args = [call[0][0] for call in easy_handle.setopt.call_args_list]
+        self.assertTrue(pycurl.MAX_RECV_SPEED_LARGE not in setopt_setting_args)
 
 
 class TestDownload(DownloadTests):

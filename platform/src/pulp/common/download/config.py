@@ -38,13 +38,15 @@ class DownloaderConfig(object):
                              use. 0 means no verificaiton
      * ssl_verify_peer:      integer telling the downloader what level of verificaiton to
                              use. 0 means no verificaiton
-     * proxy_url             A string representing the URL of a proxy server that should
+     * proxy_url:            A string representing the URL of a proxy server that should
                              be used while retrieving content. It should be of the form
                              <scheme>://<hostname>/ where the scheme is http or https.
-     * proxy_port            The port on the proxy server to connect to. This should be
+     * proxy_port:           The port on the proxy server to connect to. This should be
                              an integer value.
-     * proxy_username        The username to use when authenticating with the proxy server
-     * proxy_password        The password to use when authenticating with the proxy server
+     * proxy_username:       The username to use when authenticating with the proxy server
+     * proxy_password:       The password to use when authenticating with the proxy server
+     * max_speed:            The maximum speed to be used during downloads. This should be an integer
+                             value, and should be specified in units of bytes per second.
     """
 
     def __init__(self, **kwargs):
