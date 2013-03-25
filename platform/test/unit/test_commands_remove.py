@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2012 Red Hat, Inc.
+# Copyright © 2012-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,54 +11,70 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import unittest
-
 import mock
 
-from pulp.bindings.repository import RepositoryUnitAPI
-from pulp.client.commands.options import OPTION_REPO_ID
-from pulp.client.commands.unit import UnitRemoveCommand
+import base
+from pulp.client.commands.criteria import UnitAssociationCriteriaCommand
+from pulp.client.commands.polling import PollingCommand
+from pulp.client.commands.unit import UnitRemoveCommand, DESC_REMOVE
+from pulp.devel.unit import task_simulator
 
 
-class TestUnitRemoveCommand(unittest.TestCase):
+class TestUnitRemoveCommand(base.PulpClientTests):
+
     def setUp(self):
-        self.context = mock.MagicMock()
-        self.command = UnitRemoveCommand(self.context, 'file')
-        self.kwargs = {OPTION_REPO_ID.keyword:'repo1', 'match':'stuff'}
+        super(TestUnitRemoveCommand, self).setUp()
 
-    def test_default_to_remove_method(self):
-        self.assertEqual(self.command.method, self.command.remove)
+        self.command = UnitRemoveCommand(self.context)
 
-    @mock.patch.object(UnitRemoveCommand, 'add_display_criteria_options', autospec=True)
-    def test_no_include_search(self, mock_add):
-        # make sure this object does not add options like 'limit' and 'seek'
-        command = UnitRemoveCommand(self.context, 'file')
-        self.assertEqual(mock_add.call_count, 0)
+        self.mock_poll = mock.MagicMock().poll
+        self.command.poll = self.mock_poll
 
-    def test_remove_postponed(self):
-        self.context.server.repo_unit.remove.return_value.response_body.is_postponed.return_value = True
+        self.mock_remove_binding = mock.MagicMock().remove
+        self.mock_remove_binding.return_value = task_simulator.create_fake_task_response()
+        self.bindings.repo_unit.remove = self.mock_remove_binding
 
-        self.command.remove(**self.kwargs)
+    def test_inherited_functionality(self):
+        self.assertTrue(isinstance(self.command, UnitAssociationCriteriaCommand))
+        self.assertTrue(isinstance(self.command, PollingCommand))
 
-        message = self.context.prompt.render_paragraph.call_args[0][0]
-        self.assertTrue(message.find('postponed') >= 0)
+    def test_structure(self):
+        # Ensure the correct method is wired up
+        self.assertEqual(self.command.method, self.command.run)
 
-    def test_remove_not_postponed(self):
-        self.context.server.repo_unit.remove.return_value.response_body.is_postponed.return_value = False
+        # Ensure the correct metadata
+        self.assertEqual(self.command.name, 'remove')
+        self.assertEqual(self.command.description, DESC_REMOVE)
 
-        self.command.remove(**self.kwargs)
+    def test_run(self):
+        # Setup
+        self.cli.add_command(self.command)
 
-        message = self.context.prompt.render_paragraph.call_args[0][0]
-        self.assertEqual(message.find('postponed'), -1)
+        # Test
+        self.cli.run('remove --repo-id edit-me --str-eq name=foo'.split())
 
-    def test_bindings_call(self):
-        # mock the binding
-        self.context.server.repo_unit.remove = mock.create_autospec(
-                RepositoryUnitAPI(self.context).remove)
+        # Verify
+        #   Call to the binding with the data collected by the command
+        self.assertEqual(1, self.mock_remove_binding.call_count)
+        args = self.mock_remove_binding.call_args[0]
+        self.assertEqual(args[0], 'edit-me')
+        kwargs = self.mock_remove_binding.call_args[1]
+        self.assertEqual(kwargs['str-eq'], [['name', 'foo']])
+        self.assertTrue('type_ids' not in kwargs)
 
-        # execute
-        self.command.remove(**self.kwargs)
+        #   Poll call made with the correct value
+        self.assertEqual(1, self.mock_poll.call_count)
+        self.assertEqual(self.mock_poll.call_args[0][0],
+                         [self.mock_remove_binding.return_value.response_body])
 
-        # verify the correct args
-        self.context.server.repo_unit.remove.assert_called_once_with(
-            'repo1', type_ids=['file'], match='stuff')
+    def test_run_with_type_id(self):
+        # Setup
+        self.command.type_id = 'fake-type'
+        self.cli.add_command(self.command)
+
+        # Test
+        self.cli.run('remove --repo-id edit-me --str-eq name=foo'.split())
+
+        # Verify
+        kwargs = self.mock_remove_binding.call_args[1]
+        self.assertTrue(kwargs['type_ids'], ['fake-type'])
