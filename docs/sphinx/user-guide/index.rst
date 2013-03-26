@@ -9,6 +9,7 @@ Contents:
    introduction
    installation
    server
+   nodes
    admin-client/index
    consumer-client/index
    general-reference
