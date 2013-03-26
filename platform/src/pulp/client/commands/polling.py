@@ -110,7 +110,8 @@ class PollingCommand(PulpCliCommand):
             self.rejected(task_list[0])
             return RESULT_REJECTED
 
-        # Punch out early if polling is disabled
+        # Punch out early if polling is disabled. This should be done after the rejected check
+        # since the expectation is that the tasks were successfully queued but aren't being watched.
         if kwargs.get(FLAG_BACKGROUND.keyword, False):
             self.background()
             return RESULT_BACKGROUND
