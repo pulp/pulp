@@ -165,6 +165,8 @@ The details of the added importer are returned from the call.
   "id": "harness_importer"
  }
 
+.. _distributor_associate:
+
 Associate a Distributor with a Repository
 -----------------------------------------
 
@@ -241,6 +243,34 @@ The details of the added distributor are returned from the call.
   },
   "id": "dist_1"
  }
+
+
+.. _distributor_disassociate:
+
+Disassociate a Distributor from a Repository
+--------------------------------------------
+
+Disassociating a distributor performs the following actions:
+
+1. Remove the association between the distributor and the repository.
+2. Unbind all bound consumers.
+
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
+call_requests depends on how many consumers are bound to the repository.
+
+| :method:`delete`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
+| :permission:`delete`
+
+| :response_list:`_`
+
+* :response_code:`202,if the request was accepted by the server to disassociate when the repository is available`
+* :response_code:`404,if there is no repository or distributor with the specified IDs`
+* :response_code:`500,if the server raises an error during disassociation`
+
+| :return:`A call report list`
+
 
 Delete a Repository
 -------------------
