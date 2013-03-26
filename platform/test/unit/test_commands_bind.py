@@ -30,10 +30,10 @@ class ConsumerBindCommandTests(base.PulpClientTests):
 
         self.command = ConsumerBindCommand(self.context)
 
-        self.mock_poll = mock.MagicMock().poll
+        self.mock_poll = mock.MagicMock()
         self.command.poll = self.mock_poll
 
-        self.mock_bind_binding = mock.MagicMock().bind
+        self.mock_bind_binding = mock.MagicMock()
         self.mock_bind_binding.return_value = task_simulator.create_fake_task_response()
         self.bindings.bind.bind = self.mock_bind_binding
 
@@ -55,14 +55,9 @@ class ConsumerBindCommandTests(base.PulpClientTests):
         self.cli.run('bind --repo-id r1 --consumer-id c1 --distributor-id d1'.split())
 
         # Verify
-        #   Call to binding with the data from the command
-        self.assertEqual(1, self.mock_bind_binding.call_count)
-        call_args = self.mock_bind_binding.call_args[0]
-        self.assertEqual(call_args[0], 'c1')
-        self.assertEqual(call_args[1], 'r1')
-        self.assertEqual(call_args[2], 'd1')
+        self.mock_bind_binding.assert_called_once_with('c1', 'r1', 'd1')
 
-        #   Poll call made with the correct value
+        # Poll call made with the correct value
         self.assertEqual(1, self.mock_poll.call_count)
         self.assertEqual(self.mock_poll.call_args[0][0],
                          self.mock_bind_binding.return_value.response_body)
@@ -101,10 +96,10 @@ class ConsumerUnbindCommandTests(base.PulpClientTests):
 
         self.command = ConsumerUnbindCommand(self.context)
 
-        self.mock_poll = mock.MagicMock().poll
+        self.mock_poll = mock.MagicMock()
         self.command.poll = self.mock_poll
 
-        self.mock_unbind_binding = mock.MagicMock().unbind
+        self.mock_unbind_binding = mock.MagicMock()
         self.mock_unbind_binding.return_value = task_simulator.create_fake_task_response()
         self.bindings.bind.unbind = self.mock_unbind_binding
 
@@ -127,14 +122,9 @@ class ConsumerUnbindCommandTests(base.PulpClientTests):
         self.cli.run('unbind --repo-id r1 --consumer-id c1 --distributor-id d1'.split())
 
         # Verify
-        #   Call to binding with the data from the command
-        self.assertEqual(1, self.mock_unbind_binding.call_count)
-        call_args = self.mock_unbind_binding.call_args[0]
-        self.assertEqual(call_args[0], 'c1')
-        self.assertEqual(call_args[1], 'r1')
-        self.assertEqual(call_args[2], 'd1')
+        self.mock_unbind_binding.assert_called_once_with('c1', 'r1', 'd1', False)
 
-        #   Poll call made with the correct value
+        # Poll call made with the correct value
         self.assertEqual(1, self.mock_poll.call_count)
         self.assertEqual(self.mock_poll.call_args[0][0],
                          self.mock_unbind_binding.return_value.response_body)
