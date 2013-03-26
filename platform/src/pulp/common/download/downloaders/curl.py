@@ -59,7 +59,6 @@ class HTTPCurlDownloader(PulpDownloader):
         # this list is backwards so we can pop() efficiently and maintain the original order
         request_queue = [(r, download_report.DownloadReport.from_download_request(r))
                          for r in request_list[::-1]]
-        request_cache = []
 
         total_requests = len(request_queue)
         processed_requests = 0
@@ -77,7 +76,6 @@ class HTTPCurlDownloader(PulpDownloader):
                 # populate max_concurrent downloads into the pycurl multi handle
                 while request_queue and free_handles:
                     request, report = request_queue.pop()
-                    request_cache.append((request, report))
 
                     report.state = download_report.DOWNLOAD_DOWNLOADING
                     report.start_time = datetime.datetime.now()
@@ -137,9 +135,7 @@ class HTTPCurlDownloader(PulpDownloader):
                 _LOG.exception(e)
                 break
 
-        request_reports = [i[1] for i in request_cache]
-        self.fire_batch_finished(request_reports)
-        return request_reports
+        self.fire_batch_finished()
 
     # pycurl multi handle construction -----------------------------------------
 
@@ -327,4 +323,3 @@ class CurlDownloadProgressFunctor(object):
         self.report.total_bytes = download_t
         self.report.bytes_downloaded = download_d
         self.progress_callback(self.report)
-
