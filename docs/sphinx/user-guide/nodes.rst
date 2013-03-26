@@ -166,6 +166,11 @@ to child nodes. Publishing a *Nodes* enabled repository generates the data neces
 repository content synchronization with child nodes. If auto-publishing is enabled, a normal
 repository synchronization will result in publishing this data as well.
 
+The size of the published data varies based on the number of content units contained in the
+repository and the amount of metadata included in each unit. Each published unit consists of a
+copy of the metadata and a symlink to the actual file associated with the unit.  The metadata is
+stored as gzip-compressed JSON.
+
 The *Nodes* information can be manually published using the admin client.
 See: the ``node repo publish`` for details.
 
