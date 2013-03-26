@@ -72,7 +72,7 @@ class PollingCommand(PulpCliCommand):
 
         self.add_flag(FLAG_BACKGROUND)
 
-    def poll(self, task_list, kwargs):
+    def poll(self, task_list, user_input):
         """
         Entry point to begin polling on the tasks in the given list. Each task will be polled
         in order until completion. If an error state is encountered, polling of the remaining
@@ -95,6 +95,10 @@ class PollingCommand(PulpCliCommand):
         :param task_list: list of task reports received from the initial call to the server
         :type  task_list: list of pulp.bindings.responses.Task
 
+        :param user_input: keyword arguments that was passed to the command's method; these contain
+                           the user-specified options that may affect this method
+        :type  user_input: dict
+
         :return: the final task reports for all of the tasks
         """
 
@@ -112,7 +116,7 @@ class PollingCommand(PulpCliCommand):
 
         # Punch out early if polling is disabled. This should be done after the rejected check
         # since the expectation is that the tasks were successfully queued but aren't being watched.
-        if kwargs.get(FLAG_BACKGROUND.keyword, False):
+        if user_input.get(FLAG_BACKGROUND.keyword, False):
             self.background()
             return RESULT_BACKGROUND
 
@@ -289,7 +293,7 @@ class PollingCommand(PulpCliCommand):
 
     def background(self):
         """
-        Called when the command is command is run with the background flag, effectively
+        Called when the command is run with the background flag, effectively
         skipping polling entirely. The intention of this call is to display a message to
         the user informing them the task will continue on the server, but subclasses may
         elect to have this method display nothing.
