@@ -168,7 +168,7 @@ Binding
 ^^^^^^^
 
 The ``node bind`` command is used to associate a repository with a child node. This association
-determines which repositories may be synchronized to child nodes. The strategy specified here,
+determines which repositories may be synchronized to child nodes. The strategy specified here
 overrides the default strategy specified when the repository was enabled. More information on
 *repository-level* synchronization strategies can be  found :ref:`here<node_strategies>`.
 

@@ -60,7 +60,7 @@ Glossary
 
   node
     A Pulp node is a Pulp server that has either a parent or child relationship
-    to another Pulp server.  Parent nodes provide content to child nodes.  Child
+    to another Pulp server. Parent nodes provide content to child nodes. Child
     nodes consume content from a parent node as registered :term:`consumers <consumer>`.
 
   registration

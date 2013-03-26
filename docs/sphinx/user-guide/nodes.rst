@@ -177,25 +177,25 @@ See: the ``node repo publish`` for details.
 Registration & Activation
 -------------------------
 
-Once the *Nodes* child support has been installed on a Pulp server it can be registered to a
-parent server. This is accomplished using the Pulp Consumer client. As mentioned, a child
+Once the *Nodes* child support has been installed on a Pulp server, it can be registered to a
+parent server. This is accomplished using the Pulp consumer client. As mentioned, a child
 node is both a Pulp server and a consumer that is registered to the parent node.
 
 On the child Pulp server:
 
-1. Edit the ``/etc/pulp/consumer/consumer.conf`` file and set the ``host`` property in
-   the to the hostname or IP address of the Pulp server to be use as the child node's parent.
+1. Edit the ``/etc/pulp/consumer/consumer.conf`` file and set the ``host`` property the to the
+   hostname or IP address of the Pulp server to be use as the child node's parent.
 
 ::
 
  [server]
  host = <parent hostname or IP>
 
-2. Register to the parent server has a consumer.
+2. Register to the parent server as a consumer. This command will prompt for a password.
 
 ::
 
- $ sudo pulp-consumer -u <userid> -p <password> register --consumer-id <id>
+ $ sudo pulp-consumer -u <user> register --consumer-id <id>
 
 3. Active the Pulp server as a child node. See: the ``node activate`` command for details.
 
@@ -231,7 +231,7 @@ Child Synchronization
 
 A child node's repositories and their content can be synchronized with the parent. Technically,
 this action is seen by the parent as a content update on one of it's consumers. But, for most
-users, the term synchronization is easier to grasp.  During this process, the following objects
+users, the term synchronization is easier to grasp. During this process, the following objects
 and properties are replicated to the child node:
 
 * Repositories
@@ -269,13 +269,13 @@ to match the content contained in the repository on the parent.
 Current, there are two supported strategies.
 
  additive
-   Results in objects present in the parent but not in the child to be created or updated
+   Results in objects present in the parent but not in the child being created or updated
    as necessary. This strategy should be used when objects created locally in the child
    should be preserved.
 
  mirror
-   Results in objects present in the parent but not in the child to be created or updated
-   as necessary. Any object present in the child that do not exist in the parent are removed.
+   Results in objects present in the parent but not in the child being created or updated
+   as necessary. Any objects present in the child that do not exist in the parent are removed.
    This strategy should be used when the desired effect of synchronization is for the child
    repositories to be an exact mirror of those on the parent.
 
@@ -290,7 +290,7 @@ request being sent to the agent on the child node which performs the update. A *
 synchronization can be initiated by doing a regular repository synchronization on the child node.
 This will synchronize only the content of the repository.
 
-The synchronization can be requested using the admin client. See: the ``node syc`` command.
+The synchronization can be requested using the admin client. See: the ``node sync`` command.
 
 ::
 
@@ -349,11 +349,11 @@ On the Pulp server to be used as the child node:
  [server]
  host = parent.redhat.com
 
-3. Register as a consumer.
+3. Register as a consumer.  This command will prompt for a password.
 
 ::
 
- $ pulp-consumer -u admin -p admin register --consumer-id child-1
+ $ pulp-consumer -u admin register --consumer-id child-1
 
 4. Activate the node.
 
@@ -383,6 +383,6 @@ Tips & Troubleshooting
 ----------------------
 
 1. Make sure httpd was restarted after installing *Nodes* packages on both the parent and child.
-2. Make sure pulp-agent restarted after installing *Nodes* packages on the child.
+2. Make sure pulp-agent was restarted after installing *Nodes* packages on the child.
 3. Make sure that *Nodes* enabled repositories have been published.
 4. Make sure that ALL plugins installed on the parent are installed on the child.
