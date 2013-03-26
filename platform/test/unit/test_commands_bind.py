@@ -43,7 +43,7 @@ class ConsumerBindCommandTests(base.PulpClientTests):
         self.assertTrue(OPTION_REPO_ID in self.command.options)
         self.assertTrue(OPTION_CONSUMER_ID in self.command.options)
         self.assertTrue(OPTION_DISTRIBUTOR_ID in self.command.options)
-        self.assertEqual(3, len(self.command.options))
+        self.assertEqual(4, len(self.command.options))  # these + background from PollingCommand
 
         self.assertEqual(self.command.method, self.command.run)
 
@@ -110,7 +110,7 @@ class ConsumerUnbindCommandTests(base.PulpClientTests):
         self.assertTrue(OPTION_CONSUMER_ID in self.command.options)
         self.assertTrue(OPTION_DISTRIBUTOR_ID in self.command.options)
         self.assertTrue(FLAG_FORCE in self.command.options)
-        self.assertEqual(4, len(self.command.options))
+        self.assertEqual(5, len(self.command.options))  # these + background from PollingCommand
 
         self.assertEqual(self.command.method, self.command.run)
 
