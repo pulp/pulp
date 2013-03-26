@@ -36,9 +36,6 @@ class MockEventListener(mock.Mock):
     def __init__(self):
         super(MockEventListener, self).__init__()
 
-        self.batch_started = mock.Mock()
-        self.batch_finished = mock.Mock()
-
         self.download_started = mock.Mock()
         self.download_progress = mock.Mock()
         self.download_succeeded = mock.Mock()
@@ -257,8 +254,6 @@ class MockCurlDownloadTests(DownloadTests):
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
-        self.assertEqual(listener.batch_started.call_count, 1)
-        self.assertEqual(listener.batch_finished.call_count, 1)
         self.assertEqual(listener.download_started.call_count, 1)
         self.assertEqual(listener.download_progress.call_count, 2) # this one only tests the mock curl
         self.assertEqual(listener.download_succeeded.call_count, 1)
@@ -320,7 +315,7 @@ class LiveCurlDownloadTests(DownloadTests):
         request_list = [
             DownloadRequest(urljoin('http://localhost:8088/',
                                     self.data_dir + '/' + self.file_list[0]),
-            destination_file)]
+                            destination_file)]
 
         downloader.download(request_list)
 
@@ -367,8 +362,6 @@ class LiveCurlDownloadTests(DownloadTests):
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
-        self.assertEqual(listener.batch_started.call_count, 1)
-        self.assertEqual(listener.batch_finished.call_count, 1)
         self.assertEqual(listener.download_started.call_count, 1)
         self.assertNotEqual(listener.download_progress.call_count, 0) # not sure how many times
         self.assertEqual(listener.download_succeeded.call_count, 1)
@@ -483,10 +476,7 @@ class LiveEventletDownloaderTests(DownloadTests):
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
-        self.assertEqual(listener.batch_started.call_count, 0) # batch not supported
-        self.assertEqual(listener.batch_finished.call_count, 0)
         self.assertEqual(listener.download_started.call_count, 1)
         self.assertNotEqual(listener.download_progress.call_count, 0) # not sure how many times
         self.assertEqual(listener.download_succeeded.call_count, 1)
         self.assertEqual(listener.download_failed.call_count, 0)
-

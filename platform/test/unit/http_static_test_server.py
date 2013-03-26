@@ -74,4 +74,3 @@ class HTTPStaticTestServer(object):
         response = connection.getresponse()
         response.read()
         connection.close()
-
