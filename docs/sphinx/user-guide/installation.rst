@@ -88,6 +88,9 @@ Repositories
    releases 6.2 and earlier. Instructions on building those RPMs can be found
    at :ref:`centos-build-qpid-rpms`.
 
+
+.. _server_installation:
+
 Server
 ------
 
@@ -179,6 +182,9 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
   [server]
   host = localhost.localdomain
 
+
+
+.. _consumer_installation:
 
 Consumer Client
 ---------------
