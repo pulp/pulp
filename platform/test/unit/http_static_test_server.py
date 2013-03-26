@@ -62,6 +62,8 @@ class HTTPStaticTestServer(object):
         except:
             # if the dummy request fails for any reason, the server thread
             # daemonization should allow us to exit anyway
+            # however, this is only the case if the process exits as well,
+            # so it's safest to use only one static server per unit test file
             pass
         else:
             self._server_thread.join()

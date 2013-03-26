@@ -19,7 +19,7 @@ import pycurl
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.downloaders.curl import HTTPCurlDownloader
 
-from test_common_download import DownloadTests, mock_curl_factory, mock_curl_multi_factory, MockObjFactory
+from test_common_download import DownloadTests, mock_curl_easy_factory, mock_curl_multi_factory, MockObjFactory
 
 
 class TestAddProxyConfiguration(unittest.TestCase):
@@ -148,7 +148,7 @@ class TestDownload(DownloadTests):
     This suite of tests are for the HTTPCurlDownloader.download() method.
     """
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
-    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
     def test_is_canceled_false(self):
         """
         In this test, we leave the is_canceled boolean unset on the downloader, and we verify that the main
@@ -166,7 +166,7 @@ class TestDownload(DownloadTests):
         self.assertEqual(mock_multi_curl.select.call_count, 1)
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
-    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
     def test_is_canceled_true(self):
         """
         In this test, we set the is_canceled boolean on the downloader, and we verify that the main loop
