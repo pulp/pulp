@@ -16,7 +16,7 @@ import base
 
 from pulp.bindings.responses import (STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
                                      STATE_RUNNING, STATE_SKIPPED, RESPONSE_POSTPONED, RESPONSE_REJECTED)
-from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED
+from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED, FLAG_BACKGROUND, RESULT_BACKGROUND
 from pulp.devel.unit.task_simulator import TaskSimulator
 
 
@@ -67,7 +67,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
 
@@ -106,7 +106,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         expected_tags = ['abort', # default, always displayed
                          'header', 'waiting', 'spinner', 'succeeded', # states_1
@@ -121,9 +121,21 @@ class PollingCommandTests(base.PulpClientTests):
         for i in range(0, 3):
             self.assertEqual(STATE_FINISHED, completed_tasks[i].state)
 
+    def test_poll_background(self):
+        # Setup
+        sim = TaskSimulator()
+        sim.add_task_state('1', STATE_FINISHED)
+
+        # Test
+        task_list = sim.get_all_tasks().response_body
+        result = self.command.poll(task_list, {FLAG_BACKGROUND.keyword : True})
+
+        # Verify
+        self.assertEqual(result, RESULT_BACKGROUND)
+
     def test_poll_empty_list(self):
         # Test
-        completed_tasks = self.command.poll([])
+        completed_tasks = self.command.poll([], {})
 
         # Verify
         #   The poll command shouldn't output anything and instead just end.
@@ -146,7 +158,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertEqual(completed_tasks, RESULT_REJECTED)
@@ -174,7 +186,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertTrue(isinstance(completed_tasks, list))
@@ -203,7 +215,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertTrue(isinstance(completed_tasks, list))
@@ -231,7 +243,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertTrue(isinstance(completed_tasks, list))
@@ -253,7 +265,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        result = self.command.poll(task_list)
+        result = self.command.poll(task_list, {})
 
         # Verify
         self.assertEqual(result, RESULT_ABORTED)

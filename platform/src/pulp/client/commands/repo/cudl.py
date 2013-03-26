@@ -98,7 +98,7 @@ class DeleteRepositoryCommand(PollingCommand):
         try:
             task_list = self.context.server.repo.delete(self.repo_id).response_body
             delete_task = task_list[0]  # ignore the unbind tasks for the purposes of this command
-            self.poll([delete_task])
+            self.poll([delete_task], kwargs)
 
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
