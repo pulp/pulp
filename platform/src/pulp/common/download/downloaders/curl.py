@@ -168,6 +168,9 @@ class HTTPCurlDownloader(PulpDownloader):
         easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
         easy_handle.setopt(pycurl.NOPROGRESS, DEFAULT_NO_PROGRESS)
 
+        if self.config.max_speed:
+            easy_handle.setopt(pycurl.MAX_RECV_SPEED_LARGE, int(self.config.max_speed))
+
     def _add_basic_auth_credentials(self, easy_handle):
         if None in (self.config.basic_auth_username, self.config.basic_auth_password):
             return

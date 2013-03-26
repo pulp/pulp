@@ -156,10 +156,10 @@ class Profiler(object):
     def install_units(self, consumer, units, options, config, conduit):
         """
         Translate the specified content units to be installed.
-        The specified content units are intented to be installed on the
+        The specified content units are intended to be installed on the
         specified consumer.  It is requested that the profiler translate
         the units as needed.  If any of the content units cannot be translated,
-        and exception should be raised by the profiler.  The tanslation itself,
+        and exception should be raised by the profiler.  The translation itself,
         depends on the content unit type and is completely up to the Profiler.
         Translation into an empty list is not considered an error condition and
         will be interpreted by the caller as meaning that no content needs to be

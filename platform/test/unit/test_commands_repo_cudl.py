@@ -16,6 +16,7 @@ import mock
 import base
 
 from pulp.bindings.responses import STATE_FINISHED
+from pulp.client.commands.polling import PollingCommand
 from pulp.client.commands.repo import cudl
 from pulp.client.commands.options import OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_TITLE
@@ -31,9 +32,8 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
 
     def test_structure(self):
         # Ensure all of the expected options are there
-        found_options = set(self.command.options)
-        expected_options = set([OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID])
-        self.assertEqual(found_options, expected_options)
+        for o in [OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID]:
+            self.assertTrue(o in self.command.options)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)
@@ -78,10 +78,10 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
         self.command = cudl.DeleteRepositoryCommand(self.context)
 
     def test_structure(self):
+        self.assertTrue(isinstance(self.command, PollingCommand))
+
         # Ensure all of the expected options are there
-        found_options = set(self.command.options)
-        expected_options = set([OPTION_REPO_ID])
-        self.assertEqual(found_options, expected_options)
+        self.assertTrue(OPTION_REPO_ID in self.command.options)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)

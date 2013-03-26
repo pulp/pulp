@@ -18,6 +18,7 @@ import mock
 from pulp.bindings.responses import Task, STATE_FINISHED
 from pulp.client.commands.consumer import content as consumer_content
 from pulp.client.commands.options import OPTION_CONSUMER_ID
+from pulp.client.commands.polling import PollingCommand
 from pulp.devel.unit.task_simulator import TaskSimulator
 from pulp.server.compat import json
 
@@ -145,10 +146,11 @@ class InstallCommandTests(base.PulpClientTests):
         self.command = consumer_content.ConsumerContentInstallCommand(self.context)
 
     def test_structure(self):
-        found_options = set(self.command.options)
-        expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
-                                consumer_content.OPTION_CONTENT_UNIT))
-        self.assertEqual(found_options, expected_options)
+        self.assertTrue(isinstance(self.command, PollingCommand))
+
+        self.assertTrue(OPTION_CONSUMER_ID in self.command.options)
+        self.assertTrue(consumer_content.OPTION_CONTENT_TYPE_ID in self.command.options)
+        self.assertTrue(consumer_content.OPTION_CONTENT_UNIT in self.command.options)
 
         self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'run')
@@ -189,10 +191,11 @@ class UpdateCommandTests(base.PulpClientTests):
         self.command = consumer_content.ConsumerContentUpdateCommand(self.context)
 
     def test_structure(self):
-        found_options = set(self.command.options)
-        expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
-                                consumer_content.OPTION_CONTENT_UNIT))
-        self.assertEqual(found_options, expected_options)
+        self.assertTrue(isinstance(self.command, PollingCommand))
+
+        self.assertTrue(OPTION_CONSUMER_ID in self.command.options)
+        self.assertTrue(consumer_content.OPTION_CONTENT_TYPE_ID in self.command.options)
+        self.assertTrue(consumer_content.OPTION_CONTENT_UNIT in self.command.options)
 
         self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'run')
@@ -233,10 +236,11 @@ class UnistallCommandTests(base.PulpClientTests):
         self.command = consumer_content.ConsumerContentUninstallCommand(self.context)
 
     def test_structure(self):
-        found_options = set(self.command.options)
-        expected_options = set((OPTION_CONSUMER_ID, consumer_content.OPTION_CONTENT_TYPE_ID,
-                                consumer_content.OPTION_CONTENT_UNIT))
-        self.assertEqual(found_options, expected_options)
+        self.assertTrue(isinstance(self.command, PollingCommand))
+
+        self.assertTrue(OPTION_CONSUMER_ID in self.command.options)
+        self.assertTrue(consumer_content.OPTION_CONTENT_TYPE_ID in self.command.options)
+        self.assertTrue(consumer_content.OPTION_CONTENT_UNIT in self.command.options)
 
         self.assertEqual(self.command.method, self.command.run)
         self.assertEqual(self.command.name, 'run')

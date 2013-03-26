@@ -35,6 +35,11 @@ RESOURCE_USER_TYPE = 'user'
 ACTION_SYNC_TYPE = 'sync'
 ACTION_AUTO_PUBLISH_TYPE = 'auto_publish'
 ACTION_PUBLISH_TYPE = 'publish'
+ACTION_BIND = 'bind'
+ACTION_AGENT_BIND = 'agent_bind'
+ACTION_UNBIND = 'unbind'
+ACTION_AGENT_UNBIND = 'agent_unbind'
+ACTION_DELETE_BINDING = 'delete_binding'
 
 # -- public -------------------------------------------------------------------
 
@@ -94,7 +99,7 @@ def parse_value(tag):
 
 def parse_resource_tag(tag):
     """
-    Parses a resource tag returning a tuple of resource type and ID.
+    Parses a resource tag, returning a tuple of resource type and ID.
     @param tag: tag to parse; must pass the is_resource_tag check
     @return: tuple of resource type to resource ID
     @rtype: (str, str)
