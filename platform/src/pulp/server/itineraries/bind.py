@@ -12,7 +12,8 @@
 import logging
 
 from pulp.server.dispatch.call import CallRequest
-from pulp.common.tags import action_tag, resource_tag
+from pulp.common.tags import (action_tag, resource_tag, ACTION_BIND, ACTION_AGENT_BIND,
+                              ACTION_UNBIND, ACTION_AGENT_UNBIND, ACTION_DELETE_BINDING)
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers
 
@@ -95,7 +96,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_c
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('bind')
+        action_tag(ACTION_BIND)
     ]
 
     args = [
@@ -122,7 +123,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_c
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
             resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('agent_bind')
+            action_tag(ACTION_AGENT_BIND)
         ]
 
         args = [
@@ -189,7 +190,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('unbind')
+        action_tag(ACTION_UNBIND)
     ]
 
     args = [
@@ -212,7 +213,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent_unbind')
+        action_tag(ACTION_AGENT_UNBIND)
     ]
 
     args = [
@@ -253,7 +254,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('delete_binding')
+        action_tag(ACTION_DELETE_BINDING)
     ]
 
     args = [
@@ -312,7 +313,7 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('unbind')
+        action_tag(ACTION_UNBIND)
     ]
 
     args = [
@@ -336,7 +337,7 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag('agent_unbind')
+        action_tag(ACTION_AGENT_UNBIND)
     ]
 
     args = [

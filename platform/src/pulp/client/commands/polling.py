@@ -230,7 +230,7 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Request Succeeded')
+        msg = _('Task Succeeded')
         self.prompt.render_success_message(msg, tag='succeeded')
 
     def failed(self, task):
@@ -241,7 +241,7 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Request Failed')
+        msg = _('Task Failed')
         self.prompt.render_failure_message(msg, tag='failed')
         self.prompt.render_failure_message(task.exception, tag='failed_exception')
 
@@ -253,7 +253,7 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Request Cancelled')
+        msg = _('Task Cancelled')
         self.prompt.render_paragraph(msg, tag='cancelled')
 
     def rejected(self, task):
