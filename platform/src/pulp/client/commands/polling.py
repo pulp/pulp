@@ -18,7 +18,7 @@ Contains base classes for commands that poll the server for asynchronous tasks.
 import time
 from gettext import gettext as _
 
-from pulp.client.extensions.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
 
 
 # Returned from the poll command if one or more of the tasks in the given list
@@ -27,6 +27,13 @@ RESULT_REJECTED = 'rejected'
 
 # Returned from the poll command if the user gracefully aborts the polling
 RESULT_ABORTED = 'aborted'
+
+# Returned from the poll command if the user elects to not poll the task
+RESULT_BACKGROUND = 'background'
+
+DESC_BACKGROUND = _('if specified, the client process will end immediately (the task will '
+                    'continue to run on the server)')
+FLAG_BACKGROUND = PulpCliFlag('--bg', DESC_BACKGROUND)
 
 
 class PollingCommand(PulpCliCommand):
@@ -63,7 +70,9 @@ class PollingCommand(PulpCliCommand):
         if poll_frequency_in_seconds is None:
             self.poll_frequency_in_seconds = float(self.context.config['output']['poll_frequency_in_seconds'])
 
-    def poll(self, task_list):
+        self.add_flag(FLAG_BACKGROUND)
+
+    def poll(self, task_list, kwargs):
         """
         Entry point to begin polling on the tasks in the given list. Each task will be polled
         in order until completion. If an error state is encountered, polling of the remaining
@@ -75,6 +84,13 @@ class PollingCommand(PulpCliCommand):
 
         While each task is being polled, the progress method will be called at regular
         intervals to allow the subclass to display information on the state of the task.
+
+        The command has a built in flag for running the process in the background. If this
+        is specified, this method will immediately return and not poll the tasks.
+
+        The typical returned value from this call is the final list of completed tasks.
+        There are a few cases where this list is unavailable, in which case the RESULT_*
+        constants in this module will be returned.
 
         :param task_list: list of task reports received from the initial call to the server
         :type  task_list: list of pulp.bindings.responses.Task
@@ -94,6 +110,11 @@ class PollingCommand(PulpCliCommand):
             self.rejected(task_list[0])
             return RESULT_REJECTED
 
+        # Punch out early if polling is disabled
+        if kwargs.get(FLAG_BACKGROUND.keyword, False):
+            self.background()
+            return RESULT_BACKGROUND
+
         msg = _('This command may be exited via ctrl+c without affecting the request.')
         self.prompt.render_paragraph(msg, tag='abort')
 
@@ -111,9 +132,7 @@ class PollingCommand(PulpCliCommand):
                 task = self._poll_task(task)
 
                 # Display the appropriate message based on the result of the task
-
                 self.prompt.render_spacer(1)
-
                 if task.was_successful():
                     self.succeeded(task)
 
@@ -132,7 +151,6 @@ class PollingCommand(PulpCliCommand):
         except KeyboardInterrupt:
             # Gracefully handle if the user aborts the polling.
             return RESULT_ABORTED
-
 
     def _poll_task(self, task):
         """
@@ -267,3 +285,13 @@ class PollingCommand(PulpCliCommand):
         msg = _('The request was rejected by the server. '
                 'This is likely due to an impending delete request for the resource.')
         self.context.prompt.render_failure_message(msg, tag='rejected')
+
+    def background(self):
+        """
+        Called when the command is command is run with the background flag, effectively
+        skipping polling entirely. The intention of this call is to display a message to
+        the user informing them the task will continue on the server, but subclasses may
+        elect to have this method display nothing.
+        """
+        msg = _('The request has been queued on the server.')
+        self.context.prompt.render_paragraph(msg, tag='background')

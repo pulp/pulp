@@ -66,7 +66,7 @@ class ConsumerBindCommand(PollingCommand):
 
         response = self.context.server.bind.bind(consumer_id, repo_id, distributor_id)
         tasks = response.response_body  # already a list for bind
-        self.poll(tasks)
+        self.poll(tasks, kwargs)
 
     def get_consumer_id(self, kwargs):
         """
@@ -148,7 +148,7 @@ class ConsumerUnbindCommand(PollingCommand):
 
         response = self.context.server.bind.unbind(consumer_id, repo_id, distributor_id, force)
         tasks = response.response_body  # already a list of tasks from the server
-        self.poll(tasks)
+        self.poll(tasks, kwargs)
 
     def get_consumer_id(self, kwargs):
         """

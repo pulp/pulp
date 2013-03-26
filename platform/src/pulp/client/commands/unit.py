@@ -81,7 +81,7 @@ class UnitCopyCommand(UnitAssociationCriteriaCommand, PollingCommand):
             response = self.context.server.repo_unit.copy(from_repo, to_repo,
                                                           override_config=override_config, **kwargs)
             task = response.response_body
-            self.poll([task])
+            self.poll([task], kwargs)
         except BadRequestException, e:
             if 'source_repo_id' in e.extra_data.get('property_names', []):
                 e.extra_data['property_names'].remove('source_repo_id')
@@ -148,7 +148,7 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
 
         response = self.context.server.repo_unit.remove(repo_id, **kwargs)
         task = response.response_body
-        self.poll([task])
+        self.poll([task], kwargs)
 
     def modify_user_input(self, user_input):
         """
