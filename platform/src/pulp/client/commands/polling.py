@@ -180,11 +180,9 @@ class PollingCommand(PulpCliCommand):
 
             # Postponed is a more specific version of waiting and must be checked first.
             if task.is_postponed():
-                msg = self.postponed(task)
-                delayed_spinner.next(message=msg)
+                self.postponed(task, delayed_spinner)
             elif task.is_waiting():
-                msg = self.waiting(task)
-                delayed_spinner.next(message=msg)
+                self.waiting(task, delayed_spinner)
             else:
                 if first_run:
                     self.prompt.render_spacer(1)
@@ -224,7 +222,7 @@ class PollingCommand(PulpCliCommand):
         msg = template % {'tags' : ', '.join(task.tags)}
         self.prompt.render_paragraph(msg, tag='header')
 
-    def waiting(self, task):
+    def waiting(self, task, spinner):
         """
         Called while an accepted task (i.e. not postponed) is waiting to begin.
         Subclasses may override this to return a custom message to the user.
@@ -232,13 +230,13 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
 
-        :return: message to be displayed with the progress spinner; must not contain \n
-        :rtype:  str
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
         """
         msg = _('Waiting to begin...')
-        return msg
+        spinner.next(msg)
 
-    def postponed(self, task):
+    def postponed(self, task, spinner):
         """
         Called when a task is postponed due to the resource being used.
         Subclasses may override this to display a custom message to the user.
@@ -246,14 +244,12 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
 
-        :return: message to be displayed with the progress spinner; must not contain \n
-        :rtype:  str
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
         """
         msg  = _('The request was accepted but postponed due to one or more previous requests '
                  'against the resource. This request will proceed at the earliest possible time.')
-        return msg
-
-    # -- task completed rendering ---------------------------------------------------------------------------
+        spinner.next(message=msg)
 
     def progress(self, task, spinner):
         """
@@ -262,6 +258,10 @@ class PollingCommand(PulpCliCommand):
         and replaced with an alternate solution in the subclass.
 
         :param task: full task report for the task being displayed
+        :type  task: pulp.bindings.responses.Task
+
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
         """
         msg = _('Running...')
         spinner.next(message=msg)
