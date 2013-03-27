@@ -92,8 +92,6 @@ class LiveEventletDownloaderTests(DownloadTests):
         request_list = self._download_requests()[:1]
         downloader.download(request_list)
 
-        self.assertEqual(listener.batch_started.call_count, 0) # batch not supported
-        self.assertEqual(listener.batch_finished.call_count, 0)
         self.assertEqual(listener.download_started.call_count, 1)
         self.assertNotEqual(listener.download_progress.call_count, 0) # not sure how many times
         self.assertEqual(listener.download_succeeded.call_count, 1)
