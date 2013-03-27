@@ -43,7 +43,7 @@ on *node-level* synchronization strategies can be found :ref:`here<node_strategi
   --strategy - synchronization strategy (mirror|additive) default is additive
 
 
-A child node may be deactivated using ``node deactivate`` command. Once deactivated, the
+A child node may be deactivated using the ``node deactivate`` command. Once deactivated, the
 node may no longer be managed using ``node`` commands.
 
 ::
@@ -58,9 +58,9 @@ node may no longer be managed using ``node`` commands.
 Binding
 ^^^^^^^
 
-The ``node bind`` command is used to associate a repository with a child node. This association
-determines which repositories may be synchronized to child nodes. The strategy specified here
-overrides the default strategy specified when the repository was enabled. More information on
+The ``node bind`` command is used to associate a child node with a repository on the parent. This
+association determines which repositories may be synchronized to child nodes. The strategy specified
+here overrides the default strategy specified when the repository was enabled. More information on
 *repository-level* synchronization strategies can be  found :ref:`here<node_strategies>`.
 
 ::
