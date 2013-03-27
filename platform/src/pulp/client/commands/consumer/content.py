@@ -134,7 +134,7 @@ class ConsumerContentInstallCommand(PollingCommand):
         units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
         return units
 
-    def progress(self, task):
+    def progress(self, task, spinner):
         self.progress_tracker.display(task.progress)
 
     def succeeded(self, task):
@@ -247,7 +247,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
         units = map(_unit_dict, kwargs.get(OPTION_CONTENT_UNIT.keyword) or [])
         return units
 
-    def progress(self, task):
+    def progress(self, task, spinner):
         self.progress_tracker.display(task.progress)
 
     def succeeded(self, task):
@@ -355,7 +355,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
         units = map(_unit_dict, kwargs[OPTION_CONTENT_UNIT.keyword])
         return units
 
-    def progress(self, task):
+    def progress(self, task, spinner):
         self.progress_tracker.display(task.progress)
 
     def succeeded(self, task):

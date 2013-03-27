@@ -135,6 +135,7 @@ class PollingCommand(PulpCliCommand):
                     self.task_header(task)
 
                 task = self._poll_task(task)
+                completed_task_list.append(task)
 
                 # Display the appropriate message based on the result of the task
                 self.prompt.render_spacer(1)
@@ -143,13 +144,13 @@ class PollingCommand(PulpCliCommand):
 
                 if task.was_failure():
                     self.failed(task)
+                    break
 
                 if task.was_cancelled():
                     self.cancelled(task)
+                    break
 
                 self.prompt.render_spacer(1)
-
-                completed_task_list.append(task)
 
             return completed_task_list
 
@@ -169,27 +170,38 @@ class PollingCommand(PulpCliCommand):
         :return: the completed task report
         :rtype:  pulp.bindings.responses.Task
         """
-        spinner = self.context.prompt.create_spinner()
+        delayed_spinner = self.context.prompt.create_spinner()
+        delayed_spinner.spin_tag = 'delayed-spinner'
+        running_spinner = self.context.prompt.create_spinner()
+        running_spinner.spin_tag = 'running-spinner'
 
+        first_run = True
         while not task.is_completed():
 
             # Postponed is a more specific version of waiting and must be checked first.
             if task.is_postponed():
-                self.postponed(task)
-                spinner.next()
+                msg = self.postponed(task)
+                delayed_spinner.next(message=msg)
             elif task.is_waiting():
-                self.waiting(task)
-                spinner.next()
+                msg = self.waiting(task)
+                delayed_spinner.next(message=msg)
             else:
-                self.progress(task)
+                if first_run:
+                    self.prompt.render_spacer(1)
+                    first_run = False
+                self.progress(task, running_spinner)
 
             time.sleep(self.poll_frequency_in_seconds)
 
             response = self.context.server.tasks.get_task(task.task_id)
             task = response.response_body
 
-        # One final call to update the progress with the end state
-        self.progress(task)
+        # One final call to update the progress with the end state. It's possible the run state
+        # was never hit in the loop above, so we check for first_run again for the missing blank space.
+        if first_run:
+            self.prompt.render_spacer(1)
+
+        self.progress(task, running_spinner)
 
         return task
 
@@ -221,7 +233,7 @@ class PollingCommand(PulpCliCommand):
         :type  task: pulp.bindings.responses.Task
         """
         msg = _('Waiting to begin...')
-        self.prompt.write(msg, tag='waiting')
+        return msg
 
     def postponed(self, task):
         """
@@ -233,17 +245,18 @@ class PollingCommand(PulpCliCommand):
         """
         msg  = _('The request was accepted but postponed due to one or more previous requests '
                  'against the resource. This request will proceed at the earliest possible time.')
-        self.prompt.write(msg, tag='postponed')
+        return msg
 
     # -- task completed rendering ---------------------------------------------------------------------------
 
-    def progress(self, task):
+    def progress(self, task, spinner):
         """
         Called each time a task is polled. The default implementation displays nothing.
 
         :param task: full task report for the task being displayed
         """
-        pass
+        msg = _('Running...')
+        spinner.next(message=msg)
 
     def succeeded(self, task):
         """
