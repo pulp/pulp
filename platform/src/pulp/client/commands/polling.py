@@ -227,10 +227,13 @@ class PollingCommand(PulpCliCommand):
     def waiting(self, task):
         """
         Called while an accepted task (i.e. not postponed) is waiting to begin.
-        Subclasses may override this to display a custom message to the user.
+        Subclasses may override this to return a custom message to the user.
 
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
+
+        :return: message to be displayed with the progress spinner; must not contain \n
+        :rtype:  str
         """
         msg = _('Waiting to begin...')
         return msg
@@ -242,6 +245,9 @@ class PollingCommand(PulpCliCommand):
 
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
+
+        :return: message to be displayed with the progress spinner; must not contain \n
+        :rtype:  str
         """
         msg  = _('The request was accepted but postponed due to one or more previous requests '
                  'against the resource. This request will proceed at the earliest possible time.')
@@ -252,6 +258,8 @@ class PollingCommand(PulpCliCommand):
     def progress(self, task, spinner):
         """
         Called each time a task is polled. The default implementation displays nothing.
+        The provided spinner may be used to indicate progress has taken place or may be ignored
+        and replaced with an alternate solution in the subclass.
 
         :param task: full task report for the task being displayed
         """
