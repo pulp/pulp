@@ -1,8 +1,9 @@
 Pulp Nodes
 ==========
 
-Pulp *Nodes* management is performed using the platform REST API.  This document identifies the
-specific APIs and defines the information passed.
+Pulp *Nodes* management is performed using the platform REST API. This document identifies the
+specific APIs and defines the data values needed for each call. For more information on *Nodes*
+concepts, see the Pulp User Guide.
 
 
 Activation
