@@ -17,7 +17,7 @@ import mock
 
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Repository
+from pulp.plugins.model import Repository, Unit
 from pulp.plugins.types import database, model
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.criteria import UnitAssociationCriteria
@@ -212,10 +212,16 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         fake_user = User('associate-user', '')
         manager_factory.principal_manager().set_principal(principal=fake_user)
 
+        mock_plugins.MOCK_IMPORTER.import_units.return_value = [Unit('mock-type', {'k' : 'v'}, {}, '')]
+
         # Test
-        self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+        associated = self.manager.associate_from_repo(source_repo_id, dest_repo_id)
 
         # Verify
+        self.assertEqual(1, len(associated))
+        self.assertEqual(associated[0]['type_id'], 'mock-type')
+        self.assertEqual(associated[0]['unit_key'], {'k' : 'v'})
+
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
 
         args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
@@ -253,12 +259,20 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-2', OWNER_TYPE_USER, 'admin')
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3', OWNER_TYPE_USER, 'admin')
 
+        mock_plugins.MOCK_IMPORTER.import_units.return_value = [Unit('mock-type', {'k' : 'v'}, {}, '')]
+
         # Test
         overrides = { 'abc': '123'}
-        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
-        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria, import_config_override=overrides)
+        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'},
+                                           unit_fields=['key-1'])
+        associated = self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria,
+                                                      import_config_override=overrides)
 
         # Verify
+        self.assertEqual(1, len(associated))
+        self.assertEqual(associated[0]['type_id'], 'mock-type')
+        self.assertEqual(associated[0]['unit_key'], {'k' : 'v'})
+
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
 
         args = mock_plugins.MOCK_IMPORTER.import_units.call_args[0]
