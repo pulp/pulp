@@ -30,14 +30,6 @@ class DownloadEventListener(object):
 
     # TODO (jconnor 2013-01-22) add cancel state callbacks
 
-    # batch downloads events
-
-    def batch_started(self, report_list):
-        pass
-
-    def batch_finished(self, report_list):
-        pass
-
     # individual download events
 
     def download_started(self, report):
@@ -79,4 +71,3 @@ class AggregatingEventListener(DownloadEventListener):
 
     def download_failed(self, report):
         self.failed_reports.append(report)
-

@@ -59,4 +59,3 @@ class HTTPStaticTestServer(object):
         self._is_running = False
         self._server_thread.join()
         self._server_thread = None
-

@@ -67,26 +67,6 @@ class PulpDownloader(object):
 
     # events api ---------------------------------------------------------------
 
-    def fire_batch_started(self, report_list):
-        """
-        Fire the ``batch_started`` event using the list of download reports
-        provided.
-
-        :param report_list: list of download reports
-        :type report_list: list of pulp.common.download.report.DownloadReport
-        """
-        self._fire_event_to_listener(self.event_listener.batch_started, report_list)
-
-    def fire_batch_finished(self, report_list):
-        """
-        Fire the ``batch_finished`` event using the list of download reports
-        provided.
-
-        :param report_list: list of download reports
-        :type report_list: list of pulp.common.download.report.DownloadReport
-        """
-        self._fire_event_to_listener(self.event_listener.batch_finished, report_list)
-
     def fire_download_started(self, report):
         """
         Fire the ``download_started`` event using the download report provided.
