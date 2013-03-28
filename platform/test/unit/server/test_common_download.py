@@ -155,7 +155,7 @@ class DownloadTests(unittest.TestCase):
 
     def _download_requests(self, protocol='http'):
         # localhost:8088 is here for the live tests
-        return [DownloadRequest(protocol + '://127.0.0.1:8088/' + self.data_dir + f, os.path.join(self.storage_dir, f))
+        return [DownloadRequest(protocol + '://localhost:8088/' + self.data_dir + f, os.path.join(self.storage_dir, f))
                 for f in self.file_list]
 
 # curl downloader tests --------------------------------------------------------
