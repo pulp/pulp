@@ -311,9 +311,11 @@ class RepoUnitAssociationManager(object):
                removal
         @type  notify_plugins: bool
         """
-        self.unassociate_all_by_ids(repo_id, unit_type_id, [unit_id], owner_type, owner_id, notify_plugins=notify_plugins)
+        return self.unassociate_all_by_ids(repo_id, unit_type_id, [unit_id], owner_type, owner_id,
+                                           notify_plugins=notify_plugins)
 
-    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id, notify_plugins=True):
+    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id,
+                               notify_plugins=True):
         """
         Removes the association between a repo and a number of units. Only the
         association made by the given owner will be removed. It is possible the
@@ -343,7 +345,8 @@ class RepoUnitAssociationManager(object):
         association_filters = {'unit_id' : {'$in' : unit_id_list}}
         criteria = UnitAssociationCriteria(type_ids=[unit_type_id], association_filters=association_filters)
 
-        self.unassociate_by_criteria(repo_id, criteria, owner_type, owner_id, notify_plugins=notify_plugins)
+        return self.unassociate_by_criteria(repo_id, criteria, owner_type, owner_id,
+                                            notify_plugins=notify_plugins)
 
     def unassociate_by_criteria(self, repo_id, criteria, owner_type, owner_id, notify_plugins=True):
         """
@@ -363,7 +366,7 @@ class RepoUnitAssociationManager(object):
         unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
 
         if len(unassociate_units) is 0:
-            return
+            return []
 
         unit_map = {} # maps unit_type_id to a list of unit_ids
 
@@ -389,8 +392,17 @@ class RepoUnitAssociationManager(object):
 
             repo_manager.update_unit_count(repo_id, unit_type_id, -unique_count)
 
+        # Convert the units into transfer units. This happens regardless of whether or not
+        # the plugin will be notified as it's used to generate the return result,
+        unit_type_ids = calculate_associated_type_ids(repo_id, unassociate_units)
+        transfer_units = create_transfer_units(unassociate_units, unit_type_ids)
+
         if notify_plugins:
-            remove_from_importer(repo_id, unassociate_units)
+            remove_from_importer(repo_id, transfer_units)
+
+        # Match the return type/format as copy
+        serializable_units = [u.to_id_dict() for u in transfer_units]
+        return serializable_units
 
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):
@@ -463,7 +475,7 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
 
     return transfer_units
 
-def remove_from_importer(repo_id, removed_units):
+def remove_from_importer(repo_id, transfer_units):
 
     # Retrieve the repo from the database and convert to the transfer repo
     repo_query_manager = manager_factory.repo_query_manager()
@@ -474,10 +486,6 @@ def remove_from_importer(repo_id, removed_units):
 
     transfer_repo = common_utils.to_transfer_repo(repo)
     transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
-
-    # Convert the units into transfer units
-    unit_type_ids = calculate_associated_type_ids(repo_id, removed_units)
-    transfer_units = create_transfer_units(removed_units, unit_type_ids)
 
     # Retrieve the plugin instance to invoke
     importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
