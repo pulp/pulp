@@ -458,9 +458,17 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(4, len(list(unit_coll.find({'repo_id' : self.repo_id}))))
 
         # Test
-        self.manager.unassociate_all_by_ids(self.repo_id, self.unit_type_id, [self.unit_id, self.unit_id_2], OWNER_TYPE_USER, 'admin')
+        unassociated = self.manager.unassociate_all_by_ids(self.repo_id, self.unit_type_id,
+                                                           [self.unit_id, self.unit_id_2],
+                                                           OWNER_TYPE_USER, 'admin')
 
         # Verify
+        self.assertEqual(len(unassociated), 2)
+        for u in unassociated:
+            self.assertTrue(isinstance(u, dict))
+            self.assertTrue(u['type_id'], self.unit_type_id)
+            self.assertTrue(u['unit_key'] in [self.unit_key, self.unit_key_2])
+
         self.assertEqual(2, len(list(unit_coll.find({'repo_id' : self.repo_id}))))
 
         self.assertTrue(unit_coll.find_one({'repo_id' : self.repo_id, 'unit_type_id' : 'type-2', 'unit_id' : 'unit-1'}) is not None)
