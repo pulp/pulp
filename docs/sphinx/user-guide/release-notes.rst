@@ -14,6 +14,7 @@ New Features
 #. We now support Fedora 18 and Apache 2.4.
 #. The ``pulp-admin rpm consumer [list, search, update, unregister, history]`` commands from the pulp_rpm
    project have been moved into this project, and can now be found under ``pulp-admin consumer *``.
+#. It is now possible to upgrade from Pulp 1.0 to 2.1.
 
 Note of Caution
 ---------------
