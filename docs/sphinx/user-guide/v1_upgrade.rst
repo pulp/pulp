@@ -64,3 +64,13 @@ Consumer Client
   $ sudo mv /etc/pki/pulp/consumer/cert.pem /etc/pki/pulp/consumer/consumer-cert.pem
 
 
+Pulp Agent
+^^^^^^^^^^
+
+1. On the consumer, the package owning ``/etc/init.d/pulp-admin`` changed in v2.
+After upgrade, this symlink needs to be manually recreated.
+
+::
+
+ $ sudo ln -s /etc/init.d/goferd /etc/init.d/pulp-agent
+ $ sudo chkconfig pulp-agent on
