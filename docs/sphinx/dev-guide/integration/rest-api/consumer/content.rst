@@ -76,7 +76,7 @@ content are handler specific.  The options drive how the handler performs the op
    ]
  }
 
-
+.. _content_update:
 
 Update Content on a Consumer
 ----------------------------

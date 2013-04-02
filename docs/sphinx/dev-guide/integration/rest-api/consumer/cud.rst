@@ -60,6 +60,8 @@ its identification.
  }
 
 
+.. _consumer_update:
+
 Update a Consumer
 -----------------
 
