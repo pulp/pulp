@@ -271,16 +271,16 @@ class Importer(object):
         attribute in the report if applicable.
 
         @param repo: metadata describing the repository
-        @type  repo: L{pulp.server.plugins.model.Repository}
+        @type  repo: pulp.plugins.model.Repository
 
         @param sync_conduit: provides access to relevant Pulp functionality
-        @type  sync_conduit: L{pulp.server.conduits.repo_sync.RepoSyncConduit}
+        @type  sync_conduit: pulp.plugins.conduits.repo_sync.RepoSyncConduit
 
         @param config: plugin configuration
-        @type  config: L{pulp.server.plugins.config.PluginCallConfiguration}
+        @type  config: pulp.plugins.config.PluginCallConfiguration
 
         @return: report of the details of the sync
-        @rtype:  L{pulp.server.plugins.model.SyncReport}
+        @rtype:  pulp.plugins.model.SyncReport
         """
         raise NotImplementedError()
 
