@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2012 Red Hat, Inc.
+# Copyright © 2011-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -107,12 +107,12 @@ class ArchivedCall(Model):
 
     collection_name = 'archived_calls'
     unique_indices = ()
-    search_indices = ('serialized_call_request.id', 'serialized_call_request.group_id')
+    search_indices = ('serialized_call_report.call_request_id', 'serialized_call_report.call_request_group_id')
 
     def __init__(self, call_request, call_report):
         super(ArchivedCall, self).__init__()
         self.timestamp = dateutils.now_utc_timestamp()
-        self.serialized_call_request = call_request.serialize()
+        self.call_request_string = str(call_request)
         self.serialized_call_report = call_report.serialize()
 
 
