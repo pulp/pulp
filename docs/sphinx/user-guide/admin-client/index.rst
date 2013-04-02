@@ -10,6 +10,7 @@ Contents:
    authentication
    consumer
    events
+   nodes
    repositories
    orphan
    server

@@ -6,3 +6,4 @@ Integrating with Pulp
 
    rest-api/index
    events/index
+   nodes
