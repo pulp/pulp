@@ -43,9 +43,9 @@ def find_archived_calls(**criteria):
     """
     query = {}
     if 'call_request_id' in criteria:
-        query['serialized_call_request.id'] = criteria['call_request_id']
+        query['serialized_call_report.call_request_id'] = criteria['call_request_id']
     if 'call_request_group_id' in criteria:
-        query['serialized_call_request.group_id'] = criteria['call_request_group_id']
+        query['serialized_call_report.call_request_group_id'] = criteria['call_request_group_id']
 
     collection = ArchivedCall.get_collection()
     cursor = collection.find(query)
