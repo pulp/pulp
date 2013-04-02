@@ -207,6 +207,10 @@ class RepoUnitAssociationManager(object):
                                      for this import only
         @type  import_config_override: dict
 
+        @return: list of unit IDs (see pulp.plugins.model.Unit.to_id_dict) for units that
+                 were associated by this operation
+        @rtype:  list
+
         @raise MissingResource: if either of the specified repositories don't exist
         """
 
@@ -233,7 +237,8 @@ class RepoUnitAssociationManager(object):
 
             # If units were supposed to be filtered but none matched, we're done
             if len(associate_us) is 0:
-                return
+                # Return an empty list to indicate nothing was copied
+                return []
 
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units
@@ -251,22 +256,29 @@ class RepoUnitAssociationManager(object):
 
         # Convert the two repos into the plugin API model
         transfer_dest_repo = common_utils.to_transfer_repo(dest_repo)
-        transfer_dest_repo.working_dir = common_utils.importer_working_dir(dest_repo_importer['importer_type_id'], dest_repo['id'], mkdir=True)
+        transfer_dest_repo.working_dir = common_utils.importer_working_dir(dest_repo_importer['importer_type_id'],
+                                                                           dest_repo['id'], mkdir=True)
 
         transfer_source_repo = common_utils.to_transfer_repo(source_repo)
-        transfer_source_repo.working_dir = common_utils.importer_working_dir(source_repo_importer['importer_type_id'], source_repo['id'], mkdir=True)
+        transfer_source_repo.working_dir = common_utils.importer_working_dir(source_repo_importer['importer_type_id'],
+                                                                             source_repo['id'], mkdir=True)
 
         # Invoke the importer
         importer_instance, plugin_config = plugin_api.get_importer_by_id(dest_repo_importer['importer_type_id'])
 
         call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'], import_config_override)
         login = manager_factory.principal_manager().get_principal()['login']
-        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, login)
+        conduit = ImportUnitConduit(source_repo_id, dest_repo_id, source_repo_importer['id'],
+                                    dest_repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, login)
 
         try:
-            importer_instance.import_units(transfer_source_repo, transfer_dest_repo, conduit, call_config, units=transfer_units)
+            copied_units = importer_instance.import_units(transfer_source_repo, transfer_dest_repo, conduit,
+                                                          call_config, units=transfer_units)
+            unit_ids = [u.to_id_dict() for u in copied_units]
+            return unit_ids
         except Exception:
-            _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' % (dest_repo_importer['importer_type_id'], dest_repo_id))
+            _LOG.exception('Exception from importer [%s] while importing units into repository [%s]' %
+                           (dest_repo_importer['importer_type_id'], dest_repo_id))
             raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id, notify_plugins=True):
@@ -299,9 +311,11 @@ class RepoUnitAssociationManager(object):
                removal
         @type  notify_plugins: bool
         """
-        self.unassociate_all_by_ids(repo_id, unit_type_id, [unit_id], owner_type, owner_id, notify_plugins=notify_plugins)
+        return self.unassociate_all_by_ids(repo_id, unit_type_id, [unit_id], owner_type, owner_id,
+                                           notify_plugins=notify_plugins)
 
-    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id, notify_plugins=True):
+    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id,
+                               notify_plugins=True):
         """
         Removes the association between a repo and a number of units. Only the
         association made by the given owner will be removed. It is possible the
@@ -331,7 +345,8 @@ class RepoUnitAssociationManager(object):
         association_filters = {'unit_id' : {'$in' : unit_id_list}}
         criteria = UnitAssociationCriteria(type_ids=[unit_type_id], association_filters=association_filters)
 
-        self.unassociate_by_criteria(repo_id, criteria, owner_type, owner_id, notify_plugins=notify_plugins)
+        return self.unassociate_by_criteria(repo_id, criteria, owner_type, owner_id,
+                                            notify_plugins=notify_plugins)
 
     def unassociate_by_criteria(self, repo_id, criteria, owner_type, owner_id, notify_plugins=True):
         """
@@ -351,7 +366,7 @@ class RepoUnitAssociationManager(object):
         unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
 
         if len(unassociate_units) is 0:
-            return
+            return []
 
         unit_map = {} # maps unit_type_id to a list of unit_ids
 
@@ -377,8 +392,17 @@ class RepoUnitAssociationManager(object):
 
             repo_manager.update_unit_count(repo_id, unit_type_id, -unique_count)
 
+        # Convert the units into transfer units. This happens regardless of whether or not
+        # the plugin will be notified as it's used to generate the return result,
+        unit_type_ids = calculate_associated_type_ids(repo_id, unassociate_units)
+        transfer_units = create_transfer_units(unassociate_units, unit_type_ids)
+
         if notify_plugins:
-            remove_from_importer(repo_id, unassociate_units)
+            remove_from_importer(repo_id, transfer_units)
+
+        # Match the return type/format as copy
+        serializable_units = [u.to_id_dict() for u in transfer_units]
+        return serializable_units
 
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):
@@ -451,7 +475,7 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
 
     return transfer_units
 
-def remove_from_importer(repo_id, removed_units):
+def remove_from_importer(repo_id, transfer_units):
 
     # Retrieve the repo from the database and convert to the transfer repo
     repo_query_manager = manager_factory.repo_query_manager()
@@ -462,10 +486,6 @@ def remove_from_importer(repo_id, removed_units):
 
     transfer_repo = common_utils.to_transfer_repo(repo)
     transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
-
-    # Convert the units into transfer units
-    unit_type_ids = calculate_associated_type_ids(repo_id, removed_units)
-    transfer_units = create_transfer_units(removed_units, unit_type_ids)
 
     # Retrieve the plugin instance to invoke
     importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])

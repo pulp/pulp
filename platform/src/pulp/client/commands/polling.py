@@ -18,7 +18,7 @@ Contains base classes for commands that poll the server for asynchronous tasks.
 import time
 from gettext import gettext as _
 
-from pulp.client.extensions.extensions import PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
 
 
 # Returned from the poll command if one or more of the tasks in the given list
@@ -27,6 +27,13 @@ RESULT_REJECTED = 'rejected'
 
 # Returned from the poll command if the user gracefully aborts the polling
 RESULT_ABORTED = 'aborted'
+
+# Returned from the poll command if the user elects to not poll the task
+RESULT_BACKGROUND = 'background'
+
+DESC_BACKGROUND = _('if specified, the client process will end immediately (the task will '
+                    'continue to run on the server)')
+FLAG_BACKGROUND = PulpCliFlag('--bg', DESC_BACKGROUND)
 
 
 class PollingCommand(PulpCliCommand):
@@ -63,7 +70,9 @@ class PollingCommand(PulpCliCommand):
         if poll_frequency_in_seconds is None:
             self.poll_frequency_in_seconds = float(self.context.config['output']['poll_frequency_in_seconds'])
 
-    def poll(self, task_list):
+        self.add_flag(FLAG_BACKGROUND)
+
+    def poll(self, task_list, user_input):
         """
         Entry point to begin polling on the tasks in the given list. Each task will be polled
         in order until completion. If an error state is encountered, polling of the remaining
@@ -76,8 +85,19 @@ class PollingCommand(PulpCliCommand):
         While each task is being polled, the progress method will be called at regular
         intervals to allow the subclass to display information on the state of the task.
 
+        The command has a built in flag for running the process in the background. If this
+        is specified, this method will immediately return and not poll the tasks.
+
+        The typical returned value from this call is the final list of completed tasks.
+        There are a few cases where this list is unavailable, in which case the RESULT_*
+        constants in this module will be returned.
+
         :param task_list: list of task reports received from the initial call to the server
         :type  task_list: list of pulp.bindings.responses.Task
+
+        :param user_input: keyword arguments that was passed to the command's method; these contain
+                           the user-specified options that may affect this method
+        :type  user_input: dict
 
         :return: the final task reports for all of the tasks
         """
@@ -94,6 +114,12 @@ class PollingCommand(PulpCliCommand):
             self.rejected(task_list[0])
             return RESULT_REJECTED
 
+        # Punch out early if polling is disabled. This should be done after the rejected check
+        # since the expectation is that the tasks were successfully queued but aren't being watched.
+        if user_input.get(FLAG_BACKGROUND.keyword, False):
+            self.background()
+            return RESULT_BACKGROUND
+
         msg = _('This command may be exited via ctrl+c without affecting the request.')
         self.prompt.render_paragraph(msg, tag='abort')
 
@@ -109,30 +135,28 @@ class PollingCommand(PulpCliCommand):
                     self.task_header(task)
 
                 task = self._poll_task(task)
+                completed_task_list.append(task)
 
                 # Display the appropriate message based on the result of the task
-
                 self.prompt.render_spacer(1)
-
                 if task.was_successful():
                     self.succeeded(task)
 
                 if task.was_failure():
                     self.failed(task)
+                    break
 
                 if task.was_cancelled():
                     self.cancelled(task)
+                    break
 
                 self.prompt.render_spacer(1)
-
-                completed_task_list.append(task)
 
             return completed_task_list
 
         except KeyboardInterrupt:
             # Gracefully handle if the user aborts the polling.
             return RESULT_ABORTED
-
 
     def _poll_task(self, task):
         """
@@ -146,27 +170,36 @@ class PollingCommand(PulpCliCommand):
         :return: the completed task report
         :rtype:  pulp.bindings.responses.Task
         """
-        spinner = self.context.prompt.create_spinner()
+        delayed_spinner = self.context.prompt.create_spinner()
+        delayed_spinner.spin_tag = 'delayed-spinner'
+        running_spinner = self.context.prompt.create_spinner()
+        running_spinner.spin_tag = 'running-spinner'
 
+        first_run = True
         while not task.is_completed():
 
             # Postponed is a more specific version of waiting and must be checked first.
             if task.is_postponed():
-                self.postponed(task)
-                spinner.next()
+                self.postponed(task, delayed_spinner)
             elif task.is_waiting():
-                self.waiting(task)
-                spinner.next()
+                self.waiting(task, delayed_spinner)
             else:
-                self.progress(task)
+                if first_run:
+                    self.prompt.render_spacer(1)
+                    first_run = False
+                self.progress(task, running_spinner)
 
             time.sleep(self.poll_frequency_in_seconds)
 
             response = self.context.server.tasks.get_task(task.task_id)
             task = response.response_body
 
-        # One final call to update the progress with the end state
-        self.progress(task)
+        # One final call to update the progress with the end state. It's possible the run state
+        # was never hit in the loop above, so we check for first_run again for the missing blank space.
+        if first_run:
+            self.prompt.render_spacer(1)
+
+        self.progress(task, running_spinner)
 
         return task
 
@@ -189,38 +222,49 @@ class PollingCommand(PulpCliCommand):
         msg = template % {'tags' : ', '.join(task.tags)}
         self.prompt.render_paragraph(msg, tag='header')
 
-    def waiting(self, task):
+    def waiting(self, task, spinner):
         """
         Called while an accepted task (i.e. not postponed) is waiting to begin.
-        Subclasses may override this to display a custom message to the user.
+        Subclasses may override this to return a custom message to the user.
 
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
+
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
         """
         msg = _('Waiting to begin...')
-        self.prompt.write(msg, tag='waiting')
+        spinner.next(msg)
 
-    def postponed(self, task):
+    def postponed(self, task, spinner):
         """
         Called when a task is postponed due to the resource being used.
         Subclasses may override this to display a custom message to the user.
 
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
+
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
         """
         msg  = _('The request was accepted but postponed due to one or more previous requests '
                  'against the resource. This request will proceed at the earliest possible time.')
-        self.prompt.write(msg, tag='postponed')
+        spinner.next(message=msg)
 
-    # -- task completed rendering ---------------------------------------------------------------------------
-
-    def progress(self, task):
+    def progress(self, task, spinner):
         """
         Called each time a task is polled. The default implementation displays nothing.
+        The provided spinner may be used to indicate progress has taken place or may be ignored
+        and replaced with an alternate solution in the subclass.
 
         :param task: full task report for the task being displayed
+        :type  task: pulp.bindings.responses.Task
+
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
         """
-        pass
+        msg = _('Running...')
+        spinner.next(message=msg)
 
     def succeeded(self, task):
         """
@@ -230,7 +274,7 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Request Succeeded')
+        msg = _('Task Succeeded')
         self.prompt.render_success_message(msg, tag='succeeded')
 
     def failed(self, task):
@@ -241,7 +285,7 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Request Failed')
+        msg = _('Task Failed')
         self.prompt.render_failure_message(msg, tag='failed')
         self.prompt.render_failure_message(task.exception, tag='failed_exception')
 
@@ -253,7 +297,7 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Request Cancelled')
+        msg = _('Task Cancelled')
         self.prompt.render_paragraph(msg, tag='cancelled')
 
     def rejected(self, task):
@@ -267,3 +311,13 @@ class PollingCommand(PulpCliCommand):
         msg = _('The request was rejected by the server. '
                 'This is likely due to an impending delete request for the resource.')
         self.context.prompt.render_failure_message(msg, tag='rejected')
+
+    def background(self):
+        """
+        Called when the command is run with the background flag, effectively
+        skipping polling entirely. The intention of this call is to display a message to
+        the user informing them the task will continue on the server, but subclasses may
+        elect to have this method display nothing.
+        """
+        msg = _('The request has been queued on the server.')
+        self.context.prompt.render_paragraph(msg, tag='background')

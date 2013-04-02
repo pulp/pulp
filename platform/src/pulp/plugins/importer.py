@@ -228,6 +228,9 @@ class Importer(object):
 
         @param units: optional list of pre-filtered units to import
         @type  units: list of L{pulp.server.plugins.model.Unit}
+
+        @return: list of Unit instances that were saved to the destination repository
+        @rtype:  list
         """
         raise NotImplementedError()
 

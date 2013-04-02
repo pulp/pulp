@@ -1,6 +1,8 @@
 Publication
 ===========
 
+.. _repository_publish:
+
 Publish a Repository
 --------------------
 

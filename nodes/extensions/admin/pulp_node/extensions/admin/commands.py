@@ -221,7 +221,7 @@ class NodeRepoPublishCommand(PollingCommand):
         try:
             http = self.context.server.repo_actions.publish(repo_id, constants.HTTP_DISTRIBUTOR, {})
             task = http.response_body
-            self.poll([task])
+            self.poll([task], kwargs)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'repo_id':
@@ -492,7 +492,7 @@ class NodeUpdateCommand(PollingCommand):
         try:
             http = self.context.server.consumer_content.update(node_id, units=units, options={})
             task = http.response_body
-            self.poll([task])
+            self.poll([task], kwargs)
         except NotFoundException, e:
             for _id, _type in missing_resources(e):
                 if _type == 'consumer':

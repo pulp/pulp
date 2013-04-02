@@ -16,7 +16,7 @@ import base
 
 from pulp.bindings.responses import (STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
                                      STATE_RUNNING, STATE_SKIPPED, RESPONSE_POSTPONED, RESPONSE_REJECTED)
-from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED
+from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED, FLAG_BACKGROUND, RESULT_BACKGROUND
 from pulp.devel.unit.task_simulator import TaskSimulator
 
 
@@ -67,13 +67,13 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
 
         # The "header" tag should not be present since no headers are needed for single tasks
 
-        expected_tags = ['abort', 'waiting', 'spinner', 'waiting', 'spinner', 'succeeded']
+        expected_tags = ['abort', 'delayed-spinner', 'delayed-spinner', 'succeeded']
         self.assertEqual(self.prompt.get_write_tags(), expected_tags)
 
         self.assertEqual(4, mock_sleep.call_count) # 2 for waiting, 2 for running
@@ -106,12 +106,17 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         expected_tags = ['abort', # default, always displayed
-                         'header', 'waiting', 'spinner', 'succeeded', # states_1
-                         'header', 'waiting', 'spinner', 'waiting', 'spinner', 'succeeded', # states_2
-                         'header', 'waiting', 'spinner', 'succeeded', # states_3
+                         # states_1
+                         'header', 'delayed-spinner', 'running-spinner', 'running-spinner', 'succeeded',
+                         # states_2
+                         'header', 'delayed-spinner', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'succeeded',
+                         # states_3
+                         'header', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'running-spinner', 'running-spinner', 'succeeded',
                          ]
         found_tags = self.prompt.get_write_tags()
         self.assertEqual(expected_tags, found_tags)
@@ -121,9 +126,21 @@ class PollingCommandTests(base.PulpClientTests):
         for i in range(0, 3):
             self.assertEqual(STATE_FINISHED, completed_tasks[i].state)
 
+    def test_poll_background(self):
+        # Setup
+        sim = TaskSimulator()
+        sim.add_task_state('1', STATE_FINISHED)
+
+        # Test
+        task_list = sim.get_all_tasks().response_body
+        result = self.command.poll(task_list, {FLAG_BACKGROUND.keyword : True})
+
+        # Verify
+        self.assertEqual(result, RESULT_BACKGROUND)
+
     def test_poll_empty_list(self):
         # Test
-        completed_tasks = self.command.poll([])
+        completed_tasks = self.command.poll([], {})
 
         # Verify
         #   The poll command shouldn't output anything and instead just end.
@@ -146,7 +163,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertEqual(completed_tasks, RESULT_REJECTED)
@@ -174,16 +191,15 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertTrue(isinstance(completed_tasks, list))
-        self.assertEqual(3, len(completed_tasks))
+        self.assertEqual(2, len(completed_tasks))
 
         expected_tags = ['abort',
-                         'header', 'waiting', 'spinner', 'succeeded', # states_1
-                         'header', 'waiting', 'spinner', 'failed', 'failed_exception', # states_2
-                         'header', 'waiting', 'spinner', # states_3
+                         'header', 'delayed-spinner', 'running-spinner', 'succeeded', # states_1
+                         'header', 'delayed-spinner', 'running-spinner', 'failed', 'failed_exception', # states_2
                          ]
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
@@ -203,13 +219,14 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertTrue(isinstance(completed_tasks, list))
         self.assertEqual(1, len(completed_tasks))
 
-        expected_tags = ['abort', 'waiting', 'spinner', 'cancelled']
+        expected_tags = ['abort', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'running-spinner','cancelled']
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
     def test_postponed_task(self):
@@ -231,13 +248,14 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list)
+        completed_tasks = self.command.poll(task_list, {})
 
         # Verify
         self.assertTrue(isinstance(completed_tasks, list))
         self.assertEqual(1, len(completed_tasks))
 
-        expected_tags = ['abort', 'postponed', 'spinner', 'postponed', 'spinner', 'succeeded']
+        expected_tags = ['abort', 'delayed-spinner', 'delayed-spinner', 'running-spinner',
+                         'running-spinner', 'succeeded']
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
     def test_keyboard_interrupt(self):
@@ -253,7 +271,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         # Test
         task_list = sim.get_all_tasks().response_body
-        result = self.command.poll(task_list)
+        result = self.command.poll(task_list, {})
 
         # Verify
         self.assertEqual(result, RESULT_ABORTED)

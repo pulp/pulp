@@ -59,15 +59,12 @@ class HTTPCurlDownloader(PulpDownloader):
         # this list is backwards so we can pop() efficiently and maintain the original order
         request_queue = [(r, download_report.DownloadReport.from_download_request(r))
                          for r in request_list[::-1]]
-        request_cache = []
 
         total_requests = len(request_queue)
         processed_requests = 0
 
         multi_handle = self._build_multi_handle()
         free_handles = multi_handle.handles[:]
-
-        self.fire_batch_started([i[1] for i in request_queue[::-1]])
 
         # main request processing loop
         while processed_requests < total_requests and not self.is_canceled:
@@ -77,7 +74,6 @@ class HTTPCurlDownloader(PulpDownloader):
                 # populate max_concurrent downloads into the pycurl multi handle
                 while request_queue and free_handles:
                     request, report = request_queue.pop()
-                    request_cache.append((request, report))
 
                     report.state = download_report.DOWNLOAD_DOWNLOADING
                     report.start_time = datetime.datetime.now()
@@ -137,10 +133,6 @@ class HTTPCurlDownloader(PulpDownloader):
                 _LOG.exception(e)
                 break
 
-        request_reports = [i[1] for i in request_cache]
-        self.fire_batch_finished(request_reports)
-        return request_reports
-
     # pycurl multi handle construction -----------------------------------------
 
     def _build_multi_handle(self):
@@ -175,6 +167,9 @@ class HTTPCurlDownloader(PulpDownloader):
         easy_handle.setopt(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
         easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
         easy_handle.setopt(pycurl.NOPROGRESS, DEFAULT_NO_PROGRESS)
+
+        if self.config.max_speed:
+            easy_handle.setopt(pycurl.MAX_RECV_SPEED_LARGE, int(self.config.max_speed))
 
     def _add_basic_auth_credentials(self, easy_handle):
         if None in (self.config.basic_auth_username, self.config.basic_auth_password):
@@ -327,4 +322,3 @@ class CurlDownloadProgressFunctor(object):
         self.report.total_bytes = download_t
         self.report.bytes_downloaded = download_d
         self.progress_callback(self.report)
-

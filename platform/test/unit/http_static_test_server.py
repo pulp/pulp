@@ -39,6 +39,7 @@ class HTTPStaticTestServer(object):
 
     def __init__(self, port=8088):
         self.server = HTTPServer(('', port), SimpleHTTPRequestHandler)
+        self.server.timeout = 0.1 # timeout after a tenth of a second
         self._is_running = False
         self._server_thread = None
 
@@ -56,22 +57,5 @@ class HTTPStaticTestServer(object):
 
     def stop(self):
         self._is_running = False
-        try:
-            # force a dummy request to exit the _serve loop
-            self._send_dummy_request()
-        except:
-            # if the dummy request fails for any reason, the server thread
-            # daemonization should allow us to exit anyway
-            pass
-        else:
-            self._server_thread.join()
-        finally:
-            self._server_thread = None
-
-    def _send_dummy_request(self):
-        connection = httplib.HTTPConnection(self.server.server_name, self.server.server_port)
-        connection.request('GET', '/dummy/path')
-        response = connection.getresponse()
-        response.read()
-        connection.close()
-
+        self._server_thread.join()
+        self._server_thread = None

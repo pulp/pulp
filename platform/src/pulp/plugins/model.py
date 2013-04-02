@@ -148,6 +148,19 @@ class Unit(object):
 
         self.id = None
 
+    def to_id_dict(self):
+        """
+        Returns a dict with the identity information (type ID and unit key) for this unit. The
+        primary intention of this method is as a means to convert these units into a JSON
+        serializable format.
+        """
+
+        d = {
+            'type_id' : self.type_id,
+            'unit_key' : self.unit_key,
+            }
+        return d
+
     def __eq__(self, other):
         return self.unit_key == other.unit_key
 
