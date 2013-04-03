@@ -247,7 +247,7 @@ class Consumer:
 
 class ApplicabilityReport:
     """
-    Returned to the pulp server at the end of a units_applicable call.
+    Returned to the pulp server at the end of a find_applicable_units call.
     This is returned to indicate the applicability of a content
     unit along with summary and details.
 
