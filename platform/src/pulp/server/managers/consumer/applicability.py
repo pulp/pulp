@@ -227,16 +227,17 @@ class ApplicabilityManager(object):
         else:
             # If units are not specified, consider all units in given repos.
             for repo_id in repo_ids:
-                all_content_type_ids = content_types_db.all_type_ids()
-                for content_type_id in all_content_type_ids:
-                    criteria = UnitAssociationCriteria(type_ids=[content_type_id], unit_fields = ['unit_id','unit_type_id'])
+                all_unit_type_ids = content_types_db.all_type_ids()
+                for unit_type_id in all_unit_type_ids:
+                    criteria = UnitAssociationCriteria(type_ids=[unit_type_id], unit_fields = ['unit_id', 'unit_type_id'])
                     repo_units = repo_unit_association_query_manager.get_units(repo_id, criteria)
 
                     # Get unit metadata for each unit from type specific collection
-                    collection = content_query_manager.get_content_unit_collection(type_id=content_type_id)
+                    collection = content_query_manager.get_content_unit_collection(type_id=unit_type_id)
                     pulp_units = [collection.find_one({'_id': u['unit_id']}) for u in repo_units]
   
                     # Convert pulp units to plugin unit keys
+                    type_def = content_types_db.type_definition(unit_type_id)
                     plugin_unit_keys = [common_utils.to_plugin_unit(u, type_def).unit_key for u in pulp_units]
                     result_unit_keys.setdefault(unit_type_id, []).extend(plugin_unit_keys)
 
