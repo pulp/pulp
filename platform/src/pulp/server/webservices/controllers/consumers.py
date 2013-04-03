@@ -605,8 +605,7 @@ class ContentApplicability(JSONController):
         body {
         consumer_criteria:<dict> or None, 
         repo_criteria:<dict> or None, 
-        units: {<type_id1> : [{<unit1>}, {<unit2}, ..]
-                <type_id2> : [{<unit1>}, {<unit2}, ..]} or None
+        unit_criteria: <dict of type_id : unit_criteria> or None
         }
 
         :return: A dict of applicability reports keyed by consumer ID.
@@ -621,7 +620,7 @@ class ContentApplicability(JSONController):
 
         consumer_criteria = body.get('consumer_criteria', None)
         repo_criteria = body.get('repo_criteria', None)
-        units = body.get('units', None)
+        units = body.get('unit_criteria', None)
 
         if consumer_criteria:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
@@ -629,8 +628,13 @@ class ContentApplicability(JSONController):
         if repo_criteria:
             repo_criteria = Criteria.from_client_input(repo_criteria)
 
+        unit_criteria = {}
+        if units:
+            for type_id, criteria in units.items():
+                unit_criteria[type_id] = Criteria.from_client_input(criteria)
+
         manager = managers.consumer_applicability_manager()
-        report = manager.units_applicable(consumer_criteria, repo_criteria, units)
+        report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria)
 
         for consumer_report in report.values():
             for unit_type_id, report_list in consumer_report.items():
