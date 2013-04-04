@@ -24,7 +24,7 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.server.exceptions import PulpExecutionException
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from logging import getLogger
 from pulp.plugins.conduits import _common as common_utils
 
@@ -33,16 +33,18 @@ _LOG = getLogger(__name__)
 
 class ApplicabilityManager(object):
 
-    def find_applicable_units(self, consumer_criteria=None, repo_criteria=None, unit_criteria=None):
+    def find_applicable_units(self, consumer_criteria=None, repo_criteria=None, unit_criteria=None, report_style='by_units'):
         """
-        Determine and report which of the content units specified by the I{unit_criteria}
-        are applicable to consumers specified by the I{consumer_criteria}
-        with repos specified by I{repo_criteria}. If consumer_criteria is None, 
-        all consumers registered to the Pulp server are checked for applicability. 
-        If repo_criteria is None, all repos bound to the consumer are taken 
-        into consideration. If unit_criteria contains an empty list for a specific type, 
-        all units with specific type in the repos bound to the consumer 
-        are taken into consideration. Returns a dictionary with applicability reports 
+        Determine and report which of the content units specified by the unit_criteria
+        are applicable to consumers specified by the consumer_criteria
+        with repos specified by repo_criteria. If consumer_criteria is None,
+        all consumers registered to the Pulp server are checked for applicability.
+        If repo_criteria is None, all repos bound to the consumer are taken
+        into consideration. If unit_criteria contains an empty list for a specific type,
+        all units with specific type in the repos bound to the consumer
+        are taken into consideration. 
+
+        If report_style is is 'by_consumer', it returns a dictionary with applicability reports 
         for each unit keyed by a consumer id and further keyed by unit type id  -
 
             {<consumer_id1>:
@@ -51,6 +53,10 @@ class ApplicabilityManager(object):
              <consumer_id2>:
                { <unit_type_id1> : [<ApplicabilityReport>]}
             }
+
+        If report_style is is 'by_units', it returns a dictionary with a list of applicability
+        reports keyed by unit type id. Each applicability report contains consumer_ids in the
+        summary to indicate all the applicable consumers. 
 
         :param consumer_criteria: The consumer selection criteria.
         :type consumer_criteria: dict
@@ -62,6 +68,9 @@ class ApplicabilityManager(object):
         :type units: dict
                 {<type_id1> : <unit_criteria_for_type_id1>,
                  <type_id2> : <unit_criteria_for_type_id2>}
+      
+        :param report_style: 'by_units' or 'by_consumer'
+        :type report_style: str
 
         :return: a dictionary with applicability reports for each unit 
                  keyed by a consumer id and further keyed by unit type id.
@@ -73,31 +82,40 @@ class ApplicabilityManager(object):
         consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
 
-        # Get repo ids satisfied by specified consumer criteria
+        # Process Repo Criteria
         if repo_criteria:
+            # Get repo ids satisfied by specified repo criteria
             repo_query_manager = managers.repo_query_manager()
             repo_criteria_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
+            # if repo_criteria is specified and there are no repos satisfying the criteria, return empty result
+            if not repo_criteria_ids:
+                return result
         else:
             repo_criteria_ids = None
 
-        
+        # Process Consumer Criteria
         if consumer_criteria:
             # Get consumer ids satisfied by specified consumer criteria
             consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+            # if consumer_criteria is specified and there are no consumers satisfying the criteria, return empty result
+            if not consumer_ids:
+                return result
         else:
-            if repo_criteria_ids is not None:
+            if repo_criteria_ids:
                 # If repo_criteria is specified, get all the consumers bound to the repos
                 # satisfied by repo_criteria
-                bind_criteria = {"filters": {"repo_id": {"$in": repo_criteria_ids}}}
+                bind_criteria = Criteria(filters={"repo_id": {"$in": repo_criteria_ids}})
                 consumer_ids = [b['consumer_id'] for b in bind_manager.find_by_criteria(bind_criteria)]
+                # Remove duplicate consumer ids
+                consumer_ids = list(set(consumer_ids))
             else:
                 # Get all consumer ids registered to the Pulp server
                 consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
 
-
+        # Process Unit Criteria
         if unit_criteria:
             # If unit_criteria is specified, get unit ids satisfied by the criteria for each content type
-            # and save them in a dictionary keyed by the content type.
+            # and save them in a dictionary keyed by the content type
             unit_ids_by_type = {}
             content_query_manager = managers.content_query_manager()
             for type_id, criteria in unit_criteria.items():
@@ -115,37 +133,57 @@ class ApplicabilityManager(object):
             # considering all units vs considering 0 units since no units were found satisfying given criteria
             unit_ids_by_type = None
 
-
-        # Iterate through each consumer to collect applicability reports
+        # Create a dictionary with consumer profile and repo_ids bound to the consumer keyed by consumer id
+        consumer_profile_and_repo_ids = {}
+        all_repo_ids = set()
         for consumer_id in consumer_ids:
-            result[consumer_id] = {}
-            
-            # Find repos bound to a consumer
-            bindings = bind_manager.find_by_consumer(consumer_id)
-            bound_repo_ids = [b['repo_id'] for b in bindings]
-
+            # Find repos bound to the consumer in consideration and find an intersection of bound repos to the
+            # repos specified by repo_criteria
+            consumer_bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_consumer(consumer_id)]
+            consumer_bound_repo_ids = list(set(consumer_bound_repo_ids))
             # If repo_criteria is not specified, use repos bound to the consumer, else take intersection 
             # of repos specified in the criteria and repos bound to the consumer.
             if repo_criteria_ids is None:
-                repo_ids = bound_repo_ids
+                repo_ids = consumer_bound_repo_ids
             else:
-                repo_ids = list(set(bound_repo_ids) & set(repo_criteria_ids))
+                repo_ids = list(set(consumer_bound_repo_ids) & set(repo_criteria_ids))
 
-            plugin_unit_keys = self.__unit_ids_to_plugin_unit_keys(unit_ids_by_type, repo_ids)
-            if plugin_unit_keys:
-                pc = self.__profiled_consumer(consumer_id)
-                for typeid, unit_keys in plugin_unit_keys.items():
-                    # Find a profiler for each type id and find units applicable using that profiler.
-                    profiler, cfg = self.__profiler(typeid)
-                    try: 
-                        report_list = profiler.find_applicable_units(pc, repo_ids, typeid, unit_keys, cfg, conduit)
-                    except PulpExecutionException:
-                        report_list = None
+            if repo_ids:
+                # Save all eligible repo ids to get relevant plugin unit keys when unit_criteria is not specified
+                all_repo_ids = (all_repo_ids | set(repo_ids))
+                consumer_profile_and_repo_ids[consumer_id] = {'repo_ids': repo_ids}
+                consumer_profile_and_repo_ids[consumer_id]['profiled_consumer'] = self.__profiled_consumer(consumer_id)
 
-                    if report_list is not None:
-                        result[consumer_id][typeid] = report_list
-                    else: 
-                        _LOG.warn("Profiler for unit type [%s] is not returning applicability reports" % typeid)
+        # Get relavant units if unit_criteria is not specified and convert all unit ids to plugin unit keys
+        plugin_unit_keys = self.__unit_ids_to_plugin_unit_keys(unit_ids_by_type, list(all_repo_ids))
+
+        if plugin_unit_keys:
+            # Call respective profiler api according to the unit type to check for applicability
+            for typeid, unit_keys in plugin_unit_keys.items():
+                # if unit_keys is None or empty, continue to the next type id
+                if not unit_keys:
+                    continue
+                # Find a profiler for each type id and find units applicable using that profiler.
+                profiler, cfg = self.__profiler(typeid)
+                try:
+                    report_list = profiler.find_applicable_units(consumer_profile_and_repo_ids, typeid, unit_keys, cfg, conduit)
+                except PulpExecutionException:
+                    report_list = None
+
+                if report_list is None:
+                    _LOG.warn("Profiler for unit type [%s] is not returning applicability reports" % typeid)
+                else:
+                    result[typeid] = report_list
+
+            if result and report_style == 'by_consumer':
+                consumer_result = {}
+                for consumer_id in consumer_ids:
+                    consumer_result['consumer_id'] = {}
+                    for unit_type_id, report_list in result.items():
+                        # Find all reports with consumer_id in the applicable consumers list inside the report
+                        applicable_reports = [r for r in report_list if consumer_id in r['summary']['consumer_ids']]
+                        consumer_result['consumer_id'][unit_type_id] = applicable_reports
+                result = consumer_result
 
         return result
 
@@ -217,13 +255,15 @@ class ApplicabilityManager(object):
                         repo_units = repo_unit_association_query_manager.get_units_by_type(repo_id, unit_type_id, criteria)
                         # Get metadata for each unit from type specific collection
                         pulp_units = [collection.find_one({'_id': u['unit_id']}) for u in repo_units]
+                        # Convert pulp units to plugin unit keys
+                        plugin_unit_keys = [common_utils.to_plugin_unit(u, type_def).unit_key for u in pulp_units]
+                        result_unit_keys.setdefault(unit_type_id, []).extend(plugin_unit_keys)
                 else:
                     # Get metadata for each unit from type specific collection
                     pulp_units = [collection.find_one({'_id': unit_id}) for unit_id in unit_ids]
-
-                # Convert pulp units to plugin unit keys
-                plugin_unit_keys = [common_utils.to_plugin_unit(u, type_def).unit_key for u in pulp_units]
-                result_unit_keys.setdefault(unit_type_id, []).extend(plugin_unit_keys)
+                    # Convert pulp units to plugin unit keys
+                    plugin_unit_keys = [common_utils.to_plugin_unit(u, type_def).unit_key for u in pulp_units]
+                    result_unit_keys.setdefault(unit_type_id, []).extend(plugin_unit_keys)
         else:
             # If units are not specified, consider all units in given repos.
             for repo_id in repo_ids:

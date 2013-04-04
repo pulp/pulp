@@ -30,7 +30,7 @@ from pulp.server.dispatch.call import CallRequest, CallReport
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
-from pulp.server.exceptions import MissingResource, MissingValue
+from pulp.server.exceptions import MissingResource, MissingValue, InvalidValue
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.webservices.controllers.search import SearchController
@@ -606,14 +606,22 @@ class ContentApplicability(JSONController):
         consumer_criteria:<dict> or None, 
         repo_criteria:<dict> or None, 
         unit_criteria: <dict of type_id : unit_criteria> or None
+        report_style: <str> or None,
         }
 
-        :return: A dict of applicability reports keyed by consumer ID.
+        :return: 
+
+        When report_style is 'by_consumer' -
+        A dict of applicability reports keyed by consumer ID.
             Each consumer report is:
                 { <unit_type_id1> : [<ApplicabilityReport>],
                   <unit_type_id1> : [<ApplicabilityReport>]},
                 }
-                
+
+        When report_style is 'by_units' -
+        A dict of <unit_type_id1>: [<ApplicabilityReport>]
+        where applicability_report.summary contains a list of applicable consumer ids.
+
         :rtype: dict
         """
         body = self.params()
@@ -621,6 +629,10 @@ class ContentApplicability(JSONController):
         consumer_criteria = body.get('consumer_criteria', None)
         repo_criteria = body.get('repo_criteria', None)
         units = body.get('unit_criteria', None)
+        report_style = body.get('report_style', 'by_units')
+
+        if report_style not in ['by_units', 'by_consumer']:
+            raise InvalidValue(['report_style'])
 
         if consumer_criteria:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
@@ -636,9 +648,15 @@ class ContentApplicability(JSONController):
         manager = managers.consumer_applicability_manager()
         report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria)
 
-        for consumer_report in report.values():
-            for unit_type_id, report_list in consumer_report.items():
-                consumer_report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
+        if report_style == 'by_consumer':
+            for consumer_report in report.values():
+                for unit_type_id, report_list in consumer_report.items():
+                    consumer_report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
+            report = consumer_report
+        else:
+            for unit_type_id, report_list in report.items():
+                report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
+
         return self.ok(report)
 
 

@@ -261,17 +261,16 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def find_applicable_units(self, consumer, repo_ids, unit_type_id, unit_keys, config, conduit):
+    def find_applicable_units(self, consumer_profile_and_repo_ids, unit_type_id, unit_keys, config, conduit):
         """
-        Determine whether the content unit is applicable to the specified consumer
-        using a given list of repo ids. The definition of "applicable" is content
-        type specific and up to the decision of the profiler.
+        Determine whether the content units are applicable to the specified consumers
+        and repo ids. The definition of "applicable" is content type specific
+        and up to the decision of the profiler.
 
-        :param consumer: A consumer.
-        :type consumer: pulp.plugins.model.Consumer
-
-        :param repo_ids: List of repo ids to check for unit applicability
-        :type repo_ids: list
+        :param consumer_profile_and_repo_ids: A dictionary with consumer profile and repo ids
+                        to be considered for applicability, keyed by consumer id.
+        :type consumer_profile_and_repo_ids: dict of <consumer_id> : {'profiled_consumer' : <profiled_consumer>,
+                                                                      'repo_ids' : <repo_ids>}
 
         :param unit_type_id: Common type id of all the units
         :type unit_type_id: str
