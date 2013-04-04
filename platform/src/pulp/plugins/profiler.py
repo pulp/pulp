@@ -265,12 +265,17 @@ class Profiler(object):
         """
         Determine whether the content units are applicable to the specified consumers
         and repo ids. The definition of "applicable" is content type specific
-        and up to the decision of the profiler.
+        and up to the decision of the profiler. Consumers and repo ids are specified
+        as a dictionary:
+
+        {<consumer_id> : {'profiled_consumer' : <profiled_consumer>,
+                         'repo_ids' : <repo_ids>},
+         ...
+        }
 
         :param consumer_profile_and_repo_ids: A dictionary with consumer profile and repo ids
                         to be considered for applicability, keyed by consumer id.
-        :type consumer_profile_and_repo_ids: dict of <consumer_id> : {'profiled_consumer' : <profiled_consumer>,
-                                                                      'repo_ids' : <repo_ids>}
+        :type consumer_profile_and_repo_ids: dict
 
         :param unit_type_id: Common type id of all the units
         :type unit_type_id: str
