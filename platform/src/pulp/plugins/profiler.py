@@ -39,7 +39,7 @@ class InvalidUnitsRequested(Exception):
 
 class InvalidUnitTypeForApplicability(Exception):
     """
-    Raised by units_applicable when applicability for a unit type is not yet supported.
+    Raised by find_applicable_units when applicability for a unit type is not yet supported.
     """
 
     def __init__(self, unit_type_id, message):
@@ -261,7 +261,7 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def units_applicable(self, consumer, repo_ids, unit_type_id, unit_keys, config, conduit):
+    def find_applicable_units(self, consumer, repo_ids, unit_type_id, unit_keys, config, conduit):
         """
         Determine whether the content unit is applicable to the specified consumer
         using a given list of repo ids. The definition of "applicable" is content
