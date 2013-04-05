@@ -41,7 +41,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.units_applicable = \
+        profiler.find_applicable_units = \
             Mock(side_effect=lambda i,r,t,u,c,x:
                  [ApplicabilityReport('mysummary', 'mydetails')])
 
@@ -63,26 +63,28 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         # Setup
         self.populate()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.units_applicable = Mock(side_effect=KeyError)
+        profiler.find_applicable_units = Mock(side_effect=KeyError)
         # Test
-        units = {'rpm': [{'name':'zsh'},
-                         {'name':'ksh'}],
-                 'mock-type': [{'name':'abc'},
-                               {'name':'def'}]
-                }
+        user_specified_unit_criteria = {'rpm': {"filters": {"name": {"$in":['zsh','ksh']}}},
+                                        'mock-type': {"filters": {"name": {"$in":['abc','def']}}}
+                                        }
+        unit_criteria = {}
+        for type_id, criteria in user_specified_unit_criteria.items():
+            unit_criteria[type_id] = Criteria.from_client_input(criteria)
         manager = factory.consumer_applicability_manager()
-        result = manager.units_applicable(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, units)
-        self.assertTrue('test-1' in result.keys())
-        self.assertTrue('test-2' in result.keys())
+        result = manager.find_applicable_units(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, unit_criteria)
+        self.assertTrue(result == {})
 
     def test_no_exception_for_profiler_notfound(self):
         # Setup
         self.populate()
         # Test
-        units = {'rpm': [{'name':'zsh'}],
-                 'xxx': [{'name':'abc'}]
-                }
+        user_specified_unit_criteria = {'rpm': {"filters": {"name": {"$in":['zsh']}}},
+                         'xxx': {"filters": {"name": {"$in":['abc']}}}
+                        }
+        unit_criteria = {}
+        for type_id, criteria in user_specified_unit_criteria.items():
+            unit_criteria[type_id] = Criteria.from_client_input(criteria)
         manager = factory.consumer_applicability_manager()
-        result = manager.units_applicable(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, units)
-        self.assertTrue('test-1' in result.keys())
-        self.assertTrue('test-2' in result.keys())
+        result = manager.find_applicable_units(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, unit_criteria)
+        self.assertTrue(result == {})
