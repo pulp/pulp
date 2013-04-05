@@ -915,7 +915,7 @@ class TestApplicability(base.PulpWebserviceTests):
     SORT = [('id','ascending')]
     CONSUMER_CRITERIA = dict(filters=FILTER, sort=SORT)
     REPO_CRITERIA = None
-    UNIT = {'errata': [{'name':'security-patch_123'}]}
+    UNIT_CRITERIA = {'erratum': {"filters": {"name": {"$in":['security-patch_123']}}}}
     PROFILE = [1,2,3]
     SUMMARY = 'mysummary'
     DETAILS = 'mydetails'
@@ -930,7 +930,7 @@ class TestApplicability(base.PulpWebserviceTests):
         mock_plugins.install()
         profiler = plugin_api.get_profiler_by_type('errata')[0]
         print profiler
-        profiler.units_applicable = \
+        profiler.find_applicable_units = \
             mock.Mock(side_effect=lambda i,r,t,u,c,x:
                 [ApplicabilityReport(self.SUMMARY, self.DETAILS)])
 
@@ -955,13 +955,13 @@ class TestApplicability(base.PulpWebserviceTests):
         body = dict(consumer_criteria=self.CONSUMER_CRITERIA)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
-        body = dict(units=self.UNIT)
+        body = dict(unit_criteria=self.UNIT_CRITERIA)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
 
     def test_no_consumers(self):
         # Test
-        body = dict(consumer_criteria=self.CONSUMER_CRITERIA, units=self.UNIT)
+        body = dict(consumer_criteria=self.CONSUMER_CRITERIA, unit_criteria=self.UNIT_CRITERIA)
         status, body = self.post(self.PATH, body)
         self.assertEquals(status, 200)
         self.assertEquals(len(body), 0)
