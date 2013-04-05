@@ -73,8 +73,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
             unit_criteria[type_id] = Criteria.from_client_input(criteria)
         manager = factory.consumer_applicability_manager()
         result = manager.find_applicable_units(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, unit_criteria)
-        self.assertTrue('test-1' in result.keys())
-        self.assertTrue('test-2' in result.keys())
+        self.assertTrue(result == {})
 
     def test_no_exception_for_profiler_notfound(self):
         # Setup
@@ -88,5 +87,4 @@ class ApplicabilityManagerTests(base.PulpServerTests):
             unit_criteria[type_id] = Criteria.from_client_input(criteria)
         manager = factory.consumer_applicability_manager()
         result = manager.find_applicable_units(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, unit_criteria)
-        self.assertTrue('test-1' in result.keys())
-        self.assertTrue('test-2' in result.keys())
+        self.assertTrue(result == {})
