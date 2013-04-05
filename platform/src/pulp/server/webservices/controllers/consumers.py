@@ -605,8 +605,8 @@ class ContentApplicability(JSONController):
         body {
         consumer_criteria:<dict> or None, 
         repo_criteria:<dict> or None, 
-        unit_criteria: <dict of type_id : unit_criteria> or None
-        report_style: <str> or None,
+        unit_criteria: <dict of type_id : unit_criteria> or None,
+        override_config: <dict> or None
         }
 
         :return: 
@@ -629,10 +629,7 @@ class ContentApplicability(JSONController):
         consumer_criteria = body.get('consumer_criteria', None)
         repo_criteria = body.get('repo_criteria', None)
         units = body.get('unit_criteria', None)
-        report_style = body.get('report_style', 'by_units')
-
-        if report_style not in ['by_units', 'by_consumer']:
-            raise InvalidValue(['report_style'])
+        override_config = body.get('override_config', None)
 
         if consumer_criteria:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
@@ -646,16 +643,14 @@ class ContentApplicability(JSONController):
                 unit_criteria[type_id] = Criteria.from_client_input(criteria)
 
         manager = managers.consumer_applicability_manager()
-        report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria)
+        report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria, override_config)
 
-        if report_style == 'by_consumer':
-            for consumer_report in report.values():
-                for unit_type_id, report_list in consumer_report.items():
-                    consumer_report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
-            report = consumer_report
-        else:
-            for unit_type_id, report_list in report.items():
-                report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in report_list]
+        for unit_type_id, applicability_reports in report.items():
+            if isinstance(applicability_reports, list):
+                report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in applicability_reports]
+            else:
+                for consumer_id, report_list in applicability_reports.items():
+                    report[unit_type_id][consumer_id] = [serialization.consumer.applicability_report(r) for r in report_list]
 
         return self.ok(report)
 

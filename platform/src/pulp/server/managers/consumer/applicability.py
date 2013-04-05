@@ -17,6 +17,7 @@ Contains content applicability management classes
 
 from pulp.server.managers import factory as managers
 from pulp.server.managers.pluginwrapper import PluginWrapper
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.types import database as content_types_db
@@ -33,7 +34,7 @@ _LOG = getLogger(__name__)
 
 class ApplicabilityManager(object):
 
-    def find_applicable_units(self, consumer_criteria=None, repo_criteria=None, unit_criteria=None, report_style='by_units'):
+    def find_applicable_units(self, consumer_criteria=None, repo_criteria=None, unit_criteria=None, override_config=None):
         """
         Determine and report which of the content units specified by the unit_criteria
         are applicable to consumers specified by the consumer_criteria
@@ -43,20 +44,6 @@ class ApplicabilityManager(object):
         into consideration. If unit_criteria contains an empty list for a specific type,
         all units with specific type in the repos bound to the consumer
         are taken into consideration. 
-
-        If report_style is is 'by_consumer', it returns a dictionary with applicability reports 
-        for each unit keyed by a consumer id and further keyed by unit type id  -
-
-            {<consumer_id1>:
-               { <unit_type_id1> : [<ApplicabilityReport>],
-                 <unit_type_id1> : [<ApplicabilityReport>]},
-             <consumer_id2>:
-               { <unit_type_id1> : [<ApplicabilityReport>]}
-            }
-
-        If report_style is is 'by_units', it returns a dictionary with a list of applicability
-        reports keyed by unit type id. Each applicability report contains consumer_ids in the
-        summary to indicate all the applicable consumers. 
 
         :param consumer_criteria: The consumer selection criteria.
         :type consumer_criteria: dict
@@ -69,12 +56,10 @@ class ApplicabilityManager(object):
                 {<type_id1> : <unit_criteria_for_type_id1>,
                  <type_id2> : <unit_criteria_for_type_id2>}
       
-        :param report_style: 'by_units' or 'by_consumer'
-        :type report_style: str
+        :param override_config: Additional configuration options to be accepted from user
+        :type override_config: dict
 
-        :return: a dictionary with applicability reports for each unit 
-                 keyed by a consumer id and further keyed by unit type id.
-                 See above for sample return report.
+        :return: applicability reports dictionary keyed by content type id
         :rtype: dict
         """
         result = {}
@@ -165,8 +150,10 @@ class ApplicabilityManager(object):
                     continue
                 # Find a profiler for each type id and find units applicable using that profiler.
                 profiler, cfg = self.__profiler(typeid)
+                call_config = PluginCallConfiguration(plugin_config=cfg, repo_plugin_config=None,
+                                                      override_config=override_config)
                 try:
-                    report_list = profiler.find_applicable_units(consumer_profile_and_repo_ids, typeid, unit_keys, cfg, conduit)
+                    report_list = profiler.find_applicable_units(consumer_profile_and_repo_ids, typeid, unit_keys, call_config, conduit)
                 except PulpExecutionException:
                     report_list = None
 
@@ -174,16 +161,6 @@ class ApplicabilityManager(object):
                     _LOG.warn("Profiler for unit type [%s] is not returning applicability reports" % typeid)
                 else:
                     result[typeid] = report_list
-
-            if result and report_style == 'by_consumer':
-                consumer_result = {}
-                for consumer_id in consumer_ids:
-                    consumer_result['consumer_id'] = {}
-                    for unit_type_id, report_list in result.items():
-                        # Find all reports with consumer_id in the applicable consumers list inside the report
-                        applicable_reports = [r for r in report_list if consumer_id in r['summary']['consumer_ids']]
-                        consumer_result['consumer_id'][unit_type_id] = applicable_reports
-                result = consumer_result
 
         return result
 
