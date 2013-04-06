@@ -34,13 +34,27 @@ DEFAULT_SELECT_TIMEOUT = 1.0
 DEFAULT_MULTI_PIPELINING = 1
 
 # easy handle constants
+# 1 means that redirects should be followed, 0 means they should not
 DEFAULT_FOLLOW_LOCATION = 1
+# This sets how many times we will follow redirects before giving up
 DEFAULT_MAX_REDIRECTS = 5
+# In seconds, how long we should allow to set up the connection. Once the transfer start, this option has no
+# effect.
 DEFAULT_CONNECT_TIMEOUT = 30
-DEFAULT_REQUEST_TIMEOUT = 300
+# The following two parameters work together to decide when to abort the download due to the remote host having
+# stopped responding. These defaults can be interpreted as "If less than 1000 bytes/second are
+# sent on average over a 5 minute interval, abort the connection."
+DEFAULT_LOW_SPEED_LIMIT = 1000 # bytes per second
+DEFAULT_LOW_SPEED_TIME = 5*60 # seconds
+# If set to one, curl will not call our progress callback. If set to 0, it will.
 DEFAULT_NO_PROGRESS = 0
 
+# If set to 1, we will verify that the remote server's SSL certificate is signed by a trusted certificate
+# authority. If set to 0, we will not check their SSL certificate.
 DEFAULT_SSL_VERIFY_PEER = 1
+# If set to 2, we will verify that the remote host is using the hostname that we are trying to connect to, and
+# that the certificate is signed with that hostname. If set to 0, no such verification will take place. It is an
+# error to set this to 1.
 DEFAULT_SSL_VERIFY_HOST = 2
 
 # curl-based http download backend ---------------------------------------------
@@ -167,11 +181,18 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         return easy_handle
 
     def _add_connection_configuration(self, easy_handle):
-        # TODO (jconnor 2013-01-22) make these configurable
+        """
+        This method configures the easy_handle with several default options: what redirection policy we wish to
+        enforce, timeout values, and that we want progress reporting enabled.
+        
+        :param easy_handle: The curl handle that we wish to configure with default parameters.
+        :type  easy_handle: pycurl.Curl
+        """
         easy_handle.setopt(pycurl.FOLLOWLOCATION, DEFAULT_FOLLOW_LOCATION)
         easy_handle.setopt(pycurl.MAXREDIRS, DEFAULT_MAX_REDIRECTS)
         easy_handle.setopt(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
-        easy_handle.setopt(pycurl.TIMEOUT, DEFAULT_REQUEST_TIMEOUT)
+        easy_handle.setopt(pycurl.LOW_SPEED_LIMIT, DEFAULT_LOW_SPEED_LIMIT)
+        easy_handle.setopt(pycurl.LOW_SPEED_TIME, DEFAULT_LOW_SPEED_TIME)
         easy_handle.setopt(pycurl.NOPROGRESS, DEFAULT_NO_PROGRESS)
 
     def _add_basic_auth_credentials(self, easy_handle):
