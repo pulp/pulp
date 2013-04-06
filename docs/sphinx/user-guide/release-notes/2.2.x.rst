@@ -26,10 +26,10 @@ You can see the complete list of bugs that were fixed in Pulp 2.2.0
 API Changes
 -----------
 
-Upgrade Instructions for 2.1 --> 2.2
-------------------------------------
+Upgrade Instructions for 2.1.x --> 2.2.0
+----------------------------------------
 
-To upgrade to the new Pulp release from version 2.1, you should begin by using yum to install the latest RPMs
+To upgrade to the new Pulp release from version 2.1.x, you should begin by using yum to install the latest RPMs
 from the Pulp repository and run the database migrations::
 
     $ sudo yum upgrade
