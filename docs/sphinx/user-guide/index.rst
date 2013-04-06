@@ -7,7 +7,7 @@ Contents:
    :maxdepth: 2
 
    introduction
-   release-notes
+   release-notes/index
    installation
    server
    nodes
