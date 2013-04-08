@@ -61,6 +61,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Apr 08 2013 Jay Dobies <jason.dobies@redhat.com> 0.1.16-1
+- New build of grinder for perf fix (jason.dobies@redhat.com)
+
+* Mon Apr 08 2013 Jay Dobies <jason.dobies@redhat.com> 0.1.16-1
 - 873313 - Very high memory usage during repo sync (jwmatthews@gmail.com)
 
 * Mon Mar 11 2013 Jeff Ortel <jortel@redhat.com> 0.1.15-1
