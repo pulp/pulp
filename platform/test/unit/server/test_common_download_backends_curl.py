@@ -11,9 +11,9 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-import mock
 import unittest
 
+import mock
 import pycurl
 
 from pulp.common.download.config import DownloaderConfig
