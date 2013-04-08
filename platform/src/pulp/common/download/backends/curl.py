@@ -162,6 +162,7 @@ class HTTPCurlDownloadBackend(DownloadBackend):
 
         self._add_connection_configuration(easy_handle)
         self._add_basic_auth_credentials(easy_handle)
+        self._add_proxy_configuration(easy_handle)
 
         return easy_handle
 
@@ -179,6 +180,25 @@ class HTTPCurlDownloadBackend(DownloadBackend):
         auth_str = ':'.join((self.config.basic_auth_username, self.config.basic_auth_password))
         easy_handle.setopt(pycurl.HTTPAUTH, pycurl.HTTPAUTH_BASIC)
         easy_handle.setopt(pycurl.USERPWD, auth_str)
+
+    def _add_proxy_configuration(self, easy_handle):
+        """
+        Configure the given curl object to use our proxy settings.
+
+        :param easy_handle: The Curl instance we want to configure for proxy support
+        :type  easy_handle: pycurl.Curl
+        """
+        if self.config.proxy_url:
+            easy_handle.setopt(pycurl.PROXY, str(self.config.proxy_url))
+            easy_handle.setopt(pycurl.PROXYTYPE, pycurl.PROXYTYPE_HTTP)
+            if self.config.proxy_port:
+                easy_handle.setopt(pycurl.PROXYPORT, int(self.config.proxy_port))
+            if self.config.proxy_username:
+                easy_handle.setopt(pycurl.PROXYAUTH, pycurl.HTTPAUTH_BASIC)
+                easy_handle.setopt(
+                    pycurl.PROXYUSERPWD,
+                    '%s:%s'%(str(self.config.proxy_username),
+                             str(self.config.proxy_password)))
 
     # pycurl easy handle download management -----------------------------------
 
