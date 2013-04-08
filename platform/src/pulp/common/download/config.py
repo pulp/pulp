@@ -32,6 +32,13 @@ class DownloaderConfig(object):
      * ssl_client_key_path: path to a ssl client key (incompatible with ssl_client_key)
      * ssl_verify_host: integer telling the downloader what level of verificaiton to use, 0 means no verificaiton
      * ssl_verify_peer: integer telling the downloader what level of verificaiton to use, 0 means no verificaiton
+     * proxy_url:            A string representing the URL of a proxy server that should
+                             be used while retrieving content. It should be of the form
+                             <scheme>://<hostname>/ where the scheme is http or https.
+     * proxy_port:           The port on the proxy server to connect to. This should be
+                             an integer value.
+     * proxy_username:       The username to use when authenticating with the proxy server
+     * proxy_password:       The password to use when authenticating with the proxy server
     """
 
     def __init__(self, protocol, **kwargs):
