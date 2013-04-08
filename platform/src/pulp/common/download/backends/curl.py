@@ -46,15 +46,14 @@ DEFAULT_CONNECT_TIMEOUT = 30
 # sent on average over a 5 minute interval, abort the connection."
 DEFAULT_LOW_SPEED_LIMIT = 1000 # bytes per second
 DEFAULT_LOW_SPEED_TIME = 5*60 # seconds
-# If set to one, curl will not call our progress callback. If set to 0, it will.
+# If set to 1, curl will not call our progress callback. If set to 0, it will.
 DEFAULT_NO_PROGRESS = 0
 
 # If set to 1, we will verify that the remote server's SSL certificate is signed by a trusted certificate
 # authority. If set to 0, we will not check their SSL certificate.
 DEFAULT_SSL_VERIFY_PEER = 1
-# If set to 2, we will verify that the remote host is using the hostname that we are trying to connect to, and
-# that the certificate is signed with that hostname. If set to 0, no such verification will take place. It is an
-# error to set this to 1.
+# If set to 2, we will verify that the value of the certificate's Common Name field equals the hostname we are
+# connecting to. If set to 0, no such verification will take place. It is an error to set this to 1.
 DEFAULT_SSL_VERIFY_HOST = 2
 
 # curl-based http download backend ---------------------------------------------
