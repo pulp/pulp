@@ -17,9 +17,39 @@ import mock
 import pycurl
 
 from pulp.common.download.config import DownloaderConfig
-from pulp.common.download.backends.curl import HTTPSCurlDownloadBackend
+from pulp.common.download.backends.curl import (
+    DEFAULT_FOLLOW_LOCATION, DEFAULT_MAX_REDIRECTS, DEFAULT_CONNECT_TIMEOUT, DEFAULT_LOW_SPEED_LIMIT,
+    DEFAULT_LOW_SPEED_TIME, DEFAULT_NO_PROGRESS, HTTPSCurlDownloadBackend)
 
 from test_common_download import DownloadTests, mock_curl_multi_factory, MockObjFactory
+
+
+class TestAddConnectionConfiguration(unittest.TestCase):
+    """
+    This test module tests the HTTPSCurlDownloadBackend._add_connection_configuration method. It asserts that
+    all the appropriate default values are passed to pycurl, no more and no less. It uses Mocks to make these
+    assertions, and we will trust that the features in pycurl are tested by that project.
+    """
+    def test_defaults(self):
+        """
+        Assert that the default configuration options are handed to the pycurl easy_handle.
+        """
+        config = DownloaderConfig('https')
+        curl_downloader = HTTPSCurlDownloadBackend(config)
+        easy_handle = mock.MagicMock()
+
+        curl_downloader._add_connection_configuration(easy_handle)
+
+        # There are currently 6 settings that this method should set. If this assertion fails due to changes you
+        # intentionally made to _add_connection_configuration, please update this count, and please also update
+        # the setting assertions below it so that they are complete.
+        self.assertEqual(easy_handle.setopt.call_count, 6)
+        easy_handle.setopt.assert_any_call(pycurl.FOLLOWLOCATION, DEFAULT_FOLLOW_LOCATION)
+        easy_handle.setopt.assert_any_call(pycurl.MAXREDIRS, DEFAULT_MAX_REDIRECTS)
+        easy_handle.setopt.assert_any_call(pycurl.CONNECTTIMEOUT, DEFAULT_CONNECT_TIMEOUT)
+        easy_handle.setopt.assert_any_call(pycurl.LOW_SPEED_LIMIT, DEFAULT_LOW_SPEED_LIMIT)
+        easy_handle.setopt.assert_any_call(pycurl.LOW_SPEED_TIME, DEFAULT_LOW_SPEED_TIME)
+        easy_handle.setopt.assert_any_call(pycurl.NOPROGRESS, DEFAULT_NO_PROGRESS)
 
 
 class TestAddProxyConfiguration(unittest.TestCase):
@@ -126,6 +156,20 @@ class TestBuildEasyHandle(unittest.TestCase):
     """
     This test suite tests the _build_easy_handle() method.
     """
+    @mock.patch('pycurl.Curl', mock.MagicMock)
+    @mock.patch('pulp.common.download.backends.curl.HTTPSCurlDownloadBackend._add_connection_configuration')
+    def test__build_easy_handle_calls__add_connection_configuration(self, _add_connection_configuration):
+        """
+        This test simply asserts that _build_easy_handle() passes the easy_handle to
+        _add_connection_configuration().
+        """
+        config = DownloaderConfig('https')
+        curl_downloader = HTTPSCurlDownloadBackend(config)
+
+        easy_handle = curl_downloader._build_easy_handle()
+
+        _add_connection_configuration.assert_called_with(easy_handle)
+
     @mock.patch('pycurl.Curl', mock.MagicMock)
     @mock.patch('pulp.common.download.backends.curl.HTTPSCurlDownloadBackend'
                 '._add_proxy_configuration')
