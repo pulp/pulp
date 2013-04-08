@@ -8,6 +8,18 @@ Pulp 2.1.1
 The Pulp team is pleased to announce the release of Pulp 2.1.1. This release provides bugfixes, and also
 includes some performance improvements.
 
+Notable Bugs
+------------
+
+`928087 <https://bugzilla.redhat.com/show_bug.cgi?id=928087>`_ - pickling error in pulp.log when cancelling sync
+tasks
+
+`949186 <https://bugzilla.redhat.com/show_bug.cgi?id=949186>`_ - The pycurl downloader times out on active
+downloads, even during very good transfer rates
+
+All Bugs
+--------
+
 You can see the complete list of bugs that were fixed in Pulp 2.1.1
 `here <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.1.1&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
 
