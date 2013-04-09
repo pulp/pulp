@@ -5,8 +5,7 @@ Pulp 2.1 Release Notes
 Pulp 2.1.1
 ==========
 
-The Pulp team is pleased to announce the release of Pulp 2.1.1. This release provides bugfixes, and also
-includes some performance improvements.
+This release provides bugfixes, and also includes some performance improvements.
 
 Notable Bugs
 ------------
@@ -26,11 +25,16 @@ You can see the complete list of bugs that were fixed in Pulp 2.1.1
 Upgrade Instructions for 2.1.0 --> 2.1.1
 ----------------------------------------
 
-To upgrade to the new Pulp release from version 2.1.0, you should use yum to install the latest RPMs
+Before beginning the upgrade, stop Apache so that it doesn't cause any concurrency problems during
+the database migration step.
+
+To upgrade to the new Pulp release from version 2.1.0, use yum to install the latest RPMs
 from the Pulp repository and run the database migrations::
 
     $ sudo yum upgrade
     $ sudo pulp-manage-db
+
+After upgrading, start Apache again and Pulp 2.1.1 should be functioning properly.
 
 Pulp 2.1.0
 ==========
