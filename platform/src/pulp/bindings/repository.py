@@ -343,7 +343,7 @@ class RepositoryUnitAPI(PulpAPI):
 
         sort = kwargs.pop('sort', None)
         if sort:
-            criteria.setdefault('sort', {})['association'] = sort
+            criteria.setdefault('sort', {})['unit'] = sort
 
         fields = kwargs.pop('fields', None)
         if fields:
