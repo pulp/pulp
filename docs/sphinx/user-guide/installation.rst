@@ -25,13 +25,13 @@ Supported Operating Systems
 Server
 
 * RHEL 6
-* Fedora 16 & 17
+* Fedora 17 & 18
 * CentOS 6
 
 Consumer
 
 * RHEL 5 & 6
-* Fedora 16 & 17
+* Fedora 17 & 18
 * CentOS 6
 
 Prerequisites
