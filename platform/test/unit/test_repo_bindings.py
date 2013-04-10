@@ -39,7 +39,7 @@ class TestRepoUnitSearchAPI(unittest.TestCase):
 
     def test_sort(self):
         self.api.search('repo1', type_ids=['rpm'], sort=['id'])
-        self.assertEqual(self.query['sort'], {'association': ['id']})
+        self.assertEqual(self.query['sort'], {'unit': ['id']})
 
     def test_fields(self):
         self.api.search('repo1', type_ids=['rpm'], fields=['name'])
