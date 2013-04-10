@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from datetime import datetime
 import mock
 import unittest
 
@@ -20,8 +21,24 @@ from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.downloaders.curl import (
     DEFAULT_FOLLOW_LOCATION, DEFAULT_MAX_REDIRECTS, DEFAULT_CONNECT_TIMEOUT, DEFAULT_LOW_SPEED_LIMIT,
     DEFAULT_LOW_SPEED_TIME, DEFAULT_NO_PROGRESS, HTTPCurlDownloader)
+from pulp.common.download.report import DOWNLOAD_FAILED, DownloadReport, DOWNLOAD_SUCCEEDED
 
 from test_common_download import DownloadTests, mock_curl_easy_factory, mock_curl_multi_factory, MockObjFactory
+
+
+def mock_curl_multi_factory_with_errors():
+    """
+    This multi factory mock will cause the generated CurlMulti to report that it had errors for all downloads.
+    """
+    mock_curl_multi = mock_curl_multi_factory()
+
+    def _info_read():
+        err_list = [(c, 999, 'ERROR!') for c in mock_curl_multi._curls if c._is_active]
+        return 0, [], err_list
+
+    mock_curl_multi.info_read = _info_read
+
+    return mock_curl_multi
 
 
 class TestAddConnectionConfiguration(unittest.TestCase):
@@ -230,6 +247,64 @@ class TestDownload(DownloadTests):
     """
     This suite of tests are for the HTTPCurlDownloader.download() method.
     """
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory_with_errors))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader._process_completed_download')
+    def test_calls__process_completed_download_err_list(self, _process_completed_download):
+        """
+        In this test, we assert that download() calls _process_completed_download() correctly when pycurl
+        reports a completed download through the error list.
+        """
+        # If we set max_concurrent to 1, it's easy to deterministically find the mocked curl for assertions
+        # later
+        config = DownloaderConfig(max_concurrent=1)
+        curl_downloader = HTTPCurlDownloader(config)
+        request_list = self._download_requests()[:1]
+
+        curl_downloader.download(request_list)
+
+        mock_easy_handle = pycurl.Curl.mock_objs[0]
+        mock_multi_handle = pycurl.CurlMulti.mock_objs[0]
+        self.assertEqual(_process_completed_download.call_count, 1)
+        args = _process_completed_download.mock_calls[0][1]
+        # There should be four args, since there were errors
+        self.assertEqual(len(args), 4)
+        # Now let's assert that the arguments were correct
+        self.assertEqual(args[0], mock_easy_handle)
+        self.assertEqual(args[1], mock_multi_handle)
+        # There should be no free handles, since there was only one and it's being reported on
+        self.assertEqual(args[2], [])
+        # Assert that the error condition was passed
+        self.assertEqual(args[3], {'code': 999, 'message': 'ERROR!'})
+
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader._process_completed_download')
+    def test_calls__process_completed_download_ok_list(self, _process_completed_download):
+        """
+        In this test, we assert that download() calls _process_completed_download() correctly when pycurl
+        reports a completed download through the OK list.
+        """
+        # If we set max_concurrent to 1, it's easy to deterministically find the mocked curl for assertions
+        # later
+        config = DownloaderConfig(max_concurrent=1)
+        curl_downloader = HTTPCurlDownloader(config)
+        request_list = self._download_requests()[:1]
+
+        curl_downloader.download(request_list)
+
+        mock_easy_handle = pycurl.Curl.mock_objs[0]
+        mock_multi_handle = pycurl.CurlMulti.mock_objs[0]
+        self.assertEqual(_process_completed_download.call_count, 1)
+        args = _process_completed_download.mock_calls[0][1]
+        # There should only be three args, since there were no errors
+        self.assertEqual(len(args), 3)
+        # Now let's assert that the arguments were correct
+        self.assertEqual(args[0], mock_easy_handle)
+        self.assertEqual(args[1], mock_multi_handle)
+        # There should be no free handles, since there was only one and it's being reported on
+        self.assertEqual(args[2], [])
+
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
     def test_is_canceled_false(self):
@@ -266,3 +341,149 @@ class TestDownload(DownloadTests):
         mock_multi_curl = pycurl.CurlMulti.mock_objs[0]
         # Because we cancelled the download, the call_count on the select() should be 0
         self.assertEqual(mock_multi_curl.select.call_count, 0)
+
+
+class TestProcessCompletedDownload(unittest.TestCase):
+    """
+    Test the HTTPCurlDownloader._process_completed_download() method.
+    """
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader._clear_easy_handle_download')
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader.fire_download_failed')
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader.fire_download_succeeded')
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
+    def test_download_successful(self, fire_download_succeeded, fire_download_failed,
+                                 _clear_easy_handle_download):
+        """
+        Assert correct behavior for a successful download.
+        """
+        config = DownloaderConfig(max_concurrent=1)
+        curl_downloader = HTTPCurlDownloader(config)
+        multi_handle = curl_downloader._build_multi_handle()
+        easy_handle = multi_handle.handles[0]
+        easy_handle.report = DownloadReport('http://fake.com/doesntmatter.html', '/dev/null')
+        multi_handle._curls = [easy_handle]
+        free_handles = []
+        start_time = datetime.now()
+
+        curl_downloader._process_completed_download(easy_handle, multi_handle, free_handles)
+
+        # The easy_handle should have been removed from the multi_handle
+        multi_handle.remove_handle.assert_called_once_with(easy_handle)
+        # _clear_easy_handle_download should have been handed the easy_handle
+        _clear_easy_handle_download.assert_called_once_wth(easy_handle)
+        # The free_handles list should have the easy_handle
+        self.assertEqual(free_handles, [easy_handle])
+        # fire_download_failed should not have been called
+        self.assertEqual(fire_download_failed.call_count, 0)
+
+        # fire_download_succeeded should have been called once with the report. Let's assert that, and assert
+        # that the report looks good
+        self.assertEqual(fire_download_succeeded.call_count, 1)
+        report = fire_download_succeeded.mock_calls[0][1][0]
+        self.assertTrue(isinstance(report, DownloadReport))
+        self.assertTrue(report.state, DOWNLOAD_SUCCEEDED)
+        # It's difficult to know what the finish_time on the report will be exactly, so we'll just assert that
+        # it's after the start_time we recorded earlier
+        self.assertTrue(report.finish_time > start_time)
+
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader._clear_easy_handle_download')
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader.fire_download_failed')
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader.fire_download_succeeded')
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
+    def test_http_error_code(self, fire_download_succeeded, fire_download_failed, _clear_easy_handle_download):
+        """
+        Assert correct behavior when the HTTP status is not 200, but there were no pycurl errors.
+        """
+        config = DownloaderConfig(max_concurrent=1)
+        curl_downloader = HTTPCurlDownloader(config)
+        multi_handle = curl_downloader._build_multi_handle()
+        easy_handle = multi_handle.handles[0]
+        easy_handle.report = DownloadReport('http://fake.com/doesntmatter.html', '/dev/null')
+        multi_handle._curls = [easy_handle]
+
+        def return_code(ignored_param):
+            """
+            This function will allow us to fake a non-200 response code.
+            """
+            return 404
+
+        easy_handle.getinfo = return_code
+        free_handles = []
+        start_time = datetime.now()
+
+        curl_downloader._process_completed_download(easy_handle, multi_handle, free_handles)
+
+        # The easy_handle should have been removed from the multi_handle
+        multi_handle.remove_handle.assert_called_once_with(easy_handle)
+        # _clear_easy_handle_download should have been handed the easy_handle
+        _clear_easy_handle_download.assert_called_once_wth(easy_handle)
+        # The free_handles list should have the easy_handle
+        self.assertEqual(free_handles, [easy_handle])
+        # fire_download_succeeded should not have been called
+        self.assertEqual(fire_download_succeeded.call_count, 0)
+
+        # fire_download_failed should have been called once with the report. Let's assert that, and assert
+        # that the report looks good
+        self.assertEqual(fire_download_failed.call_count, 1)
+        report = fire_download_failed.mock_calls[0][1][0]
+        self.assertTrue(isinstance(report, DownloadReport))
+        self.assertTrue(report.state, DOWNLOAD_FAILED)
+        self.assertEqual(report.error_report['response_code'], 404)
+        # It's difficult to know what the finish_time on the report will be exactly, so we'll just assert that
+        # it's after the start_time we recorded earlier
+        self.assertTrue(report.finish_time > start_time)
+
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader._clear_easy_handle_download')
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader.fire_download_failed')
+    @mock.patch('pulp.common.download.downloaders.curl.HTTPCurlDownloader.fire_download_succeeded')
+    @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
+    @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
+    def test_pycurl_errors(self, fire_download_succeeded, fire_download_failed, _clear_easy_handle_download):
+        """
+        Assert correct behavior when error is not None.
+        """
+        config = DownloaderConfig(max_concurrent=1)
+        curl_downloader = HTTPCurlDownloader(config)
+        multi_handle = curl_downloader._build_multi_handle()
+        easy_handle = multi_handle.handles[0]
+        easy_handle.report = DownloadReport('http://fake.com/doesntmatter.html', '/dev/null')
+        multi_handle._curls = [easy_handle]
+
+        def return_code(ignored_param):
+            """
+            This function will allow us to fake the response code when pycurl didn't reach the server, which
+            will be 0.
+            """
+            return 0
+
+        easy_handle.getinfo = return_code
+        free_handles = []
+        start_time = datetime.now()
+
+        curl_downloader._process_completed_download(
+            easy_handle, multi_handle, free_handles,
+            {'code': pycurl.E_COULDNT_CONNECT, 'message': "Couldn't Connect"})
+
+        # The easy_handle should have been removed from the multi_handle
+        multi_handle.remove_handle.assert_called_once_with(easy_handle)
+        # _clear_easy_handle_download should have been handed the easy_handle
+        _clear_easy_handle_download.assert_called_once_wth(easy_handle)
+        # The free_handles list should have the easy_handle
+        self.assertEqual(free_handles, [easy_handle])
+        # fire_download_succeeded should not have been called
+        self.assertEqual(fire_download_succeeded.call_count, 0)
+
+        # fire_download_failed should have been called once with the report. Let's assert that, and assert
+        # that the report looks good
+        self.assertEqual(fire_download_failed.call_count, 1)
+        report = fire_download_failed.mock_calls[0][1][0]
+        self.assertTrue(isinstance(report, DownloadReport))
+        self.assertTrue(report.state, DOWNLOAD_FAILED)
+        self.assertEqual(report.error_report['response_code'], 0)
+        self.assertEqual(report.error_report['error_code'], pycurl.E_COULDNT_CONNECT)
+        self.assertEqual(report.error_report['error_message'], "Couldn't Connect")
+        # It's difficult to know what the finish_time on the report will be exactly, so we'll just assert that
+        # it's after the start_time we recorded earlier
+        self.assertTrue(report.finish_time > start_time)
