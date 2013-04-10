@@ -130,14 +130,14 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
 
         @param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{Criteria}
+        @type  criteria: L{UnitAssociationCriteria}
 
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
 
         try:
-            units = self.__association_query_manager.get_units_across_types(self.source_repo_id, criteria=criteria)
+            units = self.__association_query_manager.get_units(self.source_repo_id, criteria=criteria)
 
             all_units = []
 
