@@ -86,6 +86,12 @@ exit_on_failed()
   fi
 }
 
+set_release_dist()
+{
+  VERSION=`echo $VERSION | sed -e 's/%{?dist}//g'`
+  VERSION="$VERSION%{?dist}"
+}
+
 usage()
 {
 cat << EOF
@@ -143,6 +149,8 @@ if [[ -z $VERSION ]]
 then
   set_version
 fi
+
+set_release_dist
 
 # confirmation
 echo ""
