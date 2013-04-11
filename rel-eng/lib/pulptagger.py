@@ -28,6 +28,9 @@ RELEASE_REGEX = re.compile("^(release:\s*)(.+)$", re.IGNORECASE)
 VERSION_AND_RELEASE = 'PULP_VERSION_AND_RELEASE'
 NL = '\n'
 
+# macros
+DIST_MACRO = '%{?dist}'
+
 
 class PulpTagger(VersionTagger):
     """
@@ -72,7 +75,10 @@ class PulpTagger(VersionTagger):
                 continue
             match = re.match(RELEASE_REGEX, line)
             if match:
-                line = ''.join((match.group(1), release, NL))
+                if release.endswith(DIST_MACRO):
+                    line = ''.join((match.group(1), release, NL))
+                else:
+                    line = ''.join((match.group(1), release, DIST_MACRO, NL))
                 w_fp.write(line)
                 continue
             w_fp.write(line)
