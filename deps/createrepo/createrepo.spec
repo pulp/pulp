@@ -65,6 +65,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
+* Thu Apr 11 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-18
+- 950036 - not compressed unless --compress flag specified. (jortel@redhat.com)
+
 * Mon Nov 19 2012 James Antill <james.antill@redhat.com> - 0.9.9-17
 - Use .gz as the default compression for modifyrepo.
 - Document --compress-type in createrepo man page.
