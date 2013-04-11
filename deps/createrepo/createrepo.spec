@@ -2,36 +2,52 @@
 
 Summary: Creates a common metadata repository
 Name: createrepo
-Version: 0.9.8
-Release: 4%{?dist}
+Version: 0.9.9
+Release: 18%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: %{name}-%{version}.tar.gz
 Patch0: ten-changelog-limit.patch
-Patch1: createrepo-drpm.patch
-Patch2: createrepo-fixdrpm.patch
+Patch1: createrepo-head.patch
+Patch2: BZ-833350-fix-tempfile-cachedir-permissions.patch
+Patch3: BZ-865845-only-use-available-compression.patch
+Patch4: BZ-874682-modifyrepo-default-compression.patch
+Patch5: BZ-950724-compression.patch
 URL: http://createrepo.baseurl.org/
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArchitectures: noarch
-Requires: python >= 2.1, rpm-python, rpm >= 4.1.1, libxml2-python
-Requires: yum-metadata-parser, yum >= 3.2.22-20, python-deltarpm, deltarpm
+Requires: python >= 2.1, rpm-python, rpm >= 0:4.1.1, libxml2-python
+Requires: yum-metadata-parser, yum >= 3.2.29, python-deltarpm
+
 BuildRequires: python
 
 %description
-This utility will generate a common metadata repository from a directory of rpm
-packages.
+This utility will generate a common metadata repository from a directory of
+rpm packages.
 
 %prep
 %setup -q
+
+# This is divergent from upstream...
 %patch0 -p0
+
+# These are backports...
+# HEAD at the time of the rebase.
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
 %build
 
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
+
+# Hack for bash_completion.d
+mv $RPM_BUILD_ROOT/usr/%{_sysconfdir} \
+   $RPM_BUILD_ROOT/%{_sysconfdir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -41,6 +57,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-, root, root,-)
 %doc ChangeLog README COPYING
 %{_datadir}/%{name}/
+%{_sysconfdir}/bash_completion.d/
 %{_bindir}/createrepo
 %{_bindir}/modifyrepo
 %{_bindir}/mergerepo
@@ -48,18 +65,48 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
-* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.9.8-4
-- Renamed dependency RPMs (jason.dobies@redhat.com)
+* Mon Nov 19 2012 James Antill <james.antill@redhat.com> - 0.9.9-17
+- Use .gz as the default compression for modifyrepo.
+- Document --compress-type in createrepo man page.
+- Resolves: rhbz#874682
 
-* Thu Jun 16 2011 Pradeep Kilambi <pkilambi@redhat.com> 0.9.8-3
-- new package built with tito
+* Mon Oct 22 2012 James Antill <james.antill@redhat.com> - 0.9.9-16
+- Only use available compression.
+- Resolves: rhbz#865845
 
-* Mon Jan  3 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-3
-- add another drpm patch to fix up drpms being passed to wrong process :(
+* Fri Oct  5 2012 James Antill <james.antill@redhat.com> - 0.9.9-15
+- Tempfile ignores umask for files created in cache, use 666 not 777 as well.
+- Resolves: rhbz#833350
+
+* Thu Oct  4 2012 James Antill <james.antill@redhat.com> - 0.9.9-14
+- Tempfile ignores umask for files created in cache.
+- Resolves: rhbz#833350
+
+* Fri Sep 14 2012 James Antill <james.antill@redhat.com> - 0.9.9-13
+- Rebase to upstream 0.9.9.
+- Createrepo should be multitasking (Rebase).
+- Resolves: rhbz#631989
+- Createrepo ignores umask for files in it's cache.
+- Resolves: rhbz#833350
+- Reduce memory usage for --update, by using sqlite instead of XML (Rebase).
+- Resolves: rhbz#716235
+- Support removing metadata from repodata, in modifyrepo.
+- Resolves: rhbz#714094
+- Fix createrepo to work with --split and --pkglist at the same time.
+- Resolves: rhbz#646644
+
+* Fri Feb  3 2012 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.8-5
+- Fix last instance of #!/usr/bin/env.
+- Resolves: rhbz#623105
+
+* Thu Jan  7 2010 James Antill <james.antill@redhat.com> - 0.9.8-4
+- Allow baseurl option to update, when doing updates.
+- Resolves: rhbz#552981
+- Convert stat mtime to int, so comparison can succeed (for update).
+- Resolves: rhbz#553030
 
 * Thu Sep  3 2009 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-2
 - add drpm patch from https://bugzilla.redhat.com/show_bug.cgi?id=518658
-
 
 * Fri Aug 28 2009 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-1
 - bump yum requires version
