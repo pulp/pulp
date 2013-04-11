@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.1.0
-Release: 0
+Version: 2.1.1
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -434,6 +434,18 @@ exit 0
 %endif
 
 %changelog
+* Thu Apr 11 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.1.beta
+- 950632 - added unit_id search index on the repo_content_units collection
+  (jason.connor@gmail.com)
+- 947927 - This call should support both the homogeneous and heterogeneous
+  cases (jason.dobies@redhat.com)
+- 928509 - Platform changes to support override config in applicability
+  (jason.dobies@redhat.com)
+- 949186 - Removed the curl TIMEOUT setting and replaced it with a low speed
+  limit. (rbarlow@redhat.com)
+- 928087 - serialized call request replaced in archival with string
+  representation of the call request (jason.connor@gmail.com)
+
 * Fri Apr 05 2013 Jay Dobies <jason.dobies@redhat.com> 2.1.0-0
 - 
 
