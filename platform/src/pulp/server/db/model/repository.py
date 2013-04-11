@@ -217,7 +217,8 @@ class RepoContentUnit(Model):
     # modifying the following index
     unique_indices = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
     search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'),
-                       ('unit_type_id', 'created') # default sort order on get_units query, do not remove
+                       ('unit_type_id', 'created'), # default sort order on get_units query, do not remove
+                       'unit_id',
                      )
 
     OWNER_TYPE_IMPORTER = 'importer'
