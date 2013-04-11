@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import base64
 from logging import getLogger
 
 from eventlet import GreenPool
@@ -80,6 +81,7 @@ class HTTPEventletDownloader(PulpDownloader):
             urllib2_request = download_request_to_urllib2_request(self.config, request)
             response = urllib2.urlopen(urllib2_request)
             info = response.info()
+            # TODO check the response code here
             set_response_info(info, report)
 
             self.fire_download_progress(report) # fire an initial progress event
@@ -135,18 +137,42 @@ def calculate_buffer_size(report, max_progress_calls=DEFAULT_MAX_PROGRESS_CALLS)
     return buffer_size
 
 
+def set_response_info(info, report):
+    content_length = info.dict.get('content-length', None)
+    if content_length is not None:
+        try:
+            report.total_bytes = int(content_length)
+        except TypeError:
+            pass
+
+# urllib2 opener construction --------------------------------------------------
+
+def build_opener(config):
+    pass
+
+# urllib2 request construction -------------------------------------------------
+
 def download_request_to_urllib2_request(config, download_request):
-    urllib2_request = urllib2.Request(download_request.url)
-    # TODO (jconnor 2013-02-06) add ssl support
-    # TODO (jconnor 2013-02-06) add proxy support
     # TODO (jconnor 2013-02-06) add throttling support, if possible
+    urllib2_request = urllib2.Request(download_request.url)
+    add_basic_auth_support(config, urllib2_request)
+    add_ssl_support(config, urllib2_request)
+    add_proxy_support(config, urllib2_request)
     return urllib2_request
 
 
-def set_response_info(info, report):
-    # XXX (jconnor 2013-02-06) is there anything else we need?
-    content_length = info.dict.get('content-length', None)
-    if content_length is not None:
-        report.total_bytes = int(content_length)
+def add_basic_auth_support(config, request):
+    if None in (config.basic_auth_username, config.basic_auth_password):
+        return
+
+    auth_string = '%s:%s' % (config.basic_auth_username, config.basic_auth_password)
+    encoded_auth_string = base64.encodestring(auth_string).replace('\n', '')
+    request.add_header('Authorization', 'Basic %s' % encoded_auth_string)
+
+def add_ssl_support(config, request):
+    pass
 
 
+def add_proxy_support(config, request):
+    # TODO (jconnor 2013-02-06) add proxy support
+    pass
