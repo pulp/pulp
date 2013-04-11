@@ -108,34 +108,12 @@ class HTTPCurlDownloader(PulpDownloader):
                 while True:
                     num_q, ok_list, err_list = multi_handle.info_read()
 
-                    # XXX these loops contain duplicate code; which just pisses me off
-
                     for easy_handle in ok_list:
-                        easy_handle.report.finish_time = datetime.datetime.now()
-                        easy_handle.report.state = download_report.DOWNLOAD_SUCCEEDED
-
-                        report = easy_handle.report
-                        multi_handle.remove_handle(easy_handle)
-                        self._clear_easy_handle_download(easy_handle)
-                        free_handles.append(easy_handle)
-
-                        self.fire_download_succeeded(report)
+                        self._process_completed_download(easy_handle, multi_handle, free_handles)
 
                     for easy_handle, err_code, err_msg in err_list:
-                        easy_handle.report.finish_time = datetime.datetime.now()
-                        easy_handle.report.state = download_report.DOWNLOAD_FAILED
-
-                        response_code = easy_handle.getinfo(pycurl.HTTP_CODE)
-                        easy_handle.report.error_report['response_code'] = response_code
-                        easy_handle.report.error_report['error_code'] = err_code
-                        easy_handle.report.error_report['error_message'] = err_msg
-
-                        report = easy_handle.report
-                        multi_handle.remove_handle(easy_handle)
-                        self._clear_easy_handle_download(easy_handle)
-                        free_handles.append(easy_handle)
-
-                        self.fire_download_failed(report)
+                        self._process_completed_download(easy_handle, multi_handle, free_handles,
+                                                         {'code': err_code, 'message': err_msg})
 
                     processed_requests += (len(ok_list) + len(err_list))
 
@@ -218,6 +196,58 @@ class HTTPCurlDownloader(PulpDownloader):
                              str(self.config.proxy_password)))
 
     # pycurl easy handle download management -----------------------------------
+
+    def _process_completed_download(self, easy_handle, multi_handle, free_handles, error=None):
+        """
+        When _download() finishes a request, it will call this method to process the download and any errors
+        that may have occurred. This method will fill out the download report appropriately, clean up the
+        easy_handle, and fire the appropriate callbacks.
+
+        :param easy_handle:  The easy_handle for the completed download
+        :type  easy_handle:  pycurl.Curl
+        :param multi_handle: The multi_handle that the easy_handle should be removed from during cleanup
+        :type  multi_handle: pycurl.CurlMulti
+        :param free_handles: The list of free handles that the easy_handle should be added back to during
+                             cleanup
+        :type  free_handles: list
+        :param error:        The pycurl multi loop might give us back the easy_handle in the "error list"
+                             instead of in the "ok list". If this happens, it will also give us an error code
+                             and an error message. This parameter is a dictionary with the keys "code" and
+                             "message", corresponding to the error code and error message that pycurl gave us.
+                             Absence of these errors does not indicate a successful download, as HTTP error
+                             codes (such as HTTP 500) are not indicated in this way. For those codes, we will
+                             have error as None (meaning, no pycurl error), but the HTTP status code will not be
+                             200.
+        :type error:         dict or None
+        """
+        easy_handle.report.finish_time = datetime.datetime.now()
+        response_code = easy_handle.getinfo(pycurl.HTTP_CODE)
+        report = easy_handle.report
+
+        # pycurl will not give us an error for non-200 HTTP status codes, so we should verify both that there
+        # was no pycurl error, and that the HTTP status code was 200
+        download_successful = response_code == 200 and not error
+        if download_successful:
+            # The download was successful
+            report.state = download_report.DOWNLOAD_SUCCEEDED
+        else:
+            # The download was not completed successfully
+            report.state = download_report.DOWNLOAD_FAILED
+            report.error_report['response_code'] = response_code
+            if error:
+                report.error_report['error_code'] = error['code']
+                report.error_report['error_message'] = error['message']
+
+        # Cleanup
+        multi_handle.remove_handle(easy_handle)
+        self._clear_easy_handle_download(easy_handle)
+        free_handles.append(easy_handle)
+
+        # Fire the appropriate callback
+        if download_successful:
+            self.fire_download_succeeded(report)
+        else:
+            self.fire_download_failed(report)
 
     def _set_easy_handle_download(self, easy_handle, request, report):
         # store this on the handle so that it's easier to track
