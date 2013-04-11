@@ -84,6 +84,10 @@ def mock_curl_easy_factory():
     mock_curl._is_active = False
     mock_curl._opts = {}
 
+    def _getinfo(info_code):
+        # Let's always return HTTP 200
+        return 200
+
     def _perform():
         # strip off the protocol scheme + hostname + port and use the remaining *relative* path
         input_file_path = re.sub(r'^[a-z]+://localhost:8088/', '', mock_curl._opts[pycurl.URL], 1)
@@ -104,6 +108,7 @@ def mock_curl_easy_factory():
     def _setopt(opt, setting):
         mock_curl._opts[opt] = setting
 
+    mock_curl.getinfo = mock.Mock(wraps=_getinfo)
     mock_curl.perform = mock.Mock(wraps=_perform)
     mock_curl.setopt = mock.Mock(wraps=_setopt)
 
