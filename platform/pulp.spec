@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.1
-Release: 0.3.beta%{?dist}
+Release: 0.4.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -434,6 +434,9 @@ exit 0
 %endif
 
 %changelog
+* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.4.beta
+- 
+
 * Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.3.beta
 - 
 
