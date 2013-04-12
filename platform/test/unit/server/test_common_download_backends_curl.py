@@ -20,7 +20,7 @@ import pycurl
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.downloaders.curl import (
     DEFAULT_FOLLOW_LOCATION, DEFAULT_MAX_REDIRECTS, DEFAULT_CONNECT_TIMEOUT, DEFAULT_LOW_SPEED_LIMIT,
-    DEFAULT_LOW_SPEED_TIME, DEFAULT_NO_PROGRESS, HTTPCurlDownloader)
+    DEFAULT_LOW_SPEED_TIME, DEFAULT_NO_PROGRESS, HTTPCurlDownloader, HTTPSCurlDownloader)
 from pulp.common.download.report import DOWNLOAD_FAILED, DownloadReport, DOWNLOAD_SUCCEEDED
 
 from test_common_download import DownloadTests, mock_curl_easy_factory, mock_curl_multi_factory, MockObjFactory
@@ -487,3 +487,50 @@ class TestProcessCompletedDownload(unittest.TestCase):
         # It's difficult to know what the finish_time on the report will be exactly, so we'll just assert that
         # it's after the start_time we recorded earlier
         self.assertTrue(report.finish_time > start_time)
+
+
+class TestAddSSLConfiguration(unittest.TestCase):
+    """
+    Assert correct behaviour in the _add_ssl_configuration() method.
+    """
+    def test_ssl_validation_false(self):
+        """
+        Assert that Curl is not configured to do SSL validation when ssl_validation is explicitly set to False.
+        """
+        config = DownloaderConfig(ssl_validation=False)
+        curl_downloader = HTTPSCurlDownloader(config)
+        easy_handle = mock.Mock()
+
+        curl_downloader._add_ssl_configuration(easy_handle)
+
+        self.assertEqual(easy_handle.setopt.call_count, 2)
+        easy_handle.setopt.assert_any_call(pycurl.SSL_VERIFYPEER, 0)
+        easy_handle.setopt.assert_any_call(pycurl.SSL_VERIFYHOST, 0)
+
+    def test_ssl_validation_true(self):
+        """
+        Assert that Curl is configured to do SSL validation when ssl_validation is explicitly set to True.
+        """
+        config = DownloaderConfig(ssl_validation=True)
+        curl_downloader = HTTPSCurlDownloader(config)
+        easy_handle = mock.Mock()
+
+        curl_downloader._add_ssl_configuration(easy_handle)
+
+        self.assertEqual(easy_handle.setopt.call_count, 2)
+        easy_handle.setopt.assert_any_call(pycurl.SSL_VERIFYPEER, 1)
+        easy_handle.setopt.assert_any_call(pycurl.SSL_VERIFYHOST, 2)
+
+    def test_ssl_validation_unset(self):
+        """
+        Assert that Curl is configured to do SSL validation by default when ssl_validation is unset.
+        """
+        config = DownloaderConfig()
+        curl_downloader = HTTPSCurlDownloader(config)
+        easy_handle = mock.Mock()
+
+        curl_downloader._add_ssl_configuration(easy_handle)
+
+        self.assertEqual(easy_handle.setopt.call_count, 2)
+        easy_handle.setopt.assert_any_call(pycurl.SSL_VERIFYPEER, 1)
+        easy_handle.setopt.assert_any_call(pycurl.SSL_VERIFYHOST, 2)
