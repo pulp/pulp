@@ -319,7 +319,7 @@ class TestDownload(DownloadTests):
         listener = AggregatingEventListener()
         downloader.event_listener = listener
         downloader.download(request_list)
-        # Test
+        # Verify
         self.assertEqual(len(listener.succeeded_reports), 1)
         self.assertEqual(len(listener.failed_reports), 0)
         self.assertTrue(os.path.exists(request_list[0].destination))
@@ -337,7 +337,7 @@ class TestDownload(DownloadTests):
         listener = AggregatingEventListener()
         downloader.event_listener = listener
         downloader.download(request_list)
-        # Test
+        # Verify
         self.assertEqual(len(listener.succeeded_reports), 0)
         self.assertEqual(len(listener.failed_reports), 1)
 
