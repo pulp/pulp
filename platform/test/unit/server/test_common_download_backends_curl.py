@@ -11,13 +11,15 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-from datetime import datetime
+import os
 import mock
 import unittest
-
 import pycurl
 
+from datetime import datetime
+
 from pulp.common.download.config import DownloaderConfig
+from pulp.common.download.listener import AggregatingEventListener
 from pulp.common.download.downloaders.curl import (
     DEFAULT_FOLLOW_LOCATION, DEFAULT_MAX_REDIRECTS, DEFAULT_CONNECT_TIMEOUT, DEFAULT_LOW_SPEED_LIMIT,
     DEFAULT_LOW_SPEED_TIME, DEFAULT_NO_PROGRESS, HTTPCurlDownloader)
@@ -304,6 +306,32 @@ class TestDownload(DownloadTests):
         self.assertEqual(args[1], mock_multi_handle)
         # There should be no free handles, since there was only one and it's being reported on
         self.assertEqual(args[2], [])
+
+    def test_file_scheme(self):
+        # Test
+        config = DownloaderConfig(max_concurrent=1)
+        downloader = HTTPCurlDownloader(config)
+        request_list = self._file_download_requests()[:1]
+        listener = AggregatingEventListener()
+        downloader.event_listener = listener
+        downloader.download(request_list)
+        # Test
+        self.assertEqual(len(listener.succeeded_reports), 1)
+        self.assertEqual(len(listener.failed_reports), 0)
+        self.assertTrue(os.path.exists(request_list[0].destination))
+
+    def test_file_scheme_with_invalid_path(self):
+        # Test
+        config = DownloaderConfig(max_concurrent=1)
+        downloader = HTTPCurlDownloader(config)
+        request_list = self._file_download_requests()[:1]
+        request_list[0].url += 'ZZZ'
+        listener = AggregatingEventListener()
+        downloader.event_listener = listener
+        downloader.download(request_list)
+        # Test
+        self.assertEqual(len(listener.succeeded_reports), 0)
+        self.assertEqual(len(listener.failed_reports), 1)
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))

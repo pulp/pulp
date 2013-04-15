@@ -163,6 +163,10 @@ class DownloadTests(unittest.TestCase):
         return [DownloadRequest(protocol + '://localhost:8088/' + self.data_dir + f, os.path.join(self.storage_dir, f))
                 for f in self.file_list]
 
+    def _file_download_requests(self):
+        return [DownloadRequest('file://' + os.path.join(os.getcwd(), self.data_dir, f),
+                os.path.join(self.storage_dir, f)) for f in self.file_list]
+
 # curl downloader tests --------------------------------------------------------
 
 class CurlInstantiationTests(unittest.TestCase):
