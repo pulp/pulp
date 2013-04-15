@@ -86,7 +86,7 @@ class PulpConnection(httplib.HTTPSConnection):
         else: # HTTPS_SCHEME
             self._validate_server_ssl_cert()
             self._ssl_wrap_socket()
-            return httplib.HTTPSConnection.connect(self)
+            httplib.HTTPSConnection.connect(self)
 
         self._send_proxy_connect_request()
 
@@ -140,7 +140,21 @@ class PulpHandler(urllib2.HTTPHandler,
                  verify_host=False, proxy_url=None, proxy_port=None,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
 
-        proxies = {}
+        proxies = {} # this has the consequence of not using proxies configured elsewhere
+
+        if proxy_url is not None:
+
+            if proxy_url.endswith('/'):
+                proxy_url = proxy_url[:-1]
+
+            proxy_scheme = urllib.splittype(proxy_url)[0]
+
+            if proxy_port is not None:
+                proxy_url = ':'.join((proxy_url, str(proxy_port)))
+
+            proxy_url += '/'
+
+            proxies[proxy_scheme] = proxy_url
 
         urllib2.HTTPHandler.__init__(self)
         urllib2.HTTPSHandler.__init__(self)
@@ -173,7 +187,6 @@ class PulpHandler(urllib2.HTTPHandler,
         return self.do_open(factory, req)
 
     def proxy_open(self, req, proxy, scheme):
-        #req.set_proxy(proxy)
         kwargs = {'scheme': scheme,
                   'is_proxy': True,
                   'timeout': self.timeout}

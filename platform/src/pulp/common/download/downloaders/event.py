@@ -19,6 +19,7 @@ from eventlet.green import urllib2
 
 from pulp.common.download import report as download_report
 from pulp.common.download.downloaders.base import PulpDownloader
+from pulp.common.download.downloaders.urllib2_utils import PulpHandler
 
 
 # "optimal" concurrency, based purely on anecdotal evidence
@@ -79,7 +80,9 @@ class HTTPEventletDownloader(PulpDownloader):
         # make the request to the server and process the response
         try:
             urllib2_request = download_request_to_urllib2_request(self.config, request)
-            response = urllib2.urlopen(urllib2_request)
+            urllib2_opener = build_urllib2_opener(self.config)
+
+            response = urllib2_opener.open(urllib2_request)
             info = response.info()
             # TODO check the response code here
             set_response_info(info, report)
@@ -147,17 +150,23 @@ def set_response_info(info, report):
 
 # urllib2 opener construction --------------------------------------------------
 
-def build_opener(config):
-    pass
+def build_urllib2_opener(config):
+
+    kwargs = {'key_file': config.ssl_client_key_path,
+              'cert_file': config.ssl_client_cert_path,
+              'ca_cert_file': config.ssl_ca_cert_path,
+              'verify_host': config.ssl_validation,
+              'proxy_url': config.proxy_url,
+              'proxy_port': config.proxy_port,}
+
+    handler = PulpHandler(**kwargs)
+    return urllib2.build_opener(handler)
 
 # urllib2 request construction -------------------------------------------------
 
 def download_request_to_urllib2_request(config, download_request):
-    # TODO (jconnor 2013-02-06) add throttling support, if possible
     urllib2_request = urllib2.Request(download_request.url)
     add_basic_auth_support(config, urllib2_request)
-    add_ssl_support(config, urllib2_request)
-    add_proxy_support(config, urllib2_request)
     return urllib2_request
 
 
@@ -169,10 +178,4 @@ def add_basic_auth_support(config, request):
     encoded_auth_string = base64.encodestring(auth_string).replace('\n', '')
     request.add_header('Authorization', 'Basic %s' % encoded_auth_string)
 
-def add_ssl_support(config, request):
-    pass
 
-
-def add_proxy_support(config, request):
-    # TODO (jconnor 2013-02-06) add proxy support
-    pass
