@@ -308,6 +308,10 @@ class TestDownload(DownloadTests):
         self.assertEqual(args[2], [])
 
     def test_file_scheme(self):
+        """
+        In this test, we're making sure that file:// URLs work and is reported as succeeded
+        when the path is valid.
+        """
         # Test
         config = DownloaderConfig(max_concurrent=1)
         downloader = HTTPCurlDownloader(config)
@@ -321,11 +325,15 @@ class TestDownload(DownloadTests):
         self.assertTrue(os.path.exists(request_list[0].destination))
 
     def test_file_scheme_with_invalid_path(self):
+        """
+        In this test, we're making sure that file:// URLs work and is reported as failed
+        when the path is invalid.
+        """
         # Test
         config = DownloaderConfig(max_concurrent=1)
         downloader = HTTPCurlDownloader(config)
         request_list = self._file_download_requests()[:1]
-        request_list[0].url += 'ZZZ'
+        request_list[0].url += 'BADPATHBADPATHBADPATH'  # booger up the path
         listener = AggregatingEventListener()
         downloader.event_listener = listener
         downloader.download(request_list)
