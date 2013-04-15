@@ -15,6 +15,7 @@ from datetime import datetime
 import os
 import mock
 import unittest
+import urlparse
 
 import pycurl
 
@@ -323,6 +324,15 @@ class TestDownload(DownloadTests):
         self.assertEqual(len(listener.succeeded_reports), 1)
         self.assertEqual(len(listener.failed_reports), 0)
         self.assertTrue(os.path.exists(request_list[0].destination))
+        # verify the downloaded file matches
+        path_in = urlparse.urlparse(request_list[0].url).path
+        fp = open(path_in)
+        original_content = fp.read()
+        fp.close()
+        fp = open(request_list[0].destination)
+        destination_content = fp.read()
+        fp.close()
+        self.assertEqual(original_content, destination_content)
 
     def test_file_scheme_with_invalid_path(self):
         """
@@ -340,6 +350,9 @@ class TestDownload(DownloadTests):
         # Verify
         self.assertEqual(len(listener.succeeded_reports), 0)
         self.assertEqual(len(listener.failed_reports), 1)
+        report = listener.failed_reports[0]
+        self.assertEqual(report.bytes_downloaded, 0)
+        self.assertEqual(report.error_report['response_code'], 0)
 
     @mock.patch('pycurl.CurlMulti', MockObjFactory(mock_curl_multi_factory))
     @mock.patch('pycurl.Curl', MockObjFactory(mock_curl_easy_factory))
