@@ -17,8 +17,8 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: 2.1.0
-Release: 0.19.alpha
+Version: 2.2.0
+Release: 0.1.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -258,6 +258,21 @@ fi
 
 
 %changelog
+* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
+- 922229 - fix progress rendering. rendering depends on bindings processed in a
+  determined order.  Perhaps fragile and should revisit progress rendering.
+  (jortel@redhat.com)
+- 919118 - use succeeded flag to render success message or not.
+  (jortel@redhat.com)
+- 919134 - Add explaination to BadRequest raised when distributor not
+  installed. (jortel@redhat.com)
+- 919200 - move node level update strategy to consumer note.
+  (jortel@redhat.com)
+- 919177 - display bindings collated by strategy. (jortel@redhat.com)
+- 921159 - Better description of --auto-publish. (jortel@redhat.com)
+- 921107 - Fix grammatical error in node activate message. (jortel@redhat.com)
+- 921104 - Fix variable substitution in message. (jortel@redhat.com)
+
 * Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
 - 916345 - SSLCACertificateFile not supported with <Directory/> in apache 2.4
   (jortel@redhat.com)

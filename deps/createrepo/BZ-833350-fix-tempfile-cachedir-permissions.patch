@@ -1,0 +1,32 @@
+commit c06a7a01a8e697e36aa5db330a124e0309f37149
+Author: James Antill <james@and.org>
+Date:   Thu Oct 4 17:09:46 2012 -0400
+
+    Manually set the permmissions for tempfile created cachefiles. BZ 833350.
+
+diff --git a/createrepo/yumbased.py b/createrepo/yumbased.py
+index ac06196..49c3890 100644
+--- a/createrepo/yumbased.py
++++ b/createrepo/yumbased.py
+@@ -16,6 +16,11 @@
+ 
+ 
+ import os
++def _get_umask():
++   oumask = os.umask(0)
++   os.umask(oumask)
++   return oumask
++_b4rpm_oumask = _get_umask()
+ import rpm
+ import types
+ 
+@@ -86,6 +91,9 @@ class CreateRepoPackage(YumLocalPackage):
+                 csumo = os.fdopen(csumo, 'w', -1)
+                 csumo.write(checksum)
+                 csumo.close()
++                #  tempfile forces 002 ... we want to undo that, so that users
++                # can share the cache. BZ 833350.
++                os.chmod(tmpfilename, 0666 ^ _b4rpm_oumask)
+                 os.rename(tmpfilename, csumfile)
+             except:
+                 pass

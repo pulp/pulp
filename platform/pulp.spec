@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.1.0
-Release: 0.19.alpha
+Version: 2.2.0
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -435,6 +435,43 @@ exit 0
 %endif
 
 %changelog
+* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
+- 950632 - added unit_id search index on the repo_content_units collection
+  (jason.connor@gmail.com)
+- 928081 - Take note of HTTP status codes when downloading files.
+  (rbarlow@redhat.com)
+- 947927 - This call should support both the homogeneous and heterogeneous
+  cases (jason.dobies@redhat.com)
+- 928509 - Platform changes to support override config in applicability
+  (jason.dobies@redhat.com)
+- 949186 - Removed the curl TIMEOUT setting and replaced it with a low speed
+  limit. (rbarlow@redhat.com)
+- 928087 - serialized call request replaced in archival with string
+  representation of the call request (jason.connor@gmail.com)
+- 924327 - Make sure to run the groups/categories upgrades in the aggregate
+  (jason.dobies@redhat.com)
+- 918160 - changed --summary flag to *only* display the  summary
+  (jason.connor@gmail.com)
+- 916794 - 918160 - 920792 - new generator approach to orphan management to
+  keep us from stomping on memory (jason.connor@gmail.com)
+- 923402 - Clarifications to the help text in logging config files
+  (jason.dobies@redhat.com)
+- 923402 - Reduce logging level from DEBUG to INFO (jason.dobies@redhat.com)
+- 923406 - fixing typo in repo copy bindings causing recursive copy to never
+  run (skarmark@redhat.com)
+- 922214 - adding selinux context for all files under /srv/pulp instead of
+  individual files (skarmark@redhat.com)
+- 919155 - Added better test assertions (jason.dobies@redhat.com)
+- 919155 - Added handling for connection refused errors
+  (jason.dobies@redhat.com)
+- 918782 - render warning messages as normal colored text. (jortel@redhat.com)
+- 911166 - Use pulp_version macro for consistency and conditional requires on
+  both version and release for pre-release packages only. (jortel@redhat.com)
+- 908934 - Fix /etc/pki/pulp and /etc/pki/pulp/consumer ownership.
+  (jortel@redhat.com)
+- 918600 - _content_type_id wasn't being set for erratum and drpm
+  (jason.dobies@redhat.com)
+
 * Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
 - 855053 - repository unit counts are now tracked per-unit-type. Also wrote a
   migration that will convert previously-created repositories to have the new
