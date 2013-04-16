@@ -20,6 +20,7 @@ class RepositoryProgress(object):
     """
 
     PENDING = 'pending'
+    MERGING = 'merging'
     IMPORTING = 'import_started'
     DOWNLOADING_MANIFEST = 'downloading_manifest'
     ADDING_UNITS = 'adding_units'
@@ -38,6 +39,14 @@ class RepositoryProgress(object):
         self.listener = listener
         self.state = self.PENDING
         self.unit_add = dict(total=0, completed=0, details=None)
+
+    def begin_merging(self):
+        """
+        Update the report to reflect that merging has started.
+        Set state=MERGING.
+        """
+        self.state = self.MERGING
+        self.updated()
 
     def begin_importing(self):
         """

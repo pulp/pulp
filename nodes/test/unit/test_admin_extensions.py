@@ -88,7 +88,7 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 8)
+        self.assertEqual(len(lines), 9)
         self.assertTrue(NODE_LIST_TITLE in lines[1])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
@@ -121,7 +121,7 @@ class TestPublishCommand(ClientTests):
     @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch('pulp.client.commands.polling.PollingCommand.postponed')
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
-    @patch('pulp.client.commands.polling.PollingCommand.process')
+    @patch('pulp.client.commands.polling.PollingCommand.poll')
     @patch(PUBLISH_API, return_value=Response(200, {}))
     def test_publish(self, mock_binding, *unused):
         # Test
@@ -136,7 +136,7 @@ class TestPublishCommand(ClientTests):
     @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch('pulp.client.commands.polling.PollingCommand.postponed')
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
-    @patch('pulp.client.commands.polling.PollingCommand.process')
+    @patch('pulp.client.commands.polling.PollingCommand.poll')
     @patch(PUBLISH_API, return_value=Response(200, {}))
     def test_publish_not_enabled(self, mock_binding, *unused):
         # Test

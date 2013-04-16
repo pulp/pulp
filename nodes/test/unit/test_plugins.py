@@ -50,6 +50,8 @@ from pulp_node.handlers.strategies import Mirror
 from pulp_node.importers.download import Batch
 from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
+from pulp_node.handlers.reports import RepositoryReport
+from pulp_node import error
 from pulp_node import constants
 
 
@@ -282,7 +284,8 @@ class ImporterTest(PluginTestBase):
             constants.HTTP_IMPORTER,
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
-        importer.sync_repo(repo, conduit, cfg)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        report = importer.sync_repo(repo, conduit, cfg)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -290,13 +293,13 @@ class ImporterTest(PluginTestBase):
 
 class TestStrategy:
 
-    def __init__(self, tester, **cleaning_options):
+    def __init__(self, tester, **options):
         self.tester = tester
-        self.cleaning_options = cleaning_options
+        self.options = options
 
-    def __call__(self, progress):
-        self.tester.clean(**self.cleaning_options)
-        return Mirror(progress)
+    def __call__(self, progress, report):
+        self.tester.clean(**self.options)
+        return Mirror(progress, report)
 
 
 class BadBatch(Batch):
@@ -314,7 +317,7 @@ class TestAgentPlugin(PluginTestBase):
         PluginTestBase.populate(self)
         # register child
         manager = managers.consumer_manager()
-        manager.register(self.PULP_ID, notes={constants.STRATEGY_NOTE_KEY: strategy})
+        manager.register(self.PULP_ID)
         manager = managers.repo_importer_manager()
         # add importer
         importer_conf = {
@@ -341,17 +344,16 @@ class TestAgentPlugin(PluginTestBase):
         manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
 
-    def clean(self, just_units=False, purge_plugins=False):
+    def clean(self, units_only=False, plugins=False):
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
-        if just_units:
+        if units_only:
             return
         Bind.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         RepoImporter.get_collection().remove()
-        if purge_plugins:
-            plugin_api._MANAGER.importers.plugins = {}
+        if plugins:
             plugin_api._MANAGER.distributors.plugins = {}
 
     def verify(self, num_units=PluginTestBase.NUM_UNITS):
@@ -438,29 +440,31 @@ class TestAgentPlugin(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
+            options = dict(strategy=constants.MIRROR_STRATEGY)
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, {})
+            report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
         report = _report[0].details['node']
         self.assertTrue(report['succeeded'])
-        merge_report = report['details']['merge_report']
-        self.assertEqual(merge_report['added'], [self.REPO_ID])
-        self.assertEqual(merge_report['merged'], [])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report['details']['importer_reports'][self.REPO_ID]
-        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']['report']
-        self.assertEqual(len(details['add_failed']), 0)
-        self.assertEqual(len(details['delete_failed']), 0)
+        errors = report['details']['errors']
+        repositories = report['details']['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.ADDED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
         self.verify()
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
@@ -483,29 +487,31 @@ class TestAgentPlugin(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
+            options = dict(strategy=constants.ADDITIVE_STRATEGY)
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, {})
+            report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
         report = _report[0].details['node']
         self.assertTrue(report['succeeded'])
-        merge_report = report['details']['merge_report']
-        self.assertEqual(merge_report['added'], [self.REPO_ID])
-        self.assertEqual(merge_report['merged'], [])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report['details']['importer_reports'][self.REPO_ID]
-        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']['report']
-        self.assertEqual(len(details['add_failed']), 0)
-        self.assertEqual(len(details['delete_failed']), 0)
+        errors= report['details']['errors']
+        repositories = report['details']['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.ADDED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
         self.verify()
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
@@ -521,7 +527,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.Child.binding', binding)
         @patch('pulp_node.handlers.strategies.Parent.binding', binding)
-        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, just_units=True))
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, units_only=True))
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY, ssl=True)
@@ -531,26 +537,27 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
-            report = handler.update(Conduit(), units, {})
+            report = handler.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
         report = _report[0]
         self.assertTrue(report.succeeded)
-        merge_report = report.details['merge_report']
-        self.assertEqual(merge_report['added'], [])
-        self.assertEqual(merge_report['merged'], [self.REPO_ID])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report.details['importer_reports'][self.REPO_ID]
-        self.assertEqual(importer_report['added_count'], self.NUM_UNITS)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']['report']
-        self.assertTrue(details['succeeded'])
-        self.assertEqual(len(details['add_failed']), 0)
-        self.assertEqual(len(details['delete_failed']), 0)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.MERGED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
         self.verify()
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
@@ -578,27 +585,31 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, {})
+            report = handler.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
         report = _report[0]
         self.assertFalse(report.succeeded)
-        merge_report = report.details['merge_report']
-        self.assertEqual(merge_report['added'], [self.REPO_ID])
-        self.assertEqual(merge_report['merged'], [])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report.details['importer_reports'][self.REPO_ID]
-        self.assertEqual(importer_report['added_count'], 0)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']['report']
-        self.assertFalse(details['succeeded'])
-        self.assertEqual(len(details['add_failed']), 3)
-        self.assertEqual(len(details['delete_failed']), 0)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]['error_id'], error.UnitDownloadError.ERROR_ID)
+        self.assertEqual(errors[0]['count'], self.NUM_UNITS)
+        self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.ADDED)
+        units = repository['units']
+        self.assertEqual(units['added'], 0)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
         self.verify(0)
 
 
@@ -617,34 +628,35 @@ class TestAgentPlugin(PluginTestBase):
         @patch('pulp_node.importers.strategies.Batch', BadBatch)
         def test_handler(*unused):
             # publish
-            self.populate(constants.MIRROR_STRATEGY)
+            self.populate(constants.ADDITIVE_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, {})
+            report = handler.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         time.sleep(2)
         # Verify
         report = _report[0]
         self.assertTrue(report.succeeded)
-        merge_report = report.details['merge_report']
-        self.assertEqual(merge_report['added'], [])
-        self.assertEqual(merge_report['merged'], [self.REPO_ID])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report.details['importer_reports'][self.REPO_ID]
-        self.assertEqual(importer_report['added_count'], 0)
-        self.assertEqual(importer_report['removed_count'], 0)
-        details = importer_report['details']['report']
-        self.assertTrue(details['succeeded'])
-        self.assertEqual(len(details['add_failed']), 0)
-        self.assertEqual(len(details['delete_failed']), 0)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.MERGED)
+        units = repository['units']
+        self.assertEqual(units['added'], 0)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
 
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
@@ -676,57 +688,6 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
-            handler = NodeHandler(self)
-            pulp_conf.set('server', 'storage_dir', self.childfs)
-            os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, {})
-            _report.append(report)
-        test_handler()
-        time.sleep(2)
-        # Verify
-        report = _report[0]
-        self.assertFalse(report.succeeded)
-        errors = report.details['errors']
-        self.assertEqual(len(errors), 1)
-        merge_report = report.details['merge_report']
-        self.assertEqual(merge_report['added'], [self.REPO_ID])
-        self.assertEqual(merge_report['merged'], [])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report.details['importer_reports'].get(self.REPO_ID)
-        if importer_report:
-            self.assertFalse(importer_report['succeeded'])
-            exception = importer_report['exception']
-            self.assertTrue(len(exception) > 0)
-            self.verify(0)
-
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
-    def test_plugins_missing(self, *unused):
-        """
-        Test the end-to-end collaboration of:
-          distributor(publish)->handler(update)->importer(sync)
-        :see: test_handler for directory tree details.
-        """
-        _report = []
-        conn = PulpConnection(None, server_wrapper=self)
-        binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
-        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, purge_plugins=True))
-        def test_handler(*unused):
-            # publish
-            self.populate(constants.MIRROR_STRATEGY)
-            pulp_conf.set('server', 'storage_dir', self.parentfs)
-            dist = NodesHttpDistributor()
-            repo = Repository(self.REPO_ID)
-            cfg = {
-                'protocol':'file',
-                'http':{'alias':self.alias},
-                'https':{'alias':self.alias},
-                'file':{'alias':self.alias},
-            }
-            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-            dist.publish_repo(repo, conduit, cfg)
-            units = []
             options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
@@ -739,14 +700,66 @@ class TestAgentPlugin(PluginTestBase):
         report = _report[0]
         self.assertFalse(report.succeeded)
         errors = report.details['errors']
+        repositories = report.details['repositories']
         self.assertEqual(len(errors), 1)
-        merge_report = report.details['merge_report']
-        self.assertEqual(merge_report['added'], [])
-        self.assertEqual(merge_report['merged'], [])
-        self.assertEqual(merge_report['removed'], [])
-        importer_report = report.details['importer_reports'].get(self.REPO_ID)
-        if importer_report:
-            self.assertFalse(importer_report['succeeded'])
-            exception = importer_report['exception']
-            self.assertTrue(len(exception) > 0)
-            self.verify(0)
+        self.assertEqual(errors[0]['error_id'], error.CaughtException.ERROR_ID)
+        self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.ADDED)
+        units = repository['units']
+        self.assertEqual(units['added'], 0)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+        self.verify(0)
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_missing_plugins(self, *unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync) with missing distributor plugins.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.Child.binding', binding)
+        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, plugins=True))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            units = [{'type_id':'node', 'unit_key':None}]
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            container = Container(self.parentfs)
+            dispatcher = Dispatcher(container)
+            container.handlers[CONTENT]['node'] = NodeHandler(self)
+            container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
+            report = dispatcher.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0].details['node']
+        self.assertFalse(report['succeeded'])
+        errors = report['details']['errors']
+        repositories = report['details']['repositories']
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]['error_id'], error.DistributorNotInstalled.ERROR_ID)
+        self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
+        self.assertEqual(errors[0]['details']['type_id'], 'test_distributor')
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.PENDING)
+        units = repository['units']
+        self.assertEqual(units['added'], 0)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+

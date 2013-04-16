@@ -60,19 +60,24 @@ class UnitInventory(object):
     The unit inventory contains both the parent and child inventory
     of content units associated with a specific repository.  Each is contained
     within a dictionary keyed by {UnitKey} to ensure uniqueness.
+    :ivar repo_id: The repository ID.
+    :type repo_id: str
     :ivar child: The child inventory.
     :type child: dict
     :ivar parent: The parent inventory.
     :type parent: dict
     """
 
-    def __init__(self, child, parent):
+    def __init__(self, repo_id, child, parent):
         """
+        :param repo_id: The repository ID.
+        :type repo_id: str
         :param child: The child inventory.
         :type child: dict
         :param parent: The parent inventory.
         :type parent: dict
         """
+        self.repo_id = repo_id
         self.child = child
         self.parent = parent
 

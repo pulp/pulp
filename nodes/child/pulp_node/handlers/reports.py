@@ -9,26 +9,65 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from operator import itemgetter
-
 from pulp_node.progress import RepositoryProgress
+from pulp_node.error import ErrorList
 
 
-class MergeReport(object):
+# --- summary reporting  -----------------------------------------------------
+
+
+class RepositoryReport(object):
     """
     Repository merge report.
-    :ivar added: List of added repositories by repo_id.
-    :type added: list
-    :ivar merged: List of merged repositories by repo_id.
-    :type merged: list
-    :ivar removed: List of removed repositories by repo_id.
-    :type removed: list
+    :ivar repo_id: The repository ID.
+    :type repo_id: str
+    :ivar action: The action taken on the repository.
+    :param action: str
+    :ivar units: A content unit report.
+    :param units: UnitReport
+    """
+
+    # actions
+    PENDING = 'pending'
+    ADDED = 'added'
+    MERGED = 'merged'
+    DELETED = 'deleted'
+
+    def __init__(self, repo_id, action=PENDING):
+        """
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param action: The action taken on the repository.
+        :param action: str
+        """
+        self.repo_id = repo_id
+        self.action = action
+        self.units = UnitReport()
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return dict(repo_id=self.repo_id, action=self.action, units=self.units.dict())
+
+
+class UnitReport(object):
+    """
+    Content unit synchronization summary report.
+    :ivar added: Count of units added.
+    :type added: int
+    :ivar updated: Count of units updated.
+    :type updated: int
+    :ivar removed: Count of units removed.
+    :type removed: int
     """
 
     def __init__(self):
-        self.added = []
-        self.merged = []
-        self.removed = []
+        self.added = 0
+        self.updated = 0
+        self.removed = 0
 
     def dict(self):
         """
@@ -39,20 +78,45 @@ class MergeReport(object):
         return self.__dict__
 
 
-class HandlerReport(object):
+class SummaryReport(object):
     """
-    Strategy synchronization() report.
-    Aggregates the MergeReport and importer reports.
+    Node synchronization summary report.
     :ivar errors: A list of error messages.
     :type errors: list
-    :ivar merge_report: A repository merge report.
-    :type merge_report: MergeReport
+    :ivar repository: A dictionary of RepositoryReport keyed by repo_id.
+    :type repository: dict
     """
 
     def __init__(self):
-        self.errors = []
-        self.merge_report = MergeReport()
-        self.importer_reports = {}
+        self.errors = ErrorList()
+        self.repository = {}
+
+    def setup(self, bindings):
+        """
+        Setup (prime) the report using the specified bindings.
+        A RepositoryReport is created for each repository referenced in the bindings.
+        :param bindings:
+        :return:
+        """
+        for bind in bindings:
+            repo_id = bind['repo_id']
+            self.repository[repo_id] = RepositoryReport(repo_id)
+
+    def succeeded(self):
+        """
+        Get whether the update succeeded (or not).
+        :return: True if succeeded.
+        :rtype: bool
+        """
+        return not self.failed()
+
+    def failed(self):
+        """
+        Get whether the update failed (or not).
+        :return: True if failed.
+        :rtype: bool
+        """
+        return len(self.errors) > 0
 
     def dict(self):
         """
@@ -61,16 +125,22 @@ class HandlerReport(object):
         :rtype: dict
         """
         return dict(
-            errors=self.errors,
-            merge_report=self.merge_report.dict(),
-            importer_reports=self.importer_reports)
+            errors=[e.dict() for e in self.errors],
+            repositories=[r.dict() for r in self.repository.values()])
+
+    def __getitem__(self, repo_id):
+        return self.repository[repo_id]
+
+    def __setitem__(self, repo_id, report):
+        self.repository[repo_id] = report
+
+
+# --- progress reporting  ----------------------------------------------------
 
 
 class HandlerProgress(object):
     """
     The nodes handler progress report.
-    Extends progress report base class to provide integration
-    with the handler conduit.
     """
 
     PENDING = 'pending'
@@ -94,7 +164,7 @@ class HandlerProgress(object):
         :type bindings: list
         """
         self.state = self.STARTED
-        for bind in sorted(bindings, key=itemgetter('repo_id')):
+        for bind in bindings:
             repo_id = bind['repo_id']
             p = RepositoryProgress(repo_id, self)
             self.progress.append(p)
@@ -124,7 +194,7 @@ class HandlerProgress(object):
 
     def updated(self, report):
         """
-        Notification that a repository progress report has been updated.
+        Update the progress associated with a specific repository by repo_id.
         :param report: The update repository progress report.
         :type report: RepositoryProgress
         """
