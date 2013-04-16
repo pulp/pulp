@@ -79,6 +79,12 @@ class SummaryReport(object):
 class HandlerProgress(object):
     """
     The nodes handler progress report.
+    :ivar conduit: A handler conduit.
+    :type conduit: pulp.agent.lib.conduit.Conduit
+    :ivar state: The current state of the synchronization.
+    :type state: str
+    :ivar progress: A list of RepositoryProgress reports.
+    :type progress: list
     """
 
     PENDING = 'pending'

@@ -152,9 +152,9 @@ class HandlerStrategy(object):
         progress.finished()
         details = importer_report['details']
         for _dict in details['errors']:
-            e = NodeError(None)
-            e.load(_dict)
-            self.summary_report.errors.append(e)
+            ne = NodeError(None)
+            ne.load(_dict)
+            self.summary_report.errors.append(ne)
         _report = self.summary_report[repo_id]
         _report.units.added = importer_report['added_count']
         _report.units.updated = importer_report['updated_count']

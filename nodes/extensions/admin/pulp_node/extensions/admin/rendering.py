@@ -125,6 +125,7 @@ class UpdateRenderer(object):
         errors: [
           { error_id: <str>,
             details: {}
+          },
         ]
         repositories: [
           { repo_id: <str>,
@@ -134,6 +135,7 @@ class UpdateRenderer(object):
               updated: <int>,
               removed: <int>
             }
+          },
         ]
       }
     """

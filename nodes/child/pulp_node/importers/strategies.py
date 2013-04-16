@@ -233,8 +233,7 @@ class ImporterStrategy(object):
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
-        units = unit_inventory.child_only()
-        for unit in units:
+        for unit in unit_inventory.child_only():
             if self.cancelled:
                 break
             try:

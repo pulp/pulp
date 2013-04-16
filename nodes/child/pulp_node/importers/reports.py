@@ -36,7 +36,7 @@ class SummaryReport(object):
     A report that provides both summary and details regarding the importing
     of content units associated with a repository.
     :ivar errors: List of errors.
-    :type errors: list
+    :type errors: ErrorList
     """
 
     def __init__(self):

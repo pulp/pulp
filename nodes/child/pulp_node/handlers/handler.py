@@ -31,6 +31,27 @@ class NodeHandler(ContentHandler):
         """
         Update the specified content units.  Each unit must be of
         type 'node'.  Updates the entire child node.
+
+        Report format:
+          succeeded: <bool>
+          details: {
+            errors: [
+              { error_id: <str>,
+                details: {}
+              },
+            ]
+            repositories: [
+              { repo_id: <str>,
+                action: <str>,
+                units: {
+                  added: <int>,
+                  updated: <int>,
+                  removed: <int>
+                }
+              },
+            ]
+          }
+
         :param conduit: A handler conduit.
         :type conduit: pulp.agent.lib.conduit.Conduit
         :param units: A list of content unit_keys.
