@@ -12,6 +12,7 @@
 from gettext import gettext as _
 from operator import itemgetter
 
+from pulp_node.error import *
 from pulp_node.reports import RepositoryProgress, RepositoryReport
 
 
@@ -32,9 +33,24 @@ PROGRESS_STATES = {
 }
 
 ACTIONS = {
+    RepositoryReport.PENDING: _('Pending'),
     RepositoryReport.ADDED: _('Added'),
     RepositoryReport.MERGED: _('Merged'),
     RepositoryReport.DELETED: _('Removed')
+}
+
+NODE_ERRORS = {
+    CaughtException.ERROR_ID: CaughtException.DESCRIPTION,
+    PurgeOrphansError.ERROR_ID: PurgeOrphansError.DESCRIPTION,
+    RepoSyncRestError.ERROR_ID: RepoSyncRestError.DESCRIPTION,
+    GetBindingsError.ERROR_ID: GetBindingsError.DESCRIPTION,
+    GetChildUnitsError.ERROR_ID: GetChildUnitsError.DESCRIPTION,
+    ImporterNotInstalled.ERROR_ID: ImporterNotInstalled.DESCRIPTION,
+    DistributorNotInstalled.ERROR_ID: DistributorNotInstalled.DESCRIPTION,
+    ManifestDownloadError.ERROR_ID: ManifestDownloadError.DESCRIPTION,
+    UnitDownloadError.ERROR_ID: UnitDownloadError.DESCRIPTION,
+    AddUnitError.ERROR_ID: AddUnitError.DESCRIPTION,
+    DeleteUnitError.ERROR_ID: DeleteUnitError.DESCRIPTION,
 }
 
 SYNC_TITLE = _('Child Node Synchronization')
@@ -170,8 +186,15 @@ class UpdateRenderer(object):
         self.prompt.render_document_list(documents)
 
         if not self.succeeded:
+            n = 1
             self.prompt.render_title(REPORTED_ERRORS % dict(n=len(self.errors)))
-            self.prompt.render_document_list(self.errors)
+            for ne in self.errors:
+                repo_id = ne['error_id']
+                details = ne['details']
+                details['n'] = n
+                description = NODE_ERRORS.get(repo_id, str(ne))
+                self.prompt.write('- %.2d: %s\n' % (n, description % details))
+                n += 1
 
         failed_repositories = self.failed_repositories()
         if failed_repositories:

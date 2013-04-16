@@ -600,7 +600,6 @@ class TestAgentPlugin(PluginTestBase):
         repositories = report.details['repositories']
         self.assertEqual(len(errors), 1)
         self.assertEqual(errors[0]['error_id'], error.UnitDownloadError.ERROR_ID)
-        self.assertEqual(errors[0]['count'], self.NUM_UNITS)
         self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
         self.assertEqual(len(repositories), 1)
         repository = repositories[0]

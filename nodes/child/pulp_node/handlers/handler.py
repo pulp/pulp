@@ -70,6 +70,9 @@ class NodeHandler(ContentHandler):
         strategy = strategy_class(progress_report, summary_report)
         strategy.synchronize(bindings, options)
 
+        for ne in summary_report.errors:
+            log.error(ne)
+
         handler_report = ContentReport()
         if summary_report.succeeded():
             handler_report.set_succeeded(summary_report.dict())

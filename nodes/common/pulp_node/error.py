@@ -31,13 +31,6 @@ class NodeError(Exception):
         return self.error_id == other.error_id and self.details == other.details
 
 
-class SummaryError(NodeError):
-
-    def __init__(self, error_id, **details):
-        super(SummaryError, self).__init__(error_id, **details)
-        self.count = 1
-
-
 class CaughtException(NodeError):
 
     ERROR_ID = 'exception'
@@ -54,7 +47,7 @@ class CaughtException(NodeError):
 class PurgeOrphansError(NodeError):
 
     ERROR_ID = 'rest.child.orphans.purge'
-    DESCRIPTION = _('Purge orphans failed with http code: %(http_code)s.')
+    DESCRIPTION = _('Purge orphans failed with http code [%(http_code)s].')
 
     def __init__(self, http_code):
         super(PurgeOrphansError, self).__init__(self.ERROR_ID, http_code=http_code)
@@ -66,7 +59,7 @@ class PurgeOrphansError(NodeError):
 class RepoSyncRestError(NodeError):
 
     ERROR_ID = 'rest.child.repository.synchronization'
-    DESCRIPTION = _('Repository synchronization failed with http code: %(http_code)s.')
+    DESCRIPTION = _('Repository synchronization failed with http code [%(http_code)s].')
 
     def __init__(self, repo_id, http_code):
         super(RepoSyncRestError, self).__init__(self.ERROR_ID, repo_id=repo_id, http_code=http_code)
@@ -78,7 +71,7 @@ class RepoSyncRestError(NodeError):
 class GetBindingsError(NodeError):
 
     ERROR_ID = 'rest.parent.bindings.get'
-    DESCRIPTION = _('Get bindings from the parent failed with http code: %(http_code)s.')
+    DESCRIPTION = _('Get bindings from the parent failed with http code [%(http_code)s].')
 
     def __init__(self, http_code):
         super(GetBindingsError, self).__init__(self.ERROR_ID, http_code=http_code)
@@ -90,7 +83,7 @@ class GetBindingsError(NodeError):
 class GetChildUnitsError(NodeError):
 
     ERROR_ID = 'rest.child.units.get'
-    DESCRIPTION = _('Get units from child failed with http code: %(http_code)s.')
+    DESCRIPTION = _('Get units from the child failed with http code [%(http_code)s].')
 
     def __init__(self, repo_id):
         super(GetChildUnitsError, self).__init__(self.ERROR_ID, repo_id=repo_id)
@@ -103,7 +96,7 @@ class GetParentUnitsError(NodeError):
 
     ERROR_ID = 'rest.parent.units.get'
     DESCRIPTION = _('An error occurred while downloading units from the parent for '
-                    'repository: %(repo_id)s.  The cause may be that the repository has not '
+                    'repository [%(repo_id)s. The cause may be that the repository has not '
                     'been published')
 
     def __init__(self, repo_id):
@@ -116,8 +109,8 @@ class GetParentUnitsError(NodeError):
 class ImporterNotInstalled(NodeError):
 
     ERROR_ID = 'plugins.child.importer.missing'
-    DESCRIPTION = _('The %(type_id)s importer is associated with a repository: %(repo_id)s '
-                    'on the parent but is not installed on the child.  The plugin providing this '
+    DESCRIPTION = _('The [%(type_id)s] importer is associated with a repository [%(repo_id)s] '
+                    'on the parent but is not installed on the child. The plugin providing this '
                     'importer needs to be installed and loaded by restarting httpd.')
 
     def __init__(self, repo_id, type_id):
@@ -130,8 +123,8 @@ class ImporterNotInstalled(NodeError):
 class DistributorNotInstalled(NodeError):
 
     ERROR_ID = 'plugins.child.distributor.missing'
-    DESCRIPTION = _('The %(type_id)s distributor is associated with a repository: %(repo_id)s '
-                    'on the parent but is not installed on the child.  The plugin providing this '
+    DESCRIPTION = _('The [%(type_id)s] distributor is associated with a repository [%(repo_id)s] '
+                    'on the parent but is not installed on the child. The plugin providing this '
                     'distributor needs to be installed and loaded by restarting httpd.')
 
     def __init__(self, repo_id, type_id):
@@ -144,21 +137,21 @@ class DistributorNotInstalled(NodeError):
 class ManifestDownloadError(NodeError):
 
     ERROR_ID = 'download.parent.manifest'
-    DESCRIPTION = _('Received http code: %(http_code)s while downloading the manifest using '
-                    'URL: %(url)s.  The cause could be that the repository has not been published.')
+    DESCRIPTION = _('Received error report [%(error_report)s] while downloading the manifest at '
+                    'URL [%(url)s]. The cause could be that the repository has not been published.')
 
-    def __init__(self, url, http_code):
-        super(ManifestDownloadError, self).__init__(self.ERROR_ID, url=url, http_code=http_code)
+    def __init__(self, url, error_report):
+        super(ManifestDownloadError, self).__init__(self.ERROR_ID, url=url, error_report=error_report)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
 
 
-class UnitDownloadError(SummaryError):
+class UnitDownloadError(NodeError):
 
     ERROR_ID = 'download.parent.manifest.units'
-    DESCRIPTION = _('Received error report: %(error_report)s while downloading a unit file using '
-                    'URL: %(url)s for repository: %(repo_id)s.  The cause could be that the '
+    DESCRIPTION = _('Received error report [%(error_report)s] while downloading a unit file at '
+                    'URL [%(url)s] for repository [%(repo_id)s]. The cause could be that the '
                     'repository has not been published.')
 
     def __init__(self, url, repo_id, error_report):
@@ -166,10 +159,10 @@ class UnitDownloadError(SummaryError):
             self.ERROR_ID, url=url, repo_id=repo_id, error_report=error_report)
 
 
-class AddUnitError(SummaryError):
+class AddUnitError(NodeError):
 
     ERROR_ID = 'child.unit.add'
-    DESCRIPTION = _('Adding a unit associated with repository: %(repo_id)s failed.')
+    DESCRIPTION = _('Adding a unit associated with repository [%(repo_id)s] failed.')
 
     def __init__(self, repo_id):
         super(AddUnitError, self).__init__(self.ERROR_ID, repo_id=repo_id)
@@ -178,10 +171,10 @@ class AddUnitError(SummaryError):
         return self.DESCRIPTION % self.details
 
 
-class DeleteUnitError(SummaryError):
+class DeleteUnitError(NodeError):
 
     ERROR_ID = 'child.unit.delete'
-    DESCRIPTION = _('Deleting a unit associated with repository: %(repo_id)s failed.')
+    DESCRIPTION = _('Deleting a unit associated with repository [%(repo_id)s] failed.')
 
     def __init__(self, repo_id):
         super(DeleteUnitError, self).__init__(self.ERROR_ID, repo_id=repo_id)
@@ -202,11 +195,6 @@ class ErrorList(list):
         """
         if not isinstance(error, NodeError):
             raise ValueError(error)
-        if isinstance(error, SummaryError):
-            for e in self:
-                if e == error:
-                    e.count += 1
-                    return
         if error not in self:
             super(ErrorList, self).append(error)
 
