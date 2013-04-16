@@ -34,12 +34,10 @@ class DownloaderConfig(object):
      * ssl_client_key:       client private key for secure connections (https protocol
                              only)
      * ssl_client_key_path:  path to a ssl client key (incompatible with ssl_client_key)
-     * ssl_verify_host:      An integer. If set to 2, we will verify that the value of the certificate's Common
-                             Name field equals the hostname we are connecting to. If set to 0, no such
-                             verification will take place. It is an error to set this to 1.
-     * ssl_verify_peer:      An integer. If set to 1, we will verify that the remote server's SSL certificate is
-                             signed by a trusted certificate authority. If set to 0, we will not check their SSL
-                             certificate.
+     * ssl_validation:       A boolean value. If set to True, the downloader will verify that the remote
+                             server's SSL certificate is signed by a trusted authority, and that the
+                             certificate's CommonName field equals the hostname we are connecting to. If False,
+                             no such verification is made.
      * proxy_url:            A string representing the URL of a proxy server that should
                              be used while retrieving content. It should be of the form
                              <scheme>://<hostname>/ where the scheme is http or https.
