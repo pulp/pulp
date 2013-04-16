@@ -155,7 +155,7 @@ def build_urllib2_opener(config):
     kwargs = {'key_file': config.ssl_client_key_path,
               'cert_file': config.ssl_client_cert_path,
               'ca_cert_file': config.ssl_ca_cert_path,
-              'verify_host': config.ssl_validation,
+              'verify_host': bool(config.ssl_validation), # None -> False
               'proxy_url': config.proxy_url,
               'proxy_port': config.proxy_port,}
 
