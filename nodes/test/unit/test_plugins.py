@@ -47,7 +47,7 @@ from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import Manifest
 from pulp_node.handlers.strategies import Mirror
-from pulp_node.importers.download import Batch
+from pulp_node.importers.download import UnitDownloadRequest
 from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 from pulp_node.handlers.reports import RepositoryReport
@@ -302,11 +302,11 @@ class TestStrategy:
         return Mirror(progress, report)
 
 
-class BadBatch(Batch):
+class BadDownloadRequest(UnitDownloadRequest):
 
-    def add(self, url, unit):
-        n = random.random()
-        Batch.add(self, 'http:/NOWHERE/FAIL_ME_%d' % n, unit)
+    def __init__(self, url, repo_id, unit):
+        url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
+        UnitDownloadRequest.__init__(self, url, repo_id, unit)
 
 
 class TestAgentPlugin(PluginTestBase):
@@ -574,7 +574,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.Child.binding', binding)
         @patch('pulp_node.handlers.strategies.Parent.binding', binding)
-        @patch('pulp_node.importers.strategies.Batch', BadBatch)
+        @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -625,7 +625,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.Child.binding', binding)
         @patch('pulp_node.handlers.strategies.Parent.binding', binding)
-        @patch('pulp_node.importers.strategies.Batch', BadBatch)
+        @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)

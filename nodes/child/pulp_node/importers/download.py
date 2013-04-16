@@ -29,7 +29,8 @@ UNIT = 'unit'
 class UnitDownloadRequest(DownloadRequest):
 
     def __init__(self, url, repo_id, unit):
-        super(UnitDownloadRequest, self).__init__(url, {REPO_ID: repo_id, UNIT: unit})
+        super(UnitDownloadRequest, self).__init__(
+            url, unit.storage_path, data={REPO_ID: repo_id, UNIT: unit})
 
 
 class DownloadListener(AggregatingEventListener):
