@@ -22,7 +22,8 @@ from pulp.agent.lib.report import ContentReport
 from pulp_node import constants
 from pulp_node.extensions.admin.commands import *
 from pulp_node.error import *
-from pulp_node.handlers.reports import SummaryReport, RepositoryReport
+from pulp_node.reports import RepositoryReport
+from pulp_node.handlers.reports import SummaryReport
 
 # --- IDs --------------------------------------------------------------------
 

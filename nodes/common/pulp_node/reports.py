@@ -14,6 +14,73 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
+# --- summary reporting  -----------------------------------------------------
+
+class RepositoryReport(object):
+    """
+    Repository merge report.
+    :ivar repo_id: The repository ID.
+    :type repo_id: str
+    :ivar action: The action taken on the repository.
+    :param action: str
+    :ivar units: A content unit report.
+    :param units: UnitReport
+    """
+
+    # actions
+    PENDING = 'pending'
+    ADDED = 'added'
+    MERGED = 'merged'
+    DELETED = 'deleted'
+
+    def __init__(self, repo_id, action=PENDING):
+        """
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param action: The action taken on the repository.
+        :param action: str
+        """
+        self.repo_id = repo_id
+        self.action = action
+        self.units = UnitReport()
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return dict(repo_id=self.repo_id, action=self.action, units=self.units.dict())
+
+
+class UnitReport(object):
+    """
+    Content unit synchronization summary report.
+    :ivar added: Count of units added.
+    :type added: int
+    :ivar updated: Count of units updated.
+    :type updated: int
+    :ivar removed: Count of units removed.
+    :type removed: int
+    """
+
+    def __init__(self):
+        self.added = 0
+        self.updated = 0
+        self.removed = 0
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return self.__dict__
+
+
+# --- progress reporting  ----------------------------------------------------
+
+
 class RepositoryProgress(object):
     """
     Tracks the progress of a repository in the pulp nodes synchronization process.

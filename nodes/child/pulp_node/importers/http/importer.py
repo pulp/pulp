@@ -20,7 +20,7 @@ from pulp.common.download.config import DownloaderConfig
 
 from pulp_node import constants
 from pulp_node.error import CaughtException
-from pulp_node.progress import RepositoryProgress
+from pulp_node.reports import RepositoryProgress
 from pulp_node.importers.reports import SummaryReport, ProgressListener
 from pulp_node.importers.strategies import find_strategy
 

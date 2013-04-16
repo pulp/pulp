@@ -204,6 +204,7 @@ class ImporterStrategy(object):
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
+        repo_id = unit_inventory.repo_id
         units = self._missing_units(unit_inventory)
         self.progress_report.begin_adding_units(len(units))
         request_list = []
@@ -213,10 +214,10 @@ class ImporterStrategy(object):
             download = unit.get('_download')
             if not download:
                 # unit has no file associated
-                self.add_unit(child_unit)
+                self.add_unit(repo_id, child_unit)
                 continue
             url = download['url']
-            request = UnitDownloadRequest(url, unit_inventory.repo_id, child_unit)
+            request = UnitDownloadRequest(url, repo_id, child_unit)
             request_list.append(request)
         if self.cancelled:
             return

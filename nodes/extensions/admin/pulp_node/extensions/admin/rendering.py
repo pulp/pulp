@@ -12,8 +12,7 @@
 from gettext import gettext as _
 from operator import itemgetter
 
-from pulp.client.commands.repo.sync_publish import StatusRenderer
-from pulp_node.progress import RepositoryProgress
+from pulp_node.reports import RepositoryProgress, RepositoryReport
 
 
 # --- constants --------------------------------------------------------------
@@ -30,6 +29,12 @@ PROGRESS_STATES = {
     RepositoryProgress.ADDING_UNITS: _('Adding Units'),
     RepositoryProgress.IMPORTING: _('Importing'),
     RepositoryProgress.FINISHED: _('Finished')
+}
+
+ACTIONS = {
+    RepositoryReport.ADDED: _('Added'),
+    RepositoryReport.MERGED: _('Merged'),
+    RepositoryReport.DELETED: _('Removed')
 }
 
 SYNC_TITLE = _('Child Node Synchronization')
@@ -146,7 +151,7 @@ class UpdateRenderer(object):
             document = {
                 'repository': {
                     'id': repo_report['repo_id'],
-                    'action': repo_report['action'],
+                    'action': ACTIONS[repo_report['action']],
                     'units': repo_report['units']
                 },
             }
