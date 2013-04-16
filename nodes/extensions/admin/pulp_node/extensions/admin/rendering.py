@@ -45,6 +45,7 @@ NODE_ERRORS = {
     RepoSyncRestError.ERROR_ID: RepoSyncRestError.DESCRIPTION,
     GetBindingsError.ERROR_ID: GetBindingsError.DESCRIPTION,
     GetChildUnitsError.ERROR_ID: GetChildUnitsError.DESCRIPTION,
+    GetParentUnitsError.ERROR_ID: GetParentUnitsError.DESCRIPTION,
     ImporterNotInstalled.ERROR_ID: ImporterNotInstalled.DESCRIPTION,
     DistributorNotInstalled.ERROR_ID: DistributorNotInstalled.DESCRIPTION,
     ManifestDownloadError.ERROR_ID: ManifestDownloadError.DESCRIPTION,

@@ -149,7 +149,7 @@ class ManifestDownloadError(NodeError):
 
 class UnitDownloadError(NodeError):
 
-    ERROR_ID = 'download.parent.manifest.units'
+    ERROR_ID = 'download.unit'
     DESCRIPTION = _('Received error report [%(error_report)s] while downloading a unit file at '
                     'URL [%(url)s] for repository [%(repo_id)s]. The cause could be that the '
                     'repository has not been published.')
