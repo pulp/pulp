@@ -19,6 +19,8 @@ import tempfile
 
 import pycurl
 
+from urlparse import urlparse
+
 from pulp.common.download import report as download_report
 from pulp.common.download.downloaders.base import PulpDownloader
 
@@ -224,9 +226,19 @@ class HTTPCurlDownloader(PulpDownloader):
         response_code = easy_handle.getinfo(pycurl.HTTP_CODE)
         report = easy_handle.report
 
+        scheme = urlparse(report.url).scheme.lower()
+
         # pycurl will not give us an error for non-200 HTTP status codes, so we should verify both that there
-        # was no pycurl error, and that the HTTP status code was 200
-        download_successful = response_code == 200 and not error
+        # was no pycurl error, and that the HTTP status code indicates success.  The success code
+        # for file:// URLs is 0.  Else, 200 is expected.
+
+        if scheme == 'file':
+            success_response_code = 0
+        else:
+            success_response_code = 200
+
+        download_successful = response_code == success_response_code and not error
+
         if download_successful:
             # The download was successful
             report.state = download_report.DOWNLOAD_SUCCEEDED
