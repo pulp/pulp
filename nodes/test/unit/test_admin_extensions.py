@@ -9,13 +9,20 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
+import sys
 
 from mock import patch
 
 from base import ClientTests, Response
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
+
+from pulp.agent.lib.report import ContentReport
 from pulp_node import constants
 from pulp_node.extensions.admin.commands import *
+from pulp_node.error import *
+from pulp_node.handlers.reports import SummaryReport, RepositoryReport
 
 # --- IDs --------------------------------------------------------------------
 
@@ -63,6 +70,16 @@ MIXED_DISTRIBUTORS = [
     {'id': 3, 'distributor_type_id': constants.HTTP_DISTRIBUTOR},
     {'id': 4, 'distributor_type_id': constants.HTTP_DISTRIBUTOR},
 ]
+
+UPDATE_REPORT = {
+    'succeeded': True,
+    'details': {
+        'errors':[],
+        'repositories': [
+            RepositoryReport('repo_1', RepositoryReport.ADDED)
+        ]
+    }
+}
 
 
 # --- tests ------------------------------------------------------------------
@@ -333,3 +350,33 @@ class TestBindCommands(ClientTests):
         self.assertTrue(OPTION_REPO_ID in command.options)
         self.assertTrue(NODE_ID_OPTION in command.options)
         mock_binding.assert_called_with(NODE_ID, REPOSITORY_ID, constants.HTTP_DISTRIBUTOR)
+
+
+class TestRenderers(ClientTests):
+
+    def test_update_rendering(self):
+        repo_ids = ['repo_%d' % n for n in range(0, 3)]
+        handler_report = ContentReport()
+        summary_report = SummaryReport()
+        summary_report.setup([{'repo_id': r} for r in repo_ids])
+        for r in summary_report.repository.values():
+            r.action = RepositoryReport.ADDED
+        handler_report.set_succeeded(details=summary_report.dict())
+        renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
+        renderer.render()
+        printed = self.recorder.lines
+        print printed
+
+    def test_update_rendering_with_errors(self):
+        repo_ids = ['repo_%d' % n for n in range(0, 3)]
+        handler_report = ContentReport()
+        summary_report = SummaryReport()
+        summary_report.setup([{'repo_id': r} for r in repo_ids])
+        for r in summary_report.repository.values():
+            r.action = RepositoryReport.ADDED
+        summary_report.errors.append(UnitDownloadError('http://abc/x.rpm', repo_ids[0], dict(response_code=401)))
+        handler_report.set_failed(details=summary_report.dict())
+        renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
+        renderer.render()
+        printed = self.recorder.lines
+        print printed

@@ -10,6 +10,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+from operator import itemgetter
+
 from pulp.client.commands.repo.sync_publish import StatusRenderer
 from pulp_node.progress import RepositoryProgress
 
@@ -23,6 +25,7 @@ ADD_UNIT_FIELD = _('(%(n)d/%(t)d) Add unit: %(d)s')
 
 PROGRESS_STATES = {
     RepositoryProgress.PENDING: _('Pending'),
+    RepositoryProgress.MERGING: _('Merging Repository'),
     RepositoryProgress.DOWNLOADING_MANIFEST: _('Downloading Manifest'),
     RepositoryProgress.ADDING_UNITS: _('Adding Units'),
     RepositoryProgress.IMPORTING: _('Importing'),
@@ -32,6 +35,7 @@ PROGRESS_STATES = {
 SYNC_TITLE = _('Child Node Synchronization')
 SUCCEEDED_MSG = _('Synchronization succeeded')
 FAILED_MSG = _('Error occurred during synchronization, check the child node logs for details')
+REPORTED_ERRORS = _('The following [%(n)d] errors were reported:')
 REPOSITORIES_FAILED = _('The following repositories had errors:')
 
 
@@ -109,53 +113,43 @@ class ProgressTracker:
 
 
 class UpdateRenderer(object):
+    """
+    Render the node synchronization summary with the following format:
+      succeeded: <bool>
+      details: {
+        errors: [
+          { error_id: <str>,
+            details: {}
+        ]
+        repositories: [
+          { repo_id: <str>,
+            action: <str>,
+            units: {
+              added: <int>,
+              updated: <int>,
+              removed: <int>
+            }
+        ]
+      }
+    """
 
     def __init__(self, prompt, report):
         self.prompt = prompt
         self.succeeded = report['succeeded']
-        self.merge_report = report['details']['merge_report']
-        self.added = self.merge_report['added']
-        self.merged = self.merge_report['merged']
-        self.removed = self.merge_report['removed']
-        self.importer_reports = report['details']['importer_reports']
+        self.details = report['details']
+        self.errors = self.details['errors']
+        self.repositories = self.details['repositories']
 
     def render(self):
         documents = []
-        failed_repositories = []
-        for repo_id in sorted(self.repo_ids):
-            imp_report = self.importer_reports.get(repo_id)
-
-            if repo_id in self.removed:
-                document = {
-                    'repository': {
-                        'name': repo_id,
-                        'action': self.action(repo_id)
-                    }
-                }
-                documents.append(document)
-                continue
-
-            if not imp_report:
-                failed_repositories.append(repo_id)
-                continue
-
-            if not imp_report['details']['report']['succeeded']:
-                failed_repositories.append(repo_id)
-                continue
-
+        for repo_report in sorted(self.repositories, key=itemgetter('repo_id')):
             document = {
                 'repository': {
-                    'name': repo_id,
-                    'action': self.action(repo_id)
+                    'id': repo_report['repo_id'],
+                    'action': repo_report['action'],
+                    'units': repo_report['units']
                 },
-                'content_units': {
-                    'added': imp_report['added_count'],
-                    'updated': imp_report['updated_count'],
-                    'removed': imp_report['removed_count'],
-                }
-
             }
-
             documents.append(document)
 
         self.prompt.write('\n\n')
@@ -166,22 +160,22 @@ class UpdateRenderer(object):
             self.prompt.render_failure_message(FAILED_MSG)
 
         self.prompt.render_title(SYNC_TITLE)
-        self.prompt.render_document_list(documents, order=['repository'])
+        self.prompt.render_document_list(documents)
 
+        if not self.succeeded:
+            self.prompt.render_title(REPORTED_ERRORS % dict(n=len(self.errors)))
+            self.prompt.render_document_list(self.errors)
+
+        failed_repositories = self.failed_repositories()
         if failed_repositories:
-            self.prompt.write('\n')
-            self.prompt.write(REPOSITORIES_FAILED)
+            self.prompt.render_title(REPOSITORIES_FAILED)
             for repo_id in failed_repositories:
                 self.prompt.write('- %s' % repo_id)
 
-    @property
-    def repo_ids(self):
-        return self.added + self.merged + self.removed
-
-    def action(self, repo_id):
-        if repo_id in self.added:
-            return _('Added')
-        if repo_id in self.merged:
-            return _('Merged')
-        if repo_id in self.removed:
-            return _('Removed')
+    def failed_repositories(self):
+        failed = set()
+        for error in self.errors:
+            repo_id = error['details'].get('repo_id')
+            if repo_id:
+                failed.add(repo_id)
+        return sorted(failed)
