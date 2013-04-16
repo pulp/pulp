@@ -57,8 +57,8 @@ NODE_ERRORS = {
 SYNC_TITLE = _('Child Node Synchronization')
 SUCCEEDED_MSG = _('Synchronization succeeded')
 FAILED_MSG = _('Error occurred during synchronization, check the child node logs for details')
-REPORTED_ERRORS = _('The following [%(n)d] errors were reported:')
-REPOSITORIES_FAILED = _('The following repositories had errors:')
+REPORTED_ERRORS = _('The following [%(n)d] errors were reported')
+REPOSITORIES_FAILED = _('The following repositories had errors')
 
 
 # --- rendering --------------------------------------------------------------
