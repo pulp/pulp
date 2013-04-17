@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2012 Red Hat, Inc.
+# Copyright © 2011-2013 Red Hat, Inc.
 #
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+# This software is licensed to you under the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the License
+# (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied, including the
+# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
+# PARTICULAR PURPOSE.
+# You should have received a copy of GPLv2 along with this software;
+# if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from gettext import gettext as _
 
@@ -39,9 +39,9 @@ class ContentTypesCollection(JSONController):
         collection = []
         cqm = factory.content_query_manager()
         type_ids = cqm.list_content_types()
-        for id in type_ids:
-            link = serialization.link.child_link_obj(id)
-            link.update({'content_type': id})
+        for type_id in type_ids:
+            link = serialization.link.child_link_obj(type_id)
+            link.update({'content_type': type_id})
             collection.append(link)
         return self.ok(collection)
 
