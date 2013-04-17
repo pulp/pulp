@@ -30,6 +30,9 @@ class ProxyConnectionFailed(urllib2.URLError, Exception): pass
 # -- pulp connection class -----------------------------------------------------
 
 class PulpConnection(httplib.HTTPSConnection):
+    """
+    Connection class that does all the heavy lifting for the PulpHandler class.
+    """
 
     _ports = {HTTP_SCHEME: httplib.HTTP_PORT, HTTPS_SCHEME: httplib.HTTPS_PORT}
 
@@ -39,6 +42,8 @@ class PulpConnection(httplib.HTTPSConnection):
                  is_proxy=False):
 
         assert scheme in (HTTP_SCHEME, HTTPS_SCHEME)
+
+        self.scheme = scheme
 
         httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
                                          strict, timeout, source_address)
@@ -51,13 +56,15 @@ class PulpConnection(httplib.HTTPSConnection):
         self._real_host = self.host
         self._real_port = self.port
 
-        self.scheme = scheme
-
     @property
     def default_port(self):
         return self._ports[self.scheme]
 
     def request(self, method, url, body=None, headers=None):
+        """
+        Send an HTTP or HTTPS request, as appropriate; and parse the request
+        URL in case it's a proxied request.
+        """
         headers = headers or {}
         protocol, remainder = urllib.splittype(url)
 
@@ -78,7 +85,10 @@ class PulpConnection(httplib.HTTPSConnection):
             httplib.HTTPSConnection.request(self, method, url, body, headers)
 
     def connect(self):
-
+        """
+        Make an HTTP or HTTPS connection to the configured host.
+        Send a proxy CONNECT request if it's a proxied connection.
+        """
         if self.scheme == HTTP_SCHEME:
             httplib.HTTPConnection.connect(self)
 
@@ -102,9 +112,6 @@ class PulpConnection(httplib.HTTPSConnection):
                                             (self._real_host, self.ca_cert_file))
 
     def _ssl_wrap_socket(self):
-
-        # XXX (jconnor 2013-04-12) I don't think I need to do this unless we're
-        # proxying an https request via an http proxy
 
         ssl_sock = ssl.wrap_socket(self.sock, self.key_file, self.cert_file)
         self.sock = httplib.FakeSocket(self.sock, ssl_sock)
@@ -134,6 +141,13 @@ class PulpConnection(httplib.HTTPSConnection):
 class PulpHandler(urllib2.HTTPHandler,
                   urllib2.HTTPSHandler,
                   urllib2.ProxyHandler):
+    """
+    urllib2 Handler class
+
+    This class replaces the default HTTPHandler, HTTPSHandler, and ProxyHandler,
+
+    It allows proxied HTTPS requests as well as SSL verification.
+    """
 
     def __init__(self, key_file=None, cert_file=None, ca_cert_file=None,
                  verify_host=False, proxy_url=None, proxy_port=None,
@@ -157,6 +171,8 @@ class PulpHandler(urllib2.HTTPHandler,
         self.proxy_url = complete_proxy_url
 
         self.timeout = timeout
+
+    # handler chain methods
 
     def http_open(self, req):
         kwargs = {'scheme': HTTP_SCHEME,
@@ -184,6 +200,28 @@ class PulpHandler(urllib2.HTTPHandler,
 
 def pulp_connection_factory(req, scheme, key_file=None, cert_file=None, ca_cert_file=None,
                             verify_host=False, proxy_url=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,):
+    """
+    Factory method for constructing a PulpConnection instance.
+
+    :param req: request object
+    :type req: urllib2.Request
+    :param scheme: URL scheme (one of http or https)
+    :type scheme: str
+    :param key_file: path to the client key file
+    :type key_file: str or None
+    :param cert_file: path to the client certificate file
+    :type cert_file: str or None
+    :param ca_cert_file: path to a certificate authority file
+    :type ca_cert_file: str or None
+    :param verify_host: toggle host's SSL certificate verification
+    :type verify_host: bool
+    :param proxy_url: proxy URL
+    :type proxy_url: str or None
+    :param timeout: connection timeout
+    :type timeout: int or float
+    :return: a connection object used to make requests
+    :rtype: PulpConnection
+    """
     is_proxy = proxy_url is not None
     if is_proxy:
         host = proxy_url
@@ -201,6 +239,22 @@ def pulp_connection_factory(req, scheme, key_file=None, cert_file=None, ca_cert_
 # -- utility methods -----------------------------------------------------------
 
 def build_proxy_url(proxy_url, proxy_port, proxy_username=None, proxy_password=None):
+    """
+    Build a complete proxy URL out of its component parts.
+
+    Returns a URL string in the form: scheme://username:password@host:port/
+
+    :param proxy_url: proxy URL in the form of scheme://host/
+    :type proxy_url: str or None
+    :param proxy_port: proxy port number
+    :type proxy_port: int or None
+    :param proxy_username: username for proxy authentication
+    :type proxy_username: str or None
+    :param proxy_password: password for proxy authentication
+    :type proxy_password: str or None
+    :return: full proxy URL
+    :rtype: str or None
+    """
     if proxy_url is None:
         return None
 
