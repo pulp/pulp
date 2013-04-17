@@ -502,7 +502,7 @@ class NodeUpdateCommand(PollingCommand):
                     raise
             return os.EX_DATAERR
 
-    def progress(self, task):
+    def progress(self, task, spinner):
         self.tracker.display(task.progress)
 
     def succeeded(self, task):

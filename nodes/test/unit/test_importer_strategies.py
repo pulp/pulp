@@ -15,8 +15,8 @@ from mock import Mock
 
 from pulp.plugins.model import Unit
 from pulp_node.importers.strategies import ImporterStrategy
-from pulp_node.importers.reports import ProgressListener
-from pulp_node.progress import RepositoryProgress
+from pulp_node.importers.reports import SummaryReport, ProgressListener
+from pulp_node.reports import RepositoryProgress
 
 
 class TestBase(TestCase):
@@ -28,15 +28,16 @@ class TestBase(TestCase):
         config = 2
         downloader = 3
         progress = RepositoryProgress(repo_id, ProgressListener(conduit))
+        summary = SummaryReport()
         # Test
-        strategy = ImporterStrategy(conduit, config, downloader, progress)
+        strategy = ImporterStrategy(conduit, config, downloader, progress, summary)
         # Verify
         self.assertEqual(conduit, strategy.conduit)
         self.assertEqual(config, strategy.config)
         self.assertEqual(downloader, strategy.downloader)
-        self.assertEqual(progress, strategy.progress)
-        self.assertEqual(strategy.progress.listener.conduit, conduit)
-        self.assertRaises(NotImplementedError, strategy.synchronize, None)
+        self.assertEqual(progress, strategy.progress_report)
+        self.assertEqual(strategy.progress_report.listener.conduit, conduit)
+        self.assertRaises(NotImplementedError, strategy._synchronize, None)
 
 
 class TestConduit:
