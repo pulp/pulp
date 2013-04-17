@@ -233,7 +233,7 @@ Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
-Requires: pulp-eventlet >= 0.9
+Requires: python-eventlet >= 0.9
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
