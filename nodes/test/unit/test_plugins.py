@@ -92,6 +92,8 @@ class PluginTestBase(WebTest):
     UNIT_METADATA = {'A':'a','B':'b', 'N': 0}
     TYPEDEF_ID = UNIT_TYPE_ID
     NUM_UNITS = 3
+    NUM_EXTRA_UNITS = 5
+    EXTRA_REPO_IDS = ('extra_1', 'extra_2')
 
     CA_CERT = 'CA_CERTIFICATE'
     CLIENT_CERT = 'CLIENT_CERTIFICATE_AND_KEY'
@@ -143,16 +145,30 @@ class PluginTestBase(WebTest):
         manager = managers.repo_manager()
         manager.create_repo(self.REPO_ID)
         # add units
+        units = self.add_units(0, self.NUM_UNITS)
+        # CA
+        self.units = units
+        path = os.path.join(self.parentfs, 'ca.crt')
+        fp = open(path, 'w+')
+        fp.write(self.CA_CERT)
+        fp.close()
+        # client cert
+        path = os.path.join(self.parentfs, 'local.crt')
+        fp = open(path, 'w+')
+        fp.write(self.CLIENT_CERT)
+        fp.close()
+
+    def add_units(self, begin, end):
         units = []
-        for n in range(0, self.NUM_UNITS):
+        for n in range(begin, end):
             unit_id = self.UNIT_ID % n
             unit = dict(self.UNIT_METADATA)
             unit['N'] = n
             # add unit file
-            storage_dir = pulp_conf.get('server', 'storage_dir')
-            storage_path = \
-                os.path.join(storage_dir, 'content',
-                    '.'.join((unit_id, self.UNIT_TYPE_ID)))
+            storage_dir = os.path.join(pulp_conf.get('server', 'storage_dir'), 'content')
+            if not os.path.exists(storage_dir):
+                os.makedirs(storage_dir)
+            storage_path = os.path.join(storage_dir, '.'.join((unit_id, self.UNIT_TYPE_ID)))
             unit['_storage_path'] = storage_path
             fp = open(storage_path, 'w+')
             fp.write(unit_id)
@@ -172,17 +188,7 @@ class PluginTestBase(WebTest):
                 RepoContentUnit.OWNER_TYPE_IMPORTER,
                 constants.HTTP_IMPORTER)
             units.append(unit)
-        # CA
-        self.units = units
-        path = os.path.join(self.parentfs, 'ca.crt')
-        fp = open(path, 'w+')
-        fp.write(self.CA_CERT)
-        fp.close()
-        # client cert
-        path = os.path.join(self.parentfs, 'local.crt')
-        fp = open(path, 'w+')
-        fp.write(self.CLIENT_CERT)
-        fp.close()
+        return units
 
     def dist_conf(self):
         return {
@@ -344,15 +350,26 @@ class TestAgentPlugin(PluginTestBase):
         manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
 
-    def clean(self, units_only=False, plugins=False):
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        if units_only:
-            return
-        Bind.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoImporter.get_collection().remove()
+    def clean(self, repo=True, units=True, plugins=False, extra_units=0, extra_repos=None):
+        # remove repository & bindings
+        if repo:
+            Bind.get_collection().remove()
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoImporter.get_collection().remove()
+        # remove all content units
+        if units:
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+        # add extra content units
+        if extra_units:
+            self.add_units(self.NUM_UNITS, self.NUM_UNITS + extra_units)
+        # add extra repositories
+        if extra_repos:
+            manager = managers.repo_manager()
+            for repo_id in extra_repos:
+                manager.create_repo(repo_id)
+        # clear pulp plugins
         if plugins:
             plugin_api._MANAGER.distributors.plugins = {}
 
@@ -527,7 +544,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
         @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
-        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, units_only=True))
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, repo=False, units=True))
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY, ssl=True)
@@ -558,6 +575,113 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(units['added'], self.NUM_UNITS)
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
+        self.verify()
+        path = os.path.join(self.childfs, 'parent', 'client.crt')
+        self.assertTrue(os.path.exists(path))
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_merge_and_delete_extra_units(self, unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        This test does NOT clean so nodes will merge.
+        :see: test_handler for directory tree details.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, repo=False, extra_units=self.NUM_EXTRA_UNITS))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            handler = NodeHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.MERGED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], self.NUM_EXTRA_UNITS)
+        self.verify()
+        path = os.path.join(self.childfs, 'parent', 'client.crt')
+        self.assertTrue(os.path.exists(path))
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_merge_and_delete_repositories(self, unused):
+        """
+        Test the end-to-end collaboration of:
+          distributor(publish)->handler(update)->importer(sync)
+        This test does NOT clean so nodes will merge.
+        :see: test_handler for directory tree details.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, repo=False, units=True, extra_repos=self.EXTRA_REPO_IDS))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            handler = NodeHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        time.sleep(2)
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), len(self.EXTRA_REPO_IDS) + 1)
+        # merged repository
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.MERGED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+        # deleted extra repositories
+        for i in range(0, len(self.EXTRA_REPO_IDS)):
+            repository = repositories[i + 1]
+            self.assertEqual(repository['repo_id'], self.EXTRA_REPO_IDS[i])
+            self.assertEqual(repository['action'], RepositoryReport.DELETED)
+            units = repository['units']
+            self.assertEqual(units['added'], 0)
+            self.assertEqual(units['updated'], 0)
+            self.assertEqual(units['removed'], 0)
+        # verify end result
         self.verify()
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
