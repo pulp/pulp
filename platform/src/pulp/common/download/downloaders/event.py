@@ -152,6 +152,7 @@ def set_response_info(info, report):
     if content_length is not None:
         try:
             report.total_bytes = int(content_length)
+        # if we can't convert the content length to an int, leave it as None
         except TypeError:
             pass
 

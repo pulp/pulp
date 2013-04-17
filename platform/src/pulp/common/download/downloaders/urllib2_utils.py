@@ -132,7 +132,7 @@ class PulpConnection(httplib.HTTPSConnection):
         response = self.response_class(self.sock, strict=self.strict, method=self._method)
         (version, code, message) = response._read_status()
 
-        if code != 200:
+        if code != httplib.OK:
             self.close()
             raise ProxyConnectionFailed('Proxy connection failed: %d %s' % (code, message.strip()))
 
