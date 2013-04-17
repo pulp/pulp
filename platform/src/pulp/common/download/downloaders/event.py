@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import base64
 from logging import getLogger
 
 from eventlet import GreenPool
@@ -18,6 +19,7 @@ from eventlet.green import urllib2
 
 from pulp.common.download import report as download_report
 from pulp.common.download.downloaders.base import PulpDownloader
+from pulp.common.download.downloaders.urllib2_utils import PulpHandler
 
 
 # "optimal" concurrency, based purely on anecdotal evidence
@@ -72,15 +74,25 @@ class HTTPEventletDownloader(PulpDownloader):
 
         self.fire_download_started(report)
 
-        file_handle = request.initialize_file_handle()
         buffer_size = calculate_buffer_size(report, DEFAULT_MAX_PROGRESS_CALLS-1)
 
         # make the request to the server and process the response
         try:
             urllib2_request = download_request_to_urllib2_request(self.config, request)
-            response = urllib2.urlopen(urllib2_request)
+            urllib2_opener = build_urllib2_opener(self.config)
+
+            response = urllib2_opener.open(urllib2_request)
+
+            if response.code != 200:
+                report.error_report['response_code'] = response.code
+                report.error_report['response_msg'] = response.msg
+                raise urllib2.HTTPError(response.url, response.code, response.msg,
+                                        response.headers, response.fp)
+
             info = response.info()
             set_response_info(info, report)
+
+            file_handle = request.initialize_file_handle()
 
             self.fire_download_progress(report) # fire an initial progress event
 
@@ -135,18 +147,43 @@ def calculate_buffer_size(report, max_progress_calls=DEFAULT_MAX_PROGRESS_CALLS)
     return buffer_size
 
 
+def set_response_info(info, report):
+    content_length = info.dict.get('content-length', None)
+    if content_length is not None:
+        try:
+            report.total_bytes = int(content_length)
+        # if we can't convert the content length to an int, leave it as None
+        except TypeError:
+            pass
+
+# urllib2 opener construction --------------------------------------------------
+
+def build_urllib2_opener(config):
+
+    kwargs = {'key_file': config.ssl_client_key_path,
+              'cert_file': config.ssl_client_cert_path,
+              'ca_cert_file': config.ssl_ca_cert_path,
+              'verify_host': bool(config.ssl_validation), # None -> False
+              'proxy_url': config.proxy_url,
+              'proxy_port': config.proxy_port,}
+
+    handler = PulpHandler(**kwargs)
+    return urllib2.build_opener(handler)
+
+# urllib2 request construction -------------------------------------------------
+
 def download_request_to_urllib2_request(config, download_request):
     urllib2_request = urllib2.Request(download_request.url)
-    # TODO (jconnor 2013-02-06) add ssl support
-    # TODO (jconnor 2013-02-06) add proxy support
-    # TODO (jconnor 2013-02-06) add throttling support, if possible
+    add_basic_auth_support(config, urllib2_request)
     return urllib2_request
 
 
-def set_response_info(info, report):
-    # XXX (jconnor 2013-02-06) is there anything else we need?
-    content_length = info.dict.get('content-length', None)
-    if content_length is not None:
-        report.total_bytes = int(content_length)
+def add_basic_auth_support(config, request):
+    if None in (config.basic_auth_username, config.basic_auth_password):
+        return
+
+    auth_string = '%s:%s' % (config.basic_auth_username, config.basic_auth_password)
+    encoded_auth_string = base64.encodestring(auth_string).replace('\n', '')
+    request.add_header('Authorization', 'Basic %s' % encoded_auth_string)
 
 
