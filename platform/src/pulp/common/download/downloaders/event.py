@@ -74,7 +74,6 @@ class HTTPEventletDownloader(PulpDownloader):
 
         self.fire_download_started(report)
 
-        file_handle = request.initialize_file_handle()
         buffer_size = calculate_buffer_size(report, DEFAULT_MAX_PROGRESS_CALLS-1)
 
         # make the request to the server and process the response
@@ -83,9 +82,17 @@ class HTTPEventletDownloader(PulpDownloader):
             urllib2_opener = build_urllib2_opener(self.config)
 
             response = urllib2_opener.open(urllib2_request)
+
+            if response.code != 200:
+                report.error_report['response_code'] = response.code
+                report.error_report['response_msg'] = response.msg
+                raise urllib2.HTTPError(response.url, response.code, response.msg,
+                                        response.headers, response.fp)
+
             info = response.info()
-            # TODO check the response code here
             set_response_info(info, report)
+
+            file_handle = request.initialize_file_handle()
 
             self.fire_download_progress(report) # fire an initial progress event
 
