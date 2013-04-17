@@ -37,16 +37,15 @@ class PulpConnection(httplib.HTTPSConnection):
     _ports = {HTTP_SCHEME: httplib.HTTP_PORT, HTTPS_SCHEME: httplib.HTTPS_PORT}
 
     def __init__(self, host, port=None, scheme=HTTP_SCHEME, strict=None,
-                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None,
-                 key_file=None, cert_file=None, ca_cert_file=None, validate_host=True,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT,  key_file=None,
+                 cert_file=None, ca_cert_file=None, validate_host=True,
                  is_proxy=False):
 
         assert scheme in (HTTP_SCHEME, HTTPS_SCHEME)
 
         self.scheme = scheme
 
-        httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
-                                         strict, timeout, source_address)
+        httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file, strict, timeout)
 
         self.ca_cert_file = ca_cert_file
         self.validate_host = validate_host
@@ -230,10 +229,8 @@ def pulp_connection_factory(host, scheme, key_file=None, cert_file=None, ca_cert
     if is_proxy:
         host = proxy_url
     # NOTE strict is always set to True
-    # we do not allow overriding of the source_address
-    connection = PulpConnection(host, None, scheme, True, timeout, None,
-                                key_file, cert_file, ca_cert_file, verify_host,
-                                is_proxy)
+    connection = PulpConnection(host, None, scheme, True, timeout, key_file,
+                                cert_file, ca_cert_file, verify_host, is_proxy)
     return connection
 
 # -- utility methods -----------------------------------------------------------
