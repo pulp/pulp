@@ -11,6 +11,7 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import httplib
 import os
 import unittest
 import urllib2
@@ -104,6 +105,13 @@ class LiveEventletDownloaderTests(DownloadTests):
 
 class EventletHandlerTests(unittest.TestCase):
 
+    def test_proxy_url(self):
+        proxy_host = 'https://slydog.net'
+        proxy_port = 9874
+        proxy_url = 'https://slydog.net:9874/'
+        handler = urllib2_utils.PulpHandler(proxy_url=proxy_host, proxy_port=proxy_port)
+        self.assertEqual(proxy_url, handler.proxy_url)
+
     def test_build_opener(self):
         handler = urllib2_utils.PulpHandler()
         opener = urllib2.build_opener(handler)
@@ -164,3 +172,43 @@ class EventletHandlerTests(unittest.TestCase):
 
         self.assertEqual(mock_proxy_open.call_count, 1)
         self.assertTrue(req in mock_proxy_open.call_args[0], str(mock_proxy_open.call_args))
+
+
+class EventletConnectionTests(unittest.TestCase):
+
+    def test_default_port_http(self):
+        host = 'my.fakehost.com'
+        connection = urllib2_utils.PulpConnection(host)
+        self.assertEqual(connection.default_port, 80)
+
+    def test_default_port_https(self):
+        host = 'my.fakehost.com'
+        connection = urllib2_utils.PulpConnection(host, scheme='https')
+        self.assertEqual(connection.default_port, 443)
+
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpConnection.request')
+    def test_request(self, mock_request):
+        url = 'http://somenewserver.com/path/old/file'
+        req = urllib2.Request(url)
+        opener = urllib2.build_opener(urllib2_utils.PulpHandler())
+
+        try:
+            opener.open(req)
+        except httplib.ResponseNotReady:
+            pass
+
+        self.assertEqual(mock_request.call_count, 1)
+        self.assertTrue('/path/old/file' in mock_request.call_args[0], str(mock_request.call_args[0]))
+
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpConnection.connect')
+    def test_connect(self, mock_connect):
+        url = 'http://somenewserver.com/path/old/file'
+        req = urllib2.Request(url)
+        opener = urllib2.build_opener(urllib2_utils.PulpHandler())
+
+        try:
+            opener.open(req)
+        except AttributeError: # raised when None gets passed to the socket
+            pass
+
+        self.assertEqual(mock_connect.call_count, 1)
