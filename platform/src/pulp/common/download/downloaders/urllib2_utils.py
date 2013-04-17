@@ -143,7 +143,7 @@ class PulpHandler(urllib2.HTTPHandler,
 
         complete_proxy_url = build_proxy_url(proxy_url, proxy_port)
         if complete_proxy_url is not None:
-            proxies[urllib.splittype(complete_proxy_url)] = complete_proxy_url
+            proxies[urllib.splittype(complete_proxy_url)[0]] = complete_proxy_url
 
         urllib2.HTTPHandler.__init__(self)
         urllib2.HTTPSHandler.__init__(self)
