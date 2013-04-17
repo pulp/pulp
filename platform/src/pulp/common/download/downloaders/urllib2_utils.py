@@ -65,13 +65,17 @@ class PulpConnection(httplib.HTTPSConnection):
         Send an HTTP or HTTPS request, as appropriate; and parse the request
         URL in case it's a proxied request.
         """
+        protocol = self.scheme
         headers = headers or {}
-        protocol, remainder = urllib.splittype(url)
-
-        if protocol not in (HTTP_SCHEME, HTTPS_SCHEME):
-            raise ValueError('Unsupported URL protocol: %s' % url)
 
         if self.is_proxy:
+            # if it's a proxied connection, a full URL is passed in, so parse it
+
+            protocol, remainder = urllib.splittype(url)
+
+            if protocol not in (HTTP_SCHEME, HTTPS_SCHEME):
+                raise ValueError('Unsupported URL protocol: %s' % url)
+
             host, remainder = urllib.splithost(remainder)
             host, port = urllib.splitnport(host)
             port = port or self._ports[protocol]
@@ -198,13 +202,13 @@ class PulpHandler(urllib2.HTTPHandler,
         return self.do_open(factory, req)
 
 
-def pulp_connection_factory(req, scheme, key_file=None, cert_file=None, ca_cert_file=None,
+def pulp_connection_factory(host, scheme, key_file=None, cert_file=None, ca_cert_file=None,
                             verify_host=False, proxy_url=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,):
     """
     Factory method for constructing a PulpConnection instance.
 
-    :param req: request object
-    :type req: urllib2.Request
+    :param host: host and port string in the format, host:port
+    :type host: str
     :param scheme: URL scheme (one of http or https)
     :type scheme: str
     :param key_file: path to the client key file
@@ -225,13 +229,9 @@ def pulp_connection_factory(req, scheme, key_file=None, cert_file=None, ca_cert_
     is_proxy = proxy_url is not None
     if is_proxy:
         host = proxy_url
-        port = None
-    else:
-        host = req.host
-        port = req.port
     # NOTE strict is always set to True
     # we do not allow overriding of the source_address
-    connection = PulpConnection(host, port, scheme, True, timeout, None,
+    connection = PulpConnection(host, None, scheme, True, timeout, None,
                                 key_file, cert_file, ca_cert_file, verify_host,
                                 is_proxy)
     return connection
@@ -260,12 +260,16 @@ def build_proxy_url(proxy_url, proxy_port, proxy_username=None, proxy_password=N
 
     proxy_scheme, remainder = urllib.splittype(proxy_url)
     proxy_host, remainder = urllib.splithost(remainder)
+    proxy_port = proxy_port or ''
 
     proxy_auth = ''
     if proxy_username is not None:
         proxy_auth = proxy_username if not proxy_password else ':'.join((proxy_username, proxy_password))
 
-    proxy_url = '%s://%s%s:%d/' % (proxy_scheme, proxy_auth and proxy_auth + '@', proxy_host, proxy_port)
+    proxy_url = '%s://%s%s%s/' % (proxy_scheme,
+                                  proxy_auth and proxy_auth + '@',
+                                  proxy_host,
+                                  proxy_port and ':' + str(proxy_port))
     return proxy_url
 
 
