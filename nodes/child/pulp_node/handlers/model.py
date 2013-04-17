@@ -27,14 +27,14 @@ import socket
 import httplib
 
 from logging import getLogger
-from gettext import gettext as _
 
 from pulp.common.bundle import Bundle
 from pulp.common.config import Config
 from pulp.bindings.bindings import Bindings as PulpBindings
-from pulp.bindings.exceptions import NotFoundException, BadRequestException
+from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
 
+from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError
 from pulp_node.poller import TaskPoller
 from pulp_node import constants
 from pulp_node import link
@@ -44,12 +44,6 @@ log = getLogger(__name__)
 
 
 CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
-
-DISTRIBUTOR_PLUGIN_MISSING = _('A distributor of type [%(t)s] is referenced in a repository '
-                               'binding but is not installed and loaded.  It must be installed '
-                               'for node synchronization to succeed.  Please make sure that ALL '
-                               'plugins installed on the parent node are installed on the child '
-                               'node as well.')
 
 
 # --- utils -----------------------------------------------------------------------------
@@ -66,12 +60,6 @@ def subdict(adict, *keylist):
     :rtype: dict.
     """
     return dict([t for t in adict.items() if t[0] in keylist])
-
-
-# --- exceptions ------------------------------------------------------------------------
-
-class ModelError(Exception):
-    pass
 
 
 # --- pulp bindings ---------------------------------------------------------------------
@@ -127,7 +115,7 @@ class ConsumerSSLCredentialsBundle(Bundle):
 # --- model objects ---------------------------------------------------------------------
 
 
-class Child(object):
+class ChildEntity(object):
     """
     A Child (local) entity.
     :cvar binding: A REST API binding.
@@ -136,7 +124,7 @@ class Child(object):
     binding = ChildPulpBindings()
 
 
-class Parent(object):
+class ParentEntity(object):
     """
     A Parent (remote) entity.
     :cvar binding: A REST API binding.
@@ -196,7 +184,7 @@ class Repository(object):
         return 'repository: %s' % self.repo_id
 
 
-class ChildRepository(Child, Repository):
+class RepositoryOnChild(ChildEntity, Repository):
     """
     Represents a repository associated with the child inventory.
     :ivar poller: A task poller used to poll for tasks status and progress.
@@ -207,7 +195,7 @@ class ChildRepository(Child, Repository):
     def fetch_all(cls):
         """
         Fetch all repositories from the child inventory.
-        :return: A list of: ChildRepository
+        :return: A list of: RepositoryOnChild
         :rtype: list
         """
         all = []
@@ -228,7 +216,7 @@ class ChildRepository(Child, Repository):
         :param repo_id: Repository ID.
         :type repo_id: str
         :return: The fetched repository.
-        :rtype: ChildRepository
+        :rtype: RepositoryOnChild
         """
         details = {}
         try:
@@ -249,7 +237,7 @@ class ChildRepository(Child, Repository):
         """
         http = cls.binding.content_orphan.remove_all()
         if http.response_code != httplib.ACCEPTED:
-            raise ModelError('purge_orphans() failed:%d', http.response_code)
+            raise PurgeOrphansError(http.response_code)
 
     def __init__(self, repo_id, details=None):
         """
@@ -274,12 +262,12 @@ class ChildRepository(Child, Repository):
         # distributors
         for details in self.distributors:
             dist_id = details['id']
-            dist = ChildDistributor(self.repo_id, dist_id, details)
+            dist = DistributorOnChild(self.repo_id, dist_id, details)
             dist.add()
         # importers
         for details in self.importers:
             imp_id = details['id']
-            importer = ChildImporter(self.repo_id, imp_id, details)
+            importer = ImporterOnChild(self.repo_id, imp_id, details)
             importer.add()
         log.info('Repository: %s, added', self.repo_id)
 
@@ -334,11 +322,11 @@ class ChildRepository(Child, Repository):
         for details in parent.importers:
             imp_id = details['id']
             imp = Importer(self.repo_id, imp_id, details)
-            myimp = ChildImporter.fetch(self.repo_id, imp_id)
+            myimp = ImporterOnChild.fetch(self.repo_id, imp_id)
             if myimp:
                 myimp.merge(imp)
             else:
-                myimp = ChildImporter(self.repo_id, imp_id, details)
+                myimp = ImporterOnChild(self.repo_id, imp_id, details)
                 myimp.add()
 
     def delete_importers(self, parent):
@@ -352,7 +340,7 @@ class ChildRepository(Child, Repository):
         for details in self.importers:
             imp_id = details['id']
             if imp_id not in parent_ids:
-                imp = ChildImporter(self.repo_id, imp_id, {})
+                imp = ImporterOnChild(self.repo_id, imp_id, {})
                 imp.delete()
 
     def merge_distributors(self, parent):
@@ -371,11 +359,11 @@ class ChildRepository(Child, Repository):
         for details in parent.distributors:
             dist_id = details['id']
             dist = Distributor(self.repo_id, dist_id, details)
-            mydist = ChildDistributor.fetch(self.repo_id, dist_id)
+            mydist = DistributorOnChild.fetch(self.repo_id, dist_id)
             if mydist:
                 mydist.merge(dist)
             else:
-                mydist = ChildDistributor(self.repo_id, dist_id, details)
+                mydist = DistributorOnChild(self.repo_id, dist_id, details)
                 mydist.add()
 
     def delete_distributors(self, parent):
@@ -389,7 +377,7 @@ class ChildRepository(Child, Repository):
         for details in self.distributors:
             dist_id = details['id']
             if dist_id not in parent_ids:
-                dist = ChildDistributor(self.repo_id, dist_id, {})
+                dist = DistributorOnChild(self.repo_id, dist_id, {})
                 dist.delete()
 
     def run_synchronization(self, progress):
@@ -404,7 +392,7 @@ class ChildRepository(Child, Repository):
             task = http.response_body[0]
             return self.poller.join(task.task_id, progress)
         else:
-            raise ModelError('synchronization failed: http=%d', http.response_code)
+            raise RepoSyncRestError(self.repo_id, http.response_code)
 
     def cancel_synchronization(self):
         """
@@ -441,7 +429,7 @@ class Distributor(object):
         return 'distributor: %s.%s' % (self.repo_id, self.dist_id)
 
 
-class ChildDistributor(Child, Distributor):
+class DistributorOnChild(ChildEntity, Distributor):
     """
     Represents a repository-distributor associated with the child inventory.
     """
@@ -455,7 +443,7 @@ class ChildDistributor(Child, Distributor):
         :param dist_id: A distributor ID.
         :type dist_id: str
         :return: The fetched distributor.
-        :rtype: ChildDistributor
+        :rtype: DistributorOnChild
         """
         try:
             binding = cls.binding.repo_distributor
@@ -469,20 +457,13 @@ class ChildDistributor(Child, Distributor):
         """
         Add this repository-distributor to the child inventory.
         """
-        type_id = self.details['distributor_type_id']
-
-        try:
-            self.binding.repo_distributor.create(
-                self.repo_id,
-                type_id,
-                self.details['config'],
-                self.details['auto_publish'],
-                self.dist_id)
-            log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
-        except BadRequestException, e:
-            if 'distributor_type_id' in e.extra_data['property_names']:
-                e.error_message = DISTRIBUTOR_PLUGIN_MISSING % dict(t=type_id)
-            raise
+        self.binding.repo_distributor.create(
+            self.repo_id,
+            self.details['distributor_type_id'],
+            self.details['config'],
+            self.details['auto_publish'],
+            self.dist_id)
+        log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
 
     def update(self, delta):
         """
@@ -545,7 +526,7 @@ class Importer(object):
         return 'importer: %s.%s' % (self.repo_id, self.imp_id)
 
 
-class ChildImporter(Child, Importer):
+class ImporterOnChild(ChildEntity, Importer):
     """
     Represents a repository-importer associated with the child inventory.
     """
@@ -555,7 +536,7 @@ class ChildImporter(Child, Importer):
         """
         Fetch the repository-importer from the child inventory.
         :return: The fetched importer.
-        :rtype: ChildImporter
+        :rtype: ImporterOnChild
         """
         try:
             binding = cls.binding.repo_importer
@@ -609,7 +590,7 @@ class ChildImporter(Child, Importer):
             self.update(delta)
 
 
-class ParentBinding(Parent):
+class BindingsOnParent(ParentEntity):
     """
     Represents a parent consumer binding to a repository.
     """
@@ -623,11 +604,11 @@ class ParentBinding(Parent):
         """
         bundle = ConsumerSSLCredentialsBundle()
         myid = bundle.cn()
-        http = Parent.binding.bind.find_by_id(myid)
+        http = ParentEntity.binding.bind.find_by_id(myid)
         if http.response_code == httplib.OK:
             return cls.filtered(http.response_body)
         else:
-            raise ModelError('fetch failed, http:%d', http.response_code)
+            raise GetBindingsError(http.response_code)
 
     @classmethod
     def fetch(cls, repo_ids):
@@ -642,11 +623,11 @@ class ParentBinding(Parent):
         bundle = ConsumerSSLCredentialsBundle()
         myid = bundle.cn()
         for repo_id in repo_ids:
-            http = Parent.binding.bind.find_by_id(myid, repo_id)
+            http = ParentEntity.binding.bind.find_by_id(myid, repo_id)
             if http.response_code == httplib.OK:
                 binds.extend(cls.filtered(http.response_body))
             else:
-                raise ModelError('fetch failed, http:%d', http.response_code)
+                raise GetBindingsError(http.response_code)
         return binds
 
     @classmethod
@@ -660,35 +641,3 @@ class ParentBinding(Parent):
         :rtype: list
         """
         return [b for b in binds if b['type_id'] in constants.ALL_DISTRIBUTORS]
-
-
-class ParentNode(Parent):
-    """
-    Represents a node (consumer) in the parent node's inventory.
-    """
-
-    @classmethod
-    def fetch(cls):
-        """
-        Fetch this node from the parent.
-        :return: This node.
-        :rtype: dict
-        """
-        bundle = ConsumerSSLCredentialsBundle()
-        myid = bundle.cn()
-        http = Parent.binding.consumer.consumer(myid)
-        if http.response_code == httplib.OK:
-            return http.response_body
-        else:
-            raise Exception('Node not found in parent.')
-
-    @classmethod
-    def get_strategy(cls):
-        """
-        Get this node's update strategy.
-        :return: The node level strategy for this node.
-        :rtype: str
-        """
-        node = cls.fetch()
-        notes = node.get('notes', {})
-        return notes.get(constants.STRATEGY_NOTE_KEY, constants.DEFAULT_STRATEGY)
