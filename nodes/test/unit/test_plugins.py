@@ -429,8 +429,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -476,8 +476,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -525,8 +525,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, units_only=True))
         def test_handler(*unused):
             # publish
@@ -572,8 +572,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
@@ -622,8 +622,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
         def test_handler(*unused):
             # publish
@@ -669,8 +669,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -722,8 +722,8 @@ class TestAgentPlugin(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.Child.binding', binding)
-        @patch('pulp_node.handlers.strategies.Parent.binding', binding)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self, plugins=True))
         def test_handler(*unused):
             # publish

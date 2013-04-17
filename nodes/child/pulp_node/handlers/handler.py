@@ -19,7 +19,7 @@ from pulp.agent.lib.report import ContentReport
 from pulp_node import constants
 from pulp_node.handlers.strategies import find_strategy
 from pulp_node.handlers.reports import HandlerProgress, SummaryReport
-from pulp_node.handlers.model import ParentBinding
+from pulp_node.handlers.model import BindingsOnParent
 
 
 log = getLogger(__name__)
@@ -63,7 +63,7 @@ class NodeHandler(ContentHandler):
         """
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
-        bindings = ParentBinding.fetch_all()
+        bindings = BindingsOnParent.fetch_all()
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         strategy_class = find_strategy(strategy_name)
@@ -100,7 +100,7 @@ class RepositoryHandler(ContentHandler):
         report = SummaryReport()
         progress = HandlerProgress(conduit)
         repo_ids = [key['repo_id'] for key in units if key]
-        bindings = ParentBinding.fetch(repo_ids)
+        bindings = BindingsOnParent.fetch(repo_ids)
 
         strategy_class = find_strategy(constants.ADDITIVE_STRATEGY)
         strategy = strategy_class(progress, report)

@@ -81,7 +81,7 @@ class HandlerStrategy(object):
 
             # purge orphans
             if options.get(constants.PURGE_ORPHANS_KEYWORD):
-                ChildRepository.purge_orphans()
+                RepositoryOnChild.purge_orphans()
         except NodeError, ne:
             self.summary_report.errors.append(ne)
         except Exception, e:
@@ -122,14 +122,14 @@ class HandlerStrategy(object):
                 repo_id = bind['repo_id']
                 details = bind['details']
                 parent = Repository(repo_id, details)
-                child = ChildRepository.fetch(repo_id)
+                child = RepositoryOnChild.fetch(repo_id)
                 progress = self.progress_report.find_report(repo_id)
                 progress.begin_merging()
                 if child:
                     self.summary_report[repo_id].action = RepositoryReport.MERGED
                     child.merge(parent)
                 else:
-                    child = ChildRepository(repo_id, parent.details)
+                    child = RepositoryOnChild(repo_id, parent.details)
                     self.summary_report[repo_id].action = RepositoryReport.ADDED
                     child.add()
                 self._synchronize_repository(repo_id)
@@ -146,7 +146,7 @@ class HandlerStrategy(object):
         :param repo_id: A repository ID.
         :type repo_id: str
         """
-        repo = ChildRepository(repo_id)
+        repo = RepositoryOnChild(repo_id)
         progress = self.progress_report.find_report(repo_id)
         importer_report = repo.run_synchronization(progress)
         progress.finished()
@@ -167,14 +167,14 @@ class HandlerStrategy(object):
         :type bindings: list
         """
         repositories_on_parent = [b['repo_id'] for b in bindings]
-        repositories_on_child = [r.repo_id for r in ChildRepository.fetch_all()]
+        repositories_on_child = [r.repo_id for r in RepositoryOnChild.fetch_all()]
         for repo_id in sorted(repositories_on_child):
             if self.cancelled:
                 break
             try:
                 if repo_id not in repositories_on_parent:
                     self.summary_report[repo_id] = RepositoryReport(repo_id, RepositoryReport.DELETED)
-                    repo = ChildRepository(repo_id)
+                    repo = RepositoryOnChild(repo_id)
                     repo.delete()
             except NodeError, ne:
                 self.summary_report.errors.append(ne)

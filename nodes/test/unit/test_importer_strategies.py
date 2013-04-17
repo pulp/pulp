@@ -16,7 +16,7 @@ from mock import Mock
 from pulp.plugins.model import Unit
 from pulp_node.importers.strategies import ImporterStrategy
 from pulp_node.importers.reports import SummaryReport, ProgressListener
-from pulp_node.progress import RepositoryProgress
+from pulp_node.reports import RepositoryProgress
 
 
 class TestBase(TestCase):

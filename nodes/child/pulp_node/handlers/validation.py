@@ -11,7 +11,7 @@
 
 import httplib
 
-from pulp_node.handlers.model import Child
+from pulp_node.handlers.model import ChildEntity
 from pulp_node.error import ImporterNotInstalled, DistributorNotInstalled
 
 
@@ -81,7 +81,7 @@ class Validator(object):
         return errors
 
 
-class ChildServer(Child):
+class ChildServer(ChildEntity):
 
     def __init__(self):
         self.importers = self._importers()
