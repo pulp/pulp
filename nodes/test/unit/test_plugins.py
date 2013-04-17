@@ -501,7 +501,7 @@ class TestAgentPlugin(PluginTestBase):
         # Verify
         report = _report[0].details['node']
         self.assertTrue(report['succeeded'])
-        errors= report['details']['errors']
+        errors = report['details']['errors']
         repositories = report['details']['repositories']
         self.assertEqual(len(errors), 0)
         self.assertEqual(len(repositories), 1)
