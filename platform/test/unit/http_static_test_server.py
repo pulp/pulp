@@ -15,7 +15,6 @@
 HTTP test server for writing tests against an "external" server.
 """
 
-import httplib
 import threading
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
