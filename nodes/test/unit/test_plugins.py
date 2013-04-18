@@ -17,6 +17,8 @@ import tempfile
 import shutil
 import random
 
+from copy import deepcopy
+
 from mock import Mock, patch
 from base import WebTest
 
@@ -88,7 +90,7 @@ class PluginTestBase(WebTest):
     UNIT_ID = 'test_unit_%d'
     UNIT_METADATA = {'A':'a','B':'b', 'N': 0}
     TYPEDEF_ID = UNIT_TYPE_ID
-    NUM_UNITS = 3
+    NUM_UNITS = 10
     NUM_EXTRA_UNITS = 5
     EXTRA_REPO_IDS = ('extra_1', 'extra_2')
 
@@ -166,10 +168,11 @@ class PluginTestBase(WebTest):
             if not os.path.exists(storage_dir):
                 os.makedirs(storage_dir)
             storage_path = os.path.join(storage_dir, '.'.join((unit_id, self.UNIT_TYPE_ID)))
-            unit['_storage_path'] = storage_path
-            fp = open(storage_path, 'w+')
-            fp.write(unit_id)
-            fp.close()
+            if n % 2 == 0:  # even numbered has file associated
+                unit['_storage_path'] = storage_path
+                fp = open(storage_path, 'w+')
+                fp.write(unit_id)
+                fp.close()
             # add unit
             manager = managers.content_manager()
             manager.add_content_unit(
@@ -267,7 +270,7 @@ class TestDistributor(PluginTestBase):
 
     def test_config_missing_protocol(self):
         # Test
-        conf = dict(self.VALID_CONFIGURATION)
+        conf = deepcopy(self.VALID_CONFIGURATION)
         del conf[constants.PROTOCOL_KEYWORD]
         dist = NodesHttpDistributor()
         repo = plugin_model.Repository(self.REPO_ID)
@@ -281,7 +284,7 @@ class TestDistributor(PluginTestBase):
 
     def test_config_missing_http_protocol(self):
         # Test
-        conf = dict(self.VALID_CONFIGURATION)
+        conf = deepcopy(self.VALID_CONFIGURATION)
         for protocol in ('http', 'https'):
             del conf[protocol]
             dist = NodesHttpDistributor()
@@ -296,7 +299,7 @@ class TestDistributor(PluginTestBase):
 
     def test_config_missing_alias(self):
         # Test
-        conf = dict(self.VALID_CONFIGURATION)
+        conf = deepcopy(self.VALID_CONFIGURATION)
         del conf['https']['alias']
         dist = NodesHttpDistributor()
         repo = plugin_model.Repository(self.REPO_ID)
@@ -310,7 +313,7 @@ class TestDistributor(PluginTestBase):
 
     def test_config_missing_invalid_alias(self):
         # Test
-        conf = dict(self.VALID_CONFIGURATION)
+        conf = deepcopy(self.VALID_CONFIGURATION)
         conf['https']['alias'] = None
         dist = NodesHttpDistributor()
         repo = plugin_model.Repository(self.REPO_ID)
@@ -437,7 +440,7 @@ class ImporterTest(PluginTestBase):
 
     def test_invalid_strategy(self):
         # Test
-        conf = dict(self.VALID_CONFIGURATION)
+        conf = deepcopy(self.VALID_CONFIGURATION)
         conf[constants.STRATEGY_KEYWORD] = '---',
         importer = NodesHttpImporter()
         repo = plugin_model.Repository(self.REPO_ID)
@@ -576,13 +579,16 @@ class TestAgentPlugin(PluginTestBase):
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
-        units = dict([(u['metadata']['N'], u) for u in units])
+        #units = dict([(u['metadata']['N'], u) for u in units])
         self.assertEqual(len(units), num_units)
-        for n in range(0, num_units):
-            unit = units[n]
-            unit_id = self.UNIT_ID % n
+        for unit in units:
             metadata = unit['metadata']
-            storage_path = metadata['_storage_path'].replace('//', '/')
+            unit_id = self.UNIT_ID % metadata['N']  # injected by test
+            storage_path = metadata['_storage_path']
+            if not storage_path:
+                # no file associated with the unit
+                continue
+            storage_path = storage_path.replace('//', '/')
             self.assertEqual(unit['unit_type_id'], self.UNIT_TYPE_ID)
             self.assertEqual(unit['repo_id'], self.REPO_ID)
             self.assertEqual(unit['owner_id'], constants.HTTP_IMPORTER)
@@ -915,10 +921,11 @@ class TestAgentPlugin(PluginTestBase):
         self.assertEqual(repository['repo_id'], self.REPO_ID)
         self.assertEqual(repository['action'], RepositoryReport.ADDED)
         units = repository['units']
-        self.assertEqual(units['added'], 0)
+        num_units_added = self.NUM_UNITS / 2
+        self.assertEqual(units['added'], num_units_added)
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
-        self.verify(0)
+        self.verify(num_units_added)
 
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
@@ -1079,8 +1086,7 @@ class TestAgentPlugin(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
         @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
-        @patch('pulp_node.handlers.handler.find_strategy',
-               return_value=TestStrategy(self, extra_repos=self.EXTRA_REPO_IDS))
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=TestStrategy(self))
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
@@ -1090,22 +1096,22 @@ class TestAgentPlugin(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = dict(strategy=constants.ADDITIVE_STRATEGY)
-            units = [{'type_id':'node', 'unit_key':None}]
+            units = [{'type_id':'repository', 'unit_key':dict(repo_id=self.REPO_ID)}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
             dispatcher = Dispatcher(container)
-            container.handlers[CONTENT]['node'] = RepositoryHandler(self)
+            container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
             report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
         test_handler()
         # Verify
-        report = _report[0].details['node']
+        report = _report[0].details['repository']
         self.assertTrue(report['succeeded'])
         errors = report['details']['errors']
         repositories = report['details']['repositories']
         self.assertEqual(len(errors), 0)
-        self.assertEqual(len(repositories), len(self.EXTRA_REPO_IDS) + 1)
+        self.assertEqual(len(repositories), 1)
         repository = repositories[0]
         self.assertEqual(repository['repo_id'], self.REPO_ID)
         self.assertEqual(repository['action'], RepositoryReport.ADDED)
