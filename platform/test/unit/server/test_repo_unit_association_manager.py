@@ -245,9 +245,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo(dest_repo_id)
         self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
 
-        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1'})
-        self.content_manager.add_content_unit('mock-type', 'unit-2', {'key-1' : 'unit-2'})
-        self.content_manager.add_content_unit('mock-type', 'unit-3', {'key-1' : 'unit-3'})
+        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1' : 'unit-1', 'key-2':'foo', 'key-3':'bar'})
+        self.content_manager.add_content_unit('mock-type', 'unit-2', {'key-1' : 'unit-2', 'key-2':'foo', 'key-3':'bar'})
+        self.content_manager.add_content_unit('mock-type', 'unit-3', {'key-1' : 'unit-3', 'key-2':'foo', 'key-3':'bar'})
 
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-1', OWNER_TYPE_USER, 'admin')
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-2', OWNER_TYPE_USER, 'admin')
@@ -255,7 +255,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Test
         overrides = { 'abc': '123'}
-        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1'])
+        criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'unit-2'}, unit_fields=['key-1', 'key-2'])
         self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria, import_config_override=overrides)
 
         # Verify
@@ -265,6 +265,10 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         kwargs = mock_plugins.MOCK_IMPORTER.import_units.call_args[1]
         for k,v in overrides.items():
             self.assertEqual(args[3].get(k), v)
+        # make sure the criteria's "unit_fields" are being respected by giving
+        # us key-2, but not key-3
+        self.assertTrue('key-2' in kwargs['units'][0].metadata)
+        self.assertTrue('key-3' not in kwargs['units'][0].metadata)
         self.assertEqual(1, len(kwargs['units']))
         self.assertEqual(kwargs['units'][0].id, 'unit-2')
 
