@@ -248,6 +248,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 0.76-1
+- bump gofer 0.76 in deps/ (jortel@redhat.com)
+
 * Wed Mar 06 2013 Jeff Ortel <jortel@redhat.com> 0.76-1
 - Add support for cancelling RMI; thread pool rewrite; RMI class restructure.
   (jortel@redhat.com)
