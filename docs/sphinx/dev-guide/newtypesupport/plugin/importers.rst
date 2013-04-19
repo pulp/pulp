@@ -159,6 +159,13 @@ There are two approaches to handling this method:
   must be created using the ``init_unit`` method and then saved to the repository with ``save_unit``
   in the same way as in :ref:`importer_sync`.
 
+.. note::
+ Take note if which attributes on the unit are required for use when importing.
+ It is then possible to specify in the associate
+ request's :ref:`unit association criteria <unit_association_criteria>` which fields should
+ be loaded, which result in reduced RAM use during the import process,
+ especially for units with a lot of metadata.
+
 Remove Units
 ^^^^^^^^^^^^
 
