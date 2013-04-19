@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -435,6 +435,15 @@ exit 0
 %endif
 
 %changelog
+* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
+- 953665 - added ability for copy commands to specify the fields of their units
+  that should be fetched, so as to avoid loading the entirety of every unit in
+  the source repository into RAM. Also added the ability to provide a custom
+  "override_config" based on CLI options. (mhrivnak@redhat.com)
+- 952310 - support file:// urls. (jortel@redhat.com)
+- 949174 - Use a single boolean setting for whether the downloaders should
+  validate SSL hosts. (rbarlow@redhat.com)
+
 * Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
 - 950632 - added unit_id search index on the repo_content_units collection
   (jason.connor@gmail.com)
