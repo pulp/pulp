@@ -5,7 +5,15 @@ Pulp 2.1 Release Notes
 Pulp 2.1.1
 ==========
 
-This release provides bugfixes, and also includes some performance improvements.
+This release provides bugfixes and also includes some performance improvements.
+
+Changes
+-------
+
+When making a REST API call to copy units between repositories, there is now an
+opportunity to limit which fields of those units get loaded into RAM and handed
+to the importer. This can enable great reductions in RAM use when copying units
+that contain a lot of metadata.
 
 Notable Bugs
 ------------

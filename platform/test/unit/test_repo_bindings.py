@@ -96,6 +96,10 @@ class TestRepoUnitCopyAPI(unittest.TestCase):
         self.assertEqual(self.query['filters'],
                 {'unit': {'count': {'$lte': 5}}})
 
+    def test_unit_fields(self):
+        self.api.copy('repo1', 'repo2', type_ids=['rpm'], fields=['a', 'b'])
+        self.assertEqual(self.query['fields'], {'unit': ['a', 'b']})
+
     def test_source_repo_id(self):
         self.api.copy('repo1', 'repo2', type_ids=['rpm'])
         self.assertEqual(self.api.server.POST.call_args[0][1].get('source_repo_id', None), 'repo1')
