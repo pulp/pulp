@@ -313,6 +313,12 @@ class RepositoryUnitAPI(PulpAPI):
             'filters': {'unit': SearchAPI.compose_filters(**kwargs)},
             'type_ids' : kwargs['type_ids'],
         }
+        # allow a caller with type-specific knowledge to limit the fields that
+        # are retrieved. for copy purposes, we probably don't need all of the
+        # unit's attributes, and limiting which fields are retrieved can save
+        # a lot of RAM
+        if kwargs.get('fields'):
+            criteria['fields'] = {'unit': kwargs.pop('fields')}
 
         # build the association filters
         association_fake_kwargs = {}
@@ -375,7 +381,8 @@ class RepositoryUnitAPI(PulpAPI):
 
         :return:    server response
         """
-        override_config = {}
+        # allow plugins to pass in their own override config options from the CLI
+        override_config = kwargs.pop('override_config', {})
         if 'recursive' in kwargs and kwargs['recursive']:
             override_config['recursive'] = kwargs['recursive']
 

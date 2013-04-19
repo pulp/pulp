@@ -415,7 +415,6 @@ class RepoUnitAssociationManager(object):
 
 def load_associated_units(source_repo_id, criteria):
     criteria.association_fields = None
-    criteria.unit_fields = None
 
     # Retrieve the units to be associated
     association_query_manager = manager_factory.repo_unit_association_query_manager()
