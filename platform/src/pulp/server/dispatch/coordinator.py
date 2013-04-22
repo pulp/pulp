@@ -69,7 +69,9 @@ class Coordinator(object):
         queued_call_list = list(queued_call_collection.find().sort('timestamp'))
         queued_call_collection.remove(safe=True)
 
-        queued_call_request_list = [CallRequest.deserialize(q['serialized_call_request']) for q in queued_call_list]
+        queued_call_request_list = [c for c in
+                                    [CallRequest.deserialize(q['serialized_call_request']) for q in queued_call_list]
+                                    if c is not None]
 
         while queued_call_request_list:
             call_request = queued_call_request_list[0]
