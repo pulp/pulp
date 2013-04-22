@@ -31,7 +31,7 @@ log = getLogger(__name__)
 # Agent
 #
 
-class PulpAgent:
+class PulpAgent(object):
     """
     Represents a remote pulp agent.
     """
@@ -70,7 +70,7 @@ class PulpAgent:
         return Profile(self.context)
 
     @classmethod
-    def status(self, uuids):
+    def status(cls, uuids):
         """
         Get the status of the agent.
         Relies on heartbeat.
@@ -79,6 +79,21 @@ class PulpAgent:
         @return: {}
         """
         return Services.heartbeat_listener.status(uuids)
+
+    def cancel(self, task_id):
+        """
+        Cancel an agent request by task ID.
+        :param task_id: The ID of a task associated with an agent request.
+        :type task_id: str
+        """
+        agent = Agent(
+            self.context.uuid,
+            url=self.context.url,
+            secret=self.context.secret,
+            timeout=(None, None),
+            async=True)
+        admin = agent.Admin()
+        admin.cancel(criteria={'eq': task_id})
 
 #
 # Agent Capability(s)

@@ -72,7 +72,7 @@ class PulpAgent:
         return Profile(self.context)
 
     @classmethod
-    def status(self, uuids):
+    def status(cls, uuids):
         """
         Get the status of the agent.
         Relies on heartbeat.
@@ -90,6 +90,23 @@ class PulpAgent:
             else:
                 raise Exception('Status Failed')
         return result
+
+    def cancel(self, task_id):
+        """
+        Cancel an agent request by task ID.
+        :param task_id: The ID of a task associated with an agent request.
+        :type task_id: str
+        """
+        agent = Agent(
+            self.context.uuid,
+            rest=Rest(),
+            secret=self.context.secret,
+            timeout=(None, None),
+            async=True)
+        admin = agent.Admin()
+        status, result = admin.cancel(criteria={'eq': task_id})
+        if status != 202:
+            raise Exception('Cancellation Failed')
 
 #
 # Agent Capability(s)

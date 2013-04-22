@@ -32,16 +32,16 @@ def install():
     Services.heartbeat_listener = HeartbeatListener(None)
     mock.install()
     mock.reset()
-    mock.register(
-        Consumer=Consumer,
-        Content=Content,
-        Profile=Profile)
+    mock.register(Admin=Admin, Consumer=Consumer, Content=Content, Profile=Profile)
+
 
 def reset():
     mock.reset()
+    Admin.reset()
     Consumer.reset()
     Content.reset()
     Profile.reset()
+
 
 def all():
     return mock.all()
@@ -96,6 +96,16 @@ def dispatch(*args):
 #
 # Capabilities
 #
+
+
+class Admin(object):
+
+    @classmethod
+    def reset(cls):
+        cls.cancel.reset_mock()
+
+    cancel = Mock()
+
 
 class Consumer(object):
     """
