@@ -214,6 +214,7 @@ class SyncReport(object):
 
     def __init__(self, success_flag, added_count, updated_count, removed_count, summary, details):
         self.success_flag = success_flag
+        self.canceled_flag = False
         self.added_count = added_count
         self.updated_count = updated_count
         self.removed_count = removed_count
@@ -240,6 +241,7 @@ class PublishReport(object):
 
     def __init__(self, success_flag, summary, details):
         self.success_flag = success_flag
+        self.canceled_flag = False
         self.summary = summary
         self.details = details
 
