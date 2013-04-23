@@ -27,9 +27,11 @@ from pulp.common.config import Config
 from pulp.server.config import config as pulp_conf
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 from pulp.server.db import connection
+
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as managers
 from pulp.server.db.model.auth import User
+from pulp.server.db.model.dispatch import QueuedCall
 
 import web
 import base64
@@ -42,6 +44,7 @@ from pulp.server.dispatch import factory as dispatch_factory
 
 
 SerialNumber.PATH = '/tmp/sn.dat'
+
 
 class ServerTests(TestCase):
 
@@ -71,6 +74,13 @@ class ServerTests(TestCase):
         name = pulp_conf.get('database', 'name')
         connection._connection.drop_database(name)
 
+    def setUp(self):
+        QueuedCall.get_collection().remove()
+        dispatch_factory.initialize()
+
+    def tearDown(self):
+        dispatch_factory.finalize(True)
+
 
 class WebTest(ServerTests):
 
@@ -82,7 +92,6 @@ class WebTest(ServerTests):
     @classmethod
     def setUpClass(cls):
         ServerTests.setUpClass()
-        dispatch_factory.initialize()
         from pulp.server.webservices import application
         pulp_app = web.subdir_application(application.URLS).wsgifunc()
         pulp_stack_components = [
@@ -105,7 +114,6 @@ class WebTest(ServerTests):
     def tearDownClass(cls):
         ServerTests.tearDownClass()
         http.request_info = cls.ORIG_HTTP_REQUEST_INFO
-        dispatch_factory.finalize(clear_queued_calls=True)
 
     def setUp(self):
         ServerTests.setUp(self)
