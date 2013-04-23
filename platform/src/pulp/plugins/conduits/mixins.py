@@ -559,7 +559,7 @@ class PublishReportMixin(object):
         r = PublishReport(True, summary, details)
         return r
 
-    def build_failure_report(self, summary, details):
+    def build_failure_report(self, summary, details, is_canceled=False):
         """
         Creates the PublishReport instance that needs to be returned to the Pulp
         server at the end of the publish_repo call. The report built in this
@@ -571,8 +571,12 @@ class PublishReportMixin(object):
 
         @param details: potentially longer log of the publish; may be None
         @type  details: any serializable
+
+        @param is_canceled: flag to indicate if the publish was canceled
+        @type is_canceled: bool
         """
         r = PublishReport(False, summary, details)
+        r.canceled_flag = is_canceled
         return r
 
 # -- utilities ----------------------------------------------------------------

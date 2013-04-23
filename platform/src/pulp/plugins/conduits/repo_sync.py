@@ -136,7 +136,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
                        self._removed_count, summary, details)
         return r
 
-    def build_failure_report(self, summary, details):
+    def build_failure_report(self, summary, details, is_canceled=False):
         """
         Creates the SyncReport instance that needs to be returned to the Pulp
         server at the end of a sync_repo call. The report built in this fashion
@@ -156,7 +156,11 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
 
         @param details: potentially longer log of the sync; may be None
         @type  details: any serializable
+
+        @param is_canceled: flag to indicate if the sync was canceled
+        @type is_canceled: bool
         """
         r = SyncReport(False, self._added_count, self._updated_count,
                        self._removed_count, summary, details)
+        r.canceled_flag = is_canceled
         return r
