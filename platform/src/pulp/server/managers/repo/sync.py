@@ -176,11 +176,11 @@ class RepoSyncManager(object):
                 summary = sync_report.summary
                 details = sync_report.details
 
-                if sync_report.success_flag:
-                    result_code = RepoSyncResult.RESULT_SUCCESS
-
-                elif sync_report.canceled_flag:
+                if sync_report.canceled_flag:
                     result_code = RepoSyncResult.RESULT_CANCELED
+
+                elif sync_report.success_flag:
+                    result_code = RepoSyncResult.RESULT_SUCCESS
 
                 else:
                     result_code = RepoSyncResult.RESULT_FAILED
