@@ -83,7 +83,7 @@ class GetBindingsError(NodeError):
 class GetChildUnitsError(NodeError):
 
     ERROR_ID = 'rest.child.units.get'
-    DESCRIPTION = _('Get units from the child failed with http code [%(http_code)s].')
+    DESCRIPTION = _('Get units in repository [%(repo_id)s] from the child failed.')
 
     def __init__(self, repo_id):
         super(GetChildUnitsError, self).__init__(self.ERROR_ID, repo_id=repo_id)
