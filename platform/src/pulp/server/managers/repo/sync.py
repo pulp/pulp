@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2012 Red Hat, Inc.
+# Copyright © 2011-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -35,7 +35,6 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
@@ -197,6 +196,7 @@ class RepoSyncManager(object):
                                                     removed_count, summary, details, result_code)
 
         finally:
+            # Do an update instead of a save in case the importer has changed the scratchpad
             importer_coll.update({'repo_id': repo_id}, {'$set': {'last_sync': sync_end_timestamp}}, safe=True)
             # Add a sync history entry for this run
             sync_result_coll.save(result, safe=True)
