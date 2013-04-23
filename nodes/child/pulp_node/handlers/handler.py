@@ -67,7 +67,7 @@ class NodeHandler(ContentHandler):
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         strategy_class = find_strategy(strategy_name)
-        strategy = strategy_class(progress_report, summary_report)
+        strategy = strategy_class(conduit.cancelled, progress_report, summary_report)
         strategy.synchronize(bindings, options)
 
         for ne in summary_report.errors:
@@ -103,7 +103,7 @@ class RepositoryHandler(ContentHandler):
         bindings = BindingsOnParent.fetch(repo_ids)
 
         strategy_class = find_strategy(constants.ADDITIVE_STRATEGY)
-        strategy = strategy_class(progress, report)
+        strategy = strategy_class(conduit.cancelled, progress, report)
         progress.started(bindings)
         strategy.synchronize(bindings, options)
 

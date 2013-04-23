@@ -60,6 +60,8 @@ def entry_point():
 class NodesHttpImporter(Importer):
     """
     The nodes importer is used to synchronize repository content.
+    :ivar cancelled: Indicates whether the sync has been cancelled.
+    :type cancelled: bool
     """
 
     @classmethod
@@ -69,6 +71,9 @@ class NodesHttpImporter(Importer):
             'display_name' : 'Pulp Nodes HTTP Importer',
             'types' : ['node', 'repository']
         }
+
+    def __init__(self):
+        self.cancelled = False
 
     def validate_config(self, repo, config, related_repos):
         """
@@ -122,9 +127,14 @@ class NodesHttpImporter(Importer):
             downloader = self._downloader(config)
             strategy_name = config.get(constants.STRATEGY_KEYWORD)
             strategy_class = find_strategy(strategy_name)
-            listener = ProgressListener(conduit)
-            progress_report = RepositoryProgress(repo.id, listener)
-            strategy = strategy_class(conduit, config, downloader, progress_report, summary_report)
+            progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
+            strategy = strategy_class(
+                cancelled=self._cancelled,
+                conduit=conduit,
+                config=config,
+                downloader=downloader,
+                progress_report=progress_report,
+                summary_report=summary_report)
             progress_report.begin_importing()
             strategy.synchronize(repo.id)
         except Exception, e:
@@ -133,6 +143,12 @@ class NodesHttpImporter(Importer):
         summary_report.update(repo_id=repo.id)
         report = conduit.build_success_report({}, summary_report.dict())
         return report
+
+    def cancel_sync_repo(self, call_request, call_report):
+        self.cancelled = True
+
+    def _cancelled(self):
+        return self.cancelled
 
     def _downloader(self, config):
         """

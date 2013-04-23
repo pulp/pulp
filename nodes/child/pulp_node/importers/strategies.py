@@ -60,20 +60,22 @@ class ImporterStrategy(object):
     :type summary_report: pulp_node.importers.reports.SummaryReport
     """
 
-    def __init__(self, conduit, config, downloader, progress_report, summary_report):
+    def __init__(self, cancelled, conduit, config, downloader, progress_report, summary_report):
         """
+        :param cancelled: A function to get whether the operation has been cancelled.
+         :type cancelled: callable
         :param conduit: Provides access to relevant Pulp functionality.
         :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
         :param config: The plugin configuration.
         :type config: pulp.server.plugins.config.PluginCallConfiguration
         :param downloader: A fully configured file downloader.
         :type downloader: pulp.common.download.backends.base.DownloadBackend
-        :param progress: A progress reporting object.
-        :type progress: pulp_node.importers.reports.RepositoryProgress
+        :param progress_report: A progress reporting object.
+        :type progress_report: pulp_node.importers.reports.RepositoryProgress
         :param summary_report: A summary report.
         :type summary_report: pulp_node.importers.reports.SummaryReport
         """
-        self.cancelled = False
+        self.cancelled = cancelled
         self.conduit = conduit
         self.config = config
         self.downloader = downloader
@@ -105,13 +107,6 @@ class ImporterStrategy(object):
         :rtype: Report
         """
         raise NotImplementedError()
-
-    def cancel(self):
-        """
-        Cancel the synchronization in progress.
-        """
-        self.cancelled = True
-        self.downloader.cancel()
 
     def add_unit(self, repo_id, unit):
         """
@@ -209,8 +204,8 @@ class ImporterStrategy(object):
         self.progress_report.begin_adding_units(len(units))
         request_list = []
         for unit, child_unit in units:
-            if self.cancelled:
-                break
+            if self.cancelled():
+                return
             download = unit.get('_download')
             if not download:
                 # unit has no file associated
@@ -219,7 +214,7 @@ class ImporterStrategy(object):
             url = download['url']
             request = UnitDownloadRequest(url, repo_id, child_unit)
             request_list.append(request)
-        if self.cancelled:
+        if self.cancelled():
             return
         listener = DownloadListener(self)
         self.downloader.event_listener = listener
@@ -234,8 +229,8 @@ class ImporterStrategy(object):
         :type unit_inventory: UnitInventory
         """
         for unit in unit_inventory.child_only():
-            if self.cancelled:
-                break
+            if self.cancelled():
+                return
             try:
                 self.conduit.remove_unit(unit)
             except Exception:

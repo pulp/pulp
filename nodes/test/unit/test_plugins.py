@@ -92,9 +92,9 @@ class TestStrategy:
         self.tester = tester
         self.options = options
 
-    def __call__(self, progress, report):
+    def __call__(self, *args, **kwargs):
         self.tester.clean(**self.options)
-        return self._impl()(progress, report)
+        return self._impl()(*args, **kwargs)
 
     def _impl(self):
         raise NotImplementedError()

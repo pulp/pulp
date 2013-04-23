@@ -44,14 +44,16 @@ class HandlerStrategy(object):
     :type summary_report: SummaryReport
     """
 
-    def __init__(self, progress_report, summary_report):
+    def __init__(self, cancelled, progress_report, summary_report):
         """
+        :param cancelled: A function to get whether the synchronization has been cancelled.
+        :type cancelled: callable
         :param progress_report: A progress reporting object.
         :type progress_report: HandlerProgress
-        :param summary: A summary reporting object.
-        :type summary: SummaryReport
+        :param summary_report: A summary reporting object.
+        :type summary_report: SummaryReport
         """
-        self.cancelled = False
+        self.cancelled = cancelled
         self.progress_report = progress_report
         self.summary_report = summary_report
 
@@ -99,12 +101,6 @@ class HandlerStrategy(object):
         """
         raise NotImplementedError()
 
-    def cancel(self):
-        """
-        Cancel the current operation.
-        """
-        self.cancelled = True
-
     # --- protected ---------------------------------------------------------------------
 
     def _merge_repositories(self, bindings):
@@ -116,7 +112,7 @@ class HandlerStrategy(object):
         :type bindings: list
         """
         for bind in bindings:
-            if self.cancelled:
+            if self.cancelled():
                 break
             try:
                 repo_id = bind['repo_id']
@@ -148,7 +144,7 @@ class HandlerStrategy(object):
         """
         repo = RepositoryOnChild(repo_id)
         progress = self.progress_report.find_report(repo_id)
-        importer_report = repo.run_synchronization(progress)
+        importer_report = repo.run_synchronization(progress, self.cancelled)
         progress.finished()
         details = importer_report['details']
         for _dict in details['errors']:
@@ -169,7 +165,7 @@ class HandlerStrategy(object):
         repositories_on_parent = [b['repo_id'] for b in bindings]
         repositories_on_child = [r.repo_id for r in RepositoryOnChild.fetch_all()]
         for repo_id in sorted(repositories_on_child):
-            if self.cancelled:
+            if self.cancelled():
                 break
             try:
                 if repo_id not in repositories_on_parent:

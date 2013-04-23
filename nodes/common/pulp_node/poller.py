@@ -46,22 +46,18 @@ class TaskPoller(object):
 
     DELAY = 1
 
-    def __init__(self, binding, delay=DELAY):
+    def __init__(self, binding, cancelled, delay=DELAY):
         """
-        :ivar binding: A pulp API binding.
+        :param binding: A pulp API binding.
         :type binding: pulp_node.handlers.model.PulpBinding
-        :ivar delay: The delay in seconds between each poll.
+        :param cancelled: A function used to get whether polling has been aborted.
+        :type cancelled: callable
+        :param delay: The delay in seconds between each poll.
         :type delay: int
         """
         self.binding = binding
+        self.cancelled = cancelled
         self.delay = delay
-        self.poll = True
-
-    def abort(self):
-        """
-        Abort polling.
-        """
-        self.poll = False
 
     def join(self, task_id, progress):
         """
@@ -75,7 +71,10 @@ class TaskPoller(object):
         """
         last_hash = 0
 
-        while self.poll:
+        while True:
+            if self.cancelled():
+                return
+
             sleep(self.delay)
 
             http = self.binding.tasks.get_task(task_id)
