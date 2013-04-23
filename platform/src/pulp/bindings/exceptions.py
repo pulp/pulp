@@ -47,8 +47,8 @@ class RequestException(Exception):
 # Response code = 400
 class BadRequestException(RequestException): pass
 
-# Response code = 401. Commented out for now until we fix server side exception handling to follow same hierarchy.
-# class PermissionsException(RequestException): pass
+# Response code = 401
+class PermissionsException(RequestException): pass
 
 # Response code = 404
 class NotFoundException(RequestException): pass
@@ -89,13 +89,5 @@ class ConnectionException(Exception):
     [1] the response message as a dict, if we managed to decode from json,
     or a str if we didn't [2] potentially a traceback, if the server response
     was a python error, otherwise it will be None
-    """
-    pass
-
-class PermissionsException(Exception):
-    """
-    Indicates an attempt was made to do a server call without providing
-    authentication credentials, either through a certificate or as command
-    line flags.
     """
     pass

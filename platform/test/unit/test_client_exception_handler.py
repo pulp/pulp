@@ -20,6 +20,7 @@ import pulp.bindings.exceptions as exceptions
 from pulp.client.extensions.core import TAG_FAILURE
 import pulp.client.extensions.exceptions as handler
 from pulp.client.arg_utils import InvalidConfig
+from pulp.common import auth_utils
 
 
 class ExceptionsLoaderTest(base.PulpClientTests):
@@ -239,7 +240,8 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         """
 
         # Test
-        e = exceptions.PermissionsException()
+        response_body = auth_utils.generate_failure_response(auth_utils.CODE_FAILED)
+        e = exceptions.PermissionsException(response_body)
         code = self.exception_handler.handle_permission(e)
 
         # Verify

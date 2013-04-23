@@ -18,7 +18,7 @@ from M2Crypto import X509
 
 import pulp.client.launcher
 from pulp.client.extensions.exceptions import ExceptionHandler, CODE_PERMISSIONS_EXCEPTION
-
+from pulp.common import auth_utils
 
 # -- admin client overrides ---------------------------------------------------
 
@@ -33,6 +33,20 @@ class AdminExceptionHandler(ExceptionHandler):
 
         self._log_client_exception(e)
 
+        handlers = {
+            auth_utils.CODE_FAILED : self._handle_authentication_failed,
+            auth_utils.CODE_PERMISSION : self._handle_permission_error,
+            auth_utils.CODE_INVALID_SSL_CERT : self._handle_authentication_failed,
+            auth_utils.CODE_USER_PASS : self._handle_invalid_username,
+        }
+
+        error_code = auth_utils.get_error_code(e.extra_data)
+        handler_method = handlers.get(error_code, self._handle_unknown)
+        handler_method()
+
+        return CODE_PERMISSIONS_EXCEPTION
+
+    def _handle_authentication_failed(self):
         msg = _('Authentication Failed')
 
         # If the certificate exists, parse the expiration date
@@ -68,7 +82,24 @@ class AdminExceptionHandler(ExceptionHandler):
         self.prompt.render_failure_message(msg)
         self.prompt.render_paragraph(desc)
 
-        return CODE_PERMISSIONS_EXCEPTION
+    def _handle_permission_error(self):
+        msg = _('Insufficient Permissions')
+        desc = _('The user does not have the appropriate permissions to execute this command.')
+
+        self.prompt.render_failure_message(msg)
+        self.prompt.render_paragraph(desc)
+
+    def _handle_invalid_username(self):
+        msg = _('Invalid Username or Password')
+
+        self.prompt.render_failure_message(msg)
+
+    def _handle_unknown(self):
+        msg = _('Unknown Authentication Failure')
+        desc = _('See the server logs for more information.')
+
+        self.prompt.render_failure_message(msg)
+        self.prompt.render_paragraph(desc)
 
 # -- script execution ---------------------------------------------------------
 
