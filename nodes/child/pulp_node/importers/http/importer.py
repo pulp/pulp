@@ -95,9 +95,9 @@ class NodesHttpImporter(Importer):
                 msg = PROPERTY_MISSING % dict(p=key)
                 errors.append(msg)
 
-        strategy = config.get(constants.STRATEGY_KEYWORD)
+        strategy = config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
         if strategy not in constants.STRATEGIES:
-            msg = STRATEGY_UNSUPPORTED % strategy
+            msg = STRATEGY_UNSUPPORTED % dict(s=strategy)
             errors.append(msg)
 
         valid = not bool(errors)
