@@ -166,8 +166,7 @@ class NodesHttpImporter(Importer):
             max_concurrent=MAX_CONCURRENCY,
             ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
             ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
-            ssl_verify_host=0,
-            ssl_verify_peer=0)
+            ssl_validation=False)
         downloader = HTTPSCurlDownloader(conf)
         return downloader
 
