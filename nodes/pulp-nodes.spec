@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.1.1
-Release: 0.5.beta%{?dist}
+Release: 0.7.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -259,6 +259,9 @@ fi
 
 
 %changelog
+* Wed Apr 24 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.7.beta
+- 955356 - pulp-nodes-child requires: pulp-agent. (jortel@redhat.com)
+
 * Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.5.beta
 - 
 
