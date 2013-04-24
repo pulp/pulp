@@ -71,7 +71,7 @@ To install *Nodes* parent support, follow the instructions below.
 
 ::
 
-  $ sudo yum install pulp-node-parent
+  $ sudo yum install pulp-nodes-parent
 
 2. Restart Apache.
 
@@ -89,7 +89,7 @@ To install *Nodes* child support, follow the instructions below.
 
 ::
 
- $ sudo yum install pulp-node-child
+ $ sudo yum install pulp-nodes-child
 
 2. Restart Apache.
 
@@ -129,7 +129,7 @@ Install the *Nodes* admin client extensions.
 
 ::
 
- $ sudo yum install pulp-node-admin-extensions
+ $ sudo yum install pulp-nodes-admin-extensions
 
 
 Enabling Repositories
@@ -315,11 +315,11 @@ On The Parent
 
 On the Pulp server to be used as the parent node:
 
-1. Install the pulp-node-parent package.
+1. Install the pulp-nodes-parent package.
 
 ::
 
-  $ sudo yum install pulp-node-parent
+  $ sudo yum install pulp-nodes-parent
   $ sudo service httpd restart
 
 2. Enable the ``pulp-goodness`` repository.
@@ -340,11 +340,11 @@ On The Child
 
 On the Pulp server to be used as the child node:
 
-1. Install the pulp-node-child package.
+1. Install the pulp-nodes-child package.
 
 ::
 
-  $ sudo yum install pulp-node-child
+  $ sudo yum install pulp-nodes-child
   $ sudo service httpd restart && service pulp-agent restart
 
 2. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
