@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.1
-Release: 0.5.beta%{?dist}
+Release: 0.6.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -434,6 +434,9 @@ exit 0
 %endif
 
 %changelog
+* Wed Apr 24 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.6.beta
+- 
+
 * Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.5.beta
 - 953665 - added ability for copy commands to specify the fields of their units
   that should be fetched, so as to avoid loading the entirety of every unit in
