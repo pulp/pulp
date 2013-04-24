@@ -32,6 +32,13 @@ class TestConduit:
 
     save_unit = Mock()
     remove_unit = Mock()
+    set_progress = Mock()
+
+
+class TestImporter:
+
+    def __init__(self):
+        self.cancelled = False
 
 
 class TestUnit:
@@ -41,6 +48,7 @@ class TestUnit:
 
 
 REPO_ID = 'foo'
+IMPORTER = TestImporter()
 CONDUIT = TestConduit()
 CONFIG = {}
 DOWNLOADER = None
@@ -52,111 +60,104 @@ UNIT_ERROR = UnitDownloadError('http://redhat.com/unit', REPO_ID, DOWNLOADER_ERR
 
 class TestBase(TestCase):
 
-    REPO_ID = 'foo'
-    CONDUIT = TestConduit()
-    CONFIG = {}
-    DOWNLOADER = None
-
-    def test_abstract(self):
-        # Setup
+    def request(self):
         progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
         summary = SummaryReport()
+        request = SynchronizationRequest(
+            importer=IMPORTER,
+            conduit=CONDUIT,
+            config=CONFIG,
+            downloader=DOWNLOADER,
+            progress=progress,
+            summary=summary,
+            repo_id=REPO_ID
+        )
+        return request
+
+    def test_abstract(self):
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
+        strategy = ImporterStrategy()
         # Verify
-        self.assertEqual(CONDUIT, strategy.conduit)
-        self.assertEqual(CONFIG, strategy.config)
-        self.assertEqual(DOWNLOADER, strategy.downloader)
-        self.assertEqual(progress, strategy.progress_report)
-        self.assertEqual(strategy.progress_report.listener.conduit, CONDUIT)
         self.assertRaises(NotImplementedError, strategy._synchronize, None)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._unit_inventory')
     @patch('pulp_node.importers.strategies.ImporterStrategy._synchronize', side_effect=ValueError())
     def test_synchronize_catch_unknown_exception(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        strategy.synchronize(REPO_ID)
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, CaughtException.ERROR_ID)
+        strategy = ImporterStrategy()
+        strategy.synchronize(request)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._unit_inventory')
     @patch('pulp_node.importers.strategies.ImporterStrategy._synchronize', side_effect=UNIT_ERROR)
     def test_synchronize_catch_node_error(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        strategy.synchronize(REPO_ID)
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, UnitDownloadError.ERROR_ID)
+        strategy = ImporterStrategy()
+        strategy.synchronize(request)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, UnitDownloadError.ERROR_ID)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._unit_inventory')
     @patch('test_importer_strategies.TestConduit.save_unit', ValueError())
     def test_add_unit_exception(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
         unit = TestUnit()
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        strategy.add_unit(REPO_ID, unit)
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, AddUnitError.ERROR_ID)
+        strategy = ImporterStrategy()
+        strategy.add_unit(request, unit)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, AddUnitError.ERROR_ID)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._unit_inventory')
     @patch('test_importer_strategies.TestConduit.remove_unit', ValueError())
     def test_delete_units_exception(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
         unit = TestUnit()
-        inventory = UnitInventory(REPO_ID, {unit.id: unit}, {})
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        strategy._delete_units(inventory)
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, DeleteUnitError.ERROR_ID)
+        inventory = UnitInventory({unit.id: unit}, {})
+        strategy = ImporterStrategy()
+        strategy._delete_units(request, inventory)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, DeleteUnitError.ERROR_ID)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._child_units', side_effect=ValueError())
     def test_get_child_units_exception(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        self.assertRaises(GetChildUnitsError, strategy._unit_inventory, REPO_ID)
+        strategy = ImporterStrategy()
+        self.assertRaises(GetChildUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._child_units', side_effect=GetChildUnitsError(REPO_ID))
     def test_get_child_units_manifest_error(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        self.assertRaises(GetChildUnitsError, strategy._unit_inventory, REPO_ID)
+        strategy = ImporterStrategy()
+        self.assertRaises(GetChildUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._parent_units', side_effect=ValueError())
     def test_get_parent_units_exception(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        self.assertRaises(GetParentUnitsError, strategy._unit_inventory, REPO_ID)
+        strategy = ImporterStrategy()
+        self.assertRaises(GetParentUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._parent_units', side_effect=MANIFEST_ERROR)
     def test_get_parent_units_manifest_error(self, *unused):
         # Setup
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = ImporterStrategy(CONDUIT, CONFIG, DOWNLOADER, progress, summary)
-        self.assertRaises(ManifestDownloadError, strategy._unit_inventory, REPO_ID)
+        strategy = ImporterStrategy()
+        self.assertRaises(ManifestDownloadError, strategy._unit_inventory, request)
 
     def test_strategy_factory(self):
         for name, strategy in STRATEGIES.items():

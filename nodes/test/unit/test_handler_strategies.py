@@ -21,6 +21,7 @@ from pulp_node.handlers.reports import SummaryReport, HandlerProgress
 class TestConduit:
 
     update_progress = Mock()
+    cancelled = Mock(return_value=False)
 
 
 class TestRepo:
@@ -38,104 +39,103 @@ BINDING = dict(repo_id=REPO_ID, details={})
 
 class TestBase(TestCase):
 
-    def test_abstract(self):
-        # Setup
+    def request(self):
         progress = HandlerProgress(CONDUIT)
         summary = SummaryReport()
+        request = SynchronizationRequest(
+            conduit=CONDUIT,
+            progress=progress,
+            summary=summary,
+            bindings=[BINDING],
+            options={}
+        )
+        return request
+
+    def test_abstract(self):
         # Test
-        strategy = HandlerStrategy(progress, summary)
+        strategy = HandlerStrategy()
         # Verify
-        self.assertEqual(strategy.progress_report, progress)
-        self.assertEqual(strategy.progress_report.conduit, CONDUIT)
-        self.assertEqual(strategy.summary_report, summary)
         self.assertRaises(NotImplementedError, strategy._synchronize, None)
 
     @patch('pulp_node.handlers.validation.Validator.validate', side_effect=ValueError())
     def test_synchronize_validation_exception(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy.synchronize([], {})
+        strategy = HandlerStrategy()
+        strategy.synchronize(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, CaughtException.ERROR_ID)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
     @patch('pulp_node.handlers.validation.Validator.validate', side_effect=ImporterNotInstalled(REPO_ID, TYPE_ID))
     def test_synchronize_validation_node_error(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy.synchronize([], {})
+        strategy = HandlerStrategy()
+        strategy.synchronize(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, ImporterNotInstalled.ERROR_ID)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, ImporterNotInstalled.ERROR_ID)
 
     @patch('pulp_node.handlers.model.RepositoryOnChild.fetch', side_effect=ValueError())
     def test_synchronize_merge_exception(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy.synchronize([], {})
+        strategy = HandlerStrategy()
+        strategy.synchronize(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, CaughtException.ERROR_ID)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
     @patch('pulp_node.handlers.model.RepositoryOnChild.fetch', side_effect=ValueError())
     def test_merge_repositories_exception(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy._merge_repositories([BINDING])
+        strategy = HandlerStrategy()
+        strategy._merge_repositories(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, CaughtException.ERROR_ID)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
     @patch('pulp_node.handlers.model.RepositoryOnChild.fetch', side_effect=RepoSyncRestError(REPO_ID, 401))
     def test_merge_repositories_node_error(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy._merge_repositories([BINDING])
+        strategy = HandlerStrategy()
+        strategy._merge_repositories(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, RepoSyncRestError.ERROR_ID)
-        self.assertEqual(summary.errors[0].details['http_code'], 401)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, RepoSyncRestError.ERROR_ID)
+        self.assertEqual(request.summary.errors[0].details['http_code'], 401)
 
     @patch('pulp_node.handlers.model.RepositoryOnChild.fetch_all', return_value=[TestRepo(123)])
     @patch('pulp_node.handlers.model.RepositoryOnChild.delete', side_effect=ValueError())
     def test_delete_repositories_exception(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy._delete_repositories([BINDING])
+        strategy = HandlerStrategy()
+        strategy._delete_repositories(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, CaughtException.ERROR_ID)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
     @patch('pulp_node.handlers.model.RepositoryOnChild.fetch_all', return_value=[TestRepo(123)])
     @patch('pulp_node.handlers.model.RepositoryOnChild.delete', side_effect=CaughtException(ValueError()))
     def test_delete_repositories_node_error(self, *unused):
         # Setup
-        progress = HandlerProgress(CONDUIT)
-        summary = SummaryReport()
+        request = self.request()
         # Test
-        strategy = HandlerStrategy(progress, summary)
-        strategy._delete_repositories([BINDING])
+        strategy = HandlerStrategy()
+        strategy._delete_repositories(request)
         # Verify
-        self.assertEqual(len(summary.errors), 1)
-        self.assertEqual(summary.errors[0].error_id, CaughtException.ERROR_ID)
+        self.assertEqual(len(request.summary.errors), 1)
+        self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
     def test_strategy_factory(self):
         for name, strategy in STRATEGIES.items():

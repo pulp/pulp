@@ -22,7 +22,7 @@ from pulp_node import constants
 from pulp_node.error import CaughtException
 from pulp_node.reports import RepositoryProgress
 from pulp_node.importers.reports import SummaryReport, ProgressListener
-from pulp_node.importers.strategies import find_strategy
+from pulp_node.importers.strategies import find_strategy, SynchronizationRequest
 
 
 log = getLogger(__name__)
@@ -126,17 +126,17 @@ class NodesHttpImporter(Importer):
         try:
             downloader = self._downloader(config)
             strategy_name = config.get(constants.STRATEGY_KEYWORD)
-            strategy_class = find_strategy(strategy_name)
             progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
-            strategy = strategy_class(
-                cancelled=self._cancelled,
+            request = SynchronizationRequest(
+                importer=self,
                 conduit=conduit,
                 config=config,
                 downloader=downloader,
-                progress_report=progress_report,
-                summary_report=summary_report)
-            progress_report.begin_importing()
-            strategy.synchronize(repo.id)
+                progress=progress_report,
+                summary=summary_report,
+                repo_id=repo.id)
+            strategy = find_strategy(strategy_name)()
+            strategy.synchronize(request)
         except Exception, e:
             summary_report.errors.append(CaughtException(e, repo.id))
 
