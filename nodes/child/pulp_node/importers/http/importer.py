@@ -145,9 +145,19 @@ class NodesHttpImporter(Importer):
         return report
 
     def cancel_sync_repo(self, call_request, call_report):
+        """
+        Cancel an in-progress repository synchronization.
+        :param call_request:
+        :param call_report:
+        """
         self.cancelled = True
 
     def _cancelled(self):
+        """
+        Get whether the current operation has been cancelled.
+        :return: True if cancelled.
+        :rtype: bool
+        """
         return self.cancelled
 
     def _downloader(self, config):
