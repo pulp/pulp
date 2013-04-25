@@ -130,12 +130,17 @@ class RepoSyncConduitTests(base.PulpServerTests):
         # Test
         success_report = self.conduit.build_success_report('summary', 'details')
         failure_report = self.conduit.build_failure_report('summary', 'details')
+        cancel_report = self.conduit.build_cancel_report('summary', 'details')
 
         # Verify
         self.assertEqual(success_report.success_flag, True)
+        self.assertEqual(success_report.canceled_flag, False)
         self.assertEqual(failure_report.success_flag, False)
+        self.assertEqual(failure_report.canceled_flag, False)
+        self.assertEqual(cancel_report.success_flag, False)
+        self.assertEqual(cancel_report.canceled_flag, True)
 
-        for r in (success_report, failure_report):
+        for r in (success_report, failure_report, cancel_report):
             self.assertTrue(isinstance(r, SyncReport))
             self.assertEqual(10, r.added_count)
             self.assertEqual(1, r.removed_count)

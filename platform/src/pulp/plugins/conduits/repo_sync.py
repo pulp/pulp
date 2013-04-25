@@ -160,3 +160,29 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         r = SyncReport(False, self._added_count, self._updated_count,
                        self._removed_count, summary, details)
         return r
+
+    def build_cancel_report(self, summary, details):
+        """
+        Creates the SyncReport instance that needs to be returned to the Pulp
+        server at the end of a sync_repo call. The report built in this fashion
+        will indicate the sync has been cancelled.
+
+        The added, updated, and removed unit count fields will be populated with
+        the tracking counters maintained by the conduit based on calls into it.
+        If these are inaccurate for a given plugin's implementation, the counts
+        can be changed in the returned report before returning it to Pulp. This
+        data will capture how far it got before building the report and should
+        be overridden if the plugin attempts to do some form of rollback due to
+        the cancellation.
+
+        @param summary: short log of the sync; may be None but probably shouldn't be
+        @type  summary: any serializable
+
+        @param details: potentially longer log of the sync; may be None
+        @type  details: any serializable
+        """
+        r = SyncReport(False, self._added_count, self._updated_count,
+                       self._removed_count, summary, details)
+        r.canceled_flag = True
+        return r
+
