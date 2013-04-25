@@ -375,12 +375,12 @@ class RepositoryOnChild(ChildEntity, Repository):
         :type progress: pulp_node.progress.RepositoryProgress
         :return: The task result.
         """
-        poller = TaskPoller(self.binding, cancelled)
+        poller = TaskPoller(self.binding)
         http = self.binding.repo_actions.sync(self.repo_id, {})
         if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
         task = http.response_body[0]
-        result = poller.join(task.task_id, progress)
+        result = poller.join(task.task_id, progress, cancelled)
         if cancelled():
             http = self.binding.tasks.cancel_task(task.task_id)
             if http.response_code == httplib.OK:
