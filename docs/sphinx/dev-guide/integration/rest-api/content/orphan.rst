@@ -20,7 +20,7 @@ Viewing Orphaned Content
 
 View All Orphaned Content
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-List all orphaned content, regardless of type.
+Get a summary view of the orphaned units by content type
 
 | :method:`get`
 | :path:`/v2/content/orphans/`
@@ -28,6 +28,29 @@ List all orphaned content, regardless of type.
 | :response_list:`_`
 
 * :response_code:`200,even if no orphaned content is found`
+
+| :return:`summary of orphaned packages by content type`
+
+:sample_response:`200` ::
+
+ {
+  {'rpm': {'count': 21,
+           '_href': '/pulp/api/v2/content/orphans/rpm/'},
+  {'drpm': {'count': 0,
+            '_href': '/pulp/api/v2/content/orphans/drpm/'},
+ }
+
+View Orphaned Content by Type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List all the orphaned content of a particular content type.
+
+| :method:`get`
+| :path:`/v2/content/orphans/<content_type_id>/`
+| :permission:`read`
+| :response_list:`_`
+
+* :response_code:`200,even if no orphaned content is found`
+* :response_code:`404,if the content type does not exist`
 
 | :return:`(possibly empty) list of content units`
 
@@ -96,20 +119,6 @@ The individual fields of the content units returned will vary by type. The above
 sample is provided as a demonstration only and does not necessarily reflect the
 exact return types of all calls. However all fields beginning with a **_** will
 be available in all content units, regardless of type.
-
-View Orphaned Content by Type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-List all the orphaned content of a particular content type.
-
-| :method:`get`
-| :path:`/v2/content/orphans/<content_type_id>/`
-| :permission:`read`
-| :response_list:`_`
-
-* :response_code:`200,even if no orphaned content is found`
-* :response_code:`404,if the content type does not exist`
-
-| :return:`(possibly empty) list of content units`
 
 View an Individual Orphaned Content Unit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -199,3 +208,4 @@ the call consists of a list of JSON objects with the fields:
   [{'content_type_id': 'rpm', 'unit_id': 'd0dc2044-1edc-4298-bf10-a472ea943fe1'},
    {'content_type_id': 'rpm', 'unit_id': '228762de-9762-4384-b41a-4ccc594467f9'}]
  }
+
