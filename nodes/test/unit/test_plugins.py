@@ -737,6 +737,51 @@ class TestEndToEnd(PluginTestBase):
         self.verify()
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_cancelled(self, *unused):
+        """
+        Test end-to-end functionality using the mirroring strategy.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
+        @patch('pulp.agent.lib.conduit.Conduit.cancelled', return_value=True)
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            options = dict(strategy=constants.MIRROR_STRATEGY, purge_orphans=True)
+            units = [{'type_id':'node', 'unit_key':None}]
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            container = Container(self.parentfs)
+            dispatcher = Dispatcher(container)
+            container.handlers[CONTENT]['node'] = NodeHandler(self)
+            container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
+            report = dispatcher.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        # Verify
+        report = _report[0].details['node']
+        self.assertTrue(report['succeeded'])
+        errors = report['details']['errors']
+        repositories = report['details']['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.PENDING)
+        units = repository['units']
+        self.assertEqual(units['added'], 0)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_additive(self, *unused):
         """
         Test end-to-end functionality using the additive strategy.
