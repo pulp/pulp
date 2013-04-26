@@ -35,11 +35,13 @@ class UnitDownloadRequest(DownloadRequest):
 
 class DownloadListener(AggregatingEventListener):
 
-    def __init__(self, strategy):
+    def __init__(self, strategy, request):
         super(DownloadListener, self).__init__()
         self._strategy = strategy
+        self._request = request
 
     def download_started(self, report):
+        super(DownloadListener, self).download_started(report)
         try:
             dir_path = os.path.dirname(report.destination)
             os.makedirs(dir_path)
@@ -48,9 +50,15 @@ class DownloadListener(AggregatingEventListener):
                 raise e
 
     def download_succeeded(self, report):
+        super(DownloadListener, self).download_succeeded(report)
         request = report.data[REQUEST]
         unit = report.data[UNIT]
         self._strategy.add_unit(request, unit)
+
+    def download_progress(self, report):
+        super(DownloadListener, self).download_progress(report)
+        if self._request.cancelled():
+            self._request.downloader.cancel()
 
     def error_list(self):
         error_list = []

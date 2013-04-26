@@ -221,7 +221,7 @@ class ImporterStrategy(object):
             download_list.append(download_request)
         if request.cancelled():
             return
-        listener = DownloadListener(self)
+        listener = DownloadListener(self, request)
         request.downloader.event_listener = listener
         request.downloader.download(download_list)
         request.summary.errors.extend(listener.error_list())
