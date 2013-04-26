@@ -9,11 +9,16 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
 
 from unittest import TestCase
 from mock import Mock, patch
 
 from pulp.plugins.model import Unit
+from pulp.common.download.downloaders.curl import HTTPCurlDownloader
+from pulp.common.download.config import DownloaderConfig
+from pulp.server.config import config as pulp_conf
+
 from pulp_node.importers.strategies import *
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.reports import SummaryReport, ProgressListener
@@ -47,11 +52,19 @@ class TestUnit:
         self.id = unit_id
 
 
+class TestRequest(SynchronizationRequest):
+
+    def __init__(self, cancel_on, *args, **kwargs):
+        super(TestRequest, self).__init__(*args, **kwargs)
+        self.cancel_on = cancel_on
+        self.cancelled_call_count = 0
+
+    def cancelled(self):
+        self.cancelled_call_count += 1
+        return self.cancel_on and self.cancelled_call_count >= self.cancel_on
+
+
 REPO_ID = 'foo'
-IMPORTER = TestImporter()
-CONDUIT = TestConduit()
-CONFIG = {}
-DOWNLOADER = None
 
 DOWNLOADER_ERROR_REPORT = dict(response_code=401, message='go fish')
 MANIFEST_ERROR = ManifestDownloadError('http://redhat.com/manifest', DOWNLOADER_ERROR_REPORT)
@@ -60,14 +73,28 @@ UNIT_ERROR = UnitDownloadError('http://redhat.com/unit', REPO_ID, DOWNLOADER_ERR
 
 class TestBase(TestCase):
 
-    def request(self):
-        progress = RepositoryProgress(REPO_ID, ProgressListener(CONDUIT))
+    TMP_ROOT = '/tmp/pulp/nodes'
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(cls.TMP_ROOT):
+            os.makedirs(cls.TMP_ROOT)
+        path = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            'data',
+            'pulp.conf')
+        pulp_conf.read(path)
+
+    def request(self, cancel_on=0):
+        conduit = TestConduit()
+        progress = RepositoryProgress(REPO_ID, ProgressListener(conduit))
         summary = SummaryReport()
-        request = SynchronizationRequest(
-            importer=IMPORTER,
-            conduit=CONDUIT,
-            config=CONFIG,
-            downloader=DOWNLOADER,
+        request = TestRequest(
+            cancel_on=cancel_on,
+            importer=TestImporter(),
+            conduit=conduit,
+            config={},
+            downloader=Mock(),
             progress=progress,
             summary=summary,
             repo_id=REPO_ID
@@ -158,6 +185,117 @@ class TestBase(TestCase):
         # Test
         strategy = ImporterStrategy()
         self.assertRaises(ManifestDownloadError, strategy._unit_inventory, request)
+
+    def test_cancel_at_add_units(self):
+        # Setup
+        request = self.request(1)
+        request.downloader.download = Mock()
+        unit = dict(id=1, type_id='T', unit_key={}, metadata=dict(_id=3, _ns=4), _download='http://')
+        inventory = UnitInventory({}, {unit['id']: unit})
+        # Test
+        strategy = ImporterStrategy()
+        strategy._add_units(request, inventory)
+        self.assertEqual(request.cancelled_call_count, 1)
+        self.assertFalse(request.downloader.download.called)
+
+    def test_cancel_at_delete_units(self):
+        # Setup
+        request = self.request(1)
+        unit = TestUnit()
+        inventory = UnitInventory({unit.id: unit}, {})
+        request.conduit.remove_unit = Mock()
+        # Test
+        strategy = ImporterStrategy()
+        strategy._delete_units(request, inventory)
+        self.assertEqual(request.cancelled_call_count, 1)
+        request.conduit.remove_unit.assert_not_called()
+
+    def test_cancel_just_before_downloading(self):
+        # Setup
+        request = self.request(2)
+        request.downloader.download = Mock()
+        download = dict(url='http://redhat.com/file')
+        unit = dict(
+            id='123',
+            type_id='T',
+            unit_key={},
+            metadata=dict(_id=3, _ns=4),
+            _download=download,
+            _storage_path='/tmp/file')
+        inventory = UnitInventory({}, {unit['id']: unit})
+        # Test
+        strategy = ImporterStrategy()
+        strategy._add_units(request, inventory)
+        self.assertEqual(request.cancelled_call_count, 2)
+        self.assertFalse(request.downloader.download.called)
+
+    def test_cancel_begin_downloading(self):
+        # Setup
+        request = self.request(3)
+        request.downloader = HTTPCurlDownloader(DownloaderConfig())
+        request.downloader.download = Mock(side_effect=request.downloader.download)
+        request.downloader.cancel = Mock()
+        download = dict(url='http://redhat.com/file')
+        unit = dict(
+            id='123',
+            type_id='T',
+            unit_key={},
+            metadata=dict(_id=3, _ns=4),
+            _download=download,
+            _storage_path='/tmp/file')
+        inventory = UnitInventory({}, {unit['id']: unit})
+        # Test
+        strategy = ImporterStrategy()
+        strategy._add_units(request, inventory)
+        self.assertEqual(request.cancelled_call_count, 3)
+        self.assertTrue(request.downloader.download.called)
+        self.assertTrue(request.downloader.cancel.called)
+
+    def test_cancel_during_download_failed(self):
+        # Setup
+        request = self.request(4)
+        request.downloader = HTTPCurlDownloader(DownloaderConfig())
+        request.downloader.download = Mock(side_effect=request.downloader.download)
+        request.downloader.cancel = Mock()
+        download = dict(url='http://redhat.com/file')
+        unit = dict(
+            id='123',
+            type_id='T',
+            unit_key={},
+            metadata=dict(_id=3, _ns=4),
+            _download=download,
+            _relative_path='files/testing',
+            storage_path='/tmp/file')
+        inventory = UnitInventory({}, {unit['id']: unit})
+        # Test
+        strategy = ImporterStrategy()
+        strategy._add_units(request, inventory)
+        self.assertEqual(request.cancelled_call_count, 4)
+        self.assertTrue(request.downloader.download.called)
+        self.assertTrue(request.downloader.cancel.called)
+
+    def test_cancel_during_download_succeeded(self):
+        # Setup
+        request = self.request(4)
+        request.downloader = HTTPCurlDownloader(DownloaderConfig())
+        request.downloader.download = Mock(side_effect=request.downloader.download)
+        request.downloader.cancel = Mock()
+        download = dict(url='file://%s' % __file__)
+        unit = dict(
+            id='123',
+            type_id='T',
+            unit_key={},
+            metadata=dict(_id=3, _ns=4),
+            _download=download,
+            _relative_path='files/testing',
+            storage_path='/tmp/file')
+        inventory = UnitInventory({}, {unit['id']: unit})
+        # Test
+        strategy = ImporterStrategy()
+        strategy._add_units(request, inventory)
+        self.assertEqual(request.cancelled_call_count, 4)
+        self.assertTrue(request.downloader.download.called)
+        self.assertTrue(request.downloader.cancel.called)
 
     def test_strategy_factory(self):
         for name, strategy in STRATEGIES.items():

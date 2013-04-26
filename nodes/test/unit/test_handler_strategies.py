@@ -54,7 +54,6 @@ class TestRepo:
 
 REPO_ID = 'foo'
 TYPE_ID = 'random_importer'
-BINDING = dict(repo_id=REPO_ID, details={})
 TASK_ID = 'test_task'
 
 
@@ -68,7 +67,7 @@ class TestBase(TestCase):
             conduit=conduit,
             progress=progress,
             summary=summary,
-            bindings=[BINDING],
+            bindings=[dict(repo_id=REPO_ID, details={})],
             options={}
         )
         return request
