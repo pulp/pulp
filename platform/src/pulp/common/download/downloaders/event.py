@@ -12,6 +12,7 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import base64
+import urllib
 from logging import getLogger
 
 from eventlet import GreenPool
@@ -19,7 +20,7 @@ from eventlet.green import urllib2
 
 from pulp.common.download import report as download_report
 from pulp.common.download.downloaders.base import PulpDownloader
-from pulp.common.download.downloaders.urllib2_utils import PulpHandler
+from pulp.common.download.downloaders.urllib2_utils import HTTPDownloaderHandler
 
 
 # "optimal" concurrency, based purely on anecdotal evidence
@@ -160,14 +161,24 @@ def set_response_info(info, report):
 
 def build_urllib2_opener(config):
 
+    proxy_scheme = None
+    proxy_server = None
+
+    if config.proxy_url is not None:
+        proxy_scheme, remainder = urllib.splittype(config.proxy_url)
+        proxy_server= urllib.splithost(remainder)[0]
+
     kwargs = {'key_file': config.ssl_client_key_path,
               'cert_file': config.ssl_client_cert_path,
               'ca_cert_file': config.ssl_ca_cert_path,
-              'verify_host': bool(config.ssl_validation), # None -> False
-              'proxy_url': config.proxy_url,
-              'proxy_port': config.proxy_port,}
+              'validate_host': config.ssl_validation if config.ssl_validation is not None else True,
+              'proxy_scheme': proxy_scheme,
+              'proxy_server': proxy_server,
+              'proxy_port': config.proxy_port,
+              'proxy_user': config.proxy_user,
+              'proxy_password': config.proxy_password,}
 
-    handler = PulpHandler(**kwargs)
+    handler = HTTPDownloaderHandler(**kwargs)
     return urllib2.build_opener(handler)
 
 # urllib2 request construction -------------------------------------------------
