@@ -29,6 +29,35 @@ _LOG = logging.getLogger(__name__)
 
 class OrphanManager(object):
 
+    # summary api --------------------------------------------------------------
+
+    def orphans_summary(self):
+        """
+        Return a summary of the orphaned units as a dictionary of
+        content type -> number of orphaned units
+
+        :return: summary of orphaned units
+        :rtype: dict
+        """
+        summary = {}
+        for content_type_id in content_types_db.all_type_ids():
+            summary[content_type_id] = self.orphans_count_by_type(content_type_id)
+        return summary
+
+    def orphans_count_by_type(self, content_type_id):
+        """
+        Generate a count of the orphans of a given content type.
+
+        :param content_type_id: unique id of the content type to count orphans of
+        :type content_type_id: basestring
+        :return: count of orphaned units of the given type
+        :rtype: int
+        """
+        count = 0
+        for unit in self.generate_orphans_by_type(content_type_id):
+            count += 1
+        return count
+
     # generator-based api ------------------------------------------------------
 
     def generate_all_orphans(self, fields=None):

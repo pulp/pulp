@@ -891,17 +891,17 @@ class RepoAssociate(JSONController):
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_TYPE: {source_repo_id: dispatch_constants.RESOURCE_READ_OPERATION,
-                                                                   dest_repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id),
                 action_tag('associate')]
         call_request = CallRequest(association_manager.associate_from_repo,
                                    [source_repo_id, dest_repo_id],
                                    {'criteria': criteria, 'import_config_override': overrides},
-                                   resources=resources,
                                    tags=tags,
-                                   archive=True)
+                                   archive=True,
+                                   kwarg_blacklist=['criteria', 'import_config_override'])
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id)
         return execution.execute_async(self, call_request)
 
 

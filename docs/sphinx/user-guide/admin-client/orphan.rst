@@ -25,7 +25,7 @@ Listing Orphaned Content Units
 The **pulp-admin** command line client provides the ``orphan`` section and the
 ``list`` command to inspect the orphaned content units on your server::
 
- $ pulp-admin orphan list --details
+ $ pulp-admin orphan list --type=rpm --details
  Arch:          noarch
  Checksum:      7e9cad8b2cd436079fd524803ec7fa209a666ecdda05c6f9c8c5ee70cdea9ce6
  Checksumtype:  sha256
@@ -45,7 +45,8 @@ The **pulp-admin** command line client provides the ``orphan`` section and the
 You can filter the list by content type by using the ``--type=<type>`` flag.
 
 You can use the ``--details`` flag to list the individual orphaned content
-units. Otherwise only the **Summary** section is displayed.
+units. Otherwise only the **Summary** section is displayed. This flag is not
+available when the content type is omitted, and will be ignored if specified.
 
 
 Removing Orphaned Content Units
