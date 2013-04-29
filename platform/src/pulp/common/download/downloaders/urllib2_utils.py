@@ -72,6 +72,8 @@ class HTTPDownloaderConnection(object):
         self._timeout = timeout
         self._connection = None
 
+    # -- properties in the various formats expected by networking APIs ---------
+
     @property
     def url(self):
         return '%s://%s' % (self._scheme, self.host)
@@ -111,7 +113,7 @@ class HTTPDownloaderConnection(object):
             credentials = self.proxy_credentials + '@'
         if not self._proxy_port:
             return credentials + self._proxy_host
-        return credentials + ':'.join((self._proxy_host, self._proxy_port))
+        return credentials + ':'.join((self._proxy_host, str(self._proxy_port)))
 
     @property
     def proxy_server(self):
@@ -149,16 +151,17 @@ class HTTPDownloaderConnection(object):
         # proxied connection
         if self.proxy_host is not None:
             self._connection = self._proxy_connection()
-            self._connection.connect()
 
         # direct connection
         else:
             self._connection = self._direct_connection()
-            self._connection.connect()
+
+        self._connection.connect()
 
     def close(self):
         if self._connection is None:
             return
+
         self._connection.close()
         self._connection = None
 
@@ -173,14 +176,16 @@ class HTTPDownloaderConnection(object):
                                             (self.host, str(self._ca_cert_file)))
 
     def _direct_connection(self):
-        if self._scheme is HTTP_SCHEME:
+        if self._scheme == HTTP_SCHEME:
             return self._http_direct_connection()
+
         # HTTPS_SCHEME
         return self._https_direct_connection()
 
     def _proxy_connection(self):
-        if self._proxy_scheme is HTTP_SCHEME:
+        if self._proxy_scheme == HTTP_SCHEME:
             return self._http_proxy_connection()
+
         # HTTPS_SCHEME
         return self._https_proxy_connection()
 
@@ -205,24 +210,33 @@ class HTTPDownloaderConnection(object):
 
     def _complete_proxy_connection(self, connection):
         self._send_proxy_connect_request(connection)
+
         if self._scheme == HTTP_SCHEME:
             return
+
         # HTTPS_SCHEME
         self._ssl_wrap_connection_socket(connection)
 
     def _send_proxy_connect_request(self, connection):
         connection.send('CONNECT %s:%d HTTP/1.0\r\n\r\n' % (self.server, self.port))
+
         # expect a HTTP/1.0 200 Connection established
         response = connection.response_class(connection.sock, method=connection._method)
         version, code, message = response._read_status()
+
         if code != httplib.OK:
-            self.close()
-            raise ProxyConnectionFailed('Proxy connection failed: %d %s' % (code, message.strip()))
+            connection.close()
+            raise ProxyConnectionFailed('Proxy connection to <%s> failed: %d %s' %
+                                        (self.proxy_url, code, message.strip()))
+
         while True:
             line = response.fp.readline()
             if line == '\r\n': break
 
     def _ssl_wrap_connection_socket(self, connection):
+        if None in (self._key_file, self._cert_file):
+            return
+
         ssl_sock = ssl.wrap_socket(connection.sock, self._key_file, self._cert_file)
         connection.sock = ssl_sock
 
@@ -248,7 +262,7 @@ class HTTPDownloaderHandler(urllib2.HTTPHandler,
 
     This class replaces the default HTTPHandler, HTTPSHandler, and ProxyHandler,
 
-    It allows proxied HTTPS requests as well as SSL verification.
+    It allows proxied HTTP and HTTPS requests as well as SSL validation.
     """
 
     def __init__(self,
