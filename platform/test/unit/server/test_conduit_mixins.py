@@ -572,6 +572,7 @@ class PublishReportMixinTests(unittest.TestCase):
         r = self.mixin.build_success_report(summary, details)
         self.assertTrue(isinstance(r, PublishReport))
         self.assertEqual(r.success_flag, True)
+        self.assertEqual(r.canceled_flag, False)
         self.assertEqual(r.summary, summary)
         self.assertEqual(r.details, details)
 
@@ -579,5 +580,15 @@ class PublishReportMixinTests(unittest.TestCase):
         r = self.mixin.build_failure_report(summary, details)
         self.assertTrue(isinstance(r, PublishReport))
         self.assertEqual(r.success_flag, False)
+        self.assertEqual(r.canceled_flag, False)
         self.assertEqual(r.summary, summary)
         self.assertEqual(r.details, details)
+
+        # Test Cancel Report
+        r = self.mixin.build_cancel_report(summary, details)
+        self.assertTrue(isinstance(r, PublishReport))
+        self.assertEqual(r.success_flag, False)
+        self.assertEqual(r.canceled_flag, True)
+        self.assertEqual(r.summary, summary)
+        self.assertEqual(r.details, details)
+

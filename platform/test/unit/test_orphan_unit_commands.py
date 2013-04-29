@@ -39,14 +39,14 @@ class TestList(base.PulpClientTests):
         self.assertEqual('--type', self.command.options[0].name)
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
-    @mock.patch('pulp.bindings.content.OrphanContentAPI.orphans')
-    def test_all(self, mock_orphans, mock_render):
-        mock_orphans.return_value.response_body =\
+    @mock.patch('pulp.bindings.content.OrphanContentAPI.orphans_by_type')
+    def test_all(self, mock_orphans_by_type, mock_render):
+        mock_orphans_by_type.return_value.response_body =\
             [{'_id': 'foo', '_content_type_id': 'rpm'}]
 
-        self.command.run(details=True)
+        self.command.run(type='rpm', details=True)
 
-        mock_orphans.assert_called_once_with()
+        mock_orphans_by_type.assert_called_once_with('rpm')
         mock_render.assert_any_call(
             {'_id' : 'foo', 'id' : 'foo', '_content_type_id': 'rpm'})
         self.assertEqual(mock_render.call_count, 2)
@@ -67,13 +67,12 @@ class TestList(base.PulpClientTests):
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
     @mock.patch('pulp.bindings.content.OrphanContentAPI.orphans')
     def test_summary(self, mock_orphans, mock_render):
-        mock_orphans.return_value.response_body = [
-            {'_id': 'foo1', '_content_type_id': 'rpm'},
-            {'_id': 'foo2', '_content_type_id': 'rpm'},
-            {'_id': 'foo3', '_content_type_id': 'srpm'},
-        ]
+        mock_orphans.return_value.response_body = {
+            'rpm': {'count': 2, '_href': 'whocares'},
+            'srpm': {'count': 1, '_href': 'stillwhocares'},
+        }
 
-        self.command.run(summary=True)
+        self.command.run()
 
         last_call_arg = mock_render.call_args[0][0]
         self.assertEqual(last_call_arg, {'rpm':2, 'srpm':1, 'Total':3})
