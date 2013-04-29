@@ -13,22 +13,29 @@
 import os
 
 import base
-from pulp.client.commands.repo import downloader
+from pulp.client.commands.repo import importer_config
 from pulp.client.extensions.extensions import PulpCliCommand
 
 
-FILES_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'test_commands_downloader')
+FILES_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                         'data', 'test_commands_importer_config')
 
 
-class MixinTest(PulpCliCommand, downloader.DownloaderConfigMixin):
+class MixinTest(PulpCliCommand, importer_config.ImporterConfigMixin):
     """
     The mixin can't be used alone so this class has the proper usage to run. When the command is
     executed, it will stored the parsed version of the config to be accessed by an assertion.
     """
 
-    def __init__(self, include_ssl=True, include_proxy=True, include_throttling=True):
+    def __init__(self, options_bundle=None, include_ssl=True, include_proxy=True,
+                 include_throttling=True, include_unit_policy=True):
         PulpCliCommand.__init__(self, 'mixin', '', self.run)
-        downloader.DownloaderConfigMixin.__init__(self, include_ssl, include_proxy, include_throttling)
+        importer_config.ImporterConfigMixin.__init__(self,
+                                                     options_bundle=options_bundle,
+                                                     include_ssl=include_ssl,
+                                                     include_proxy=include_proxy,
+                                                     include_throttling=include_throttling,
+                                                     include_unit_policy=include_unit_policy)
 
         self.last_parsed_config = None
 
@@ -36,11 +43,19 @@ class MixinTest(PulpCliCommand, downloader.DownloaderConfigMixin):
         self.last_parsed_config = self.parse_user_input(kwargs)
 
 
-class DownloaderMixinTests(base.PulpClientTests):
+class ImporterConfigMixinTests(base.PulpClientTests):
 
     def setUp(self):
-        super(DownloaderMixinTests, self).setUp()
+        super(ImporterConfigMixinTests, self).setUp()
         self.mixin = MixinTest()
+
+    def test_custom_options_bundle(self):
+        # Test
+        new_options_bundle = importer_config.OptionsBundle()
+        self.mixin = MixinTest(options_bundle=new_options_bundle)
+
+        # Verify
+        self.assertTrue(self.mixin.options_bundle is new_options_bundle)
 
     def test_groups(self):
         """
@@ -48,55 +63,56 @@ class DownloaderMixinTests(base.PulpClientTests):
         tested separately.
         """
 
-        self.assertEqual(3, len(self.mixin.option_groups))
+        self.assertEqual(4, len(self.mixin.option_groups))
         group_names = [g.name for g in self.mixin.option_groups]
-        expected_names = [downloader.GROUP_NAME_SSL, downloader.GROUP_NAME_PROXY,
-                          downloader.GROUP_NAME_THROTTLING]
+        expected_names = [importer_config.GROUP_NAME_SSL, importer_config.GROUP_NAME_PROXY,
+                          importer_config.GROUP_NAME_THROTTLING, importer_config.GROUP_NAME_UNIT_POLICY]
         self.assertEqual(set(group_names), set(expected_names))
 
     def test_groups_no_includes(self):
-        self.mixin = MixinTest(include_ssl=False, include_proxy=False, include_throttling=False)
+        self.mixin = MixinTest(include_ssl=False, include_proxy=False,
+                               include_throttling=False, include_unit_policy=False)
         self.assertEqual(0, len(self.mixin.option_groups))
 
     # -- populate tests -------------------------------------------------------
 
     def test_populate_ssl_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == downloader.GROUP_NAME_SSL][0]
+        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_SSL][0]
         options = group.options
 
         self.assertEqual(4, len(options))
-        self.assertEqual(options[0], downloader.OPT_FEED_CA_CERT)
-        self.assertEqual(options[1], downloader.OPT_VERIFY_FEED_SSL)
-        self.assertEqual(options[2], downloader.OPT_FEED_CERT)
-        self.assertEqual(options[3], downloader.OPT_FEED_KEY)
+        self.assertEqual(options[0], self.mixin.options_bundle.opt_feed_ca_cert)
+        self.assertEqual(options[1], self.mixin.options_bundle.opt_verify_feed_ssl)
+        self.assertEqual(options[2], self.mixin.options_bundle.opt_feed_cert)
+        self.assertEqual(options[3], self.mixin.options_bundle.opt_feed_key)
 
     def test_populate_proxy_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == downloader.GROUP_NAME_PROXY][0]
+        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_PROXY][0]
         options = group.options
 
         self.assertEqual(4, len(options))
-        self.assertEqual(options[0], downloader.OPT_PROXY_HOST)
-        self.assertEqual(options[1], downloader.OPT_PROXY_PORT)
-        self.assertEqual(options[2], downloader.OPT_PROXY_USER)
-        self.assertEqual(options[3], downloader.OPT_PROXY_PASS)
+        self.assertEqual(options[0], self.mixin.options_bundle.opt_proxy_host)
+        self.assertEqual(options[1], self.mixin.options_bundle.opt_proxy_port)
+        self.assertEqual(options[2], self.mixin.options_bundle.opt_proxy_user)
+        self.assertEqual(options[3], self.mixin.options_bundle.opt_proxy_pass)
 
     def test_populate_throttling_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == downloader.GROUP_NAME_THROTTLING][0]
+        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_THROTTLING][0]
         options = group.options
 
         self.assertEqual(2, len(options))
-        self.assertEqual(options[0], downloader.OPT_MAX_DOWNLOADS)
-        self.assertEqual(options[1], downloader.OPT_MAX_SPEED)
+        self.assertEqual(options[0], self.mixin.options_bundle.opt_max_downloads)
+        self.assertEqual(options[1], self.mixin.options_bundle.opt_max_speed)
 
     # -- parse tests ----------------------------------------------------------
 
     def test_parse_ssl_group(self):
         # Setup
         user_input = {
-            downloader.OPT_FEED_CA_CERT.keyword : os.path.join(FILES_DIR, 'ca_cert.crt'),
-            downloader.OPT_VERIFY_FEED_SSL.keyword : True,
-            downloader.OPT_FEED_CERT.keyword : os.path.join(FILES_DIR, 'client_cert.crt'),
-            downloader.OPT_FEED_KEY.keyword : os.path.join(FILES_DIR, 'client_key.crt'),
+            self.mixin.options_bundle.opt_feed_ca_cert.keyword : os.path.join(FILES_DIR, 'ca_cert.crt'),
+            self.mixin.options_bundle.opt_verify_feed_ssl.keyword : True,
+            self.mixin.options_bundle.opt_feed_cert.keyword : os.path.join(FILES_DIR, 'client_cert.crt'),
+            self.mixin.options_bundle.opt_feed_key.keyword : os.path.join(FILES_DIR, 'client_key.crt'),
         }
 
         # Test
@@ -112,10 +128,10 @@ class DownloaderMixinTests(base.PulpClientTests):
     def test_parse_proxy_group(self):
         # Setup
         user_input = {
-            downloader.OPT_PROXY_HOST.keyword : 'host-1',
-            downloader.OPT_PROXY_PORT.keyword : 80,
-            downloader.OPT_PROXY_USER.keyword : 'user-1',
-            downloader.OPT_PROXY_PASS.keyword : 'pass-1',
+            self.mixin.options_bundle.opt_proxy_host.keyword : 'host-1',
+            self.mixin.options_bundle.opt_proxy_port.keyword : 80,
+            self.mixin.options_bundle.opt_proxy_user.keyword : 'user-1',
+            self.mixin.options_bundle.opt_proxy_pass.keyword : 'pass-1',
         }
 
         # Test
@@ -131,8 +147,8 @@ class DownloaderMixinTests(base.PulpClientTests):
     def test_parse_throttling(self):
         # Setup
         user_input = {
-            downloader.OPT_MAX_SPEED.keyword : 1024,
-            downloader.OPT_MAX_DOWNLOADS.keyword : 4,
+            self.mixin.options_bundle.opt_max_speed.keyword : 1024,
+            self.mixin.options_bundle.opt_max_downloads.keyword : 4,
         }
 
         # Test
