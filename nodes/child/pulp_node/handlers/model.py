@@ -382,12 +382,20 @@ class RepositoryOnChild(ChildEntity, Repository):
         task = http.response_body[0]
         result = poller.join(task.task_id, progress, cancelled)
         if cancelled():
-            http = self.binding.tasks.cancel_task(task.task_id)
-            if http.response_code == httplib.OK:
-                log.info('Task [%s] cancelled', task.task_id)
-            else:
-                log.error('Task [%s] cancellation failed http=%s', task.task_id, http.response_code)
+            self._cancel_synchronization(task)
         return result
+
+    def _cancel_synchronization(self, task):
+        """
+        Cancel a task associated with a repository synchronization.
+        :param task: A running task.
+        :type task: pulp.bindings.responses.Task
+        """
+        http = self.binding.tasks.cancel_task(task.task_id)
+        if http.response_code == httplib.ACCEPTED:
+            log.info('Task [%s] cancelled', task.task_id)
+        else:
+            log.error('Task [%s] cancellation failed http=%s', task.task_id, http.response_code)
 
 
 class Distributor(object):
