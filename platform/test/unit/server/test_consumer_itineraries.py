@@ -83,6 +83,9 @@ class TestContent(PulpItineraryTests):
         itinerary = consumer_content_install_itinerary(self.CONSUMER_ID, units, options)
         call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
 
+        # run the task
+        self.run_next()
+
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
@@ -135,6 +138,9 @@ class TestContent(PulpItineraryTests):
         itinerary = consumer_content_update_itinerary(self.CONSUMER_ID, units, options)
         call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
 
+        # run the task
+        self.run_next()
+
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
@@ -186,6 +192,9 @@ class TestContent(PulpItineraryTests):
         options = dict(importkeys=True)
         itinerary = consumer_content_uninstall_itinerary(self.CONSUMER_ID, units, options)
         call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
+
+        # run the task
+        self.run_next()
 
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
