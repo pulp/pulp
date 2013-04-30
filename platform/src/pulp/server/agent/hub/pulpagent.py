@@ -101,7 +101,7 @@ class PulpAgent:
             self.context.uuid,
             rest=Rest(),
             secret=self.context.secret,
-            timeout=(None, None),
+            timeout=None,
             async=True)
         admin = agent.Admin()
         status, result = admin.cancel(criteria={'eq': task_id})
