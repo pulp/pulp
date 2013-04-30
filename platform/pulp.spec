@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.1.1
-Release: 0.8.beta%{?dist}
+Release: 0.9.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -434,6 +434,13 @@ exit 0
 %endif
 
 %changelog
+* Tue Apr 30 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.9.beta
+- 957890 - removing duplicate units in case when consumer is bound to copies of
+  same repo (skarmark@redhat.com)
+- 957890 - fixed duplicate unit listing in the applicability report and
+  performance improvement fix to avoid loading unnecessary units
+  (skarmark@redhat.com)
+
 * Fri Apr 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.1-0.8.beta
 - 954038 - updating applicability api to send unit ids instead of translated
   plugin unit objects to profilers and fixing a couple of performance issues
