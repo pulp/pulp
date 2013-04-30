@@ -89,7 +89,7 @@ class TestContent(PulpItineraryTests):
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
-        # cancel task #1 (actual install)
+        # cancel the task
         self.cancel(call_report.call_request_id)
 
         # verify agent called
@@ -144,7 +144,7 @@ class TestContent(PulpItineraryTests):
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
-        # cancel task #1 (actual update)
+        # cancel the task
         self.cancel(call_report.call_request_id)
 
         # verify agent called
@@ -199,7 +199,7 @@ class TestContent(PulpItineraryTests):
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
-        # cancel task #1 (actual install)
+        # cancel the task
         self.cancel(call_report.call_request_id)
 
         # verify agent called

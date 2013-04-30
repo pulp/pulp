@@ -176,7 +176,7 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 0.74
+Requires: python-gofer >= 0.76
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -365,7 +365,7 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: gofer >= 0.74
+Requires: gofer >= 0.76
 
 %description agent
 The pulp agent, used to provide remote command & control and
