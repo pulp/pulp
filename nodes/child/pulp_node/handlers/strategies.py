@@ -149,9 +149,6 @@ class HandlerStrategy(object):
                     request.summary[repo_id].action = RepositoryReport.ADDED
                     child.add()
                 self._synchronize_repository(request, repo_id)
-                if request.cancelled():
-                    request.summary[repo_id].action = RepositoryReport.CANCELLED
-                    continue
             except NodeError, ne:
                 request.summary.errors.append(ne)
             except Exception, e:
@@ -170,6 +167,9 @@ class HandlerStrategy(object):
         repo = RepositoryOnChild(repo_id)
         progress = request.progress.find_report(repo_id)
         importer_report = repo.run_synchronization(progress, request.cancelled)
+        if request.cancelled():
+            request.summary[repo_id].action = RepositoryReport.CANCELLED
+            return
         progress.finished()
         details = importer_report['details']
         for _dict in details['errors']:
