@@ -238,7 +238,7 @@ class ApplicabilityManager(object):
                                         fields=['unit_id'])
                     repo_units = repo_unit_association_query_manager.find_by_criteria(criteria)
                     pulp_unit_ids = [u['unit_id'] for u in repo_units]
-                    result_units.setdefault(unit_type_id, []).extend(pulp_unit_ids)
+                    result_units.setdefault(unit_type_id, []).extend(list(set(pulp_unit_ids)))
                 else:
                     result_units.setdefault(unit_type_id, []).extend(unit_ids)
         else:
@@ -249,7 +249,7 @@ class ApplicabilityManager(object):
                                     fields=['unit_id'])
                 repo_units = repo_unit_association_query_manager.find_by_criteria(criteria)
                 pulp_unit_ids = [u['unit_id'] for u in repo_units]
-                result_units.setdefault(unit_type_id, []).extend(pulp_unit_ids)
+                result_units.setdefault(unit_type_id, []).extend(list(set(pulp_unit_ids)))
 
         return result_units
 
