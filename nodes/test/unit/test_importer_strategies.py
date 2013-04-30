@@ -52,7 +52,7 @@ class TestUnit:
         self.id = unit_id
 
 
-class TestRequest(SynchronizationRequest):
+class TestRequest(SyncRequest):
 
     def __init__(self, cancel_on, *args, **kwargs):
         super(TestRequest, self).__init__(*args, **kwargs)

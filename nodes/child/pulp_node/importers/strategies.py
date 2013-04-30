@@ -41,7 +41,24 @@ STRATEGY_UNSUPPORTED = _('Importer strategy "%(s)s" not supported')
 # --- request ---------------------------------------------------------------------------
 
 
-class SynchronizationRequest(object):
+class SyncRequest(object):
+    """
+    Represents a specific request to synchronize a repository on a child node.
+    It contains the resources needed by the strategy to complete the request
+    and maintains the state of the request.
+    :ivar conduit: Provides access to relevant Pulp functionality.
+    :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
+    :ivar config: The plugin configuration.
+    :type config: pulp.server.plugins.config.PluginCallConfiguration
+    :ivar downloader: A fully configured file downloader.
+    :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+    :ivar progress: A progress reporting object.
+    :type progress: pulp_node.importers.reports.RepositoryProgress
+    :ivar summary: A summary report.
+    :type summary: pulp_node.importers.reports.SummaryReport
+    :ivar repo_id: The ID of a repository to synchronize.
+    :type repo_id: str
+    """
 
     def __init__(self, importer, conduit, config, downloader, progress, summary, repo_id):
         """
@@ -55,6 +72,8 @@ class SynchronizationRequest(object):
         :type progress: pulp_node.importers.reports.RepositoryProgress
         :param summary: A summary report.
         :type summary: pulp_node.importers.reports.SummaryReport
+        :param repo_id: The ID of a repository to synchronize.
+        :type repo_id: str
         """
         self.importer = importer
         self.conduit = conduit
@@ -92,7 +111,7 @@ class ImporterStrategy(object):
         """
         Synchronize the content units associated with the specified repository.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         request.started()
 
@@ -108,7 +127,7 @@ class ImporterStrategy(object):
         """
         Specific strategies defined by subclasses.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         raise NotImplementedError()
 
@@ -118,7 +137,7 @@ class ImporterStrategy(object):
         The conduit will automatically associate the unit to the repository
         to which it's pre-configured.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         :param unit: The unit to be added.
         :type unit: Unit
         """
@@ -135,7 +154,7 @@ class ImporterStrategy(object):
         """
         Build the unit inventory.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         :return: The built inventory.
         :rtype: UnitInventory
         """
@@ -201,7 +220,7 @@ class ImporterStrategy(object):
         For units with files, the unit is added to the inventory as part of the
         transport callback.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
@@ -231,7 +250,7 @@ class ImporterStrategy(object):
         Determine the list of units contained in the child inventory
         but are not contained in the parent inventory and un-associate them.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
@@ -250,7 +269,7 @@ class ImporterStrategy(object):
         restrict this search to only those associated with the repository
         to which it is pre-configured.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
@@ -263,7 +282,7 @@ class ImporterStrategy(object):
         This is performed by reading the manifest at the URL defined in
         the configuration.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
@@ -292,7 +311,7 @@ class Mirror(ImporterStrategy):
           3. Add missing units.
           4. Delete units specified in the child but not in the parent.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         unit_inventory = self._unit_inventory(request)
         self._add_units(request, unit_inventory)
@@ -314,7 +333,7 @@ class Additive(ImporterStrategy):
           2. Fetch the child units associated with the repository.
           3. Add missing units.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         unit_inventory = self._unit_inventory(request)
         self._add_units(request, unit_inventory)

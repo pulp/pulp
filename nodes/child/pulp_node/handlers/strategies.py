@@ -32,7 +32,22 @@ STRATEGY_UNSUPPORTED = _('Handler strategy "%(s)s" not supported')
 # --- request  --------------------------------------------------------------------------
 
 
-class SynchronizationRequest(object):
+class SyncRequest(object):
+    """
+    Represents a specific request to synchronize a child node.
+    It contains the resources needed by the strategy to complete the request
+    and maintains the state of the request.
+    :ivar conduit: A handler conduit.
+    :type conduit: pulp.agent.lib.conduit.Conduit
+    :ivar progress: A progress report.
+    :type progress: HandlerProgress
+    :ivar summary: The summary report.
+    :type summary: SummaryReport
+    :ivar bindings: A list of consumer binding payloads.
+    :type bindings: list
+    :ivar options: synchronization options.
+    :type options: dict
+    """
 
     def __init__(self, conduit, progress, summary, bindings, options):
         """
@@ -116,7 +131,7 @@ class HandlerStrategy(object):
         """
         Specific strategies defined by subclasses.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         raise NotImplementedError()
 
@@ -128,7 +143,7 @@ class HandlerStrategy(object):
           - Merge repositories found in BOTH parent and child.
           - Add repositories found in the parent but NOT in the child.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         for bind in request.bindings:
             try:
@@ -162,7 +177,7 @@ class HandlerStrategy(object):
         :param repo_id: A repository ID.
         :type repo_id: str
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         repo = RepositoryOnChild(repo_id)
         progress = request.progress.find_report(repo_id)
@@ -185,7 +200,7 @@ class HandlerStrategy(object):
         """
         Delete repositories found in the child but NOT in the parent.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         repositories_on_parent = [b['repo_id'] for b in request.bindings]
         repositories_on_child = [r.repo_id for r in RepositoryOnChild.fetch_all()]
@@ -219,7 +234,7 @@ class Mirror(HandlerStrategy):
           - Purge unbound repositories.
           - Purge orphaned content units.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         self._merge_repositories(request)
         self._delete_repositories(request)
@@ -233,7 +248,7 @@ class Additive(HandlerStrategy):
           - Add/Merge bound repositories as needed.
           - Synchronize all bound repositories.
         :param request: A synchronization request.
-        :type request: SynchronizationRequest
+        :type request: SyncRequest
         """
         self._merge_repositories(request)
 
