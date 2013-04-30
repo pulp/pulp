@@ -82,9 +82,6 @@ class ApplicabilityManager(object):
         if consumer_criteria:
             # Get consumer ids satisfied by specified consumer criteria
             consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
-            # if consumer_criteria is specified and there are no consumers satisfying the criteria, return empty result
-            if not consumer_ids:
-                return result
         else:
             if repo_criteria_ids:
                 # If repo_criteria is specified, get all the consumers bound to the repos
@@ -96,6 +93,20 @@ class ApplicabilityManager(object):
             else:
                 # Get all consumer ids registered to the Pulp server
                 consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
+        # if there are no relevant consumers, return empty result
+        if not consumer_ids:
+            return result
+        else:
+            # Based on the consumers, get all the repos bound to the consumers in consideration
+            # and find intersection of repo_criteria_ids and consumer_repo_ids
+            bind_criteria = Criteria(filters={"consumer_id": {"$in": consumer_ids}})
+            consumer_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(bind_criteria)]
+            if not repo_criteria_ids:
+                repo_criteria_ids = list(set(consumer_repo_ids))
+            else:
+                repo_criteria_ids = list(set(consumer_repo_ids) & set(repo_criteria_ids))
+            if not repo_criteria_ids:
+                return result
 
         # Process Unit Criteria
         if unit_criteria:
@@ -223,20 +234,22 @@ class ApplicabilityManager(object):
                 # Get unit type specific collection
                 if not unit_ids:
                     # If unit_list is empty for a unit_type, consider all units of specific type
-                    criteria = UnitAssociationCriteria(type_ids=[unit_type_id], association_filters={"repo_id": {"$in": repo_ids}}, unit_fields = ['unit_id'])
+                    criteria = Criteria(filters={"repo_id": {"$in": repo_ids}, "unit_type_id":unit_type_id},
+                                        fields=['unit_id'])
                     repo_units = repo_unit_association_query_manager.find_by_criteria(criteria)
                     pulp_unit_ids = [u['unit_id'] for u in repo_units]
-                    result_units.setdefault(unit_type_id, []).extend(pulp_unit_ids)
+                    result_units.setdefault(unit_type_id, []).extend(list(set(pulp_unit_ids)))
                 else:
                     result_units.setdefault(unit_type_id, []).extend(unit_ids)
         else:
             # If units are not specified, consider all units in given repos.
             all_unit_type_ids = content_types_db.all_type_ids()
             for unit_type_id in all_unit_type_ids:
-                criteria = UnitAssociationCriteria(type_ids=[unit_type_id], association_filters={"repo_id": {"$in": repo_ids}}, unit_fields = ['unit_id'])
+                criteria = Criteria(filters={"repo_id": {"$in": repo_ids}, "unit_type_id":unit_type_id},
+                                    fields=['unit_id'])
                 repo_units = repo_unit_association_query_manager.find_by_criteria(criteria)
                 pulp_unit_ids = [u['unit_id'] for u in repo_units]
-                result_units.setdefault(unit_type_id, []).extend(pulp_unit_ids)
+                result_units.setdefault(unit_type_id, []).extend(list(set(pulp_unit_ids)))
 
         return result_units
 
