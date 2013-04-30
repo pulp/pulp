@@ -131,11 +131,12 @@ class HandlerStrategy(object):
         :type request: SynchronizationRequest
         """
         for bind in request.bindings:
-            if request.cancelled():
-                break
             try:
                 repo_id = bind['repo_id']
                 details = bind['details']
+                if request.cancelled():
+                    request.summary[repo_id].action = RepositoryReport.CANCELLED
+                    continue
                 parent = Repository(repo_id, details)
                 child = RepositoryOnChild.fetch(repo_id)
                 progress = request.progress.find_report(repo_id)
@@ -148,6 +149,9 @@ class HandlerStrategy(object):
                     request.summary[repo_id].action = RepositoryReport.ADDED
                     child.add()
                 self._synchronize_repository(request, repo_id)
+                if request.cancelled():
+                    request.summary[repo_id].action = RepositoryReport.CANCELLED
+                    continue
             except NodeError, ne:
                 request.summary.errors.append(ne)
             except Exception, e:
@@ -187,7 +191,8 @@ class HandlerStrategy(object):
         repositories_on_child = [r.repo_id for r in RepositoryOnChild.fetch_all()]
         for repo_id in sorted(repositories_on_child):
             if request.cancelled():
-                break
+                request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.CANCELLED)
+                continue
             try:
                 if repo_id not in repositories_on_parent:
                     request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.DELETED)

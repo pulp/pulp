@@ -775,7 +775,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(len(repositories), 1)
         repository = repositories[0]
         self.assertEqual(repository['repo_id'], self.REPO_ID)
-        self.assertEqual(repository['action'], RepositoryReport.PENDING)
+        self.assertEqual(repository['action'], RepositoryReport.CANCELLED)
         units = repository['units']
         self.assertEqual(units['added'], 0)
         self.assertEqual(units['updated'], 0)

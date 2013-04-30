@@ -34,6 +34,7 @@ PROGRESS_STATES = {
 
 ACTIONS = {
     RepositoryReport.PENDING: _('Pending'),
+    RepositoryReport.CANCELLED: _('Cancelled'),
     RepositoryReport.ADDED: _('Added'),
     RepositoryReport.MERGED: _('Merged'),
     RepositoryReport.DELETED: _('Removed')
@@ -71,7 +72,9 @@ class ProgressTracker:
         self.snapshot = []
 
     def display(self, report):
-        reports = report['progress']
+        reports = report.get('progress')
+        if reports is None:
+            return
 
         # On the 2nd+ report, update the last in-progress report.
         if self.snapshot:

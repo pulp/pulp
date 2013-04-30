@@ -170,7 +170,7 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.repository), 1)
         repository = request.summary.repository[REPO_ID]
         self.assertEqual(repository.repo_id, REPO_ID)
-        self.assertEqual(repository.action, RepositoryReport.PENDING)
+        self.assertEqual(repository.action, RepositoryReport.CANCELLED)
         units = repository.units
         self.assertEqual(units.added, 0)
         self.assertEqual(units.updated, 0)
@@ -188,7 +188,7 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.repository), 1)
         repository = request.summary.repository[REPO_ID]
         self.assertEqual(repository.repo_id, REPO_ID)
-        self.assertEqual(repository.action, RepositoryReport.PENDING)
+        self.assertEqual(repository.action, RepositoryReport.CANCELLED)
         units = repository.units
         self.assertEqual(units.added, 0)
         self.assertEqual(units.updated, 0)
