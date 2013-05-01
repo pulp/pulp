@@ -174,10 +174,10 @@ class HandlerStrategy(object):
     def _synchronize_repository(self, request, repo_id):
         """
         Run synchronization on a repository by ID.
-        :param repo_id: A repository ID.
-        :type repo_id: str
         :param request: A synchronization request.
         :type request: SyncRequest
+        :param repo_id: A repository ID.
+        :type repo_id: str
         """
         repo = RepositoryOnChild(repo_id)
         progress = request.progress.find_report(repo_id)
