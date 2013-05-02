@@ -83,8 +83,9 @@ class RepoImporterManager(object):
 
         # Process any scheduled syncs and get schedule details using schedule id
         for importer in importers:
-            if 'scheduled_syncs' in importer and importer['scheduled_syncs']:
-                scheduled_sync_details = list(ScheduledCall.get_collection().find({"id": {"$in": importer['scheduled_syncs']}}))
+            scheduled_sync_ids = importer.get('scheduled_syncs', None)
+            if scheduled_sync_ids is not None:
+                scheduled_sync_details = list(ScheduledCall.get_collection().find({"id": {"$in": scheduled_sync_ids}}))
                 importer['scheduled_syncs'] = [s["schedule"] for s in scheduled_sync_details]
 
         return importers
