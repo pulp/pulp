@@ -22,6 +22,7 @@ from pulp.plugins.importer import Importer
 from pulp.plugins.model import Repository
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoImporter
+from pulp.server.db.model.dispatch import ScheduledCall
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
@@ -615,3 +616,21 @@ class RepoManagerTests(base.PulpServerTests):
         self.importer_manager.find_by_repo_list(['repo-1'])
         self.assertTrue(mock_get_collection.return_value.find.called)
         mock_get_collection.return_value.find.assert_called_once_with(EXPECT, PROJECTION)
+
+    @mock.patch.object(ScheduledCall, 'get_collection')
+    def test_find_by_repo_list_no_scheduled_sync(self, mock_get_collection):
+        EXPECT = {"id": {"$in": []}}
+        self.importer_manager.find_by_repo_list(['repo-1'])
+        self.assertFalse(mock_get_collection.return_value.find.called)
+
+    @mock.patch.object(ScheduledCall, 'get_collection')
+    def test_find_by_repo_list_with_scheduled_sync(self, mock_get_collection):
+        repo_id = 'scheduled_repo'
+        importer_type_id = 'mock-importer'
+        schedule_id = 'scheduled_repo_sync'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, importer_type_id, {})
+        self.importer_manager.add_sync_schedule(repo_id, schedule_id)
+        self.importer_manager.find_by_repo_list([repo_id])
+        EXPECT = {"id": {"$in": [schedule_id]}}
+        mock_get_collection.return_value.find.assert_called_once_with(EXPECT)
