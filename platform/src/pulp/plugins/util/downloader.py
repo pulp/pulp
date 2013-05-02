@@ -12,9 +12,9 @@
 
 """
 Contains functions related to working with the Pulp downloader library.
-
-TODO: Rename this file and update docs when a name is chosen.
 """
+
+# TODO: Rename this file and update docs when a name is chosen.
 
 from functools import partial
 
