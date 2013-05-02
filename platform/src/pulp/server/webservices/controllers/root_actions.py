@@ -40,8 +40,8 @@ class LoginController(JSONController):
     def POST(self):
         user = factory.principal_manager().get_principal()
         key, certificate = factory.cert_generation_manager().make_admin_user_cert(user)
-        certificate = key + certificate
-        return self.ok(certificate)
+        key_cert = {"key": key, "certificate": certificate}
+        return self.ok(key_cert)
 
 # -- web.py application -------------------------------------------------------
 
