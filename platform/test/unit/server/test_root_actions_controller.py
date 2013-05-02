@@ -30,7 +30,7 @@ class UserCertificateControllerTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(200, status)
 
-        certificate = manager_factory.certificate_manager(content=str(body))
+        certificate = manager_factory.certificate_manager(content=str(body['key']+body['certificate']))
         cn = certificate.subject()['CN']
         username, id = cert_generation_manager.decode_admin_user(cn)
 
