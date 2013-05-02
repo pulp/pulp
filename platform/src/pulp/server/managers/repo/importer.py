@@ -15,6 +15,7 @@ import logging
 import sys
 
 from pulp.server.db.model.repository import Repo, RepoImporter
+from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 import pulp.server.managers.factory as manager_factory
@@ -78,7 +79,16 @@ class RepoImporterManager(object):
         """
         spec = {'repo_id' : {'$in' : repo_id_list}}
         projection = {'scratchpad' : 0}
-        return list(RepoImporter.get_collection().find(spec, projection))
+        importers = list(RepoImporter.get_collection().find(spec, projection))
+
+        # Process any scheduled syncs and get schedule details using schedule id
+        for importer in importers:
+            scheduled_sync_ids = importer.get('scheduled_syncs', None)
+            if scheduled_sync_ids is not None:
+                scheduled_sync_details = list(ScheduledCall.get_collection().find({"id": {"$in": scheduled_sync_ids}}))
+                importer['scheduled_syncs'] = [s["schedule"] for s in scheduled_sync_details]
+
+        return importers
 
     def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
         """
