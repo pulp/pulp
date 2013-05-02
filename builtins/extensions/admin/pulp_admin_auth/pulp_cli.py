@@ -54,7 +54,8 @@ class LoginCommand(PulpCliCommand):
                 self.context.prompt.write(_('Login cancelled'))
                 return os.EX_NOUSER
 
-        certificate = self.context.server.actions.login(username, password).response_body
+        result = self.context.server.actions.login(username, password).response_body
+        key_cert = result['key'] + result['certificate']
 
         # Save the certificate to the filesystem
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
@@ -68,13 +69,13 @@ class LoginCommand(PulpCliCommand):
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
 
         f = open(cert_filename, 'w')
-        f.write(certificate)
+        f.write(key_cert)
         f.close()
 
         # Parse the certificate to extract the expiration date
         expiration_date = None
         try:
-            certificate_section = str(certificate[certificate.index('-----BEGIN CERTIFICATE'):])
+            certificate_section = str(key_cert[key_cert.index('-----BEGIN CERTIFICATE'):])
             x509_cert = X509.load_cert_string(certificate_section)
             expiration_date = x509_cert.get_not_after()
         except Exception:
