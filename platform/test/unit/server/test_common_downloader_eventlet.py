@@ -103,112 +103,83 @@ class LiveEventletDownloaderTests(DownloadTests):
         self.assertEqual(listener.download_failed.call_count, 0)
 
 
-class EventletHandlerTests(unittest.TestCase):
-
-    def test_proxy_url(self):
-        proxy_host = 'https://slydog.net'
-        proxy_port = 9874
-        proxy_url = 'https://slydog.net:9874/'
-        handler = urllib2_utils.PulpHandler(proxy_url=proxy_host, proxy_port=proxy_port)
-        self.assertEqual(proxy_url, handler.proxy_url)
-
-    def test_build_opener(self):
-        handler = urllib2_utils.PulpHandler()
-        opener = urllib2.build_opener(handler)
-
-        self.assertTrue(handler in opener.handlers)
-
-        # our handler should replace the http, https, and proxy handlers
-        for h in opener.handlers:
-            if isinstance(h, (urllib2.HTTPHandler, urllib2.HTTPSHandler, urllib2.ProxyHandler)):
-                self.assertEqual(h, handler)
-                continue
-
-    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpHandler.http_open')
-    def test_http_handler(self, mock_http_open):
-        url = 'http://awesomeserver.org/path/to/latest/awesomeness'
-        req = urllib2.Request(url)
-
-        handler = urllib2_utils.PulpHandler()
-        opener = urllib2.build_opener(handler)
-
-        try:
-            opener.open(req)
-        except urllib2.HTTPError:
-            pass
-
-        mock_http_open.assert_called_once_with(req)
-
-    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpHandler.https_open')
-    def test_https_handler(self, mock_https_open):
-        url = 'https://awesomeserver.org/path/to/secure/awesomeness'
-        req = urllib2.Request(url)
-
-        handler = urllib2_utils.PulpHandler()
-        opener = urllib2.build_opener(handler)
-
-        try:
-            opener.open(req)
-        except urllib2.HTTPError:
-            pass
-
-        mock_https_open.assert_called_once_with(req)
-
-    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpHandler.proxy_open')
-    def test_https_handler(self, mock_proxy_open):
-        url = 'https://awesomeserver.org/path/to/secure/awesomeness'
-        req = urllib2.Request(url)
-
-        proxy_url = 'https://184.169.138.163'
-        proxy_port = 3875
-
-        handler = urllib2_utils.PulpHandler(proxy_url=proxy_url, proxy_port=proxy_port)
-        opener = urllib2.build_opener(handler)
-
-        try:
-            opener.open(req)
-        except urllib2.HTTPError:
-            pass
-
-        self.assertEqual(mock_proxy_open.call_count, 1)
-        self.assertTrue(req in mock_proxy_open.call_args[0], str(mock_proxy_open.call_args))
-
-
 class EventletConnectionTests(unittest.TestCase):
 
-    def test_default_port_http(self):
-        host = 'my.fakehost.com'
-        connection = urllib2_utils.PulpConnection(host)
-        self.assertEqual(connection.default_port, 80)
-
-    def test_default_port_https(self):
-        host = 'my.fakehost.com'
-        connection = urllib2_utils.PulpConnection(host, scheme='https')
-        self.assertEqual(connection.default_port, 443)
-
-    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpConnection.request')
-    def test_request(self, mock_request):
-        url = 'http://somenewserver.com/path/old/file'
-        req = urllib2.Request(url)
-        opener = urllib2.build_opener(urllib2_utils.PulpHandler())
+    def test_instantiation(self):
+        host = 'myserver.com'
 
         try:
-            opener.open(req)
-        except httplib.ResponseNotReady:
-            pass
-
-        self.assertEqual(mock_request.call_count, 1)
-        self.assertTrue('/path/old/file' in mock_request.call_args[0], str(mock_request.call_args[0]))
-
-    @mock.patch('pulp.common.download.downloaders.urllib2_utils.PulpConnection.connect')
-    def test_connect(self, mock_connect):
-        url = 'http://somenewserver.com/path/old/file'
-        req = urllib2.Request(url)
-        opener = urllib2.build_opener(urllib2_utils.PulpHandler())
+            urllib2_utils.HTTPDownloaderConnection(urllib2_utils.HTTP_SCHEME, host)
+        except:
+            self.fail('instantiation with %s scheme and %s host failed' % (urllib2_utils.HTTP_SCHEME, host))
 
         try:
-            opener.open(req)
-        except AttributeError: # raised when None gets passed to the socket
-            pass
+            urllib2_utils.HTTPDownloaderConnection(urllib2_utils.HTTPS_SCHEME, host)
+        except:
+            self.fail('instantiation with %s scheme and %s host failed' % (urllib2_utils.HTTPS_SCHEME, host))
 
-        self.assertEqual(mock_connect.call_count, 1)
+    def test_properties(self):
+        kwargs = {'scheme': 'http',
+                  'host': 'myhost.com',
+                  'proxy_scheme': 'http',
+                  'proxy_host': 'myproxy.com',
+                  'proxy_port': 3456}
+
+        connection = urllib2_utils.HTTPDownloaderConnection(**kwargs)
+
+        self.assertEqual(connection.url, 'http://myhost.com')
+        self.assertEqual(connection.host, 'myhost.com')
+        self.assertEqual(connection.server, 'myhost.com')
+        self.assertEqual(connection.port, 80)
+        self.assertEqual(connection.proxy_url, 'http://myproxy.com:3456')
+        self.assertEqual(connection.proxy_host, 'myproxy.com:3456')
+        self.assertEqual(connection.proxy_server, 'myproxy.com')
+        self.assertEqual(connection.proxy_port, 3456)
+        self.assertEqual(connection.proxy_credentials, None)
+
+
+MOCK_RESPONSE = mock.MagicMock()
+MOCK_RESPONSE.code = 200
+MOCK_RESPONSE.msg = 'OK'
+
+class EventletHandlerTests(unittest.TestCase):
+
+    def test_instantiation(self):
+        try:
+            urllib2_utils.HTTPDownloaderHandler()
+        except:
+            self.fail('instantiation failed')
+
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.proxy_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.https_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.http_open', return_value=MOCK_RESPONSE)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.default_open', return_value=None)
+    def test_http_open(self, mock_default_open, mock_http_open, mock_https_open, mock_proxy_open):
+        url = 'http://myserver.com/path/to/resource'
+        req = urllib2.Request(url)
+        opener = urllib2.build_opener(urllib2_utils.HTTPDownloaderHandler())
+
+        response = opener.open(req)
+
+        self.assertTrue(response is MOCK_RESPONSE)
+        self.assertEqual(mock_default_open.call_count, 1)
+        self.assertEqual(mock_http_open.call_count, 1)
+        self.assertEqual(mock_https_open.call_count, 0)
+        self.assertEqual(mock_proxy_open.call_count, 0)
+
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.proxy_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.https_open', return_value=MOCK_RESPONSE)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.http_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.default_open', return_value=None)
+    def test_http_open(self, mock_default_open, mock_http_open, mock_https_open, mock_proxy_open):
+        url = 'https://myserver.com/path/to/resource'
+        req = urllib2.Request(url)
+        opener = urllib2.build_opener(urllib2_utils.HTTPDownloaderHandler())
+
+        response = opener.open(req)
+
+        self.assertTrue(response is MOCK_RESPONSE)
+        self.assertEqual(mock_default_open.call_count, 1)
+        self.assertEqual(mock_http_open.call_count, 0)
+        self.assertEqual(mock_https_open.call_count, 1)
+        self.assertEqual(mock_proxy_open.call_count, 0)
