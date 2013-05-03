@@ -112,20 +112,37 @@ class PluginCallConfiguration:
         :rtype:  bool, None
         """
 
-        str = self.get(key)
+        str_bool = self.get(key)
 
         # Handle the case where it's already a boolean
-        if isinstance(str, bool):
-            return str
+        if isinstance(str_bool, bool):
+            return str_bool
 
         # If we're here, need to parse the string version of a boolean
-        if str is not None:
-            str = str.lower()
-            if str == 'true':
+        if str_bool is not None:
+            str_bool = str_bool.lower()
+            if str_bool == 'true':
                 return True
-            elif str == 'false':
+            elif str_bool == 'false':
                 return False
         return None
+
+    def flatten(self):
+        """
+        Returns a single dict containing values aggregated across all sources after applying
+        the priority rules. In other words, if a key is present in multiple sources, the highest
+        priority value will be included in this dict.
+
+        :rtype: dict
+        """
+
+        # Order matters so the highest priority value is used
+        ordered_configs = (self.default_config, self.plugin_config,
+                           self.repo_plugin_config, self.override_config)
+
+        flattened = {}
+        map(flattened.update, ordered_configs)
+        return flattened
 
     def _all_configs(self):
         """
