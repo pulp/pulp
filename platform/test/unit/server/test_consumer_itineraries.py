@@ -54,7 +54,7 @@ class TestContent(PulpItineraryTests):
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
-        # run task #1 (actual bind)
+        # run task #1 (actual install)
         self.run_next()
 
         # verify agent called
@@ -72,6 +72,29 @@ class TestContent(PulpItineraryTests):
         self.assertEqual(call_report.result['details'], report.details)
         self.assertEqual(call_report.result['reboot'], report.reboot)
 
+    def test_install_cancelled(self):
+        # Setup
+        self.populate()
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        itinerary = consumer_content_install_itinerary(self.CONSUMER_ID, units, options)
+        call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
+
+        # run the task
+        self.run_next()
+
+        # Verify
+        self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # cancel the task
+        self.cancel(call_report.call_request_id)
+
+        # verify agent called
+        mock_agent.Admin.cancel.assert_called_with(criteria={'eq': call_report.call_request_id})
+
     def test_update(self):
         # Setup
         self.populate()
@@ -86,7 +109,7 @@ class TestContent(PulpItineraryTests):
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
-        # run task #1 (actual bind)
+        # run task #1 (actual update)
         self.run_next()
 
         # verify agent called
@@ -104,6 +127,29 @@ class TestContent(PulpItineraryTests):
         self.assertEqual(call_report.result['details'], report.details)
         self.assertEqual(call_report.result['reboot'], report.reboot)
 
+    def test_update_cancelled(self):
+        # Setup
+        self.populate()
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        itinerary = consumer_content_update_itinerary(self.CONSUMER_ID, units, options)
+        call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
+
+        # run the task
+        self.run_next()
+
+        # Verify
+        self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # cancel the task
+        self.cancel(call_report.call_request_id)
+
+        # verify agent called
+        mock_agent.Admin.cancel.assert_called_with(criteria={'eq': call_report.call_request_id})
+
     def test_uninstall(self):
         # Setup
         self.populate()
@@ -118,7 +164,7 @@ class TestContent(PulpItineraryTests):
         # Verify
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
-        # run task #1 (actual bind)
+        # run task #1 (actual uninstall)
         self.run_next()
 
         # verify agent called
@@ -135,3 +181,26 @@ class TestContent(PulpItineraryTests):
         self.assertTrue(call_report.result['succeeded'])
         self.assertEqual(call_report.result['details'], report.details)
         self.assertEqual(call_report.result['reboot'], report.reboot)
+
+    def test_uninstall_cancelled(self):
+        # Setup
+        self.populate()
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        itinerary = consumer_content_uninstall_itinerary(self.CONSUMER_ID, units, options)
+        call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
+
+        # run the task
+        self.run_next()
+
+        # Verify
+        self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # cancel the task
+        self.cancel(call_report.call_request_id)
+
+        # verify agent called
+        mock_agent.Admin.cancel.assert_called_with(criteria={'eq': call_report.call_request_id})
