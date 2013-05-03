@@ -31,9 +31,9 @@ _LOG = getLogger(__name__)
 DEFAULT_MAX_CONCURRENT = 7
 
 # taken from python's socket._fileobject wrapper
-DEFAULT_BUFFER_SIZE = 8192
+DEFAULT_BUFFER_SIZE = 8192 # bytes
 
-DEFAULT_PROGRESS_INTERVAL = 5
+DEFAULT_PROGRESS_INTERVAL = 5 # seconds
 
 # -- eventlet downloader -------------------------------------------------------
 
@@ -47,7 +47,7 @@ class HTTPEventletDownloader(PulpDownloader):
     overhead.
     """
 
-    @ property
+    @property
     def buffer_size(self):
         return self.config.buffer_size or DEFAULT_BUFFER_SIZE
 
@@ -57,11 +57,8 @@ class HTTPEventletDownloader(PulpDownloader):
 
     @property
     def progress_interval(self):
-        # cache the progress interval for better performance
-        if not hasattr(self, '_progress_interval'):
-            seconds = self.config.progress_interval or DEFAULT_PROGRESS_INTERVAL
-            self._progress_interval = datetime.timedelta(seconds=seconds)
-        return self._progress_interval
+        seconds = self.config.progress_interval or DEFAULT_PROGRESS_INTERVAL
+        return datetime.timedelta(seconds=seconds)
 
     def download(self, request_list):
 
@@ -104,6 +101,8 @@ class HTTPEventletDownloader(PulpDownloader):
             info = response.info()
             set_response_info(info, report)
 
+            buffer_size = self.buffer_size
+            progress_interval = self.progress_interval
             file_handle = request.initialize_file_handle()
 
             self.fire_download_progress(report) # fire an initial progress event
@@ -111,7 +110,7 @@ class HTTPEventletDownloader(PulpDownloader):
 
             # individual file download i/o loop
             while not self.is_canceled:
-                body = response.read(self.buffer_size)
+                body = response.read(buffer_size)
                 if not body:
                     break
 
@@ -120,7 +119,13 @@ class HTTPEventletDownloader(PulpDownloader):
                 bytes_read = len(body)
                 report.bytes_downloaded += bytes_read
 
-                last_update_time = self._interval_progress_report(last_update_time, report)
+                now = datetime.datetime.now()
+
+                if now - last_update_time < progress_interval:
+                    continue
+
+                self.fire_download_progress(report)
+                last_update_time = now
 
             else:
                 # we didn't break out of the i/o loop only if we were cancelled
@@ -138,15 +143,6 @@ class HTTPEventletDownloader(PulpDownloader):
 
         # return the appropriately filled out report
         return report
-
-    def _interval_progress_report(self, last_update_time, report):
-        now = datetime.datetime.now()
-
-        if now - last_update_time < self.progress_interval:
-            return last_update_time
-
-        self.fire_download_progress(report)
-        return now
 
 # utilities --------------------------------------------------------------------
 
@@ -168,7 +164,7 @@ def build_urllib2_opener(config):
 
     if config.proxy_url is not None:
         proxy_scheme, remainder = urllib.splittype(config.proxy_url)
-        proxy_server= urllib.splithost(remainder)[0]
+        proxy_server = urllib.splithost(remainder)[0]
 
     kwargs = {'key_file': config.ssl_client_key_path,
               'cert_file': config.ssl_client_cert_path,
