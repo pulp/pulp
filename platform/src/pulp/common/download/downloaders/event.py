@@ -12,28 +12,30 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import base64
+import datetime
+import urllib
 from logging import getLogger
 
-from eventlet import GreenPool
+import eventlet
 from eventlet.green import urllib2
 
 from pulp.common.download import report as download_report
 from pulp.common.download.downloaders.base import PulpDownloader
-from pulp.common.download.downloaders.urllib2_utils import PulpHandler
+from pulp.common.download.downloaders.urllib2_utils import HTTPDownloaderHandler
 
+# -- constants -----------------------------------------------------------------
+
+_LOG = getLogger(__name__)
 
 # "optimal" concurrency, based purely on anecdotal evidence
 DEFAULT_MAX_CONCURRENT = 7
 
 # taken from python's socket._fileobject wrapper
-DEFAULT_BUFFER_SIZE = 8192
-NO_RETURN_BUFFER_SIZE = -1
+DEFAULT_BUFFER_SIZE = 8192 # bytes
 
-DEFAULT_MAX_PROGRESS_CALLS = 10
+DEFAULT_PROGRESS_INTERVAL = 5 # seconds
 
-_LOG = getLogger(__name__)
-
-# eventlet downloader ----------------------------------------------------------
+# -- eventlet downloader -------------------------------------------------------
 
 class HTTPEventletDownloader(PulpDownloader):
     """
@@ -46,12 +48,21 @@ class HTTPEventletDownloader(PulpDownloader):
     """
 
     @property
+    def buffer_size(self):
+        return self.config.buffer_size or DEFAULT_BUFFER_SIZE
+
+    @property
     def max_concurrent(self):
         return self.config.max_concurrent or DEFAULT_MAX_CONCURRENT
 
+    @property
+    def progress_interval(self):
+        seconds = self.config.progress_interval or DEFAULT_PROGRESS_INTERVAL
+        return datetime.timedelta(seconds=seconds)
+
     def download(self, request_list):
 
-        pool = GreenPool(size=self.max_concurrent)
+        pool = eventlet.GreenPool(size=self.max_concurrent)
 
         # main i/o loop
         for report in pool.imap(self._fetch, request_list):
@@ -74,8 +85,6 @@ class HTTPEventletDownloader(PulpDownloader):
 
         self.fire_download_started(report)
 
-        buffer_size = calculate_buffer_size(report, DEFAULT_MAX_PROGRESS_CALLS-1)
-
         # make the request to the server and process the response
         try:
             urllib2_request = download_request_to_urllib2_request(self.config, request)
@@ -92,9 +101,12 @@ class HTTPEventletDownloader(PulpDownloader):
             info = response.info()
             set_response_info(info, report)
 
+            buffer_size = self.buffer_size
+            progress_interval = self.progress_interval
             file_handle = request.initialize_file_handle()
 
             self.fire_download_progress(report) # fire an initial progress event
+            last_update_time = datetime.datetime.now()
 
             # individual file download i/o loop
             while not self.is_canceled:
@@ -106,8 +118,14 @@ class HTTPEventletDownloader(PulpDownloader):
 
                 bytes_read = len(body)
                 report.bytes_downloaded += bytes_read
-                # this is guaranteed to fire at least one (final) progress event
+
+                now = datetime.datetime.now()
+
+                if now - last_update_time < progress_interval:
+                    continue
+
                 self.fire_download_progress(report)
+                last_update_time = now
 
             else:
                 # we didn't break out of the i/o loop only if we were cancelled
@@ -128,25 +146,6 @@ class HTTPEventletDownloader(PulpDownloader):
 
 # utilities --------------------------------------------------------------------
 
-def calculate_buffer_size(report, max_progress_calls=DEFAULT_MAX_PROGRESS_CALLS):
-    # if we've been unable to determine the size of the download, return a
-    # buffer size that won't bother with reporting the progress
-    if not report.total_bytes or report.total_bytes < 1:
-        return NO_RETURN_BUFFER_SIZE
-
-    # return a buffer size that allows for a maximum number of progress calls,
-    # but don't bother returning a buffer size smaller than the default;
-    # the read() operation won't honor it anyway
-
-    divisor = max_progress_calls
-    if report.total_bytes % divisor != 0:
-        divisor -= 1
-
-    potential_buffer_size = report.total_bytes / divisor
-    buffer_size = max(potential_buffer_size, DEFAULT_BUFFER_SIZE)
-    return buffer_size
-
-
 def set_response_info(info, report):
     content_length = info.dict.get('content-length', None)
     if content_length is not None:
@@ -160,14 +159,24 @@ def set_response_info(info, report):
 
 def build_urllib2_opener(config):
 
+    proxy_scheme = None
+    proxy_server = None
+
+    if config.proxy_url is not None:
+        proxy_scheme, remainder = urllib.splittype(config.proxy_url)
+        proxy_server = urllib.splithost(remainder)[0]
+
     kwargs = {'key_file': config.ssl_client_key_path,
               'cert_file': config.ssl_client_cert_path,
               'ca_cert_file': config.ssl_ca_cert_path,
-              'verify_host': bool(config.ssl_validation), # None -> False
-              'proxy_url': config.proxy_url,
-              'proxy_port': config.proxy_port,}
+              'validate_host': config.ssl_validation if config.ssl_validation is not None else True,
+              'proxy_scheme': proxy_scheme,
+              'proxy_server': proxy_server,
+              'proxy_port': config.proxy_port,
+              'proxy_user': config.proxy_user,
+              'proxy_password': config.proxy_password,}
 
-    handler = PulpHandler(**kwargs)
+    handler = HTTPDownloaderHandler(**kwargs)
     return urllib2.build_opener(handler)
 
 # urllib2 request construction -------------------------------------------------
