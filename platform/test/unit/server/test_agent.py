@@ -131,6 +131,15 @@ class TestAgent(base.PulpServerTests):
         self.assertTrue(last_heartbeat is None)
         self.assertTrue(isinstance(details, dict))
 
+    def test_cancel(self):
+        # Test
+        task_id = '123'
+        agent = DirectAgent(CONSUMER)
+        agent.cancel(task_id)
+        # Verify
+        criteria = {'eq': task_id}
+        mock_agent.Admin.cancel.assert_called_once_with(criteria=criteria)
+
 
 class TestRestAgent(base.PulpServerTests):
 
@@ -204,3 +213,12 @@ class TestRestAgent(base.PulpServerTests):
         self.assertFalse(alive)
         self.assertTrue(last_heartbeat is None)
         self.assertTrue(isinstance(details, dict))
+
+    def test_cancel(self):
+        # Test
+        task_id = '123'
+        agent = RestAgent(CONSUMER)
+        agent.cancel(task_id)
+        # Verify
+        criteria = {'eq': task_id}
+        mock_agent.Admin.cancel.assert_called_once_with(criteria=criteria)

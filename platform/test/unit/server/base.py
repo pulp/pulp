@@ -235,6 +235,9 @@ class PulpItineraryTests(PulpAsyncServerTests):
     def run_next(self):
         TaskQueue.run_next()
 
+    def cancel(self, request_id):
+        self.coordinator.cancel_call(request_id)
+
 
 class TaskQueue:
 
@@ -272,6 +275,9 @@ class TaskQueue:
     def enqueue(self, task):
         self.__queue.append(task)
 
+    def cancel(self, task):
+        return task.cancel()
+
     def __run_next(self):
         if self.__next < len(self.__queue):
             task = self.__queue[self.__next]
@@ -290,6 +296,11 @@ class TaskQueue:
                 return
         task.call_report.state = dispatch_constants.CALL_RUNNING_STATE
         task._run()
+
+    def get(self, task_id):
+        for task in self.__queue:
+            if task.call_report.call_request_id == task_id:
+                return task
 
     def all_tasks(self):
         return list(self.__queue)

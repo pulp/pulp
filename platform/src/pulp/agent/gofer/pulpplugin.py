@@ -137,6 +137,16 @@ class Conduit(HandlerConduit):
         context.progress.details = report
         context.progress.report()
 
+    def cancelled(self):
+        """
+        Get whether the current operation has been cancelled.
+        :return: True if cancelled, else False.
+        :rtype: bool
+        """
+        context = Context.current()
+        return context.cancelled()
+
+
 # --- actions ----------------------------------------------------------------
 
 
