@@ -22,15 +22,15 @@ from pulp_node.error import UnitDownloadError
 log = getLogger(__name__)
 
 
-REPO_ID = 'repo_id'
+REQUEST = 'request'
 UNIT = 'unit'
 
 
 class UnitDownloadRequest(DownloadRequest):
 
-    def __init__(self, url, repo_id, unit):
+    def __init__(self, url, request, unit):
         super(UnitDownloadRequest, self).__init__(
-            url, unit.storage_path, data={REPO_ID: repo_id, UNIT: unit})
+            url, unit.storage_path, data={REQUEST: request, UNIT: unit})
 
 
 class DownloadListener(AggregatingEventListener):
@@ -40,6 +40,11 @@ class DownloadListener(AggregatingEventListener):
         self._strategy = strategy
 
     def download_started(self, report):
+        super(DownloadListener, self).download_started(report)
+        request = report.data[REQUEST]
+        if request.cancelled():
+            request.downloader.cancel()
+            return
         try:
             dir_path = os.path.dirname(report.destination)
             os.makedirs(dir_path)
@@ -48,14 +53,23 @@ class DownloadListener(AggregatingEventListener):
                 raise e
 
     def download_succeeded(self, report):
-        repo_id = report.data[REPO_ID]
+        super(DownloadListener, self).download_succeeded(report)
+        request = report.data[REQUEST]
         unit = report.data[UNIT]
-        self._strategy.add_unit(repo_id, unit)
+        self._strategy.add_unit(request, unit)
+        if request.cancelled():
+            request.downloader.cancel()
+
+    def download_failed(self, report):
+        super(DownloadListener, self).download_failed(report)
+        request = report.data[REQUEST]
+        if request.cancelled():
+            request.downloader.cancel()
 
     def error_list(self):
         error_list = []
         for report in self.failed_reports:
-            repo_id = report.data[REPO_ID]
-            error = UnitDownloadError(report.url, repo_id, report.error_report)
+            request = report.data[REQUEST]
+            error = UnitDownloadError(report.url, request.repo_id, report.error_report)
             error_list.append(error)
         return error_list

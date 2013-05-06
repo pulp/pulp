@@ -22,7 +22,7 @@ from pulp_node import constants
 from pulp_node.error import CaughtException
 from pulp_node.reports import RepositoryProgress
 from pulp_node.importers.reports import SummaryReport, ProgressListener
-from pulp_node.importers.strategies import find_strategy
+from pulp_node.importers.strategies import find_strategy, SyncRequest
 
 
 log = getLogger(__name__)
@@ -60,6 +60,8 @@ def entry_point():
 class NodesHttpImporter(Importer):
     """
     The nodes importer is used to synchronize repository content.
+    :ivar cancelled: Indicates whether the sync has been cancelled.
+    :type cancelled: bool
     """
 
     @classmethod
@@ -69,6 +71,9 @@ class NodesHttpImporter(Importer):
             'display_name' : 'Pulp Nodes HTTP Importer',
             'types' : ['node', 'repository']
         }
+
+    def __init__(self):
+        self.cancelled = False
 
     def validate_config(self, repo, config, related_repos):
         """
@@ -121,18 +126,39 @@ class NodesHttpImporter(Importer):
         try:
             downloader = self._downloader(config)
             strategy_name = config.get(constants.STRATEGY_KEYWORD)
-            strategy_class = find_strategy(strategy_name)
-            listener = ProgressListener(conduit)
-            progress_report = RepositoryProgress(repo.id, listener)
-            strategy = strategy_class(conduit, config, downloader, progress_report, summary_report)
-            progress_report.begin_importing()
-            strategy.synchronize(repo.id)
+            progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
+            request = SyncRequest(
+                importer=self,
+                conduit=conduit,
+                config=config,
+                downloader=downloader,
+                progress=progress_report,
+                summary=summary_report,
+                repo_id=repo.id)
+            strategy = find_strategy(strategy_name)()
+            strategy.synchronize(request)
         except Exception, e:
             summary_report.errors.append(CaughtException(e, repo.id))
 
         summary_report.update(repo_id=repo.id)
         report = conduit.build_success_report({}, summary_report.dict())
         return report
+
+    def cancel_sync_repo(self, call_request, call_report):
+        """
+        Cancel an in-progress repository synchronization.
+        :param call_request:
+        :param call_report:
+        """
+        self.cancelled = True
+
+    def _cancelled(self):
+        """
+        Get whether the current operation has been cancelled.
+        :return: True if cancelled.
+        :rtype: bool
+        """
+        return self.cancelled
 
     def _downloader(self, config):
         """
@@ -150,8 +176,7 @@ class NodesHttpImporter(Importer):
             max_concurrent=MAX_CONCURRENCY,
             ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
             ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
-            ssl_verify_host=0,
-            ssl_verify_peer=0)
+            ssl_validation=False)
         downloader = HTTPSCurlDownloader(conf)
         return downloader
 
