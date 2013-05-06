@@ -187,8 +187,6 @@ class Repository(object):
 class RepositoryOnChild(ChildEntity, Repository):
     """
     Represents a repository associated with the child inventory.
-    :ivar poller: A task poller used to poll for tasks status and progress.
-    :type poller: TaskPoller
     """
 
     @classmethod
@@ -238,16 +236,6 @@ class RepositoryOnChild(ChildEntity, Repository):
         http = cls.binding.content_orphan.remove_all()
         if http.response_code != httplib.ACCEPTED:
             raise PurgeOrphansError(http.response_code)
-
-    def __init__(self, repo_id, details=None):
-        """
-        :param repo_id: The repository ID.
-        :type repo_id: str
-        :param details: The repositories details.
-        :type details: dict
-        """
-        Repository.__init__(self, repo_id, details)
-        self.poller = TaskPoller(self.binding)
 
     def add(self):
         """
@@ -380,25 +368,34 @@ class RepositoryOnChild(ChildEntity, Repository):
                 dist = DistributorOnChild(self.repo_id, dist_id, {})
                 dist.delete()
 
-    def run_synchronization(self, progress):
+    def run_synchronization(self, progress, cancelled):
         """
         Run a repo_sync() on this child repository.
         :param progress: A progress report.
         :type progress: pulp_node.progress.RepositoryProgress
         :return: The task result.
         """
+        poller = TaskPoller(self.binding)
         http = self.binding.repo_actions.sync(self.repo_id, {})
-        if http.response_code == httplib.ACCEPTED:
-            task = http.response_body[0]
-            return self.poller.join(task.task_id, progress)
-        else:
+        if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
+        task = http.response_body[0]
+        result = poller.join(task.task_id, progress, cancelled)
+        if cancelled():
+            self._cancel_synchronization(task)
+        return result
 
-    def cancel_synchronization(self):
+    def _cancel_synchronization(self, task):
         """
-        Cancel running synchronization.
+        Cancel a task associated with a repository synchronization.
+        :param task: A running task.
+        :type task: pulp.bindings.responses.Task
         """
-        self.poller.abort()
+        http = self.binding.tasks.cancel_task(task.task_id)
+        if http.response_code == httplib.ACCEPTED:
+            log.info('Task [%s] cancelled', task.task_id)
+        else:
+            log.error('Task [%s] cancellation failed http=%s', task.task_id, http.response_code)
 
 
 class Distributor(object):

@@ -30,6 +30,9 @@ TASK_FAILED = _('Task %(t)s, failed: state=%(s)s')
 class TaskFailed(Exception):
     pass
 
+class PollingFailed(Exception):
+    pass
+
 
 # --- polling ---------------------------------------------------------------------------
 
@@ -40,30 +43,21 @@ class TaskPoller(object):
     :type binding: pulp_node.handlers.model.PulpBinding
     :ivar delay: The delay in seconds between each poll.
     :type delay: int
-    :ivar poll: The main loop latch.
-    :type poll: bool
     """
 
     DELAY = 1
 
     def __init__(self, binding, delay=DELAY):
         """
-        :ivar binding: A pulp API binding.
+        :param binding: A pulp API binding.
         :type binding: pulp_node.handlers.model.PulpBinding
-        :ivar delay: The delay in seconds between each poll.
+        :param delay: The delay in seconds between each poll.
         :type delay: int
         """
         self.binding = binding
         self.delay = delay
-        self.poll = True
 
-    def abort(self):
-        """
-        Abort polling.
-        """
-        self.poll = False
-
-    def join(self, task_id, progress):
+    def join(self, task_id, progress, cancelled):
         """
         Begin polling the specified task.
         This call blocks until the task has completed.
@@ -71,27 +65,41 @@ class TaskPoller(object):
         :type task_id: str
         :param progress: A progress reporting object.
         :type progress: pulp_node.progress.RepositoryProgress
+        :param cancelled: A function used to get whether polling has been cancelled.
+        :type cancelled: callable
         :return: The task result.
+        :raise PollingFailed: On failure to fetch the task.
+        :raise TaskFailed: On indication that the task being polled has failed.
         """
+        poll = True
+        task_result = None
         last_hash = 0
 
-        while self.poll:
+        while poll:
+            if cancelled():
+                poll = False
+                continue
+
             sleep(self.delay)
 
             http = self.binding.tasks.get_task(task_id)
             if http.response_code != httplib.OK:
                 msg = FETCH_TASK_FAILED % {'t': task_id, 'c': http.response_code}
-                raise Exception(msg)
+                raise PollingFailed(msg)
 
             task = http.response_body
-            last_hash = self._report_progress(progress, task, last_hash)
 
             if task.state == CALL_ERROR_STATE:
                 msg = TASK_FAILED % {'t': task_id, 's': task.state}
                 raise TaskFailed(msg, task.exception, task.traceback)
 
+            last_hash = self._report_progress(progress, task, last_hash)
+
             if task.state in CALL_COMPLETE_STATES:
-                return task.result
+                task_result = task.result
+                poll = False
+
+        return task_result
 
     def _report_progress(self, progress, task, last_hash):
         """

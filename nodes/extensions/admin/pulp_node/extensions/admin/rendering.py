@@ -34,6 +34,7 @@ PROGRESS_STATES = {
 
 ACTIONS = {
     RepositoryReport.PENDING: _('Pending'),
+    RepositoryReport.CANCELLED: _('Cancelled'),
     RepositoryReport.ADDED: _('Added'),
     RepositoryReport.MERGED: _('Merged'),
     RepositoryReport.DELETED: _('Removed')
@@ -71,14 +72,16 @@ class ProgressTracker:
         self.snapshot = []
 
     def display(self, report):
-        reports = report['progress']
+        reports = report.get('progress')
+        if reports is None:
+            return
 
         # On the 2nd+ report, update the last in-progress report.
         if self.snapshot:
-            r, pb = self.snapshot[-1]
-            repo_id = r['repo_id']
-            r = self._find(repo_id, reports)
-            self._render(r, pb)
+            report, pb = self.snapshot[-1]
+            repo_id = report['repo_id']
+            report = self._find(repo_id, reports)
+            self._render(report, pb)
 
         # The latency in polling can causes gaps in the reported progress.
         # This includes the gap between never having processed a report and receiving
