@@ -30,6 +30,9 @@ TASK_FAILED = _('Task %(t)s, failed: state=%(s)s')
 class TaskFailed(Exception):
     pass
 
+class PollingFailed(Exception):
+    pass
+
 
 # --- polling ---------------------------------------------------------------------------
 
@@ -65,26 +68,38 @@ class TaskPoller(object):
         :param cancelled: A function used to get whether polling has been cancelled.
         :type cancelled: callable
         :return: The task result.
+        :raise PollingFailed: On failure to fetch the task.
+        :raise TaskFailed: On indication that the task being polled has failed.
         """
+        poll = True
+        task_result = None
         last_hash = 0
 
-        while not cancelled():
+        while poll:
+            if cancelled():
+                poll = False
+                continue
+
             sleep(self.delay)
 
             http = self.binding.tasks.get_task(task_id)
             if http.response_code != httplib.OK:
                 msg = FETCH_TASK_FAILED % {'t': task_id, 'c': http.response_code}
-                raise Exception(msg)
+                raise PollingFailed(msg)
 
             task = http.response_body
-            last_hash = self._report_progress(progress, task, last_hash)
 
             if task.state == CALL_ERROR_STATE:
                 msg = TASK_FAILED % {'t': task_id, 's': task.state}
                 raise TaskFailed(msg, task.exception, task.traceback)
 
+            last_hash = self._report_progress(progress, task, last_hash)
+
             if task.state in CALL_COMPLETE_STATES:
-                return task.result
+                task_result = task.result
+                poll = False
+
+        return task_result
 
     def _report_progress(self, progress, task, last_hash):
         """
