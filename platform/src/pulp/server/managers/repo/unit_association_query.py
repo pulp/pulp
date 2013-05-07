@@ -299,13 +299,19 @@ class RepoUnitAssociationQueryManager(object):
                 # Remove all associations didn't match the units after the filter was applied
                 unit_associations = [u for u in unit_associations if u['unit_id'] in matching_unit_ids]
 
-            # At this point, unit_associations only contains units that have passed the unit
-            # filters (if they exist).
-            for u in unit_associations:
-                spec = {'_id' : u['unit_id']}
-                metadata = type_collection.find_one(spec, fields=criteria.unit_fields)
-                u['metadata'] = metadata
+            # Batch look up all of the units. This seems like it'd be rough on memory, but since
+            # we have to ultimately return all of this data to the caller, it's going to end up there
+            # anyway.
+            all_unit_ids = [u['unit_id'] for u in unit_associations]
+            spec = {'_id' : {'$in' : all_unit_ids}}
+            all_metadata = type_collection.find(spec, fields=criteria.unit_fields)
 
+            # Convert to dict by unit_id for simple lookup
+            metadata_by_id = dict([(u['_id'], u) for u in all_metadata])
+            def merge_metadata(association):
+                association['metadata'] = metadata_by_id[association['unit_id']]
+            map(merge_metadata, unit_associations)
+            
             return unit_associations
 
         else:
