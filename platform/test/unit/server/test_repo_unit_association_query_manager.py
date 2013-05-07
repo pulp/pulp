@@ -565,6 +565,23 @@ class UnitAssociationQueryTests(base.PulpServerTests):
             self.assertFalse('md_2' in u['metadata'])
             self.assertFalse('md_3' in u['metadata'])
 
+    def test_get_units_by_type_assoc_sort_unit_filters(self):
+        """
+        This test is a direct result of https://bugzilla.redhat.com/show_bug.cgi?id=952775
+        """
+        # Test
+        criteria = UnitAssociationCriteria(unit_filters={'md_2' : 0},
+                                           association_sort=[('created', association_manager.SORT_ASCENDING)])
+        units = self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify
+        expected = math.ceil(float(len(self.units['alpha'])) / float(2))
+        self.assertEqual(expected, len(units))
+
+        #  The bug was that the metadata was None
+        for u in units:
+            self.assertEqual(u['metadata']['md_2'], 0)
+
     def test_get_units_by_type_not_query(self):
         """
         Mongo really doesn't like $not queries when regular expressions are
