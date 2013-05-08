@@ -42,7 +42,7 @@ _USAGE = _("""These are basic filtering options that will be AND'd together.
 These will be ignored if --filters= is specified. Any option may be specified
 multiple times. The value for each option should be a field name and value to
 match against, specified as "name=value".
-Example: $ pulp-admin repo search --gt='content_unit_count=0'
+Example: $ pulp-admin <command> --gt='content_unit_count=0'
 """).replace('\n', ' ')
 
 ALL_CRITERIA_ARGS = ('filters', 'after', 'before', 'str-eq', 'int-eq', 'match',
