@@ -17,11 +17,12 @@ Defines exception classes to handle server connection and request exceptions
 
 from gettext import gettext as _
 
-# Base class for server request exceptions
 
 class RequestException(Exception):
     """
-    Base exception class
+    Base exception class for all exceptions that originate by the Pulp server. These
+    exceptions coming from the server use the standard exception structure and can be parsed
+    accordingly.
     """
     def __init__(self, response_body):
         Exception.__init__(self)
@@ -47,17 +48,22 @@ class RequestException(Exception):
 # Response code = 400
 class BadRequestException(RequestException): pass
 
+
 # Response code = 401
 class PermissionsException(RequestException): pass
+
 
 # Response code = 404
 class NotFoundException(RequestException): pass
 
+
 # Response code = 409
 class ConflictException(RequestException): pass
 
+
 # Response code >= 500
 class PulpServerException(RequestException): pass
+
 
 # Response code >= 500 and not a Pulp formatted error
 class ApacheServerException(Exception):
@@ -80,6 +86,18 @@ class ApacheServerException(Exception):
         Exception.__init__(self)
 
         self.message = message
+
+
+class ClientSSLException(Exception):
+    """
+    Raised in the event the client-side libraries refuse to even attempt an SSL connection
+    to the server. The common use case here is an expired client certificate which the
+    client-side libraries will check before even initiating the request.
+    """
+
+    def __init__(self, cert_filename):
+        Exception.__init__(self)
+        self.cert_filename = cert_filename
 
 
 class ConnectionException(Exception):

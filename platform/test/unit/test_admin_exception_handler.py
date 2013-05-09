@@ -19,6 +19,7 @@ from pulp.common import auth_utils
 
 import base
 
+
 class AdminExceptionHandlerTests(base.PulpClientTests):
 
     def setUp(self):
@@ -63,6 +64,16 @@ class AdminExceptionHandlerTests(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.assertTrue('server log' in self.recorder.lines[2]) # skip blank line
         self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
+
+    def test_handle_client_ssl(self):
+        # Test
+        e = exceptions.ClientSSLException('x')
+        code = self.handler.handle_client_ssl(e)
+
+        # Verify
+        self.assertEqual(code, exceptions.CODE_PERMISSIONS_EXCEPTION)
+        self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
+        self.assertTrue('session certificate' in self.recorder.lines[2])
 
 
 class AdminExceptionHandlerDispatchingTests(base.PulpClientTests):

@@ -12,15 +12,20 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from _socket import gaierror
+import os
 from socket import error as socket_error
 from M2Crypto.SSL.Checker import WrongHost
 
 import base
 import pulp.bindings.exceptions as exceptions
-from pulp.client.extensions.core import TAG_FAILURE
+from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
 import pulp.client.extensions.exceptions as handler
 from pulp.client.arg_utils import InvalidConfig
 from pulp.common import auth_utils
+
+
+CERT_FILENAME = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             'data', 'test_client_exception_handler', 'cert.pem')
 
 
 class ExceptionsLoaderTest(base.PulpClientTests):
@@ -105,6 +110,11 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_SOCKET_ERROR)
         self.assertEqual(1, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
+        self.prompt.tags = []
+
+        code = self.exception_handler.handle_exception(exceptions.ClientSSLException(CERT_FILENAME))
+        self.assertEqual(code, handler.CODE_PERMISSIONS_EXCEPTION)
+        self.assertEqual([TAG_FAILURE, TAG_PARAGRAPH], self.prompt.get_write_tags())
         self.prompt.tags = []
 
         code = self.exception_handler.handle_exception(Exception({}))
@@ -293,6 +303,20 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
 
+    def test_client_ssl(self):
+        """
+        Tests handling client-side SSL verification issues.
+        """
+
+        # Test
+        e = exceptions.ClientSSLException(CERT_FILENAME)
+        code = self.exception_handler.handle_client_ssl(e)
+
+        # Verify
+        self.assertEqual(code, handler.CODE_PERMISSIONS_EXCEPTION)
+        self.assertEqual([TAG_FAILURE, TAG_PARAGRAPH], self.prompt.get_write_tags())
+        self.assertTrue('May  9 12:39:37 2013 GMT' in self.recorder.lines[2])
+
     def test_unknown_host(self):
         """
         Tests the case where the client is configured with a host that cannot
@@ -340,3 +364,11 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_SOCKET_ERROR)
         self.assertTrue('refused' in self.recorder.lines[0])
         self.assertEqual([TAG_FAILURE], self.prompt.get_write_tags())
+
+    def test_certificate_expiration(self):
+        # Test
+        date = self.exception_handler._certificate_expiration_date(CERT_FILENAME)
+
+        # Verify
+        self.assertEqual(date, 'May  9 12:39:37 2013 GMT')
+
