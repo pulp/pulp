@@ -263,7 +263,7 @@ class HTTPSServerWrapper(object):
         except SSL.SSLError, err:
             # Translate stale login certificate to an auth exception
             if 'sslv3 alert certificate expired' == str(err):
-                raise exceptions.PermissionsException()
+                raise exceptions.ClientSSLException(self.pulp_connection.cert_filename)
             else:
                 raise exceptions.ConnectionException(None, str(err), None)
 
