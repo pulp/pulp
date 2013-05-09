@@ -38,6 +38,66 @@ log = getLogger(__name__)
 STRATEGY_UNSUPPORTED = _('Importer strategy "%(s)s" not supported')
 
 
+# --- request ---------------------------------------------------------------------------
+
+
+class SyncRequest(object):
+    """
+    Represents a specific request to synchronize a repository on a child node.
+    It contains the resources needed by the strategy to complete the request
+    and maintains the state of the request.
+    :ivar conduit: Provides access to relevant Pulp functionality.
+    :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
+    :ivar config: The plugin configuration.
+    :type config: pulp.server.plugins.config.PluginCallConfiguration
+    :ivar downloader: A fully configured file downloader.
+    :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+    :ivar progress: A progress reporting object.
+    :type progress: pulp_node.importers.reports.RepositoryProgress
+    :ivar summary: A summary report.
+    :type summary: pulp_node.importers.reports.SummaryReport
+    :ivar repo_id: The ID of a repository to synchronize.
+    :type repo_id: str
+    """
+
+    def __init__(self, importer, conduit, config, downloader, progress, summary, repo_id):
+        """
+        :param conduit: Provides access to relevant Pulp functionality.
+        :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
+        :param config: The plugin configuration.
+        :type config: pulp.server.plugins.config.PluginCallConfiguration
+        :param downloader: A fully configured file downloader.
+        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+        :param progress: A progress reporting object.
+        :type progress: pulp_node.importers.reports.RepositoryProgress
+        :param summary: A summary report.
+        :type summary: pulp_node.importers.reports.SummaryReport
+        :param repo_id: The ID of a repository to synchronize.
+        :type repo_id: str
+        """
+        self.importer = importer
+        self.conduit = conduit
+        self.config = config
+        self.downloader = downloader
+        self.progress = progress
+        self.summary = summary
+        self.repo_id = repo_id
+
+    def started(self):
+        """
+        Processing the request has started.
+        """
+        self.progress.begin_importing()
+
+    def cancelled(self):
+        """
+        Get whether the request has been cancelled.
+        :return: True if cancelled.
+        :rtype: bool
+        """
+        return self.importer.cancelled
+
+
 # --- abstract strategy  ----------------------------------------------------------------
 
 
@@ -45,122 +105,80 @@ class ImporterStrategy(object):
     """
     This object provides the transport independent content unit
     synchronization strategies used by nodes importer plugins.
-    :ivar cancelled: The flag indicating that the current operation
-        has been cancelled.
-    :type cancelled: bool
-    :ivar conduit: Provides access to relevant Pulp functionality
-    :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
-    :ivar config: The plugin configuration.
-    :type config: pulp.server.plugins.config.PluginCallConfiguration
-    :ivar downloader: A fully configured file downloader.
-    :type downloader: pulp.common.download.backends.base.DownloadBackend
-    :ivar progress_report: A progress reporting object.
-    :type progress_report: RepositoryProgress
-    :ivar summary_report: A summary report.
-    :type summary_report: pulp_node.importers.reports.SummaryReport
     """
 
-    def __init__(self, conduit, config, downloader, progress_report, summary_report):
-        """
-        :param conduit: Provides access to relevant Pulp functionality.
-        :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
-        :param config: The plugin configuration.
-        :type config: pulp.server.plugins.config.PluginCallConfiguration
-        :param downloader: A fully configured file downloader.
-        :type downloader: pulp.common.download.backends.base.DownloadBackend
-        :param progress: A progress reporting object.
-        :type progress: pulp_node.importers.reports.RepositoryProgress
-        :param summary_report: A summary report.
-        :type summary_report: pulp_node.importers.reports.SummaryReport
-        """
-        self.cancelled = False
-        self.conduit = conduit
-        self.config = config
-        self.downloader = downloader
-        self.progress_report = progress_report
-        self.summary_report = summary_report
-
-    def synchronize(self, repo_id):
+    def synchronize(self, request):
         """
         Synchronize the content units associated with the specified repository.
-        :param repo_id: The repository ID.
-        :type repo_id: str
-        :return: A synchronization report.
-        :rtype: Report
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        try:
-            self._synchronize(repo_id)
-        except NodeError, ne:
-            self.summary_report.errors.append(ne)
-        except Exception, e:
-            log.exception(repo_id)
-            self.summary_report.errors.append(CaughtException(e, repo_id))
+        request.started()
 
-    def _synchronize(self, repo_id):
+        try:
+            self._synchronize(request)
+        except NodeError, ne:
+            request.summary.errors.append(ne)
+        except Exception, e:
+            log.exception(request.repo_id)
+            request.summary.errors.append(CaughtException(e, request.repo_id))
+
+    def _synchronize(self, request):
         """
         Specific strategies defined by subclasses.
-        :param repo_id: The repository ID.
-        :type repo_id: str
-        :return: A synchronization report.
-        :rtype: Report
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
         raise NotImplementedError()
 
-    def cancel(self):
-        """
-        Cancel the synchronization in progress.
-        """
-        self.cancelled = True
-        self.downloader.cancel()
-
-    def add_unit(self, repo_id, unit):
+    def add_unit(self, request, unit):
         """
         Add the specified unit to the child inventory using the conduit.
         The conduit will automatically associate the unit to the repository
         to which it's pre-configured.
-        :param repo_id: A repository ID.
-        :type repo_id: str
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :param unit: The unit to be added.
         :type unit: Unit
         """
         try:
-            self.conduit.save_unit(unit)
-            self.progress_report.unit_added(details=unit.storage_path)
+            request.conduit.save_unit(unit)
+            request.progress.unit_added(details=unit.storage_path)
         except Exception:
             log.exception(unit.id)
-            self.summary_report.errors.append(AddUnitError(repo_id))
+            request.summary.errors.append(AddUnitError(request.repo_id))
 
     # --- protected ---------------------------------------------------------------------
 
-    def _unit_inventory(self, repo_id):
+    def _unit_inventory(self, request):
         """
         Build the unit inventory.
-        :param repo_id: A repository ID.
-        :rtype repo_id: str
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :return: The built inventory.
         :rtype: UnitInventory
         """
         # fetch child units
         child = {}
         try:
-            units = self._child_units()
+            units = self._child_units(request)
             child.update(units)
         except NodeError:
             raise
         except Exception:
-            log.exception(repo_id)
-            raise GetChildUnitsError(repo_id)
+            log.exception(request.repo_id)
+            raise GetChildUnitsError(request.repo_id)
         # fetch parent units
         parent = {}
         try:
-            units = self._parent_units()
+            units = self._parent_units(request)
             parent.update(units)
         except NodeError:
             raise
         except Exception:
-            log.exception(repo_id)
-            raise GetParentUnitsError(repo_id)
-        return UnitInventory(repo_id, child, parent)
+            log.exception(request.repo_id)
+            raise GetParentUnitsError(request.repo_id)
+        return UnitInventory(child, parent)
 
     def _missing_units(self, unit_inventory):
         """
@@ -188,7 +206,7 @@ class ImporterStrategy(object):
             new_units.append((unit, unit_in))
         return new_units
 
-    def _add_units(self, unit_inventory):
+    def _add_units(self, request, unit_inventory):
         """
         Determine the list of units contained in the parent inventory
         but are not contained in the child inventory and add them.
@@ -201,72 +219,77 @@ class ImporterStrategy(object):
           2. The file associated with the unit is successfully downloaded.
         For units with files, the unit is added to the inventory as part of the
         transport callback.
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
-        repo_id = unit_inventory.repo_id
         units = self._missing_units(unit_inventory)
-        self.progress_report.begin_adding_units(len(units))
-        request_list = []
+        request.progress.begin_adding_units(len(units))
+        download_list = []
         for unit, child_unit in units:
-            if self.cancelled:
-                break
+            if request.cancelled():
+                return
             download = unit.get('_download')
             if not download:
                 # unit has no file associated
-                self.add_unit(repo_id, child_unit)
+                self.add_unit(request, child_unit)
                 continue
             url = download['url']
-            request = UnitDownloadRequest(url, repo_id, child_unit)
-            request_list.append(request)
-        if self.cancelled:
+            download_request = UnitDownloadRequest(url, request, child_unit)
+            download_list.append(download_request)
+        if request.cancelled():
             return
         listener = DownloadListener(self)
-        self.downloader.event_listener = listener
-        self.downloader.download(request_list)
-        self.summary_report.errors.extend(listener.error_list())
+        request.downloader.event_listener = listener
+        request.downloader.download(download_list)
+        request.summary.errors.extend(listener.error_list())
 
-    def _delete_units(self, unit_inventory):
+    def _delete_units(self, request, unit_inventory):
         """
         Determine the list of units contained in the child inventory
         but are not contained in the parent inventory and un-associate them.
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
         for unit in unit_inventory.child_only():
-            if self.cancelled:
-                break
+            if request.cancelled():
+                return
             try:
-                self.conduit.remove_unit(unit)
+                request.conduit.remove_unit(unit)
             except Exception:
                 log.exception(unit.id)
-                self.summary_report.errors.append(DeleteUnitError(unit_inventory.repo_id))
+                request.summary.errors.append(DeleteUnitError(request.repo_id))
 
-    def _child_units(self):
+    def _child_units(self, request):
         """
         Fetch the child units using the conduit.  The conduit will
         restrict this search to only those associated with the repository
         to which it is pre-configured.
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
-        units = self.conduit.get_units()
+        units = request.conduit.get_units()
         return unit_dictionary(units)
 
-    def _parent_units(self):
+    def _parent_units(self, request):
         """
         Fetch the list of units published by the parent nodes distributor.
         This is performed by reading the manifest at the URL defined in
         the configuration.
-        :param repo_id: The repository ID.
-        :type repo_id: str
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
-        self.progress_report.begin_manifest_download()
-        url = self.config.get(constants.MANIFEST_URL_KEYWORD)
+        request.progress.begin_manifest_download()
+        url = request.config.get(constants.MANIFEST_URL_KEYWORD)
         manifest = Manifest()
-        units = manifest.read(url, self.downloader)
+        units = manifest.read(url, request.downloader)
         return unit_dictionary(units)
 
 
@@ -280,19 +303,19 @@ class Mirror(ImporterStrategy):
     repository in the parent.  Maintains an exact mirror.
     """
 
-    def _synchronize(self, repo_id):
+    def _synchronize(self, request):
         """
         Performs the following steps:
           1. Read the (parent) manifest.
           2. Fetch the child units associated with the repository.
           3. Add missing units.
           4. Delete units specified in the child but not in the parent.
-        :param repo_id: The repository ID.
-        :type repo_id: str
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        unit_inventory = self._unit_inventory(repo_id)
-        self._add_units(unit_inventory)
-        self._delete_units(unit_inventory)
+        unit_inventory = self._unit_inventory(request)
+        self._add_units(request, unit_inventory)
+        self._delete_units(request, unit_inventory)
 
 
 class Additive(ImporterStrategy):
@@ -303,19 +326,17 @@ class Additive(ImporterStrategy):
     that are not contained in the parent inventory are permitted to remain.
     """
 
-    def _synchronize(self, repo_id):
+    def _synchronize(self, request):
         """
         Performs the following steps:
           1. Read the (parent) manifest.
           2. Fetch the child units associated with the repository.
           3. Add missing units.
-        :param repo_id: The repository ID.
-        :type repo_id: str
-        :return: A synchronization report.
-        :rtype: Report
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        unit_inventory = self._unit_inventory(repo_id)
-        self._add_units(unit_inventory)
+        unit_inventory = self._unit_inventory(request)
+        self._add_units(request, unit_inventory)
 
 
 # --- factory ---------------------------------------------------------------------------

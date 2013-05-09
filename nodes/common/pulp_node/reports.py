@@ -25,6 +25,7 @@ class RepositoryReport(object):
 
     # actions
     PENDING = 'pending'
+    CANCELLED = 'cancelled'
     ADDED = 'added'
     MERGED = 'merged'
     DELETED = 'deleted'

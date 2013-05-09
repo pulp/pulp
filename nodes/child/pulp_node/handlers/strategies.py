@@ -29,159 +29,196 @@ log = getLogger(__name__)
 STRATEGY_UNSUPPORTED = _('Handler strategy "%(s)s" not supported')
 
 
+# --- request  --------------------------------------------------------------------------
+
+
+class SyncRequest(object):
+    """
+    Represents a specific request to synchronize a child node.
+    It contains the resources needed by the strategy to complete the request
+    and maintains the state of the request.
+    :ivar conduit: A handler conduit.
+    :type conduit: pulp.agent.lib.conduit.Conduit
+    :ivar progress: A progress report.
+    :type progress: HandlerProgress
+    :ivar summary: The summary report.
+    :type summary: SummaryReport
+    :ivar bindings: A list of consumer binding payloads.
+    :type bindings: list
+    :ivar options: synchronization options.
+    :type options: dict
+    """
+
+    def __init__(self, conduit, progress, summary, bindings, options):
+        """
+        :param conduit: A handler conduit.
+        :type conduit: pulp.agent.lib.conduit.Conduit
+        :param progress: A progress report.
+        :type progress: HandlerProgress
+        :param summary: The summary report.
+        :type summary: SummaryReport
+        :param bindings: A list of consumer binding payloads.
+        :type bindings: list
+        :param options: synchronization options.
+        :type options: dict
+        """
+        self.conduit = conduit
+        self.progress = progress
+        self.summary = summary
+        self.bindings = sorted(bindings, key=itemgetter('repo_id'))
+        self.options = options
+        summary.setup(self.bindings)
+
+    def cancelled(self):
+        """
+        Get whether the request has been cancelled.
+        :return: True if cancelled.
+        :rtype: bool
+        """
+        return self.conduit.cancelled()
+
+    def started(self):
+        """
+        Processing of the request has started.
+        """
+        self.progress.started(self.bindings)
+
+    def finished(self):
+        """
+        Processing of the request has finished.
+        """
+        self.progress.finished()
+
+
 # --- abstract strategy -----------------------------------------------------------------
 
 
 class HandlerStrategy(object):
     """
     Provides strategies for synchronizing repositories between pulp servers.
-    :ivar cancelled: The flag indicating that the current operation
-        has been cancelled.
-    :type cancelled: bool
-    :ivar progress_report: A progress report.
-    :type progress_report: HandlerProgress
-    :ivar summary_report: The summary report.
-    :type summary_report: SummaryReport
     """
 
-    def __init__(self, progress_report, summary_report):
-        """
-        :param progress_report: A progress reporting object.
-        :type progress_report: HandlerProgress
-        :param summary: A summary reporting object.
-        :type summary: SummaryReport
-        """
-        self.cancelled = False
-        self.progress_report = progress_report
-        self.summary_report = summary_report
-
-    def synchronize(self, bindings, options):
+    def synchronize(self, request):
         """
         Synchronize child repositories based on bindings.
         Subclasses must not override this method.
-        :param bindings: A list of consumer binding payloads.
-        :type bindings: list
-        :param options: synchronization options.
-        :type options: dict
         """
-        bindings.sort(key=itemgetter('repo_id'))
-
-        self.summary_report.setup(bindings)
-        self.progress_report.started(bindings)
+        request.started()
 
         try:
             # validation
-            validator = Validator(self.summary_report)
-            validator.validate(bindings)
-            if self.summary_report.failed():
+            validator = Validator(request.summary)
+            validator.validate(request.bindings)
+            if request.summary.failed():
                 return
 
             # synchronization implemented by subclasses
-            self._synchronize(bindings)
+            self._synchronize(request)
 
             # purge orphans
-            if options.get(constants.PURGE_ORPHANS_KEYWORD):
+            if request.options.get(constants.PURGE_ORPHANS_KEYWORD):
                 RepositoryOnChild.purge_orphans()
         except NodeError, ne:
-            self.summary_report.errors.append(ne)
+            request.summary.errors.append(ne)
         except Exception, e:
             log.exception('synchronization failed')
             error = CaughtException(e)
-            self.summary_report.errors.append(error)
+            request.summary.errors.append(error)
         finally:
-            self.progress_report.finished()
+            request.finished()
 
-    def _synchronize(self, bindings):
+    def _synchronize(self, request):
         """
         Specific strategies defined by subclasses.
-        :param bindings: A list of consumer binding payloads.
-        :type bindings: list
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
         raise NotImplementedError()
 
-    def cancel(self):
-        """
-        Cancel the current operation.
-        """
-        self.cancelled = True
-
     # --- protected ---------------------------------------------------------------------
 
-    def _merge_repositories(self, bindings):
+    def _merge_repositories(self, request):
         """
         Add or update repositories based on bindings.
           - Merge repositories found in BOTH parent and child.
           - Add repositories found in the parent but NOT in the child.
-        :param bindings: List of bind payloads.
-        :type bindings: list
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        for bind in bindings:
-            if self.cancelled:
-                break
+        for bind in request.bindings:
             try:
                 repo_id = bind['repo_id']
                 details = bind['details']
+                if request.cancelled():
+                    request.summary[repo_id].action = RepositoryReport.CANCELLED
+                    continue
                 parent = Repository(repo_id, details)
                 child = RepositoryOnChild.fetch(repo_id)
-                progress = self.progress_report.find_report(repo_id)
+                progress = request.progress.find_report(repo_id)
                 progress.begin_merging()
                 if child:
-                    self.summary_report[repo_id].action = RepositoryReport.MERGED
+                    request.summary[repo_id].action = RepositoryReport.MERGED
                     child.merge(parent)
                 else:
                     child = RepositoryOnChild(repo_id, parent.details)
-                    self.summary_report[repo_id].action = RepositoryReport.ADDED
+                    request.summary[repo_id].action = RepositoryReport.ADDED
                     child.add()
-                self._synchronize_repository(repo_id)
+                self._synchronize_repository(request, repo_id)
             except NodeError, ne:
-                self.summary_report.errors.append(ne)
+                request.summary.errors.append(ne)
             except Exception, e:
                 log.exception(repo_id)
                 error = CaughtException(e, repo_id)
-                self.summary_report.errors.append(error)
+                request.summary.errors.append(error)
 
-    def _synchronize_repository(self, repo_id):
+    def _synchronize_repository(self, request, repo_id):
         """
         Run synchronization on a repository by ID.
+        :param request: A synchronization request.
+        :type request: SyncRequest
         :param repo_id: A repository ID.
         :type repo_id: str
         """
         repo = RepositoryOnChild(repo_id)
-        progress = self.progress_report.find_report(repo_id)
-        importer_report = repo.run_synchronization(progress)
+        progress = request.progress.find_report(repo_id)
+        importer_report = repo.run_synchronization(progress, request.cancelled)
+        if request.cancelled():
+            request.summary[repo_id].action = RepositoryReport.CANCELLED
+            return
         progress.finished()
         details = importer_report['details']
         for _dict in details['errors']:
             ne = NodeError(None)
             ne.load(_dict)
-            self.summary_report.errors.append(ne)
-        _report = self.summary_report[repo_id]
+            request.summary.errors.append(ne)
+        _report = request.summary[repo_id]
         _report.units.added = importer_report['added_count']
         _report.units.updated = importer_report['updated_count']
         _report.units.removed = importer_report['removed_count']
 
-    def _delete_repositories(self, bindings):
+    def _delete_repositories(self, request):
         """
         Delete repositories found in the child but NOT in the parent.
-        :param bindings: List of bind payloads.
-        :type bindings: list
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        repositories_on_parent = [b['repo_id'] for b in bindings]
+        repositories_on_parent = [b['repo_id'] for b in request.bindings]
         repositories_on_child = [r.repo_id for r in RepositoryOnChild.fetch_all()]
         for repo_id in sorted(repositories_on_child):
-            if self.cancelled:
-                break
+            if request.cancelled():
+                request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.CANCELLED)
+                continue
             try:
                 if repo_id not in repositories_on_parent:
-                    self.summary_report[repo_id] = RepositoryReport(repo_id, RepositoryReport.DELETED)
+                    request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.DELETED)
                     repo = RepositoryOnChild(repo_id)
                     repo.delete()
             except NodeError, ne:
-                self.summary_report.errors.append(ne)
+                request.summary.errors.append(ne)
             except Exception, e:
                 log.exception(repo_id)
                 error = CaughtException(e, repo_id)
-                self.summary_report.errors.append(error)
+                request.summary.errors.append(error)
 
 
 # --- strategies ------------------------------------------------------------------------
@@ -189,31 +226,31 @@ class HandlerStrategy(object):
 
 class Mirror(HandlerStrategy):
 
-    def _synchronize(self, bindings):
+    def _synchronize(self, request):
         """
         Synchronize repositories.
           - Add/Merge bound repositories as needed.
           - Synchronize all bound repositories.
           - Purge unbound repositories.
           - Purge orphaned content units.
-        :param bindings: A list of bind payloads.
-        :type bindings: list
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        self._merge_repositories(bindings)
-        self._delete_repositories(bindings)
+        self._merge_repositories(request)
+        self._delete_repositories(request)
 
 
 class Additive(HandlerStrategy):
 
-    def _synchronize(self, bindings):
+    def _synchronize(self, request):
         """
         Synchronize repositories.
           - Add/Merge bound repositories as needed.
           - Synchronize all bound repositories.
-        :param bindings: A list of bind payloads.
-        :type bindings: list
+        :param request: A synchronization request.
+        :type request: SyncRequest
         """
-        self._merge_repositories(bindings)
+        self._merge_repositories(request)
 
 
 # --- factory ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2012 Red Hat, Inc.
+# Copyright © 2011-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -35,7 +35,6 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
@@ -145,62 +144,63 @@ class RepoSyncManager(object):
         importer_coll = RepoImporter.get_collection()
         sync_result_coll = RepoSyncResult.get_collection()
         repo_id = repo['id']
+        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
 
         # Perform the sync
         sync_start_timestamp = _now_timestamp()
+        sync_end_timestamp = None
+        result = None
+
         try:
             sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
+
         except Exception, e:
-            # I really wish python 2.4 supported except and finally together
             sync_end_timestamp = _now_timestamp()
 
-            # Reload the importer in case the plugin edits the scratchpad
-            repo_importer = importer_coll.find_one({'repo_id' : repo_id})
-            repo_importer['last_sync'] = sync_end_timestamp
-            importer_coll.save(repo_importer, safe=True)
-
-            # Add a sync history entry for this run
             result = RepoSyncResult.error_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
                                                  sync_start_timestamp, sync_end_timestamp, e, sys.exc_info()[2])
-            sync_result_coll.save(result, safe=True)
 
             _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
-        sync_end_timestamp = _now_timestamp()
-
-        # Reload the importer in case the plugin edits the scratchpad
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
-        repo_importer['last_sync'] = sync_end_timestamp
-        importer_coll.save(repo_importer, safe=True)
-
-        # Add a sync history entry for this run. Need to be safe here in case
-        # the plugin is incorrect in its return
-        if sync_report is not None and isinstance(sync_report, SyncReport):
-            added_count = sync_report.added_count
-            updated_count = sync_report.updated_count
-            removed_count = sync_report.removed_count
-            summary = sync_report.summary
-            details = sync_report.details
-            if sync_report.success_flag:
-                result_code = RepoSyncResult.RESULT_SUCCESS
-            else:
-                task_state = _current_task_state()
-                result_code = _map_task_state_to_sync_result_code(task_state, RepoSyncResult.RESULT_FAILED)
-
         else:
-            _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
+            sync_end_timestamp = _now_timestamp()
 
-            added_count = updated_count = removed_count = -1
-            summary = details = _('Unknown')
-            task_state = _current_task_state()
-            result_code = _map_task_state_to_sync_result_code(task_state, RepoSyncResult.RESULT_SUCCESS)
+            # Need to be safe here in case the plugin is incorrect in its return
+            if isinstance(sync_report, SyncReport):
 
+                added_count = sync_report.added_count
+                updated_count = sync_report.updated_count
+                removed_count = sync_report.removed_count
+                summary = sync_report.summary
+                details = sync_report.details
 
-        result = RepoSyncResult.expected_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
-                                                sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
-                                                removed_count, summary, details, result_code)
-        sync_result_coll.save(result, safe=True)
+                if sync_report.canceled_flag:
+                    result_code = RepoSyncResult.RESULT_CANCELED
+
+                elif sync_report.success_flag:
+                    result_code = RepoSyncResult.RESULT_SUCCESS
+
+                else:
+                    result_code = RepoSyncResult.RESULT_FAILED
+
+            else:
+                _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
+
+                added_count = updated_count = removed_count = -1 # None?
+                summary = details = _('Unknown')
+                result_code = RepoSyncResult.RESULT_ERROR # RESULT_UNKNOWN?
+
+            result = RepoSyncResult.expected_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+                                                    sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
+                                                    removed_count, summary, details, result_code)
+
+        finally:
+            # Do an update instead of a save in case the importer has changed the scratchpad
+            importer_coll.update({'repo_id': repo_id}, {'$set': {'last_sync': sync_end_timestamp}}, safe=True)
+            # Add a sync history entry for this run
+            sync_result_coll.save(result, safe=True)
+
         return result
 
     def sync_history(self, repo_id, limit=None):
@@ -273,27 +273,3 @@ def _repo_storage_dir():
     return dir
 
 
-def _current_task_state():
-    context = dispatch_factory.context()
-    if context.call_request_id is None:
-        return None
-    coordinator = dispatch_factory.coordinator()
-    tasks = coordinator._find_tasks(call_request_id=context.call_request_id)
-    if not tasks:
-        return None
-    task = tasks[0]
-    return task.call_request_exit_state or task.call_report.state
-
-
-def _map_task_state_to_sync_result_code(task_state, default=RepoSyncResult.RESULT_ERROR):
-    if task_state is None:
-        msg = _('Repo sync exited with unknown dispatch task state, setting sync result code to: %(c)s')
-        _LOG.error(msg % {'c': default})
-        return default
-    if task_state is dispatch_constants.CALL_FINISHED_STATE:
-        return RepoSyncResult.RESULT_SUCCESS
-    if task_state is dispatch_constants.CALL_ERROR_STATE:
-        return RepoSyncResult.RESULT_ERROR
-    if task_state is dispatch_constants.CALL_CANCELED_STATE:
-        return RepoSyncResult.RESULT_CANCELED
-    return RepoSyncResult.RESULT_FAILED

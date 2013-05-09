@@ -86,6 +86,7 @@ class UploadCommand(PulpCliCommand):
         :type  upload_manager: pulp.client.upload.manager.UploadManager
         :param upload_files: if false, the user will not be prompted for files
                to upload and the create will be purely metadata based
+        :type  upload_files: bool
         """
 
         if method is None:
@@ -138,15 +139,8 @@ class UploadCommand(PulpCliCommand):
                 self.context.prompt.render_failure_message(_('File %(f)s does not exist or could not be read') % {'f' : f})
                 return os.EX_IOERR
 
-        # Display the list of found files
-        if verbose and self.upload_files:
-            self.prompt.write(_('Files to be uploaded:'))
-            for r in all_filenames:
-                self.prompt.write('  %s' % os.path.basename(r))
-            self.prompt.render_spacer()
-
-        # Package into tuples of (filename, type_id, unit key, metadata)
-        file_bundles = [ [f, None, {}, {}] for f in all_filenames]
+        # Package into FileBundle DTOs
+        orig_file_bundles = [FileBundle(f) for f in all_filenames]
 
         # Determine the metadata for each file
         self.prompt.write(_('Extracting necessary metadata for each request...'))
@@ -155,9 +149,9 @@ class UploadCommand(PulpCliCommand):
         # If not a file-based upload, make a single request with the values
         # from the generate_* commands
         if self.upload_files:
-            for i, file_bundle in enumerate(file_bundles):
-                filename = file_bundle[0]
-                bar.render(i+1, len(file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
+            for i, file_bundle in enumerate(orig_file_bundles):
+                filename = file_bundle.filename
+                bar.render(i+1, len(orig_file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
 
                 try:
                     unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename, **kwargs)
@@ -171,9 +165,9 @@ class UploadCommand(PulpCliCommand):
                     return os.EX_DATAERR
 
                 type_id = self.determine_type_id(filename, **kwargs)
-                file_bundle[1] = type_id
-                file_bundle[2].update(unit_key)
-                file_bundle[3].update(unit_metadata)
+                file_bundle.type_id = type_id
+                file_bundle.unit_key.update(unit_key)
+                file_bundle.metadata.update(unit_metadata)
         else:
             try:
                 unit_key, unit_metadata = self.generate_unit_key_and_metadata(None, **kwargs)
@@ -186,22 +180,46 @@ class UploadCommand(PulpCliCommand):
                 return os.EX_DATAERR
 
             type_id = self.determine_type_id(None, **kwargs)
-            file_bundle = [None, type_id, unit_key, unit_metadata]
-            file_bundles.append(file_bundle)
+            file_bundle = FileBundle(None, type_id, unit_key, unit_metadata)
+            orig_file_bundles.append(file_bundle)
 
         self.prompt.write(_('... completed'))
         self.prompt.render_spacer()
+
+        # Give the subclass a chance to remove any files that shouldn't be uploaded
+        file_bundles = self.create_upload_list(orig_file_bundles, **kwargs)
+
+        # Display the list of files to upload
+        if verbose and self.upload_files:
+
+            # Files that are actually being uploaded
+            self.prompt.write(_('Files to be uploaded:'))
+            for file_bundle in file_bundles:
+                self.prompt.write('  %s' % os.path.basename(file_bundle.filename))
+
+            # Files that were removed by the subclass
+            removed_file_bundles = set(orig_file_bundles) - set(file_bundles)
+            if len(removed_file_bundles) > 0:
+                self.prompt.render_spacer()
+                self.prompt.write(_('Skipped files:'))
+                for file_bundle in removed_file_bundles:
+                    self.prompt.write('  %s' % os.path.basename(file_bundle.filename))
+
+            self.prompt.render_spacer()
+
+        # Gracefully punch out if all files were skipped; we'll only be here if there was originally
+        # one or more file specified
+        if len(file_bundles) == 0:
+            self.context.prompt.write(_('No files eligible for upload'))
+            return os.EX_OK
 
         # Initialize all uploads
         self.prompt.write(_('Creating upload requests on the server...'))
         bar = self.prompt.create_progress_bar()
 
         upload_ids = []
-        for i, job in enumerate(file_bundles):
-            filename = job[0]
-            type_id  = job[1]
-            unit_key = job[2]
-            metadata = job[3]
+        for i, file_bundle in enumerate(file_bundles):
+            filename = file_bundle.filename
 
             if self.upload_files:
                 msg = _('Initializing: %(n)s') % {'n' : os.path.basename(filename)}
@@ -209,7 +227,8 @@ class UploadCommand(PulpCliCommand):
                 msg = _('Initializing upload')
 
             bar.render(i+1, len(file_bundles), message=msg)
-            upload_id = self.upload_manager.initialize_upload(filename, repo_id, type_id, unit_key, metadata)
+            upload_id = self.upload_manager.initialize_upload(filename, repo_id, file_bundle.type_id,
+                                                              file_bundle.unit_key, file_bundle.metadata)
             upload_ids.append(upload_id)
 
         self.prompt.write(_('... completed'))
@@ -218,7 +237,7 @@ class UploadCommand(PulpCliCommand):
         # Start the upload process
         perform_upload(self.context, self.upload_manager, upload_ids)
 
-    def matching_files_in_dir(self, dir):
+    def matching_files_in_dir(self, directory):
         """
         Returns which files in the given directory should be uploaded. This
         should be overridden in subclasses to limit files uploaded from a
@@ -227,15 +246,15 @@ class UploadCommand(PulpCliCommand):
         The default implementation if not overridden will return all files
         in the given directory.
 
-        :param dir: directory in which to list files
-        :type  dir: str
+        :param directory: directory in which to list files
+        :type  directory: str
 
         :return: list of full paths of files to upload
         :rtype:  list
         """
         all_files = []
-        for f in os.listdir(dir):
-            filename = os.path.join(dir, f)
+        for f in os.listdir(directory):
+            filename = os.path.join(directory, f)
             if os.path.isfile(filename):
                 all_files.append(filename)
 
@@ -317,6 +336,28 @@ class UploadCommand(PulpCliCommand):
                for the unit being uploaded
         """
         return {}
+
+    def create_upload_list(self, file_bundles, **kwargs):
+        """
+        Called after the metadata has been extracted for each file specified by the
+        user. This method returns a list of which of those files should actually be
+        uploaded, allowing the subclass a chance to remove files for whatever reason
+        (likely if the subclasses wishes to check for the existence of those files
+        in the server).
+
+        In most cases, the default implementation may remain unchanged.
+
+        :param file_bundles: list of FileBundle instances that contain the filename and
+               metadata for each file to be uploaded
+        :type  file_bundles: list
+        :param kwargs: arguments passed into the upload call by the user
+        :type  kwargs: dict
+
+        :return: new list containing the FileBundle instances from the original file_bundles list
+                 that should be uploaded
+        :rtype:  list
+        """
+        return file_bundles
 
 
 class ResumeCommand(PulpCliCommand):
@@ -486,6 +527,25 @@ class CancelCommand(PulpCliCommand):
             return os.EX_OK
 
 # -- utility ------------------------------------------------------------------
+
+class FileBundle(object):
+    """
+    Holder for all information pertaining to a single file being uploaded.
+    """
+
+    def __init__(self, filename, type_id=None, unit_key=None, metadata=None):
+        super(FileBundle, self).__init__()
+        self.filename = filename
+        self.type_id = type_id
+        self.unit_key = unit_key or {}
+        self.metadata = metadata or {}
+
+    def __eq__(self, other):
+        return self.filename == other.filename
+
+    def __str__(self):
+        return self.filename
+
 
 def perform_upload(context, upload_manager, upload_ids):
     """

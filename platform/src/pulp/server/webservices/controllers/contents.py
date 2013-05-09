@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2012 Red Hat, Inc.
+# Copyright © 2011-2013 Red Hat, Inc.
 #
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+# This software is licensed to you under the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the License
+# (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied, including the
+# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
+# PARTICULAR PURPOSE.
+# You should have received a copy of GPLv2 along with this software;
+# if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from gettext import gettext as _
 
@@ -39,9 +39,9 @@ class ContentTypesCollection(JSONController):
         collection = []
         cqm = factory.content_query_manager()
         type_ids = cqm.list_content_types()
-        for id in type_ids:
-            link = serialization.link.child_link_obj(id)
-            link.update({'content_type': id})
+        for type_id in type_ids:
+            link = serialization.link.child_link_obj(type_id)
+            link.update({'content_type': type_id})
             collection.append(link)
         return self.ok(collection)
 
@@ -270,12 +270,12 @@ class OrphanCollection(JSONController):
     @auth_required(READ)
     def GET(self):
         orphan_manager = factory.content_orphan_manager()
-        # NOTE this can still potentially stomp on memory, but hopefully the
-        # _with_search_indexes methods will reduce the foot print enough that
-        # we'll never see this bug again
-        orphans = list(orphan_manager.generate_all_orphans_with_unit_keys())
-        map(lambda o: o.update(serialization.link.child_link_obj(o['_content_type_id'], o['_id'])), orphans)
-        return self.ok(orphans)
+        summary = orphan_manager.orphans_summary()
+        # convert the counts into sub-documents so we can add _href fields to them
+        rest_summary = dict((k, {'count': v}) for k, v in summary.items())
+        # add links to the content type sub-collections
+        map(lambda k: rest_summary[k].update(serialization.link.child_link_obj(k)), rest_summary)
+        return self.ok(rest_summary)
 
     @auth_required(DELETE)
     def DELETE(self):
@@ -291,7 +291,7 @@ class OrphanTypeSubCollection(JSONController):
     def GET(self, content_type):
         orphan_manager = factory.content_orphan_manager()
         # NOTE this can still potentially stomp on memory, but hopefully the
-        # _with_search_indexes methods will reduce the foot print enough that
+        # _with_unit_keys methods will reduce the foot print enough that
         # we'll never see this bug again
         orphans = list(orphan_manager.generate_orphans_by_type_with_unit_keys(content_type))
         map(lambda o: o.update(serialization.link.child_link_obj(o['_id'])), orphans)

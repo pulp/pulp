@@ -152,7 +152,7 @@ class UnitAssociationCriteria(Model):
         # A default instance will be used in the case where no criteria is
         # passed in, so use sane defaults here.
 
-        if type_ids is not None and  not isinstance(type_ids, (list, tuple)):
+        if type_ids is not None and not isinstance(type_ids, (list, tuple)):
             type_ids = [type_ids]
         self.type_ids = type_ids
 
@@ -249,7 +249,7 @@ class UnitAssociationCriteria(Model):
             if d:
                 raise pulp_exceptions.InvalidValue(d.keys())
 
-        # XXX these are here for "backward compatibility", in the future, these
+        # These are here for backward compatibility, in the future, these
         # should be removed and the corresponding association_spec and unit_spec
         # properties should be used
         if association_filters:
@@ -257,8 +257,10 @@ class UnitAssociationCriteria(Model):
         if unit_filters:
             _compile_regexs_for_not(unit_filters)
 
-        return cls(type_ids, association_filters, unit_filters, association_sort,
-                   unit_sort, limit, skip, association_fields, unit_fields, remove_duplicates)
+        return cls(type_ids=type_ids, association_filters=association_filters, unit_filters=unit_filters,
+                   association_sort=association_sort, unit_sort=unit_sort, limit=limit, skip=skip,
+                   association_fields=association_fields, unit_fields=unit_fields,
+                   remove_duplicates=remove_duplicates)
 
     @property
     def association_spec(self):
