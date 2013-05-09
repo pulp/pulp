@@ -95,10 +95,10 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         will have no effect.
 
         :param unit: unit object returned from the init_unit call
-        :type  unit: L{Unit}
+        :type  unit: pulp.plugins.model.Unit
 
         :return: object reference to the provided unit
-        :rtype:  L{Unit}
+        :rtype:  pulp.plugins.model.Unit
         """
 
         try:
@@ -123,7 +123,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         :type  criteria: L{UnitAssociationCriteria}
 
         :return: list of unit instances
-        :rtype:  list of L{AssociatedUnit}
+        :rtype:  list of pulp.plugins.model.AssociatedUnit
         """
         return mixins.do_get_repo_units(self.source_repo_id, criteria, ImporterConduitException)
 
@@ -137,9 +137,9 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
 
         :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        :type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: UnitAssociationCriteria
 
         :return: list of unit instances
-        :rtype:  list of L{AssociatedUnit}
+        :rtype:  list of pulp.plugins.model.AssociatedUnit
         """
         return mixins.do_get_repo_units(self.dest_repo_id, criteria, ImporterConduitException)
