@@ -94,11 +94,11 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         This call is idempotent. If the association already exists, this call
         will have no effect.
 
-        @param unit: unit object returned from the init_unit call
-        @type  unit: L{Unit}
+        :param unit: unit object returned from the init_unit call
+        :type  unit: L{Unit}
 
-        @return: object reference to the provided unit
-        @rtype:  L{Unit}
+        :return: object reference to the provided unit
+        :rtype:  L{Unit}
         """
 
         try:
@@ -118,12 +118,12 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         Units returned from this call will have the id field populated and are
         useable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within;
+        :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: L{UnitAssociationCriteria}
 
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        :return: list of unit instances
+        :rtype:  list of L{AssociatedUnit}
         """
         return mixins.do_get_repo_units(self.source_repo_id, criteria, ImporterConduitException)
 
@@ -135,11 +135,11 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         Units returned from this call will have the id field populated and are
         useable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within;
+        :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: L{UnitAssociationCriteria}
 
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        :return: list of unit instances
+        :rtype:  list of L{AssociatedUnit}
         """
         return mixins.do_get_repo_units(self.dest_repo_id, criteria, ImporterConduitException)
