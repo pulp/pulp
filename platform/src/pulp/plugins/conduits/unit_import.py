@@ -20,9 +20,10 @@ from gettext import gettext as _
 import logging
 import sys
 
+from pulp.plugins.conduits import mixins
 from pulp.plugins.conduits.mixins import (
     ImporterConduitException, ImporterScratchPadMixin, RepoScratchPadMixin,
-    SearchUnitsMixin, AddUnitMixin, do_get_repo_units)
+    SearchUnitsMixin, AddUnitMixin)
 import pulp.server.managers.factory as manager_factory
 
 from pulp.server.db.model.criteria import UnitAssociationCriteria # shadow for importing by plugins
@@ -101,7 +102,9 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         """
 
         try:
-            self.__association_manager.associate_unit_by_id(self.dest_repo_id, unit.type_id, unit.id, self.association_owner_type, self.association_owner_id)
+            self.__association_manager.associate_unit_by_id(self.dest_repo_id, unit.type_id, unit.id,
+                                                            self.association_owner_type,
+                                                            self.association_owner_id)
             return unit
         except Exception, e:
             _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
@@ -122,7 +125,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
-        return do_get_repo_units(self.source_repo_id, criteria, ImporterConduitException)
+        return mixins.do_get_repo_units(self.source_repo_id, criteria, ImporterConduitException)
 
     def get_destination_units(self, criteria=None):
         """
@@ -139,4 +142,4 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
-        return do_get_repo_units(self.dest_repo_id, criteria, ImporterConduitException)
+        return mixins.do_get_repo_units(self.dest_repo_id, criteria, ImporterConduitException)
