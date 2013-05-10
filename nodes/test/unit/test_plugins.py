@@ -44,7 +44,7 @@ from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import ManifestReader
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.importers.download import UnitDownloadRequest
 from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
@@ -446,7 +446,7 @@ class TestDistributor(PluginTestBase):
         # Verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
-        manifest = Manifest()
+        manifest = ManifestReader()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
         units = list(manifest.read(url, downloader))
@@ -454,10 +454,10 @@ class TestDistributor(PluginTestBase):
         for n in range(0, self.NUM_UNITS):
             unit = units[n]
             created = self.units[n]
-            for p, v in unit['metadata'].items():
-                if p.startswith('_'):
-                    continue
+            for p, v in unit['unit_key'].items():
                 self.assertEqual(created[p], v)
+            self.assertEqual(created.get('_storage_path'), unit['storage_path'])
+            self.assertEqual(unit['type_id'], self.UNIT_TYPE_ID)
 
 
 class ImporterTest(PluginTestBase):

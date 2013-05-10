@@ -20,9 +20,10 @@ from unittest import TestCase
 from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 
-from pulp_node.manifest import Manifest
+from pulp_node import manifest
+from pulp_node.manifest import ManifestWriter, ManifestReader
 
-Manifest.UNITS_PER_FILE = 2
+manifest.MAX_UNITS_FILE_SIZE = 20
 
 
 class TestManifest(TestCase):
@@ -40,43 +41,57 @@ class TestManifest(TestCase):
         self.assertEqual(len(units_in), self.NUM_UNITS)
         for i in range(0, len(units_out)):
             for k, v in units_in[i].items():
-                self.assertEqual(units_out[i][int(k)], v)
+                self.assertEqual(units_out[i][k], v)
 
-    def test_write(self):
+    def test_writer(self):
         # Test
-        manifest = Manifest()
+        writer = ManifestWriter(self.tmp_dir)
         units = []
         for i in range(0, self.NUM_UNITS):
-            units.append({i: i + 1})
-        manifest.write(self.tmp_dir, units)
+            unit = dict(unit_id=i, type_id='T', unit_key={})
+            units.append(unit)
+        writer.open()
+        for u in units:
+            writer.add_unit(u)
+        writer.close()
         # Verify
-        path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
+        path = os.path.join(self.tmp_dir, manifest.MANIFEST_FILE_NAME)
         self.assertTrue(os.path.exists(path))
         fp = gzip.open(path)
         s = fp.read()
+        json_manifest = json.loads(s)
         fp.close()
-        manifest = json.loads(s)
         units_in = []
-        for unit_file in manifest['unit_files']:
+        for unit_file in json_manifest['unit_files']:
             path = os.path.join(self.tmp_dir, unit_file)
             fp = gzip.open(path)
-            units_in.extend(json.load(fp))
+            while True:
+                json_unit = fp.readline()
+                if json_unit:
+                    units_in.append(json.loads(json_unit))
+                else:
+                    break
             fp.close()
-        self.assertEqual(manifest['total_units'], self.NUM_UNITS)
+        self.assertEqual(json_manifest['total_units'], self.NUM_UNITS)
         self.verify(units, units_in)
 
     def test_round_trip(self):
         # Test
-        manifest = Manifest()
+        writer = ManifestWriter(self.tmp_dir)
         units = []
         for i in range(0, self.NUM_UNITS):
-            units.append({i:i+1})
-        manifest.write(self.tmp_dir, units)
+            unit = dict(unit_id=i, type_id='T', unit_key={})
+            units.append(unit)
+        writer.open()
+        for u in units:
+            writer.add_unit(u)
+        writer.close()
         cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
-        manifest = Manifest()
-        path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
+        reader = ManifestReader()
+        path = os.path.join(self.tmp_dir, manifest.MANIFEST_FILE_NAME)
         url = 'file://%s' % path
-        units_in = list(manifest.read(url, downloader))
+        manifest_in = reader.read_manifest(url, downloader)
+        units_in = list(reader.unit_iterator(manifest_in, downloader))
         # Verify
         self.verify(units, units_in)

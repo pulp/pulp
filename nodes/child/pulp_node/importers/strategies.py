@@ -23,7 +23,8 @@ from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
-from pulp_node.manifest import Manifest
+from pulp_node import query
+from pulp_node.manifest import ManifestReader
 from pulp_node.importers.inventory import UnitInventory, unit_dictionary
 from pulp_node.importers.download import DownloadListener, UnitDownloadRequest
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
@@ -200,7 +201,7 @@ class ImporterStrategy(object):
             metadata = unit['metadata']
             storage_path = unit.get('storage_path')
             if storage_path:
-                relative_path = unit['_relative_path']
+                relative_path = unit['relative_path']
                 storage_path = '/'.join((storage_dir, relative_path))
             unit_in = Unit(type_id, unit_key, metadata, storage_path)
             new_units.append((unit, unit_in))
@@ -273,7 +274,7 @@ class ImporterStrategy(object):
         :return: A dictionary of units keyed by UnitKey.
         :rtype: dict
         """
-        units = request.conduit.get_units()
+        units = query.get_units(request.repo_id)
         return unit_dictionary(units)
 
     def _parent_units(self, request):
@@ -288,8 +289,9 @@ class ImporterStrategy(object):
         """
         request.progress.begin_manifest_download()
         url = request.config.get(constants.MANIFEST_URL_KEYWORD)
-        manifest = Manifest()
-        units = manifest.read(url, request.downloader)
+        reader = ManifestReader()
+        manifest = reader.read_manifest(url, request.downloader)
+        units = reader.unit_iterator(manifest, request.downloader)
         return unit_dictionary(units)
 
 

@@ -12,7 +12,7 @@
 import os
 import hashlib
 
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import ManifestWriter
 
 from logging import getLogger
 
@@ -67,19 +67,6 @@ class FilePublisher(Publisher):
     :type publish_dir: str
     """
 
-    @staticmethod
-    def encode_path(path):
-        """
-        Encode file path.  Encodes path as a SHA-256 hex digest.
-        :param path: A file path.
-        :type path: str
-        :return: The encoded path.
-        :rtype: str
-        """
-        m = hashlib.sha256()
-        m.update(path)
-        return m.hexdigest()
-
     def __init__(self, publish_dir, repo_id):
         """
         :param publish_dir: The publishing root directory.
@@ -98,43 +85,33 @@ class FilePublisher(Publisher):
         :param units: A list of units to publish.
         :type units: list
         """
-        self.link(units)
-        self.write_manifest(units)
 
-    def write_manifest(self, units):
-        """
-        Write the manifest (units.json) for the specified list of units.
-        :param units: A list of units.
-        :type units: list
-        :return: The absolute path to the written manifest file.
-        :rtype: str
-        """
-        manifest = Manifest()
         dir_path = join(self.publish_dir, self.repo_id)
         mkdir(dir_path)
-        return manifest.write(dir_path, units)
+        manifest = ManifestWriter(dir_path)
+        manifest.open()
+        for unit in units:
+            self.link_unit(unit)
+            manifest.add_unit(unit)
+        manifest_path = manifest.close()
+        return manifest_path
 
-    def link(self, units):
+    def link_unit(self, unit):
         """
-        Link files associated with the units into the publish directory.
+        Link files associated with the unit into the publish directory.
         The file name is the SHA256 of the unit.storage_path.
-        :param units: A list of units to link.
-        :type units: list
-        :return: A list of (unit, relative_path)
+        :param unit: A content unit.
+        :type unit: dict
+        :return: A tuple (unit, relative_path)
         :rtype: tuple
         """
-        links = []
-        for unit in units:
-            storage_path = unit.get('storage_path')
-            if not storage_path:
-                # not all units are associated with files.
-                continue
-            encoded_path = self.encode_path(storage_path)
-            relative_path = join(self.repo_id, 'content', encoded_path)
-            published_path = join(self.publish_dir, relative_path)
-            mkdir(published_path)
-            if not os.path.islink(published_path):
-                os.symlink(storage_path, published_path)
-            link = (unit, relative_path)
-            links.append(link)
-        return links
+        storage_path = unit.get('storage_path')
+        if not storage_path:
+            # not all units are associated with files.
+            return unit, None
+        relative_path = join(self.repo_id, 'content', storage_path)
+        published_path = join(self.publish_dir, relative_path)
+        mkdir(published_path)
+        if not os.path.islink(published_path):
+            os.symlink(storage_path, published_path)
+        return unit, relative_path

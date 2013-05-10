@@ -20,6 +20,7 @@ from pulp.server.config import config as pulp_conf
 
 from pulp_node import link
 from pulp_node import constants
+from pulp_node import query
 from pulp_node.distributors.http.publisher import HttpPublisher
 
 
@@ -142,9 +143,9 @@ class NodesHttpDistributor(Distributor):
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
         """
-        units = conduit.get_units()
+        units = query.get_units(repo.id)
         publisher = self.publisher(repo, config)
-        units = self._prepare_units(units)
+        #units = self._prepare_units(units)
         publisher.publish(units)
         details = dict(unit_count=len(units))
         return conduit.build_success_report('succeeded', details)
