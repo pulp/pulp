@@ -11,11 +11,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.client.clients.consumer import ConsumerExceptionHandler
-
 from pulp.client.extensions import exceptions
 from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
+from pulp.common import auth_utils
 
 import base
+
 
 class ConsumerExceptionHandlerTests(base.PulpClientTests):
 
@@ -30,7 +31,8 @@ class ConsumerExceptionHandlerTests(base.PulpClientTests):
         """
 
         # Test
-        e = exceptions.PermissionsException()
+        response_body = auth_utils.generate_failure_response(auth_utils.CODE_FAILED)
+        e = exceptions.PermissionsException(response_body)
         code = self.handler.handle_permission(e)
 
         # Verify
