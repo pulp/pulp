@@ -267,7 +267,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
 
         return config
 
@@ -291,7 +291,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
 
         arg_utils.convert_file_contents(('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key'), config)
 
@@ -317,7 +317,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
     def parse_throttling_group(self, user_input):
@@ -338,7 +338,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
     def parse_unit_policy(self, user_input):
@@ -353,11 +353,11 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
 
-def _safe_parse(user_input, config, input_keyword, config_keyword):
+def safe_parse(user_input, config, input_keyword, config_keyword):
     """
     Prior to calling the parse methods in this class, the user input should have been pre-scrubbed
     to remove keys whose value were None (see parse_user_input docs). We can't simply pop with
