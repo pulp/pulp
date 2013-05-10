@@ -434,6 +434,16 @@ class ExceptionHandler:
         return self.config['logging']['filename']
 
     def _certificate_expiration_date(self, full_cert_path):
+        """
+        Attempts to read and return the expiration date of the certificate at the given
+        path. If anything goes wrong, None is returned. This method should not be considered
+        as any sort of validation on the certificate.
+
+        :rtype: str or None
+        """
+
+        # This except block is pretty broad, but the intention of this method is really just to
+        # help pretty up the UI by showing the expiration date if it can find it.
         try:
             f = open(full_cert_path, 'r')
             certificate = f.read()
