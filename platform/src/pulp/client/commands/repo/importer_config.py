@@ -112,11 +112,9 @@ class OptionsBundle(object):
 class ImporterConfigMixin(object):
     """
     Mixin to add to a command that will provide options on the CLI to accept the standard
-    configuration values for a Pulp downloader. This mixin also provides a method to parse
-    the submitted user input and generate a config dict containing all of the downloader
-    config values. That method should be called as the basis for creating the configuration for
-    an importer using one of the Pulp downloaders. The produced configuration uses the keys
-    in pulp.common.plugins.importer_constants.
+    configuration values for a Pulp importer. This mixin also provides a method to parse
+    the submitted user input and generate a config dict suitable for an importer
+    config values. The produced configuration uses the keys in pulp.common.plugins.importer_constants.
 
     Touch points are provided to manipulate the options created by this mixin for each group
     (the populate_* methods). If options are added through overridden versions of those methods,
@@ -125,20 +123,19 @@ class ImporterConfigMixin(object):
     the ability to manipulate them.
 
     The option instances that will be used in this mixin are contained in an OptionsBundle
-    instance. If no changes to the optiond defaults are required, this can be omitted from
+    instance. If no changes to the option defaults are required, this can be omitted from
     this object's instantiation. If tweaks to the options are required, they should be done
     in an instance of OptionsBundle and then passed to this class at instantiation.
 
     This mixin must be used in a class that subclasses PulpCliCommand as well. The usage is as
     follows:
 
-    * Define a class that extends both PulpCliCommand and DownloaderConfigMixin.
-    * Call the DownloaderConfigMixin.__init__ method in its constructor. This will add the
+    * Define a class that extends both PulpCliCommand and ImporterConfigMixin.
+    * Call the ImporterConfigMixin.__init__ method in its constructor. This will add the
       necessary options to the command.
     * In the execution method of the command, run parse_user_input(), passing in the args
       parsed from the user input. The result of that is a dict that can be used server-side
-      to configure a downloader. It's up to the plugin writer to dictate how to store that
-      in the importer's configuration.
+      to configure an importer.
     """
 
     def __init__(self,
@@ -238,7 +235,7 @@ class ImporterConfigMixin(object):
         :param user_input: keyword arguments from the CLI framework containing user input
         :type  user_input: dict
 
-        :return: suitable representation of the downloader config that can be stored on the repo
+        :return: suitable representation of the importer config that can be stored on the repo
         :rtype:  dict
         """
         config = {}
