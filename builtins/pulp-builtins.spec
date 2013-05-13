@@ -13,8 +13,8 @@
 # ---- Pulp Builtins -----------------------------------------------------------
 
 Name: pulp-builtins
-Version: 2.1.0
-Release: 0.19.alpha
+Version: 2.2.0
+Release: 0.5.alpha%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -103,6 +103,22 @@ client capabilities.
 
 
 %changelog
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
+- 
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
+- 
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
+- 915473 - fixing login api to return a json document with key and certificate
+  (skarmark@redhat.com)
+
+* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
+- 
+
+* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
+- 902869 - more robust handling of --force unregistration. (jortel@redhat.com)
+
 * Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
 - 
 

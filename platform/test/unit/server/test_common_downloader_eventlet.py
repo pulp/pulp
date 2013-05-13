@@ -11,12 +11,17 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+import httplib
 import os
 import unittest
+import urllib2
 from cStringIO import StringIO
+
+import mock
 
 from pulp.common.download.config import DownloaderConfig
 from pulp.common.download.downloaders import event as eventlet_downloader
+from pulp.common.download.downloaders import urllib2_utils
 
 from http_static_test_server import HTTPStaticTestServer
 from test_common_download import DownloadTests, MockEventListener
@@ -96,3 +101,85 @@ class LiveEventletDownloaderTests(DownloadTests):
         self.assertNotEqual(listener.download_progress.call_count, 0) # not sure how many times
         self.assertEqual(listener.download_succeeded.call_count, 1)
         self.assertEqual(listener.download_failed.call_count, 0)
+
+
+class EventletConnectionTests(unittest.TestCase):
+
+    def test_instantiation(self):
+        host = 'myserver.com'
+
+        try:
+            urllib2_utils.HTTPDownloaderConnection(urllib2_utils.HTTP_SCHEME, host)
+        except:
+            self.fail('instantiation with %s scheme and %s host failed' % (urllib2_utils.HTTP_SCHEME, host))
+
+        try:
+            urllib2_utils.HTTPDownloaderConnection(urllib2_utils.HTTPS_SCHEME, host)
+        except:
+            self.fail('instantiation with %s scheme and %s host failed' % (urllib2_utils.HTTPS_SCHEME, host))
+
+    def test_properties(self):
+        kwargs = {'scheme': 'http',
+                  'host': 'myhost.com',
+                  'proxy_scheme': 'http',
+                  'proxy_host': 'myproxy.com',
+                  'proxy_port': 3456}
+
+        connection = urllib2_utils.HTTPDownloaderConnection(**kwargs)
+
+        self.assertEqual(connection.url, 'http://myhost.com')
+        self.assertEqual(connection.host, 'myhost.com')
+        self.assertEqual(connection.server, 'myhost.com')
+        self.assertEqual(connection.port, 80)
+        self.assertEqual(connection.proxy_url, 'http://myproxy.com:3456')
+        self.assertEqual(connection.proxy_host, 'myproxy.com:3456')
+        self.assertEqual(connection.proxy_server, 'myproxy.com')
+        self.assertEqual(connection.proxy_port, 3456)
+        self.assertEqual(connection.proxy_credentials, None)
+
+
+MOCK_RESPONSE = mock.MagicMock()
+MOCK_RESPONSE.code = 200
+MOCK_RESPONSE.msg = 'OK'
+
+class EventletHandlerTests(unittest.TestCase):
+
+    def test_instantiation(self):
+        try:
+            urllib2_utils.HTTPDownloaderHandler()
+        except:
+            self.fail('instantiation failed')
+
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.proxy_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.https_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.http_open', return_value=MOCK_RESPONSE)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.default_open', return_value=None)
+    def test_http_open(self, mock_default_open, mock_http_open, mock_https_open, mock_proxy_open):
+        url = 'http://myserver.com/path/to/resource'
+        req = urllib2.Request(url)
+        opener = urllib2.build_opener(urllib2_utils.HTTPDownloaderHandler())
+
+        response = opener.open(req)
+
+        self.assertTrue(response is MOCK_RESPONSE)
+        self.assertEqual(mock_default_open.call_count, 1)
+        self.assertEqual(mock_http_open.call_count, 1)
+        self.assertEqual(mock_https_open.call_count, 0)
+        self.assertEqual(mock_proxy_open.call_count, 0)
+
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.proxy_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.https_open', return_value=MOCK_RESPONSE)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.http_open', return_value=None)
+    @mock.patch('pulp.common.download.downloaders.urllib2_utils.HTTPDownloaderHandler.default_open', return_value=None)
+    def test_http_open(self, mock_default_open, mock_http_open, mock_https_open, mock_proxy_open):
+        url = 'https://myserver.com/path/to/resource'
+        req = urllib2.Request(url)
+        opener = urllib2.build_opener(urllib2_utils.HTTPDownloaderHandler())
+
+        response = opener.open(req)
+
+        self.assertTrue(response is MOCK_RESPONSE)
+        self.assertEqual(mock_default_open.call_count, 1)
+        self.assertEqual(mock_http_open.call_count, 0)
+        self.assertEqual(mock_https_open.call_count, 1)
+        self.assertEqual(mock_proxy_open.call_count, 0)

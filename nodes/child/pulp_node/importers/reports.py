@@ -9,6 +9,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp_node.error import ErrorList
+
 
 # --- utils -----------------------------------------------------------------------------
 
@@ -29,36 +31,25 @@ def key_and_repr(units):
 # --- reports ---------------------------------------------------------------------------
 
 
-class ImporterReport(object):
+class SummaryReport(object):
     """
     A report that provides both summary and details regarding the importing
     of content units associated with a repository.
-    :ivar add_failed: List of units that failed to be added.
-        Each item is: (Unit, Exception)
-    :type add_failed: list
-    :ivar delete_failed: List of units that failed to be deleted.
-        Each item is: (Unit, Exception)
-    :type delete_failed: list
+    :ivar errors: List of errors.
+    :type errors: ErrorList
     """
 
-    def __init__(self, add_failed, delete_failed):
-        """
-        :param add_failed: List of units that failed to be added.
-            Each item is: (Unit, Exception)
-        :type add_failed: list
-        :param delete_failed: List of units that failed to be deleted.
-            Each item is: (Unit, Exception)
-        :type delete_failed: list
-        """
-        self.add_failed = key_and_repr(add_failed)
-        self.delete_failed = key_and_repr(delete_failed)
-        self.succeeded = not (self.add_failed or self.delete_failed)
+    def __init__(self):
+        self.errors = ErrorList()
+
+    def update(self, **details):
+        self.errors.update(**details)
 
     def dict(self):
         """
         Get a dictionary representation.
         """
-        return self.__dict__
+        return dict(errors=[e.dict() for e in self.errors])
 
 
 class ProgressListener(object):

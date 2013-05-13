@@ -1,0 +1,37 @@
+commit 248a8342ea7c865e3f9d381f955e9de556351ef1
+Author: Zdeněk Pavlas <zpavlas@redhat.com>
+Date:   Mon Oct 15 10:46:10 2012 +0200
+
+    modifyrepo: use available compression only.  BZ 865845.
+
+diff --git a/modifyrepo.py b/modifyrepo.py
+index 153ad4d..626bb94 100755
+--- a/modifyrepo.py
++++ b/modifyrepo.py
+@@ -30,6 +30,7 @@ import os
+ import sys
+ from createrepo import __version__
+ from createrepo.utils import checksum_and_rename, compressOpen, MDError
++from createrepo.utils import _available_compression
+ from yum.misc import checksum
+ 
+ from yum.repoMDObject import RepoMD, RepoMDError, RepoData
+@@ -45,7 +46,7 @@ class RepoMetadata:
+         self.repomdxml = os.path.join(self.repodir, 'repomd.xml')
+         self.checksum_type = 'sha256'
+         self.compress = False
+-        self.compress_type='xz'
++        self.compress_type = _available_compression[-1] # best available
+ 
+         if not os.path.exists(self.repomdxml):
+             raise MDError, '%s not found' % self.repomdxml
+@@ -194,7 +195,8 @@ def main(args):
+ 
+ 
+     repomd.compress = opts.compress
+-    repomd.compress_type = opts.compress_type
++    if opts.compress_type in _available_compression:
++        repomd.compress_type = opts.compress_type
+ 
+     # remove
+     if opts.remove:

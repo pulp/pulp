@@ -313,6 +313,12 @@ class RepositoryUnitAPI(PulpAPI):
             'filters': {'unit': SearchAPI.compose_filters(**kwargs)},
             'type_ids' : kwargs.get('type_ids', None),
         }
+        # allow a caller with type-specific knowledge to limit the fields that
+        # are retrieved. for copy purposes, we probably don't need all of the
+        # unit's attributes, and limiting which fields are retrieved can save
+        # a lot of RAM
+        if kwargs.get('fields'):
+            criteria['fields'] = {'unit': kwargs.pop('fields')}
 
         # build the association filters
         association_fake_kwargs = {}

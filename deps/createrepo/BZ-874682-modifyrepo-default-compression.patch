@@ -1,0 +1,41 @@
+commit f3a4ebe8b9290b3df21ad3c689889e7f1ced2316
+Author: James Antill <james@and.org>
+Date:   Mon Nov 19 16:17:57 2012 -0500
+
+    Change the compress-type for modifyrepo to .gz for compat. BZ 874682.
+
+diff --git a/modifyrepo.py b/modifyrepo.py
+index 626bb94..bf1eec0 100755
+--- a/modifyrepo.py
++++ b/modifyrepo.py
+@@ -177,7 +177,7 @@ def main(args):
+                       help="remove specified file from repodata")
+     parser.add_option("--compress", action="store_true", default=False,
+                       help="compress the new repodata before adding it to the repo")
+-    parser.add_option("--compress-type", dest='compress_type', default='xz',
++    parser.add_option("--compress-type", dest='compress_type', default='gz',
+                       help="compression format to use")
+     parser.usage = "modifyrepo [options] [--remove] <input_metadata> <output repodata>"
+     
+commit ccbae23bf7752f7ec7f5de49cbf4c49415f773a2
+Author: James Antill <james@and.org>
+Date:   Mon Nov 19 16:18:27 2012 -0500
+
+    Add --compress-type to createrepo man page, remove old --xz opt. BZ 874682.
+
+diff --git a/docs/createrepo.8 b/docs/createrepo.8
+index 4734392..ff359de 100644
+--- a/docs/createrepo.8
++++ b/docs/createrepo.8
+@@ -111,8 +111,9 @@ output the paths to the pkgs actually read useful with  --update
+ max size of an rpm that to run deltarpm against (in bytes)
+ .IP "\fB\--workers\fP WORKERS
+ number of workers to spawn to read rpms
+-.IP "\fB\--xz\fP
+-use xz for repodata compression
++.IP "\fB\--compress-type\fP
++specify which compression method to use: compat (default),
++xz (may not be available), gz, bz2.
+ .IP
+ 
+ .SH "EXAMPLES"

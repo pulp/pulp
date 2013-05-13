@@ -38,3 +38,11 @@ class Conduit:
         @type report: object
         """
         log.info('Progress reported:%s', report)
+
+    def cancelled(self):
+        """
+        Get whether the current operation has been cancelled.
+        :return: True if cancelled, else False
+        :rtype: bool
+        """
+        return False

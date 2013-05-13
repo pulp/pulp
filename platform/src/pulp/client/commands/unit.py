@@ -183,7 +183,7 @@ class OrphanUnitListCommand(PulpCliCommand):
 
         self.add_option(OPTION_TYPE)
 
-        m = _('include a detailed list of the individual orphaned units')
+        m = _('include a detailed list of the individual orphaned units, ignored when content type is not specified')
         details_flag = PulpCliFlag('--details', m)
         self.add_flag(details_flag)
 
@@ -191,21 +191,28 @@ class OrphanUnitListCommand(PulpCliCommand):
         content_type = kwargs.get('type', None)
         show_details = kwargs.get('details', False)
 
-        if content_type is not None:
-            orphans = self.context.server.content_orphan.orphans_by_type(content_type).response_body
-        else:
-            orphans = self.context.server.content_orphan.orphans().response_body
-
         summary = {}
 
-        for orphan in orphans:
-            orphan_type = orphan['_content_type_id']
-            summary[orphan_type] = summary.get(orphan_type, 0) + 1
+        if content_type is not None:
+            orphans = self.context.server.content_orphan.orphans_by_type(content_type).response_body
 
+            for orphan in orphans:
+                orphan_type = orphan['_content_type_id']
+                summary[orphan_type] = summary.get(orphan_type, 0) + 1
+
+                if show_details:
+                    # set the 'id' if it's not already there
+                    orphan.setdefault('id', orphan.get('_id', None))
+                    self.prompt.render_document(orphan)
+
+        else:
             if show_details:
-                # set the 'id' if it's not already there
-                orphan.setdefault('id', orphan.get('_id', None))
-                self.prompt.render_document(orphan)
+                self.prompt.write(_('no content type specified; details flag ignored'))
+
+            rest_summary = self.context.server.content_orphan.orphans().response_body
+
+            for key, value in rest_summary.items():
+                summary[key] = value['count']
 
         order = summary.keys()
         order.sort()

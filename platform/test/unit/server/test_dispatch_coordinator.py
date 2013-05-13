@@ -553,3 +553,58 @@ class CoordinatorFindCallReportsTests(CoordinatorTests):
         self.assertEqual(len(call_report_list), 1)
         self.assertEqual(call_report_list[0].call_request_id, call_request.id)
 
+# coordinator start tests ------------------------------------------------------
+
+class CoordinatorStartTests(CoordinatorTests):
+
+    def setUp(self):
+        super(CoordinatorStartTests, self).setUp()
+        self.queued_call_collection = QueuedCall.get_collection()
+        self.coordinator.execute_call_asynchronously = mock.Mock()
+        self.coordinator.execute_multiple_calls = mock.Mock()
+
+    def tearDown(self):
+        super(CoordinatorStartTests, self).tearDown()
+
+    def test_start_bad_queued_call_none(self):
+        self.queued_call_collection.insert({'serialized_call_request': None})
+
+        self.coordinator.start()
+
+        self.assertEqual(self.coordinator.execute_call_asynchronously.call_count, 0)
+        self.assertEqual(self.coordinator.execute_multiple_calls.call_count, 0)
+
+    def test_start_bad_queued_call_missing_fields(self):
+        self.queued_call_collection.insert({'serialized_call_request': {}})
+
+        self.coordinator.start()
+
+        self.assertEqual(self.coordinator.execute_call_asynchronously.call_count, 0)
+        self.assertEqual(self.coordinator.execute_multiple_calls.call_count, 0)
+
+    def test_start_good_queued_call(self):
+        request = call.CallRequest(dummy_call)
+        queued_request = QueuedCall(request)
+        self.queued_call_collection.insert(queued_request)
+
+        self.coordinator.start()
+
+        self.assertEqual(self.coordinator.execute_call_asynchronously.call_count, 1)
+        self.assertEqual(self.coordinator.execute_multiple_calls.call_count, 0)
+
+    def test_start_good_queued_call_collection(self):
+        request_1 = call.CallRequest(dummy_call)
+        request_2 = call.CallRequest(dummy_call)
+        request_1.group_id = request_2.group_id = 'my-group'
+
+        queued_request_1 = QueuedCall(request_1)
+        queued_request_2 = QueuedCall(request_2)
+        self.queued_call_collection.insert(queued_request_1)
+        self.queued_call_collection.insert(queued_request_2)
+
+        self.coordinator.start()
+
+        self.assertEqual(self.coordinator.execute_call_asynchronously.call_count, 0)
+        self.assertEqual(self.coordinator.execute_multiple_calls.call_count, 1)
+
+

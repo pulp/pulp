@@ -231,7 +231,7 @@ class CallRequest(object):
             return None
 
         constructor_kwargs = dict(data)
-        constructor_kwargs.pop('callable_name') # added for search
+        constructor_kwargs.pop('callable_name', None) # added for search
 
         for key, value in constructor_kwargs.items():
             constructor_kwargs[encode_unicode(key)] = constructor_kwargs.pop(key)
@@ -244,15 +244,18 @@ class CallRequest(object):
             _LOG.exception(e)
             return None
 
-        id = constructor_kwargs.pop('id')
-        group_id = constructor_kwargs.pop('group_id')
-        schedule_id = constructor_kwargs.pop('schedule_id')
-        execution_hooks = constructor_kwargs.pop('execution_hooks')
-        control_hooks = constructor_kwargs.pop('control_hooks')
+        call_id = constructor_kwargs.pop('id', None)
+        group_id = constructor_kwargs.pop('group_id', None)
+        schedule_id = constructor_kwargs.pop('schedule_id', None)
+        execution_hooks = constructor_kwargs.pop('execution_hooks', None)
+        control_hooks = constructor_kwargs.pop('control_hooks', None)
+
+        if None in (call_id, execution_hooks, control_hooks):
+            return None
 
         instance = cls(**constructor_kwargs)
 
-        instance.id = id
+        instance.id = call_id
         instance.group_id = group_id
         instance.schedule_id = schedule_id
 

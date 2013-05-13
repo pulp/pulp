@@ -14,50 +14,37 @@ import errno
 
 from logging import getLogger
 
-from pulp.common.download.listener import DownloadEventListener
+from pulp.common.download.listener import AggregatingEventListener
 from pulp.common.download.request import DownloadRequest
+from pulp_node.error import UnitDownloadError
+
 
 log = getLogger(__name__)
 
 
-class Batch(object):
-    """
-    A collection of download requests and a mapping of unit by URL.
-    :ivar units: A mapping of units by URL.
-    :type units: dict
-    :ivar request_list: A list of download requests
-    :type request_list: list
-    """
-
-    def __init__(self):
-        self.units = {}
-        self.request_list = []
-
-    def add(self, url, unit):
-        """
-        Add a unit to the download batch.
-        :param url: The download URL.
-        :type url: str
-        :param unit: A content unit.
-        :type unit: pulp.plugins.model.Unit
-        """
-        self.units[url] = unit
-        request = DownloadRequest(str(url), unit.storage_path)
-        self.request_list.append(request)
+REQUEST = 'request'
+UNIT = 'unit'
 
 
-class DownloadListener(DownloadEventListener):
+class UnitDownloadRequest(DownloadRequest):
 
-    def __init__(self, strategy, batch):
-        self.strategy = strategy
-        self.batch = batch
-        self.failed = []
+    def __init__(self, url, request, unit):
+        super(UnitDownloadRequest, self).__init__(
+            url, unit.storage_path, data={REQUEST: request, UNIT: unit})
 
-    @property
-    def progress(self):
-        return self.strategy.progress
+
+class DownloadListener(AggregatingEventListener):
+
+    def __init__(self, strategy):
+        super(DownloadListener, self).__init__()
+        self._strategy = strategy
 
     def download_started(self, report):
+        super(DownloadListener, self).download_started(report)
+        request = report.data[REQUEST]
+        if request.cancelled():
+            request.downloader.cancel()
+            return
         try:
             dir_path = os.path.dirname(report.destination)
             os.makedirs(dir_path)
@@ -66,14 +53,23 @@ class DownloadListener(DownloadEventListener):
                 raise e
 
     def download_succeeded(self, report):
-        unit = self.batch.units.get(report.url)
-        try:
-            self.strategy.add_unit(unit)
-        except Exception, e:
-            log.exception(report.url)
-            self.failed.append((unit, e))
+        super(DownloadListener, self).download_succeeded(report)
+        request = report.data[REQUEST]
+        unit = report.data[UNIT]
+        self._strategy.add_unit(request, unit)
+        if request.cancelled():
+            request.downloader.cancel()
 
     def download_failed(self, report):
-        unit = self.batch.units[report.url]
-        self.failed.append((unit, report.error_report))
-        self.progress.set_action('downloaded_failed', report.url)
+        super(DownloadListener, self).download_failed(report)
+        request = report.data[REQUEST]
+        if request.cancelled():
+            request.downloader.cancel()
+
+    def error_list(self):
+        error_list = []
+        for report in self.failed_reports:
+            request = report.data[REQUEST]
+            error = UnitDownloadError(report.url, request.repo_id, report.error_report)
+            error_list.append(error)
+        return error_list

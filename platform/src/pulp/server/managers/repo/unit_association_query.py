@@ -283,14 +283,35 @@ class RepoUnitAssociationQueryManager(object):
 
         if association_sorted:
             # The units are already sorted, so we have to maintain the order in
-            # the units list.
+            # the units list. We also haven't applied the unit filters to the
+            # list yet, so we're not guaranteed that everything in unit_associations
+            # is going to be part of the result.
 
-            for u in unit_associations:
-                spec = copy.copy(unit_spec)
-                spec['_id'] = u['unit_id']
-                metadata = type_collection.find_one(spec, fields=criteria.unit_fields)
-                u['metadata'] = metadata
+            # The first step is to figure out which associations actually match the
+            # unit filters. This only applies if there is unit filtering.
+            if len(unit_spec) > 0:
+                association_unit_ids = [u['unit_id'] for u in unit_associations]
+                unit_id_spec = copy.copy(unit_spec)
+                unit_id_spec['_id'] = {'$in' : association_unit_ids}
+                matching_unit_id_cursor = type_collection.find(unit_id_spec, fields=['_id'])
+                matching_unit_ids = [u['_id'] for u in matching_unit_id_cursor] # unpack mongo format
 
+                # Remove all associations didn't match the units after the filter was applied
+                unit_associations = [u for u in unit_associations if u['unit_id'] in matching_unit_ids]
+
+            # Batch look up all of the units. This seems like it'd be rough on memory, but since
+            # we have to ultimately return all of this data to the caller, it's going to end up there
+            # anyway.
+            all_unit_ids = [u['unit_id'] for u in unit_associations]
+            spec = {'_id' : {'$in' : all_unit_ids}}
+            all_metadata = type_collection.find(spec, fields=criteria.unit_fields)
+
+            # Convert to dict by unit_id for simple lookup
+            metadata_by_id = dict([(u['_id'], u) for u in all_metadata])
+            def merge_metadata(association):
+                association['metadata'] = metadata_by_id[association['unit_id']]
+            map(merge_metadata, unit_associations)
+            
             return unit_associations
 
         else:

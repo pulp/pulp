@@ -48,6 +48,9 @@ class MockContext(object):
     def current(self):
         return self
 
+    def cancelled(self):
+        pass
+
 
 class TestConduit(unittest.TestCase):
 
@@ -83,3 +86,26 @@ class TestConduit(unittest.TestCase):
         conduit.update_progress(report)
         self.assertEqual(report, mock_context.return_value.progress.details)
         self.assertEqual(1, mock_context.return_value.progress.report.call_count)
+
+    @mock.patch('pulp.agent.lib.dispatcher.Dispatcher')
+    @mock.patch('gofer.agent.plugin.Plugin.find', return_value=MockPlugin())
+    @mock.patch('gofer.agent.rmi.Context.current', return_value=MockContext())
+    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
+    @mock.patch('test_agent.MockContext.cancelled', return_value=True)
+    def test_cancelled(self, mock_cancelled, *unused):
+        from pulp.agent.gofer.pulpplugin import Conduit
+        conduit = Conduit()
+        cancelled = conduit.cancelled()
+        self.assertTrue(cancelled)
+        self.assertEqual(1, mock_cancelled.call_count)
+
+    @mock.patch('gofer.agent.plugin.Plugin.find', return_value=MockPlugin())
+    @mock.patch('gofer.agent.rmi.Context.current', return_value=MockContext())
+    @mock.patch('gofer.agent.logutil.getLogger', return_value=root)
+    @mock.patch('test_agent.MockContext.cancelled', return_value=False)
+    def test_not_cancelled(self, mock_cancelled, *unused):
+        from pulp.agent.gofer.pulpplugin import Conduit
+        conduit = Conduit()
+        cancelled = conduit.cancelled()
+        self.assertFalse(cancelled)
+        self.assertEqual(1, mock_cancelled.call_count)

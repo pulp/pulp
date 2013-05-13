@@ -137,10 +137,9 @@ class Importer(object):
 
         * Initializing the unit through the conduit which populates the final
           destination of the unit.
-        * Deriving any
-        * Copy the unit from the provided temporary location into the unit's
-          actual path.
-        * Save the unit in Pulp, which both adds the unit to Pulp's database and
+        * Moving the unit from the provided temporary location into the unit's
+          final destination.
+        * Saving the unit in Pulp, which both adds the unit to Pulp's database and
           associates it to the repository.
 
         This call may be invoked for either units that do not already exist as
@@ -318,6 +317,7 @@ class Importer(object):
         @rtype:  list of L{pulp.server.plugins.model.Unit}
         """
         raise NotImplementedError()
+
 
 class GroupImporter(object):
     """

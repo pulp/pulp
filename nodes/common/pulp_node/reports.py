@@ -9,9 +9,73 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from logging import getLogger
+# --- summary reporting  -----------------------------------------------------
 
-log = getLogger(__name__)
+
+class RepositoryReport(object):
+    """
+    Repository merge report.
+    :ivar repo_id: The repository ID.
+    :type repo_id: str
+    :ivar action: The action taken on the repository.
+    :param action: str
+    :ivar units: A content unit report.
+    :param units: UnitReport
+    """
+
+    # actions
+    PENDING = 'pending'
+    CANCELLED = 'cancelled'
+    ADDED = 'added'
+    MERGED = 'merged'
+    DELETED = 'deleted'
+
+    def __init__(self, repo_id, action=PENDING):
+        """
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param action: The action taken on the repository.
+        :param action: str
+        """
+        self.repo_id = repo_id
+        self.action = action
+        self.units = UnitReport()
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return dict(repo_id=self.repo_id, action=self.action, units=self.units.dict())
+
+
+class UnitReport(object):
+    """
+    Content unit synchronization summary report.
+    :ivar added: Count of units added.
+    :type added: int
+    :ivar updated: Count of units updated.
+    :type updated: int
+    :ivar removed: Count of units removed.
+    :type removed: int
+    """
+
+    def __init__(self):
+        self.added = 0
+        self.updated = 0
+        self.removed = 0
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return self.__dict__
+
+
+# --- progress reporting  ----------------------------------------------------
 
 
 class RepositoryProgress(object):
@@ -20,6 +84,7 @@ class RepositoryProgress(object):
     """
 
     PENDING = 'pending'
+    MERGING = 'merging'
     IMPORTING = 'import_started'
     DOWNLOADING_MANIFEST = 'downloading_manifest'
     ADDING_UNITS = 'adding_units'
@@ -38,6 +103,14 @@ class RepositoryProgress(object):
         self.listener = listener
         self.state = self.PENDING
         self.unit_add = dict(total=0, completed=0, details=None)
+
+    def begin_merging(self):
+        """
+        Update the report to reflect that merging has started.
+        Set state=MERGING.
+        """
+        self.state = self.MERGING
+        self.updated()
 
     def begin_importing(self):
         """

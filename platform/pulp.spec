@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.1.0
-Release: 0.19.alpha
+Version: 2.2.0
+Release: 0.5.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -176,7 +176,7 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 0.74
+Requires: python-gofer >= 0.76
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -233,7 +233,7 @@ Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
-Requires: pulp-eventlet >= 0.9
+Requires: python-eventlet >= 0.9
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -365,7 +365,7 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: gofer >= 0.74
+Requires: gofer >= 0.76
 
 %description agent
 The pulp agent, used to provide remote command & control and
@@ -435,6 +435,86 @@ exit 0
 %endif
 
 %changelog
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
+- 
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
+- 
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
+- 952775 - Fixed broken unit filter application when sorted by association
+  (jason.dobies@redhat.com)
+- 913171 - using get method instead of dict lookup (skarmark@redhat.com)
+- 915473 - fixing login api to return a json document with key and certificate
+  (skarmark@redhat.com)
+- 913171 - fixed repo details to display list of actual schedules instead of
+  schedule ids and unit tests (skarmark@redhat.com)
+- 957890 - removing duplicate units in case when consumer is bound to copies of
+  same repo (skarmark@redhat.com)
+- 957890 - fixed duplicate unit listing in the applicability report and
+  performance improvement fix to avoid loading unnecessary units
+  (skarmark@redhat.com)
+- 954038 - updating applicability api to send unit ids instead of translated
+  plugin unit objects to profilers and fixing a couple of performance issues
+  (skarmark@redhat.com)
+- 924778 - Added hook for a subclass to manipulate the file bundle list after
+  the metadata is generated (jason.dobies@redhat.com)
+- 916729 - Fixed auth failures to return JSON documents containing a
+  programmatic error code and added client-side exception middleware support
+  for displaying the proper user message based on the error.
+  (jason.dobies@redhat.com)
+- 887000 - removed dispatch lookups in sync to determine canceled state
+  (jason.connor@gmail.com)
+- 927244 - unit association log blacklist criteria (jason.connor@gmail.com)
+- 903414 - handle malformed queued calls (jason.connor@gmail.com)
+- 927216 - remove CDS section from server.conf. (jortel@redhat.com)
+
+* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
+- 953665 - added ability for copy commands to specify the fields of their units
+  that should be fetched, so as to avoid loading the entirety of every unit in
+  the source repository into RAM. Also added the ability to provide a custom
+  "override_config" based on CLI options. (mhrivnak@redhat.com)
+- 952310 - support file:// urls. (jortel@redhat.com)
+- 949174 - Use a single boolean setting for whether the downloaders should
+  validate SSL hosts. (rbarlow@redhat.com)
+
+* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
+- 950632 - added unit_id search index on the repo_content_units collection
+  (jason.connor@gmail.com)
+- 928081 - Take note of HTTP status codes when downloading files.
+  (rbarlow@redhat.com)
+- 947927 - This call should support both the homogeneous and heterogeneous
+  cases (jason.dobies@redhat.com)
+- 928509 - Platform changes to support override config in applicability
+  (jason.dobies@redhat.com)
+- 949186 - Removed the curl TIMEOUT setting and replaced it with a low speed
+  limit. (rbarlow@redhat.com)
+- 928087 - serialized call request replaced in archival with string
+  representation of the call request (jason.connor@gmail.com)
+- 924327 - Make sure to run the groups/categories upgrades in the aggregate
+  (jason.dobies@redhat.com)
+- 918160 - changed --summary flag to *only* display the  summary
+  (jason.connor@gmail.com)
+- 916794 - 918160 - 920792 - new generator approach to orphan management to
+  keep us from stomping on memory (jason.connor@gmail.com)
+- 923402 - Clarifications to the help text in logging config files
+  (jason.dobies@redhat.com)
+- 923402 - Reduce logging level from DEBUG to INFO (jason.dobies@redhat.com)
+- 923406 - fixing typo in repo copy bindings causing recursive copy to never
+  run (skarmark@redhat.com)
+- 922214 - adding selinux context for all files under /srv/pulp instead of
+  individual files (skarmark@redhat.com)
+- 919155 - Added better test assertions (jason.dobies@redhat.com)
+- 919155 - Added handling for connection refused errors
+  (jason.dobies@redhat.com)
+- 918782 - render warning messages as normal colored text. (jortel@redhat.com)
+- 911166 - Use pulp_version macro for consistency and conditional requires on
+  both version and release for pre-release packages only. (jortel@redhat.com)
+- 908934 - Fix /etc/pki/pulp and /etc/pki/pulp/consumer ownership.
+  (jortel@redhat.com)
+- 918600 - _content_type_id wasn't being set for erratum and drpm
+  (jason.dobies@redhat.com)
+
 * Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
 - 855053 - repository unit counts are now tracked per-unit-type. Also wrote a
   migration that will convert previously-created repositories to have the new

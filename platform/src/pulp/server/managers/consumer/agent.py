@@ -50,8 +50,8 @@ class AgentManager(object):
         Notification that a consumer (agent) has
         been unregistered.  This ensure that all registration
         artifacts have been cleaned up.
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
@@ -63,14 +63,14 @@ class AgentManager(object):
         Request the agent to perform the specified bind. This method will be called
         after the server-side representation of the binding has been created.
 
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
-        @param repo_id: A repository ID.
-        @type repo_id: str
-        @param distributor_id: A distributor ID.
-        @type distributor_id: str
-        @param options: The options are handler specific.
-        @type options: dict
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        :param repo_id: A repository ID.
+        :type repo_id: str
+        :param distributor_id: A distributor ID.
+        :type distributor_id: str
+        :param options: The options are handler specific.
+        :type options: dict
         """
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -96,14 +96,14 @@ class AgentManager(object):
     def unbind(self, consumer_id, repo_id, distributor_id, options):
         """
         Request the agent to perform the specified unbind.
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
-        @param repo_id: A repository ID.
-        @type repo_id: str
-        @param distributor_id: A distributor ID.
-        @type distributor_id: str
-        @param options: The options are handler specific.
-        @type options: dict
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        :param repo_id: A repository ID.
+        :type repo_id: str
+        :param distributor_id: A distributor ID.
+        :type distributor_id: str
+        :param options: The options are handler specific.
+        :type options: dict
         """
         # agent request
         manager = managers.consumer_manager()
@@ -125,13 +125,13 @@ class AgentManager(object):
     def install_content(self, consumer_id, units, options):
         """
         Install content units on a consumer.
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
-        @param units: A list of content units to be installed.
-        @type units: list of:
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        :param units: A list of content units to be installed.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Install options; based on unit type.
-        @type options: dict
+        :param options: Install options; based on unit type.
+        :type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
@@ -155,13 +155,13 @@ class AgentManager(object):
     def update_content(self, consumer_id, units, options):
         """
         Update content units on a consumer.
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
-        @param units: A list of content units to be updated.
-        @type units: list of:
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        :param units: A list of content units to be updated.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Update options; based on unit type.
-        @type options: dict
+        :param options: Update options; based on unit type.
+        :type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
@@ -185,13 +185,13 @@ class AgentManager(object):
     def uninstall_content(self, consumer_id, units, options):
         """
         Uninstall content units on a consumer.
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
-        @param units: A list of content units to be uninstalled.
-        @type units: list of:
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        :param units: A list of content units to be uninstalled.
+        :type units: list of:
             { type_id:<str>, type_id:<dict> }
-        @param options: Uninstall options; based on unit type.
-        @type options: dict
+        :param options: Uninstall options; based on unit type.
+        :type options: dict
         """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
@@ -215,10 +215,23 @@ class AgentManager(object):
     def send_profile(self, consumer_id):
         """
         Send the content profile(s).
-        @param consumer_id: The consumer ID.
-        @type consumer_id: str
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
         """
         _LOG.info(consumer_id)
+
+    def cancel_request(self, consumer_id, task_id):
+        """
+        Cancel an agent request associated with the specified task ID.
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        :param: task_id: The task ID associated with the request.
+        :type: str
+        """
+        manager = managers.consumer_manager()
+        consumer = manager.get_consumer(consumer_id)
+        agent = PulpAgent(consumer)
+        agent.cancel(task_id)
 
     def __invoke_plugin(self, call, *args, **kwargs):
         try:
@@ -232,10 +245,10 @@ class AgentManager(object):
         """
         Find the profiler.
         Returns the Profiler base class when not matched.
-        @param typeid: The content type ID.
-        @type typeid: str
-        @return: (profiler, cfg)
-        @rtype: tuple
+        :param typeid: The content type ID.
+        :type typeid: str
+        :return: (profiler, cfg)
+        :rtype: tuple
         """
         try:
             plugin, cfg = plugin_api.get_profiler_by_type(typeid)
@@ -247,10 +260,10 @@ class AgentManager(object):
     def __profiled_consumer(self, consumer_id):
         """
         Get a profiler consumer model object.
-        @param id: A consumer ID.
-        @type id: str
-        @return: A populated profiler consumer model object.
-        @rtype: L{ProfiledConsumer}
+        :param id: A consumer ID.
+        :type id: str
+        :return: A populated profiler consumer model object.
+        :rtype: L{ProfiledConsumer}
         """
         profiles = {}
         manager = managers.consumer_profile_manager()
@@ -265,11 +278,11 @@ class AgentManager(object):
         Build the bindings needed by the agent. The returned bindings will be
         the payload created by the appropriate distributor.
 
-        @param bindings: a list of binding object retrieved from the database
-        @type  bindings: list
+        :param bindings: a list of binding object retrieved from the database
+        :type  bindings: list
 
-        @return list of binding objects to send to the agent
-        @rtype: list
+        :return: list of binding objects to send to the agent
+        :rtype: list
         """
         agent_bindings = []
         for binding in bindings:
@@ -290,13 +303,13 @@ class AgentManager(object):
     def __unbindings(self, bindings):
         """
         Build the (un)bindings needed by the agent.
-        @param bindings: A list of binding IDs.
+        :param bindings: A list of binding IDs.
           Each binding is:
             {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @type bindings: list
-        @return A list of agent bindings.
+        :type bindings: list
+        :return: A list of agent bindings.
           Each unbinding is: {type_id:<str>, repo_id:<str>}
-        @rtype: list
+        :rtype: list
         """
         agent_bindings = []
         for binding in bindings:
@@ -322,8 +335,8 @@ class Units(dict):
     def __init__(self, units):
         """
         Unit is: {type_id:<str>, unit_key:<dict>}
-        @param units: A list of content units.
-        @type units: list
+        :param units: A list of content units.
+        :type units: list
         """
         for unit in units:
             typeid = unit['type_id']
@@ -336,7 +349,7 @@ class Units(dict):
     def join(self):
         """
         Flat (uncollated) list of units.
-        @return: A list of units.
-        @rtype: list
+        :return: A list of units.
+        :rtype: list
         """
         return [j for i in self.values() for j in i]

@@ -19,9 +19,10 @@ from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 
 from pulp_node import constants
-from pulp_node.progress import RepositoryProgress
-from pulp_node.importers.reports import ProgressListener
-from pulp_node.importers.strategies import find_strategy
+from pulp_node.error import CaughtException
+from pulp_node.reports import RepositoryProgress
+from pulp_node.importers.reports import SummaryReport, ProgressListener
+from pulp_node.importers.strategies import find_strategy, SyncRequest
 
 
 log = getLogger(__name__)
@@ -59,6 +60,8 @@ def entry_point():
 class NodesHttpImporter(Importer):
     """
     The nodes importer is used to synchronize repository content.
+    :ivar cancelled: Indicates whether the sync has been cancelled.
+    :type cancelled: bool
     """
 
     @classmethod
@@ -70,7 +73,7 @@ class NodesHttpImporter(Importer):
         }
 
     def __init__(self):
-        self.strategy = None
+        self.cancelled = False
 
     def validate_config(self, repo, config, related_repos):
         """
@@ -97,9 +100,9 @@ class NodesHttpImporter(Importer):
                 msg = PROPERTY_MISSING % dict(p=key)
                 errors.append(msg)
 
-        strategy = config.get(constants.STRATEGY_KEYWORD)
+        strategy = config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
         if strategy not in constants.STRATEGIES:
-            msg = STRATEGY_UNSUPPORTED % strategy
+            msg = STRATEGY_UNSUPPORTED % dict(s=strategy)
             errors.append(msg)
 
         valid = not bool(errors)
@@ -118,22 +121,44 @@ class NodesHttpImporter(Importer):
         :return: A report describing the result.
         :rtype: pulp.server.plugins.model.SyncReport
         """
+        summary_report = SummaryReport()
+
         try:
             downloader = self._downloader(config)
             strategy_name = config.get(constants.STRATEGY_KEYWORD)
-            strategy_class = find_strategy(strategy_name)
-            listener = ProgressListener(conduit)
-            progress = RepositoryProgress(repo.id, listener)
-            self.strategy = strategy_class(conduit, config, downloader, progress)
-            progress.begin_importing()
-            report = self.strategy.synchronize(repo.id)
-            details = dict(report=report.dict())
+            progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
+            request = SyncRequest(
+                importer=self,
+                conduit=conduit,
+                config=config,
+                downloader=downloader,
+                progress=progress_report,
+                summary=summary_report,
+                repo_id=repo.id)
+            strategy = find_strategy(strategy_name)()
+            strategy.synchronize(request)
         except Exception, e:
-            msg = repr(e)
-            log.exception(repo.id)
-            details = dict(exception=msg)
-        report = conduit.build_success_report({}, details)
+            summary_report.errors.append(CaughtException(e, repo.id))
+
+        summary_report.update(repo_id=repo.id)
+        report = conduit.build_success_report({}, summary_report.dict())
         return report
+
+    def cancel_sync_repo(self, call_request, call_report):
+        """
+        Cancel an in-progress repository synchronization.
+        :param call_request:
+        :param call_report:
+        """
+        self.cancelled = True
+
+    def _cancelled(self):
+        """
+        Get whether the current operation has been cancelled.
+        :return: True if cancelled.
+        :rtype: bool
+        """
+        return self.cancelled
 
     def _downloader(self, config):
         """
@@ -151,8 +176,7 @@ class NodesHttpImporter(Importer):
             max_concurrent=MAX_CONCURRENCY,
             ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
             ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
-            ssl_verify_host=0,
-            ssl_verify_peer=0)
+            ssl_validation=False)
         downloader = HTTPSCurlDownloader(conf)
         return downloader
 
