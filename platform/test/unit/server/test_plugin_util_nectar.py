@@ -14,12 +14,12 @@ import unittest
 
 from pulp.common.plugins import importer_constants as constants
 from pulp.common.download.config import DownloaderConfig
-from pulp.plugins.util import downloader
+from pulp.plugins.util import nectar
 
 
 class ConfigTranslationTests(unittest.TestCase):
 
-    def test_importer_config_to_download_config_complete(self):
+    def test_importer_config_to_nectar_config_complete(self):
         # Setup
         importer_config = {
             constants.KEY_SSL_CA_CERT : 'ca_cert',
@@ -37,7 +37,7 @@ class ConfigTranslationTests(unittest.TestCase):
         }
 
         # Test
-        download_config = downloader.importer_config_to_downloader_config(importer_config)
+        download_config = nectar.importer_config_to_nectar_config(importer_config)
 
         # Verify
         self.assertTrue(isinstance(download_config, DownloaderConfig))
@@ -61,7 +61,7 @@ class ConfigTranslationTests(unittest.TestCase):
         }
 
         # Test
-        download_config = downloader.importer_config_to_downloader_config(importer_config)
+        download_config = nectar.importer_config_to_nectar_config(importer_config)
 
         # Verify
         self.assertEqual(download_config.ssl_ca_cert, 'ca_cert')
