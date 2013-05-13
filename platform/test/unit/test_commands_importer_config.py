@@ -191,7 +191,8 @@ class ImporterConfigMixinTests(base.PulpClientTests):
     def test_end_to_end(self):
         # Setup
         self.cli.add_command(self.mixin)
-        user_input = 'mixin --feed url --proxy-host phost --verify-feed-ssl true --max-downloads 5'
+        user_input = 'mixin --feed url --proxy-host phost --verify-feed-ssl true ' \
+                     '--max-downloads 5 --remove-missing true'
 
         # Test
         self.cli.run(user_input.split())
@@ -201,3 +202,4 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(self.mixin.last_parsed_config['proxy_host'], 'phost')
         self.assertEqual(self.mixin.last_parsed_config['ssl_validation'], True)
         self.assertEqual(self.mixin.last_parsed_config['max_downloads'], 5)
+        self.assertEqual(self.mixin.last_parsed_config['remove_missing'], True)

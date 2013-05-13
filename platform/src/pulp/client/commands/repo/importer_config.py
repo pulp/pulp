@@ -246,6 +246,7 @@ class ImporterConfigMixin(object):
         config.update(self.parse_ssl_group(user_input))
         config.update(self.parse_proxy_group(user_input))
         config.update(self.parse_throttling_group(user_input))
+        config.update(self.parse_unit_policy(user_input))
         return config
 
     def parse_sync_group(self, user_input):
