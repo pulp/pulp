@@ -11,10 +11,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains functions related to working with the Pulp downloader library.
+Contains functions related to working with the Nectar downloading library.
 """
-
-# TODO: Rename this file and update docs when a name is chosen.
 
 from functools import partial
 
@@ -22,7 +20,7 @@ from pulp.common.plugins import importer_constants as constants
 from pulp.common.download.config import DownloaderConfig
 
 
-def importer_config_to_downloader_config(importer_config):
+def importer_config_to_nectar_config(importer_config):
     """
     Translates the Pulp standard importer configuration into a DownloaderConfig instance.
 
