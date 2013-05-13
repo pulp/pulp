@@ -175,9 +175,7 @@ class Unit(object):
         This should provide a consistent and unique hash where units of the same
         type and the same unit key will get the same hash value.
         """
-        keys = str(sorted(self.unit_key.keys()))
-        values = str(sorted(self.unit_key.values()))
-        return hash(self.type_id + keys + values)
+        return hash(self.type_id + str(sorted(self.unit_key.items())))
 
 
 class AssociatedUnit(Unit):

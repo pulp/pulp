@@ -57,3 +57,12 @@ class TestUnit(unittest.TestCase):
         unit2 = unit_factory()
         unit2.storage_path = '/foo/bar'
         self.assertEqual(hash(unit1), hash(unit2))
+
+    def test_opposite_values(self):
+        # the original algorithm failed this test
+        unit1 = unit_factory()
+        unit2 = unit_factory()
+        # give unit2 a new instance of unit_key with values of "a" and "b"
+        # swapped compared to unit1
+        unit2.unit_key = unit_key_factory(a=unit1.unit_key['b'], b=unit1.unit_key['a'])
+        self.assertNotEqual(hash(unit1), hash(unit2))
