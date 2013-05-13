@@ -19,6 +19,7 @@ from pulp.common.plugins import importer_constants as constants
 
 # -- group names --------------------------------------------------------------
 
+GROUP_NAME_SYNC = _('Synchronization')
 GROUP_NAME_THROTTLING = _('Throttling')
 GROUP_NAME_SSL = _('Feed Authentication')
 GROUP_NAME_PROXY = _('Feed Proxy')
@@ -37,6 +38,21 @@ class OptionsBundle(object):
     """
 
     def __init__(self):
+
+        # -- synchronization options --------------------------------------------------
+
+        d = _('URL of the external source repository to sync')
+        self.opt_feed = PulpCliOption('--feed', d, required=False)
+
+        d = _('if "true", the size of each synchronized file will be verified against '
+              'the repo metadata; defaults to false')
+        self.opt_verify_size = PulpCliOption('--verify-size', d, required=False,
+                                             parse_func=parsers.parse_boolean)
+
+        d = _('if "true", the checksum of each synchronized file will be verified '
+              'against the repo metadata; defaults to false')
+        self.opt_verify_checksum = PulpCliOption('--verify-checksum', d, required=False,
+                                                 parse_func=parsers.parse_boolean)
 
         # -- proxy options ------------------------------------------------------------
 
@@ -127,6 +143,7 @@ class ImporterConfigMixin(object):
 
     def __init__(self,
                  options_bundle=None,
+                 include_sync=True,
                  include_ssl=True,
                  include_proxy=True,
                  include_throttling=True,
@@ -137,10 +154,15 @@ class ImporterConfigMixin(object):
 
         # Created now, but won't be added to the command until the include_* flags are checked.
         # Stored as instance variables so a class using this mixin can further manipulate them.
+        self.sync_group = PulpCliOptionGroup(GROUP_NAME_SYNC)
         self.ssl_group = PulpCliOptionGroup(GROUP_NAME_SSL)
         self.proxy_group = PulpCliOptionGroup(GROUP_NAME_PROXY)
         self.throttling_group = PulpCliOptionGroup(GROUP_NAME_THROTTLING)
         self.unit_policy_group = PulpCliOptionGroup(GROUP_NAME_UNIT_POLICY)
+
+        if include_sync:
+            self.populate_sync_group()
+            self.add_option_group(self.sync_group)
 
         if include_ssl:
             self.populate_ssl_group()
@@ -157,6 +179,15 @@ class ImporterConfigMixin(object):
         if include_unit_policy:
             self.populate_unit_policy()
             self.add_option_group(self.unit_policy_group)
+
+    def populate_sync_group(self):
+        """
+        Adds options to the synchronization group. This is only called if the include_sync flag is
+        set to True in the constructor.
+        """
+        self.sync_group.add_option(self.options_bundle.opt_feed)
+        self.sync_group.add_option(self.options_bundle.opt_verify_size)
+        self.sync_group.add_option(self.options_bundle.opt_verify_checksum)
 
     def populate_ssl_group(self):
         """
@@ -211,9 +242,34 @@ class ImporterConfigMixin(object):
         :rtype:  dict
         """
         config = {}
+        config.update(self.parse_sync_group(user_input))
         config.update(self.parse_ssl_group(user_input))
         config.update(self.parse_proxy_group(user_input))
         config.update(self.parse_throttling_group(user_input))
+        config.update(self.parse_unit_policy(user_input))
+        return config
+
+    def parse_sync_group(self, user_input):
+        """
+        Reads any basic synchronization config options from the user input and packages them into
+        the Pulp standard importer config format.
+
+        :param user_input: keyword arguments from the CLI framework containing user input
+        :type  user_input: dict
+
+        :return: suitable representation of the config that can be stored on the repo
+        :rtype:  dict
+        """
+        key_tuples = (
+            (constants.KEY_FEED, self.options_bundle.opt_feed.keyword),
+            (constants.KEY_VERIFY_SIZE, self.options_bundle.opt_verify_size.keyword),
+            (constants.KEY_VERIFY_CHECKSUM, self.options_bundle.opt_verify_checksum.keyword),
+        )
+
+        config = {}
+        for config_key, input_key in key_tuples:
+            safe_parse(user_input, config, input_key, config_key)
+
         return config
 
     def parse_ssl_group(self, user_input):
@@ -236,7 +292,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
 
         arg_utils.convert_file_contents(('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key'), config)
 
@@ -262,7 +318,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
     def parse_throttling_group(self, user_input):
@@ -283,7 +339,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
     def parse_unit_policy(self, user_input):
@@ -298,11 +354,11 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
 
-def _safe_parse(user_input, config, input_keyword, config_keyword):
+def safe_parse(user_input, config, input_keyword, config_keyword):
     """
     Prior to calling the parse methods in this class, the user input should have been pre-scrubbed
     to remove keys whose value were None (see parse_user_input docs). We can't simply pop with
