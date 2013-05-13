@@ -162,7 +162,10 @@ class Unit(object):
         return d
 
     def __eq__(self, other):
-        return self.unit_key == other.unit_key
+        return (self.unit_key == other.unit_key) and (self.type_id == other.type_id)
+
+    def __ne__(self, other):
+        return not self == other
 
     def __str__(self):
         return 'Unit [key=%s] [type=%s] [id=%s]' % (self.unit_key, self.type_id, self.id)

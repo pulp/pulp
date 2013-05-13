@@ -21,7 +21,26 @@ unit_key_factory = functools.partial(dict, a='foo', b='bar', c=3)
 unit_factory = functools.partial(Unit, 'my_type', unit_key_factory(), {}, '')
 
 
-class TestUnit(unittest.TestCase):
+class TestUnitEquality(unittest.TestCase):
+    def test_equal(self):
+        unit1 = unit_factory()
+        unit2 = unit_factory()
+        self.assertEqual(unit1, unit2)
+
+    def test_not_equal(self):
+        unit1 = unit_factory()
+        unit2 = unit_factory()
+        unit2.unit_key = unit_key_factory(a='xyz')
+        self.assertNotEqual(unit1, unit2)
+
+    def test_type_id_not_equal(self):
+        unit1 = unit_factory()
+        unit2 = unit_factory()
+        unit2.type_id = 'notthesameasunit1'
+        self.assertNotEqual(unit1, unit2)
+
+
+class TestUnitHash(unittest.TestCase):
     def test_hashequality(self):
         unit1 = unit_factory()
         unit2 = unit_factory()
