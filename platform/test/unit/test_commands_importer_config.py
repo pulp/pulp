@@ -15,6 +15,7 @@ import os
 import base
 from pulp.client.commands.repo import importer_config
 from pulp.client.extensions.extensions import PulpCliCommand
+from pulp.common.plugins import importer_constants as constants
 
 
 FILES_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -27,11 +28,12 @@ class MixinTest(PulpCliCommand, importer_config.ImporterConfigMixin):
     executed, it will stored the parsed version of the config to be accessed by an assertion.
     """
 
-    def __init__(self, options_bundle=None, include_ssl=True, include_proxy=True,
+    def __init__(self, options_bundle=None, include_sync=True, include_ssl=True, include_proxy=True,
                  include_throttling=True, include_unit_policy=True):
         PulpCliCommand.__init__(self, 'mixin', '', self.run)
         importer_config.ImporterConfigMixin.__init__(self,
                                                      options_bundle=options_bundle,
+                                                     include_sync=include_sync,
                                                      include_ssl=include_ssl,
                                                      include_proxy=include_proxy,
                                                      include_throttling=include_throttling,
@@ -63,18 +65,28 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         tested separately.
         """
 
-        self.assertEqual(4, len(self.mixin.option_groups))
+        self.assertEqual(5, len(self.mixin.option_groups))
         group_names = [g.name for g in self.mixin.option_groups]
-        expected_names = [importer_config.GROUP_NAME_SSL, importer_config.GROUP_NAME_PROXY,
-                          importer_config.GROUP_NAME_THROTTLING, importer_config.GROUP_NAME_UNIT_POLICY]
+        expected_names = [importer_config.GROUP_NAME_SYNC, importer_config.GROUP_NAME_SSL,
+                          importer_config.GROUP_NAME_PROXY, importer_config.GROUP_NAME_THROTTLING,
+                          importer_config.GROUP_NAME_UNIT_POLICY]
         self.assertEqual(set(group_names), set(expected_names))
 
     def test_groups_no_includes(self):
-        self.mixin = MixinTest(include_ssl=False, include_proxy=False,
+        self.mixin = MixinTest(include_sync=False, include_ssl=False, include_proxy=False,
                                include_throttling=False, include_unit_policy=False)
         self.assertEqual(0, len(self.mixin.option_groups))
 
     # -- populate tests -------------------------------------------------------
+
+    def test_populate_sync_group(self):
+        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_SYNC][0]
+        options = group.options
+
+        self.assertEqual(3, len(options))
+        self.assertEqual(options[0], self.mixin.options_bundle.opt_feed)
+        self.assertEqual(options[1], self.mixin.options_bundle.opt_verify_size)
+        self.assertEqual(options[2], self.mixin.options_bundle.opt_verify_checksum)
 
     def test_populate_ssl_group(self):
         group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_SSL][0]
@@ -105,6 +117,23 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(options[1], self.mixin.options_bundle.opt_max_speed)
 
     # -- parse tests ----------------------------------------------------------
+
+    def test_parse_sync_group(self):
+        # Setup
+        user_input = {
+            self.mixin.options_bundle.opt_feed.keyword : 'feed-1',
+            self.mixin.options_bundle.opt_verify_size.keyword : True,
+            self.mixin.options_bundle.opt_verify_checksum.keyword : False,
+        }
+
+        # Test
+        parsed = self.mixin.parse_sync_group(user_input)
+
+        # Verify
+        self.assertEqual(3, len(parsed))
+        self.assertEqual(parsed[constants.KEY_FEED], 'feed-1')
+        self.assertEqual(parsed[constants.KEY_VERIFY_SIZE], True)
+        self.assertEqual(parsed[constants.KEY_VERIFY_CHECKSUM], False)
 
     def test_parse_ssl_group(self):
         # Setup
@@ -162,12 +191,15 @@ class ImporterConfigMixinTests(base.PulpClientTests):
     def test_end_to_end(self):
         # Setup
         self.cli.add_command(self.mixin)
-        user_input = 'mixin --proxy-host phost --verify-feed-ssl true --max-downloads 5'
+        user_input = 'mixin --feed url --proxy-host phost --verify-feed-ssl true ' \
+                     '--max-downloads 5 --remove-missing true'
 
         # Test
         self.cli.run(user_input.split())
 
         # Verify
+        self.assertEqual(self.mixin.last_parsed_config['feed'], 'url')
         self.assertEqual(self.mixin.last_parsed_config['proxy_host'], 'phost')
         self.assertEqual(self.mixin.last_parsed_config['ssl_validation'], True)
         self.assertEqual(self.mixin.last_parsed_config['max_downloads'], 5)
+        self.assertEqual(self.mixin.last_parsed_config['remove_missing'], True)
