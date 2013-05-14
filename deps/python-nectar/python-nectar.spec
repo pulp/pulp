@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        0.90.0
+Version:        0.90.2
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -51,6 +51,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Tue May 14 2013 Jason L Connor <jason.connor@gmail.com>
+- new package built with tito
+
 * Mon May 13 2013 Jason L Connor (jconnor@redhat.com) 0.90.0-1
 - brought in new revent downloader to replace old eventlet downloader
 - bumped version in preparation of 1.0.0 release
