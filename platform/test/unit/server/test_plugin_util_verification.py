@@ -24,12 +24,8 @@ class VerificationTests(unittest.TestCase):
         expected_size = 9
         test_file = StringIO('Test data')
 
-        # Test
-        valid, found_size = verification.verify_size(test_file, expected_size)
-
-        # Verify
-        self.assertTrue(valid)
-        self.assertEqual(found_size, expected_size)
+        # Test - Should not raise an exception
+        verification.verify_size(test_file, expected_size)
 
     def test_size_incorrect(self):
         # Setup
@@ -37,40 +33,26 @@ class VerificationTests(unittest.TestCase):
         test_file = StringIO('Test data')
 
         # Test
-        valid, found_size = verification.verify_size(test_file, 1)
-
-        # Verify
-        self.assertTrue(not valid)
-        self.assertEqual(found_size, expected_size)
+        self.assertRaises(verification.VerificationException, verification.verify_size, test_file, 1)
 
     def test_checksum_sha256(self):
         # Setup
         test_file = StringIO('Test data')
         expected_checksum = 'e27c8214be8b7cf5bccc7c08247e3cb0c1514a48ee1f63197fe4ef3ef51d7e6f'
 
-        # Test
-        valid, found_checksum = verification.verify_checksum(test_file, verification.TYPE_SHA256,
-                                                             expected_checksum)
-
-        # Verify
-        self.assertTrue(valid)
-        self.assertEqual(found_checksum, expected_checksum)
+        # Test - Should not raise an exception
+        verification.verify_checksum(test_file, verification.TYPE_SHA256, expected_checksum)
 
     def test_checksum_sha256_incorrect(self):
         # Setup
         test_file = StringIO('Test data')
-        expected_checksum = 'e27c8214be8b7cf5bccc7c08247e3cb0c1514a48ee1f63197fe4ef3ef51d7e6f'
 
         # Test
-        valid, found_checksum = verification.verify_checksum(test_file, verification.TYPE_SHA256,
-                                                             'foo')
-
-        # Verify
-        self.assertTrue(not valid)
-        self.assertEqual(found_checksum, expected_checksum)
+        self.assertRaises(verification.VerificationException, verification.verify_checksum,
+                          test_file, verification.TYPE_SHA256, 'foo')
 
     def test_checksum_invalid_checksum(self):
-        self.assertRaises(ValueError, verification.verify_checksum,
+        self.assertRaises(verification.InvalidChecksumType, verification.verify_checksum,
                           StringIO(), 'fake-type', 'irrelevant')
 
     def test_checksum_algorithm_mappings(self):

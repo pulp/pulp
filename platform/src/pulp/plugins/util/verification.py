@@ -32,6 +32,20 @@ CHECKSUM_FUNCTIONS = {
 }
 
 
+class InvalidChecksumType(ValueError):
+    """
+    Raised when the specified checksum isn't one of the supported TYPE_* constants.
+    """
+    pass
+
+
+class VerificationException(ValueError):
+    """
+    Raised when the verification of a file fails.
+    """
+    pass
+
+
 def verify_size(file_object, expected_size):
     """
     Returns whether or not the size of the contents of the given file-like object match
@@ -41,16 +55,15 @@ def verify_size(file_object, expected_size):
     :param expected_size: size to verify the contents of file_object against
     :type  expected_size: int
 
-    :return: tuple of boolean indicating if the expected size was found and the actual size
-             that was found
-    :rtype:  (bool, int)
+    :raises VerificationException: if the file did not pass the verification
     """
 
     # Validate the size by seeking to the end to find the file size with tell()
     file_object.seek(0, 2)
     found_size = file_object.tell()
 
-    return found_size == expected_size, found_size
+    if found_size != expected_size:
+        raise VerificationException(found_size)
 
 
 def verify_checksum(file_object, checksum_type, checksum_value):
@@ -65,15 +78,11 @@ def verify_checksum(file_object, checksum_type, checksum_value):
     :param checksum_value: expected checksum to verify against
     :type  checksum_value: str
 
-    :return: tuple of boolean indicating if the expected checksum was found and the actual
-             checksum that was found
-    :rtype:  (bool, str)
-
     :raises ValueError: if the checksum_type isn't one of the TYPE_* constants
     """
 
     if checksum_type not in CHECKSUM_FUNCTIONS:
-        raise ValueError('Unknown checksum type [%s]' % checksum_type)
+        raise InvalidChecksumType('Unknown checksum type [%s]' % checksum_type)
 
     hasher = CHECKSUM_FUNCTIONS[checksum_type]()
 
@@ -83,4 +92,5 @@ def verify_checksum(file_object, checksum_type, checksum_value):
         hasher.update(bits)
         bits = file_object.read(VALIDATION_CHUNK_SIZE)
 
-    return hasher.hexdigest() == checksum_value, hasher.hexdigest()
+    if hasher.hexdigest() != checksum_value:
+        raise VerificationException(hasher.hexdigest())
