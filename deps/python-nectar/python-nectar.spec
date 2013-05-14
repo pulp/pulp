@@ -21,6 +21,10 @@ Requires:       python-eventlet >= 0.12.0
 Requires:       python-isodate >= 0.4.9
 Requires:       python-pycurl >= 7.19.0
 Requires:       python-requests >= 1.2.0
+# RHEL6 ONLY
+%if 0%{?rhel} == 6
+Requires: curl => 7.19.0
+%endif
 
 %description
 %{summary}
@@ -47,6 +51,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Mon May 13 2013 Jason L Connor (jconnor@redhat.com) 0.90.0-1
+- brought in new revent downloader to replace old eventlet downloader
+- bumped version in preparation of 1.0.0 release
+
 * Wed May 08 2013 Jason L Connor (jconnor@redhat.com) 0.0.90-1
 - cut project from pulp
 - initial spec file and setup.py
