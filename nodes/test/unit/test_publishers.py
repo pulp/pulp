@@ -14,8 +14,8 @@ import shutil
 import tempfile
 
 from unittest import TestCase
-from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
-from pulp.common.download.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.config import DownloaderConfig
 from pulp_node.distributors.http.publisher import HttpPublisher
 from pulp_node.manifest import Manifest
 

@@ -15,8 +15,8 @@ from logging import getLogger
 from gettext import gettext as _
 
 from pulp.plugins.importer import Importer
-from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
-from pulp.common.download.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.config import DownloaderConfig
 
 from pulp_node import constants
 from pulp_node.error import CaughtException
@@ -169,7 +169,7 @@ class NodesHttpImporter(Importer):
         :param config: The importer configuration.
         :param config: pulp.plugins.config.PluginCallConfiguration
         :return: A configured downloader
-        :rtype: pulp.common.download.downloaders.base.PulpDownloader
+        :rtype: nectar.downloaders.base.Downloader
         """
         ssl = config.get(constants.SSL_KEYWORD, {})
         conf = DownloaderConfig(

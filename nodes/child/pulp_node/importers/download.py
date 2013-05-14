@@ -14,8 +14,8 @@ import errno
 
 from logging import getLogger
 
-from pulp.common.download.listener import AggregatingEventListener
-from pulp.common.download.request import DownloadRequest
+from nectar.listener import AggregatingEventListener
+from nectar.request import DownloadRequest
 from pulp_node.error import UnitDownloadError
 
 
