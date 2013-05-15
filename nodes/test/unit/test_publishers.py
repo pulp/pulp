@@ -17,12 +17,14 @@ from unittest import TestCase
 from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
 from pulp.common.download.config import DownloaderConfig
 from pulp_node.distributors.http.publisher import HttpPublisher
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import ManifestReader
 
 
 class TestHttp(TestCase):
 
-    TMP_ROOT = '/tmp/pulp/nodes/transport'
+    TMP_ROOT = '/tmp/pulp/nodes/publishing'
+
+    RELATIVE_PATH = 'redhat/packages'
 
     UNITS = [
         'test_1.unit',
@@ -36,7 +38,7 @@ class TestHttp(TestCase):
         self.tmpdir = tempfile.mkdtemp(dir=self.TMP_ROOT)
         self.unit_dir = os.path.join(self.tmpdir, 'unit_storage')
         shutil.rmtree(self.tmpdir)
-        os.makedirs(self.unit_dir)
+        os.makedirs(os.path.join(self.unit_dir, self.RELATIVE_PATH))
 
     def shutDown(self):
         shutil.rmtree(self.TMP_ROOT)
@@ -46,11 +48,12 @@ class TestHttp(TestCase):
         units = []
         for n in range(0, 3):
             fn = 'test_%d' % n
-            path = os.path.join(self.unit_dir, fn)
+            relative_path = os.path.join(self.RELATIVE_PATH, fn)
+            path = os.path.join(self.unit_dir, relative_path)
             fp = open(path, 'w')
             fp.write(fn)
             fp.close()
-            unit = {'type_id':'unit', 'unit_key':{'n':n}, 'storage_path':path}
+            unit = {'type_id':'unit', 'unit_key':{'n':n}, 'storage_path':path, 'relative_path':relative_path}
             units.append(unit)
         # test
         # publish
@@ -64,15 +67,16 @@ class TestHttp(TestCase):
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
         manifest_path = p.manifest_path()
-        manifest = Manifest()
-        url = 'file://'+manifest_path
-        units = manifest.read(url, downloader)
+        manifest_reader = ManifestReader(downloader)
+        url = 'file://' + manifest_path
+        manifest = manifest_reader.read(url)
+        units = manifest.get_units()
         n = 0
         for unit in units:
             file_content = 'test_%d' % n
             _download = unit['_download']
             url = _download['url']
-            self.assertEqual(url.rsplit('/', 1)[0],'/'.join((base_url, publish_dir[1:], repo_id, 'content')))
+            self.assertEqual(url, '/'.join((base_url, publish_dir[1:], repo_id, unit['relative_path'])))
             path = url.split('//', 1)[1]
             self.assertTrue(os.path.islink(path))
             f = open(path)

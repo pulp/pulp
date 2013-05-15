@@ -9,19 +9,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
-def unit_dictionary(units):
-    """
-    Build a dictionary of units keyed by UnitKey using
-    the specified list of units.
-    :param units: A list of content units.
-        Each unit is either: (Unit|dict)
-    :type units: list
-    :return: A dictionary of units keyed by UnitKey.
-    :rtype: dict
-    """
-    items = [(UniqueKey(u), u) for u in units]
-    return dict(items)
+import os
+import json
 
 
 class UniqueKey(object):
@@ -35,14 +24,10 @@ class UniqueKey(object):
     def __init__(self, unit):
         """
         :param unit: A content unit.
-        :type unit: (dict|Unit)
+        :type unit: dict
         """
-        if isinstance(unit, dict):
-            type_id = unit['type_id']
-            unit_key = tuple(sorted(unit['unit_key'].items()))
-        else:
-            type_id = unit.type_id
-            unit_key = tuple(sorted(unit.unit_key.items()))
+        type_id = unit['type_id']
+        unit_key = tuple(sorted(unit['unit_key'].items()))
         self.uid = (type_id, unit_key)
 
     def __hash__(self):
@@ -60,36 +45,59 @@ class UnitInventory(object):
     The unit inventory contains both the parent and child inventory
     of content units associated with a specific repository.  Each is contained
     within a dictionary keyed by {UnitKey} to ensure uniqueness.
-    :ivar child: The child inventory.
-    :type child: dict
-    :ivar parent: The parent inventory.
-    :type parent: dict
     """
 
-    def __init__(self, child, parent):
-        """
-        :param child: The child inventory.
-        :type child: dict
-        :param parent: The parent inventory.
-        :type parent: dict
-        """
-        self.child = child
-        self.parent = parent
+    @staticmethod
+    def _import_manifest(manifest):
+        units = {}
+        for unit in manifest.get_units():
+            key = UniqueKey(unit)
+            path = os.path.join(manifest.tmp_dir, 'parent_unit_%.5d' % len(units))
+            with open(path, 'w+') as fp:
+                json.dump(unit, fp)
+            units[key] = path
+        return units
 
-    def parent_only(self):
+    @staticmethod
+    def _import_units_on_child(unit_iterator):
+        units = {}
+        for unit in unit_iterator:
+            del unit['metadata']
+            key = UniqueKey(unit)
+            units[key] = unit
+        return units
+
+    def __init__(self, manifest, unit_iterator):
+        """
+        :param manifest: The manifest containing the units associated
+            with a specific repository.
+        :type manifest: pulp_node.manifest.Manifest
+        :param unit_iterator: An iterator of the units associated
+            with a specific repository.
+        :type unit_iterator: iterable
+        """
+        self.manifest = manifest
+        self.units_on_parent = self._import_manifest(manifest)
+        self.units_on_child = self._import_units_on_child(unit_iterator)
+
+    def units_on_parent_only(self):
         """
         Listing of units contained in the parent inventory
         but not contained in the child inventory.
-        :return: List of units that need to be added.
-        :rtype: list
+        :return: Iterator of units that need to be added.
+        :rtype: generator
         """
-        return [u for k, u in self.parent.items() if k not in self.child]
+        paths = [p for k, p in self.units_on_parent.items() if k not in self.units_on_child]
+        for path in paths:
+            with open(path) as fp:
+                unit = json.load(fp)
+                yield unit
 
-    def child_only(self):
+    def units_on_child_only(self):
         """
         Listing of units contained in the child inventory
         but not contained in the parent inventory.
         :return: List of units that need to be purged.
         :rtype: list
         """
-        return [u for k, u in self.child.items() if k not in self.parent]
+        return [u for k, u in self.units_on_child.items() if k not in self.units_on_parent]

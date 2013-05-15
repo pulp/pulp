@@ -63,6 +63,8 @@ class UnitsIterator:
         unit_key = {}
         for key in typedef['unit_key']:
             unit_key[key] = metadata.pop(key, None)
+        metadata.pop('_id', None)
+        metadata.pop('_id', None)
         storage_dir = pulp_conf.get('server', 'storage_dir')
         storage_path = metadata.pop('_storage_path', None)
         if storage_path:

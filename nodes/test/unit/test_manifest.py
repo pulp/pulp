@@ -23,8 +23,6 @@ from pulp.common.download.config import DownloaderConfig
 from pulp_node import manifest
 from pulp_node.manifest import ManifestWriter, ManifestReader
 
-manifest.MAX_UNITS_FILE_SIZE = 20
-
 
 class TestManifest(TestCase):
 
@@ -59,20 +57,18 @@ class TestManifest(TestCase):
         self.assertTrue(os.path.exists(path))
         fp = gzip.open(path)
         s = fp.read()
-        json_manifest = json.loads(s)
+        manifest_in = json.loads(s)
         fp.close()
         units_in = []
-        for unit_file in json_manifest['unit_files']:
-            path = os.path.join(self.tmp_dir, unit_file)
-            fp = gzip.open(path)
-            while True:
-                json_unit = fp.readline()
-                if json_unit:
-                    units_in.append(json.loads(json_unit))
-                else:
-                    break
-            fp.close()
-        self.assertEqual(json_manifest['total_units'], self.NUM_UNITS)
+        path = os.path.join(self.tmp_dir, manifest_in[manifest.UNIT_FILE])
+        fp = gzip.open(path)
+        while True:
+            json_unit = fp.readline()
+            if json_unit:
+                units_in.append(json.loads(json_unit))
+            else:
+                break
+        fp.close()
         self.verify(units, units_in)
 
     def test_round_trip(self):
@@ -88,10 +84,10 @@ class TestManifest(TestCase):
         writer.close()
         cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
-        reader = ManifestReader()
+        reader = ManifestReader(downloader)
         path = os.path.join(self.tmp_dir, manifest.MANIFEST_FILE_NAME)
         url = 'file://%s' % path
-        manifest_in = reader.read_manifest(url, downloader)
-        units_in = list(reader.unit_iterator(manifest_in, downloader))
+        manifest_in = reader.read(url)
+        units_in = list(manifest_in.get_units())
         # Verify
         self.verify(units, units_in)

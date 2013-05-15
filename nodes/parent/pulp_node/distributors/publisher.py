@@ -31,15 +31,15 @@ def join(*parts):
     parts = parts[0:1]+[p.strip('/') for p in parts[1:]]
     return '/'.join(parts)
 
-def mkdir(file_path):
+
+def mkdir(path):
     """
-    Ensure the directory for the specified file path exists.
+    Ensure the directory at the specified path exists.
     :param file_path: The path to a file.
     :type file_path: str
     """
-    dir_path = os.path.dirname(file_path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 class Publisher(object):
@@ -109,9 +109,9 @@ class FilePublisher(Publisher):
         if not storage_path:
             # not all units are associated with files.
             return unit, None
-        relative_path = join(self.repo_id, 'content', storage_path)
+        relative_path = join(self.repo_id, unit['relative_path'])
         published_path = join(self.publish_dir, relative_path)
-        mkdir(published_path)
+        mkdir(os.path.dirname(published_path))
         if not os.path.islink(published_path):
             os.symlink(storage_path, published_path)
         return unit, relative_path

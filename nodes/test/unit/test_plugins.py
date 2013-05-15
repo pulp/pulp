@@ -446,10 +446,11 @@ class TestDistributor(PluginTestBase):
         # Verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
-        manifest = ManifestReader()
+        manifest_reader = ManifestReader(downloader)
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
-        units = list(manifest.read(url, downloader))
+        manifest = manifest_reader.read(url)
+        units = list(manifest.get_units())
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
             unit = units[n]

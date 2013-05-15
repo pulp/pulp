@@ -10,9 +10,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import shutil
 
 from unittest import TestCase
 from mock import Mock, patch
+from tempfile import mkdtemp
 
 from pulp.plugins.model import Unit
 from pulp.common.download.downloaders.curl import HTTPCurlDownloader
@@ -64,6 +66,16 @@ class TestRequest(SyncRequest):
         return self.cancel_on and self.cancelled_call_count >= self.cancel_on
 
 
+class TestManifest:
+
+    def __init__(self, tmp_dir, units=None):
+        self.tmp_dir = tmp_dir
+        self.units = units or []
+
+    def get_units(self):
+        return self.units
+
+
 REPO_ID = 'foo'
 
 DOWNLOADER_ERROR_REPORT = dict(response_code=401, message='go fish')
@@ -84,6 +96,14 @@ class TestBase(TestCase):
             'data',
             'pulp.conf')
         pulp_conf.read(path)
+
+    def setUp(self):
+        super(TestBase, self).setUp()
+        self.tmp_dir = mkdtemp()
+
+    def tearDown(self):
+        super(TestBase, self).tearDown()
+        shutil.rmtree(self.tmp_dir, ignore_errors=True)
 
     def request(self, cancel_on=0):
         conduit = TestConduit()
@@ -148,13 +168,15 @@ class TestBase(TestCase):
         request = self.request()
         # Test
         unit = TestUnit()
-        inventory = UnitInventory({unit.id: unit}, {})
+        extra_units = [dict(unit_id=unit.id, type_id='T', unit_key={}, metadata={})]
+        manifest = TestManifest(self.tmp_dir)
+        inventory = UnitInventory(manifest, extra_units)
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
         self.assertEqual(len(request.summary.errors), 1)
         self.assertEqual(request.summary.errors[0].error_id, DeleteUnitError.ERROR_ID)
 
-    @patch('pulp_node.importers.strategies.ImporterStrategy._child_units', side_effect=ValueError())
+    @patch('pulp_node.query.get_units', side_effect=ValueError())
     def test_get_child_units_exception(self, *unused):
         # Setup
         request = self.request()
@@ -162,15 +184,8 @@ class TestBase(TestCase):
         strategy = ImporterStrategy()
         self.assertRaises(GetChildUnitsError, strategy._unit_inventory, request)
 
-    @patch('pulp_node.importers.strategies.ImporterStrategy._child_units', side_effect=GetChildUnitsError(REPO_ID))
-    def test_get_child_units_manifest_error(self, *unused):
-        # Setup
-        request = self.request()
-        # Test
-        strategy = ImporterStrategy()
-        self.assertRaises(GetChildUnitsError, strategy._unit_inventory, request)
-
-    @patch('pulp_node.importers.strategies.ImporterStrategy._parent_units', side_effect=ValueError())
+    @patch('pulp_node.query.get_units', return_value=[])
+    @patch('pulp_node.manifest.ManifestReader.read', side_effect=ValueError())
     def test_get_parent_units_exception(self, *unused):
         # Setup
         request = self.request()
@@ -178,7 +193,8 @@ class TestBase(TestCase):
         strategy = ImporterStrategy()
         self.assertRaises(GetParentUnitsError, strategy._unit_inventory, request)
 
-    @patch('pulp_node.importers.strategies.ImporterStrategy._parent_units', side_effect=MANIFEST_ERROR)
+    @patch('pulp_node.query.get_units', return_value=[])
+    @patch('pulp_node.manifest.ManifestReader.read', side_effect=MANIFEST_ERROR)
     def test_get_parent_units_manifest_error(self, *unused):
         # Setup
         request = self.request()
@@ -190,8 +206,11 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         request.downloader.download = Mock()
-        unit = dict(id=1, type_id='T', unit_key={}, metadata=dict(_id=3, _ns=4), _download='http://')
-        inventory = UnitInventory({}, {unit['id']: unit})
+        unit = TestUnit()
+        units = [dict(unit_id=unit.id, type_id='T', unit_key={}, metadata={})]
+        manifest = TestManifest(self.tmp_dir, units)
+        inventory = UnitInventory(manifest, [])
+        strategy = ImporterStrategy()
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -202,7 +221,9 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         unit = TestUnit()
-        inventory = UnitInventory({unit.id: unit}, {})
+        extra_units = [dict(unit_id=unit.id, type_id='T', unit_key={}, metadata={})]
+        manifest = TestManifest(self.tmp_dir)
+        inventory = UnitInventory(manifest, extra_units)
         request.conduit.remove_unit = Mock()
         # Test
         strategy = ImporterStrategy()
@@ -216,13 +237,14 @@ class TestBase(TestCase):
         request.downloader.download = Mock()
         download = dict(url='http://redhat.com/file')
         unit = dict(
-            id='123',
+            unit_id='123',
             type_id='T',
             unit_key={},
-            metadata=dict(_id=3, _ns=4),
+            metadata={},
             _download=download,
             _storage_path='/tmp/file')
-        inventory = UnitInventory({}, {unit['id']: unit})
+        manifest = TestManifest(self.tmp_dir, [unit])
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -237,13 +259,14 @@ class TestBase(TestCase):
         request.downloader.cancel = Mock()
         download = dict(url='http://redhat.com/file')
         unit = dict(
-            id='123',
+            unit_id='123',
             type_id='T',
             unit_key={},
-            metadata=dict(_id=3, _ns=4),
+            metadata={},
             _download=download,
             _storage_path='/tmp/file')
-        inventory = UnitInventory({}, {unit['id']: unit})
+        manifest = TestManifest(self.tmp_dir, [unit])
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -259,14 +282,15 @@ class TestBase(TestCase):
         request.downloader.cancel = Mock()
         download = dict(url='http://redhat.com/file')
         unit = dict(
-            id='123',
+            unit_id='123',
             type_id='T',
             unit_key={},
-            metadata=dict(_id=3, _ns=4),
+            metadata={},
             _download=download,
-            _relative_path='files/testing',
-            storage_path='/tmp/file')
-        inventory = UnitInventory({}, {unit['id']: unit})
+            storage_path='/tmp/file',
+            relative_path='files/testing')
+        manifest = TestManifest(self.tmp_dir, [unit])
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -280,16 +304,17 @@ class TestBase(TestCase):
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='file://%s' % __file__)
+        download = dict(url='http://redhat.com/file')
         unit = dict(
-            id='123',
+            unit_id='123',
             type_id='T',
             unit_key={},
-            metadata=dict(_id=3, _ns=4),
+            metadata={},
             _download=download,
-            _relative_path='files/testing',
-            storage_path='/tmp/file')
-        inventory = UnitInventory({}, {unit['id']: unit})
+            storage_path='/tmp/file',
+            relative_path='files/testing')
+        manifest = TestManifest(self.tmp_dir, [unit])
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)

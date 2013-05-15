@@ -25,6 +25,7 @@ import gzip
 
 from logging import getLogger
 from tempfile import mktemp, mkdtemp
+from uuid import uuid4
 
 from pulp.common.download.request import DownloadRequest
 
@@ -32,17 +33,10 @@ log = getLogger(__name__)
 
 
 MANIFEST_FILE_NAME = 'manifest.json.gz'
-UNITS_FILE_NAME = 'units-%d.json.gz'
-KEYS_FILE_NAME = 'keys.json.gz'
-MAX_UNITS_FILE_SIZE = 0x40000000  # 1GB
+UNITS_FILE_NAME = 'units.json.gz'
 
-URL = 'url'
-UNIT_FILES = 'unit_files'
-TOTAL_UNITS = 'total_units'
-
-UNIT_ID = 'unit_id'
-TYPE_ID = 'type_id'
-UNIT_KEY = 'unit_key'
+MANIFEST_ID = 'manifest_id'
+UNIT_FILE = 'unit_file'
 
 
 # --- manifest --------------------------------------------------------------------------
@@ -59,28 +53,15 @@ class ManifestWriter(object):
 
     def __init__(self, dir_path):
         self.dir_path = dir_path
-        self.units = 0
-        self.unit_files = []
-        self.unit_writer = None
-        self.unit_catalog = []
+        self.unit_writer = UnitWriter(os.path.join(dir_path, UNITS_FILE_NAME))
 
     def open(self):
         if not os.path.exists(self.dir_path):
             os.makedirs(self.dir_path)
-        self.open_unit_writer()
-
-    def open_unit_writer(self):
-        file_name = UNITS_FILE_NAME % len(self.unit_files)
-        path = os.path.join(self.dir_path, file_name)
-        self.unit_files.append(file_name)
-        self.unit_writer = UnitWriter(path)
 
     def close(self):
         self.unit_writer.close()
-        manifest = dict(
-            total_units=self.units,
-            unit_catalog=self.unit_catalog,
-            unit_files=self.unit_files)
+        manifest = {MANIFEST_ID: str(uuid4()), UNIT_FILE: UNITS_FILE_NAME}
         path = os.path.join(self.dir_path, MANIFEST_FILE_NAME)
         json_manifest = json.dumps(manifest, indent=2)
         with open(path, 'w+') as fp:
@@ -93,154 +74,109 @@ class ManifestWriter(object):
         :raise IOError on I/O errors.
         :raise ValueError on json encoding errors
         """
-        self.update_catalog(unit)
-        json_unit = json.dumps(unit)
-        if self.unit_writer.capacity() < len(json_unit):
-            self.unit_writer.close()
-            self.open_unit_writer()
-        self.unit_writer.add(json_unit)
-        self.units += 1
-
-    def update_catalog(self, unit):
-        """
-        Update the unit catalog.
-        :param unit: A content unit.
-        :type unit: dict
-        """
-        entry = {}
-        for key in (UNIT_ID, TYPE_ID, UNIT_KEY):
-            entry[key] = unit[key]
-        self.unit_catalog.append(entry)
+        self.unit_writer.add(unit)
 
 
 class UnitWriter(object):
 
     def __init__(self, path):
         self.path = path
-        self.bytes_written = 0
         self.fp = open(path, 'w+')
 
-    def add(self, json_unit):
-        self.bytes_written += len(json_unit)
+    def add(self, unit):
+        json_unit = json.dumps(unit)
         self.fp.write(json_unit)
         self.fp.write('\n')
 
     def close(self):
-        self.fp.close()
-        compress(self.path)
+        if self.is_open():
+            self.fp.close()
+            compress(self.path)
+            self.fp = None
 
-    def capacity(self):
-        return MAX_UNITS_FILE_SIZE - self.bytes_written
+    def is_open(self):
+        return self.fp is not None
 
-    def __len__(self):
-        return self.bytes_written
+    def __del__(self):
+        self.close()
+
+
+class Manifest(object):
+
+    def __init__(self, tmp_dir, manifest_id, unit_path):
+        self.tmp_dir = tmp_dir
+        self.manifest_id = manifest_id
+        self.unit_path = unit_path
+
+    def get_units(self):
+        return UnitIterator(self.unit_path)
+
+    def clean_up(self):
+        shutil.rmtree(self.tmp_dir, ignore_errors=True)
+
+    def __del__(self):
+        self.clean_up()
 
 
 class ManifestReader(object):
 
-    def read_manifest(self, url, downloader):
+    def __init__(self, downloader):
+        """
+        :param downloader: The downloader to use.
+        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+        """
+        self.tmp_dir = mkdtemp()
+        self.downloader = downloader
+
+    def read(self, url):
         """
         Download and return the content of a published manifest.
         :param url: The URL for the manifest.
         :type url: str
-        :param downloader: The downloader to use.
-        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
         :return: The manifest.
-        :rtype: dict
+        :rtype: Manifest
         :raise HTTPError, URL errors.
         :raise ValueError, json decoding errors
         """
-        tmp_dir = mkdtemp()
-        try:
-            destination = os.path.join(tmp_dir, MANIFEST_FILE_NAME)
-            request = DownloadRequest(str(url), destination)
-            request_list = [request]
-            downloader.download(request_list)
-            fp = gzip.open(destination)
-            try:
-                manifest = json.load(fp)
-                manifest[URL] = url
-                return manifest
-            finally:
-                fp.close()
-        finally:
-            shutil.rmtree(tmp_dir)
+        manifest = self._download_manifest(url)
+        base_url = url.rsplit('/', 1)[0]
+        manifest_id = manifest[MANIFEST_ID]
+        unit_path = self._download_units(base_url, manifest[UNIT_FILE])
+        return Manifest(self.tmp_dir, manifest_id, unit_path)
 
-    def unit_iterator(self, manifest, downloader):
-        """
-        Create and return a units iterator.
-        :param manifest: The manifest object.
-        :type manifest: dict
-        :param downloader: The downloader to use.
-        :return: An initialized iterator.
-        :rtype: UnitsIterator
-        :raise HTTPError, URL errors.
-        """
-        request_list = []
-        tmp_dir = mkdtemp()
-        base_url = manifest[URL].rsplit('/', 1)[0]
-        for file_name in manifest[UNIT_FILES]:
-            destination = os.path.join(tmp_dir, file_name)
-            url = '/'.join((base_url, file_name))
-            request = DownloadRequest(str(url), destination)
-            request_list.append(request)
-        downloader.download(request_list)
-        unit_files = [r.destination for r in request_list]
-        total_units = manifest[TOTAL_UNITS]
-        return UnitsIterator(tmp_dir, total_units, unit_files)
+    def _download_manifest(self, url):
+        destination = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
+        request = DownloadRequest(str(url), destination)
+        request_list = [request]
+        self.downloader.download(request_list)
+        with gzip.open(destination) as fp:
+            return json.load(fp)
+
+    def _download_units(self, base_url, unit_file):
+        destination = os.path.join(self.tmp_dir, unit_file)
+        url = '/'.join((base_url, unit_file))
+        request = DownloadRequest(str(url), destination)
+        request_list = [request]
+        self.downloader.download(request_list)
+        return destination
 
 
-class UnitsIterator:
-    """
-    Iterates a list of paths to files containing json encoded lists of units.
-    """
+class UnitIterator:
 
     @staticmethod
-    def get_unit_files(paths):
-        for path in paths:
-            yield gzip.open(path)
+    def get_units(path):
+        with gzip.open(path) as fp:
+            while True:
+                json_unit = fp.readline()
+                if not json_unit:
+                    break
+                yield json.loads(json_unit)
 
-    @staticmethod
-    def get_units(paths):
-        for fp in UnitsIterator.get_unit_files(paths):
-            with fp:
-                while True:
-                    json_unit = fp.readline()
-                    if not json_unit:
-                        break
-                    yield json.loads(json_unit)
-
-    def __init__(self, tmp_dir, total_units, unit_files):
-        """
-        :param tmp_dir:  The directory containing the files.
-        :type tmp_dir: str
-        :param total_units: The aggregate number of units contained in the files.
-        :type total_units: int
-        :param unit_files: A list of unit file names.
-        :type unit_files: list
-        """
-        self.tmp_dir = tmp_dir
-        self.total_units = total_units
-        paths = [os.path.join(tmp_dir, fn) for fn in unit_files]
-        self.unit_generator = UnitsIterator.get_units(paths)
+    def __init__(self, path):
+        self.unit_generator = UnitIterator.get_units(path)
 
     def next(self):
-        """
-        Get the next unit.
-        Reads files as necessary to provide an aggregated list of units.
-        :return: The next unit.
-        :rtype: dict
-        :raise StopIteration when empty.
-        :raise IOError on I/O errors.
-        :raise ValueError on json decoding errors
-        """
         return self.unit_generator.next()
-
-    def __del__(self):
-        shutil.rmtree(self.tmp_dir, ignore_errors=True)
-
-    def __len__(self):
-        return self.total_units
 
     def __iter__(self):
         return self

@@ -19,13 +19,13 @@ the strategies provided here.
 from gettext import gettext as _
 from logging import getLogger
 
-from pulp.plugins.model import Unit
+from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
 from pulp_node import query
 from pulp_node.manifest import ManifestReader
-from pulp_node.importers.inventory import UnitInventory, unit_dictionary
+from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import DownloadListener, UnitDownloadRequest
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
     DeleteUnitError, CaughtException)
@@ -160,26 +160,25 @@ class ImporterStrategy(object):
         :rtype: UnitInventory
         """
         # fetch child units
-        child = {}
         try:
-            units = self._child_units(request)
-            child.update(units)
+            unit_iterator = query.get_units(request.repo_id)
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetChildUnitsError(request.repo_id)
         # fetch parent units
-        parent = {}
         try:
-            units = self._parent_units(request)
-            parent.update(units)
+            request.progress.begin_manifest_download()
+            url = request.config.get(constants.MANIFEST_URL_KEYWORD)
+            manifest_reader = ManifestReader(request.downloader)
+            manifest = manifest_reader.read(url)
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
-        return UnitInventory(child, parent)
+        return UnitInventory(manifest, unit_iterator)
 
     def _missing_units(self, unit_inventory):
         """
@@ -193,9 +192,7 @@ class ImporterStrategy(object):
         """
         new_units = []
         storage_dir = pulp_conf.get('server', 'storage_dir')
-        for unit in unit_inventory.parent_only():
-            unit['metadata'].pop('_id')
-            unit['metadata'].pop('_ns')
+        for unit in unit_inventory.units_on_parent_only():
             type_id = unit['type_id']
             unit_key = unit['unit_key']
             metadata = unit['metadata']
@@ -255,44 +252,24 @@ class ImporterStrategy(object):
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
-        for unit in unit_inventory.child_only():
+        for unit in unit_inventory.units_on_child_only():
             if request.cancelled():
                 return
             try:
-                request.conduit.remove_unit(unit)
+                _unit = AssociatedUnit(
+                    unit['type_id'],
+                    unit['unit_key'],
+                    {},
+                    None,
+                    None,
+                    None,
+                    unit['owner_type'],
+                    unit['owner_id'])
+                _unit.id = unit['unit_id']
+                request.conduit.remove_unit(_unit)
             except Exception:
-                log.exception(unit.id)
+                log.exception(unit['unit_id'])
                 request.summary.errors.append(DeleteUnitError(request.repo_id))
-
-    def _child_units(self, request):
-        """
-        Fetch the child units using the conduit.  The conduit will
-        restrict this search to only those associated with the repository
-        to which it is pre-configured.
-        :param request: A synchronization request.
-        :type request: SyncRequest
-        :return: A dictionary of units keyed by UnitKey.
-        :rtype: dict
-        """
-        units = query.get_units(request.repo_id)
-        return unit_dictionary(units)
-
-    def _parent_units(self, request):
-        """
-        Fetch the list of units published by the parent nodes distributor.
-        This is performed by reading the manifest at the URL defined in
-        the configuration.
-        :param request: A synchronization request.
-        :type request: SyncRequest
-        :return: A dictionary of units keyed by UnitKey.
-        :rtype: dict
-        """
-        request.progress.begin_manifest_download()
-        url = request.config.get(constants.MANIFEST_URL_KEYWORD)
-        reader = ManifestReader()
-        manifest = reader.read_manifest(url, request.downloader)
-        units = reader.unit_iterator(manifest, request.downloader)
-        return unit_dictionary(units)
 
 
 # --- strategies ------------------------------------------------------------------------

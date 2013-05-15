@@ -145,28 +145,9 @@ class NodesHttpDistributor(Distributor):
         """
         units = query.get_units(repo.id)
         publisher = self.publisher(repo, config)
-        #units = self._prepare_units(units)
         publisher.publish(units)
         details = dict(unit_count=len(units))
         return conduit.build_success_report('succeeded', details)
-
-    def _prepare_units(self, units):
-        """
-        Prepare units to be published.
-            - add _relative storage path.
-        :param units: A list of units to be published.
-        :type units: list
-        """
-        prepared = []
-        storage_dir = pulp_conf.get('server', 'storage_dir')
-        for unit in units:
-            _unit = unit.__dict__
-            storage_path = _unit['storage_path']
-            if storage_path:
-                relative_path = storage_path[len(storage_dir):]
-                _unit['_relative_path'] = relative_path
-            prepared.append(_unit)
-        return prepared
 
     def publisher(self, repo, config):
         """
