@@ -83,10 +83,9 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_SYNC][0]
         options = group.options
 
-        self.assertEqual(3, len(options))
+        self.assertEqual(2, len(options))
         self.assertEqual(options[0], self.mixin.options_bundle.opt_feed)
-        self.assertEqual(options[1], self.mixin.options_bundle.opt_verify_size)
-        self.assertEqual(options[2], self.mixin.options_bundle.opt_verify_checksum)
+        self.assertEqual(options[1], self.mixin.options_bundle.opt_validate)
 
     def test_populate_ssl_group(self):
         group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_SSL][0]
@@ -122,18 +121,16 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         # Setup
         user_input = {
             self.mixin.options_bundle.opt_feed.keyword : 'feed-1',
-            self.mixin.options_bundle.opt_verify_size.keyword : True,
-            self.mixin.options_bundle.opt_verify_checksum.keyword : False,
+            self.mixin.options_bundle.opt_validate.keyword : True,
         }
 
         # Test
         parsed = self.mixin.parse_sync_group(user_input)
 
         # Verify
-        self.assertEqual(3, len(parsed))
+        self.assertEqual(2, len(parsed))
         self.assertEqual(parsed[constants.KEY_FEED], 'feed-1')
-        self.assertEqual(parsed[constants.KEY_VERIFY_SIZE], True)
-        self.assertEqual(parsed[constants.KEY_VERIFY_CHECKSUM], False)
+        self.assertEqual(parsed[constants.KEY_VALIDATE], True)
 
     def test_parse_ssl_group(self):
         # Setup
