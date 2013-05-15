@@ -21,11 +21,8 @@ docstring for more information.
 # Location of the external source to sync
 KEY_FEED = 'feed'
 
-# Boolean indicating if the synchronized units should be verified by size
-KEY_VERIFY_SIZE = 'verify_size'
-
-# Boolean indicating if the synchronized units should be verified by checksum
-KEY_VERIFY_CHECKSUM = 'verify_checksum'
+# Boolean indicating if the synchronized units should be verified by size and checksum
+KEY_VALIDATE = 'validate'
 
 # -- ssl ----------------------------------------------------------------------
 
