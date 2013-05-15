@@ -44,15 +44,10 @@ class OptionsBundle(object):
         d = _('URL of the external source repository to sync')
         self.opt_feed = PulpCliOption('--feed', d, required=False)
 
-        d = _('if "true", the size of each synchronized file will be verified against '
-              'the repo metadata; defaults to false')
-        self.opt_verify_size = PulpCliOption('--verify-size', d, required=False,
-                                             parse_func=parsers.parse_boolean)
-
-        d = _('if "true", the checksum of each synchronized file will be verified '
-              'against the repo metadata; defaults to false')
-        self.opt_verify_checksum = PulpCliOption('--verify-checksum', d, required=False,
-                                                 parse_func=parsers.parse_boolean)
+        d = _('if "true", the size and checksum of each synchronized file will be verified against '
+              'the repo metadata')
+        self.opt_validate = PulpCliOption('--validate', d, required=False,
+                                          parse_func=parsers.parse_boolean)
 
         # -- proxy options ------------------------------------------------------------
 
@@ -183,8 +178,7 @@ class ImporterConfigMixin(object):
         set to True in the constructor.
         """
         self.sync_group.add_option(self.options_bundle.opt_feed)
-        self.sync_group.add_option(self.options_bundle.opt_verify_size)
-        self.sync_group.add_option(self.options_bundle.opt_verify_checksum)
+        self.sync_group.add_option(self.options_bundle.opt_validate)
 
     def populate_ssl_group(self):
         """
@@ -259,8 +253,7 @@ class ImporterConfigMixin(object):
         """
         key_tuples = (
             (constants.KEY_FEED, self.options_bundle.opt_feed.keyword),
-            (constants.KEY_VERIFY_SIZE, self.options_bundle.opt_verify_size.keyword),
-            (constants.KEY_VERIFY_CHECKSUM, self.options_bundle.opt_verify_checksum.keyword),
+            (constants.KEY_VALIDATE, self.options_bundle.opt_validate.keyword),
         )
 
         config = {}
