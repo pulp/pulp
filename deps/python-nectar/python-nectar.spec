@@ -23,7 +23,7 @@ Requires:       python-pycurl >= 7.19.0
 Requires:       python-requests >= 1.2.0
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
-Requires: curl => 7.19.0
+Requires:       curl >= 7.19.0
 %endif
 
 %description
