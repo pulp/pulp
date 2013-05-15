@@ -15,8 +15,8 @@ from unittest import TestCase
 from mock import Mock, patch
 
 from pulp.plugins.model import Unit
-from pulp.common.download.downloaders.curl import HTTPCurlDownloader
-from pulp.common.download.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPCurlDownloader
+from nectar.config import DownloaderConfig
 from pulp.server.config import config as pulp_conf
 
 from pulp_node.importers.strategies import *

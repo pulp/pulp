@@ -17,7 +17,7 @@ Contains functions related to working with the Nectar downloading library.
 from functools import partial
 
 from pulp.common.plugins import importer_constants as constants
-from pulp.common.download.config import DownloaderConfig
+from nectar.config import DownloaderConfig
 
 
 def importer_config_to_nectar_config(importer_config):
@@ -28,7 +28,7 @@ def importer_config_to_nectar_config(importer_config):
            single dict view on the configuration
     :type  importer_config: dict
 
-    :rtype: pulp.common.download.config.DownloaderConfig
+    :rtype: nectar.config.DownloaderConfig
     """
 
     # Mapping of importer config key to downloader config key
