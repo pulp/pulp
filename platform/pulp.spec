@@ -171,6 +171,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
+Requires: python-nectar >= 0.90.0-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -188,7 +189,6 @@ Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9
-Requires: curl => 7.19.7
 %endif
 Obsoletes: pulp
 
@@ -233,7 +233,6 @@ Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
-Requires: python-eventlet >= 0.9
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -436,10 +435,10 @@ exit 0
 
 %changelog
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
-- 
+-
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
-- 
+-
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
 - 952775 - Fixed broken unit filter application when sorted by association
