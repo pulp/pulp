@@ -14,27 +14,29 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.config import config as pulp_conf
 
 
-# --- queries -----------------------------------------------------------------
+# --- nodes conduit  ----------------------------------------------------------
 
 
-def get_units(repo_id):
-    """
-    Get all units associated with a repository.
-    :param repo_id: The repository ID used to query the units.
-    :type repo_id: str
-    :return: unit iterator
-    :rtype: UnitsIterator
-    """
-    units = {}
-    types = {}
-    collection = RepoContentUnit.get_collection()
-    for unit in collection.find({'repo_id': repo_id}):
-        unit_id = unit['unit_id']
-        type_id = unit['unit_type_id']
-        units[unit_id] = unit
-        unit_list = types.setdefault(type_id, [])
-        unit_list.append(unit['unit_id'])
-    return UnitsIterator(units, types)
+class NodesConduit(object):
+
+    def get_units(self, repo_id):
+        """
+        Get all units associated with a repository.
+        :param repo_id: The repository ID used to query the units.
+        :type repo_id: str
+        :return: unit iterator
+        :rtype: UnitsIterator
+        """
+        units = {}
+        types = {}
+        collection = RepoContentUnit.get_collection()
+        for unit in collection.find({'repo_id': repo_id}):
+            unit_id = unit['unit_id']
+            type_id = unit['unit_type_id']
+            units[unit_id] = unit
+            unit_list = types.setdefault(type_id, [])
+            unit_list.append(unit['unit_id'])
+        return UnitsIterator(units, types)
 
 
 # --- typedef -----------------------------------------------------------------

@@ -23,7 +23,7 @@ from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
-from pulp_node import query
+from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import ManifestReader
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import DownloadListener, UnitDownloadRequest
@@ -161,7 +161,8 @@ class ImporterStrategy(object):
         """
         # fetch child units
         try:
-            unit_iterator = query.get_units(request.repo_id)
+            conduit = NodesConduit()
+            unit_iterator = conduit.get_units(request.repo_id)
         except NodeError:
             raise
         except Exception:

@@ -21,7 +21,7 @@ from pulp.server.db.model.repository import RepoContentUnit
 
 from pulp_node import constants
 from pulp_node.importers.http.importer import NodesHttpImporter
-from pulp_node.query import get_units
+from pulp_node.conduit import NodesConduit
 
 
 # --- constants ---------------------------------------------------------------
@@ -105,7 +105,8 @@ class QueryTests(ServerTests):
     def test_query(self):
         num_units = 5
         units_created = populate(num_units)
-        units = get_units(REPO_ID)
+        conduit = NodesConduit()
+        units = conduit.get_units(REPO_ID)
         self.assertEqual(len(units), len(units_created))
         unit_list = list(units)
         n = 0

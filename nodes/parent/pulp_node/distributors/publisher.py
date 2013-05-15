@@ -83,7 +83,7 @@ class FilePublisher(Publisher):
         Writes the units.json file and symlinks each of the
         files associated to the unit.storage_path.
         :param units: A list of units to publish.
-        :type units: list
+        :type units: iterable
         """
 
         dir_path = join(self.publish_dir, self.repo_id)
