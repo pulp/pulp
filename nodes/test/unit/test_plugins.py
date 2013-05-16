@@ -515,7 +515,8 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
-    def test_import(self):
+    @patch('pulp_node.manifest.Manifest.clean_up')
+    def test_import(self, mock_manifest_clean):
         # Setup
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.parentfs)
@@ -548,6 +549,7 @@ class ImporterTest(PluginTestBase):
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
+        self.assertTrue(mock_manifest_clean.called)
 
 
 # --- testing end-to-end -----------------------------------------------------

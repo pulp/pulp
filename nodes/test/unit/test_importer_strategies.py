@@ -72,8 +72,12 @@ class TestManifest:
         self.tmp_dir = tmp_dir
         self.units = units or []
 
-    def get_units(self):
-        return self.units
+    def get_units(self, indexes=None):
+        index = 0
+        for unit in self.units:
+            if indexes is None or index in indexes:
+                yield unit
+            index += 1
 
 
 REPO_ID = 'foo'

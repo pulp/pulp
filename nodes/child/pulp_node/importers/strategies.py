@@ -83,6 +83,7 @@ class SyncRequest(object):
         self.progress = progress
         self.summary = summary
         self.repo_id = repo_id
+        self.manifest = None
 
     def started(self):
         """
@@ -123,6 +124,12 @@ class ImporterStrategy(object):
         except Exception, e:
             log.exception(request.repo_id)
             request.summary.errors.append(CaughtException(e, request.repo_id))
+        finally:
+            if request.manifest is not None:
+                try:
+                    request.manifest.clean_up()
+                except Exception:
+                    log.exception('cleaning manifest, failed')
 
     def _synchronize(self, request):
         """
@@ -173,13 +180,13 @@ class ImporterStrategy(object):
             request.progress.begin_manifest_download()
             url = request.config.get(constants.MANIFEST_URL_KEYWORD)
             manifest_reader = ManifestReader(request.downloader)
-            manifest = manifest_reader.read(url)
+            request.manifest = manifest_reader.read(url)
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
-        return UnitInventory(manifest, unit_iterator)
+        return UnitInventory(request.manifest, unit_iterator)
 
     def _missing_units(self, unit_inventory):
         """

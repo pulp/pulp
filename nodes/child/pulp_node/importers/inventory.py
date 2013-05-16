@@ -9,9 +9,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import json
-
 
 class UniqueKey(object):
     """
@@ -50,12 +47,11 @@ class UnitInventory(object):
     @staticmethod
     def _import_manifest(manifest):
         units = {}
+        index = 0
         for unit in manifest.get_units():
             key = UniqueKey(unit)
-            path = os.path.join(manifest.tmp_dir, 'parent_unit_%.5d' % len(units))
-            with open(path, 'w+') as fp:
-                json.dump(unit, fp)
-            units[key] = path
+            units[key] = index
+            index += 1
         return units
 
     @staticmethod
@@ -87,11 +83,8 @@ class UnitInventory(object):
         :return: Iterator of units that need to be added.
         :rtype: generator
         """
-        paths = [p for k, p in self.units_on_parent.items() if k not in self.units_on_child]
-        for path in paths:
-            with open(path) as fp:
-                unit = json.load(fp)
-                yield unit
+        indexes = [i for k, i in self.units_on_parent.items() if k not in self.units_on_child]
+        return self.manifest.get_units(indexes)
 
     def units_on_child_only(self):
         """

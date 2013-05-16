@@ -32,9 +32,13 @@ from pulp.common.download.request import DownloadRequest
 log = getLogger(__name__)
 
 
+# --- constants -------------------------------------------------------------------------
+
+# files
 MANIFEST_FILE_NAME = 'manifest.json.gz'
 UNITS_FILE_NAME = 'units.json.gz'
 
+# fields within the manifest
 MANIFEST_ID = 'manifest_id'
 UNIT_FILE = 'unit_file'
 TOTAL_UNITS = 'total_units'
@@ -79,19 +83,42 @@ class ManifestWriter(object):
 
 
 class UnitWriter(object):
+    """
+    Writes json encoded content units to a file.
+    :ivar path: The absolute path to the file to be written.
+    :type path: str
+    :ivar fp: The file pointer used to write units to the file.
+    :type fp: A python file object.
+    :ivar total_units: Tracks the total number of units written.
+    :type total_units: int
+    """
 
     def __init__(self, path):
+        """
+        :param path: The absolute path to the file to be written.
+        :type path: str
+        """
         self.path = path
         self.fp = open(path, 'w+')
         self.total_units = 0
 
     def add(self, unit):
+        """
+        Add (write) the specified unit to the file as a json encoded string.
+        :param unit: A content unit.
+        :type unit: dict
+        """
         self.total_units += 1
         json_unit = json.dumps(unit)
         self.fp.write(json_unit)
         self.fp.write('\n')
 
     def close(self):
+        """
+        Close and compress the associated file.  This method is idempotent.
+        :return: The number of units written.
+        :rtype: int
+        """
         if self.is_open():
             self.fp.close()
             compress(self.path)
@@ -99,31 +126,25 @@ class UnitWriter(object):
         return self.total_units
 
     def is_open(self):
+        """
+        Get whether the writer is open.
+        :return: True if open.
+        :rtype: bool
+        """
         return self.fp is not None
 
     def __del__(self):
+        # just in case the writer is not properly closed.
         self.close()
 
 
-class Manifest(object):
-
-    def __init__(self, tmp_dir, manifest_id, unit_path, total_units):
-        self.tmp_dir = tmp_dir
-        self.manifest_id = manifest_id
-        self.unit_path = unit_path
-        self.total_units = total_units
-
-    def get_units(self):
-        return UnitIterator(self.unit_path, self.total_units)
-
-    def clean_up(self):
-        shutil.rmtree(self.tmp_dir, ignore_errors=True)
-
-    def __del__(self):
-        self.clean_up()
-
-
 class ManifestReader(object):
+    """
+    :ivar tmp_dir: The path to the directory containing downloaded files.
+    :type tmp_dir: str
+    :ivar downloader: The downloader to use.
+    :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+    """
 
     def __init__(self, downloader):
         """
@@ -167,8 +188,8 @@ class ManifestReader(object):
 
     def _download_units(self, base_url, unit_file):
         """
-        Download the file containing content units associated with
-        the a manifest using the specified base URL and file name.
+        Download the file containing content units associated with the a manifest
+        using the specified base URL and file name.
         :param base_url: The base URL used to download the file.
         :type base_url: str
         :param unit_file: The name of the unit file relative to the base URL.
@@ -184,6 +205,58 @@ class ManifestReader(object):
         return destination
 
 
+class Manifest(object):
+    """
+    The manifest returned by the ManifestReader.
+    Provides structured access to the information contained within the manifest
+    and access to the content units associated with the manifest through
+    and iterator to ensure a small memory footprint.
+    :ivar tmp_dir: The directory containing the content units.
+    :type tmp_dir: str
+    :ivar manifest_id: The unique manifest ID.
+    :type manifest_id: str
+    :ivar unit_path: The path to the downloaded content units file.
+    :type unit_path: str
+    :ivar total_units: The number of units in the units file.
+    :type total_units: int
+    """
+
+    def __init__(self, tmp_dir, manifest_id, unit_path, total_units):
+        """
+        :param tmp_dir: The directory containing the content units.
+        :type tmp_dir: str
+        :param manifest_id: The unique manifest ID.
+        :type manifest_id: str
+        :param unit_path: The path to the downloaded content units file.
+        :type unit_path: str
+        :param total_units: The number of units in the units file.
+        :type total_units: int
+        """
+        self.tmp_dir = tmp_dir
+        self.manifest_id = manifest_id
+        self.unit_path = unit_path
+        self.total_units = total_units
+
+    def get_units(self, indexes=None):
+        """
+        Get the content units referenced in the manifest.
+        :param indexes: Limit the result to units at the specified indexes.  None=ALL.
+        :return: An iterator used to read downloaded content units.
+        :rtype: UnitIterator
+        """
+        return UnitIterator(self.unit_path, self.total_units, indexes=indexes)
+
+    def clean_up(self):
+        """
+        Remove the tmp_dir and contained downloaded files.
+        """
+        shutil.rmtree(self.tmp_dir, ignore_errors=True)
+
+    def __del__(self):
+        # just in case the manifest is not properly cleaned up.
+        self.clean_up()
+
+
 class UnitIterator:
     """
     Used to iterate content units inventory file associated with a manifest.
@@ -192,16 +265,27 @@ class UnitIterator:
     """
 
     @staticmethod
-    def get_units(path):
+    def get_units(path, indexes):
         with gzip.open(path) as fp:
+            index = 0
             while True:
                 json_unit = fp.readline()
                 if not json_unit:
                     break
-                yield json.loads(json_unit)
+                if indexes is None or index in indexes:
+                    yield json.loads(json_unit)
+                index += 1
 
-    def __init__(self, path, total_units):
-        self.unit_generator = UnitIterator.get_units(path)
+    def __init__(self, path, total_units, indexes=None):
+        """
+        :param path: The absolute path to the units file to be iterated.
+        :type path: str
+        :param total_units: The number of units contained in the units file.
+        :type total_units: int
+        :param indexes: List of indexes to be included.  None=ALL.
+        :type indexes: iterable
+        """
+        self.unit_generator = UnitIterator.get_units(path, indexes)
         self.total_units = total_units
 
     def next(self):
