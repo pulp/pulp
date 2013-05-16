@@ -37,6 +37,7 @@ UNITS_FILE_NAME = 'units.json.gz'
 
 MANIFEST_ID = 'manifest_id'
 UNIT_FILE = 'unit_file'
+TOTAL_UNITS = 'total_units'
 
 
 # --- manifest --------------------------------------------------------------------------
@@ -60,8 +61,8 @@ class ManifestWriter(object):
             os.makedirs(self.dir_path)
 
     def close(self):
-        self.unit_writer.close()
-        manifest = {MANIFEST_ID: str(uuid4()), UNIT_FILE: UNITS_FILE_NAME}
+        total_units = self.unit_writer.close()
+        manifest = {MANIFEST_ID: str(uuid4()), UNIT_FILE: UNITS_FILE_NAME, TOTAL_UNITS: total_units}
         path = os.path.join(self.dir_path, MANIFEST_FILE_NAME)
         json_manifest = json.dumps(manifest, indent=2)
         with open(path, 'w+') as fp:
@@ -82,8 +83,10 @@ class UnitWriter(object):
     def __init__(self, path):
         self.path = path
         self.fp = open(path, 'w+')
+        self.total_units = 0
 
     def add(self, unit):
+        self.total_units += 1
         json_unit = json.dumps(unit)
         self.fp.write(json_unit)
         self.fp.write('\n')
@@ -93,6 +96,7 @@ class UnitWriter(object):
             self.fp.close()
             compress(self.path)
             self.fp = None
+        return self.total_units
 
     def is_open(self):
         return self.fp is not None
@@ -103,13 +107,14 @@ class UnitWriter(object):
 
 class Manifest(object):
 
-    def __init__(self, tmp_dir, manifest_id, unit_path):
+    def __init__(self, tmp_dir, manifest_id, unit_path, total_units):
         self.tmp_dir = tmp_dir
         self.manifest_id = manifest_id
         self.unit_path = unit_path
+        self.total_units = total_units
 
     def get_units(self):
-        return UnitIterator(self.unit_path)
+        return UnitIterator(self.unit_path, self.total_units)
 
     def clean_up(self):
         shutil.rmtree(self.tmp_dir, ignore_errors=True)
@@ -142,9 +147,17 @@ class ManifestReader(object):
         base_url = url.rsplit('/', 1)[0]
         manifest_id = manifest[MANIFEST_ID]
         unit_path = self._download_units(base_url, manifest[UNIT_FILE])
-        return Manifest(self.tmp_dir, manifest_id, unit_path)
+        total_units = manifest[TOTAL_UNITS]
+        return Manifest(self.tmp_dir, manifest_id, unit_path, total_units)
 
     def _download_manifest(self, url):
+        """
+        Download the manifest at the specified URL.
+        :param url: The URL used to download the manifest.
+        :type url: str
+        :return: The json decoded manifest content.
+        :rtype: dict
+        """
         destination = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         request = DownloadRequest(str(url), destination)
         request_list = [request]
@@ -153,6 +166,16 @@ class ManifestReader(object):
             return json.load(fp)
 
     def _download_units(self, base_url, unit_file):
+        """
+        Download the file containing content units associated with
+        the a manifest using the specified base URL and file name.
+        :param base_url: The base URL used to download the file.
+        :type base_url: str
+        :param unit_file: The name of the unit file relative to the base URL.
+        :type unit_file: str
+        :return: The absolute path to the downloaded file.
+        :rtype: str
+        """
         destination = os.path.join(self.tmp_dir, unit_file)
         url = '/'.join((base_url, unit_file))
         request = DownloadRequest(str(url), destination)
@@ -162,6 +185,11 @@ class ManifestReader(object):
 
 
 class UnitIterator:
+    """
+    Used to iterate content units inventory file associated with a manifest.
+    The file contains (1) json encoded unit per line.  The total number
+    of units in the file is reported by __len__().
+    """
 
     @staticmethod
     def get_units(path):
@@ -172,14 +200,18 @@ class UnitIterator:
                     break
                 yield json.loads(json_unit)
 
-    def __init__(self, path):
+    def __init__(self, path, total_units):
         self.unit_generator = UnitIterator.get_units(path)
+        self.total_units = total_units
 
     def next(self):
         return self.unit_generator.next()
 
     def __iter__(self):
         return self
+
+    def __len__(self):
+        return self.total_units
 
 
 # --- utils -----------------------------------------------------------------------------
