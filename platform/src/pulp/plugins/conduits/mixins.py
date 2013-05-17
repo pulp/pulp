@@ -422,7 +422,7 @@ class AddUnitMixin(object):
 
         @return: object representation of the unit, populated by Pulp with both
                  provided and derived values
-        @rtype:  L{Unit}
+        @rtype:  pulp.plugins.model.Unit
         """
 
         try:
