@@ -23,6 +23,7 @@ from mock import Mock, patch
 from base import WebTest
 
 from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.request import DownloadRequest
 from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
@@ -49,7 +50,6 @@ from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import ManifestReader
 from pulp_node.handlers.strategies import Mirror, Additive
-from pulp_node.importers.download import UnitDownloadRequest
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
 from pulp_node import constants
@@ -114,11 +114,11 @@ class AdditiveTestStrategy(TestStrategy):
         return Additive
 
 
-class BadDownloadRequest(UnitDownloadRequest):
+class BadDownloadRequest(DownloadRequest):
 
     def __init__(self, url, *passed_along):
         url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
-        UnitDownloadRequest.__init__(self, url, *passed_along)
+        DownloadRequest.__init__(self, url, *passed_along)
 
 
 # --- testing base classes ---------------------------------------------------

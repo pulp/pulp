@@ -135,7 +135,7 @@ class ManifestReader(object):
     :ivar tmp_dir: The path to a directory used for downloaded files.
     :type tmp_dir: str
     :ivar downloader: The downloader to use.
-    :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+    :type downloader: nectar.downloaders.base.Downloader
     """
 
     def __init__(self, downloader, tmp_dir):
@@ -143,7 +143,7 @@ class ManifestReader(object):
         :param tmp_dir: The path to a directory used for downloaded files.
         :type tmp_dir: str
         :param downloader: The downloader to use.
-        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+        :type downloader: nectar.downloaders.base.Downloader
         """
         self.tmp_dir = tmp_dir
         self.downloader = downloader

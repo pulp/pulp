@@ -27,7 +27,7 @@ from pulp_node import constants
 from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import ManifestReader
 from pulp_node.importers.inventory import UnitInventory
-from pulp_node.importers.download import DownloadListener, UnitDownloadRequest
+from pulp_node.importers.download import DownloadListener
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
     DeleteUnitError, CaughtException)
 
@@ -238,7 +238,7 @@ class ImporterStrategy(object):
                 continue
             url = download['url']
             storage_path = self._storage_path(unit)
-            download_request = UnitDownloadRequest(url, request, storage_path, ref)
+            download_request = DownloadListener.create_request(url, request, storage_path, ref)
             download_list.append(download_request)
         if request.cancelled():
             return
