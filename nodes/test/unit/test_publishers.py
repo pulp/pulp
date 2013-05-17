@@ -67,12 +67,14 @@ class TestHttp(TestCase):
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
         manifest_path = p.manifest_path()
-        manifest_reader = ManifestReader(downloader)
+        working_dir = os.path.join(self.tmpdir, 'working_dir')
+        os.makedirs(working_dir)
+        manifest_reader = ManifestReader(downloader, working_dir)
         url = 'file://' + manifest_path
         manifest = manifest_reader.read(url)
         units = manifest.get_units()
         n = 0
-        for unit in units:
+        for unit, ref in units:
             file_content = 'test_%d' % n
             _download = unit['_download']
             url = _download['url']

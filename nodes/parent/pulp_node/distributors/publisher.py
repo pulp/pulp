@@ -107,7 +107,7 @@ class FilePublisher(Publisher):
         """
         storage_path = unit.get('storage_path')
         if not storage_path:
-            # not all units are associated with files.
+            # not all units have associated files.
             return unit, None
         relative_path = join(self.repo_id, unit['relative_path'])
         published_path = join(self.publish_dir, relative_path)

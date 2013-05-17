@@ -84,10 +84,16 @@ class TestManifest(TestCase):
         writer.close()
         cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
-        reader = ManifestReader(downloader)
+        working_dir = os.path.join(self.tmp_dir, 'working_dir')
+        os.makedirs(working_dir)
+        reader = ManifestReader(downloader, working_dir)
         path = os.path.join(self.tmp_dir, manifest.MANIFEST_FILE_NAME)
         url = 'file://%s' % path
         manifest_in = reader.read(url)
-        units_in = list(manifest_in.get_units())
         # Verify
+        units_in = []
+        for unit, ref in manifest_in.get_units():
+            units_in.append(unit)
+            _unit = ref.fetch()
+            self.assertEqual(unit, _unit)
         self.verify(units, units_in)

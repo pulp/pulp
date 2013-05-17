@@ -134,7 +134,7 @@ class NodesHttpImporter(Importer):
                 downloader=downloader,
                 progress=progress_report,
                 summary=summary_report,
-                repo_id=repo.id)
+                repo=repo)
             strategy = find_strategy(strategy_name)()
             strategy.synchronize(request)
         except Exception, e:

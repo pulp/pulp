@@ -23,14 +23,14 @@ log = getLogger(__name__)
 
 
 REQUEST = 'request'
-UNIT = 'unit'
+UNIT_REF = 'unit_ref'
 
 
 class UnitDownloadRequest(DownloadRequest):
 
-    def __init__(self, url, request, unit):
+    def __init__(self, url, request, storage_path, ref):
         super(UnitDownloadRequest, self).__init__(
-            url, unit.storage_path, data={REQUEST: request, UNIT: unit})
+            url, storage_path, data={REQUEST: request, UNIT_REF: ref})
 
 
 class DownloadListener(AggregatingEventListener):
@@ -55,7 +55,9 @@ class DownloadListener(AggregatingEventListener):
     def download_succeeded(self, report):
         super(DownloadListener, self).download_succeeded(report)
         request = report.data[REQUEST]
-        unit = report.data[UNIT]
+        unit_ref = report.data[UNIT_REF]
+        unit = unit_ref.fetch()
+        unit['storage_path'] = report.destination
         self._strategy.add_unit(request, unit)
         if request.cancelled():
             request.downloader.cancel()

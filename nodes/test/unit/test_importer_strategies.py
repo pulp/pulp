@@ -48,12 +48,6 @@ class TestImporter:
         self.cancelled = False
 
 
-class TestUnit:
-
-    def __init__(self, unit_id=None):
-        self.id = unit_id
-
-
 class TestRequest(SyncRequest):
 
     def __init__(self, cancel_on, *args, **kwargs):
@@ -66,18 +60,11 @@ class TestRequest(SyncRequest):
         return self.cancel_on and self.cancelled_call_count >= self.cancel_on
 
 
-class TestManifest:
+class TestRepo(object):
 
-    def __init__(self, tmp_dir, units=None):
-        self.tmp_dir = tmp_dir
-        self.units = units or []
-
-    def get_units(self, indexes=None):
-        index = 0
-        for unit in self.units:
-            if indexes is None or index in indexes:
-                yield unit
-            index += 1
+    def __init__(self, repo_id, working_dir):
+        self.id = repo_id
+        self.working_dir = working_dir
 
 
 REPO_ID = 'foo'
@@ -121,7 +108,7 @@ class TestBase(TestCase):
             downloader=Mock(),
             progress=progress,
             summary=summary,
-            repo_id=REPO_ID
+            repo=TestRepo(REPO_ID, self.tmp_dir)
         )
         return request
 
@@ -159,7 +146,7 @@ class TestBase(TestCase):
         # Setup
         request = self.request()
         # Test
-        unit = TestUnit()
+        unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
         strategy = ImporterStrategy()
         strategy.add_unit(request, unit)
         self.assertEqual(len(request.summary.errors), 1)
@@ -171,10 +158,8 @@ class TestBase(TestCase):
         # Setup
         request = self.request()
         # Test
-        unit = TestUnit()
-        extra_units = [dict(unit_id=unit.id, type_id='T', unit_key={}, metadata={})]
-        manifest = TestManifest(self.tmp_dir)
-        inventory = UnitInventory(manifest, extra_units)
+        unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
+        inventory = UnitInventory([], [unit])
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
         self.assertEqual(len(request.summary.errors), 1)
@@ -210,11 +195,9 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         request.downloader.download = Mock()
-        unit = TestUnit()
-        units = [dict(unit_id=unit.id, type_id='T', unit_key={}, metadata={})]
-        manifest = TestManifest(self.tmp_dir, units)
-        inventory = UnitInventory(manifest, [])
-        strategy = ImporterStrategy()
+        unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
+        units = [(unit, None)]
+        inventory = UnitInventory(units, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -224,10 +207,8 @@ class TestBase(TestCase):
     def test_cancel_at_delete_units(self):
         # Setup
         request = self.request(1)
-        unit = TestUnit()
-        extra_units = [dict(unit_id=unit.id, type_id='T', unit_key={}, metadata={})]
-        manifest = TestManifest(self.tmp_dir)
-        inventory = UnitInventory(manifest, extra_units)
+        unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
+        inventory = UnitInventory([], [unit])
         request.conduit.remove_unit = Mock()
         # Test
         strategy = ImporterStrategy()
@@ -247,8 +228,8 @@ class TestBase(TestCase):
             metadata={},
             _download=download,
             _storage_path='/tmp/file')
-        manifest = TestManifest(self.tmp_dir, [unit])
-        inventory = UnitInventory(manifest, [])
+        units = [(unit, None)]
+        inventory = UnitInventory(units, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -269,8 +250,8 @@ class TestBase(TestCase):
             metadata={},
             _download=download,
             _storage_path='/tmp/file')
-        manifest = TestManifest(self.tmp_dir, [unit])
-        inventory = UnitInventory(manifest, [])
+        units = [(unit, None)]
+        inventory = UnitInventory(units, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -293,8 +274,8 @@ class TestBase(TestCase):
             _download=download,
             storage_path='/tmp/file',
             relative_path='files/testing')
-        manifest = TestManifest(self.tmp_dir, [unit])
-        inventory = UnitInventory(manifest, [])
+        units = [(unit, None)]
+        inventory = UnitInventory(units, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -317,8 +298,8 @@ class TestBase(TestCase):
             _download=download,
             storage_path='/tmp/file',
             relative_path='files/testing')
-        manifest = TestManifest(self.tmp_dir, [unit])
-        inventory = UnitInventory(manifest, [])
+        units = [(unit, None)]
+        inventory = UnitInventory(units, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)

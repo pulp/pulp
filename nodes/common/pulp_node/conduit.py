@@ -70,7 +70,7 @@ class UnitsIterator:
         storage_dir = pulp_conf.get('server', 'storage_dir')
         storage_path = metadata.pop('_storage_path', None)
         if storage_path:
-            relative_path = storage_path[len(storage_dir):]
+            relative_path = storage_path[len(storage_dir):].lstrip('/')
         else:
             relative_path = None
         return dict(

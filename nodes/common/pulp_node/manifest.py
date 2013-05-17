@@ -24,7 +24,7 @@ import shutil
 import gzip
 
 from logging import getLogger
-from tempfile import mktemp, mkdtemp
+from tempfile import mktemp
 from uuid import uuid4
 
 from pulp.common.download.request import DownloadRequest
@@ -85,6 +85,7 @@ class ManifestWriter(object):
 class UnitWriter(object):
     """
     Writes json encoded content units to a file.
+    This approach is 30x faster than opening, appending, and closing for each unit.
     :ivar path: The absolute path to the file to be written.
     :type path: str
     :ivar fp: The file pointer used to write units to the file.
@@ -119,19 +120,10 @@ class UnitWriter(object):
         :return: The number of units written.
         :rtype: int
         """
-        if self.is_open():
+        if not self.fp.closed:
             self.fp.close()
             compress(self.path)
-            self.fp = None
         return self.total_units
-
-    def is_open(self):
-        """
-        Get whether the writer is open.
-        :return: True if open.
-        :rtype: bool
-        """
-        return self.fp is not None
 
     def __del__(self):
         # just in case the writer is not properly closed.
@@ -140,18 +132,20 @@ class UnitWriter(object):
 
 class ManifestReader(object):
     """
-    :ivar tmp_dir: The path to the directory containing downloaded files.
+    :ivar tmp_dir: The path to a directory used for downloaded files.
     :type tmp_dir: str
     :ivar downloader: The downloader to use.
     :type downloader: pulp.common.download.downloaders.base.PulpDownloader
     """
 
-    def __init__(self, downloader):
+    def __init__(self, downloader, tmp_dir):
         """
+        :param tmp_dir: The path to a directory used for downloaded files.
+        :type tmp_dir: str
         :param downloader: The downloader to use.
         :type downloader: pulp.common.download.downloaders.base.PulpDownloader
         """
-        self.tmp_dir = mkdtemp()
+        self.tmp_dir = tmp_dir
         self.downloader = downloader
 
     def read(self, url):
@@ -169,7 +163,7 @@ class ManifestReader(object):
         manifest_id = manifest[MANIFEST_ID]
         unit_path = self._download_units(base_url, manifest[UNIT_FILE])
         total_units = manifest[TOTAL_UNITS]
-        return Manifest(self.tmp_dir, manifest_id, unit_path, total_units)
+        return Manifest(manifest_id, unit_path, total_units)
 
     def _download_manifest(self, url):
         """
@@ -202,6 +196,7 @@ class ManifestReader(object):
         request = DownloadRequest(str(url), destination)
         request_list = [request]
         self.downloader.download(request_list)
+        decompress(destination)
         return destination
 
 
@@ -211,8 +206,6 @@ class Manifest(object):
     Provides structured access to the information contained within the manifest
     and access to the content units associated with the manifest through
     and iterator to ensure a small memory footprint.
-    :ivar tmp_dir: The directory containing the content units.
-    :type tmp_dir: str
     :ivar manifest_id: The unique manifest ID.
     :type manifest_id: str
     :ivar unit_path: The path to the downloaded content units file.
@@ -221,7 +214,7 @@ class Manifest(object):
     :type total_units: int
     """
 
-    def __init__(self, tmp_dir, manifest_id, unit_path, total_units):
+    def __init__(self, manifest_id, unit_path, total_units):
         """
         :param tmp_dir: The directory containing the content units.
         :type tmp_dir: str
@@ -232,29 +225,17 @@ class Manifest(object):
         :param total_units: The number of units in the units file.
         :type total_units: int
         """
-        self.tmp_dir = tmp_dir
         self.manifest_id = manifest_id
         self.unit_path = unit_path
         self.total_units = total_units
 
-    def get_units(self, indexes=None):
+    def get_units(self):
         """
         Get the content units referenced in the manifest.
-        :param indexes: Limit the result to units at the specified indexes.  None=ALL.
         :return: An iterator used to read downloaded content units.
         :rtype: UnitIterator
         """
-        return UnitIterator(self.unit_path, self.total_units, indexes=indexes)
-
-    def clean_up(self):
-        """
-        Remove the tmp_dir and contained downloaded files.
-        """
-        shutil.rmtree(self.tmp_dir, ignore_errors=True)
-
-    def __del__(self):
-        # just in case the manifest is not properly cleaned up.
-        self.clean_up()
+        return UnitIterator(self.unit_path, self.total_units)
 
 
 class UnitIterator:
@@ -265,27 +246,28 @@ class UnitIterator:
     """
 
     @staticmethod
-    def get_units(path, indexes):
-        with gzip.open(path) as fp:
-            index = 0
+    def get_units(path):
+        with open(path) as fp:
             while True:
+                begin = fp.tell()
                 json_unit = fp.readline()
-                if not json_unit:
+                end = fp.tell()
+                if json_unit:
+                    unit = json.loads(json_unit)
+                    length = (end - begin)
+                    ref = UnitRef(path, begin, length)
+                    yield (unit, ref)
+                else:
                     break
-                if indexes is None or index in indexes:
-                    yield json.loads(json_unit)
-                index += 1
 
-    def __init__(self, path, total_units, indexes=None):
+    def __init__(self, path, total_units):
         """
         :param path: The absolute path to the units file to be iterated.
         :type path: str
         :param total_units: The number of units contained in the units file.
         :type total_units: int
-        :param indexes: List of indexes to be included.  None=ALL.
-        :type indexes: iterable
         """
-        self.unit_generator = UnitIterator.get_units(path, indexes)
+        self.unit_generator = UnitIterator.get_units(path)
         self.total_units = total_units
 
     def next(self):
@@ -296,6 +278,42 @@ class UnitIterator:
 
     def __len__(self):
         return self.total_units
+
+
+class UnitRef(object):
+    """
+    Reference to a unit within the downloaded units file.
+    :ivar path: The absolute path to the units file.
+    :type path: str
+    :ivar offset: The offset for a specific unit with the file.
+    :type offset: int
+    :ivar length: The length of a specific unit within the file.
+    :type length: int
+    """
+
+    def __init__(self, path, offset, length):
+        """
+        :param path: The absolute path to the units file.
+        :type path: str
+        :param offset: The offset for a specific unit with the file.
+        :type offset: int
+        :param length: The length of a specific unit within the file.
+        :type length: int
+        """
+        self.path = path
+        self.offset = offset
+        self.length = length
+
+    def fetch(self):
+        """
+        Fetch referenced content unit from the units file.
+        :return: The json decoded unit.
+        :rtype: dict
+        """
+        with open(self.path) as fp:
+            fp.seek(self.offset)
+            json_unit = fp.read(self.length)
+            return json.loads(json_unit)
 
 
 # --- utils -----------------------------------------------------------------------------
@@ -309,16 +327,29 @@ def compress(file_path):
     :raise IOError on I/O errors.
     """
     tmp_path = mktemp()
-    shutil.move(file_path, tmp_path)
-    fp_in = open(tmp_path)
     try:
-        fp_out = gzip.open(file_path, 'wb')
-        try:
-            copy(fp_in, fp_out)
-        finally:
-            fp_out.close()
+        shutil.move(file_path, tmp_path)
+        with open(tmp_path) as fp_in:
+            with gzip.open(file_path, 'wb') as fp_out:
+                copy(fp_in, fp_out)
     finally:
-        fp_in.close()
+        os.unlink(tmp_path)
+
+
+def decompress(file_path):
+    """
+    In-place file decompression using gzip.
+    :param file_path: A fully qualified file path.
+    :type file_path: str
+    :raise IOError on I/O errors.
+    """
+    tmp_path = mktemp()
+    try:
+        shutil.move(file_path, tmp_path)
+        with gzip.open(tmp_path) as fp_in:
+            with open(file_path, 'wb') as fp_out:
+                copy(fp_in, fp_out)
+    finally:
         os.unlink(tmp_path)
 
 
