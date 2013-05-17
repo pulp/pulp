@@ -10,42 +10,84 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from inspect import getmembers, isfunction
 import unittest
+
+import mock
 
 from pulp.common.plugins import importer_constants
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.util import importer_config
 
 
+class MainMethodTests(unittest.TestCase):
+
+    def test_all_pass(self):
+        # All options are optional, so we can run them without concern
+        config = PluginCallConfiguration({}, {})
+        importer_config.validate_config(config)
+        # no exception should be raised
+
+    @mock.patch('pulp.plugins.util.importer_config._validate_ssl_validation_flag')
+    def test_failure(self, mock_step):
+        mock_step.side_effect = ValueError('test message')
+        config = PluginCallConfiguration({}, {})
+        try:
+            importer_config.validate_config(config)
+            self.fail()
+        except importer_config.InvalidConfig, e:
+            self.assertEqual(1, len(e.failure_messages))
+            self.assertEqual('test message', e.failure_messages[0])
+
+    def test_validation_step_list(self):
+        """
+        Make sure all of the _validate_* methods are listed in the VALIDATIONS constant to
+        be run.
+        """
+        # Function names from the module itself
+        functions_list = [f for f in getmembers(importer_config, isfunction)]
+        validate_step_function_names = [f[0] for f in functions_list if f[0].startswith('_validate')]
+
+        # Function names from the driver constant
+        found_step_function_names = [f.__name__ for f in importer_config._list_validations()]
+
+        self.assertEqual(set(validate_step_function_names), set(found_step_function_names))
+
+
 class MaxSpeedTests(unittest.TestCase):
 
+    def test_optional(self):
+        config = PluginCallConfiguration({}, {})
+        importer_config._validate_max_speed(config)
+        # no exception should be raised
+
     def test_int(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: 1.0})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: 1})
         importer_config._validate_max_speed(config)
         # test ensures no exception raised
 
     def test_str(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: '512.0'})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: '512'})
         importer_config._validate_max_speed(config)
         # test ensures no exception raised
 
     def test_non_positive(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: -1.0})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: -1})
         try:
             importer_config._validate_max_speed(config)
             self.fail()
         except ValueError, e:
             self.assertTrue('parameter <max_speed>' in e[0])
-            self.assertTrue('-1.0' in e[0])
+            self.assertTrue('-1' in e[0])
 
     def test_non_positive_str(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: '-42.0'})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_MAX_SPEED: '-42'})
         try:
             importer_config._validate_max_speed(config)
             self.fail()
         except ValueError, e:
             self.assertTrue('parameter <max_speed>' in e[0])
-            self.assertTrue('-42.0' in e[0])
+            self.assertTrue('-42' in e[0])
 
 
 class MaxDownloadsTests(unittest.TestCase):
@@ -90,7 +132,6 @@ class MaxDownloadsTests(unittest.TestCase):
             self.fail()
         except ValueError, e:
             self.assertTrue('0' in e[0])
-
 
 
 class ProxyHostTests(unittest.TestCase):
@@ -229,6 +270,14 @@ class ProxyPasswordTests(unittest.TestCase):
             self.assertTrue('int' in e[0])
 
 
+class SSLValidationFlagTests(unittest.TestCase):
+
+    @mock.patch('pulp.plugins.util.importer_config._run_validate_is_non_required_bool')
+    def test_delegate(self, mock_util):
+        importer_config._validate_ssl_validation_flag('config')
+        mock_util.assert_called_once_with('config', importer_constants.KEY_SSL_VALIDATION)
+
+
 class SSLCACertTests(unittest.TestCase):
 
     def test_valid(self):
@@ -297,3 +346,81 @@ class SSLClientKeyTests(unittest.TestCase):
             self.fail()
         except ValueError, e:
             self.assertTrue('int' in e[0])
+
+
+class ValidateDownloadsTests(unittest.TestCase):
+
+    @mock.patch('pulp.plugins.util.importer_config._run_validate_is_non_required_bool')
+    def test_delegate(self, mock_util):
+        importer_config._validate_validate_downloads('config')
+        mock_util.assert_called_once_with('config', importer_constants.KEY_VALIDATE)
+
+
+class RemoveMissingTests(unittest.TestCase):
+
+    @mock.patch('pulp.plugins.util.importer_config._run_validate_is_non_required_bool')
+    def test_delegate(self, mock_util):
+        importer_config._validate_remove_missing('config')
+        mock_util.assert_called_once_with('config', importer_constants.KEY_UNITS_REMOVE_MISSING)
+
+
+class RetainOldCountTests(unittest.TestCase):
+
+    def test_optional(self):
+        config = PluginCallConfiguration({}, {})
+        importer_config._validate_retain_old_count(config)
+        # no exception should be raised
+
+    def test_int(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_UNITS_RETAIN_OLD_COUNT: 1})
+        importer_config._validate_retain_old_count(config)
+        # test ensures no exception raised
+
+    def test_str(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_UNITS_RETAIN_OLD_COUNT: '1'})
+        importer_config._validate_retain_old_count(config)
+        # test ensures no exception raised
+
+    def test_non_positive(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_UNITS_RETAIN_OLD_COUNT: -1})
+        try:
+            importer_config._validate_retain_old_count(config)
+            self.fail()
+        except ValueError, e:
+            self.assertTrue(importer_constants.KEY_UNITS_RETAIN_OLD_COUNT in e[0])
+            self.assertTrue('-1' in e[0])
+
+    def test_non_positive_str(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_UNITS_RETAIN_OLD_COUNT: '-1'})
+        try:
+            importer_config._validate_retain_old_count(config)
+            self.fail()
+        except ValueError, e:
+            self.assertTrue(importer_constants.KEY_UNITS_RETAIN_OLD_COUNT in e[0])
+            self.assertTrue('-1' in e[0])
+
+
+class ValidateIsNonRequiredBooleanTests(unittest.TestCase):
+
+    def test_valid_bool(self):
+        config = PluginCallConfiguration({}, {'a' : True})
+        importer_config._run_validate_is_non_required_bool(config, 'a')
+        # no exception should be raised
+
+    def test_valid_str(self):
+        config = PluginCallConfiguration({}, {'a' : 'true'})
+        importer_config._run_validate_is_non_required_bool(config, 'a')
+        # no exception should be raised
+
+    def test_optional(self):
+        config = PluginCallConfiguration({}, {})
+        importer_config._run_validate_is_non_required_bool(config, 'missing')
+        # no exception should be raised
+
+    def test_unparsable(self):
+        config = PluginCallConfiguration({}, {'a' : 'x'})
+        try:
+            importer_config._run_validate_is_non_required_bool(config, 'a')
+            self.fail()
+        except ValueError, e:
+            self.assertTrue('x' in e[0])

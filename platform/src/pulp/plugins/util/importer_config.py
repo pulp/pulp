@@ -41,25 +41,18 @@ class InvalidConfig(Exception):
 
 def validate_config(config):
     """
+    Validates all standard importer configuration options in the given configuration. All
+    validations are performed regardless of whether or not an error is encountered. If a failure
+    occurs, an exception is raised containing a list of all failure messages.
 
     :param config: the configuration object being validated
     :type  config: pulp.plugins.config.PluginCallConfiguration
+
+    :raises InvalidConfig: if one or more validation tests fails
     """
 
-    validations = (
-        _validate_ssl_ca_cert,
-        _validate_ssl_client_cert,
-        _validate_ssl_client_key,
-        _validate_max_speed,
-        _validate_max_downloads,
-        _validate_proxy_host,
-        _validate_proxy_port,
-        _validate_proxy_username,
-        _validate_proxy_password,
-    )
-
     potential_exception = InvalidConfig()
-    for v in validations:
+    for v in _list_validations():
         try:
             v(config)
         except ValueError, e:
@@ -67,6 +60,16 @@ def validate_config(config):
 
     if potential_exception.has_errors():
         raise potential_exception
+
+
+def _validate_ssl_validation_flag(config):
+    """
+    Make sure the SSL validation enabled flag is a boolean.
+
+    :param config: The configuration object that we are validating.
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    """
+    _run_validate_is_non_required_bool(config, importer_constants.KEY_SSL_VALIDATION)
 
 
 def _validate_ssl_ca_cert(config):
@@ -256,6 +259,52 @@ def _validate_proxy_password(config):
                      'type': type(proxy_password)}
         raise ValueError(msg)
 
+
+def _validate_validate_downloads(config):
+    """
+    This (humorously named) method will validate the optional config option called
+    "validate_downloads". If it is set, it must be a boolean, otherwise it may be None.
+
+    :param config: the config to be validated
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    """
+    _run_validate_is_non_required_bool(config, importer_constants.KEY_VALIDATE)
+
+
+def _validate_remove_missing(config):
+    """
+    This method will validate the optional config setting called "remove_missing_units". If it is set, it must
+    be a boolean, otherwise it may be None.
+
+    :param config: the config to be validated
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    """
+    _run_validate_is_non_required_bool(config, importer_constants.KEY_UNITS_REMOVE_MISSING)
+
+
+def _validate_retain_old_count(config):
+    """
+    Makes sure the number of old units to retain is a number greater than or equal to 0.
+
+    :param config: the config to be validated
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    """
+    retain_old_count = config.get(importer_constants.KEY_UNITS_RETAIN_OLD_COUNT)
+    if retain_old_count is None:
+        return # optional
+
+    try:
+        retain_old_count = _cast_to_int_without_allowing_floats(retain_old_count)
+        if retain_old_count < 0:
+            raise ValueError()
+    except ValueError:
+        msg = _('The configuration parameter <%(old_count_name)s> must be set to an integer greater '
+                'than or equal to zero, but is currently set to <%(old_count)s>.')
+        msg = msg % {'old_count_name': importer_constants.KEY_UNITS_RETAIN_OLD_COUNT,
+                     'old_count': retain_old_count}
+        raise ValueError(msg)
+
+
 # -- utilities ----------------------------------------------------------------
 
 def _cast_to_int_without_allowing_floats(value):
@@ -278,3 +327,48 @@ def _cast_to_int_without_allowing_floats(value):
     if not isinstance(value, int):
         raise ValueError()
     return value
+
+
+def _run_validate_is_non_required_bool(config, setting_name):
+    """
+    Validate that the bool represented in the config by setting_name is either not set, or if it is set that
+    it is a boolean value.
+
+    :param config: the config to be validated
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    :param setting_name: The name of the setting we wish to validate in the config
+    :type setting_name: str
+    """
+    original_setting = setting = config.get(setting_name)
+    if setting is None:
+        # We don't require any settings
+        return
+    if isinstance(setting, basestring):
+        setting = config.get_boolean(setting_name)
+    if isinstance(setting, bool):
+        return
+    msg = _('The configuration parameter <%(name)s> must be set to a boolean value, but is '
+            'currently set to <%(value)s>.')
+    msg = msg % {'name': setting_name, 'value': original_setting}
+    raise ValueError(msg)
+
+
+def _list_validations():
+    """
+    Returns a list of all validation functions that should be run.
+    """
+    return (
+        _validate_ssl_validation_flag,
+        _validate_ssl_ca_cert,
+        _validate_ssl_client_cert,
+        _validate_ssl_client_key,
+        _validate_max_speed,
+        _validate_max_downloads,
+        _validate_proxy_host,
+        _validate_proxy_port,
+        _validate_proxy_username,
+        _validate_proxy_password,
+        _validate_validate_downloads,
+        _validate_remove_missing,
+        _validate_retain_old_count,
+    )
