@@ -116,9 +116,9 @@ class AdditiveTestStrategy(TestStrategy):
 
 class BadDownloadRequest(DownloadRequest):
 
-    def __init__(self, url, *passed_along):
+    def __init__(self, url, *args, **kwargs):
         url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
-        DownloadRequest.__init__(self, url, *passed_along)
+        DownloadRequest.__init__(self, url, *args, **kwargs)
 
 
 # --- testing base classes ---------------------------------------------------
@@ -996,7 +996,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
         @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
-        @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -1043,7 +1043,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
         @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
-        @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
