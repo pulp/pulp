@@ -94,14 +94,14 @@ class OptionsBundle(object):
 
         # -- unit policy --------------------------------------------------------------
 
-        d = _('if "true", units that were previously in the external feed but no are no longer '
+        d = _('if "true", units that were previously in the external feed but are no longer '
               'found will be removed from the repository')
         self.opt_remove_missing = PulpCliOption('--remove-missing', d, required=False,
                                                 parse_func=parsers.parse_boolean)
 
         d = _('count indicating how many non-latest versions of a unit to keep in a repository')
         self.opt_retain_old_count = PulpCliOption('--retain-old-count', d, required=False,
-                                                  parse_func=parsers.parse_positive_int)
+                                                  parse_func=parsers.parse_nonnegative_int)
 
 
 class ImporterConfigMixin(object):
