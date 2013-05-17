@@ -47,8 +47,8 @@ from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import ManifestReader
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.importers.download import UnitDownloadRequest
-from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
-from pulp.common.download.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.config import DownloaderConfig
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
 from pulp_node import constants

@@ -17,8 +17,8 @@ import json
 
 from unittest import TestCase
 
-from pulp.common.download.downloaders.curl import HTTPSCurlDownloader
-from pulp.common.download.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.config import DownloaderConfig
 
 from pulp_node import manifest
 from pulp_node.manifest import ManifestWriter, ManifestReader

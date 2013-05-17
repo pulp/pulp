@@ -171,10 +171,3 @@ class RevokePermissionsForTaskV2(RevokePermissionsForTask):
         resource = '/v2/tasks/%s/' % call_report.call_request_id
         operations = ['READ', 'DELETE']
         factory.permission_manager().revoke(resource, self.user_name, operations)
-
-
-
-
-
-
-

@@ -53,7 +53,7 @@ class SyncRequest(object):
     :ivar config: The plugin configuration.
     :type config: pulp.server.plugins.config.PluginCallConfiguration
     :ivar downloader: A fully configured file downloader.
-    :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+    :type downloader: nectar.downloaders.base.Downloader
     :ivar progress: A progress reporting object.
     :type progress: pulp_node.importers.reports.RepositoryProgress
     :ivar summary: A summary report.
@@ -69,7 +69,7 @@ class SyncRequest(object):
         :param config: The plugin configuration.
         :type config: pulp.server.plugins.config.PluginCallConfiguration
         :param downloader: A fully configured file downloader.
-        :type downloader: pulp.common.download.downloaders.base.PulpDownloader
+        :type downloader: nectar.downloaders.base.Downloader
         :param progress: A progress reporting object.
         :type progress: pulp_node.importers.reports.RepositoryProgress
         :param summary: A summary report.

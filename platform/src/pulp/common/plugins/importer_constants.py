@@ -16,6 +16,14 @@ will use to store the standard Pulp importer configuration values. See that clas
 docstring for more information.
 """
 
+# -- basic sync ---------------------------------------------------------------
+
+# Location of the external source to sync
+KEY_FEED = 'feed'
+
+# Boolean indicating if the synchronized units should be verified by size and checksum
+KEY_VALIDATE = 'validate'
+
 # -- ssl ----------------------------------------------------------------------
 
 # PEM-encoded contents of a CA certificate used to verify its external feed

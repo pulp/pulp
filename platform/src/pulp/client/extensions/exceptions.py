@@ -26,11 +26,12 @@ react to it in the extension itself.
 """
 
 from _socket import gaierror
-from socket import error as socket_error
 from gettext import gettext as _
 import logging
+from M2Crypto import X509
 from M2Crypto.SSL.Checker import WrongHost
 import os
+from socket import error as socket_error
 
 from pulp.bindings.exceptions import *
 from pulp.client.arg_utils import InvalidConfig
@@ -78,8 +79,8 @@ class ExceptionHandler:
         Analyzes the type of exception passed in and calls the appropriate
         method to handle it.
 
-        @param e:
-        @return:
+        :param e: exception raised up to the framework
+        :return: exit code that describes the error
         """
 
         # Determine which method to call based on exception type
@@ -94,6 +95,7 @@ class ExceptionHandler:
             (gaierror,              self.handle_unknown_host),
             (socket_error,          self.handle_socket_error),
             (PulpServerException,   self.handle_server_error),
+            (ClientSSLException,    self.handle_client_ssl),
             (ApacheServerException, self.handle_apache_error),
         )
 
@@ -112,7 +114,7 @@ class ExceptionHandler:
         data included the error message will indicate details on what caused
         the error.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_server_exception(e)
@@ -143,7 +145,7 @@ class ExceptionHandler:
         """
         Handles a not found (HTTP 404) error from the server.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_server_exception(e)
@@ -167,7 +169,7 @@ class ExceptionHandler:
         be determined based on the included extra data and an appropriate error
         message will be displayed.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_server_exception(e)
@@ -202,7 +204,7 @@ class ExceptionHandler:
         """
         Handles an internal server error (HTTP 50x).
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_server_exception(e)
@@ -221,7 +223,7 @@ class ExceptionHandler:
         """
         Handles a connection error coming out of the client's HTTP libraries.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_client_exception(e)
@@ -237,7 +239,7 @@ class ExceptionHandler:
         """
         Handles an authentication error from the server.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_client_exception(e)
@@ -252,7 +254,7 @@ class ExceptionHandler:
         """
         Handles a client-side argument parsing exception.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_client_exception(e)
@@ -266,7 +268,7 @@ class ExceptionHandler:
         different hostname in its SSL certificate than the client used to
         contact the server.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_client_exception(e)
@@ -292,7 +294,7 @@ class ExceptionHandler:
         Handles the client not being able to resolve the configured hostname
         for the server.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_client_exception(e)
@@ -310,8 +312,7 @@ class ExceptionHandler:
         Handles anything coming out of the socket layer exception handling, most notabley
         the connection refused error.
 
-        @return: appropriate exit code for this error
-
+        :return: appropriate exit code for this error
         """
         self._log_client_exception(e)
 
@@ -332,14 +333,35 @@ class ExceptionHandler:
         self.prompt.render_failure_message(msg)
         return CODE_SOCKET_ERROR
 
+    def handle_client_ssl(self, e):
+        """
+        Handles an exception that originates in the client-side library attempting to establish
+        an SSL connection.
+
+        :type e: ClientSSLException
+        :return: appropriate error code for this error
+        """
+        msg = _('Session Expired')
+        expiration_date = self._certificate_expiration_date(e.cert_filename)
+
+        if expiration_date is not None:
+            desc = _('The session certificate expired on %(e)s.')
+            desc = desc % {'e' : expiration_date}
+        else:
+            desc = _('The session certificate is expired.')
+
+        self.prompt.render_failure_message(msg)
+        self.prompt.render_paragraph(desc)
+
+        return CODE_PERMISSIONS_EXCEPTION
+
     def handle_apache_error(self, e):
         """
         Handles an exception that crops up from Apache itself, which won't have
         all of the extra data Pulp adds to its standard exception format.
 
-        @type e: ApacheServerException
-
-        @return: appropriate exit code for this error
+        :type e: ApacheServerException
+        :return: appropriate error code for this error
         """
 
         self._log_client_exception(e)
@@ -358,7 +380,7 @@ class ExceptionHandler:
         Catch-all to handle any exception that wasn't explicitly handled by
         any of the other handle_* methods in this class.
 
-        @return: appropriate exit code for this error
+        :return: appropriate exit code for this error
         """
 
         self._log_client_exception(e)
@@ -375,7 +397,7 @@ class ExceptionHandler:
         Dumps all information from an exception that came from the server
         to the log.
 
-        @type e: RequestException
+        :type e: RequestException
         """
         template = """Exception occurred:
         href:      %(h)s
@@ -399,7 +421,7 @@ class ExceptionHandler:
         """
         Dumps all information from a client-side originated exception to the log.
 
-        @type e: Exception
+        :type e: Exception
         """
         LOG.exception('Client-side exception occurred')
 
@@ -407,6 +429,29 @@ class ExceptionHandler:
         """
         Syntactic sugar for reading the log filename out of the config.
 
-        @return: full path to the log file
+        :return: full path to the log file
         """
         return self.config['logging']['filename']
+
+    def _certificate_expiration_date(self, full_cert_path):
+        """
+        Attempts to read and return the expiration date of the certificate at the given
+        path. If anything goes wrong, None is returned. This method should not be considered
+        as any sort of validation on the certificate.
+
+        :rtype: str or None
+        """
+
+        # This except block is pretty broad, but the intention of this method is really just to
+        # help pretty up the UI by showing the expiration date if it can find it.
+        try:
+            f = open(full_cert_path, 'r')
+            certificate = f.read()
+            f.close()
+
+            certificate_section = str(certificate[certificate.index('-----BEGIN CERTIFICATE'):])
+            x509_cert = X509.load_cert_string(certificate_section)
+            expiration_date = x509_cert.get_not_after()
+            return str(expiration_date)
+        except Exception:
+            return None

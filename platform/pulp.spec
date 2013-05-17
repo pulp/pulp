@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.2.alpha%{?dist}
+Release: 0.8.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -171,6 +171,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
+Requires: python-nectar >= 0.90.0-1
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -188,7 +189,6 @@ Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9
-Requires: curl => 7.19.7
 %endif
 Obsoletes: pulp
 
@@ -233,7 +233,6 @@ Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
-Requires: python-eventlet >= 0.9
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -435,6 +434,49 @@ exit 0
 %endif
 
 %changelog
+* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.8.alpha
+- 
+
+* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.7.alpha
+- 
+
+* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.6.alpha
+- 
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
+-
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
+-
+
+* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
+- 952775 - Fixed broken unit filter application when sorted by association
+  (jason.dobies@redhat.com)
+- 913171 - using get method instead of dict lookup (skarmark@redhat.com)
+- 915473 - fixing login api to return a json document with key and certificate
+  (skarmark@redhat.com)
+- 913171 - fixed repo details to display list of actual schedules instead of
+  schedule ids and unit tests (skarmark@redhat.com)
+- 957890 - removing duplicate units in case when consumer is bound to copies of
+  same repo (skarmark@redhat.com)
+- 957890 - fixed duplicate unit listing in the applicability report and
+  performance improvement fix to avoid loading unnecessary units
+  (skarmark@redhat.com)
+- 954038 - updating applicability api to send unit ids instead of translated
+  plugin unit objects to profilers and fixing a couple of performance issues
+  (skarmark@redhat.com)
+- 924778 - Added hook for a subclass to manipulate the file bundle list after
+  the metadata is generated (jason.dobies@redhat.com)
+- 916729 - Fixed auth failures to return JSON documents containing a
+  programmatic error code and added client-side exception middleware support
+  for displaying the proper user message based on the error.
+  (jason.dobies@redhat.com)
+- 887000 - removed dispatch lookups in sync to determine canceled state
+  (jason.connor@gmail.com)
+- 927244 - unit association log blacklist criteria (jason.connor@gmail.com)
+- 903414 - handle malformed queued calls (jason.connor@gmail.com)
+- 927216 - remove CDS section from server.conf. (jortel@redhat.com)
+
 * Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
 - 953665 - added ability for copy commands to specify the fields of their units
   that should be fetched, so as to avoid loading the entirety of every unit in

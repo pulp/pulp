@@ -27,7 +27,7 @@ from logging import getLogger
 from tempfile import mktemp
 from uuid import uuid4
 
-from pulp.common.download.request import DownloadRequest
+from nectar.request import DownloadRequest
 
 log = getLogger(__name__)
 

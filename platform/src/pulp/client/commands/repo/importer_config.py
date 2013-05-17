@@ -19,6 +19,7 @@ from pulp.common.plugins import importer_constants as constants
 
 # -- group names --------------------------------------------------------------
 
+GROUP_NAME_SYNC = _('Synchronization')
 GROUP_NAME_THROTTLING = _('Throttling')
 GROUP_NAME_SSL = _('Feed Authentication')
 GROUP_NAME_PROXY = _('Feed Proxy')
@@ -37,6 +38,16 @@ class OptionsBundle(object):
     """
 
     def __init__(self):
+
+        # -- synchronization options --------------------------------------------------
+
+        d = _('URL of the external source repository to sync')
+        self.opt_feed = PulpCliOption('--feed', d, required=False)
+
+        d = _('if "true", the size and checksum of each synchronized file will be verified against '
+              'the repo metadata')
+        self.opt_validate = PulpCliOption('--validate', d, required=False,
+                                          parse_func=parsers.parse_boolean)
 
         # -- proxy options ------------------------------------------------------------
 
@@ -96,11 +107,9 @@ class OptionsBundle(object):
 class ImporterConfigMixin(object):
     """
     Mixin to add to a command that will provide options on the CLI to accept the standard
-    configuration values for a Pulp downloader. This mixin also provides a method to parse
-    the submitted user input and generate a config dict containing all of the downloader
-    config values. That method should be called as the basis for creating the configuration for
-    an importer using one of the Pulp downloaders. The produced configuration uses the keys
-    in pulp.common.plugins.importer_constants.
+    configuration values for a Pulp importer. This mixin also provides a method to parse
+    the submitted user input and generate a config dict suitable for an importer
+    config values. The produced configuration uses the keys in pulp.common.plugins.importer_constants.
 
     Touch points are provided to manipulate the options created by this mixin for each group
     (the populate_* methods). If options are added through overridden versions of those methods,
@@ -109,24 +118,24 @@ class ImporterConfigMixin(object):
     the ability to manipulate them.
 
     The option instances that will be used in this mixin are contained in an OptionsBundle
-    instance. If no changes to the optiond defaults are required, this can be omitted from
+    instance. If no changes to the option defaults are required, this can be omitted from
     this object's instantiation. If tweaks to the options are required, they should be done
     in an instance of OptionsBundle and then passed to this class at instantiation.
 
     This mixin must be used in a class that subclasses PulpCliCommand as well. The usage is as
     follows:
 
-    * Define a class that extends both PulpCliCommand and DownloaderConfigMixin.
-    * Call the DownloaderConfigMixin.__init__ method in its constructor. This will add the
+    * Define a class that extends both PulpCliCommand and ImporterConfigMixin.
+    * Call the ImporterConfigMixin.__init__ method in its constructor. This will add the
       necessary options to the command.
     * In the execution method of the command, run parse_user_input(), passing in the args
       parsed from the user input. The result of that is a dict that can be used server-side
-      to configure a downloader. It's up to the plugin writer to dictate how to store that
-      in the importer's configuration.
+      to configure an importer.
     """
 
     def __init__(self,
                  options_bundle=None,
+                 include_sync=True,
                  include_ssl=True,
                  include_proxy=True,
                  include_throttling=True,
@@ -137,10 +146,15 @@ class ImporterConfigMixin(object):
 
         # Created now, but won't be added to the command until the include_* flags are checked.
         # Stored as instance variables so a class using this mixin can further manipulate them.
+        self.sync_group = PulpCliOptionGroup(GROUP_NAME_SYNC)
         self.ssl_group = PulpCliOptionGroup(GROUP_NAME_SSL)
         self.proxy_group = PulpCliOptionGroup(GROUP_NAME_PROXY)
         self.throttling_group = PulpCliOptionGroup(GROUP_NAME_THROTTLING)
         self.unit_policy_group = PulpCliOptionGroup(GROUP_NAME_UNIT_POLICY)
+
+        if include_sync:
+            self.populate_sync_group()
+            self.add_option_group(self.sync_group)
 
         if include_ssl:
             self.populate_ssl_group()
@@ -157,6 +171,14 @@ class ImporterConfigMixin(object):
         if include_unit_policy:
             self.populate_unit_policy()
             self.add_option_group(self.unit_policy_group)
+
+    def populate_sync_group(self):
+        """
+        Adds options to the synchronization group. This is only called if the include_sync flag is
+        set to True in the constructor.
+        """
+        self.sync_group.add_option(self.options_bundle.opt_feed)
+        self.sync_group.add_option(self.options_bundle.opt_validate)
 
     def populate_ssl_group(self):
         """
@@ -207,13 +229,37 @@ class ImporterConfigMixin(object):
         :param user_input: keyword arguments from the CLI framework containing user input
         :type  user_input: dict
 
-        :return: suitable representation of the downloader config that can be stored on the repo
+        :return: suitable representation of the importer config that can be stored on the repo
         :rtype:  dict
         """
         config = {}
+        config.update(self.parse_sync_group(user_input))
         config.update(self.parse_ssl_group(user_input))
         config.update(self.parse_proxy_group(user_input))
         config.update(self.parse_throttling_group(user_input))
+        config.update(self.parse_unit_policy(user_input))
+        return config
+
+    def parse_sync_group(self, user_input):
+        """
+        Reads any basic synchronization config options from the user input and packages them into
+        the Pulp standard importer config format.
+
+        :param user_input: keyword arguments from the CLI framework containing user input
+        :type  user_input: dict
+
+        :return: suitable representation of the config that can be stored on the repo
+        :rtype:  dict
+        """
+        key_tuples = (
+            (constants.KEY_FEED, self.options_bundle.opt_feed.keyword),
+            (constants.KEY_VALIDATE, self.options_bundle.opt_validate.keyword),
+        )
+
+        config = {}
+        for config_key, input_key in key_tuples:
+            safe_parse(user_input, config, input_key, config_key)
+
         return config
 
     def parse_ssl_group(self, user_input):
@@ -236,7 +282,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
 
         arg_utils.convert_file_contents(('ssl_ca_cert', 'ssl_client_cert', 'ssl_client_key'), config)
 
@@ -262,7 +308,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
     def parse_throttling_group(self, user_input):
@@ -283,7 +329,7 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
     def parse_unit_policy(self, user_input):
@@ -298,11 +344,11 @@ class ImporterConfigMixin(object):
 
         config = {}
         for config_key, input_key in key_tuples:
-            _safe_parse(user_input, config, input_key, config_key)
+            safe_parse(user_input, config, input_key, config_key)
         return config
 
 
-def _safe_parse(user_input, config, input_keyword, config_keyword):
+def safe_parse(user_input, config, input_keyword, config_keyword):
     """
     Prior to calling the parse methods in this class, the user input should have been pre-scrubbed
     to remove keys whose value were None (see parse_user_input docs). We can't simply pop with
