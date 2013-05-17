@@ -16,9 +16,10 @@ from unittest import TestCase
 from mock import Mock, patch
 from tempfile import mkdtemp
 
-from pulp.plugins.model import Unit
-from nectar.downloaders.curl import HTTPCurlDownloader
 from nectar.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPCurlDownloader
+
+from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
 from pulp_node.importers.strategies import *

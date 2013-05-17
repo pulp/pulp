@@ -14,9 +14,10 @@
 from logging import getLogger
 from gettext import gettext as _
 
-from pulp.plugins.importer import Importer
-from nectar.downloaders.curl import HTTPSCurlDownloader
 from nectar.config import DownloaderConfig
+from nectar.downloaders.curl import HTTPSCurlDownloader
+
+from pulp.plugins.importer import Importer
 
 from pulp_node import constants
 from pulp_node.error import CaughtException

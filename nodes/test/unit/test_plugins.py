@@ -22,6 +22,9 @@ from copy import deepcopy
 from mock import Mock, patch
 from base import WebTest
 
+from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.config import DownloaderConfig
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
 from pulp_node.distributors.http.distributor import NodesHttpDistributor
@@ -47,8 +50,6 @@ from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import ManifestReader
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.importers.download import UnitDownloadRequest
-from nectar.downloaders.curl import HTTPSCurlDownloader
-from nectar.config import DownloaderConfig
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
 from pulp_node import constants
