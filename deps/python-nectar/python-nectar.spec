@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        0.90.3
+Version:        0.90.2
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
