@@ -12,8 +12,9 @@
 
 import unittest
 
-from pulp.common.plugins import importer_constants as constants
 from nectar.config import DownloaderConfig
+
+from pulp.common.plugins import importer_constants as constants, importer_constants
 from pulp.plugins.util import downloader_config
 
 

@@ -16,8 +16,9 @@ Contains functions related to working with the Nectar downloading library.
 
 from functools import partial
 
-from pulp.common.plugins import importer_constants as constants
 from nectar.config import DownloaderConfig
+
+from pulp.common.plugins import importer_constants as constants
 
 
 def importer_config_to_nectar_config(importer_config):
@@ -67,4 +68,3 @@ def _safe_add_arg(importer_config, dl_config, keys_tuple):
     """
     if keys_tuple[0] in importer_config:
         dl_config[keys_tuple[1]] = importer_config[keys_tuple[0]]
-
