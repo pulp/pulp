@@ -51,6 +51,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 0.90.2-1
+- fix deps/nectar version number (jortel@redhat.com)
+- add tito.props. (jortel@redhat.com)
+
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 0.90.3-1
 - new package built with tito
 
