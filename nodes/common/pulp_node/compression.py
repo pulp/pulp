@@ -40,6 +40,8 @@ def compress(file_path):
         os.unlink(file_path)
         if not file_path.endswith(FILE_SUFFIX):
             file_path += FILE_SUFFIX
+        if os.path.exists(file_path):
+            os.unlink(file_path)
         os.link(tmp_path, file_path)
         return file_path
     finally:
@@ -61,6 +63,8 @@ def decompress(file_path):
                 transfer(fp_in, fp_out)
         os.unlink(file_path)
         file_path = file_path.rstrip(FILE_SUFFIX)
+        if os.path.exists(file_path):
+            os.unlink(file_path)
         os.link(tmp_path, file_path)
         return file_path
     finally:
