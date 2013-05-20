@@ -23,7 +23,7 @@ from logging import getLogger
 
 from nectar.request import DownloadRequest
 
-from pulp_node.compression import compress, decompress
+from pulp_node.compression import compress, decompress, compressed
 
 
 log = getLogger(__name__)
@@ -73,6 +73,8 @@ class Manifest(object):
         request = DownloadRequest(str(url), destination)
         request_list = [request]
         downloader.download(request_list)
+        if compressed(destination):
+            destination = decompress(destination)
         with open(destination) as fp:
             manifest = json.load(fp)
             self.__dict__.update(manifest)
@@ -94,7 +96,8 @@ class Manifest(object):
         request = DownloadRequest(str(url), self.units_path)
         request_list = [request]
         downloader.download(request_list)
-        self.units_path = decompress(self.units_path)
+        if compressed(self.units_path):
+            self.units_path = decompress(self.units_path)
 
     def read(self, path):
         """
@@ -112,13 +115,17 @@ class Manifest(object):
     def write(self, path):
         """
         Write the manifest to a json encoded file at the specified path.
+        Returns the path to the written manifest just in case it's compressed in the future.
         :param path: The absolute path to the written json encoded manifest file.
         :type path: str
+        :return: The absolute path to the written manifest.
+        :rtype: str
         :raise IOError: on I/O errors.
         :raise ValueError: on json encoding errors
         """
         with open(path, 'w+') as fp:
             json.dump(self.__dict__, fp, indent=2)
+        return path
 
     def set_units(self, writer):
         """

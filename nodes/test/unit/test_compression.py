@@ -36,6 +36,8 @@ class TestCompression(TestCase):
         # Test
         compressed_path = compress(path)
         # Verify
+        self.assertFalse(compressed(path))
+        self.assertTrue(compressed(compressed_path))
         self.assertEqual(path + FILE_SUFFIX, compressed_path)
         with gzip.open(compressed_path) as fp:
             block_in = fp.read()

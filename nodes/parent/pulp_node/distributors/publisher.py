@@ -98,7 +98,7 @@ class FilePublisher(Publisher):
         manifest_id = str(uuid4())
         manifest = Manifest(manifest_id)
         manifest.set_units(writer)
-        manifest.write(manifest_path)
+        manifest_path = manifest.write(manifest_path)
         return manifest_path
 
     def link_unit(self, unit):

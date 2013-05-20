@@ -68,6 +68,17 @@ def decompress(file_path):
             os.unlink(tmp_path)
 
 
+def compressed(path):
+    """
+    Get whether the specified path points to a compressed file.
+    :param path: A file path.
+    :type path: str
+    :return: True if compressed.
+    :rtype: bool
+    """
+    return os.path.isfile(path) and path.endswith(FILE_SUFFIX)
+
+
 def transfer(fp_in, fp_out):
     """
     Transfer bytes between open file pointers using a buffer.
