@@ -32,7 +32,7 @@ def compress(file_path):
     :rtype: str
     :raise IOError: on I/O errors.
     """
-    tmp_path = mktemp()
+    tmp_path = mktemp(dir=os.path.dirname(file_path))
     try:
         with open(file_path) as fp_in:
             with gzip.open(tmp_path, 'wb') as fp_out:
@@ -54,7 +54,7 @@ def decompress(file_path):
     :type file_path: str
     :raise IOError: on I/O errors.
     """
-    tmp_path = mktemp()
+    tmp_path = mktemp(dir=os.path.dirname(file_path))
     try:
         with gzip.open(file_path) as fp_in:
             with open(tmp_path, 'w+') as fp_out:
