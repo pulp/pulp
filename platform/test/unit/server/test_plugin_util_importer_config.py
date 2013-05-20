@@ -28,16 +28,9 @@ class MainMethodTests(unittest.TestCase):
         importer_config.validate_config(config)
         # no exception should be raised
 
-    @mock.patch('pulp.plugins.util.importer_config.validate_ssl_validation_flag')
-    def test_failure(self, mock_step):
-        mock_step.side_effect = ValueError('test message')
-        config = PluginCallConfiguration({}, {})
-        try:
-            importer_config.validate_config(config)
-            self.fail()
-        except importer_config.InvalidConfig, e:
-            self.assertEqual(1, len(e.failure_messages))
-            self.assertEqual('test message', e.failure_messages[0])
+    def test_failure(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_VALIDATE : 0})
+        self.assertRaises(importer_config.InvalidConfig, importer_config.validate_config, config)
 
     def test_validation_step_list(self):
         """
@@ -50,7 +43,7 @@ class MainMethodTests(unittest.TestCase):
                                                                         f[0] != 'validate_config']
 
         # Function names from the driver constant
-        found_step_function_names = [f.__name__ for f in importer_config._list_validations()]
+        found_step_function_names = [f.__name__ for f in importer_config.VALIDATIONS]
 
         self.assertEqual(set(validate_step_function_names), set(found_step_function_names))
 

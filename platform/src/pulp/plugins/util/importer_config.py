@@ -52,7 +52,7 @@ def validate_config(config):
     """
 
     potential_exception = InvalidConfig()
-    for v in _list_validations():
+    for v in VALIDATIONS:
         try:
             v(config)
         except ValueError, e:
@@ -383,23 +383,19 @@ def _run_validate_is_non_required_bool(config, setting_name):
     raise ValueError(msg)
 
 
-def _list_validations():
-    """
-    Returns a list of all validation functions that should be run.
-    """
-    return (
-        validate_feed_requirement,
-        validate_ssl_validation_flag,
-        validate_ssl_ca_cert,
-        validate_ssl_client_cert,
-        validate_ssl_client_key,
-        validate_max_speed,
-        validate_max_downloads,
-        validate_proxy_host,
-        validate_proxy_port,
-        validate_proxy_username,
-        validate_proxy_password,
-        validate_validate_downloads,
-        validate_remove_missing,
-        validate_retain_old_count,
-    )
+VALIDATIONS = (
+    validate_feed_requirement,
+    validate_ssl_validation_flag,
+    validate_ssl_ca_cert,
+    validate_ssl_client_cert,
+    validate_ssl_client_key,
+    validate_max_speed,
+    validate_max_downloads,
+    validate_proxy_host,
+    validate_proxy_port,
+    validate_proxy_username,
+    validate_proxy_password,
+    validate_validate_downloads,
+    validate_remove_missing,
+    validate_retain_old_count,
+)
