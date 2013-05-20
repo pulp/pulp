@@ -2,7 +2,7 @@
 
 Name:           python-nectar
 Version:        0.90.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Performance tuned network download client library
 
 Group:          Development/Tools
@@ -13,8 +13,6 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
 
-BuildRequires:  python-mock
-BuildRequires:  python-nose
 BuildRequires:  python-setuptools
 
 Requires:       python-eventlet >= 0.9.17
@@ -39,11 +37,6 @@ Requires:       curl >= 7.19.0
 rm -rf $RPM_BUILD_ROOT
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 
-# (jconnor 2013-05) commented out until a sub-set of tests is identified that
-# do not pull in so many dependiencies
-#%check
-#nosetests test/unit/
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -53,7 +46,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
-* Mon May 20 2013 Jason L Connor <jason.connor@gmail.com> 0.90.3-1
+* Mon May 20 2013 Jason L Connor <jason.connor@gmail.com> 0.90.3-2
 - changed requires so for epel and fedora; commented out (for now) %%check
   (jason.connor@gmail.com)
 - revent test script (jason.connor@gmail.com)
