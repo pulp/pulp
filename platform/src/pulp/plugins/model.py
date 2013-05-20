@@ -219,7 +219,7 @@ class SyncReport(object):
 
     @ivar details: potentially longer log that will have to be specifically
                    retrieved through the Pulp REST APIs
-    @type details: just about any serializable object (likley str or dict)
+    @type details: just about any serializable object (likely str or dict)
     """
 
     def __init__(self, success_flag, added_count, updated_count, removed_count, summary, details):
