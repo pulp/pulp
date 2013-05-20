@@ -60,6 +60,8 @@ class SyncRequest(object):
     :type summary: pulp_node.importers.reports.SummaryReport
     :ivar repo_id: The ID of a repository to synchronize.
     :type repo_id: str
+    :ivar working_dir: The absolute path to a directory to be used as temporary storage.
+    :type working_dir: str
     """
 
     def __init__(self, importer, conduit, config, downloader, progress, summary, repo):
