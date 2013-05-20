@@ -52,7 +52,7 @@ Sends a portion of the contents of the file being uploaded to the server. If the
 entire file cannot be sent in a single call, the caller may divide up the file
 and provide offset information for Pulp to use when assembling it.
 
-| :method:`post`
+| :method:`put`
 | :path:`/v2/content/uploads/<upload_id>/<offset/`
 | :permission:`update`
 | :param_list:`post` The body of the request is the content to store in the file
