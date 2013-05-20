@@ -120,3 +120,19 @@ class TestParsePostiveInt(unittest.TestCase):
 
     def test_negative(self):
         self.assertRaises(ValueError, parsers.parse_positive_int, '-314')
+
+
+class TestParseNonNegativeInt(unittest.TestCase):
+    def test_valid(self):
+        ret = parsers.parse_nonnegative_int('31415')
+        self.assertEqual(ret, 31415)
+
+    def test_string(self):
+        self.assertRaises(ValueError, parsers.parse_nonnegative_int, 'foo')
+
+    def test_zero(self):
+        ret = parsers.parse_nonnegative_int('0')
+        self.assertEqual(ret, 0)
+
+    def test_negative(self):
+        self.assertRaises(ValueError, parsers.parse_nonnegative_int, '-314')
