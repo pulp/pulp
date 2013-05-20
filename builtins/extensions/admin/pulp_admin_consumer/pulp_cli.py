@@ -19,7 +19,7 @@ from pulp.client.commands.consumer.query import ConsumerListCommand, ConsumerSea
 # -- framework hook -----------------------------------------------------------
 
 SECTION_ROOT = 'consumer'
-DESC_ROOT = _('register, bind, and interact with consumers')
+DESC_ROOT = _('display and manage Pulp consumers')
 
 def initialize(context):
     if context.cli.find_section(SECTION_ROOT) is not None:
