@@ -64,6 +64,22 @@ def parse_notes(value):
         raise ValueError(_('invalid syntax for specifying notes'))
 
 
+def parse_nonnegative_int(value):
+    """
+    Returns an int representation of the user entered value, raising an
+    exception if it is negative.
+
+    :param value: user entered value
+    :type  value: str
+    :rtype: int
+    """
+
+    i = int(value)
+    if i < 0:
+        raise ValueError(_('value must be a non-negative integer'))
+    return i
+
+
 def parse_positive_int(value):
     """
     Returns an int representation of the user entered value, raising an
