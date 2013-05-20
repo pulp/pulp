@@ -25,7 +25,7 @@ TRANSFER_CHUNK_SIZE = 0x3200000  # 50MB
 
 def compress(file_path):
     """
-    On-disk file compression using GZIP.
+    Compress the file at the specified path using GZIP.
     :param file_path: A fully qualified file path.
     :type file_path: str
     :return: The updated file path.
@@ -49,7 +49,7 @@ def compress(file_path):
 
 def decompress(file_path):
     """
-    On-disk file decompression using GZIP.
+    Decompress the file at the specified path using GZIP.
     :param file_path: A fully qualified file path.
     :type file_path: str
     :raise IOError: on I/O errors.
