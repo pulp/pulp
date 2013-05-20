@@ -11,7 +11,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains utilities for interacting with the Pulp standard importer config.
+Contains utilities for validating a Pulp standard importer config.
 """
 
 from gettext import gettext as _
@@ -62,7 +62,37 @@ def validate_config(config):
         raise potential_exception
 
 
-def _validate_ssl_validation_flag(config):
+def validate_feed_requirement(config):
+    """
+    Ensures the feed URL is a string if specified. Also ensures the feed is present if any of the
+    other feed sync related configuration options are specified (for instance, proxy information).
+
+    This validation does not check the integrity of the feed URL.
+    """
+    feed_url = config.get(importer_constants.KEY_FEED)
+    # feed_urls are not required if all of the other feed related settings are None
+    dependencies = [
+        importer_constants.KEY_MAX_SPEED, importer_constants.KEY_MAX_DOWNLOADS,
+        importer_constants.KEY_PROXY_PASS, importer_constants.KEY_PROXY_PORT,
+        importer_constants.KEY_PROXY_HOST, importer_constants.KEY_PROXY_USER,
+        importer_constants.KEY_UNITS_RETAIN_OLD_COUNT, importer_constants.KEY_SSL_CA_CERT,
+        importer_constants.KEY_SSL_CLIENT_CERT,
+        importer_constants.KEY_SSL_CLIENT_KEY, importer_constants.KEY_VALIDATE]
+    if not feed_url and all([config.get(setting) is None for setting in dependencies]):
+        return True, None
+    elif not feed_url:
+        msg = _('The configuration parameter <%(name)s> is required when any of the following other '
+                'parameters are defined: ' + ', '.join(dependencies))
+        msg = msg % {'name': importer_constants.KEY_FEED}
+        raise ValueError(msg)
+
+    if not isinstance(feed_url, basestring):
+        msg = _('<%(feed_url)s> must be a string.')
+        msg = msg % {'feed_url': importer_constants.KEY_FEED}
+        raise ValueError(msg)
+
+
+def validate_ssl_validation_flag(config):
     """
     Make sure the SSL validation enabled flag is a boolean.
 
@@ -72,7 +102,7 @@ def _validate_ssl_validation_flag(config):
     _run_validate_is_non_required_bool(config, importer_constants.KEY_SSL_VALIDATION)
 
 
-def _validate_ssl_ca_cert(config):
+def validate_ssl_ca_cert(config):
     """
     Make sure the ssl_ca_cert is a string if it is set.
 
@@ -88,7 +118,7 @@ def _validate_ssl_ca_cert(config):
         raise ValueError(msg)
 
 
-def _validate_ssl_client_cert(config):
+def validate_ssl_client_cert(config):
     """
     Make sure the client certificte is a string if it is set.
     """
@@ -108,7 +138,7 @@ def _validate_ssl_client_cert(config):
         raise ValueError(msg)
 
 
-def _validate_ssl_client_key(config):
+def validate_ssl_client_key(config):
     """
     Make sure the ssl_client_key is a string and that the cert is also provided, if the key is set.
     """
@@ -122,7 +152,7 @@ def _validate_ssl_client_key(config):
         raise ValueError(msg)
 
 
-def _validate_max_speed(config):
+def validate_max_speed(config):
     """
     Make sure the max speed can be cast to a number, if it is defined.
     """
@@ -141,7 +171,7 @@ def _validate_max_speed(config):
         raise ValueError(msg)
 
 
-def _validate_max_downloads(config):
+def validate_max_downloads(config):
     """
     Make sure the maximum downloads value is a positive integer if it is set.
     """
@@ -160,7 +190,7 @@ def _validate_max_downloads(config):
         raise ValueError(msg)
 
 
-def _validate_proxy_host(config):
+def validate_proxy_host(config):
     """
     Make sure the proxy host is a string if it is set.
 
@@ -184,7 +214,7 @@ def _validate_proxy_host(config):
         raise ValueError(msg)
 
 
-def _validate_proxy_port(config):
+def validate_proxy_port(config):
     """
     The proxy_port is optional. If it is set, this will make sure the proxy_url is also set, and that the port
     is a positive integer.
@@ -207,7 +237,7 @@ def _validate_proxy_port(config):
         raise ValueError(msg)
 
 
-def _validate_proxy_username(config):
+def validate_proxy_username(config):
     """
     The proxy_username is optional. If it is set, this method will ensure that it is a string, and it will
     also ensure that the proxy_password and proxy_url settings are set.
@@ -233,7 +263,7 @@ def _validate_proxy_username(config):
         raise ValueError(msg)
 
 
-def _validate_proxy_password(config):
+def validate_proxy_password(config):
     """
     The proxy password setting is optional. However, if it is set, it must be a string. Also, if it
     is set, user must also be set.
@@ -260,7 +290,7 @@ def _validate_proxy_password(config):
         raise ValueError(msg)
 
 
-def _validate_validate_downloads(config):
+def validate_validate_downloads(config):
     """
     This (humorously named) method will validate the optional config option called
     "validate_downloads". If it is set, it must be a boolean, otherwise it may be None.
@@ -271,7 +301,7 @@ def _validate_validate_downloads(config):
     _run_validate_is_non_required_bool(config, importer_constants.KEY_VALIDATE)
 
 
-def _validate_remove_missing(config):
+def validate_remove_missing(config):
     """
     This method will validate the optional config setting called "remove_missing_units". If it is set, it must
     be a boolean, otherwise it may be None.
@@ -282,7 +312,7 @@ def _validate_remove_missing(config):
     _run_validate_is_non_required_bool(config, importer_constants.KEY_UNITS_REMOVE_MISSING)
 
 
-def _validate_retain_old_count(config):
+def validate_retain_old_count(config):
     """
     Makes sure the number of old units to retain is a number greater than or equal to 0.
 
@@ -358,17 +388,18 @@ def _list_validations():
     Returns a list of all validation functions that should be run.
     """
     return (
-        _validate_ssl_validation_flag,
-        _validate_ssl_ca_cert,
-        _validate_ssl_client_cert,
-        _validate_ssl_client_key,
-        _validate_max_speed,
-        _validate_max_downloads,
-        _validate_proxy_host,
-        _validate_proxy_port,
-        _validate_proxy_username,
-        _validate_proxy_password,
-        _validate_validate_downloads,
-        _validate_remove_missing,
-        _validate_retain_old_count,
+        validate_feed_requirement,
+        validate_ssl_validation_flag,
+        validate_ssl_ca_cert,
+        validate_ssl_client_cert,
+        validate_ssl_client_key,
+        validate_max_speed,
+        validate_max_downloads,
+        validate_proxy_host,
+        validate_proxy_port,
+        validate_proxy_username,
+        validate_proxy_password,
+        validate_validate_downloads,
+        validate_remove_missing,
+        validate_retain_old_count,
     )
