@@ -321,7 +321,7 @@ def decompress(file_path):
 
 def copy(fp_in, fp_out):
     """
-    Buffered copy between open file pointers using a 5 MB buffer.
+    Buffered copy between open file pointers using a buffer.
     :param fp_in: Input file.
     :type fp_in: file-like
     :param fp_out: Output file.
@@ -329,7 +329,7 @@ def copy(fp_in, fp_out):
     :raise IOError: on I/O errors.
     """
     while True:
-        buf = fp_in.read(0x500000)  # 5MB
+        buf = fp_in.read(0x3200000)  # 50MB
         if buf:
             fp_out.write(buf)
         else:
