@@ -68,6 +68,8 @@ class Manifest(object):
         :type dir_path: str
         :param downloader: The nectar downloader to be used.
         :type downloader: nectar.downloaders.base.Downloader
+        :raise HTTPError: on URL errors.
+-       :raise ValueError: on json decoding errors
         """
         destination = os.path.join(dir_path, MANIFEST_FILE_NAME)
         request = DownloadRequest(str(url), destination)
@@ -86,6 +88,8 @@ class Manifest(object):
         :type url: str
         :param downloader: The nectar downloader to be used.
         :type downloader: nectar.downloaders.base.Downloader
+        :raise HTTPError: on URL errors.
+-       :raise ValueError: on json decoding errors
         """
         base_url = url.rsplit('/', 1)[0]
         url = '/'.join((base_url, os.path.basename(self.units_path)))
@@ -100,6 +104,8 @@ class Manifest(object):
         The manifest is updated using the contents of the read json document.
         :param path: The absolute path to a json encoded manifest file.
         :type path: str
+        :raise IOError: on I/O errors.
+        :raise ValueError: on json decoding errors
         """
         with open(path) as fp:
             manifest = json.load(fp)
@@ -110,6 +116,8 @@ class Manifest(object):
         Write the manifest to a json encoded file at the specified path.
         :param path: The absolute path to the written json encoded manifest file.
         :type path: str
+        :raise IOError: on I/O errors.
+        :raise ValueError: on json encoding errors
         """
         with open(path, 'w+') as fp:
             json.dump(self.__dict__, fp, indent=2)
@@ -129,6 +137,8 @@ class Manifest(object):
         Get the content units referenced in the manifest.
         :return: An iterator used to read downloaded content units.
         :rtype: iterable
+        :raise IOError: on I/O errors.
+-       :raise ValueError: json decoding errors
         """
         if self.total_units:
             return UnitIterator(self.units_path, self.total_units)
@@ -152,6 +162,7 @@ class UnitWriter(object):
         """
         :param path: The absolute path to the file to be written.
         :type path: str
+        :raise IOError: on I/O errors
         """
         self.path = path
         self.fp = open(path, 'w+')
@@ -162,6 +173,8 @@ class UnitWriter(object):
         Add (write) the specified unit to the file as a json encoded string.
         :param unit: A content unit.
         :type unit: dict
+        :raise IOError: on I/O errors.
+-       :raise ValueError: json encoding errors
         """
         self.total_units += 1
         json_unit = json.dumps(unit)
@@ -262,6 +275,8 @@ class UnitRef(object):
         Fetch referenced content unit from the units file.
         :return: The json decoded unit.
         :rtype: dict
+        :raise IOError: on I/O errors.
+-       :raise ValueError: json encoding errors
         """
         with open(self.path) as fp:
             fp.seek(self.offset)
@@ -277,7 +292,7 @@ def compress(file_path):
     In-place file compression using gzip.
     :param file_path: A fully qualified file path.
     :type file_path: str
-    :raise IOError on I/O errors.
+    :raise IOError: on I/O errors.
     """
     tmp_path = mktemp()
     try:
@@ -294,7 +309,7 @@ def decompress(file_path):
     In-place file decompression using gzip.
     :param file_path: A fully qualified file path.
     :type file_path: str
-    :raise IOError on I/O errors.
+    :raise IOError: on I/O errors.
     """
     tmp_path = mktemp()
     try:
@@ -313,7 +328,7 @@ def copy(fp_in, fp_out):
     :type fp_in: file-like
     :param fp_out: Output file.
     :type fp_out: file-like
-    :raise IOError on I/O errors.
+    :raise IOError: on I/O errors.
     """
     while True:
         buf = fp_in.read(0x500000)  # 5MB
