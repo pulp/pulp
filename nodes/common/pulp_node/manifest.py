@@ -18,13 +18,13 @@ json encoded file.  For performance reasons, the unit files are compressed.
 
 import os
 import json
-import shutil
-import gzip
 
 from logging import getLogger
-from tempfile import mktemp
 
 from nectar.request import DownloadRequest
+
+from pulp_node.compression import compress, decompress
+
 
 log = getLogger(__name__)
 
@@ -94,7 +94,7 @@ class Manifest(object):
         request = DownloadRequest(str(url), self.units_path)
         request_list = [request]
         downloader.download(request_list)
-        decompress(self.units_path)
+        self.units_path = decompress(self.units_path)
 
     def read(self, path):
         """
@@ -187,7 +187,7 @@ class UnitWriter(object):
         """
         if not self.fp.closed:
             self.fp.close()
-            compress(self.path)
+            self.path = compress(self.path)
         return self.total_units
 
     def __enter__(self):
@@ -280,57 +280,3 @@ class UnitRef(object):
             fp.seek(self.offset)
             json_unit = fp.read(self.length)
             return json.loads(json_unit)
-
-
-# --- utils -----------------------------------------------------------------------------
-
-
-def compress(file_path):
-    """
-    On-disk file compression using GZIP.
-    :param file_path: A fully qualified file path.
-    :type file_path: str
-    :raise IOError: on I/O errors.
-    """
-    tmp_path = mktemp()
-    try:
-        shutil.move(file_path, tmp_path)
-        with open(tmp_path) as fp_in:
-            with gzip.open(file_path, 'wb') as fp_out:
-                copy(fp_in, fp_out)
-    finally:
-        os.unlink(tmp_path)
-
-
-def decompress(file_path):
-    """
-    On-disk file decompression using GZIP.
-    :param file_path: A fully qualified file path.
-    :type file_path: str
-    :raise IOError: on I/O errors.
-    """
-    tmp_path = mktemp()
-    try:
-        shutil.move(file_path, tmp_path)
-        with gzip.open(tmp_path) as fp_in:
-            with open(file_path, 'wb') as fp_out:
-                copy(fp_in, fp_out)
-    finally:
-        os.unlink(tmp_path)
-
-
-def copy(fp_in, fp_out):
-    """
-    Buffered copy between open file pointers using a buffer.
-    :param fp_in: Input file.
-    :type fp_in: file-like
-    :param fp_out: Output file.
-    :type fp_out: file-like
-    :raise IOError: on I/O errors.
-    """
-    while True:
-        buf = fp_in.read(0x3200000)  # 50MB
-        if buf:
-            fp_out.write(buf)
-        else:
-            break
