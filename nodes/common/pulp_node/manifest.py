@@ -12,10 +12,8 @@
 """
 Provides classes for managing the content unit manifest.
 The manifest is a json encoded file that defines content units
-associated with repository.  The total list of units is stored in separate
-json encoded files.  The manifest contains a list of those file names and
-the total count of units.  For performance reasons, the manifest and the unit
-files are compressed.
+associated with repository.  The units themselves are stored in a separate
+json encoded file.  For performance reasons, the unit files are compressed.
 """
 
 import os
@@ -276,7 +274,7 @@ class UnitRef(object):
         :return: The json decoded unit.
         :rtype: dict
         :raise IOError: on I/O errors.
--       :raise ValueError: json encoding errors
+-       :raise ValueError: json decoding errors
         """
         with open(self.path) as fp:
             fp.seek(self.offset)
@@ -289,7 +287,7 @@ class UnitRef(object):
 
 def compress(file_path):
     """
-    In-place file compression using gzip.
+    On-disk file compression using GZIP.
     :param file_path: A fully qualified file path.
     :type file_path: str
     :raise IOError: on I/O errors.
@@ -306,7 +304,7 @@ def compress(file_path):
 
 def decompress(file_path):
     """
-    In-place file decompression using gzip.
+    On-disk file decompression using GZIP.
     :param file_path: A fully qualified file path.
     :type file_path: str
     :raise IOError: on I/O errors.
