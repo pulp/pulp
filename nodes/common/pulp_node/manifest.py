@@ -25,7 +25,6 @@ import gzip
 
 from logging import getLogger
 from tempfile import mktemp
-from uuid import uuid4
 
 from nectar.request import DownloadRequest
 
@@ -34,52 +33,107 @@ log = getLogger(__name__)
 
 # --- constants -------------------------------------------------------------------------
 
-# files
-MANIFEST_FILE_NAME = 'manifest.json.gz'
-UNITS_FILE_NAME = 'units.json.gz'
 
-# fields within the manifest
-MANIFEST_ID = 'manifest_id'
-UNIT_FILE = 'unit_file'
-TOTAL_UNITS = 'total_units'
+MANIFEST_FILE_NAME = 'manifest.json'
+UNITS_FILE_NAME = 'units.json.gz'
 
 
 # --- manifest --------------------------------------------------------------------------
 
 
-class ManifestWriter(object):
+class Manifest(object):
     """
-    The manifest is a json encoded file that defines content units
-    associated with repository.  The total list of units is stored in separate
-    json encoded files.  The manifest contains a list of those file names and
-    the total count of units.  For performance reasons, the manifest and the unit
-    files are compressed.
+    Provides structured access to the information contained within the manifest
+    and access to the content units associated with the manifest through
+    and iterator to ensure a small memory footprint.
+    :ivar id: The unique manifest ID.
+    :type id: str
+    :ivar total_units: The number of units in the units file.
+    :type total_units: int
+    :ivar unit_path: The path to the downloaded content units file.
+    :type unit_path: str
     """
 
-    def __init__(self, dir_path):
-        self.dir_path = dir_path
-        self.unit_writer = UnitWriter(os.path.join(dir_path, UNITS_FILE_NAME))
+    def __init__(self, manifest_id=None):
+        self.id = manifest_id
+        self.total_units = 0
+        self.units_path = None
 
-    def open(self):
-        if not os.path.exists(self.dir_path):
-            os.makedirs(self.dir_path)
+    def fetch(self, url, dir_path, downloader):
+        """
+        Fetch the manifest file using the specified URL.
+        :param url: The URL to the manifest.
+        :type url: str
+        :param dir_path: The absolute path to a directory for the downloaded manifest.
+        :type dir_path: str
+        :param downloader: The nectar downloader to be used.
+        :type downloader: nectar.downloaders.base.Downloader
+        """
+        destination = os.path.join(dir_path, MANIFEST_FILE_NAME)
+        request = DownloadRequest(str(url), destination)
+        request_list = [request]
+        downloader.download(request_list)
+        with open(destination) as fp:
+            manifest = json.load(fp)
+            self.__dict__.update(manifest)
+            self.units_path = os.path.join(dir_path, os.path.basename(self.units_path))
 
-    def close(self):
-        total_units = self.unit_writer.close()
-        manifest = {MANIFEST_ID: str(uuid4()), UNIT_FILE: UNITS_FILE_NAME, TOTAL_UNITS: total_units}
-        path = os.path.join(self.dir_path, MANIFEST_FILE_NAME)
-        json_manifest = json.dumps(manifest, indent=2)
+    def fetch_units(self, url, downloader):
+        """
+        Fetch the units file referenced in the manifest.
+        The file is decompressed and written to the path specified by units_path.
+        :param url: The URL to the manifest.  Used as the base URL.
+        :type url: str
+        :param downloader: The nectar downloader to be used.
+        :type downloader: nectar.downloaders.base.Downloader
+        """
+        base_url = url.rsplit('/', 1)[0]
+        url = '/'.join((base_url, os.path.basename(self.units_path)))
+        request = DownloadRequest(str(url), self.units_path)
+        request_list = [request]
+        downloader.download(request_list)
+        decompress(self.units_path)
+
+    def read(self, path):
+        """
+        Read the manifest file at the specified path.
+        The manifest is updated using the contents of the read json document.
+        :param path: The absolute path to a json encoded manifest file.
+        :type path: str
+        """
+        with open(path) as fp:
+            manifest = json.load(fp)
+            self.__dict__.update(manifest)
+
+    def write(self, path):
+        """
+        Write the manifest to a json encoded file at the specified path.
+        :param path: The absolute path to the written json encoded manifest file.
+        :type path: str
+        """
         with open(path, 'w+') as fp:
-            fp.write(json_manifest)
-        compress(path)
+            json.dump(self.__dict__, fp, indent=2)
 
-    def add_unit(self, unit):
+    def set_units(self, writer):
         """
-        Add a unit to the manifest.
-        :raise IOError on I/O errors.
-        :raise ValueError on json encoding errors
+        Set the associated units file using the specified writer.
+        Updates the units_path and total_units based on what was written by the writer.
+        :param writer: The writer used to create the units file.
+        :type writer: UnitWriter
         """
-        self.unit_writer.add(unit)
+        self.units_path = writer.path
+        self.total_units = writer.total_units
+
+    def get_units(self):
+        """
+        Get the content units referenced in the manifest.
+        :return: An iterator used to read downloaded content units.
+        :rtype: iterable
+        """
+        if self.total_units:
+            return UnitIterator(self.units_path, self.total_units)
+        else:
+            return []
 
 
 class UnitWriter(object):
@@ -125,117 +179,16 @@ class UnitWriter(object):
             compress(self.path)
         return self.total_units
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *unused):
+        self.close()
+        return False
+
     def __del__(self):
         # just in case the writer is not properly closed.
         self.close()
-
-
-class ManifestReader(object):
-    """
-    :ivar tmp_dir: The path to a directory used for downloaded files.
-    :type tmp_dir: str
-    :ivar downloader: The downloader to use.
-    :type downloader: nectar.downloaders.base.Downloader
-    """
-
-    def __init__(self, downloader, tmp_dir):
-        """
-        :param tmp_dir: The path to a directory used for downloaded files.
-        :type tmp_dir: str
-        :param downloader: The downloader to use.
-        :type downloader: nectar.downloaders.base.Downloader
-        """
-        self.tmp_dir = tmp_dir
-        self.downloader = downloader
-
-    def read(self, url):
-        """
-        Download and return the content of a published manifest.
-        :param url: The URL for the manifest.
-        :type url: str
-        :return: The manifest.
-        :rtype: Manifest
-        :raise HTTPError, URL errors.
-        :raise ValueError, json decoding errors
-        """
-        manifest = self._download_manifest(url)
-        base_url = url.rsplit('/', 1)[0]
-        manifest_id = manifest[MANIFEST_ID]
-        unit_path = self._download_units(base_url, manifest[UNIT_FILE])
-        total_units = manifest[TOTAL_UNITS]
-        return Manifest(manifest_id, unit_path, total_units)
-
-    def _download_manifest(self, url):
-        """
-        Download the manifest at the specified URL.
-        :param url: The URL used to download the manifest.
-        :type url: str
-        :return: The json decoded manifest content.
-        :rtype: dict
-        """
-        destination = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
-        request = DownloadRequest(str(url), destination)
-        request_list = [request]
-        self.downloader.download(request_list)
-        with gzip.open(destination) as fp:
-            return json.load(fp)
-
-    def _download_units(self, base_url, unit_file):
-        """
-        Download the file containing content units associated with the a manifest
-        using the specified base URL and file name.
-        :param base_url: The base URL used to download the file.
-        :type base_url: str
-        :param unit_file: The name of the unit file relative to the base URL.
-        :type unit_file: str
-        :return: The absolute path to the downloaded file.
-        :rtype: str
-        """
-        destination = os.path.join(self.tmp_dir, unit_file)
-        url = '/'.join((base_url, unit_file))
-        request = DownloadRequest(str(url), destination)
-        request_list = [request]
-        self.downloader.download(request_list)
-        decompress(destination)
-        return destination
-
-
-class Manifest(object):
-    """
-    The manifest returned by the ManifestReader.
-    Provides structured access to the information contained within the manifest
-    and access to the content units associated with the manifest through
-    and iterator to ensure a small memory footprint.
-    :ivar manifest_id: The unique manifest ID.
-    :type manifest_id: str
-    :ivar unit_path: The path to the downloaded content units file.
-    :type unit_path: str
-    :ivar total_units: The number of units in the units file.
-    :type total_units: int
-    """
-
-    def __init__(self, manifest_id, unit_path, total_units):
-        """
-        :param tmp_dir: The directory containing the content units.
-        :type tmp_dir: str
-        :param manifest_id: The unique manifest ID.
-        :type manifest_id: str
-        :param unit_path: The path to the downloaded content units file.
-        :type unit_path: str
-        :param total_units: The number of units in the units file.
-        :type total_units: int
-        """
-        self.manifest_id = manifest_id
-        self.unit_path = unit_path
-        self.total_units = total_units
-
-    def get_units(self):
-        """
-        Get the content units referenced in the manifest.
-        :return: An iterator used to read downloaded content units.
-        :rtype: UnitIterator
-        """
-        return UnitIterator(self.unit_path, self.total_units)
 
 
 class UnitIterator:

@@ -175,7 +175,7 @@ class TestBase(TestCase):
         self.assertRaises(GetChildUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.conduit.NodesConduit.get_units', return_value=[])
-    @patch('pulp_node.manifest.ManifestReader.read', side_effect=ValueError())
+    @patch('pulp_node.manifest.Manifest.fetch', side_effect=ValueError())
     def test_get_parent_units_exception(self, *unused):
         # Setup
         request = self.request()
@@ -184,7 +184,7 @@ class TestBase(TestCase):
         self.assertRaises(GetParentUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.conduit.NodesConduit.get_units', return_value=[])
-    @patch('pulp_node.manifest.ManifestReader.read', side_effect=MANIFEST_ERROR)
+    @patch('pulp_node.manifest.Manifest.fetch', side_effect=MANIFEST_ERROR)
     def test_get_parent_units_manifest_error(self, *unused):
         # Setup
         request = self.request()

@@ -20,13 +20,13 @@ from unittest import TestCase
 from nectar.downloaders.curl import HTTPSCurlDownloader
 from nectar.config import DownloaderConfig
 
-from pulp_node import manifest
-from pulp_node.manifest import ManifestWriter, ManifestReader
+from pulp_node.manifest import *
 
 
 class TestManifest(TestCase):
 
     NUM_UNITS = 10
+    MANIFEST_ID = '123'
 
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
@@ -41,27 +41,37 @@ class TestManifest(TestCase):
             for k, v in units_in[i].items():
                 self.assertEqual(units_out[i][k], v)
 
-    def test_writer(self):
-        # Test
-        writer = ManifestWriter(self.tmp_dir)
+    def test_publishing(self):
+        # Setup
         units = []
+        manifest_path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         for i in range(0, self.NUM_UNITS):
             unit = dict(unit_id=i, type_id='T', unit_key={})
             units.append(unit)
-        writer.open()
+        # Test
+        units_path = os.path.join(self.tmp_dir, UNITS_FILE_NAME)
+        writer = UnitWriter(units_path)
         for u in units:
-            writer.add_unit(u)
+            writer.add(u)
         writer.close()
+        manifest = Manifest(self.MANIFEST_ID)
+        manifest.set_units(writer)
+        manifest.write(manifest_path)
         # Verify
-        path = os.path.join(self.tmp_dir, manifest.MANIFEST_FILE_NAME)
-        self.assertTrue(os.path.exists(path))
-        fp = gzip.open(path)
-        s = fp.read()
-        manifest_in = json.loads(s)
-        fp.close()
+        self.assertTrue(os.path.exists(manifest_path))
+        with open(manifest_path) as fp:
+            manifest_in = json.load(fp)
+        self.assertEqual(manifest.id, manifest_in['id'])
+        self.assertEqual(manifest.units_path, manifest_in['units_path'])
+        self.assertEqual(manifest.units_path, writer.path)
+        self.assertEqual(manifest.total_units, manifest_in['total_units'])
+        self.assertEqual(manifest.total_units, writer.total_units)
+        self.assertEqual(manifest.total_units, len(units))
+        self.assertTrue(os.path.exists(manifest_path))
+        self.assertTrue(os.path.exists(manifest.units_path))
+        self.assertTrue(os.path.exists(units_path))
         units_in = []
-        path = os.path.join(self.tmp_dir, manifest_in[manifest.UNIT_FILE])
-        fp = gzip.open(path)
+        fp = gzip.open(manifest.units_path)
         while True:
             json_unit = fp.readline()
             if json_unit:
@@ -72,27 +82,34 @@ class TestManifest(TestCase):
         self.verify(units, units_in)
 
     def test_round_trip(self):
-        # Test
-        writer = ManifestWriter(self.tmp_dir)
+        # Setup
         units = []
+        manifest_path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         for i in range(0, self.NUM_UNITS):
             unit = dict(unit_id=i, type_id='T', unit_key={})
             units.append(unit)
-        writer.open()
+            # Test
+        units_path = os.path.join(self.tmp_dir, UNITS_FILE_NAME)
+        writer = UnitWriter(units_path)
         for u in units:
-            writer.add_unit(u)
+            writer.add(u)
         writer.close()
+        manifest = Manifest(self.MANIFEST_ID)
+        manifest.set_units(writer)
+        manifest.write(manifest_path)
+        # Test
         cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
         working_dir = os.path.join(self.tmp_dir, 'working_dir')
         os.makedirs(working_dir)
-        reader = ManifestReader(downloader, working_dir)
-        path = os.path.join(self.tmp_dir, manifest.MANIFEST_FILE_NAME)
+        path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         url = 'file://%s' % path
-        manifest_in = reader.read(url)
+        manifest = Manifest()
+        manifest.fetch(url, working_dir, downloader)
+        manifest.fetch_units(url, downloader)
         # Verify
         units_in = []
-        for unit, ref in manifest_in.get_units():
+        for unit, ref in manifest.get_units():
             units_in.append(unit)
             _unit = ref.fetch()
             self.assertEqual(unit, _unit)

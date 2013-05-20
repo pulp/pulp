@@ -48,7 +48,7 @@ from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
-from pulp_node.manifest import ManifestReader
+from pulp_node.manifest import Manifest
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
@@ -304,7 +304,7 @@ class TestDistributor(PluginTestBase):
             {'id': 'nodes_http_importer',
              'importer_type_id': 'nodes_http_importer',
              'config': {
-                 'manifest_url': 'file://localhost/%(tmp_dir)s/%(repo_id)s/manifest.json.gz',
+                 'manifest_url': 'file://localhost/%(tmp_dir)s/%(repo_id)s/manifest.json',
                  'protocol': 'file',
                  'ssl': {},
                  'strategy': 'additive'
@@ -448,10 +448,12 @@ class TestDistributor(PluginTestBase):
         # Verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
-        manifest_reader = ManifestReader(downloader, self.childfs)
+        manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
-        manifest = manifest_reader.read(url)
+        manifest = Manifest()
+        manifest.fetch(url, self.childfs, downloader)
+        manifest.fetch_units(url, downloader)
         units = [u for u, r in manifest.get_units()]
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
@@ -667,7 +669,7 @@ class TestEndToEnd(PluginTestBase):
         manager = managers.repo_importer_manager()
         importer = manager.get_importer(self.REPO_ID)
         manifest_url = importer['config'][constants.MANIFEST_URL_KEYWORD]
-        self.assertTrue(manifest_url.endswith('%s/manifest.json.gz' % self.REPO_ID))
+        self.assertTrue(manifest_url.endswith('%s/manifest.json' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
         manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)

@@ -25,7 +25,7 @@ from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
 from pulp_node.conduit import NodesConduit
-from pulp_node.manifest import ManifestReader
+from pulp_node.manifest import Manifest
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import DownloadListener
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
@@ -180,8 +180,9 @@ class ImporterStrategy(object):
         try:
             request.progress.begin_manifest_download()
             url = request.config.get(constants.MANIFEST_URL_KEYWORD)
-            manifest_reader = ManifestReader(request.downloader, request.working_dir)
-            manifest = manifest_reader.read(url)
+            manifest = Manifest()
+            manifest.fetch(url, request.working_dir, request.downloader)
+            manifest.fetch_units(url, request.downloader)
             parent_units = manifest.get_units()
         except NodeError:
             raise

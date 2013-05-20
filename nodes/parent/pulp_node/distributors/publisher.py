@@ -10,9 +10,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import hashlib
 
-from pulp_node.manifest import ManifestWriter
+from uuid import uuid4
+
+from pulp_node.manifest import Manifest, UnitWriter, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 
 from logging import getLogger
 
@@ -87,13 +88,17 @@ class FilePublisher(Publisher):
         """
 
         dir_path = join(self.publish_dir, self.repo_id)
+        units_path = os.path.join(dir_path, UNITS_FILE_NAME)
+        manifest_path = os.path.join(dir_path, MANIFEST_FILE_NAME)
         mkdir(dir_path)
-        manifest = ManifestWriter(dir_path)
-        manifest.open()
-        for unit in units:
-            self.link_unit(unit)
-            manifest.add_unit(unit)
-        manifest_path = manifest.close()
+        with UnitWriter(units_path) as writer:
+            for unit in units:
+                self.link_unit(unit)
+                writer.add(unit)
+        manifest_id = str(uuid4())
+        manifest = Manifest(manifest_id)
+        manifest.set_units(writer)
+        manifest.write(manifest_path)
         return manifest_path
 
     def link_unit(self, unit):
