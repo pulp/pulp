@@ -27,7 +27,7 @@ from pulp_node import constants
 from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import Manifest
 from pulp_node.importers.inventory import UnitInventory
-from pulp_node.importers.download import DownloadListener
+from pulp_node.importers.download import UnitDownloadManager
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
     DeleteUnitError, CaughtException)
 
@@ -222,33 +222,33 @@ class ImporterStrategy(object):
           1. If no file is associated with unit.
           2. The file associated with the unit is successfully downloaded.
         For units with files, the unit is added to the inventory as part of the
-        transport callback.
+        unit download manager callback.
         :param request: A synchronization request.
         :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
+        download_list = []
         units = unit_inventory.units_on_parent_only()
         request.progress.begin_adding_units(len(units))
-        download_list = []
-        for unit, ref in units:
+        manager = UnitDownloadManager(self, request)
+        for unit, unit_ref in units:
             if request.cancelled():
                 return
             download = unit.get('_download')
             if not download:
                 # unit has no file associated
-                self.add_unit(request, ref.fetch())
+                self.add_unit(request, unit_ref.fetch())
                 continue
             url = download['url']
             storage_path = self._storage_path(unit)
-            download_request = DownloadListener.create_request(url, request, storage_path, ref)
-            download_list.append(download_request)
+            _request = manager.create_request(url, storage_path, unit_ref)
+            download_list.append(_request)
         if request.cancelled():
             return
-        listener = DownloadListener(self)
-        request.downloader.event_listener = listener
+        request.downloader.event_listener = manager
         request.downloader.download(download_list)
-        request.summary.errors.extend(listener.error_list())
+        request.summary.errors.extend(manager.error_list())
 
     def _delete_units(self, request, unit_inventory):
         """
