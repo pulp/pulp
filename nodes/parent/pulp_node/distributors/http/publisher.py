@@ -36,9 +36,9 @@ class HttpPublisher(FilePublisher):
         self.alias = alias
         FilePublisher.__init__(self, alias[1], repo_id)
 
-    def link_unit(self, units):
-        # Add the URL to each unit.
-        unit, relative_path = FilePublisher.link_unit(self, units)
+    def publish_unit(self, unit):
+        # Add the URL to the unit.
+        unit, relative_path = super(self.__class__, self).publish_unit(unit)
         if relative_path:
             url = join(self.base_url, self.alias[0], relative_path)
             unit['_download'] = dict(url=url)

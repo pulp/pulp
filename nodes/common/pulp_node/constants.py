@@ -40,6 +40,11 @@ CA_CERT_KEYWORD = 'ca_cert'
 CLIENT_CERT_KEYWORD = 'client_cert'
 
 
+# --- unit/publishing --------------------------------------------------------
+
+PUBLISHED_AS_TARBALL = 'published_as_tarball'
+
+
 # --- consumer notes ---------------------------------------------------------
 
 NODE_NOTE_KEY = '_child-node'

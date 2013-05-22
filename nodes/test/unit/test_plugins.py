@@ -200,20 +200,25 @@ class PluginTestBase(WebTest):
 
     def add_units(self, begin, end):
         units = []
+        storage_dir = os.path.join(pulp_conf.get('server', 'storage_dir'), 'content')
+        if not os.path.exists(storage_dir):
+            os.makedirs(storage_dir)
         for n in range(begin, end):
             unit_id = self.UNIT_ID % n
             unit = dict(self.UNIT_METADATA)
             unit['N'] = n
             # add unit file
-            storage_dir = os.path.join(pulp_conf.get('server', 'storage_dir'), 'content')
-            if not os.path.exists(storage_dir):
-                os.makedirs(storage_dir)
             storage_path = os.path.join(storage_dir, '.'.join((unit_id, self.UNIT_TYPE_ID)))
             if n % 2 == 0:  # even numbered has file associated
                 unit['_storage_path'] = storage_path
-                fp = open(storage_path, 'w+')
-                fp.write(unit_id)
-                fp.close()
+                if n == 0:  # 1st one is a directory of files
+                    os.makedirs(storage_path)
+                    path = os.path.join(storage_path, 'abc.rpm')
+                    with open(path, 'w+') as fp:
+                        fp.write(path)
+                else:
+                    with open(storage_path, 'w+') as fp:
+                        fp.write(unit_id)
             # add unit
             manager = managers.content_manager()
             manager.add_content_unit(
@@ -693,10 +698,14 @@ class TestEndToEnd(PluginTestBase):
             file_path = '.'.join((unit_id, self.UNIT_TYPE_ID))
             self.assertEqual(storage_path, os.path.join(self.childfs, 'content', file_path))
             self.assertTrue(os.path.exists(storage_path))
-            fp = open(storage_path)
-            content = fp.read()
-            fp.close()
-            self.assertEqual(content, unit_id)
+            if os.path.isfile(storage_path):
+                fp = open(storage_path)
+                content = fp.read()
+                fp.close()
+                self.assertEqual(content, unit_id)
+            else:
+                self.assertTrue(os.path.isdir(storage_path))
+                self.assertEqual(len(os.listdir(storage_path)), 1)
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_mirror(self, *unused):

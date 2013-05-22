@@ -11,11 +11,15 @@
 
 import os
 import errno
+import tarfile
 
 from logging import getLogger
+from tempfile import mktemp
 
 from nectar.listener import AggregatingEventListener
 from nectar.request import DownloadRequest
+
+from pulp_node import constants
 from pulp_node.error import UnitDownloadError
 
 
@@ -98,6 +102,8 @@ class UnitDownloadManager(AggregatingEventListener):
         unit = unit_ref.fetch()
         unit['storage_path'] = report.destination
         self._strategy.add_unit(self.request, unit)
+        if unit.get(constants.PUBLISHED_AS_TARBALL):
+            self.extract(report.destination)
         if self.request.cancelled():
             self.request.downloader.cancel()
 
@@ -112,6 +118,24 @@ class UnitDownloadManager(AggregatingEventListener):
         super(self.__class__, self).download_failed(report)
         if self.request.cancelled():
             self.request.downloader.cancel()
+
+    def extract(self, path):
+        """
+        Replace the tarball at the specified path with it's extracted contents.
+        :param path: The absolute path to a tarball.
+        :type path: str
+        """
+        parent_dir = os.path.dirname(path)
+        tgz_path = mktemp(dir=parent_dir)
+        os.link(path, tgz_path)
+        os.unlink(path)
+        os.mkdir(path)
+        try:
+            with tarfile.open(tgz_path) as fp:
+                fp.extractall(path=path)
+        finally:
+            if os.path.exists(tgz_path):
+                os.unlink(tgz_path)
 
     def error_list(self):
         """
