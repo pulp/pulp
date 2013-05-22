@@ -16,32 +16,22 @@ Contains methods suitable for passing to the parse_func parameter of the
 option and flag client classes.
 """
 
-import csv as csv_module
 from gettext import gettext as _
-
 import isodate
+
+from okaara.parsers import *
 
 from pulp.client import arg_utils
 from pulp.common import dateutils
 
 
-def parse_boolean(value):
-    """
-    Returns the boolean representation of the given user input, raising the
-    appropriate exception if the user input cannot be parsed.
+# Backward compatibility for Pulp parsers that existed before Okaara's implementations
+parse_nonnegative_int = parse_non_negative_int
+parse_optional_nonnegative_int = parse_optional_non_negative_int
+csv = parse_csv_string
 
-    :param value: user entered text extracted by the framework
-    :type  value: str
-    :rtype: bool
-    """
 
-    converted = arg_utils.arg_to_bool(value)
-
-    if converted is None:
-        raise ValueError(_('invalid boolean value'))
-    else:
-        return converted
-
+# -- pulp custom parsers ------------------------------------------------------
 
 def parse_notes(value):
     """
@@ -64,38 +54,6 @@ def parse_notes(value):
         raise ValueError(_('invalid syntax for specifying notes'))
 
 
-def parse_nonnegative_int(value):
-    """
-    Returns an int representation of the user entered value, raising an
-    exception if it is negative.
-
-    :param value: user entered value
-    :type  value: str
-    :rtype: int
-    """
-
-    i = int(value)
-    if i < 0:
-        raise ValueError(_('value must be a non-negative integer'))
-    return i
-
-
-def parse_positive_int(value):
-    """
-    Returns an int representation of the user entered value, raising an
-    exception if it is not a positive number.
-
-    :param value: user entered value
-    :type  value: str
-    :rtype: int
-    """
-
-    i = int(value)
-    if i < 1:
-        raise ValueError(_('value must be a positive integer'))
-    return i
-
-
 def iso8601(value):
     """
     Makes sure that an incoming ISO8601 value is formatted in the standard way
@@ -111,10 +69,6 @@ def iso8601(value):
         return dateutils.parse_iso8601_datetime_or_date(value).replace(microsecond=0).isoformat()
     except isodate.ISO8601Error:
         raise ValueError(_('invalid ISO8601 string'))
-
-
-def csv(input):
-    return csv_module.reader((input,)).next()
 
 
 def key_csv(input):

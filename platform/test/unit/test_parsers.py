@@ -14,9 +14,28 @@
 
 import unittest
 import isodate
+
+from okaara import parsers as okaara_parsers
+
 from pulp.client import parsers
 
-import mock
+
+class TestBackwardsCompatibility(unittest.TestCase):
+
+    def test_mapping_to_okaara(self):
+        self.assertEqual(parsers.csv, okaara_parsers.parse_csv_string)
+        self.assertEqual(parsers.parse_nonnegative_int, okaara_parsers.parse_non_negative_int)
+        self.assertEqual(parsers.parse_optional_nonnegative_int, okaara_parsers.parse_optional_non_negative_int)
+
+
+class TestNotes(unittest.TestCase):
+    def test_valid(self):
+        ret = parsers.parse_notes(['a=z', 'b=y'])
+        self.assertEqual(ret, {'a' : 'z', 'b' : 'y'})
+
+    def test_invalid(self):
+        self.assertRaises(ValueError, parsers.parse_notes, 'foo')
+
 
 class TestISO8601(unittest.TestCase):
     def test_type_error(self):
@@ -36,24 +55,6 @@ class TestISO8601(unittest.TestCase):
 
     def test_value_error(self):
         self.assertRaises(ValueError, parsers.iso8601, 'abcde')
-
-
-class TestCSV(unittest.TestCase):
-    @mock.patch('csv.reader')
-    def test_calls_csv_module(self, mock_reader):
-        value = 'a,b,c'
-        ret = parsers.csv(value)
-        mock_reader.assert_called_once_with((value,))
-        mock_reader.return_value.next.assert_called_once_with()
-        self.assertEqual(mock_reader.return_value.next.return_value, ret)
-
-    def test_basic_values(self):
-        ret = parsers.csv('a,b,c')
-        self.assertEqual(ret, ['a', 'b', 'c'])
-
-    def test_single_value(self):
-        ret = parsers.csv('a')
-        self.assertEqual(ret, ['a'])
 
 
 class TestKeyCSV(unittest.TestCase):
@@ -105,34 +106,3 @@ class TestKeyValueMultiple(unittest.TestCase):
     def test_none(self):
         ret = parsers.key_value_multiple(None)
         self.assertEqual(ret, [])
-
-
-class TestParsePostiveInt(unittest.TestCase):
-    def test_valid(self):
-        ret = parsers.parse_positive_int('31415')
-        self.assertEqual(ret, 31415)
-
-    def test_string(self):
-        self.assertRaises(ValueError, parsers.parse_positive_int, 'foo')
-
-    def test_zero(self):
-        self.assertRaises(ValueError, parsers.parse_positive_int, '0')
-
-    def test_negative(self):
-        self.assertRaises(ValueError, parsers.parse_positive_int, '-314')
-
-
-class TestParseNonNegativeInt(unittest.TestCase):
-    def test_valid(self):
-        ret = parsers.parse_nonnegative_int('31415')
-        self.assertEqual(ret, 31415)
-
-    def test_string(self):
-        self.assertRaises(ValueError, parsers.parse_nonnegative_int, 'foo')
-
-    def test_zero(self):
-        ret = parsers.parse_nonnegative_int('0')
-        self.assertEqual(ret, 0)
-
-    def test_negative(self):
-        self.assertRaises(ValueError, parsers.parse_nonnegative_int, '-314')
