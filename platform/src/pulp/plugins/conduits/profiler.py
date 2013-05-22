@@ -44,23 +44,25 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
 
-    def search_units(self, type_id, criteria):
+    def search_unit_ids(self, type_id, criteria):
         """
         Searches for units of a given type in the server, regardless of their
-        associations to any repositories.
+        associations to any repositories and returns a list of unit ids.
 
         @param type_id: indicates the type of units being retrieved
         @type  type_id: str
         @param criteria: used to query which units are returned
         @type  criteria: pulp.server.db.model.criteria.Criteria
 
-        @return: list of unit instances
-        @rtype:  list of units
+        @return: list of unit ids
+        @rtype:  list of str
         """
         try:
             query_manager = managers.content_query_manager()
+            criteria["fields"] = ['_id']
             units = query_manager.find_by_criteria(type_id, criteria)
-            return units
+            unit_ids = [u['_id'] for u in units] 
+            return unit_ids
 
         except Exception, e:
             _LOG.exception(_('Exception from server searching units of type [%s]' % type_id))
