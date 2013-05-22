@@ -49,20 +49,6 @@ def mkdir(path):
         os.makedirs(path)
 
 
-def tarball(dir_path, tgz_path):
-    """
-    Create a tarball containing the specified directory.
-    :param dir_path: The absolute path to a directory.
-    :type dir_path: str
-    :param tgz_path: The absolute path to created tarball.
-    :type tgz_path: str
-    """
-    with tarfile.open(tgz_path, 'w:gz') as fp:
-        for fn in os.listdir(dir_path):
-            path = os.path.join(dir_path, fn)
-            fp.add(path, arcname=os.path.basename(path))
-
-
 class Publisher(object):
     """
     The publisher does the heavy lifting for nodes distributor.
@@ -138,7 +124,8 @@ class FilePublisher(Publisher):
         mkdir(os.path.dirname(published_path))
         if os.path.isdir(storage_path):
             tgz_path = published_path + TGZ_SUFFIX
-            tarball(storage_path, tgz_path)
+            with tarfile.open(tgz_path, 'w:gz') as tb:
+                tb.add(storage_path, arcname=os.path.basename(storage_path))
             unit[constants.PUBLISHED_AS_TARBALL] = True
             relative_path += TGZ_SUFFIX
         else:

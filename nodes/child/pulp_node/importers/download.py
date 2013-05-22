@@ -13,8 +13,8 @@ import os
 import errno
 import tarfile
 
-from logging import getLogger
 from tempfile import mktemp
+from logging import getLogger
 
 from nectar.listener import AggregatingEventListener
 from nectar.request import DownloadRequest
@@ -103,7 +103,7 @@ class UnitDownloadManager(AggregatingEventListener):
         unit['storage_path'] = report.destination
         self._strategy.add_unit(self.request, unit)
         if unit.get(constants.PUBLISHED_AS_TARBALL):
-            self.extract(report.destination)
+            self.untar_dir(report.destination)
         if self.request.cancelled():
             self.request.downloader.cancel()
 
@@ -119,17 +119,17 @@ class UnitDownloadManager(AggregatingEventListener):
         if self.request.cancelled():
             self.request.downloader.cancel()
 
-    def extract(self, path):
+    def untar_dir(self, path):
         """
-        Replace the tarball at the specified path with it's extracted contents.
+        Replaces the tarball at the specified path with the extracted directory tree.
         :param path: The absolute path to a tarball.
         :type path: str
+        :raise IOError: on i/o errors.
         """
         parent_dir = os.path.dirname(path)
         tgz_path = mktemp(dir=parent_dir)
         os.link(path, tgz_path)
         os.unlink(path)
-        os.mkdir(path)
         try:
             with tarfile.open(tgz_path) as fp:
                 fp.extractall(path=path)

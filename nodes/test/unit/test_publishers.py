@@ -113,11 +113,9 @@ class TestHttp(TestCase):
             else:
                 self.assertTrue(os.path.islink(path))
             if n == 0:
-                with tarfile.open(path) as fp:
-                    files = sorted(fp.getnames())
-                self.assertEqual(len(files), self.NUM_TARED_FILES)
-                for tn in range(0, self.NUM_TARED_FILES):
-                    self.assertEqual(files[tn], self.TARED_FILE % tn)
+                with tarfile.open(path) as tb:
+                    files = sorted(tb.getnames())
+                self.assertEqual(len(files), self.NUM_TARED_FILES + 1)
             else:
                 with open(path, 'rb') as fp:
                     unit_content = fp.read()
