@@ -14,16 +14,21 @@
 """
 Profiler conduits.
 """
+from gettext import gettext as _
+
+import logging
+import sys
 
 from pulp.server.managers import factory as managers
-from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, SearchUnitsMixin
+from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin
 from pulp.plugins.conduits.mixins import ProfilerConduitException
 
-class ProfilerConduit(MultipleRepoUnitsMixin, SearchUnitsMixin):
+_LOG = logging.getLogger(__name__)
+
+class ProfilerConduit(MultipleRepoUnitsMixin):
 
     def __init__(self):
         MultipleRepoUnitsMixin.__init__(self, ProfilerConduitException)
-        SearchUnitsMixin.__init__(self, ProfilerConduitException)
 
     def get_bindings(self, consumer_id):
         """
@@ -38,3 +43,25 @@ class ProfilerConduit(MultipleRepoUnitsMixin, SearchUnitsMixin):
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
+
+    def search_units(self, type_id, criteria):
+        """
+        Searches for units of a given type in the server, regardless of their
+        associations to any repositories.
+
+        @param type_id: indicates the type of units being retrieved
+        @type  type_id: str
+        @param criteria: used to query which units are returned
+        @type  criteria: pulp.server.db.model.criteria.Criteria
+
+        @return: list of unit instances
+        @rtype:  list of units
+        """
+        try:
+            query_manager = managers.content_query_manager()
+            units = query_manager.find_by_criteria(type_id, criteria)
+            return units
+
+        except Exception, e:
+            _LOG.exception(_('Exception from server searching units of type [%s]' % type_id))
+            raise self.exception_class(e), None, sys.exc_info()[2]

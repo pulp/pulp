@@ -21,6 +21,7 @@ from web.webapi import BadRequest
 # Pulp
 import pulp.server.managers.factory as managers
 from pulp.common.tags import action_tag, resource_tag
+from pulp.plugins.types import database as content_types_db
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
@@ -637,6 +638,13 @@ class ContentApplicability(JSONController):
         if repo_criteria:
             repo_criteria = Criteria.from_client_input(repo_criteria)
 
+        # If unit_criteria is not specified, consider all units of all types
+        if not units:
+            units = {}
+            all_unit_type_ids = content_types_db.all_type_ids()
+            for unit_type_id in all_unit_type_ids:
+                units[unit_type_id] = {}
+        # Validate user defined criteria and convert them to Criteria objects
         unit_criteria = {}
         if units:
             for type_id, criteria in units.items():

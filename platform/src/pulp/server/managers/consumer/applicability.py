@@ -20,7 +20,6 @@ from pulp.server.managers.pluginwrapper import PluginWrapper
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.profiler import Profiler
 from pulp.plugins.model import Consumer as ProfiledConsumer
-from pulp.plugins.types import database as content_types_db
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -129,11 +128,7 @@ class ApplicabilityManager(object):
                 consumer_profile_and_repo_ids[consumer_id]['profiled_consumer'] = self.__profiled_consumer(consumer_id)
 
         if not unit_criteria:
-            # If unit_criteria is not specified, consider all units
-            unit_criteria = {}
-            all_unit_type_ids = content_types_db.all_type_ids()
-            for unit_type_id in all_unit_type_ids:
-                unit_criteria[unit_type_id] = {}
+            return result
 
         # Call respective profiler api according to the unit type to check for applicability
         for unit_type_id, criteria in unit_criteria.items():
