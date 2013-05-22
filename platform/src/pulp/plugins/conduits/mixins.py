@@ -191,8 +191,7 @@ class SearchUnitsMixin(object):
         try:
             query_manager = manager_factory.content_query_manager()
             units = query_manager.find_by_criteria(type_id, criteria)
-            unit_ids = [u['_id'] for u in units]
-            return unit_ids
+            return units
 
         except Exception, e:
             _LOG.exception('Exception from server requesting all units of type [%s]' % type_id)
