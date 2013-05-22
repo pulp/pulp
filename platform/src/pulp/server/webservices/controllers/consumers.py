@@ -640,11 +640,9 @@ class ContentApplicability(JSONController):
         unit_criteria = {}
         if units:
             for type_id, criteria in units.items():
-                # process if criteria is not empty
-                if criteria:
-                    unit_criteria[type_id] = Criteria.from_client_input(criteria)
-                else:
-                    unit_criteria[type_id] = criteria
+                if criteria is None:
+                    criteria = {}
+                unit_criteria[type_id] = Criteria.from_client_input(criteria)
 
         manager = managers.consumer_applicability_manager()
         report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria, override_config)

@@ -25,9 +25,8 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.server.exceptions import PulpExecutionException
-from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
+from pulp.server.db.model.criteria import Criteria
 from logging import getLogger
-from pulp.plugins.conduits import _common as common_utils
 
 _LOG = getLogger(__name__)
 
