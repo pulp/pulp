@@ -73,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed May 22 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.31-1
+- Okaara upgrade (jason.dobies@redhat.com)
+
+* Wed May 22 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.31-1
 - Renamed non-negative int parser (jason.dobies@redhat.com)
 - Added base set of parsers (jason.dobies@redhat.com)
 - Header standardization (jason.dobies@redhat.com)
