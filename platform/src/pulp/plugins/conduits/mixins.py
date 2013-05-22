@@ -191,7 +191,7 @@ class SearchUnitsMixin(object):
         try:
             query_manager = manager_factory.content_query_manager()
             units = query_manager.find_by_criteria(type_id, criteria)
-            unit_ids = [u['id'] for u in units]
+            unit_ids = [u['_id'] for u in units]
             return unit_ids
 
         except Exception, e:
