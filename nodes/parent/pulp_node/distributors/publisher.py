@@ -23,7 +23,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-TGZ_SUFFIX = '.tgz'
+TAR_SUFFIX = '.tar'
 
 
 def join(*parts):
@@ -123,11 +123,11 @@ class FilePublisher(Publisher):
         published_path = join(self.publish_dir, relative_path)
         mkdir(os.path.dirname(published_path))
         if os.path.isdir(storage_path):
-            tgz_path = published_path + TGZ_SUFFIX
-            with tarfile.open(tgz_path, 'w:gz') as tb:
+            tgz_path = published_path + TAR_SUFFIX
+            with tarfile.open(tgz_path, 'w:') as tb:
                 tb.add(storage_path, arcname=os.path.basename(storage_path))
             unit[constants.PUBLISHED_AS_TARBALL] = True
-            relative_path += TGZ_SUFFIX
+            relative_path += TAR_SUFFIX
         else:
             os.symlink(storage_path, published_path)
         return unit, relative_path
