@@ -16,13 +16,14 @@ Profiler conduits.
 """
 
 from pulp.server.managers import factory as managers
-from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin
+from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, SearchUnitsMixin
 from pulp.plugins.conduits.mixins import ProfilerConduitException
 
-class ProfilerConduit(MultipleRepoUnitsMixin):
+class ProfilerConduit(MultipleRepoUnitsMixin, SearchUnitsMixin):
 
     def __init__(self):
         MultipleRepoUnitsMixin.__init__(self, ProfilerConduitException)
+        SearchUnitsMixin.__init__(self, ProfilerConduitException)
 
     def get_bindings(self, consumer_id):
         """
