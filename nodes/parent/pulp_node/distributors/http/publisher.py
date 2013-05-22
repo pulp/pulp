@@ -9,6 +9,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import urllib
 
 from pulp_node.distributors.publisher import join, FilePublisher
 from pulp_node.manifest import MANIFEST_FILE_NAME
@@ -40,7 +41,7 @@ class HttpPublisher(FilePublisher):
         # Add the URL to the unit.
         unit, relative_path = super(self.__class__, self).publish_unit(unit)
         if relative_path:
-            url = join(self.base_url, self.alias[0], relative_path)
+            url = join(self.base_url, self.alias[0], urllib.quote(relative_path))
             unit['_download'] = dict(url=url)
         return unit, relative_path
 
