@@ -15,17 +15,19 @@ Nodes importer plugins delegate synchronization to one of
 the strategies provided here.
 """
 
+import os
 
 from gettext import gettext as _
 from logging import getLogger
 
-from pulp.plugins.model import Unit
+from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
+from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import Manifest
-from pulp_node.importers.inventory import UnitInventory, unit_dictionary
-from pulp_node.importers.download import DownloadListener, UnitDownloadRequest
+from pulp_node.importers.inventory import UnitInventory
+from pulp_node.importers.download import UnitDownloadManager
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
     DeleteUnitError, CaughtException)
 
@@ -58,9 +60,11 @@ class SyncRequest(object):
     :type summary: pulp_node.importers.reports.SummaryReport
     :ivar repo_id: The ID of a repository to synchronize.
     :type repo_id: str
+    :ivar working_dir: The absolute path to a directory to be used as temporary storage.
+    :type working_dir: str
     """
 
-    def __init__(self, importer, conduit, config, downloader, progress, summary, repo_id):
+    def __init__(self, importer, conduit, config, downloader, progress, summary, repo):
         """
         :param conduit: Provides access to relevant Pulp functionality.
         :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
@@ -81,7 +85,8 @@ class SyncRequest(object):
         self.downloader = downloader
         self.progress = progress
         self.summary = summary
-        self.repo_id = repo_id
+        self.repo_id = repo.id
+        self.working_dir = repo.working_dir
 
     def started(self):
         """
@@ -139,13 +144,18 @@ class ImporterStrategy(object):
         :param request: A synchronization request.
         :type request: SyncRequest
         :param unit: The unit to be added.
-        :type unit: Unit
+        :type unit: dict
         """
         try:
-            request.conduit.save_unit(unit)
-            request.progress.unit_added(details=unit.storage_path)
+            new_unit = Unit(
+                unit['type_id'],
+                unit['unit_key'],
+                unit['metadata'],
+                unit['storage_path'])
+            request.conduit.save_unit(new_unit)
+            request.progress.unit_added(details=new_unit.storage_path)
         except Exception:
-            log.exception(unit.id)
+            log.exception(unit['unit_id'])
             request.summary.errors.append(AddUnitError(request.repo_id))
 
     # --- protected ---------------------------------------------------------------------
@@ -159,52 +169,46 @@ class ImporterStrategy(object):
         :rtype: UnitInventory
         """
         # fetch child units
-        child = {}
         try:
-            units = self._child_units(request)
-            child.update(units)
+            conduit = NodesConduit()
+            child_units = conduit.get_units(request.repo_id)
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetChildUnitsError(request.repo_id)
+
         # fetch parent units
-        parent = {}
         try:
-            units = self._parent_units(request)
-            parent.update(units)
+            request.progress.begin_manifest_download()
+            url = request.config.get(constants.MANIFEST_URL_KEYWORD)
+            manifest = Manifest()
+            manifest.fetch(url, request.working_dir, request.downloader)
+            manifest.fetch_units(url, request.downloader)
+            parent_units = manifest.get_units()
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
-        return UnitInventory(child, parent)
 
-    def _missing_units(self, unit_inventory):
+        return UnitInventory(parent_units, child_units)
+
+    def _storage_path(self, unit):
         """
-        Determine the list of units defined parent inventory that are
-        not in the child inventory.
-        :param unit_inventory: The inventory of both parent and child content units.
-        :type unit_inventory: UnitInventory
-        :return: The list of units to be added.
-            Each item: (parent_unit, unit_to_be_added)
-        :rtype: list
+        Get the storage_path for the unit using the storage_dir defined in
+        the server.conf and the relative_path injected when the unit was published.
+        :param unit: A published unit.
+        :type unit: dict
+        :return: The localized storage path.
+        :rtype: str
         """
-        new_units = []
         storage_dir = pulp_conf.get('server', 'storage_dir')
-        for unit in unit_inventory.parent_only():
-            unit['metadata'].pop('_id')
-            unit['metadata'].pop('_ns')
-            type_id = unit['type_id']
-            unit_key = unit['unit_key']
-            metadata = unit['metadata']
-            storage_path = unit.get('storage_path')
-            if storage_path:
-                relative_path = unit['_relative_path']
-                storage_path = '/'.join((storage_dir, relative_path))
-            unit_in = Unit(type_id, unit_key, metadata, storage_path)
-            new_units.append((unit, unit_in))
-        return new_units
+        storage_path = unit.get('storage_path')
+        if storage_path:
+            relative_path = unit['relative_path']
+            storage_path = os.path.join(storage_dir, relative_path)
+        return storage_path
 
     def _add_units(self, request, unit_inventory):
         """
@@ -218,32 +222,33 @@ class ImporterStrategy(object):
           1. If no file is associated with unit.
           2. The file associated with the unit is successfully downloaded.
         For units with files, the unit is added to the inventory as part of the
-        transport callback.
+        unit download manager callback.
         :param request: A synchronization request.
         :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
-        units = self._missing_units(unit_inventory)
-        request.progress.begin_adding_units(len(units))
         download_list = []
-        for unit, child_unit in units:
+        units = unit_inventory.units_on_parent_only()
+        request.progress.begin_adding_units(len(units))
+        manager = UnitDownloadManager(self, request)
+        for unit, unit_ref in units:
             if request.cancelled():
                 return
             download = unit.get('_download')
             if not download:
                 # unit has no file associated
-                self.add_unit(request, child_unit)
+                self.add_unit(request, unit_ref.fetch())
                 continue
             url = download['url']
-            download_request = UnitDownloadRequest(url, request, child_unit)
-            download_list.append(download_request)
+            storage_path = self._storage_path(unit)
+            _request = manager.create_request(url, storage_path, unit_ref)
+            download_list.append(_request)
         if request.cancelled():
             return
-        listener = DownloadListener(self)
-        request.downloader.event_listener = listener
+        request.downloader.event_listener = manager
         request.downloader.download(download_list)
-        request.summary.errors.extend(listener.error_list())
+        request.summary.errors.extend(manager.error_list())
 
     def _delete_units(self, request, unit_inventory):
         """
@@ -254,43 +259,24 @@ class ImporterStrategy(object):
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
-        for unit in unit_inventory.child_only():
+        for unit in unit_inventory.units_on_child_only():
             if request.cancelled():
                 return
             try:
-                request.conduit.remove_unit(unit)
+                _unit = AssociatedUnit(
+                    unit['type_id'],
+                    unit['unit_key'],
+                    {},
+                    None,
+                    None,
+                    None,
+                    unit['owner_type'],
+                    unit['owner_id'])
+                _unit.id = unit['unit_id']
+                request.conduit.remove_unit(_unit)
             except Exception:
-                log.exception(unit.id)
+                log.exception(unit['unit_id'])
                 request.summary.errors.append(DeleteUnitError(request.repo_id))
-
-    def _child_units(self, request):
-        """
-        Fetch the child units using the conduit.  The conduit will
-        restrict this search to only those associated with the repository
-        to which it is pre-configured.
-        :param request: A synchronization request.
-        :type request: SyncRequest
-        :return: A dictionary of units keyed by UnitKey.
-        :rtype: dict
-        """
-        units = request.conduit.get_units()
-        return unit_dictionary(units)
-
-    def _parent_units(self, request):
-        """
-        Fetch the list of units published by the parent nodes distributor.
-        This is performed by reading the manifest at the URL defined in
-        the configuration.
-        :param request: A synchronization request.
-        :type request: SyncRequest
-        :return: A dictionary of units keyed by UnitKey.
-        :rtype: dict
-        """
-        request.progress.begin_manifest_download()
-        url = request.config.get(constants.MANIFEST_URL_KEYWORD)
-        manifest = Manifest()
-        units = manifest.read(url, request.downloader)
-        return unit_dictionary(units)
 
 
 # --- strategies ------------------------------------------------------------------------

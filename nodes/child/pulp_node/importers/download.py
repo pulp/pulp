@@ -22,28 +22,58 @@ from pulp_node.error import UnitDownloadError
 log = getLogger(__name__)
 
 
-REQUEST = 'request'
-UNIT = 'unit'
+UNIT_REF = 'unit_ref'
 
 
-class UnitDownloadRequest(DownloadRequest):
+class UnitDownloadManager(AggregatingEventListener):
+    """
+    The content unit download manager.
+    Listens for status changes to unit download requests and calls into the importer
+    strategy object based on whether the download succeeded or failed.  If the download
+    succeeded, the importer strategy is called to add the associated content unit (in the DB).
+    In all cases, it checks the cancellation status of the sync request and when
+    cancellation is detected, the downloader is cancelled.
+    """
 
-    def __init__(self, url, request, unit):
-        super(UnitDownloadRequest, self).__init__(
-            url, unit.storage_path, data={REQUEST: request, UNIT: unit})
+    @staticmethod
+    def create_request(url, storage_path, unit_ref):
+        """
+        Create a nectar download request compatible with the listener.
+        :param url: The download URL.
+        :type url: str
 
+        :param storage_path: The absolute path to where the file is to be downloaded.
+        :type storage_path: str
+        :param unit_ref: A reference to the unit association.
+        :type unit_ref: pulp_node.manifest.UnitRef.
+        :return: A nectar download request.
+        :rtype: DownloadRequest
+        """
+        return DownloadRequest(url, storage_path, data={UNIT_REF: unit_ref})
 
-class DownloadListener(AggregatingEventListener):
-
-    def __init__(self, strategy):
-        super(DownloadListener, self).__init__()
+    def __init__(self, strategy, request):
+        """
+        :param strategy: An importer strategy
+        :type strategy: pulp_node.importer.strategy.ImporterStrategy.
+        :param request: The nodes sync request.
+        :type request: pulp_node.importers.strategies.SyncRequest.
+        """
+        super(self.__class__, self).__init__()
         self._strategy = strategy
+        self.request = request
 
     def download_started(self, report):
-        super(DownloadListener, self).download_started(report)
-        request = report.data[REQUEST]
-        if request.cancelled():
-            request.downloader.cancel()
+        """
+        A specific download (request) has started.
+          1. Check to see if the node sync request has been cancelled and cancel
+             the downloader as needed.
+          2. Create the destination directory structure as needed.
+        :param report: A nectar download report.
+        :type report: nectar.report.DownloadReport.
+        """
+        super(self.__class__, self).download_started(report)
+        if self.request.cancelled():
+            self.request.downloader.cancel()
             return
         try:
             dir_path = os.path.dirname(report.destination)
@@ -53,23 +83,44 @@ class DownloadListener(AggregatingEventListener):
                 raise e
 
     def download_succeeded(self, report):
-        super(DownloadListener, self).download_succeeded(report)
-        request = report.data[REQUEST]
-        unit = report.data[UNIT]
-        self._strategy.add_unit(request, unit)
-        if request.cancelled():
-            request.downloader.cancel()
+        """
+        A specific download (request) has succeeded.
+          1. Fetch the content unit using the reference.
+          2. Update the storage_path on the unit.
+          3. Add the unit.
+          4. Check to see if the node sync request has been cancelled and cancel
+             the downloader as needed.
+        :param report: A nectar download report.
+        :type report: nectar.report.DownloadReport.
+        """
+        super(self.__class__, self).download_succeeded(report)
+        unit_ref = report.data[UNIT_REF]
+        unit = unit_ref.fetch()
+        unit['storage_path'] = report.destination
+        self._strategy.add_unit(self.request, unit)
+        if self.request.cancelled():
+            self.request.downloader.cancel()
 
     def download_failed(self, report):
-        super(DownloadListener, self).download_failed(report)
-        request = report.data[REQUEST]
-        if request.cancelled():
-            request.downloader.cancel()
+        """
+        A specific download (request) has failed.
+        Just need to check to see if the node sync request has been cancelled
+        and cancel the downloader as needed.
+        :param report: A nectar download report.
+        :type report: nectar.report.DownloadReport.:
+        """
+        super(self.__class__, self).download_failed(report)
+        if self.request.cancelled():
+            self.request.downloader.cancel()
 
     def error_list(self):
+        """
+        Return the aggregated list of errors.
+        :return: The aggregated list of errors.
+        :rtype: list
+        """
         error_list = []
         for report in self.failed_reports:
-            request = report.data[REQUEST]
-            error = UnitDownloadError(report.url, request.repo_id, report.error_report)
+            error = UnitDownloadError(report.url, self.request.repo_id, report.error_report)
             error_list.append(error)
         return error_list

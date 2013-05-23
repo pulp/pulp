@@ -10,20 +10,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 
-def unit_dictionary(units):
-    """
-    Build a dictionary of units keyed by UnitKey using
-    the specified list of units.
-    :param units: A list of content units.
-        Each unit is either: (Unit|dict)
-    :type units: list
-    :return: A dictionary of units keyed by UnitKey.
-    :rtype: dict
-    """
-    items = [(UniqueKey(u), u) for u in units]
-    return dict(items)
-
-
 class UniqueKey(object):
     """
     A unique unit key consisting of a unit's type_id & unit_key.
@@ -35,14 +21,10 @@ class UniqueKey(object):
     def __init__(self, unit):
         """
         :param unit: A content unit.
-        :type unit: (dict|Unit)
+        :type unit: dict
         """
-        if isinstance(unit, dict):
-            type_id = unit['type_id']
-            unit_key = tuple(sorted(unit['unit_key'].items()))
-        else:
-            type_id = unit.type_id
-            unit_key = tuple(sorted(unit.unit_key.items()))
+        type_id = unit['type_id']
+        unit_key = tuple(sorted(unit['unit_key'].items()))
         self.uid = (type_id, unit_key)
 
     def __hash__(self):
@@ -60,36 +42,50 @@ class UnitInventory(object):
     The unit inventory contains both the parent and child inventory
     of content units associated with a specific repository.  Each is contained
     within a dictionary keyed by {UnitKey} to ensure uniqueness.
-    :ivar child: The child inventory.
-    :type child: dict
-    :ivar parent: The parent inventory.
-    :type parent: dict
     """
 
-    def __init__(self, child, parent):
-        """
-        :param child: The child inventory.
-        :type child: dict
-        :param parent: The parent inventory.
-        :type parent: dict
-        """
-        self.child = child
-        self.parent = parent
+    @staticmethod
+    def _import_parent_units(units):
+        _units = {}
+        for unit, ref in units:
+            unit.pop('metadata', None)
+            key = UniqueKey(unit)
+            _units[key] = (unit, ref)
+        return _units
 
-    def parent_only(self):
+    @staticmethod
+    def _import_child_units(units):
+        _units = {}
+        for unit in units:
+            unit.pop('metadata', None)
+            key = UniqueKey(unit)
+            _units[key] = unit
+        return _units
+
+    def __init__(self, parent_units, child_units):
+        """
+        :param parent_units: The content units in the parent node.
+        :type parent_units: iterable
+        :param child_units: The content units in the child node.
+        :type child_units: iterable
+        """
+        self.parent_units = self._import_parent_units(parent_units)
+        self.child_units = self._import_child_units(child_units)
+
+    def units_on_parent_only(self):
         """
         Listing of units contained in the parent inventory
         but not contained in the child inventory.
-        :return: List of units that need to be added.
+        :return: List of (unit address).
         :rtype: list
         """
-        return [u for k, u in self.parent.items() if k not in self.child]
+        return [r for k, r in self.parent_units.items() if k not in self.child_units]
 
-    def child_only(self):
+    def units_on_child_only(self):
         """
         Listing of units contained in the child inventory
         but not contained in the parent inventory.
         :return: List of units that need to be purged.
         :rtype: list
         """
-        return [u for k, u in self.child.items() if k not in self.parent]
+        return [u for k, u in self.child_units.items() if k not in self.parent_units]

@@ -20,6 +20,7 @@ from pulp.server.config import config as pulp_conf
 
 from pulp_node import link
 from pulp_node import constants
+from pulp_node.conduit import NodesConduit
 from pulp_node.distributors.http.publisher import HttpPublisher
 
 
@@ -142,30 +143,12 @@ class NodesHttpDistributor(Distributor):
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
         """
-        units = conduit.get_units()
+        nodes_conduit = NodesConduit()
+        units = nodes_conduit.get_units(repo.id)
         publisher = self.publisher(repo, config)
-        units = self._prepare_units(units)
         publisher.publish(units)
         details = dict(unit_count=len(units))
         return conduit.build_success_report('succeeded', details)
-
-    def _prepare_units(self, units):
-        """
-        Prepare units to be published.
-            - add _relative storage path.
-        :param units: A list of units to be published.
-        :type units: list
-        """
-        prepared = []
-        storage_dir = pulp_conf.get('server', 'storage_dir')
-        for unit in units:
-            _unit = unit.__dict__
-            storage_path = _unit['storage_path']
-            if storage_path:
-                relative_path = storage_path[len(storage_dir):]
-                _unit['_relative_path'] = relative_path
-            prepared.append(_unit)
-        return prepared
 
     def publisher(self, repo, config):
         """

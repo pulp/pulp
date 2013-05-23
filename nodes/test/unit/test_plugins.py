@@ -22,6 +22,10 @@ from copy import deepcopy
 from mock import Mock, patch
 from base import WebTest
 
+from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.request import DownloadRequest
+from nectar.config import DownloaderConfig
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
 from pulp_node.distributors.http.distributor import NodesHttpDistributor
@@ -46,9 +50,6 @@ from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import Manifest
 from pulp_node.handlers.strategies import Mirror, Additive
-from pulp_node.importers.download import UnitDownloadRequest
-from nectar.downloaders.curl import HTTPSCurlDownloader
-from nectar.config import DownloaderConfig
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
 from pulp_node import constants
@@ -62,8 +63,9 @@ FAKE_DISTRIBUTOR = 'test_distributor'
 
 class Repository(object):
 
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, repo_id, working_dir=None):
+        self.id = repo_id
+        self.working_dir = working_dir
 
 
 class FakeDistributor(object):
@@ -112,11 +114,11 @@ class AdditiveTestStrategy(TestStrategy):
         return Additive
 
 
-class BadDownloadRequest(UnitDownloadRequest):
+class BadDownloadRequest(DownloadRequest):
 
-    def __init__(self, url, repo_id, unit):
+    def __init__(self, url, *args, **kwargs):
         url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
-        UnitDownloadRequest.__init__(self, url, repo_id, unit)
+        DownloadRequest.__init__(self, url, *args, **kwargs)
 
 
 # --- testing base classes ---------------------------------------------------
@@ -302,7 +304,7 @@ class TestDistributor(PluginTestBase):
             {'id': 'nodes_http_importer',
              'importer_type_id': 'nodes_http_importer',
              'config': {
-                 'manifest_url': 'file://localhost/%(tmp_dir)s/%(repo_id)s/manifest.json.gz',
+                 'manifest_url': 'file://localhost/%(tmp_dir)s/%(repo_id)s/manifest.json',
                  'protocol': 'file',
                  'ssl': {},
                  'strategy': 'additive'
@@ -449,15 +451,18 @@ class TestDistributor(PluginTestBase):
         manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
-        units = list(manifest.read(url, downloader))
+        manifest = Manifest()
+        manifest.fetch(url, self.childfs, downloader)
+        manifest.fetch_units(url, downloader)
+        units = [u for u, r in manifest.get_units()]
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
             unit = units[n]
             created = self.units[n]
-            for p, v in unit['metadata'].items():
-                if p.startswith('_'):
-                    continue
+            for p, v in unit['unit_key'].items():
                 self.assertEqual(created[p], v)
+            self.assertEqual(created.get('_storage_path'), unit['storage_path'])
+            self.assertEqual(unit['type_id'], self.UNIT_TYPE_ID)
 
 
 class ImporterTest(PluginTestBase):
@@ -519,7 +524,9 @@ class ImporterTest(PluginTestBase):
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.parentfs)
         dist = NodesHttpDistributor()
-        repo = Repository(self.REPO_ID)
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
         cfg = {
             'protocol':'file',
             'http':{'alias':self.alias},
@@ -662,7 +669,7 @@ class TestEndToEnd(PluginTestBase):
         manager = managers.repo_importer_manager()
         importer = manager.get_importer(self.REPO_ID)
         manifest_url = importer['config'][constants.MANIFEST_URL_KEYWORD]
-        self.assertTrue(manifest_url.endswith('%s/manifest.json.gz' % self.REPO_ID))
+        self.assertTrue(manifest_url.endswith('%s/manifest.json' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
         manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
@@ -991,7 +998,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
         @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
-        @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -1038,7 +1045,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
         @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
-        @patch('pulp_node.importers.strategies.UnitDownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
