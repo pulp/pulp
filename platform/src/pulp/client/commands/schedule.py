@@ -29,6 +29,7 @@ import copy
 from gettext import gettext as _
 import logging
 
+from pulp.client import parsers
 from pulp.client.arg_utils import convert_boolean_arguments, convert_removed_options
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client.validators import interval_iso6801_validator
@@ -53,7 +54,9 @@ DESC_NEXT_RUN = _('displays the next time the operation will run across all sche
 
 # Order for render_document_list
 SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'last_run', 'next_run']
-DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs', 'consecutive_failures', 'failure_threshold', 'first_run', 'last_run', 'next_run']
+DETAILED_SCHEDULE_ORDER = ['schedule', 'id', 'enabled', 'remaining_runs',
+                           'consecutive_failures', 'failure_threshold',
+                           'first_run', 'last_run', 'next_run']
 
 # Options
 DESC_SCHEDULE_ID = _('identifies an existing schedule')
@@ -62,12 +65,15 @@ OPT_SCHEDULE_ID = PulpCliOption('--schedule-id', DESC_SCHEDULE_ID, required=True
 DESC_SCHEDULE = _('time to execute in iso8601 format '
                   '(yyyy-mm-ddThh:mm:ssZ/PiuT); the number of recurrences may '
                   'be specified in this value')
-OPT_SCHEDULE = PulpCliOption('--schedule', DESC_SCHEDULE, aliases=['-s'], required=True, validate_func=interval_iso6801_validator)
+OPT_SCHEDULE = PulpCliOption('--schedule', DESC_SCHEDULE, aliases=['-s'], required=True,
+                             validate_func=interval_iso6801_validator)
 
 DESC_FAILURE_THRESHOLD = _('number of failures before the schedule is automatically '
                            'disabled; unspecified means the schedule will never '
                            'be automatically disabled')
-OPT_FAILURE_THRESHOLD = PulpCliOption('--failure-threshold', DESC_FAILURE_THRESHOLD, aliases=['-f'], required=False)
+OPT_FAILURE_THRESHOLD = PulpCliOption('--failure-threshold', DESC_FAILURE_THRESHOLD,
+                                      aliases=['-f'], required=False,
+                                      parse_func=parsers.parse_optional_positive_int)
 
 DESC_ENABLED = _('if "false", the schedule will exist but will not trigger any '
                  'executions; defaults to true')
