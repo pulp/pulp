@@ -3,7 +3,7 @@
 # -- headers ------------------------------------------------------------------
 
 Name:           python-okaara
-Version:        1.0.30
+Version:        1.0.31
 Release:        1%{?dist}
 Summary:        Python command line utilities
 
@@ -72,8 +72,14 @@ rm -rf $RPM_BUILD_ROOT
 # -- changelog ----------------------------------------------------------------
 
 %changelog
-* Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.30-1
-- New version of okaara (jason.dobies@redhat.com)
+* Wed May 22 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.31-1
+- Okaara upgrade (jason.dobies@redhat.com)
+
+* Wed May 22 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.31-1
+- Renamed non-negative int parser (jason.dobies@redhat.com)
+- Added base set of parsers (jason.dobies@redhat.com)
+- Header standardization (jason.dobies@redhat.com)
+- Updated sample (jason.dobies@redhat.com)
 
 * Thu Feb 14 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.30-1
 - Various clean up (jason.dobies@redhat.com)
