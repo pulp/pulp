@@ -10,9 +10,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import hashlib
 
-from pulp_node.manifest import Manifest
+from uuid import uuid4
+
+from pulp_node.manifest import Manifest, UnitWriter, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 
 from logging import getLogger
 
@@ -31,15 +32,15 @@ def join(*parts):
     parts = parts[0:1]+[p.strip('/') for p in parts[1:]]
     return '/'.join(parts)
 
-def mkdir(file_path):
+
+def mkdir(path):
     """
-    Ensure the directory for the specified file path exists.
+    Ensure the directory at the specified path exists.
     :param file_path: The path to a file.
     :type file_path: str
     """
-    dir_path = os.path.dirname(file_path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 class Publisher(object):
@@ -67,19 +68,6 @@ class FilePublisher(Publisher):
     :type publish_dir: str
     """
 
-    @staticmethod
-    def encode_path(path):
-        """
-        Encode file path.  Encodes path as a SHA-256 hex digest.
-        :param path: A file path.
-        :type path: str
-        :return: The encoded path.
-        :rtype: str
-        """
-        m = hashlib.sha256()
-        m.update(path)
-        return m.hexdigest()
-
     def __init__(self, publish_dir, repo_id):
         """
         :param publish_dir: The publishing root directory.
@@ -96,45 +84,39 @@ class FilePublisher(Publisher):
         Writes the units.json file and symlinks each of the
         files associated to the unit.storage_path.
         :param units: A list of units to publish.
-        :type units: list
+        :type units: iterable
         """
-        self.link(units)
-        self.write_manifest(units)
 
-    def write_manifest(self, units):
-        """
-        Write the manifest (units.json) for the specified list of units.
-        :param units: A list of units.
-        :type units: list
-        :return: The absolute path to the written manifest file.
-        :rtype: str
-        """
-        manifest = Manifest()
         dir_path = join(self.publish_dir, self.repo_id)
+        units_path = os.path.join(dir_path, UNITS_FILE_NAME)
+        manifest_path = os.path.join(dir_path, MANIFEST_FILE_NAME)
         mkdir(dir_path)
-        return manifest.write(dir_path, units)
+        with UnitWriter(units_path) as writer:
+            for unit in units:
+                self.link_unit(unit)
+                writer.add(unit)
+        manifest_id = str(uuid4())
+        manifest = Manifest(manifest_id)
+        manifest.set_units(writer)
+        manifest_path = manifest.write(manifest_path)
+        return manifest_path
 
-    def link(self, units):
+    def link_unit(self, unit):
         """
-        Link files associated with the units into the publish directory.
+        Link files associated with the unit into the publish directory.
         The file name is the SHA256 of the unit.storage_path.
-        :param units: A list of units to link.
-        :type units: list
-        :return: A list of (unit, relative_path)
+        :param unit: A content unit.
+        :type unit: dict
+        :return: A tuple (unit, relative_path)
         :rtype: tuple
         """
-        links = []
-        for unit in units:
-            storage_path = unit.get('storage_path')
-            if not storage_path:
-                # not all units are associated with files.
-                continue
-            encoded_path = self.encode_path(storage_path)
-            relative_path = join(self.repo_id, 'content', encoded_path)
-            published_path = join(self.publish_dir, relative_path)
-            mkdir(published_path)
-            if not os.path.islink(published_path):
-                os.symlink(storage_path, published_path)
-            link = (unit, relative_path)
-            links.append(link)
-        return links
+        storage_path = unit.get('storage_path')
+        if not storage_path:
+            # not all units have associated files.
+            return unit, None
+        relative_path = join(self.repo_id, unit['relative_path'])
+        published_path = join(self.publish_dir, relative_path)
+        mkdir(os.path.dirname(published_path))
+        if not os.path.islink(published_path):
+            os.symlink(storage_path, published_path)
+        return unit, relative_path

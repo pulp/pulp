@@ -20,14 +20,13 @@ from unittest import TestCase
 from nectar.downloaders.curl import HTTPSCurlDownloader
 from nectar.config import DownloaderConfig
 
-from pulp_node.manifest import Manifest
-
-Manifest.UNITS_PER_FILE = 2
+from pulp_node.manifest import *
 
 
 class TestManifest(TestCase):
 
     NUM_UNITS = 10
+    MANIFEST_ID = '123'
 
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
@@ -40,43 +39,78 @@ class TestManifest(TestCase):
         self.assertEqual(len(units_in), self.NUM_UNITS)
         for i in range(0, len(units_out)):
             for k, v in units_in[i].items():
-                self.assertEqual(units_out[i][int(k)], v)
+                self.assertEqual(units_out[i][k], v)
 
-    def test_write(self):
-        # Test
-        manifest = Manifest()
+    def test_publishing(self):
+        # Setup
         units = []
+        manifest_path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         for i in range(0, self.NUM_UNITS):
-            units.append({i: i + 1})
-        manifest.write(self.tmp_dir, units)
+            unit = dict(unit_id=i, type_id='T', unit_key={})
+            units.append(unit)
+        # Test
+        units_path = os.path.join(self.tmp_dir, UNITS_FILE_NAME)
+        writer = UnitWriter(units_path)
+        for u in units:
+            writer.add(u)
+        writer.close()
+        manifest = Manifest(self.MANIFEST_ID)
+        manifest.set_units(writer)
+        manifest.write(manifest_path)
         # Verify
-        path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
-        self.assertTrue(os.path.exists(path))
-        fp = gzip.open(path)
-        s = fp.read()
-        fp.close()
-        manifest = json.loads(s)
+        self.assertTrue(os.path.exists(manifest_path))
+        with open(manifest_path) as fp:
+            manifest_in = json.load(fp)
+        self.assertEqual(manifest.id, manifest_in['id'])
+        self.assertEqual(manifest.units_path, manifest_in['units_path'])
+        self.assertEqual(manifest.units_path, writer.path)
+        self.assertEqual(manifest.total_units, manifest_in['total_units'])
+        self.assertEqual(manifest.total_units, writer.total_units)
+        self.assertEqual(manifest.total_units, len(units))
+        self.assertTrue(os.path.exists(manifest_path))
+        self.assertTrue(os.path.exists(manifest.units_path))
+        self.assertTrue(os.path.exists(units_path))
         units_in = []
-        for unit_file in manifest['unit_files']:
-            path = os.path.join(self.tmp_dir, unit_file)
-            fp = gzip.open(path)
-            units_in.extend(json.load(fp))
-            fp.close()
-        self.assertEqual(manifest['total_units'], self.NUM_UNITS)
+        fp = gzip.open(manifest.units_path)
+        while True:
+            json_unit = fp.readline()
+            if json_unit:
+                units_in.append(json.loads(json_unit))
+            else:
+                break
+        fp.close()
         self.verify(units, units_in)
 
     def test_round_trip(self):
-        # Test
-        manifest = Manifest()
+        # Setup
         units = []
+        manifest_path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         for i in range(0, self.NUM_UNITS):
-            units.append({i:i+1})
-        manifest.write(self.tmp_dir, units)
+            unit = dict(unit_id=i, type_id='T', unit_key={})
+            units.append(unit)
+            # Test
+        units_path = os.path.join(self.tmp_dir, UNITS_FILE_NAME)
+        writer = UnitWriter(units_path)
+        for u in units:
+            writer.add(u)
+        writer.close()
+        manifest = Manifest(self.MANIFEST_ID)
+        manifest.set_units(writer)
+        manifest.write(manifest_path)
+        # Test
         cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
-        manifest = Manifest()
-        path = os.path.join(self.tmp_dir, Manifest.FILE_NAME)
+        working_dir = os.path.join(self.tmp_dir, 'working_dir')
+        os.makedirs(working_dir)
+        path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         url = 'file://%s' % path
-        units_in = list(manifest.read(url, downloader))
+        manifest = Manifest()
+        manifest.fetch(url, working_dir, downloader)
+        manifest.fetch_units(url, downloader)
         # Verify
+        units_in = []
+        for unit, ref in manifest.get_units():
+            units_in.append(unit)
+            _unit = ref.fetch()
+            self.assertEqual(unit, _unit)
         self.verify(units, units_in)

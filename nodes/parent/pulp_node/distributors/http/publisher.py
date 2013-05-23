@@ -11,7 +11,7 @@
 
 
 from pulp_node.distributors.publisher import join, FilePublisher
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import MANIFEST_FILE_NAME
 
 
 class HttpPublisher(FilePublisher):
@@ -36,13 +36,13 @@ class HttpPublisher(FilePublisher):
         self.alias = alias
         FilePublisher.__init__(self, alias[1], repo_id)
 
-    def link(self, units):
+    def link_unit(self, units):
         # Add the URL to each unit.
-        links = FilePublisher.link(self, units)
-        for unit, relative_path in links:
+        unit, relative_path = FilePublisher.link_unit(self, units)
+        if relative_path:
             url = join(self.base_url, self.alias[0], relative_path)
             unit['_download'] = dict(url=url)
-        return links
+        return unit, relative_path
 
     def manifest_path(self):
         """
@@ -50,4 +50,4 @@ class HttpPublisher(FilePublisher):
         :return: The path component of the URL.
         :rtype: str
         """
-        return join(self.alias[0], self.repo_id, Manifest.FILE_NAME)
+        return join(self.alias[0], self.repo_id, MANIFEST_FILE_NAME)
