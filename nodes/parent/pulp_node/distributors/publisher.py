@@ -131,15 +131,17 @@ class FilePublisher(Publisher):
             os.symlink(storage_path, published_path)
         return unit, relative_path
 
-    def tar_dir(self, path, tar_path):
+    def tar_dir(self, path, tar_path, bufsize=65535):
         """
         Tar up the directory at the specified path.
         :param path: The absolute path to a directory.
         :type path: str
         :param tar_path: The target path.
         :type tar_path: str
+        :param bufsize: The buffer size to be used.
+        :type bufsize: int
         :return:
         """
-        with tarfile.open(tar_path, 'w', bufsize=65535) as tb:
+        with tarfile.open(tar_path, 'w', bufsize=bufsize) as tb:
             _dir = os.path.basename(path)
             tb.add(path, arcname=_dir)
