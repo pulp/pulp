@@ -19,9 +19,9 @@ from nectar.downloaders.curl import HTTPSCurlDownloader
 from nectar.config import DownloaderConfig
 
 from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.distributors.http.publisher import HttpPublisher
 from pulp_node.manifest import Manifest
-from pulp_node.distributors.publisher import TGZ_SUFFIX
 
 
 class TestHttp(TestCase):
@@ -43,7 +43,7 @@ class TestHttp(TestCase):
         if not os.path.exists(self.TMP_ROOT):
             os.makedirs(self.TMP_ROOT)
         self.tmpdir = tempfile.mkdtemp(dir=self.TMP_ROOT)
-        self.unit_dir = os.path.join(self.tmpdir, 'unit_storage')
+        self.unit_dir = os.path.join(self.tmpdir, 'content')
         shutil.rmtree(self.tmpdir)
         os.makedirs(os.path.join(self.unit_dir, self.RELATIVE_PATH))
 
@@ -88,26 +88,20 @@ class TestHttp(TestCase):
         working_dir = os.path.join(self.tmpdir, 'working_dir')
         os.makedirs(working_dir)
         manifest = Manifest()
-        url = 'file://' + manifest_path
+        url = pathlib.url_join(base_url, manifest_path)
         manifest.fetch(url, working_dir, downloader)
         manifest.fetch_units(url, downloader)
         units = manifest.get_units()
         n = 0
         for unit, ref in units:
-            file_content = 'test_%d' % n
-            _download = unit['_download']
-            url = _download['url']
-            expected_url = '/'.join(
-                (base_url,
-                 publish_dir[1:],
-                 repo_id, unit['relative_path']))
             if n == 0:
-                expected_url += TGZ_SUFFIX
                 self.assertTrue(unit[constants.PUBLISHED_AS_TARBALL])
             else:
                 self.assertFalse(unit.get(constants.PUBLISHED_AS_TARBALL, False))
-            self.assertEqual(url, expected_url)
-            path = url.split('//', 1)[1]
+            path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
+            self.assertEqual(
+                manifest.publishing_details[constants.BASE_URL],
+                pathlib.url_join(base_url, publish_dir, repo_id))
             if n == 0:
                 self.assertTrue(os.path.isfile(path))
             else:
@@ -119,6 +113,6 @@ class TestHttp(TestCase):
             else:
                 with open(path, 'rb') as fp:
                     unit_content = fp.read()
-                    self.assertEqual(unit_content, file_content)
+                    self.assertEqual(unit_content, unit_content)
             self.assertEqual(unit['unit_key']['n'], n)
             n += 1

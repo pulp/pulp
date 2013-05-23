@@ -16,37 +16,12 @@ from uuid import uuid4
 from shutil import rmtree
 
 from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.manifest import Manifest, UnitWriter, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 
 from logging import getLogger
 
 log = getLogger(__name__)
-
-
-TAR_SUFFIX = '.tar'
-
-
-def join(*parts):
-    """
-    Join URL and file path fragments.
-    :param parts: A list of url fragments.
-    :type parts: list
-    :return: The joined result.
-    :rtype: str
-    """
-    parts = list(parts)
-    parts = parts[0:1]+[p.strip('/') for p in parts[1:]]
-    return '/'.join(parts)
-
-
-def mkdir(path):
-    """
-    Ensure the directory at the specified path exists.
-    :param path: The path to a file.
-    :type path: str
-    """
-    if not os.path.exists(path):
-        os.makedirs(path)
 
 
 class Publisher(object):
@@ -91,12 +66,14 @@ class FilePublisher(Publisher):
         files associated to the unit.storage_path.
         :param units: A list of units to publish.
         :type units: iterable
+        :return: The absolute path to the manifest.
+        :rtype: str
         """
-        dir_path = join(self.publish_dir, self.repo_id)
-        units_path = os.path.join(dir_path, UNITS_FILE_NAME)
-        manifest_path = os.path.join(dir_path, MANIFEST_FILE_NAME)
+        dir_path = pathlib.join(self.publish_dir, self.repo_id)
+        units_path = pathlib.join(dir_path, UNITS_FILE_NAME)
+        manifest_path = pathlib.join(dir_path, MANIFEST_FILE_NAME)
         rmtree(dir_path, ignore_errors=True)
-        mkdir(dir_path)
+        pathlib.mkdir(dir_path)
         with UnitWriter(units_path) as writer:
             for unit in units:
                 self.publish_unit(unit)
@@ -112,24 +89,20 @@ class FilePublisher(Publisher):
         Publish the file associated with the unit into the publish directory.
         :param unit: A content unit.
         :type unit: dict
-        :return: A tuple (unit, relative_path)
-        :rtype: tuple
         """
         storage_path = unit.get('storage_path')
         if not storage_path:
             # not all units have associated files.
             return unit, None
-        relative_path = join(self.repo_id, unit['relative_path'])
-        published_path = join(self.publish_dir, relative_path)
-        mkdir(os.path.dirname(published_path))
+        relative_path = pathlib.join(self.repo_id, unit['relative_path'])
+        published_path = pathlib.join(self.publish_dir, relative_path)
+        pathlib.mkdir(os.path.dirname(published_path))
         if os.path.isdir(storage_path):
-            tar_path = published_path + TAR_SUFFIX
-            self.tar_dir(storage_path, tar_path)
+            self.tar_dir(storage_path, published_path)
             unit[constants.PUBLISHED_AS_TARBALL] = True
-            relative_path += TAR_SUFFIX
         else:
             os.symlink(storage_path, published_path)
-        return unit, relative_path
+            unit[constants.PUBLISHED_AS_FILE] = True
 
     def tar_dir(self, path, tar_path, bufsize=65535):
         """

@@ -9,11 +9,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import urllib
-
 from pulp_node import constants
-from pulp_node.distributors.publisher import join, FilePublisher
-from pulp_node.manifest import MANIFEST_FILE_NAME
+from pulp_node import pathlib
+from pulp_node.distributors.publisher import FilePublisher
+from pulp_node.manifest import Manifest, MANIFEST_FILE_NAME
 
 
 class HttpPublisher(FilePublisher):
@@ -38,13 +37,23 @@ class HttpPublisher(FilePublisher):
         self.alias = alias
         FilePublisher.__init__(self, alias[1], repo_id)
 
-    def publish_unit(self, unit):
-        # Add the URL to the unit.
-        unit, relative_path = super(self.__class__, self).publish_unit(unit)
-        if relative_path:
-            url = join(self.base_url, self.alias[0], urllib.quote(relative_path))
-            unit[constants.DOWNLOAD_DETAILS] = {constants.URL: url}
-        return unit, relative_path
+    def publish(self, units):
+        """
+        Publish the specified units.
+        Writes the units.json file and symlinks each of the
+        files associated to the unit.storage_path.
+        :param units: A list of units to publish.
+        :type units: iterable
+        :return: The path to the written manifest.
+        :rtype: str
+        """
+        manifest_path = super(self.__class__, self).publish(units)
+        manifest = Manifest()
+        manifest.read(manifest_path)
+        manifest.publishing_details[constants.BASE_URL] = \
+            pathlib.url_join(self.base_url, self.alias[0], self.repo_id)
+        manifest.write(manifest_path)
+        return manifest_path
 
     def manifest_path(self):
         """
@@ -52,4 +61,4 @@ class HttpPublisher(FilePublisher):
         :return: The path component of the URL.
         :rtype: str
         """
-        return join(self.alias[0], self.repo_id, MANIFEST_FILE_NAME)
+        return pathlib.join(self.alias[0], self.repo_id, MANIFEST_FILE_NAME)

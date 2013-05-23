@@ -10,7 +10,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import errno
 import tarfile
 
 from tempfile import mktemp
@@ -20,6 +19,7 @@ from nectar.listener import AggregatingEventListener
 from nectar.request import DownloadRequest
 
 from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.error import UnitDownloadError
 
 
@@ -76,15 +76,11 @@ class UnitDownloadManager(AggregatingEventListener):
         :type report: nectar.report.DownloadReport.
         """
         super(self.__class__, self).download_started(report)
-        if self.request.cancelled():
-            self.request.downloader.cancel()
-            return
-        try:
+        if not self.request.cancelled():
             dir_path = os.path.dirname(report.destination)
-            os.makedirs(dir_path)
-        except OSError, e:
-            if e.errno != errno.EEXIST:
-                raise e
+            pathlib.mkdir(dir_path)
+        else:
+            self.request.downloader.cancel()
 
     def download_succeeded(self, report):
         """
