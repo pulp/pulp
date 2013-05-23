@@ -19,8 +19,11 @@ import gzip
 from tempfile import mktemp
 
 
+BUFSIZE = 65535
 FILE_SUFFIX = '.gz'
-TRANSFER_CHUNK_SIZE = 0x3200000  # 50MB
+
+
+# --- API --------------------------------------------------------------------
 
 
 def compress(file_path):
@@ -83,17 +86,12 @@ def compressed(path):
     return os.path.isfile(path) and path.endswith(FILE_SUFFIX)
 
 
-def transfer(fp_in, fp_out):
-    """
-    Transfer bytes between open file pointers using a buffer.
-    :param fp_in: Input file.
-    :type fp_in: file-like
-    :param fp_out: Output file.
-    :type fp_out: file-like
-    :raise IOError: on I/O errors.
-    """
+# --- utils ------------------------------------------------------------------
+
+
+def transfer(fp_in, fp_out, bufsize=65535):
     while True:
-        buf = fp_in.read(TRANSFER_CHUNK_SIZE)
+        buf = fp_in.read(bufsize)
         if buf:
             fp_out.write(buf)
         else:
