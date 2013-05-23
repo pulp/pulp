@@ -42,6 +42,8 @@ CLIENT_CERT_KEYWORD = 'client_cert'
 
 # --- unit/publishing --------------------------------------------------------
 
+URL = 'url'
+DOWNLOAD_DETAILS = 'download_details'
 PUBLISHED_AS_TARBALL = 'published_as_tarball'
 
 

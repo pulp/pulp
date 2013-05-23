@@ -235,12 +235,12 @@ class ImporterStrategy(object):
         for unit, unit_ref in units:
             if request.cancelled():
                 return
-            download = unit.get('_download')
-            if not download:
+            download_details = unit.get(constants.DOWNLOAD_DETAILS)
+            if not download_details:
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
                 continue
-            url = download['url']
+            url = download_details[constants.URL]
             storage_path = self._storage_path(unit)
             _request = manager.create_request(url, storage_path, unit_ref)
             download_list.append(_request)

@@ -11,6 +11,7 @@
 
 import urllib
 
+from pulp_node import constants
 from pulp_node.distributors.publisher import join, FilePublisher
 from pulp_node.manifest import MANIFEST_FILE_NAME
 
@@ -42,7 +43,7 @@ class HttpPublisher(FilePublisher):
         unit, relative_path = super(self.__class__, self).publish_unit(unit)
         if relative_path:
             url = join(self.base_url, self.alias[0], urllib.quote(relative_path))
-            unit['_download'] = dict(url=url)
+            unit[constants.DOWNLOAD_DETAILS] = {constants.URL: url}
         return unit, relative_path
 
     def manifest_path(self):
