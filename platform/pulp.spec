@@ -167,7 +167,7 @@ Requires: python-%{name}-common = %{pulp_version}
 Requires: pymongo >= 2.1.1
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-okaara >= 1.0.30
+Requires: python-okaara >= 1.0.32
 Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
@@ -274,7 +274,7 @@ Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: m2crypto
 Requires: python-%{name}-common = %{pulp_version}
-Requires: python-okaara >= 1.0.30
+Requires: python-okaara >= 1.0.32
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
@@ -313,7 +313,7 @@ for content, bind and system specific operations.
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
-Requires: python-okaara >= 1.0.30
+Requires: python-okaara >= 1.0.32
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-client-lib = %{pulp_version}
