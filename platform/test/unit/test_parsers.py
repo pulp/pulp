@@ -13,8 +13,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import unittest
-import isodate
 
+import isodate
 from okaara import parsers as okaara_parsers
 
 from pulp.client import parsers

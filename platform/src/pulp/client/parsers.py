@@ -17,8 +17,8 @@ option and flag client classes.
 """
 
 from gettext import gettext as _
-import isodate
 
+import isodate
 from okaara.parsers import *
 
 from pulp.client import arg_utils
