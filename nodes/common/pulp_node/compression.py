@@ -19,7 +19,6 @@ import gzip
 from tempfile import mktemp
 
 
-BUFSIZE = 65535
 FILE_SUFFIX = '.gz'
 
 
