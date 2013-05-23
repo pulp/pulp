@@ -127,15 +127,15 @@ class UnitDownloadManager(AggregatingEventListener):
         :raise IOError: on i/o errors.
         """
         parent_dir = os.path.dirname(path)
-        tgz_path = mktemp(dir=parent_dir)
-        os.link(path, tgz_path)
+        tar_path = mktemp(dir=parent_dir)
+        os.link(path, tar_path)
         os.unlink(path)
         try:
-            with tarfile.open(tgz_path) as fp:
+            with tarfile.open(tar_path) as fp:
                 fp.extractall(path=path)
         finally:
-            if os.path.exists(tgz_path):
-                os.unlink(tgz_path)
+            if os.path.exists(tar_path):
+                os.unlink(tar_path)
 
     def error_list(self):
         """
