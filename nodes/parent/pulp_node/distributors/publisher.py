@@ -123,11 +123,23 @@ class FilePublisher(Publisher):
         published_path = join(self.publish_dir, relative_path)
         mkdir(os.path.dirname(published_path))
         if os.path.isdir(storage_path):
-            tgz_path = published_path + TAR_SUFFIX
-            with tarfile.open(tgz_path, 'w:') as tb:
-                tb.add(storage_path, arcname=os.path.basename(storage_path))
+            tar_path = published_path + TAR_SUFFIX
+            self.tar_dir(storage_path, tar_path)
             unit[constants.PUBLISHED_AS_TARBALL] = True
             relative_path += TAR_SUFFIX
         else:
             os.symlink(storage_path, published_path)
         return unit, relative_path
+
+    def tar_dir(self, path, tar_path):
+        """
+        Tar up the directory at the specified path.
+        :param path: The absolute path to a directory.
+        :type path: str
+        :param tar_path: The target path.
+        :type tar_path: str
+        :return:
+        """
+        with tarfile.open(tar_path, 'w', bufsize=65535) as tb:
+            _dir = os.path.basename(path)
+            tb.add(path, arcname=_dir)
