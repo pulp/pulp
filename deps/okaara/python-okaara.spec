@@ -73,6 +73,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu May 23 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.32-1
+- 966202 - Change the config options to use the optional parsers.
+  (jason.dobies@redhat.com)
+
+* Thu May 23 2013 Jay Dobies <jason.dobies@redhat.com> 1.0.32-1
 - Added empty strings as a possibility for optional parse methods
   (jason.dobies@redhat.com)
 - Added copyright information (jason.dobies@redhat.com)
