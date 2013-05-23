@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.11.alpha%{?dist}
+Release: 0.12.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -438,6 +438,9 @@ exit 0
 %endif
 
 %changelog
+* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
+- 
+
 * Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
 - 923796 - Changed example to not cite a specific command
   (jason.dobies@redhat.com)
