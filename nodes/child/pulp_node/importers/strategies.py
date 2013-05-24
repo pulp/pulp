@@ -258,7 +258,7 @@ class ImporterStrategy(object):
         :return: True if has associated file that needs to be downloaded.
         :rtype: bool
         """
-        for option in constants.PUBLISHING_OPTIONS:
+        for option in constants.PUBLISHING_METHODS:
             if unit.get(option, False):
                 return True
         return False
