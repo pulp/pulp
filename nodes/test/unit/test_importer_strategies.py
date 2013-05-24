@@ -252,7 +252,8 @@ class TestBase(TestCase):
             type_id='T',
             unit_key={},
             metadata={},
-            storage_path='/tmp/file')
+            storage_path='/tmp/file',
+            relative_path='files/testing')
         units = [unit]
         inventory = UnitInventory(TestManifest(units), [])
         # Test
