@@ -45,6 +45,7 @@ class Publisher(object):
     def commit(self):
         """
         Commit publishing.
+        Supports 2-stage publishing.
         """
         pass
 
