@@ -9,6 +9,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
+
 from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.distributors.publisher import FilePublisher
@@ -54,6 +56,17 @@ class HttpPublisher(FilePublisher):
             pathlib.url_join(self.base_url, self.alias[0], self.repo_id)
         manifest.write(manifest_path)
         return manifest_path
+
+    def publish_unit(self, unit):
+        """
+        Publish the file associated with the unit into the publish directory.
+        :param unit: A content unit.
+        :type unit: dict
+        """
+        super(self.__class__, self).publish_unit(unit)
+        storage_path = unit.get(constants.STORAGE_PATH)
+        if storage_path:
+            unit[constants.CHECKSUM] = pathlib.checksum(storage_path)
 
     def manifest_path(self):
         """

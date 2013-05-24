@@ -45,6 +45,7 @@ CLIENT_CERT_KEYWORD = 'client_cert'
 BASE_URL = 'base_url'
 STORAGE_PATH = 'storage_path'
 RELATIVE_PATH = 'relative_path'
+CHECKSUM = 'checksum'
 
 PUBLISHED_AS_FILE = 'published_as_file'
 PUBLISHED_AS_TARBALL = 'published_as_tarball'
