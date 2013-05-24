@@ -39,7 +39,6 @@ def compress(file_path):
         with open(file_path) as fp_in:
             with gzip.open(tmp_path, 'wb') as fp_out:
                 transfer(fp_in, fp_out)
-        os.unlink(file_path)
         if not file_path.endswith(FILE_SUFFIX):
             file_path += FILE_SUFFIX
         if os.path.exists(file_path):
@@ -63,7 +62,6 @@ def decompress(file_path):
         with gzip.open(file_path) as fp_in:
             with open(tmp_path, 'w+') as fp_out:
                 transfer(fp_in, fp_out)
-        os.unlink(file_path)
         file_path = file_path.rstrip(FILE_SUFFIX)
         if os.path.exists(file_path):
             os.unlink(file_path)

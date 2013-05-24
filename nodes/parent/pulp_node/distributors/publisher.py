@@ -14,12 +14,13 @@ import tarfile
 
 from uuid import uuid4
 from shutil import rmtree
+from tempfile import mkdtemp
+from logging import getLogger
 
 from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.manifest import Manifest, UnitWriter, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 
-from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -41,6 +42,12 @@ class Publisher(object):
         """
         raise NotImplementedError()
 
+    def commit(self):
+        """
+        Commit publishing.
+        """
+        pass
+
 
 class FilePublisher(Publisher):
     """
@@ -58,6 +65,7 @@ class FilePublisher(Publisher):
         """
         self.publish_dir = publish_dir
         self.repo_id = repo_id
+        self.tmp_dir = None
 
     def publish(self, units):
         """
@@ -69,11 +77,10 @@ class FilePublisher(Publisher):
         :return: The absolute path to the manifest.
         :rtype: str
         """
-        dir_path = pathlib.join(self.publish_dir, self.repo_id)
-        units_path = pathlib.join(dir_path, UNITS_FILE_NAME)
-        manifest_path = pathlib.join(dir_path, MANIFEST_FILE_NAME)
-        rmtree(dir_path, ignore_errors=True)
-        pathlib.mkdir(dir_path)
+        pathlib.mkdir(self.publish_dir)
+        self.tmp_dir = mkdtemp(dir=self.publish_dir)
+        units_path = pathlib.join(self.tmp_dir, UNITS_FILE_NAME)
+        manifest_path = pathlib.join(self.tmp_dir, MANIFEST_FILE_NAME)
         with UnitWriter(units_path) as writer:
             for unit in units:
                 self.publish_unit(unit)
@@ -94,8 +101,8 @@ class FilePublisher(Publisher):
         if not storage_path:
             # not all units have associated files.
             return unit, None
-        relative_path = pathlib.join(self.repo_id, unit['relative_path'])
-        published_path = pathlib.join(self.publish_dir, relative_path)
+        relative_path = unit['relative_path']
+        published_path = pathlib.join(self.tmp_dir, relative_path)
         pathlib.mkdir(os.path.dirname(published_path))
         if os.path.isdir(storage_path):
             self.tar_dir(storage_path, published_path)
@@ -118,3 +125,26 @@ class FilePublisher(Publisher):
         with tarfile.open(tar_path, 'w', bufsize=bufsize) as tb:
             _dir = os.path.basename(path)
             tb.add(path, arcname=_dir)
+
+    def commit(self):
+        """
+        Commit publishing.
+        Move the tmp_dir to the publish_dir.
+        """
+        if not self.tmp_dir:
+            # already committed
+            return
+        dir_path = pathlib.join(self.publish_dir, self.repo_id)
+        rmtree(dir_path, ignore_errors=True)
+        os.rename(self.tmp_dir, dir_path)
+        self.tmp_dir = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, *unused):
+        if exc_type:
+            rmtree(self.tmp_dir, ignore_errors=True)
+            self.tmp_dir = None
+        else:
+            self.commit()
