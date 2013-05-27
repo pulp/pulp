@@ -10,7 +10,7 @@
 Summary: Support for using OpenSSL in python scripts
 Name: m2crypto
 Version: 0.21.1.pulp
-Release: 8%{?dist}
+Release: 9%{?dist}
 Source0: http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-%{version}.tar.gz
 # https://bugzilla.osafoundation.org/show_bug.cgi?id=2341
 Patch0: m2crypto-0.21.1-timeouts.patch
@@ -30,6 +30,12 @@ Patch3: m2crypto-0.20.2-check.patch
 Patch4: m2crypto-0.21.1-smime-doc.patch
 # ISSUE Link to be filed
 Patch5: m2crypto-0.21.1-x509_crl.patch
+
+# SSL support for IPv6-only hosts
+# https://bugzilla.osafoundation.org/show_bug.cgi?id=13044
+# https://bugzilla.redhat.com/show_bug.cgi?id=742914
+Patch6: m2crypto-0.21.1-getaddrinfo.patch
+
 License: MIT
 Group: System Environment/Libraries
 URL: http://wiki.osafoundation.org/bin/view/Projects/MeTooCrypto
@@ -55,6 +61,7 @@ This package allows you to call OpenSSL functions from python scripts.
 #%patch4 -p1 -b .memoryview
 %patch4 -p0
 %patch5 -p1 -b .x509_crl
+%patch6 -p0 -b .getaddrinfo
 
 # Red Hat opensslconf.h #includes an architecture-specific file, but SWIG
 # doesn't follow the #include.
@@ -120,6 +127,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/M2Crypto-*.egg-info
 
 %changelog
+* Tue May 28 2013 Tom Lanyon <tom@netspot.com.au> 0.21.1.pulp-9
+- BZ 742914 - added patch for getaddrinfo support (IPv6)
+
 * Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.21.1.pulp-8
 - Renamed dependency RPMs (jason.dobies@redhat.com)
 
