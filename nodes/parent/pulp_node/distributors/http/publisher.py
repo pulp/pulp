@@ -9,8 +9,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-
 from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.distributors.publisher import FilePublisher

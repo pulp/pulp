@@ -41,4 +41,3 @@ def url_join(base, *paths):
 
 def quote(path):
     return urllib.quote(path)
-
