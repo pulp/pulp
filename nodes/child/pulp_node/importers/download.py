@@ -10,12 +10,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-import errno
+import tarfile
 
+from tempfile import mktemp
 from logging import getLogger
 
 from nectar.listener import AggregatingEventListener
 from nectar.request import DownloadRequest
+
+from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.error import UnitDownloadError
 
 
@@ -72,15 +76,11 @@ class UnitDownloadManager(AggregatingEventListener):
         :type report: nectar.report.DownloadReport.
         """
         super(self.__class__, self).download_started(report)
-        if self.request.cancelled():
-            self.request.downloader.cancel()
-            return
-        try:
+        if not self.request.cancelled():
             dir_path = os.path.dirname(report.destination)
-            os.makedirs(dir_path)
-        except OSError, e:
-            if e.errno != errno.EEXIST:
-                raise e
+            pathlib.mkdir(dir_path)
+        else:
+            self.request.downloader.cancel()
 
     def download_succeeded(self, report):
         """
@@ -98,6 +98,8 @@ class UnitDownloadManager(AggregatingEventListener):
         unit = unit_ref.fetch()
         unit['storage_path'] = report.destination
         self._strategy.add_unit(self.request, unit)
+        if unit.get(constants.PUBLISHED_AS_TARBALL):
+            self.untar_dir(report.destination)
         if self.request.cancelled():
             self.request.downloader.cancel()
 
@@ -112,6 +114,24 @@ class UnitDownloadManager(AggregatingEventListener):
         super(self.__class__, self).download_failed(report)
         if self.request.cancelled():
             self.request.downloader.cancel()
+
+    def untar_dir(self, path):
+        """
+        Replaces the tarball at the specified path with the extracted directory tree.
+        :param path: The absolute path to a tarball.
+        :type path: str
+        :raise IOError: on i/o errors.
+        """
+        parent_dir = os.path.dirname(path)
+        tar_path = mktemp(dir=parent_dir)
+        os.link(path, tar_path)
+        os.unlink(path)
+        try:
+            with tarfile.open(tar_path) as fp:
+                fp.extractall(path=path)
+        finally:
+            if os.path.exists(tar_path):
+                os.unlink(tar_path)
 
     def error_list(self):
         """

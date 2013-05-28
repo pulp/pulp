@@ -23,6 +23,7 @@ from logging import getLogger
 
 from nectar.request import DownloadRequest
 
+from pulp_node import pathlib
 from pulp_node.compression import compress, decompress, compressed
 
 
@@ -50,12 +51,15 @@ class Manifest(object):
     :type total_units: int
     :ivar unit_path: The path to the downloaded content units file.
     :type unit_path: str
+    :param publishing_details: Details of how units have been published.
+    :type publishing_details: dict
     """
 
     def __init__(self, manifest_id=None):
         self.id = manifest_id
         self.total_units = 0
         self.units_path = None
+        self.publishing_details = {}
 
     def fetch(self, url, dir_path, downloader):
         """
@@ -69,7 +73,7 @@ class Manifest(object):
         :raise HTTPError: on URL errors.
 -       :raise ValueError: on json decoding errors
         """
-        destination = os.path.join(dir_path, MANIFEST_FILE_NAME)
+        destination = pathlib.join(dir_path, MANIFEST_FILE_NAME)
         request = DownloadRequest(str(url), destination)
         request_list = [request]
         downloader.download(request_list)
@@ -78,7 +82,7 @@ class Manifest(object):
         with open(destination) as fp:
             manifest = json.load(fp)
             self.__dict__.update(manifest)
-            self.units_path = os.path.join(dir_path, os.path.basename(self.units_path))
+            self.units_path = pathlib.join(dir_path, os.path.basename(self.units_path))
 
     def fetch_units(self, url, downloader):
         """
