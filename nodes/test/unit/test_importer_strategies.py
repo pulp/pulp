@@ -68,6 +68,31 @@ class TestRepo(object):
         self.working_dir = working_dir
 
 
+class TestManifest:
+
+    def __init__(self, units):
+        self.units = [(u, TestUnitRef(u)) for u in units]
+        self.publishing_details = {constants.BASE_URL: ''}
+
+    def get_units(self):
+        return self.units
+
+    def fetch(self):
+        pass
+
+    def fetch_units(self):
+        pass
+
+
+class TestUnitRef:
+
+    def __init__(self, unit):
+        self.unit = unit
+
+    def fetch(self):
+        return self.unit
+
+
 REPO_ID = 'foo'
 
 DOWNLOADER_ERROR_REPORT = dict(response_code=401, message='go fish')
@@ -160,7 +185,7 @@ class TestBase(TestCase):
         request = self.request()
         # Test
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        inventory = UnitInventory([], [unit])
+        inventory = UnitInventory(TestManifest([]), [unit])
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
         self.assertEqual(len(request.summary.errors), 1)
@@ -197,8 +222,8 @@ class TestBase(TestCase):
         request = self.request(1)
         request.downloader.download = Mock()
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        units = [(unit, None)]
-        inventory = UnitInventory(units, [])
+        units = [unit]
+        inventory = UnitInventory(TestManifest(units), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -209,7 +234,7 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        inventory = UnitInventory([], [unit])
+        inventory = UnitInventory(TestManifest([]), [unit])
         request.conduit.remove_unit = Mock()
         # Test
         strategy = ImporterStrategy()
@@ -227,10 +252,9 @@ class TestBase(TestCase):
             type_id='T',
             unit_key={},
             metadata={},
-            _download=download,
-            _storage_path='/tmp/file')
-        units = [(unit, None)]
-        inventory = UnitInventory(units, [])
+            storage_path='/tmp/file')
+        units = [unit]
+        inventory = UnitInventory(TestManifest(units), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -249,14 +273,15 @@ class TestBase(TestCase):
             type_id='T',
             unit_key={},
             metadata={},
-            _download=download,
-            _storage_path='/tmp/file')
-        units = [(unit, None)]
-        inventory = UnitInventory(units, [])
+            published_as_file=True,
+            storage_path='/tmp/file',
+            relative_path='files/testing')
+        units = [unit]
+        inventory = UnitInventory(TestManifest(units), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 3)
+        self.assertEqual(request.cancelled_call_count, 4)
         self.assertTrue(request.downloader.download.called)
         self.assertTrue(request.downloader.cancel.called)
 
@@ -272,11 +297,11 @@ class TestBase(TestCase):
             type_id='T',
             unit_key={},
             metadata={},
-            _download=download,
+            published_as_file=True,
             storage_path='/tmp/file',
             relative_path='files/testing')
-        units = [(unit, None)]
-        inventory = UnitInventory(units, [])
+        units = [unit]
+        inventory = UnitInventory(TestManifest(units), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -296,11 +321,11 @@ class TestBase(TestCase):
             type_id='T',
             unit_key={},
             metadata={},
-            _download=download,
+            published_as_file=True,
             storage_path='/tmp/file',
             relative_path='files/testing')
-        units = [(unit, None)]
-        inventory = UnitInventory(units, [])
+        units = [unit]
+        inventory = UnitInventory(TestManifest(units), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
