@@ -145,8 +145,8 @@ class NodesHttpDistributor(Distributor):
         """
         nodes_conduit = NodesConduit()
         units = nodes_conduit.get_units(repo.id)
-        publisher = self.publisher(repo, config)
-        publisher.publish(units)
+        with self.publisher(repo, config) as publisher:
+            publisher.publish(units)
         details = dict(unit_count=len(units))
         return conduit.build_success_report('succeeded', details)
 

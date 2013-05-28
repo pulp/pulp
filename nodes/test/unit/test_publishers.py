@@ -80,7 +80,8 @@ class TestHttp(TestCase):
         publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
         virtual_host = (publish_dir, publish_dir)
         p = HttpPublisher(base_url, virtual_host, repo_id)
-        p.publish(units)
+        with HttpPublisher(base_url, virtual_host, repo_id) as p:
+            p.publish(units)
         # verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)

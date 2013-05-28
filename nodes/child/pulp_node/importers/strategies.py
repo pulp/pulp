@@ -234,7 +234,7 @@ class ImporterStrategy(object):
         for unit, unit_ref in units:
             if request.cancelled():
                 return
-            if not self._has_download(unit):
+            if not self._needs_download(unit):
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
                 continue
@@ -250,15 +250,15 @@ class ImporterStrategy(object):
         request.downloader.download(download_list)
         request.summary.errors.extend(manager.error_list())
 
-    def _has_download(self, unit):
+    def _needs_download(self, unit):
         """
-        Get whether the unit has an associated file to download.
-        :param unit: The unit to check.
+        Get whether the unit has an associated file that needs to be downloaded.
+        :param unit: A content unit.
         :type unit: dict
-        :return: True if has associated file.
+        :return: True if has associated file that needs to be downloaded.
         :rtype: bool
         """
-        for option in constants.PUBLISHING_OPTIONS:
+        for option in constants.PUBLISHING_METHODS:
             if unit.get(option, False):
                 return True
         return False

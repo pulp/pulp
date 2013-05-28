@@ -281,7 +281,7 @@ class TestBase(TestCase):
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 4)
+        self.assertTrue(request.cancelled_call_count >= 3)
         self.assertTrue(request.downloader.download.called)
         self.assertTrue(request.downloader.cancel.called)
 
