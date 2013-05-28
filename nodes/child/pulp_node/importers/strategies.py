@@ -15,8 +15,6 @@ Nodes importer plugins delegate synchronization to one of
 the strategies provided here.
 """
 
-import os
-
 from gettext import gettext as _
 from logging import getLogger
 
@@ -24,6 +22,7 @@ from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import Manifest
 from pulp_node.importers.inventory import UnitInventory
@@ -185,14 +184,13 @@ class ImporterStrategy(object):
             manifest = Manifest()
             manifest.fetch(url, request.working_dir, request.downloader)
             manifest.fetch_units(url, request.downloader)
-            parent_units = manifest.get_units()
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
-        return UnitInventory(parent_units, child_units)
+        return UnitInventory(manifest, child_units)
 
     def _storage_path(self, unit):
         """
@@ -204,10 +202,10 @@ class ImporterStrategy(object):
         :rtype: str
         """
         storage_dir = pulp_conf.get('server', 'storage_dir')
-        storage_path = unit.get('storage_path')
+        storage_path = unit.get(constants.STORAGE_PATH)
         if storage_path:
-            relative_path = unit['relative_path']
-            storage_path = os.path.join(storage_dir, relative_path)
+            relative_path = unit[constants.RELATIVE_PATH]
+            storage_path = pathlib.join(storage_dir, relative_path)
         return storage_path
 
     def _add_units(self, request, unit_inventory):
@@ -232,15 +230,17 @@ class ImporterStrategy(object):
         units = unit_inventory.units_on_parent_only()
         request.progress.begin_adding_units(len(units))
         manager = UnitDownloadManager(self, request)
+        publishing_details = unit_inventory.manifest.publishing_details
         for unit, unit_ref in units:
             if request.cancelled():
                 return
-            download = unit.get('_download')
-            if not download:
+            if not self._needs_download(unit):
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
                 continue
-            url = download['url']
+            url = pathlib.url_join(
+                publishing_details[constants.BASE_URL],
+                pathlib.quote(unit[constants.RELATIVE_PATH]))
             storage_path = self._storage_path(unit)
             _request = manager.create_request(url, storage_path, unit_ref)
             download_list.append(_request)
@@ -249,6 +249,19 @@ class ImporterStrategy(object):
         request.downloader.event_listener = manager
         request.downloader.download(download_list)
         request.summary.errors.extend(manager.error_list())
+
+    def _needs_download(self, unit):
+        """
+        Get whether the unit has an associated file that needs to be downloaded.
+        :param unit: A content unit.
+        :type unit: dict
+        :return: True if has associated file that needs to be downloaded.
+        :rtype: bool
+        """
+        for option in constants.PUBLISHING_METHODS:
+            if unit.get(option, False):
+                return True
+        return False
 
     def _delete_units(self, request, unit_inventory):
         """

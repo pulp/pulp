@@ -45,7 +45,7 @@ and installed scripts. Setup scripts can be found in the following locations:
 
 * ``<pulp root>/platform/src``
 * ``<pulp root>/pulp_devel``
-* ``<pulp_rpm root>/rpm-support/src``
+* ``<pulp_rpm root>/pulp_rpm/src``
 * ``<pulp_puppet root>/pulp_puppet_common``
 * ``<pulp_puppet root>/pulp_puppet_extensions_admin``
 * ``<pulp_puppet root>/pulp_puppet_handlers``

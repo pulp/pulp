@@ -40,6 +40,17 @@ CA_CERT_KEYWORD = 'ca_cert'
 CLIENT_CERT_KEYWORD = 'client_cert'
 
 
+# --- unit/publishing --------------------------------------------------------
+
+BASE_URL = 'base_url'
+STORAGE_PATH = 'storage_path'
+RELATIVE_PATH = 'relative_path'
+
+PUBLISHED_AS_FILE = 'published_as_file'
+PUBLISHED_AS_TARBALL = 'published_as_tarball'
+PUBLISHING_METHODS = [PUBLISHED_AS_FILE, PUBLISHED_AS_TARBALL]
+
+
 # --- consumer notes ---------------------------------------------------------
 
 NODE_NOTE_KEY = '_child-node'
