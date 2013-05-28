@@ -286,7 +286,6 @@ Current, there are two supported strategies.
 
 .. note:: The ``additive`` strategy is the default.
 
-
 Running
 ^^^^^^^
 
@@ -300,6 +299,15 @@ The synchronization can be requested using the admin client. See: the ``node syn
 ::
 
  $ pulp-admin node sync --node-id <node-id>
+
+Scheduling
+^^^^^^^^^^
+
+Synchronization of a particular child can be scheduled with an optional recurrence. The
+format for describing the schedule follows the Pulp standard for
+:ref:`date and time intervals <date-and-time>`. All commands related to the
+creation, removal, and listing of node sync schedules can be found under the
+``node sync schedules`` command.
 
 
 Quick Start

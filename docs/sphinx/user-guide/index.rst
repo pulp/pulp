@@ -10,9 +10,9 @@ Contents:
    release-notes/index
    installation
    server
-   nodes
    admin-client/index
    consumer-client/index
+   nodes
    general-reference
    glossary
    troubleshooting
