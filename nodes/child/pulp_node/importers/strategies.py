@@ -264,9 +264,6 @@ class ImporterStrategy(object):
         if storage_path:
             if not os.path.exists(storage_path):
                 return True
-            checksum = unit.get(constants.CHECKSUM)
-            if checksum != pathlib.checksum(storage_path):
-                return True
         return False
 
     def _delete_units(self, request, unit_inventory):

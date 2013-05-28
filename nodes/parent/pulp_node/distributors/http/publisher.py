@@ -57,17 +57,6 @@ class HttpPublisher(FilePublisher):
         manifest.write(manifest_path)
         return manifest_path
 
-    def publish_unit(self, unit):
-        """
-        Publish the file associated with the unit into the publish directory.
-        :param unit: A content unit.
-        :type unit: dict
-        """
-        super(self.__class__, self).publish_unit(unit)
-        storage_path = unit.get(constants.STORAGE_PATH)
-        if storage_path:
-            unit[constants.CHECKSUM] = pathlib.checksum(storage_path)
-
     def manifest_path(self):
         """
         Get the relative URL path to the manifest.

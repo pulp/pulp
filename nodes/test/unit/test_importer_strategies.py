@@ -15,6 +15,7 @@ import shutil
 from unittest import TestCase
 from mock import Mock, patch
 from tempfile import mkdtemp
+from uuid import uuid4
 
 from nectar.config import DownloaderConfig
 from nectar.downloaders.curl import HTTPCurlDownloader
@@ -244,16 +245,17 @@ class TestBase(TestCase):
 
     def test_cancel_just_before_downloading(self):
         # Setup
+        unit_id = str(uuid4())
         request = self.request(2)
         request.downloader.download = Mock()
-        download = dict(url='http://redhat.com/file')
+        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
-            unit_id='123',
+            unit_id=unit_id,
             type_id='T',
             unit_key={},
             metadata={},
-            storage_path='/tmp/file',
-            relative_path='files/testing')
+            storage_path='/tmp/node/testing/%s' % unit_id,
+            relative_path='testing/%s' % unit_id)
         units = [unit]
         inventory = UnitInventory(TestManifest(units), [])
         # Test
@@ -264,19 +266,19 @@ class TestBase(TestCase):
 
     def test_cancel_begin_downloading(self):
         # Setup
+        unit_id = str(uuid4())
         request = self.request(3)
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='http://redhat.com/file')
+        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
-            unit_id='123',
+            unit_id=unit_id,
             type_id='T',
             unit_key={},
             metadata={},
-            published_as_file=True,
-            storage_path='/tmp/file',
-            relative_path='files/testing')
+            storage_path='/tmp/node/testing/%s' % unit_id,
+            relative_path='testing/%s' % unit_id)
         units = [unit]
         inventory = UnitInventory(TestManifest(units), [])
         # Test
@@ -288,19 +290,19 @@ class TestBase(TestCase):
 
     def test_cancel_during_download_failed(self):
         # Setup
+        unit_id = str(uuid4())
         request = self.request(4)
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='http://redhat.com/file')
+        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
-            unit_id='123',
+            unit_id=unit_id,
             type_id='T',
             unit_key={},
             metadata={},
-            published_as_file=True,
-            storage_path='/tmp/file',
-            relative_path='files/testing')
+            storage_path='/tmp/node/testing/%s' % unit_id,
+            relative_path='testing/%s' % unit_id)
         units = [unit]
         inventory = UnitInventory(TestManifest(units), [])
         # Test
@@ -312,19 +314,19 @@ class TestBase(TestCase):
 
     def test_cancel_during_download_succeeded(self):
         # Setup
+        unit_id = str(uuid4())
         request = self.request(4)
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='http://redhat.com/file')
+        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
-            unit_id='123',
+            unit_id=unit_id,
             type_id='T',
             unit_key={},
             metadata={},
-            published_as_file=True,
-            storage_path='/tmp/file',
-            relative_path='files/testing')
+            storage_path='/tmp/node/testing/%s' % unit_id,
+            relative_path='testing/%s' % unit_id)
         units = [unit]
         inventory = UnitInventory(TestManifest(units), [])
         # Test

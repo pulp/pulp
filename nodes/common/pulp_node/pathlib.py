@@ -18,7 +18,6 @@ duplication with in the nodes project.
 
 import os
 import urllib
-import hashlib
 import errno
 
 
@@ -43,34 +42,3 @@ def url_join(base, *paths):
 def quote(path):
     return urllib.quote(path)
 
-
-def checksum(path, bufsize=65535):
-    if os.path.isdir(path):
-        return directory_checksum(path, bufsize)
-    else:
-        return file_checksum(path, bufsize)
-
-
-def file_checksum(path, bufsize=65535):
-    _hash = hashlib.sha256()
-    with open(path) as fp:
-        while True:
-            buf = fp.read(bufsize)
-            if buf:
-                _hash.update(buf)
-            else:
-                break
-    return _hash.hexdigest()
-
-
-def directory_checksum(path, bufsize=65535):
-    tree = []
-    parent_dir = os.path.dirname(path)
-    for _dir, _dirs, _files in os.walk(path):
-        tree.append(_dir.lstrip(parent_dir))
-        file_paths = [os.path.join(_dir, f) for f in _files]
-        tree.extend([(p.lstrip(parent_dir), file_checksum(p, bufsize)) for p in file_paths])
-    tree.sort()
-    _hash = hashlib.sha256()
-    _hash.update(str(tree))
-    return _hash.hexdigest()
