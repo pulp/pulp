@@ -147,6 +147,7 @@ class NodesHttpDistributor(Distributor):
         units = nodes_conduit.get_units(repo.id)
         with self.publisher(repo, config) as publisher:
             publisher.publish(units)
+            publisher.commit()
         details = dict(unit_count=len(units))
         return conduit.build_success_report('succeeded', details)
 

@@ -55,6 +55,12 @@ class FilePublisher(Publisher):
     The file-based publisher.
     :ivar publish_dir: The publish_dir directory for all repositories.
     :type publish_dir: str
+    :ivar repo_id: The ID of a repository to be published.
+    :type repo_id: str
+    :ivar tmp_dir: The absolute path to the temporary publishing directory.
+    :type tmp_dir: str
+    :ivar staged: A flag indicating that publishing has been staged and needs commit.
+    :type staged: bool
     """
 
     def __init__(self, publish_dir, repo_id):
@@ -67,12 +73,14 @@ class FilePublisher(Publisher):
         self.publish_dir = publish_dir
         self.repo_id = repo_id
         self.tmp_dir = None
+        self.staged = False
 
     def publish(self, units):
         """
         Publish the specified units.
-        Writes the units.json file and symlinks each of the
-        files associated to the unit.storage_path.
+        Writes the units.json file and symlinks each of the files associated
+        to the unit.storage_path.  Publishing is staged in a temporary directory and
+        must use commit() to make the publishing permanent.
         :param units: A list of units to publish.
         :type units: iterable
         :return: The absolute path to the manifest.
@@ -90,6 +98,7 @@ class FilePublisher(Publisher):
         manifest = Manifest(manifest_id)
         manifest.set_units(writer)
         manifest_path = manifest.write(manifest_path)
+        self.staged = True
         return manifest_path
 
     def publish_unit(self, unit):
@@ -132,20 +141,23 @@ class FilePublisher(Publisher):
         Commit publishing.
         Move the tmp_dir to the publish_dir.
         """
-        if not self.tmp_dir:
-            # already committed
+        if not self.staged:
+            # nothing to commit
             return
         dir_path = pathlib.join(self.publish_dir, self.repo_id)
         rmtree(dir_path, ignore_errors=True)
         os.rename(self.tmp_dir, dir_path)
-        self.tmp_dir = None
+        self.staged = False
+
+    def unstage(self):
+        """
+        Un-stage publishing.
+        """
+        rmtree(self.tmp_dir, ignore_errors=True)
+        self.staged = False
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, *unused):
-        if exc_type:
-            rmtree(self.tmp_dir, ignore_errors=True)
-            self.tmp_dir = None
-        else:
-            self.commit()
+    def __exit__(self, *unused):
+        self.unstage()
