@@ -136,9 +136,10 @@ class ConsumerGroupAssociateAction(JSONController):
                                    [consumer_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        matched = execution.execute(call_request)
-        return self.ok(matched)
-
+        execution.execute(call_request)
+        collection = ConsumerGroup.get_collection()
+        group = collection.find_one({'id': consumer_group_id})
+        return self.ok(group['consumer_ids'])
 
 class ConsumerGroupUnassociateAction(JSONController):
 
@@ -152,8 +153,10 @@ class ConsumerGroupUnassociateAction(JSONController):
                                    [consumer_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        matched = execution.execute(call_request)
-        return self.ok(matched)
+        execution.execute(call_request)
+        collection = ConsumerGroup.get_collection()
+        group = collection.find_one({'id': consumer_group_id})
+        return self.ok(group['consumer_ids'])
 
 
 class ConsumerGroupContentAction(JSONController):
