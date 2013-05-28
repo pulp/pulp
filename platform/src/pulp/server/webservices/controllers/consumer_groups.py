@@ -13,6 +13,8 @@
 
 import web
 
+from web.webapi import BadRequest
+
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
@@ -183,13 +185,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-
-        call_request_list = consumer_group_content_install_itinerary(consumer_group_id, units, options)
-        results = []
-        for call_request in call_request_list:
-            result = execution.execute_async(self, call_request)
-            results.append(result)
-        return results
+        call_requests = consumer_group_content_install_itinerary(consumer_group_id, units, options)
+        execution.execute_multiple(call_requests)
 
     def update(self, consumer_group_id):
         """
@@ -205,13 +202,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-
-        call_request_list = consumer_group_content_update_itinerary(consumer_group_id, units, options)
-        results = []
-        for call_request in call_request_list:
-            result = execution.execute_async(self, call_request)
-            results.append(result)
-        return results
+        call_requests = consumer_group_content_update_itinerary(consumer_group_id, units, options)
+        execution.execute_multiple(call_requests)
 
     def uninstall(self, consumer_group_id):
         """
@@ -227,13 +219,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-
-        call_request_list = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
-        results = []
-        for call_request in call_request_list:
-            result = execution.execute_async(self, call_request)
-            results.append(result)
-        return results
+        call_requests = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
+        execution.execute_multiple(call_requests)
 
 
 class ConsumerGroupBindings(JSONController):
