@@ -50,8 +50,7 @@ class TestHttp(TestCase):
     def shutDown(self):
         shutil.rmtree(self.TMP_ROOT)
 
-    def test_publisher(self):
-        # setup
+    def populate(self):
         units = []
         for n in range(0, 3):
             fn = 'test_%d' % n
@@ -73,15 +72,20 @@ class TestHttp(TestCase):
                 'relative_path': relative_path
             }
             units.append(unit)
+        return units
+
+    def test_publisher(self):
+        # setup
+        units = self.populate()
         # test
         # publish
         repo_id = 'test_repo'
         base_url = 'file://'
         publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
         virtual_host = (publish_dir, publish_dir)
-        p = HttpPublisher(base_url, virtual_host, repo_id)
         with HttpPublisher(base_url, virtual_host, repo_id) as p:
             p.publish(units)
+            p.commit()
         # verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
@@ -117,3 +121,32 @@ class TestHttp(TestCase):
                     self.assertEqual(unit_content, unit_content)
             self.assertEqual(unit['unit_key']['n'], n)
             n += 1
+
+    def test_unstage(self):
+        # setup
+        units = self.populate()
+        # test
+        # publish
+        repo_id = 'test_repo'
+        base_url = 'file://'
+        publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
+        virtual_host = (publish_dir, publish_dir)
+        p = HttpPublisher(base_url, virtual_host, repo_id)
+        p.publish(units)
+        p.unstage()
+        # verify
+        self.assertFalse(os.path.exists(p.tmp_dir))
+
+    def test_exit(self):
+        # setup
+        units = self.populate()
+        # test
+        # publish
+        repo_id = 'test_repo'
+        base_url = 'file://'
+        publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
+        virtual_host = (publish_dir, publish_dir)
+        with HttpPublisher(base_url, virtual_host, repo_id) as p:
+            p.publish(units)
+        # verify
+        self.assertFalse(os.path.exists(p.tmp_dir))
