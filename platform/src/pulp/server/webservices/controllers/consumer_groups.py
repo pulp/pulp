@@ -13,6 +13,8 @@
 
 import web
 
+from web.webapi import BadRequest
+
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
@@ -27,7 +29,8 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.itineraries.consumer_group import (consumer_group_content_install_itinerary,
-     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary)
+     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary,
+     consumer_group_bind_itinerary, consumer_group_unbind_itinerary)
 
 # consumer group collection ----------------------------------------------------
 
@@ -183,13 +186,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-
-        call_request_list = consumer_group_content_install_itinerary(consumer_group_id, units, options)
-        results = []
-        for call_request in call_request_list:
-            result = execution.execute_async(self, call_request)
-            results.append(result)
-        return results
+        call_requests = consumer_group_content_install_itinerary(consumer_group_id, units, options)
+        execution.execute_multiple(call_requests)
 
     def update(self, consumer_group_id):
         """
@@ -205,13 +203,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-
-        call_request_list = consumer_group_content_update_itinerary(consumer_group_id, units, options)
-        results = []
-        for call_request in call_request_list:
-            result = execution.execute_async(self, call_request)
-            results.append(result)
-        return results
+        call_requests = consumer_group_content_update_itinerary(consumer_group_id, units, options)
+        execution.execute_multiple(call_requests)
 
     def uninstall(self, consumer_group_id):
         """
@@ -227,13 +220,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-
-        call_request_list = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
-        results = []
-        for call_request in call_request_list:
-            result = execution.execute_async(self, call_request)
-            results.append(result)
-        return results
+        call_requests = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
+        execution.execute_multiple(call_requests)
 
 
 class ConsumerGroupBindings(JSONController):
@@ -267,15 +255,15 @@ class ConsumerGroupBindings(JSONController):
         return self.ok(bindings)
 
     @auth_required(authorization.CREATE)
-    def POST(self, consumer_group_id):
+    def POST(self, group_id):
         """
         Create a bind association between the specified
         consumer by id included in the URL path and a repo-distributor
         specified in the POST body: {repo_id:<str>, distributor_id:<str>}.
-        Designed to be itempotent so only MissingResource is expected to
+        Designed to be idempotent so only MissingResource is expected to
         be raised by manager.
-        @param consumer_group_id: The consumer to bind.
-        @type consumer_group_id: str
+        @param group_id: The consumer group to bind.
+        @type group_id: str
         @return: The created bind model object:
             {consumer_group_id:<str>, repo_id:<str>, distributor_id:<str>}
         @rtype: dict
@@ -283,36 +271,17 @@ class ConsumerGroupBindings(JSONController):
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
-
-        collection = ConsumerGroup.get_collection()
-        consumer_group = collection.find_one({'id': consumer_group_id})
-
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_group_id,
-            repo_id,
-            distributor_id,
-        ]
-        manager = managers_factory.consumer_group_manager()
-        call_request = CallRequest(
-            manager.bind,
-            args,
-            resources=resources,
-            weight=0)
-
-        link = serialization.link.child_link_obj(
-            consumer_group_id,
-            repo_id,
-            distributor_id)
-        result = execution.execute_sync_created(self, call_request, link)
-        return result
+        binding_config = body.get('binding_config', None)
+        options = body.get('options', {})
+        notify_agent = body.get('notify_agent', True)
+        call_requests = consumer_group_bind_itinerary(
+            group_id=group_id,
+            repo_id=repo_id,
+            distributor_id=distributor_id,
+            notify_agent=notify_agent,
+            binding_config=binding_config,
+            agent_options=options)
+        execution.execute_multiple(call_requests)
 
 
 class ConsumerGroupBinding(JSONController):
@@ -346,12 +315,12 @@ class ConsumerGroupBinding(JSONController):
         return self.ok(serialized_bind)
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, consumer_group_id, repo_id, distributor_id):
+    def DELETE(self, group_id, repo_id, distributor_id):
         """
         Delete a bind association between the specified
         consumer and repo-distributor.  Designed to be idempotent.
-        @param consumer_group_id: A consumer ID.
-        @type consumer_group_id: str
+        @param group_id: A consumer group ID.
+        @type group_id: str
         @param repo_id: A repo ID.
         @type repo_id: str
         @param distributor_id: A distributor ID.
@@ -361,33 +330,8 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        manager = managers_factory.consumer_group_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
-        args = [
-            consumer_group_id,
-            repo_id,
-            distributor_id,
-        ]
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE,
-                consumer_group_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('unbind')
-        ]
-        call_request = CallRequest(manager.unbind,
-                                   args=args,
-                                   resources=resources,
-                                   tags=tags)
-        return self.ok(execution.execute(call_request))
-
+        call_requests = consumer_group_unbind_itinerary(group_id, repo_id, distributor_id, {})
+        execution.execute_multiple(call_requests)
 
 
 # web.py application -----------------------------------------------------------
