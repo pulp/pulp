@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.10.alpha%{?dist}
+Release: 0.14.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -74,6 +74,8 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server/plugins.conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
@@ -165,7 +167,7 @@ Requires: python-%{name}-common = %{pulp_version}
 Requires: pymongo >= 2.1.1
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-okaara >= 1.0.30
+Requires: python-okaara >= 1.0.32
 Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
@@ -204,6 +206,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/logging/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %dir %{_sysconfdir}/%{name}/vhosts80
+%dir %{_sysconfdir}/%{name}/server
+%dir %{_sysconfdir}/%{name}/server/plugins.conf.d
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-v1-upgrade
@@ -270,7 +274,7 @@ Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: m2crypto
 Requires: python-%{name}-common = %{pulp_version}
-Requires: python-okaara >= 1.0.30
+Requires: python-okaara >= 1.0.32
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
@@ -309,7 +313,7 @@ for content, bind and system specific operations.
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
-Requires: python-okaara >= 1.0.30
+Requires: python-okaara >= 1.0.32
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-client-lib = %{pulp_version}
@@ -434,6 +438,20 @@ exit 0
 %endif
 
 %changelog
+* Fri May 24 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.14.alpha
+- 966202 - Change the config options to use the optional parsers.
+  (jason.dobies@redhat.com)
+
+* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.13.alpha
+- 
+
+* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
+- 
+
+* Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
+- 923796 - Changed example to not cite a specific command
+  (jason.dobies@redhat.com)
+
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.10.alpha
 - 
 
