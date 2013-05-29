@@ -59,6 +59,10 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
+* Wed May 29 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21
+- 968535 - rebase using version f18/f19 version; includes fix for bz:950724.
+  (jortel@redhat.com)
+
 * Tue May 14 2013 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.9-21
 - update to latest HEAD
 - don't BuildRequire bash-completion in rhel
