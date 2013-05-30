@@ -22,7 +22,7 @@ from gettext import gettext as _
 
 from pulp.common import dateutils
 
-
+ID_REGEX_ALLOW_DOTS = re.compile(r'^[.\-_A-Za-z0-9]+$')
 ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
 
 
@@ -87,7 +87,26 @@ def id_validator(x):
     if not isinstance(x, (list, tuple)):
         x = [x]
 
-    for input in x:
-        if ID_REGEX.match(input) is None:
+    for input_id in x:
+        if ID_REGEX.match(input_id) is None:
             raise ValueError(_('value must contain only letters, numbers, underscores, and hyphens'))
 
+def id_validator_allow_dots(x):
+    """
+    Validates that the input is a valid Pulp ID. This validator also allows
+    dots or periods in the id. This validator can be used on either a single ID
+    or a list of IDs, the latter occuring in the event that
+    allow_multiple is set to True for the option.
+
+    :param x: input value to be validated
+    :type  x: str or list
+
+    :raise ValueError: if the input is not a valid ID or any entry in the list
+           of IDs is invalid
+    """
+    if not isinstance(x, (list, tuple)):
+        x = [x]
+
+    for input_id in x:
+        if ID_REGEX_ALLOW_DOTS.match(input_id) is None:
+            raise ValueError(_('value must contain only letters, numbers, underscores, periods and hyphens'))
