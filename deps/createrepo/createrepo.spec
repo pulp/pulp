@@ -1,53 +1,47 @@
 %{!?python_sitelib: %define python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
+%if ! 0%{?rhel}
+# we don't have this in rhel yet...
+BuildRequires: bash-completion
+%endif
+
+# disable broken /usr/lib/rpm/brp-python-bytecompile
+%define __os_install_post %{nil}
+%define compdir %(pkg-config --variable=completionsdir bash-completion)
+%if "%{compdir}" == ""
+%define compdir "/etc/bash_completion.d"
+%endif
+
 Summary: Creates a common metadata repository
 Name: createrepo
 Version: 0.9.9
-Release: 18%{?dist}
+Release: 21%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: %{name}-%{version}.tar.gz
-Patch0: ten-changelog-limit.patch
-Patch1: createrepo-head.patch
-Patch2: BZ-833350-fix-tempfile-cachedir-permissions.patch
-Patch3: BZ-865845-only-use-available-compression.patch
-Patch4: BZ-874682-modifyrepo-default-compression.patch
-Patch5: BZ-950724-compression.patch
+Patch0: createrepo-head.patch
+Patch1: ten-changelog-limit.patch
 URL: http://createrepo.baseurl.org/
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArchitectures: noarch
-Requires: python >= 2.1, rpm-python, rpm >= 0:4.1.1, libxml2-python
-Requires: yum-metadata-parser, yum >= 3.2.29, python-deltarpm
-
+Requires: python >= 2.1, rpm-python, rpm >= 4.1.1, libxml2-python
+Requires: yum-metadata-parser, yum >= 3.4.3-4, python-deltarpm, deltarpm, pyliblzma
 BuildRequires: python
 
 %description
-This utility will generate a common metadata repository from a directory of
-rpm packages.
+This utility will generate a common metadata repository from a directory of rpm
+packages.
 
 %prep
 %setup -q
-
-# This is divergent from upstream...
-%patch0 -p0
-
-# These are backports...
-# HEAD at the time of the rebase.
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
+%patch0 -p1
+%patch1 -p0
 
 %build
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT install
-
-# Hack for bash_completion.d
-mv $RPM_BUILD_ROOT/usr/%{_sysconfdir} \
-   $RPM_BUILD_ROOT/%{_sysconfdir}
+make DESTDIR=$RPM_BUILD_ROOT sysconfdir=%{_sysconfdir} install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -55,9 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root,-)
-%doc ChangeLog README COPYING
+%doc ChangeLog README COPYING COPYING.lib
+%(dirname %{compdir})
 %{_datadir}/%{name}/
-%{_sysconfdir}/bash_completion.d/
 %{_bindir}/createrepo
 %{_bindir}/modifyrepo
 %{_bindir}/mergerepo
@@ -65,51 +59,110 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
-* Thu Apr 11 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-18
-- 950036 - not compressed unless --compress flag specified. (jortel@redhat.com)
+* Wed May 29 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21
+- 968535 - rebase using version f18/f19 version; includes fix for bz:950724.
+  (jortel@redhat.com)
 
-* Mon Nov 19 2012 James Antill <james.antill@redhat.com> - 0.9.9-17
-- Use .gz as the default compression for modifyrepo.
-- Document --compress-type in createrepo man page.
-- Resolves: rhbz#874682
+* Tue May 14 2013 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.9-21
+- update to latest HEAD
+- don't BuildRequire bash-completion in rhel
+- Fail for bad compress-type options to modifyrepo, like createrepo. BZ 886589
+- Fix options documentation. BZ 892657.
+- modifyrepo: fix --compress option bug. BZ 950724
+- modifyrepo: add --checksum and --{unique,simple}-md-filenames options
 
-* Mon Oct 22 2012 James Antill <james.antill@redhat.com> - 0.9.9-16
-- Only use available compression.
-- Resolves: rhbz#865845
+* Thu Mar 28 2013 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.9-20
+- package also %{compdir}'s parent
 
-* Fri Oct  5 2012 James Antill <james.antill@redhat.com> - 0.9.9-15
-- Tempfile ignores umask for files created in cache, use 666 not 777 as well.
-- Resolves: rhbz#833350
+* Wed Mar 20 2013 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.9-19
+- add BuildRequires: bash-completion
 
-* Thu Oct  4 2012 James Antill <james.antill@redhat.com> - 0.9.9-14
-- Tempfile ignores umask for files created in cache.
-- Resolves: rhbz#833350
+* Wed Mar 20 2013 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.9-18
+- add bash-completion aliases, use pkg-config.
 
-* Fri Sep 14 2012 James Antill <james.antill@redhat.com> - 0.9.9-13
-- Rebase to upstream 0.9.9.
-- Createrepo should be multitasking (Rebase).
-- Resolves: rhbz#631989
-- Createrepo ignores umask for files in it's cache.
-- Resolves: rhbz#833350
-- Reduce memory usage for --update, by using sqlite instead of XML (Rebase).
-- Resolves: rhbz#716235
-- Support removing metadata from repodata, in modifyrepo.
-- Resolves: rhbz#714094
-- Fix createrepo to work with --split and --pkglist at the same time.
-- Resolves: rhbz#646644
+* Tue Mar 19 2013 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.9-17
+- move bash-completion scripts to /usr/share/  BZ 923001
 
-* Fri Feb  3 2012 Zdenek Pavlas <zpavlas@redhat.com> - 0.9.8-5
-- Fix last instance of #!/usr/bin/env.
-- Resolves: rhbz#623105
+* Wed Mar  6 2013 Zdenek Pavlas <zpavlas at redhat.com> - 0.9.9-16
+- update to latest HEAD
+- turn off stdout buffering in worker to prevent a deadlock
+- modifyrepo: use integer timestamps
 
-* Thu Jan  7 2010 James Antill <james.antill@redhat.com> - 0.9.8-4
-- Allow baseurl option to update, when doing updates.
-- Resolves: rhbz#552981
-- Convert stat mtime to int, so comparison can succeed (for update).
-- Resolves: rhbz#553030
+* Wed Feb 13 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.9.9-15
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Fri Dec 21 2012 Zdenek Pavlas <zpavlas at redhat.com> - 0.9.9-14
+- update to latest HEAD
+- Fix the deadlock issue.  BZ 856363
+- Manually set the permmissions for tempfile created cachefiles. BZ 833350
+- modifyrepo: use available compression only.  BZ 865845
+- No baseurl means no baseurl.  BZ 875029
+- Change the compress-type for modifyrepo to .gz for compat. BZ 874682.
+- fix the --skip-symlinks option
+- no repomd.xml && --checkts: skip .rpm timestamp checking.  BZ 877301
+- new worker piping code (no tempfiles, should be faster)
+
+* Thu Sep 13 2012 James Antill <james at fedoraproject.org> - 0.9.9-13
+- update to latest head
+- Fix for workers that output a lot.
+
+* Wed Jul 18 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.9.9-12
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Thu Feb 16 2012 James Antill <james at fedoraproject.org> - 0.9.9-11
+- update to latest head
+- fix for lots of workers and not many rpms.
+
+* Thu Jan  5 2012 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-10
+- update to latest head
+- fix for generating repos for rhel5 on fedora
+
+* Fri Oct 28 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-9
+- 3rd time is the charm
+- fix it so prestodelta's get made with the right name and don't traceback
+
+* Wed Oct 26 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-8
+- change how compressOpen() defaults so mash doesn't break
+- add requires for pyliblzma
+
+* Mon Oct 24 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-7
+- latest upstream
+- --compress-type among other deals.
+
+* Fri Jul 29 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-6
+- latest upstream
+- fixes bugs: 713747, 581632, 581628
+
+* Wed Jul 20 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-5
+- new patch to fix us breaking certain pungi configs
+
+* Tue Jul 19 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-4
+- latest upstream head
+- change --update to use sqlite for old repodata
+
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.9.9-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Thu Jan 27 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-2
+- make sure when a worker exits with a non-zero returncode we exit, too.
+
+* Wed Jan 26 2011 Seth Vidal <skvidal at fedoraproject.org> - 0.9.9-1
+- 0.9.9
+- change yum requires to 3.2.29
+
+* Wed Jul 21 2010 David Malcolm <dmalcolm@redhat.com> - 0.9.8-5
+- Rebuilt for https://fedoraproject.org/wiki/Features/Python_2.7/MassRebuild
+
+* Thu Jan  7 2010 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-4
+- latest head with fixes for --update w/o --skipstat
+
+
+* Tue Dec 22 2009 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-3
+- patch to latest HEAD from upstream
 
 * Thu Sep  3 2009 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-2
 - add drpm patch from https://bugzilla.redhat.com/show_bug.cgi?id=518658
+
 
 * Fri Aug 28 2009 Seth Vidal <skvidal at fedoraproject.org> - 0.9.8-1
 - bump yum requires version
