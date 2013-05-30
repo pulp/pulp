@@ -72,9 +72,6 @@ class RepoManager(object):
         if existing_repo is not None:
             raise DuplicateResource(repo_id)
 
-        if repo_id is None or not is_repo_id_valid(repo_id):
-            raise InvalidValue(['repo_id'])
-
         if notes is not None and not isinstance(notes, dict):
             raise InvalidValue(['notes'])
 

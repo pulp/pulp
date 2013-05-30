@@ -37,11 +37,6 @@ def repo_delete_itinerary(repo_id):
     # delete repository
 
     manager = managers.repo_manager()
-    resources = {
-        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-            {repo_id: dispatch_constants.RESOURCE_DELETE_OPERATION}
-    }
-
     tags = [
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         action_tag('delete')
@@ -50,10 +45,9 @@ def repo_delete_itinerary(repo_id):
     delete_request = CallRequest(
         manager.delete_repo,
         [repo_id],
-        resources=resources,
         tags=tags,
         archive=True)
-
+    delete_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
     call_requests.append(delete_request)
 
     # append unbind itineraries foreach bound consumer

@@ -51,7 +51,7 @@ OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False,
                              allow_multiple=True, parse_func=parsers.parse_notes)
 
 # IDs
-OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True, validate_func=validators.id_validator)
+OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True, validate_func=validators.id_validator_allow_dots)
 OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True, validate_func=validators.id_validator)
 OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID, required=True, validate_func=validators.id_validator)
 
