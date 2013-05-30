@@ -106,14 +106,7 @@ rm -rf %{buildroot}
 
 
 # define required pulp platform version.
-# pre-release package packages have dependencies based on both
-# version and release.
-%if %(echo %release | cut -f1 -d'.') < 1
-%global pulp_version %{version}-%{release}
-%else
 %global pulp_version %{version}
-%endif
-
 
 # ---- Common ----------------------------------------------------------------
 
