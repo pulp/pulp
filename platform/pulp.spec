@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.14.alpha%{?dist}
+Release: 0.15.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -438,6 +438,10 @@ exit 0
 %endif
 
 %changelog
+* Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
+- 913670 - fix consumer group bind/unbind. (jortel@redhat.com)
+- 878234 - use correct method on coordinator. (jortel@redhat.com)
+
 * Fri May 24 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.14.alpha
 - 966202 - Change the config options to use the optional parsers.
   (jason.dobies@redhat.com)
