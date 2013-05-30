@@ -14,10 +14,8 @@
 from gettext import gettext as _
 
 from pulp.client.commands.options import OPTION_REPO_ID
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag, PulpCliCommand
 from pulp.client import validators
-from pulp.bindings.repository import RepositoryHistoryAPI
-from pulp.client.extensions.core import PulpPrompt
 
 # -- constants ----------------------------------------------------------------
 
@@ -25,11 +23,18 @@ from pulp.client.extensions.core import PulpPrompt
 DESC_SYNC_HISTORY = _('shows sync history')
 DESC_PUBLISH_HISTORY = _('shows publish history')
 
-# Limit is used to limit the number of history events shown
+# Options
 DESC_LIMIT = _('specify how many events to display')
 OPTION_LIMIT = PulpCliOption('--limit', DESC_LIMIT, required=False,
                              validate_func=validators.positive_int_validator)
 DEFAULT_LIMIT = 5
+DESC_DISTRIBUTOR_ID = _('the distributor id')
+OPTION_DISTRIBUTOR_ID = PulpCliOption('--distributor-id', DESC_DISTRIBUTOR_ID, required=True,
+                                      validate_func=validators.id_validator)
+
+# Flags
+DESC_DETAILS = _('increase information shown')
+FLAG_DETAILS = PulpCliFlag('--details', DESC_DETAILS, aliases='-d')
 
 # -- commands -----------------------------------------------------------------
 
@@ -39,9 +44,9 @@ class SyncHistoryCommand(PulpCliCommand):
     Displays the sync history of a given repository
     """
 
-    def __init__(self, context, name='sync_history', description=DESC_SYNC_HISTORY, method=None):
+    def __init__(self, context, name='sync', description=DESC_SYNC_HISTORY, method=None):
+        # The context is used to access the server and prompt.
         self.context = context
-        self.prompt = context.prompt
 
         if method is None:
             method = self.run
@@ -49,29 +54,46 @@ class SyncHistoryCommand(PulpCliCommand):
         super(SyncHistoryCommand, self).__init__(name, description, method)
 
         self.add_option(OPTION_REPO_ID)
+        # Option to limit the number of history objects shown
         self.add_option(OPTION_LIMIT)
+        # Flag to display more information about the syncs
+        self.add_flag(FLAG_DETAILS)
 
     # TODO: Figure out where to apply the limit
     def run(self, **kwargs):
         # Collect input
+        details = kwargs[FLAG_DETAILS.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         limit = DEFAULT_LIMIT
         if kwargs[OPTION_LIMIT.keyword] is not None:
             limit = kwargs[OPTION_LIMIT.keyword]
 
+        # Request the sync history from the server
         result = self.context.server.repo_history.sync_history(repo_id)
 
-        # TODO: render the theoretical results in a pretty way
+        # Render results
+        filter = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count', 'removed_count',
+                  'updated_count']
+        print_order = ['repo_id', 'result', 'started', 'completed', 'added_count', 'removed_count',
+                       'updated_count', 'summary']
+        if details is True:
+            filter.append('details')
+            print_order.append('details')
+
+        title = _('Sync History')
+        self.context.prompt.render_title(title)
+        self.context.prompt.render_document_list(result.response_body, filters=filter, order=print_order)
 
 
 class PublishHistoryCommand(PulpCliCommand):
     """
-
+    Displays the publish history of a given repository and publisher
     """
 
-    def __init__(self, context, name='publish_history', description=DESC_PUBLISH_HISTORY, method=None):
+    # TODO: Sort out whether or not a details flag is needed
+    def __init__(self, context, name='publish', description=DESC_PUBLISH_HISTORY, method=None):
+        # The context is used to access the server and prompt.
         self.context = context
-        self.prompt = context.prompt
 
         if method is None:
             method = self.run
@@ -79,12 +101,29 @@ class PublishHistoryCommand(PulpCliCommand):
         super(PublishHistoryCommand, self).__init__(name, description, method)
 
         self.add_option(OPTION_REPO_ID)
+        self.add_option(OPTION_DISTRIBUTOR_ID)
         self.add_option(OPTION_LIMIT)
+        self.add_flag(FLAG_DETAILS)
 
-    # TODO: Is a second required arg necessary?
     def run(self, **kwargs):
         # Collect input
+        details = kwargs[FLAG_DETAILS.keyword]
+        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         limit = DEFAULT_LIMIT
         if kwargs[OPTION_LIMIT.keyword] is not None:
             limit = kwargs[OPTION_LIMIT.keyword]
+
+        # Request the publish history from the server
+        result = self.context.server.repo_history.publish_history(repo_id, distributor_id)
+
+        # Render results
+        filter = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
+        print_order = ['repo_id', 'distributor_id', 'result', 'started', 'completed', 'summary']
+        if details is True:
+            filter.append('details')
+            print_order.append('details')
+
+        title = _('Publish History')
+        self.context.prompt.render_title(title)
+        self.context.prompt.render_document_list(result.response_body, filters=filter, order=print_order)
