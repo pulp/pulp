@@ -66,10 +66,16 @@ class SyncHistoryCommand(PulpCliCommand):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         limit = DEFAULT_LIMIT
         if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = kwargs[OPTION_LIMIT.keyword]
+            limit = int(kwargs[OPTION_LIMIT.keyword])
 
         # Request the sync history from the server
         result = self.context.server.repo_history.sync_history(repo_id)
+        # Use limit to only show the last n items.
+        index_start = len(result.response_body) - limit
+        if index_start < 0:
+            # In this case just print the whole list
+            index_start = 0
+        result = result.response_body[index_start:]
 
         # Render results
         filter = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count', 'removed_count',
@@ -82,7 +88,7 @@ class SyncHistoryCommand(PulpCliCommand):
 
         title = _('Sync History')
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result.response_body, filters=filter, order=print_order)
+        self.context.prompt.render_document_list(result[:], filters=filter, order=print_order)
 
 
 class PublishHistoryCommand(PulpCliCommand):
@@ -112,10 +118,16 @@ class PublishHistoryCommand(PulpCliCommand):
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         limit = DEFAULT_LIMIT
         if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = kwargs[OPTION_LIMIT.keyword]
+            limit = int(kwargs[OPTION_LIMIT.keyword])
 
         # Request the publish history from the server
         result = self.context.server.repo_history.publish_history(repo_id, distributor_id)
+        # Use limit to only show the last n items.
+        index_start = len(result.response_body) - limit
+        if index_start < 0:
+            # In this case just print the whole list
+            index_start = 0
+        result = result.response_body[index_start:]
 
         # Render results
         filter = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
@@ -126,4 +138,4 @@ class PublishHistoryCommand(PulpCliCommand):
 
         title = _('Publish History')
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result.response_body, filters=filter, order=print_order)
+        self.context.prompt.render_document_list(result, filters=filter, order=print_order)
