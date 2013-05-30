@@ -181,6 +181,11 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     # unbind
 
+    resources = {
+        dispatch_constants.RESOURCE_CONSUMER_TYPE:
+            {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+    }
+
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
@@ -197,8 +202,9 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     unbind_request = CallRequest(
         bind_manager.unbind,
         args=args,
+        resources=resources,
         tags=tags)
-    unbind_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+
     call_requests.append(unbind_request)
 
     # notify agent
@@ -239,6 +245,11 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     # delete the binding
 
+    resources = {
+        dispatch_constants.RESOURCE_CONSUMER_TYPE:
+            {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
+    }
+
     tags = [
         resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
@@ -255,8 +266,9 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     delete_request = CallRequest(
         bind_manager.delete,
         args=args,
+        resources=resources,
         tags=tags)
-    unbind_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
+
     call_requests.append(delete_request)
 
     delete_request.depends_on(agent_request.id)

@@ -334,13 +334,6 @@ class Coordinator(object):
         if not resources:
             return dispatch_constants.CALL_ACCEPTED_RESPONSE, set(), [], []
 
-        original_resources = resources
-        resources = {}
-        for operation, resource_dict in original_resources.items():
-            for resource_type, resource_ids in resource_dict.items():
-                for resource_id in resource_ids:
-                    resources.setdefault(resource_type, {}).update({resource_id: operation})
-
         postponing_call_requests = set()
         postponing_reasons = []
         rejecting_call_requests = set()
