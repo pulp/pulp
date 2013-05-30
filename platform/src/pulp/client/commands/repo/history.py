@@ -11,6 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+"""
+Commands for showing a repository's sync and publish history
+"""
+
 from gettext import gettext as _
 
 from pulp.client.commands.options import OPTION_REPO_ID
@@ -59,7 +63,6 @@ class SyncHistoryCommand(PulpCliCommand):
         # Flag to display more information about the syncs
         self.add_flag(FLAG_DETAILS)
 
-    # TODO: Figure out where to apply the limit
     def run(self, **kwargs):
         # Collect input
         details = kwargs[FLAG_DETAILS.keyword]
@@ -77,18 +80,19 @@ class SyncHistoryCommand(PulpCliCommand):
             index_start = 0
         result = result.response_body[index_start:]
 
-        # Render results
-        filter = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count', 'removed_count',
-                  'updated_count']
+        # Filter the fields to show and define the order in which they are displayed
+        filters = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count',
+                   'removed_count', 'updated_count']
         print_order = ['repo_id', 'result', 'started', 'completed', 'added_count', 'removed_count',
                        'updated_count', 'summary']
         if details is True:
-            filter.append('details')
+            filters.append('details')
             print_order.append('details')
 
+        # Render results
         title = _('Sync History')
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result[:], filters=filter, order=print_order)
+        self.context.prompt.render_document_list(result[:], filters=filters, order=print_order)
 
 
 class PublishHistoryCommand(PulpCliCommand):
@@ -129,13 +133,14 @@ class PublishHistoryCommand(PulpCliCommand):
             index_start = 0
         result = result.response_body[index_start:]
 
-        # Render results
-        filter = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
+        # Filter the fields to show and define the order in which they are displayed
+        filters = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
         print_order = ['repo_id', 'distributor_id', 'result', 'started', 'completed', 'summary']
         if details is True:
-            filter.append('details')
+            filters.append('details')
             print_order.append('details')
 
+        # Render results
         title = _('Publish History')
         self.context.prompt.render_title(title)
         self.context.prompt.render_document_list(result, filters=filter, order=print_order)
