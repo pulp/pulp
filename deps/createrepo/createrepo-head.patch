@@ -1,14 +1,57 @@
+diff --git a/Makefile b/Makefile
+index 60bb9db..0b5738b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,4 +1,5 @@
+ PKGNAME = createrepo
++ALIASES = mergerepo modifyrepo genpkgmetadata.py mergerepo.py modifyrepo.py
+ VERSION=$(shell awk '/Version:/ { print $$2 }' ${PKGNAME}.spec)
+ RELEASE=$(shell awk '/Release:/ { print $$2 }' ${PKGNAME}.spec)
+ CVSTAG=createrepo-$(subst .,_,$(VERSION)-$(RELEASE))
+@@ -26,6 +27,8 @@ docdir =
+ includedir = ${prefix}/include
+ oldincludedir = /usr/include
+ mandir = ${prefix}/share/man
++compdir = $(shell pkg-config --variable=completionsdir bash-completion)
++compdir := $(or $(compdir), "/etc/bash_completion.d")
+ 
+ pkgdatadir = $(datadir)/$(PKGNAME)
+ pkglibdir = $(libdir)/$(PKGNAME)
+@@ -33,7 +36,7 @@ pkgincludedir = $(includedir)/$(PKGNAME)
+ top_builddir = 
+ 
+ # all dirs
+-DIRS = $(DESTDIR)$(bindir) $(DESTDIR)$(sysconfdir)/bash_completion.d \
++DIRS = $(DESTDIR)$(bindir) $(DESTDIR)$(compdir) \
+ 	$(DESTDIR)$(pkgdatadir) $(DESTDIR)$(mandir)
+ 
+ 
+@@ -65,7 +68,8 @@ check:
+ 
+ install: all installdirs
+ 	$(INSTALL_MODULES) $(srcdir)/$(MODULES) $(DESTDIR)$(pkgdatadir)
+-	$(INSTALL_DATA) $(PKGNAME).bash $(DESTDIR)$(sysconfdir)/bash_completion.d
++	$(INSTALL_DATA) $(PKGNAME).bash $(DESTDIR)$(compdir)/$(PKGNAME)
++	(cd $(DESTDIR)$(compdir); for n in $(ALIASES); do ln -s $(PKGNAME) $$n; done)
+ 	for subdir in $(SUBDIRS) ; do \
+ 	  $(MAKE) -C $$subdir install VERSION=$(VERSION) PKGNAME=$(PKGNAME); \
+ 	done
 diff --git a/createrepo.bash b/createrepo.bash
-index 54ac8b2..f0695ba 100644
+index 54ac8b2..14b43d8 100644
 --- a/createrepo.bash
 +++ b/createrepo.bash
-@@ -1,11 +1,17 @@
+@@ -1,11 +1,22 @@
  # bash completion for createrepo and friends
  
 +_cr_compress_type()
 +{
 +    COMPREPLY=( $( compgen -W "$( ${1:-createrepo} --compress-type=FOO / 2>&1 \
 +        | sed -ne 's/,/ /g' -ne 's/.*[Cc]ompression.*://p' )" -- "$2" ) )
++}
++
++_cr_checksum_type()
++{
++    COMPREPLY=( $( compgen -W 'md5 sha1 sha256 sha512' -- "$1" ) )
 +}
 +
  _cr_createrepo()
@@ -21,7 +64,18 @@ index 54ac8b2..f0695ba 100644
          --revision|-x|--excludes|--changelog-limit|--max-delta-rpm-size)
              return 0
              ;;
-@@ -30,10 +36,24 @@ _cr_createrepo()
+@@ -18,8 +29,8 @@ _cr_createrepo()
+             COMPREPLY=( $( compgen -f -o plusdirs -X '!*.xml' -- "$2" ) )
+             return 0
+             ;;
+-        -s|--sumtype)
+-            COMPREPLY=( $( compgen -W 'md5 sha1 sha256 sha512' -- "$2" ) )
++        -s|--checksum)
++            _cr_checksum_type "$2"
+             return 0
+             ;;
+         -i|--pkglist|--read-pkgs-list)
+@@ -30,10 +41,24 @@ _cr_createrepo()
              COMPREPLY=( $( compgen -f -o plusdirs -X '!*.rpm' -- "$2" ) )
              return 0
              ;;
@@ -46,7 +100,7 @@ index 54ac8b2..f0695ba 100644
      esac
  
      if [[ $2 == -* ]] ; then
-@@ -42,9 +62,9 @@ _cr_createrepo()
+@@ -42,9 +67,9 @@ _cr_createrepo()
              --cachedir --checkts --no-database --update --update-md-path
              --skip-stat --split --pkglist --includepkg --outputdir
              --skip-symlinks --changelog-limit --unique-md-filenames
@@ -55,11 +109,11 @@ index 54ac8b2..f0695ba 100644
 -            --max-delta-rpm-size --workers' -- "$2" ) )
 +            --simple-md-filenames --retain-old-md --distro --content --repo
 +            --revision --deltas --oldpackagedirs --num-deltas --read-pkgs-list
-+            --max-delta-rpm-size --workers --xz --compress-type' -- "$2" ) )
++            --max-delta-rpm-size --workers --compress-type' -- "$2" ) )
      else
          COMPREPLY=( $( compgen -d -- "$2" ) )
      fi
-@@ -63,10 +83,14 @@ _cr_mergerepo()
+@@ -63,10 +88,14 @@ _cr_mergerepo()
              COMPREPLY=( $( compgen -d -- "$2" ) )
              return 0
              ;;
@@ -75,7 +129,7 @@ index 54ac8b2..f0695ba 100644
  } &&
  complete -F _cr_mergerepo -o filenames mergerepo mergerepo.py
  
-@@ -78,17 +102,22 @@ _cr_modifyrepo()
+@@ -78,17 +107,27 @@ _cr_modifyrepo()
          --version|-h|--help|--mdtype)
              return 0
              ;;
@@ -83,12 +137,17 @@ index 54ac8b2..f0695ba 100644
 +            _cr_compress_type "" "$2"
 +            return 0
 +            ;;
++        -s|--checksum)
++            _cr_checksum_type "$2"
++            return 0
++            ;;
      esac
  
      if [[ $2 == -* ]] ; then
 -        COMPREPLY=( $( compgen -W '--version --help --mdtype' -- "$2" ) )
 +        COMPREPLY=( $( compgen -W '--version --help --mdtype --remove
-+            --compress --compress-type' -- "$2" ) )
++            --compress --no-compress --compress-type --checksum
++            --unique-md-filenames --simple-md-filenames' -- "$2" ) )
          return 0
      fi
  
@@ -101,10 +160,28 @@ index 54ac8b2..f0695ba 100644
          fi
      done
 diff --git a/createrepo.spec b/createrepo.spec
-index 1e491cd..eea7092 100644
+index 1e491cd..9a2179b 100644
 --- a/createrepo.spec
 +++ b/createrepo.spec
-@@ -11,7 +11,7 @@ URL: http://createrepo.baseurl.org/
+@@ -1,5 +1,17 @@
+ %{!?python_sitelib: %define python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+ 
++%if ! 0%{?rhel}
++# we don't have this in rhel yet...
++BuildRequires: bash-completion
++%endif
++
++# disable broken /usr/lib/rpm/brp-python-bytecompile
++%define __os_install_post %{nil}
++%define compdir %(pkg-config --variable=completionsdir bash-completion)
++%if "%{compdir}" == ""
++%define compdir "/etc/bash_completion.d"
++%endif
++
+ Summary: Creates a common metadata repository
+ Name: createrepo
+ Version: 0.9.9
+@@ -11,7 +23,7 @@ URL: http://createrepo.baseurl.org/
  BuildRoot: %{_tmppath}/%{name}-%{version}root
  BuildArchitectures: noarch
  Requires: python >= 2.1, rpm-python, rpm >= 0:4.1.1, libxml2-python
@@ -113,7 +190,16 @@ index 1e491cd..eea7092 100644
  
  %description
  This utility will generate a common metadata repository from a directory of
-@@ -43,6 +43,9 @@ make DESTDIR=$RPM_BUILD_ROOT sysconfdir=%{_sysconfdir} install
+@@ -32,7 +44,7 @@ make DESTDIR=$RPM_BUILD_ROOT sysconfdir=%{_sysconfdir} install
+ %defattr(-, root, root)
+ %dir %{_datadir}/%{name}
+ %doc ChangeLog README COPYING COPYING.lib
+-%{_sysconfdir}/bash_completion.d/
++%(dirname %{compdir})
+ %{_datadir}/%{name}/*
+ %{_bindir}/%{name}
+ %{_bindir}/modifyrepo
+@@ -43,6 +55,9 @@ make DESTDIR=$RPM_BUILD_ROOT sysconfdir=%{_sysconfdir} install
  %{python_sitelib}/createrepo
  
  %changelog
@@ -124,7 +210,7 @@ index 1e491cd..eea7092 100644
  - bump to 0.9.9
  - add worker.py
 diff --git a/createrepo/__init__.py b/createrepo/__init__.py
-index 8f2538e..25b5565 100644
+index 8f2538e..1b18a9f 100644
 --- a/createrepo/__init__.py
 +++ b/createrepo/__init__.py
 @@ -26,15 +26,16 @@ import tempfile
@@ -218,7 +304,33 @@ index 8f2538e..25b5565 100644
          if not self.conf.directories: # just makes things easier later
              self.conf.directories = [self.conf.directory]
          if not self.conf.directory: # ensure we have both in the config object
-@@ -410,9 +427,11 @@ class MetaDataGenerator:
+@@ -290,14 +307,13 @@ class MetaDataGenerator:
+ 
+         def extension_visitor(filelist, dirname, names):
+             for fn in names:
++                fn = os.path.join(dirname, fn)
+                 if os.path.isdir(fn):
+                     continue
+                 if self.conf.skip_symlinks and os.path.islink(fn):
+                     continue
+                 elif fn[-extlen:].lower() == '%s' % (ext):
+-                    relativepath = dirname.replace(startdir, "", 1)
+-                    relativepath = relativepath.lstrip("/")
+-                    filelist.append(os.path.join(relativepath, fn))
++                    filelist.append(fn[len(startdir):])
+ 
+         filelist = []
+         startdir = directory + '/'
+@@ -311,7 +327,7 @@ class MetaDataGenerator:
+     def checkTimeStamps(self):
+         """check the timestamp of our target dir. If it is not newer than
+            the repodata return False, else True"""
+-        if self.conf.checkts:
++        if self.conf.checkts and self.conf.mdtimestamp:
+             dn = os.path.join(self.conf.basedir, self.conf.directory)
+             files = self.getFileList(dn, '.rpm')
+             files = self.trimRpms(files)
+@@ -410,9 +426,11 @@ class MetaDataGenerator:
  
      def _setupPrimary(self):
          # setup the primary metadata file
@@ -232,7 +344,7 @@ index 8f2538e..25b5565 100644
          fo.write('<?xml version="1.0" encoding="UTF-8"?>\n')
          fo.write('<metadata xmlns="http://linux.duke.edu/metadata/common"' \
              ' xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="%s">' %
-@@ -421,9 +440,11 @@ class MetaDataGenerator:
+@@ -421,9 +439,11 @@ class MetaDataGenerator:
  
      def _setupFilelists(self):
          # setup the filelist file
@@ -246,7 +358,7 @@ index 8f2538e..25b5565 100644
          fo.write('<?xml version="1.0" encoding="UTF-8"?>\n')
          fo.write('<filelists xmlns="http://linux.duke.edu/metadata/filelists"' \
                   ' packages="%s">' % self.pkgcount)
-@@ -431,9 +452,11 @@ class MetaDataGenerator:
+@@ -431,9 +451,11 @@ class MetaDataGenerator:
  
      def _setupOther(self):
          # setup the other file
@@ -260,7 +372,7 @@ index 8f2538e..25b5565 100644
          fo.write('<?xml version="1.0" encoding="UTF-8"?>\n')
          fo.write('<otherdata xmlns="http://linux.duke.edu/metadata/other"' \
                   ' packages="%s">' %
-@@ -442,9 +465,10 @@ class MetaDataGenerator:
+@@ -442,9 +464,10 @@ class MetaDataGenerator:
  
      def _setupDelta(self):
          # setup the other file
@@ -273,7 +385,15 @@ index 8f2538e..25b5565 100644
          fo.write('<?xml version="1.0" encoding="UTF-8"?>\n')
          fo.write('<prestodelta>\n')
          return fo
-@@ -530,39 +554,19 @@ class MetaDataGenerator:
+@@ -520,6 +543,7 @@ class MetaDataGenerator:
+         # go on their merry way
+         
+         newpkgs = []
++        keptpkgs = []
+         if self.conf.update:
+             # if we're in --update mode then only act on the new/changed pkgs
+             for pkg in pkglist:
+@@ -530,39 +554,13 @@ class MetaDataGenerator:
                  old_pkg = pkg
                  if pkg.find("://") != -1:
                      old_pkg = os.path.basename(pkg)
@@ -312,18 +432,12 @@ index 8f2538e..25b5565 100644
 -                        outfile.write('\n')
 -
 -                    self.oldData.freeNodes(pkg)
-+
-+                    if self.conf.baseurl: # if we have a baseurl set, reset the one
-+                                          # in the old pkg
-+                        old_po.basepath = self.conf.baseurl
-+                    self.primaryfile.write(old_po.xml_dump_primary_metadata())
-+                    self.flfile.write(old_po.xml_dump_filelists_metadata())
-+                    self.otherfile.write(old_po.xml_dump_other_metadata())
++                    keptpkgs.append((pkg, old_po))
 +
                      #FIXME - if we're in update and we have deltas enabled
                      # check the presto data for this pkg and write its info back out
                      # to our deltafile
-@@ -584,12 +588,12 @@ class MetaDataGenerator:
+@@ -584,32 +582,45 @@ class MetaDataGenerator:
              po = None
              if isinstance(pkg, YumAvailablePackage):
                  po = pkg
@@ -338,7 +452,34 @@ index 8f2538e..25b5565 100644
                  self.read_pkgs.append(pkg)
              
              if po:
-@@ -608,8 +612,10 @@ class MetaDataGenerator:
+-                self.primaryfile.write(po.xml_dump_primary_metadata())
+-                self.flfile.write(po.xml_dump_filelists_metadata())
+-                self.otherfile.write(po.xml_dump_other_metadata(
+-                                     clog_limit=self.conf.changelog_limit))
++                keptpkgs.append((pkg, po))
+                 continue
+                 
+             pkgfiles.append(pkg)
+-            
+-       
++
++        keptpkgs.sort(reverse=True)
++        # keptkgs is a list of (filename, po), pkgfiles is a list if filenames.
++        # Need to write them in sorted(filename) order.  We loop over pkgfiles,
++        # inserting keptpkgs in right spots (using the upto argument).
++        def save_keptpkgs(upto):
++            while keptpkgs and (upto is None or keptpkgs[-1][0] < upto):
++                filename, po = keptpkgs.pop()
++                # reset baseurl in the old pkg
++                po.basepath = self.conf.baseurl
++                self.primaryfile.write(po.xml_dump_primary_metadata())
++                self.flfile.write(po.xml_dump_filelists_metadata())
++                self.otherfile.write(po.xml_dump_other_metadata(
++                    clog_limit=self.conf.changelog_limit))
++
+         if pkgfiles:
+             # divide that list by the number of workers and fork off that many
+             # workers to tmpdirs
              # waitfor the workers to finish and as each one comes in
              # open the files they created and write them out to our metadata
              # add up the total pkg counts and return that value
@@ -347,11 +488,12 @@ index 8f2538e..25b5565 100644
 +            self._worker_tmp_path = tempfile.mkdtemp() # setting this in the base object so we can clean it up later
 +            if self.conf.workers < 1:
 +                self.conf.workers = num_cpus_online()
++            pkgfiles.sort()
 +            worker_chunks = split_list_into_equal_chunks(pkgfiles, self.conf.workers)
              worker_cmd_dict = {}
              worker_jobs = {}
              base_worker_cmdline = [self.conf.worker_cmd, 
-@@ -617,7 +623,8 @@ class MetaDataGenerator:
+@@ -617,7 +628,8 @@ class MetaDataGenerator:
                      '--pkgoptions=_collapse_libc_requires=%s' % self.conf.collapse_glibc_requires, 
                      '--pkgoptions=_cachedir=%s' % self.conf.cachedir,
                      '--pkgoptions=_baseurl=%s' % self.conf.baseurl,
@@ -361,40 +503,31 @@ index 8f2538e..25b5565 100644
              
              if self.conf.quiet:
                  base_worker_cmdline.append('--quiet')
-@@ -626,19 +633,25 @@ class MetaDataGenerator:
+@@ -626,15 +638,14 @@ class MetaDataGenerator:
                  base_worker_cmdline.append('--verbose')
                  
              for worker_num in range(self.conf.workers):
+-                # make the worker directory
 +                pkl = self._worker_tmp_path + '/pkglist-%s' % worker_num
 +                f = open(pkl, 'w') 
 +                f.write('\n'.join(worker_chunks[worker_num]))
 +                f.close()
 +                
-                 # make the worker directory
                  workercmdline = []
                  workercmdline.extend(base_worker_cmdline)
 -                thisdir = worker_tmp_path + '/' + str(worker_num)
-+                thisdir = self._worker_tmp_path + '/' + str(worker_num)
-                 if checkAndMakeDir(thisdir):
-                     workercmdline.append('--tmpmdpath=%s' % thisdir)
-                 else:
-                     raise MDError, "Unable to create worker path: %s" % thisdir
+-                if checkAndMakeDir(thisdir):
+-                    workercmdline.append('--tmpmdpath=%s' % thisdir)
+-                else:
+-                    raise MDError, "Unable to create worker path: %s" % thisdir
 -                workercmdline.extend(worker_chunks[worker_num])
 +                workercmdline.append('--pkglist=%s/pkglist-%s' % (self._worker_tmp_path, worker_num))
                  worker_cmd_dict[worker_num] = workercmdline
              
                  
- 
-+            fds = {}
-             for (num, cmdline) in worker_cmd_dict.items():
-                 if not self.conf.quiet:
-                     self.callback.log("Spawning worker %s with %s pkgs" % (num, 
-@@ -646,21 +659,24 @@ class MetaDataGenerator:
-                 job = subprocess.Popen(cmdline, stdout=subprocess.PIPE,
+@@ -647,49 +658,60 @@ class MetaDataGenerator:
                                          stderr=subprocess.PIPE)
                  worker_jobs[num] = job
-+                fds[job.stdout.fileno()] = num, job.stdout, self.callback.log
-+                fds[job.stderr.fileno()] = num, job.stderr, self.callback.errorlog
              
 -            gimmebreak = 0
 -            while gimmebreak != len(worker_jobs.keys()):
@@ -404,20 +537,39 @@ index 8f2538e..25b5565 100644
 -                        gimmebreak+=1
 -                    line = job.stdout.readline()
 -                    if line:
--                        self.callback.log('Worker %s: %s' % (num, line.rstrip()))
++            files = self.primaryfile, self.flfile, self.otherfile
++            def log_messages(num):
++                job = worker_jobs[num]
++                while True:
++                    # check stdout and stderr
++                    for stream in select((job.stdout, job.stderr), (), ())[0]:
++                        line = stream.readline()
++                        if line: break
++                    else:
++                        return # EOF, EOF
++                    if stream is job.stdout:
++                        if line.startswith('*** '):
++                            # get data, save to local files
++                            for out, size in zip(files, line[4:].split()):
++                                out.write(stream.read(int(size)))
++                            return
+                         self.callback.log('Worker %s: %s' % (num, line.rstrip()))
 -                    line = job.stderr.readline()
 -                    if line:
--                        self.callback.errorlog('Worker %s: %s' % (num, line.rstrip()))
-+            while fds:
-+                for fd in select(fds, [], [])[0]:
-+                    num, stream, logger = fds[fd]
-+                    line = stream.readline()
-+                    if line == '':
-+                        del fds[fd]
-+                        continue
-+                    logger('Worker %s: %s' % (num, line.rstrip()))
++                    else:
+                         self.callback.errorlog('Worker %s: %s' % (num, line.rstrip()))
++
++            for i, pkg in enumerate(pkgfiles):
++                # insert cached packages
++                save_keptpkgs(pkg)
++
++                # save output to local files
++                log_messages(i % self.conf.workers)
 +
 +            for (num, job) in worker_jobs.items():
++                # process remaining messages on stderr
++                log_messages(num)
++
 +                if job.wait() != 0:
 +                    msg = "Worker exited with non-zero value: %s. Fatal." % job.returncode
 +                    self.callback.errorlog(msg)
@@ -426,16 +578,18 @@ index 8f2538e..25b5565 100644
 -                
              if not self.conf.quiet:
                  self.callback.log("Workers Finished")
-             # finished with workers
-@@ -671,15 +687,19 @@ class MetaDataGenerator:
-                 for (fn, fo) in (('primary.xml', self.primaryfile), 
-                            ('filelists.xml', self.flfile),
-                            ('other.xml', self.otherfile)):
+-            # finished with workers
+-            # go to their dirs and add the contents
+-            if not self.conf.quiet:
+-                self.callback.log("Gathering worker results")
+-            for num in range(self.conf.workers):
+-                for (fn, fo) in (('primary.xml', self.primaryfile), 
+-                           ('filelists.xml', self.flfile),
+-                           ('other.xml', self.otherfile)):
 -                    fnpath = worker_tmp_path + '/' + str(num) + '/' + fn
-+                    fnpath = self._worker_tmp_path + '/' + str(num) + '/' + fn
-                     if os.path.exists(fnpath):
-                         fo.write(open(fnpath, 'r').read())
- 
+-                    if os.path.exists(fnpath):
+-                        fo.write(open(fnpath, 'r').read())
+-
                      
              for pkgfile in pkgfiles:
                  if self.conf.deltas:
@@ -449,8 +603,19 @@ index 8f2538e..25b5565 100644
 +                        continue
                  self.read_pkgs.append(pkgfile)
  
++        save_keptpkgs(None) # append anything left
          return self.current_pkg
-@@ -784,7 +804,6 @@ class MetaDataGenerator:
+ 
+ 
+     def closeMetadataDocs(self):
+-        if not self.conf.quiet:
+-            self.callback.log('')
+-
+-
+         # save them up to the tmp locations:
+         if not self.conf.quiet:
+             self.callback.log(_('Saving Primary metadata'))
+@@ -784,7 +806,6 @@ class MetaDataGenerator:
              return self._old_package_dict
  
          self._old_package_dict = {}
@@ -458,7 +623,7 @@ index 8f2538e..25b5565 100644
          for d in self.conf.oldpackage_paths:
              for f in self.getFileList(d, '.rpm'):
                  fp = d + '/' + f
-@@ -833,7 +852,7 @@ class MetaDataGenerator:
+@@ -833,7 +854,7 @@ class MetaDataGenerator:
          return ' '.join(results)
  
      def _createRepoDataObject(self, mdfile, mdtype, compress=True, 
@@ -467,7 +632,7 @@ index 8f2538e..25b5565 100644
          """return random metadata as RepoData object to be  added to RepoMD
             mdfile = complete path to file
             mdtype = the metadata type to use
-@@ -843,15 +862,13 @@ class MetaDataGenerator:
+@@ -843,15 +864,13 @@ class MetaDataGenerator:
          sfile = os.path.basename(mdfile)
          fo = open(mdfile, 'r')
          outdir = os.path.join(self.conf.outputdir, self.conf.tempdir)
@@ -489,7 +654,7 @@ index 8f2538e..25b5565 100644
          else:
              outfn  = os.path.join(outdir, sfile)
              output = open(outfn, 'w')
-@@ -874,7 +891,6 @@ class MetaDataGenerator:
+@@ -874,14 +893,13 @@ class MetaDataGenerator:
  
          thisdata = RepoData()
          thisdata.type = mdtype
@@ -497,7 +662,15 @@ index 8f2538e..25b5565 100644
          thisdata.location = (self.conf.baseurl, os.path.join(self.conf.finaldir, sfile))
          thisdata.checksum = (self.conf.sumtype, csum)
          if compress:
-@@ -925,9 +941,14 @@ class MetaDataGenerator:
+             thisdata.openchecksum  = (self.conf.sumtype, open_csum)
+         
+         thisdata.size = str(os.stat(outfn).st_size)
+-        thisdata.timestamp = str(os.stat(outfn).st_mtime)
++        thisdata.timestamp = str(int(os.stat(outfn).st_mtime))
+         for (k, v) in attribs.items():
+             setattr(thisdata, k, str(v))
+         
+@@ -925,9 +943,14 @@ class MetaDataGenerator:
              rp = sqlitecachec.RepodataParserSqlite(repopath, repomd.repoid, None)
  
          for (rpm_file, ftype) in workfiles:
@@ -514,7 +687,7 @@ index 8f2538e..25b5565 100644
              # This is misc.checksum() done locally so we can get the size too.
              data = misc.Checksums([sumtype])
              while data.read(zfo, 2**16):
-@@ -966,14 +987,20 @@ class MetaDataGenerator:
+@@ -966,14 +989,20 @@ class MetaDataGenerator:
                      good_name = '%s.sqlite' % ftype
                      resultpath = os.path.join(repopath, good_name)
  
@@ -537,7 +710,7 @@ index 8f2538e..25b5565 100644
                      # csum the compressed file
                      db_compressed_sums[ftype] = misc.checksum(sumtype,
                                                               result_compressed)
-@@ -983,8 +1010,8 @@ class MetaDataGenerator:
+@@ -983,8 +1012,8 @@ class MetaDataGenerator:
                      os.unlink(resultpath)
  
                      if self.conf.unique_md_filenames:
@@ -548,7 +721,16 @@ index 8f2538e..25b5565 100644
                          csum_result_compressed =  os.path.join(repopath,
                                                             csum_compressed_name)
                          os.rename(result_compressed, csum_result_compressed)
-@@ -1020,7 +1047,13 @@ class MetaDataGenerator:
+@@ -1001,7 +1030,7 @@ class MetaDataGenerator:
+                     data.location = (self.conf.baseurl, 
+                               os.path.join(self.conf.finaldir, compressed_name))
+                     data.checksum = (sumtype, db_compressed_sums[ftype])
+-                    data.timestamp = str(db_stat.st_mtime)
++                    data.timestamp = str(int(db_stat.st_mtime))
+                     data.size = str(db_stat.st_size)
+                     data.opensize = str(un_stat.st_size)
+                     data.openchecksum = (sumtype, db_csums[ftype])
+@@ -1020,7 +1049,13 @@ class MetaDataGenerator:
              data.openchecksum = (sumtype, uncsum)
  
              if self.conf.unique_md_filenames:
@@ -563,7 +745,7 @@ index 8f2538e..25b5565 100644
                  orig_file = os.path.join(repopath, rpm_file)
                  dest_file = os.path.join(repopath, res_file)
                  os.rename(orig_file, dest_file)
-@@ -1046,7 +1079,7 @@ class MetaDataGenerator:
+@@ -1046,7 +1081,7 @@ class MetaDataGenerator:
              
  
          if self.conf.additional_metadata:
@@ -572,7 +754,7 @@ index 8f2538e..25b5565 100644
                  mdcontent = self._createRepoDataObject(md_file, md_type)
                  repomd.repoData[mdcontent.type] = mdcontent
                  
-@@ -1110,23 +1143,43 @@ class MetaDataGenerator:
+@@ -1110,23 +1145,43 @@ class MetaDataGenerator:
                      raise MDError, _(
                      'Could not remove old metadata file: %s: %s') % (oldfile, e)
  
@@ -630,7 +812,7 @@ index 8f2538e..25b5565 100644
                  continue
  
              if os.path.exists(finalfile):
-@@ -1147,14 +1200,19 @@ class MetaDataGenerator:
+@@ -1147,14 +1202,19 @@ class MetaDataGenerator:
                      msg += _('Error was %s') % e
                      raise MDError, msg
  
@@ -644,8 +826,8 @@ index 8f2538e..25b5565 100644
 +        self._cleanup_tmp_repodata_dir()
 +        self._cleanup_update_tmp_dir()        
 +        self._write_out_read_pkgs_list()
- 
 +
+ 
 +    def _cleanup_update_tmp_dir(self):
 +        if not self.conf.update:
 +            return
@@ -657,7 +839,7 @@ index 8f2538e..25b5565 100644
          # write out the read_pkgs_list file with self.read_pkgs
          if self.conf.read_pkgs_list:
              try:
-@@ -1167,6 +1225,23 @@ class MetaDataGenerator:
+@@ -1167,6 +1227,23 @@ class MetaDataGenerator:
                                % self.conf.read_pkgs_list)
                  self.errorlog(_('Error was %s') % e)
  
@@ -681,7 +863,32 @@ index 8f2538e..25b5565 100644
      def setup_sqlite_dbs(self, initdb=True):
          """sets up the sqlite dbs w/table schemas and db_infos"""
          destdir = os.path.join(self.conf.outputdir, self.conf.tempdir)
-@@ -1232,6 +1307,19 @@ class SplitMetaDataGenerator(MetaDataGenerator):
+@@ -1194,24 +1271,6 @@ class SplitMetaDataGenerator(MetaDataGenerator):
+         (scheme, netloc, path, query, fragid) = urlparse.urlsplit(url)
+         return urlparse.urlunsplit((scheme, netloc, path, query, str(fragment)))
+ 
+-    def getFileList(self, directory, ext):
+-
+-        extlen = len(ext)
+-
+-        def extension_visitor(arg, dirname, names):
+-            for fn in names:
+-                if os.path.isdir(fn):
+-                    continue
+-                elif fn[-extlen:].lower() == '%s' % (ext):
+-                    reldir = os.path.basename(dirname)
+-                    if reldir == os.path.basename(directory):
+-                        reldir = ""
+-                    arg.append(os.path.join(reldir, fn))
+-
+-        rpmlist = []
+-        os.path.walk(directory, extension_visitor, rpmlist)
+-        return rpmlist
+-
+     def doPkgMetadata(self):
+         """all the heavy lifting for the package metadata"""
+         if len(self.conf.directories) == 1:
+@@ -1232,6 +1291,19 @@ class SplitMetaDataGenerator(MetaDataGenerator):
                      thisdir = os.path.join(self.conf.basedir, mydir)
  
              filematrix[mydir] = self.getFileList(thisdir, '.rpm')
@@ -701,7 +908,7 @@ index 8f2538e..25b5565 100644
              self.trimRpms(filematrix[mydir])
              self.pkgcount += len(filematrix[mydir])
  
-@@ -1240,7 +1328,6 @@ class SplitMetaDataGenerator(MetaDataGenerator):
+@@ -1240,7 +1312,6 @@ class SplitMetaDataGenerator(MetaDataGenerator):
          self.conf.baseurl = self._getFragmentUrl(self.conf.baseurl, mediano)
          try:
              self.openMetadataDocs()
@@ -1047,7 +1254,7 @@ index 27d3690..54863cb 100644
 +        print po.xml_dump_other_metadata()
 +
 diff --git a/createrepo/utils.py b/createrepo/utils.py
-index 995c3b9..d66b115 100644
+index 995c3b9..b0d92ec 100644
 --- a/createrepo/utils.py
 +++ b/createrepo/utils.py
 @@ -23,6 +23,12 @@ import bz2
@@ -1092,7 +1299,7 @@ index 995c3b9..d66b115 100644
  
  def _gzipOpen(filename, mode="rb", compresslevel=9):
      return GzipFile(filename, mode, compresslevel)
-@@ -69,6 +67,67 @@ def bzipFile(source, dest):
+@@ -69,6 +67,75 @@ def bzipFile(source, dest):
      s_fn.close()
  
  
@@ -1127,6 +1334,10 @@ index 995c3b9..d66b115 100644
 +    s_fn.close()
 +
 +
++class Duck:
++    def __init__(self, **attr):
++        self.__dict__ = attr
++
 +
 +def compressFile(source, dest, compress_type):
 +    """Compress an existing file using any compression type from source to dest"""
@@ -1149,7 +1360,11 @@ index 995c3b9..d66b115 100644
 +            compress_type = 'gz'
 +            
 +    if compress_type == 'xz':
-+        return lzma.LZMAFile(fn, mode)
++        fh = lzma.LZMAFile(fn, mode)
++        if mode == 'w':
++            fh = Duck(write=lambda s, write=fh.write: s != '' and write(s),
++                      close=fh.close)
++        return fh
 +    elif compress_type == 'bz2':
 +        return bz2.BZ2File(fn, mode)
 +    elif compress_type == 'gz':
@@ -1160,23 +1375,21 @@ index 995c3b9..d66b115 100644
  def returnFD(filename):
      try:
          fdno = os.open(filename, os.O_RDONLY)
-@@ -124,15 +183,36 @@ def encodefiletypelist(filetypelist):
+@@ -124,15 +191,28 @@ def encodefiletypelist(filetypelist):
      return result
  
  def split_list_into_equal_chunks(seq, num_chunks):
-+    if num_chunks <= 1:
-+        return [seq[:]]
-     avg = len(seq) / float(num_chunks)
-     out = []
-     last = 0.0
+-    avg = len(seq) / float(num_chunks)
+-    out = []
+-    last = 0.0
 -    while last < len(seq):
-+    #  Due to floating point math, we do one less than the number of chunks
-+    # and then the rest. Eg. range(1,6), 9
-+    while len(out) < (num_chunks - 1):
-         out.append(seq[int(last):int(last + avg)])
-         last += avg
-+    out.append(seq[int(last):])
- 
+-        out.append(seq[int(last):int(last + avg)])
+-        last += avg
+-
++    """it's used on sorted input which is then merged in order"""
++    out = [[] for i in range(num_chunks)]
++    for i, item in enumerate(seq):
++        out[i % num_chunks].append(item)
      return out
  
 +def num_cpus_online(unknown=1):
@@ -1198,11 +1411,55 @@ index 995c3b9..d66b115 100644
  
  class MDError(Exception):
      def __init__(self, value=None):
+diff --git a/createrepo/yumbased.py b/createrepo/yumbased.py
+index ac06196..f87ac6d 100644
+--- a/createrepo/yumbased.py
++++ b/createrepo/yumbased.py
+@@ -16,6 +16,11 @@
+ 
+ 
+ import os
++def _get_umask():
++   oumask = os.umask(0)
++   os.umask(oumask)
++   return oumask
++_b4rpm_oumask = _get_umask()
+ import rpm
+ import types
+ 
+@@ -86,6 +91,9 @@ class CreateRepoPackage(YumLocalPackage):
+                 csumo = os.fdopen(csumo, 'w', -1)
+                 csumo.write(checksum)
+                 csumo.close()
++                #  tempfile forces 002 ... we want to undo that, so that users
++                # can share the cache. BZ 833350.
++                os.chmod(tmpfilename, 0666 ^ _b4rpm_oumask)
+                 os.rename(tmpfilename, csumfile)
+             except:
+                 pass
 diff --git a/docs/createrepo.8 b/docs/createrepo.8
-index e3c4c3b..4734392 100644
+index e3c4c3b..eefd4bf 100644
 --- a/docs/createrepo.8
 +++ b/docs/createrepo.8
-@@ -53,7 +53,8 @@ gullible).
+@@ -37,6 +37,10 @@ cache of checksums of packages in the repository. In consecutive runs of
+ createrepo over the same repository of files that do not have a complete
+ change out of all packages this decreases the processing time dramatically.
+ .br
++.IP "\fB\--basedir\fP"
++Basedir for path to directories in the repodata, default is the current working
++directory.
++.br
+ .IP "\fB\--update\fP"
+ If metadata already exists in the outputdir and an rpm is unchanged
+ (based on file size and mtime) since the metadata was generated, reuse
+@@ -49,11 +53,15 @@ skip the stat() call on a --update, assumes if the filename is the same
+ then the file is still the same (only use this if you're fairly trusting or
+ gullible).
+ .br
++.IP "\fB\--update-md-path\fP"
++Use the existing repodata for --update, from this path.
++.br
+ .IP "\fB\-C --checkts\fP"
  Don't generate repo metadata, if their timestamps are newer than its rpms.
  This option decreases the processing time drastically again, if you happen
  to run it on an unmodified repo, but it is (currently) mutual exclusive
@@ -1212,7 +1469,27 @@ index e3c4c3b..4734392 100644
  .br
  .IP "\fB\--split\fP"
  Run in split media mode. Rather than pass a single directory, take a set of
-@@ -104,7 +105,15 @@ Tells createrepo to generate deltarpms and the delta metadata
+@@ -61,7 +69,7 @@ directories corresponding to different volumes in a media set.
+ .br
+ .IP "\fB\-p --pretty\fP"
+ Output xml files in pretty format.
+-.IP "\fB\-V --version\fP"
++.IP "\fB\--version\fP"
+ Output version.
+ .IP "\fB\-h --help\fP"
+ Show help menu.
+@@ -89,6 +97,10 @@ Include the file's checksum in the metadata filename, helps HTTP caching (defaul
+ .IP "\fB\--simple-md-filenames\fP"
+ Do not include the file's checksum in the metadata filename.
+ 
++.IP "\fB\--retain-old-md\fP"
++Keep around the latest (by timestamp) N copies of the old repodata (so clients
++with older repomd.xml files can still access it). Default is 0.
++
+ .IP "\fB\--distro\fP"
+ Specify distro tags. Can be specified more than once. Optional syntax specifying a
+ cpeid(http://cpe.mitre.org/) --distro=cpeid,distrotag
+@@ -104,7 +116,16 @@ Tells createrepo to generate deltarpms and the delta metadata
  paths to look for older pkgs to delta against. Can be specified multiple times
  .IP "\fB\--num-deltas\fP int"
  the number of older versions to make deltas against. Defaults to 1
@@ -1223,43 +1500,76 @@ index e3c4c3b..4734392 100644
 +max size of an rpm that to run deltarpm against (in bytes)
 +.IP "\fB\--workers\fP WORKERS
 +number of workers to spawn to read rpms
-+.IP "\fB\--xz\fP
-+use xz for repodata compression
++.IP "\fB\--compress-type\fP
++specify which compression method to use: compat (default),
++xz (may not be available), gz, bz2.
 +.IP
  
  .SH "EXAMPLES"
  Here is an example of a repository with a groups file. Note that the
 diff --git a/genpkgmetadata.py b/genpkgmetadata.py
-index 8c98191..9bf8c8d 100755
+index 8c98191..4528bf2 100755
 --- a/genpkgmetadata.py
 +++ b/genpkgmetadata.py
-@@ -100,6 +100,8 @@ def parse_args(args, conf):
-     parser.add_option("--simple-md-filenames", dest="simple_md_filenames",
-         help="do not include the file's checksum in the filename, helps with proxies",
-         default=False, action="store_true")
+@@ -22,7 +22,7 @@
+ import os
+ import sys
+ import re
+-from optparse import OptionParser
++from optparse import OptionParser,SUPPRESS_HELP
+ import time
+ 
+ import createrepo
+@@ -37,6 +37,12 @@ def parse_args(args, conf):
+        Sanity check all the things being passed in.
+     """
+ 
++    def_workers = os.nice(0)
++    if def_workers > 0:
++        def_workers = 1 # We are niced, so just use a single worker.
++    else:
++        def_workers = 0 # zoooom....
++
+     _def   = yum.misc._default_checksums[0]
+     _avail = yum.misc._available_checksums
+     parser = OptionParser(version = "createrepo %s" % createrepo.__version__)
+@@ -95,11 +101,13 @@ def parse_args(args, conf):
+     parser.add_option("--changelog-limit", dest="changelog_limit",
+         default=None, help="only import the last N changelog entries")
+     parser.add_option("--unique-md-filenames", dest="unique_md_filenames",
+-        help="include the file's checksum in the filename, helps with proxies",
++        help="include the file's checksum in the filename, helps with proxies (default)",
+         default=True, action="store_true")
+-    parser.add_option("--simple-md-filenames", dest="simple_md_filenames",
+-        help="do not include the file's checksum in the filename, helps with proxies",
+-        default=False, action="store_true")
++    parser.add_option("--simple-md-filenames", dest="unique_md_filenames",
++        help="do not include the file's checksum in the filename",
++        action="store_false")
 +    parser.add_option("--retain-old-md", default=0, type='int', dest='retain_old_md',
 +        help="keep around the latest (by timestamp) N copies of the old repodata")
      parser.add_option("--distro", default=[], action="append",
          help="distro tag and optional cpeid: --distro" "'cpeid,textname'")
      parser.add_option("--content", default=[], dest='content_tags',
-@@ -119,10 +121,15 @@ def parse_args(args, conf):
+@@ -119,10 +127,15 @@ def parse_args(args, conf):
      parser.add_option("--max-delta-rpm-size", default=100000000,
          dest='max_delta_rpm_size', type='int',
          help="max size of an rpm that to run deltarpm against (in bytes)")
 -
-     parser.add_option("--workers", default=1,
+-    parser.add_option("--workers", default=1,
++    parser.add_option("--workers", default=def_workers,
          dest='workers', type='int',
          help="number of workers to spawn to read rpms")
 +    parser.add_option("--xz", default=False,
 +        action="store_true",
-+        help="use xz for repodata compression")
++        help=SUPPRESS_HELP)
 +    parser.add_option("--compress-type", default='compat', dest="compress_type",
 +        help="which compression type to use")
 +        
      
      (opts, argsleft) = parser.parse_args(args)
      if len(argsleft) > 1 and not opts.split:
-@@ -138,6 +145,9 @@ def parse_args(args, conf):
+@@ -138,6 +151,9 @@ def parse_args(args, conf):
      else:
          directories = argsleft
  
@@ -1269,8 +1579,13 @@ index 8c98191..9bf8c8d 100755
      if opts.sumtype == 'sha1':
          errorprint(_('Warning: It is more compatible to use sha instead of sha1'))
  
-@@ -155,6 +165,11 @@ def parse_args(args, conf):
-     
+@@ -150,11 +166,13 @@ def parse_args(args, conf):
+         errorprint(_('--split and --checkts options are mutually exclusive'))
+         sys.exit(1)
+ 
+-    if opts.simple_md_filenames:
+-        opts.unique_md_filenames = False
+-    
      if opts.nodatabase:
          opts.database = False
 +    
@@ -1281,7 +1596,7 @@ index 8c98191..9bf8c8d 100755
          
      # let's switch over to using the conf object - put all the opts into it
      for opt in parser.option_list:
-@@ -240,6 +255,7 @@ def main(args):
+@@ -240,6 +258,7 @@ def main(args):
              if mdgen.checkTimeStamps():
                  if mdgen.conf.verbose:
                      print _('repo is up to date')
@@ -1331,7 +1646,7 @@ index 05e5f5e..80cb1a8 100755
  if __name__ == "__main__":
      main(sys.argv[1:])
 diff --git a/modifyrepo.py b/modifyrepo.py
-index 17094a4..153ad4d 100755
+index 17094a4..bffe99a 100755
 --- a/modifyrepo.py
 +++ b/modifyrepo.py
 @@ -1,11 +1,15 @@
@@ -1351,7 +1666,7 @@ index 17094a4..153ad4d 100755
  #
  # This program is free software; you can redistribute it and/or modify
  # it under the terms of the GNU General Public License as published by
-@@ -20,11 +24,12 @@
+@@ -20,11 +24,13 @@
  # (C) Copyright 2006  Red Hat, Inc.
  # Luke Macken <lmacken@redhat.com>
  # modified by Seth Vidal 2008
@@ -1362,19 +1677,20 @@ index 17094a4..153ad4d 100755
  from createrepo import __version__
 -from createrepo.utils import checksum_and_rename, GzipFile, MDError
 +from createrepo.utils import checksum_and_rename, compressOpen, MDError
++from createrepo.utils import _available_compression
  from yum.misc import checksum
  
  from yum.repoMDObject import RepoMD, RepoMDError, RepoData
-@@ -39,6 +44,8 @@ class RepoMetadata:
+@@ -38,7 +44,7 @@ class RepoMetadata:
+         """ Parses the repomd.xml file existing in the given repo directory. """
          self.repodir = os.path.abspath(repo)
          self.repomdxml = os.path.join(self.repodir, 'repomd.xml')
-         self.checksum_type = 'sha256'
-+        self.compress = False
-+        self.compress_type='xz'
+-        self.checksum_type = 'sha256'
++        self.compress_type = _available_compression[-1] # best available
  
          if not os.path.exists(self.repomdxml):
              raise MDError, '%s not found' % self.repomdxml
-@@ -49,6 +56,35 @@ class RepoMetadata:
+@@ -49,6 +55,35 @@ class RepoMetadata:
          except RepoMDError, e:
              raise MDError, 'Could not parse %s' % self.repomdxml
  
@@ -1410,7 +1726,7 @@ index 17094a4..153ad4d 100755
  
      def add(self, metadata, mdtype=None):
          """ Insert arbitrary metadata into this repository.
-@@ -63,8 +99,8 @@ class RepoMetadata:
+@@ -63,8 +98,8 @@ class RepoMetadata:
              mdname = 'updateinfo.xml'
          elif isinstance(metadata, str):
              if os.path.exists(metadata):
@@ -1421,7 +1737,7 @@ index 17094a4..153ad4d 100755
                  else:
                      oldmd = file(metadata, 'r')
                  md = oldmd.read()
-@@ -75,14 +111,19 @@ class RepoMetadata:
+@@ -75,27 +110,32 @@ class RepoMetadata:
          else:
              raise MDError, 'invalid metadata type'
  
@@ -1432,7 +1748,7 @@ index 17094a4..153ad4d 100755
 -        if not mdtype:
 -            mdtype = mdname.split('.')[0]
 -            
-+        if self.compress or not mdname.split('.')[-1] in ('gz', 'bz2', 'xz'):
++        if self.compress and mdname.split('.')[-1] not in ('gz', 'bz2', 'xz'):
 +            do_compress = True
 +            mdname += '.' + self.compress_type
 +        mdtype = self._get_mdtype(mdname, mdtype)
@@ -1447,8 +1763,13 @@ index 17094a4..153ad4d 100755
          newmd.write(md)
          newmd.close()
          print "Wrote:", destmd
-@@ -91,11 +132,8 @@ class RepoMetadata:
-         csum, destmd = checksum_and_rename(destmd, self.checksum_type)
+ 
+         open_csum = checksum(self.checksum_type, metadata)
+-        csum, destmd = checksum_and_rename(destmd, self.checksum_type)
++        if self.unique_md_filenames:
++            csum, destmd = checksum_and_rename(destmd, self.checksum_type)
++        else:
++            csum = checksum(self.checksum_type, destmd)
          base_destmd = os.path.basename(destmd)
  
 -
@@ -1461,9 +1782,12 @@ index 17094a4..153ad4d 100755
  
          new_rd = RepoData()
          new_rd.type = mdtype
-@@ -105,18 +143,28 @@ class RepoMetadata:
+@@ -103,20 +143,30 @@ class RepoMetadata:
+         new_rd.checksum = (self.checksum_type, csum)
+         new_rd.openchecksum = (self.checksum_type, open_csum)
          new_rd.size = str(os.stat(destmd).st_size)
-         new_rd.timestamp = str(os.stat(destmd).st_mtime)
+-        new_rd.timestamp = str(os.stat(destmd).st_mtime)
++        new_rd.timestamp = str(int(os.stat(destmd).st_mtime))
          self.repoobj.repoData[new_rd.type] = new_rd
 -        
 -        print "           type =", new_rd.type
@@ -1502,28 +1826,43 @@ index 17094a4..153ad4d 100755
  
  
  def main(args):
-@@ -124,7 +172,13 @@ def main(args):
+@@ -124,7 +174,23 @@ def main(args):
      # query options
      parser.add_option("--mdtype", dest='mdtype',
                        help="specific datatype of the metadata, will be derived from the filename if not specified")
 -    parser.usage = "modifyrepo [options] <input_metadata> <output repodata>"
 +    parser.add_option("--remove", action="store_true",
 +                      help="remove specified file from repodata")
-+    parser.add_option("--compress", action="store_true", default=False,
-+                      help="compress the new repodata before adding it to the repo")
-+    parser.add_option("--compress-type", dest='compress_type', default='xz',
++    parser.add_option("--compress", action="store_true", default=True,
++                      help="compress the new repodata before adding it to the repo (default)")
++    parser.add_option("--no-compress", action="store_false", dest="compress",
++                      help="do not compress the new repodata before adding it to the repo")
++    parser.add_option("--compress-type", dest='compress_type', default='gz',
 +                      help="compression format to use")
++    parser.add_option("-s", "--checksum", default='sha256', dest='sumtype',
++        help="specify the checksum type to use (default: sha256)")
++    parser.add_option("--unique-md-filenames", dest="unique_md_filenames",
++        help="include the file's checksum in the filename, helps with proxies (default)",
++        default=True, action="store_true")
++    parser.add_option("--simple-md-filenames", dest="unique_md_filenames",
++        help="do not include the file's checksum in the filename",
++        action="store_false")
 +    parser.usage = "modifyrepo [options] [--remove] <input_metadata> <output repodata>"
      
      (opts, argsleft) = parser.parse_args(args)
      if len(argsleft) != 2:
-@@ -137,11 +191,27 @@ def main(args):
+@@ -137,11 +203,32 @@ def main(args):
      except MDError, e:
          print "Could not access repository: %s" % str(e)
          return 1
 +
 +
++    repomd.checksum_type = opts.sumtype
++    repomd.unique_md_filenames = opts.unique_md_filenames
 +    repomd.compress = opts.compress
++    if opts.compress_type not in _available_compression:
++        print "Compression %s not available: Please choose from: %s" % (opts.compress_type, ', '.join(_available_compression))
++        return 1
 +    repomd.compress_type = opts.compress_type
 +
 +    # remove
@@ -1546,7 +1885,7 @@ index 17094a4..153ad4d 100755
  if __name__ == '__main__':
      ret = main(sys.argv[1:])
 diff --git a/worker.py b/worker.py
-index eb35ef7..23c87a3 100755
+index eb35ef7..b67b5bd 100755
 --- a/worker.py
 +++ b/worker.py
 @@ -5,6 +5,7 @@ import yum
@@ -1566,11 +1905,44 @@ index eb35ef7..23c87a3 100755
      parser.add_option("--pkgoptions", default=[], action='append',
                  help="pkgoptions in the format of key=value")
      parser.add_option("--quiet", default=False, action='store_true',
-@@ -68,7 +71,13 @@ def main(args):
-     fl = open(opts.tmpmdpath  + '/filelists.xml' , 'w')
-     other = open(opts.tmpmdpath  + '/other.xml' , 'w')
-     
+@@ -36,10 +39,6 @@ def main(args):
+     opts, pkgs = parser.parse_args(args)
+     external_data = {'_packagenumber': 1}
+     globalopts = {}
+-    if not opts.tmpmdpath:
+-        print >> sys.stderr, "tmpmdpath required for destination files"
+-        sys.exit(1)
 -    
+     
+     for strs in opts.pkgoptions:
+         k,v = strs.split('=')
+@@ -61,18 +60,39 @@ def main(args):
+             v = None
+         globalopts[k] = v
+ 
++    # turn off buffering on stdout
++    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+     
+     reldir = external_data['_reldir']
+     ts = rpmUtils.transaction.initReadOnlyTransaction()
+-    pri = open(opts.tmpmdpath + '/primary.xml' , 'w')
+-    fl = open(opts.tmpmdpath  + '/filelists.xml' , 'w')
+-    other = open(opts.tmpmdpath  + '/other.xml' , 'w')
+-    
+-    
++    if opts.tmpmdpath:
++        files = [open(opts.tmpmdpath + '/%s.xml' % i, 'w')
++                 for i in ('primary', 'filelists', 'other')]
++        def output(*xml):
++            for fh, buf in zip(files, xml):
++                fh.write(buf)
++    else:
++        def output(*xml):
++            buf = ' '.join(str(len(i)) for i in xml)
++            sys.stdout.write('*** %s\n' % buf)
++            for buf in xml:
++                sys.stdout.write(buf)
++
 +    if opts.pkglist:
 +        for line in open(opts.pkglist,'r').readlines():
 +            line = line.strip()
@@ -1578,24 +1950,41 @@ index eb35ef7..23c87a3 100755
 +                continue
 +            pkgs.append(line)
 +
++    clog_limit=globalopts.get('clog_limit', None)
++    if clog_limit is not None:
++         clog_limit = int(clog_limit)
      for pkgfile in pkgs:
          pkgpath = reldir + '/' + pkgfile
          if not os.path.exists(pkgpath):
-@@ -80,11 +89,14 @@ def main(args):
+             print >> sys.stderr, "File not found: %s" % pkgpath
++            output()
+             continue
+ 
+         try:
+@@ -80,20 +100,17 @@ def main(args):
                  print "reading %s" % (pkgfile)
  
              pkg = createrepo.yumbased.CreateRepoPackage(ts, package=pkgpath, 
 -                                                        external_data=external_data)
-+                                sumtype=globalopts.get('sumtype', None), 
-+                                external_data=external_data)
-             pri.write(pkg.xml_dump_primary_metadata())
-             fl.write(pkg.xml_dump_filelists_metadata())
+-            pri.write(pkg.xml_dump_primary_metadata())
+-            fl.write(pkg.xml_dump_filelists_metadata())
 -            other.write(pkg.xml_dump_other_metadata(clog_limit=
 -                                            globalopts.get('clog_limit', None)))
-+            clog_limit=globalopts.get('clog_limit', None)
-+            if clog_limit is not None:
-+                 clog_limit = int(clog_limit)
-+            other.write(pkg.xml_dump_other_metadata(clog_limit=clog_limit))
++                                sumtype=globalopts.get('sumtype', None), 
++                                external_data=external_data)
++            output(pkg.xml_dump_primary_metadata(),
++                   pkg.xml_dump_filelists_metadata(),
++                   pkg.xml_dump_other_metadata(clog_limit=clog_limit))
          except yum.Errors.YumBaseError, e:
              print >> sys.stderr, "Error: %s" % e
++            output()
              continue
+         else:
+             external_data['_packagenumber']+=1
+         
+-    pri.close()
+-    fl.close()
+-    other.close()
+-    
+ if __name__ == "__main__":
+     main(sys.argv[1:])
