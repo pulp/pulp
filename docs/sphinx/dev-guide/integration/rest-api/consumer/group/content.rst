@@ -2,7 +2,7 @@ Content Management
 ==================
 
 
-.. _group_content_update:
+.. _group_content_install:
 
 Install Content on a Consumer Group
 -----------------------------------
