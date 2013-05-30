@@ -34,7 +34,7 @@ from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResou
 
 # -- constants ----------------------------------------------------------------
 
-_REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_REPO_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 _DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
 
 _LOG = logging.getLogger(__name__)
@@ -71,6 +71,9 @@ class RepoManager(object):
         existing_repo = Repo.get_collection().find_one({'id' : repo_id})
         if existing_repo is not None:
             raise DuplicateResource(repo_id)
+
+        if repo_id is None or not is_repo_id_valid(repo_id):
+            raise InvalidValue(['repo_id'])
 
         if notes is not None and not isinstance(notes, dict):
             raise InvalidValue(['notes'])
