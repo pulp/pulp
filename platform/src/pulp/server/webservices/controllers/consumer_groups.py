@@ -287,14 +287,6 @@ class ConsumerGroupBindings(JSONController):
         collection = ConsumerGroup.get_collection()
         consumer_group = collection.find_one({'id': consumer_group_id})
 
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
         args = [
             consumer_group_id,
             repo_id,
@@ -304,8 +296,11 @@ class ConsumerGroupBindings(JSONController):
         call_request = CallRequest(
             manager.bind,
             args,
-            resources=resources,
             weight=0)
+
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_group_id)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
 
         link = serialization.link.child_link_obj(
             consumer_group_id,
@@ -362,14 +357,7 @@ class ConsumerGroupBinding(JSONController):
         @rtype: dict
         """
         manager = managers_factory.consumer_group_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_group_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-                {repo_id:dispatch_constants.RESOURCE_READ_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-                {distributor_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
+
         args = [
             consumer_group_id,
             repo_id,
@@ -384,10 +372,13 @@ class ConsumerGroupBinding(JSONController):
         ]
         call_request = CallRequest(manager.unbind,
                                    args=args,
-                                   resources=resources,
                                    tags=tags)
-        return self.ok(execution.execute(call_request))
 
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_group_id)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
+
+        return self.ok(execution.execute(call_request))
 
 
 # web.py application -----------------------------------------------------------
