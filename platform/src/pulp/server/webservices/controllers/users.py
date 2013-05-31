@@ -85,7 +85,6 @@ class UsersCollection(JSONController):
 
         # Creation
         manager = managers.user_manager()
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_CREATE_OPERATION}}
         args = [login]
         kwargs = {'password': password,
                   'name': name}
@@ -95,10 +94,10 @@ class UsersCollection(JSONController):
         call_request = CallRequest(manager.create_user,
                                    args,
                                    kwargs,
-                                   resources=resources,
                                    weight=weight,
                                    tags=tags,
                                    kwarg_blacklist=['password'])
+        call_request.creates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         user = execution.execute_sync(call_request)
         user_link = serialization.link.child_link_obj(login)
         user.update(user_link)
@@ -134,13 +133,12 @@ class UserResource(JSONController):
 
         manager = managers.user_manager()
 
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('delete')]
         call_request = CallRequest(manager.delete_user,
                                    [login],
-                                   resources=resources,
                                    tags=tags)
+        call_request.deletes_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         result = execution.execute(call_request)
 
         # Delete any existing user permissions given to the creator of the user
@@ -160,13 +158,12 @@ class UserResource(JSONController):
 
         # Perform update
         manager = managers.user_manager()
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('update')]
         call_request = CallRequest(manager.update_user,
                                    [login, delta],
-                                   resources=resources,
                                    tags=tags)
+        call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         result = execution.execute(call_request)
         result.update(serialization.link.current_link_obj())
         return self.ok(result)
