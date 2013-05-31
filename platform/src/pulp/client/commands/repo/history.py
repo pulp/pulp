@@ -20,6 +20,7 @@ from gettext import gettext as _
 from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag, PulpCliCommand
 from pulp.client import validators
+from okaara import parsers
 
 # -- constants ----------------------------------------------------------------
 
@@ -30,7 +31,7 @@ DESC_PUBLISH_HISTORY = _('shows publish history')
 # Options
 DESC_LIMIT = _('specify how many events to display')
 OPTION_LIMIT = PulpCliOption('--limit', DESC_LIMIT, required=False,
-                             validate_func=validators.positive_int_validator)
+                             parse_func=parsers.parse_positive_int)
 DEFAULT_LIMIT = 5
 DESC_DISTRIBUTOR_ID = _('the distributor id')
 OPTION_DISTRIBUTOR_ID = PulpCliOption('--distributor-id', DESC_DISTRIBUTOR_ID, required=True,
@@ -48,14 +49,11 @@ class SyncHistoryCommand(PulpCliCommand):
     Displays the sync history of a given repository
     """
 
-    def __init__(self, context, name='sync', description=DESC_SYNC_HISTORY, method=None):
+    def __init__(self, context, name='sync', description=DESC_SYNC_HISTORY):
         # The context is used to access the server and prompt.
         self.context = context
 
-        if method is None:
-            method = self.run
-
-        super(SyncHistoryCommand, self).__init__(name, description, method)
+        super(SyncHistoryCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_REPO_ID)
         # Option to limit the number of history objects shown
@@ -67,18 +65,17 @@ class SyncHistoryCommand(PulpCliCommand):
         # Collect input
         details = kwargs[FLAG_DETAILS.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        limit = DEFAULT_LIMIT
         if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = int(kwargs[OPTION_LIMIT.keyword])
+            limit = kwargs[OPTION_LIMIT.keyword]
+        else:
+            limit = DEFAULT_LIMIT
 
         # Request the sync history from the server
         result = self.context.server.repo_history.sync_history(repo_id)
+        # Sort so the latest sync is first in the list
+        result = sorted(result.response_body, reverse=True)
         # Use limit to only show the last n items.
-        index_start = len(result.response_body) - limit
-        if index_start < 0:
-            # In this case just print the whole list
-            index_start = 0
-        result = result.response_body[index_start:]
+        result = result[:limit]
 
         # Filter the fields to show and define the order in which they are displayed
         filters = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count',
@@ -92,7 +89,7 @@ class SyncHistoryCommand(PulpCliCommand):
         # Render results
         title = _('Sync History')
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result[:], filters=filters, order=print_order)
+        self.context.prompt.render_document_list(result, filters=filters, order=print_order)
 
 
 class PublishHistoryCommand(PulpCliCommand):
@@ -100,19 +97,18 @@ class PublishHistoryCommand(PulpCliCommand):
     Displays the publish history of a given repository and publisher
     """
 
-    # TODO: Sort out whether or not a details flag is needed
-    def __init__(self, context, name='publish', description=DESC_PUBLISH_HISTORY, method=None):
+    def __init__(self, context, name='publish', description=DESC_PUBLISH_HISTORY):
         # The context is used to access the server and prompt.
         self.context = context
 
-        if method is None:
-            method = self.run
+        super(PublishHistoryCommand, self).__init__(name, description, self.run)
 
-        super(PublishHistoryCommand, self).__init__(name, description, method)
-
+        # History is given for a repo id and distributor id pair
         self.add_option(OPTION_REPO_ID)
         self.add_option(OPTION_DISTRIBUTOR_ID)
+        # Optional limit on the number of history items to show
         self.add_option(OPTION_LIMIT)
+        # Option flag to show more details for each history item
         self.add_flag(FLAG_DETAILS)
 
     def run(self, **kwargs):
@@ -120,18 +116,16 @@ class PublishHistoryCommand(PulpCliCommand):
         details = kwargs[FLAG_DETAILS.keyword]
         distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
-        limit = DEFAULT_LIMIT
         if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = int(kwargs[OPTION_LIMIT.keyword])
+            limit = kwargs[OPTION_LIMIT.keyword]
+        else:
+            limit = DEFAULT_LIMIT
 
         # Request the publish history from the server
         result = self.context.server.repo_history.publish_history(repo_id, distributor_id)
+        result = sorted(result.response_body, reverse=True)
         # Use limit to only show the last n items.
-        index_start = len(result.response_body) - limit
-        if index_start < 0:
-            # In this case just print the whole list
-            index_start = 0
-        result = result.response_body[index_start:]
+        result = result[:limit]
 
         # Filter the fields to show and define the order in which they are displayed
         filters = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
@@ -143,4 +137,4 @@ class PublishHistoryCommand(PulpCliCommand):
         # Render results
         title = _('Publish History')
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result, filters=filter, order=print_order)
+        self.context.prompt.render_document_list(result, filters=filters, order=print_order)
