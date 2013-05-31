@@ -164,9 +164,8 @@ class BindReport(HandlerReport):
         @param report: An aggregation report.
         @type report: Report
         """
-        bind_details = report.details.setdefault(self.aggregation_key, {})
-        bind_details[self.repo_id] = \
-            dict(succeeded=self.succeeded, details=self.details)
+        bind_details = report.details.setdefault(self.aggregation_key, [])
+        bind_details.append(dict(repo_id=self.repo_id, succeeded=self.succeeded, details=self.details))
 
 
 class CleanReport(HandlerReport):
