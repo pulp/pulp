@@ -17,10 +17,11 @@ Commands for showing a repository's sync and publish history
 
 from gettext import gettext as _
 
+from okaara import parsers
+
 from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag, PulpCliCommand
 from pulp.client import validators
-from okaara import parsers
 
 # -- constants ----------------------------------------------------------------
 

@@ -13,10 +13,9 @@
 
 import mock
 
-import base
-
 from pulp.client.commands.repo import history
 from pulp.client.commands.options import OPTION_REPO_ID
+import base
 
 
 class SyncHistoryCommandTests(base.PulpClientTests):
