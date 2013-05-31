@@ -72,11 +72,7 @@ class SyncHistoryCommand(PulpCliCommand):
             limit = DEFAULT_LIMIT
 
         # Request the sync history from the server
-        result = self.context.server.repo_history.sync_history(repo_id)
-        # Sort so the latest sync is first in the list
-        result = sorted(result.response_body, reverse=True)
-        # Use limit to only show the last n items.
-        result = result[:limit]
+        result = self.context.server.repo_history.sync_history(repo_id, limit).response_body
 
         # Filter the fields to show and define the order in which they are displayed
         filters = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count',
@@ -123,10 +119,8 @@ class PublishHistoryCommand(PulpCliCommand):
             limit = DEFAULT_LIMIT
 
         # Request the publish history from the server
-        result = self.context.server.repo_history.publish_history(repo_id, distributor_id)
-        result = sorted(result.response_body, reverse=True)
-        # Use limit to only show the last n items.
-        result = result[:limit]
+        result = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit)
+        result = result.response_body
 
         # Filter the fields to show and define the order in which they are displayed
         filters = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']

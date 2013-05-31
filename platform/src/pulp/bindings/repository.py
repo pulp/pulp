@@ -246,13 +246,40 @@ class RepositoryHistoryAPI(PulpAPI):
         super(RepositoryHistoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/history/"
 
-    def sync_history(self, repo_id):
-        path = self.base_path % repo_id + "/sync/"
-        return self.server.GET(path)
+    def sync_history(self, repo_id, limit):
+        """
+        retrieve the sync history for a given repository
 
-    def publish_history(self, repo_id, distributor_id):
+        :param repo_id: the repository id
+        :type repo_id: basestring
+        :param limit: the number of history entries to return
+        :type limit: int
+        :return: server response code and response body
+        :rtype: pulp.bindings.responses.Response
+        """
+        path = self.base_path % repo_id + "/sync/"
+        response = self.server.GET(path)
+        response.response_body = sorted(response.response_body, reverse=True)[:limit]
+        return response
+
+    def publish_history(self, repo_id, distributor_id, limit):
+        """
+        retrieve the publish history for a given repository and distributor
+
+        :param repo_id: the repository id
+        :type repo_id: basestring
+        :param distributor_id: the distributor id to retrieve the history for
+        :type distributor_id: basestring
+        :param limit: the number of history entries to return
+        :type limit: int
+        :return: server response code and response body
+        :rtype: pulp.bindings.responses.Response
+        """
         path = self.base_path % repo_id + "/publish/" + "%s/" % distributor_id
-        return self.server.GET(path)
+        response = self.server.GET(path)
+        response.response_body = sorted(response.response_body, reverse=True)[:limit]
+        return response
+
 
 class RepositoryActionsAPI(PulpAPI):
     """
