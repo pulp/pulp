@@ -31,6 +31,7 @@ from pulp.client import parsers, validators
 
 # General Resource
 DESC_ID = _('unique identifier; only alphanumeric, -, and _ allowed')
+DESC_ID_ALLOWING_DOTS = _('unique identifier; only alphanumeric, ., -, and _ allowed')
 DESC_NAME = _('user-readable display name (may contain i18n characters)')
 DESC_DESCRIPTION = _('user-readable description (may contain i18n characters)')
 DESC_NOTE = _(
@@ -51,8 +52,8 @@ OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False,
                              allow_multiple=True, parse_func=parsers.parse_notes)
 
 # IDs
-OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID, required=True, validate_func=validators.id_validator_allow_dots)
+OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID_ALLOWING_DOTS, required=True, validate_func=validators.id_validator_allow_dots)
 OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True, validate_func=validators.id_validator)
-OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID, required=True, validate_func=validators.id_validator)
+OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID_ALLOWING_DOTS, required=True, validate_func=validators.id_validator_allow_dots)
 
 FLAG_ALL = PulpCliFlag('--all', DESC_ALL)

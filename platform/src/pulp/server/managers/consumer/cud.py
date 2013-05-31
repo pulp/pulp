@@ -30,7 +30,7 @@ from pulp.server.exceptions import DuplicateResource, InvalidValue, \
 
 # -- constants ----------------------------------------------------------------
 
-_CONSUMER_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_CONSUMER_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
 _LOG = logging.getLogger(__name__)
 
