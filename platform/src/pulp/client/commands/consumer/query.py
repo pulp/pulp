@@ -17,7 +17,7 @@ from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client.commands.options import OPTION_CONSUMER_ID
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 from pulp.client.parsers import parse_positive_int
-from pulp.client.validators import interval_iso6801_validator
+from pulp.client.validators import iso8601_datetime_validator
 
 # consumer query commands ------------------------------------------------------
 
@@ -185,12 +185,12 @@ OPTION_SORT = PulpCliOption('--sort',
 OPTION_START_DATE = PulpCliOption('--start-date',
                                   _('only return entries that occur on or after the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)'),
                                   required=False,
-                                  validate_func=interval_iso6801_validator)
+                                  validate_func=iso8601_datetime_validator)
 
 OPTION_END_DATE = PulpCliOption('--end-date',
                                 _('only return entries that occur on or before the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)'),
                                 required=False,
-                                validate_func=interval_iso6801_validator)
+                                validate_func=iso8601_datetime_validator)
 
 FLAG_DETAILS = PulpCliFlag('--details', _('if specified, all of the consumer information is displayed'))
 

@@ -52,6 +52,21 @@ def non_negative_int_validator(x):
         raise ValueError(_('value must not be negative'))
 
 
+def iso8601_datetime_validator(x):
+    """
+    Validates that a user-entered value is a correct iso8601 date
+
+    :param x: input value to be validated
+    :type x: str
+
+    :raise ValueError: if the input is not a valid iso8601
+    """
+    try:
+        dateutils.parse_iso8601_datetime(x)
+    except Exception:
+        raise ValueError(_('value must be a valid iso8601 string (yyyy-mm-ddThh:mm:ssZ)'))
+
+
 def interval_iso6801_validator(x):
     """
     Validates that a user-entered value is a correct iso8601 date with
