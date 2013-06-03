@@ -66,7 +66,7 @@ class OptionsBundle(object):
 
         # -- throttling options -------------------------------------------------------
 
-        d = _('maximum bandwidth used per download thread, in kB/sec, when '
+        d = _('maximum bandwidth used per download thread, in bytes/sec, when '
               'synchronizing the repo')
         self.opt_max_speed = PulpCliOption('--max-speed', d, required=False,
                                            parse_func=parsers.parse_optional_positive_int)
