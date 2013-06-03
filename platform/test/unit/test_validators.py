@@ -15,6 +15,7 @@ import unittest
 
 from pulp.client import validators
 
+
 class TestPositiveInt(unittest.TestCase):
     def test_positive(self):
         validators.positive_int_validator(2)
@@ -53,6 +54,44 @@ class TestNonNegativeInt(unittest.TestCase):
 
     def test_none(self):
         self.assertRaises(TypeError, validators.non_negative_int_validator, None)
+
+
+class TestIso8601DateTime(unittest.TestCase):
+    def test_valid_datetime(self):
+        validators.iso8601_datetime_validator('2013-06-02T12:00:00Z')
+        validators.iso8601_datetime_validator('2013-06-02T12:00:00-23:00')
+
+    def test_invalid_datetime(self):
+        #Incomplete date
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-02')
+        # Illegal month
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-13-01T12:00:00Z')
+        # Illegal day
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-42T12:00:00Z')
+        # Illegal hour
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-03T25:00:00Z')
+        # Illegal minute
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-03T12:61:00Z')
+        # Illegal second
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-03T12:00:61Z')
+        # Illegal timezone
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-03T12:00:61-25:00')
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '')
+
+
+class TestIso8601Interval(unittest.TestCase):
+
+    def test_start_duration(self):
+        validators.interval_iso6801_validator('2010-06-06T12:00:00Z/P1Y0M0DT0H0M')
+
+    def test_duration_end(self):
+        validators.interval_iso6801_validator('P1Y6M0DT0H0M/2011-12-06T12:00:00Z')
+
+    def test_invalid_intervals(self):
+        self.assertRaises(ValueError,
+                          validators.interval_iso6801_validator, '2010-06-06T12:00:00Z/P-1Y0M0DT0H0M')
+        self.assertRaises(ValueError, validators.interval_iso6801_validator, '')
+
 
 class TestId(unittest.TestCase):
 

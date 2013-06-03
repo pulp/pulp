@@ -59,7 +59,7 @@ def iso8601_datetime_validator(x):
     :param x: input value to be validated
     :type x: str
 
-    :raise ValueError: if the input is not a valid iso8601
+    :raise ValueError: if the input is not a valid iso8601 string
     """
     try:
         dateutils.parse_iso8601_datetime(x)
