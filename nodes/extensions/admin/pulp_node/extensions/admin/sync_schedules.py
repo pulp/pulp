@@ -24,7 +24,7 @@ DESC_LIST = _('list scheduled sync operations')
 DESC_CREATE = _('adds a new scheduled sync operation')
 DESC_DELETE = _('delete a sync schedule')
 DESC_UPDATE = _('updates an existing schedule')
-DESC_NEXT_RUN = _('displays the next scheduled sync run for a repository')
+DESC_NEXT_RUN = _('displays the next scheduled sync run for a child node')
 
 # A node sync is considered an update operation on the REST API
 SYNC_OPERATION = 'update'
@@ -34,7 +34,7 @@ SYNC_OPERATION = 'update'
 class NodeListScheduleCommand(ListScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(NodeListScheduleCommand, self).__init__(context, strategy,
+        super(self.__class__, self).__init__(context, strategy,
                                                       description=DESC_LIST)
         self.add_option(NODE_ID_OPTION)
 
@@ -42,7 +42,7 @@ class NodeListScheduleCommand(ListScheduleCommand):
 class NodeCreateScheduleCommand(CreateScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(NodeCreateScheduleCommand, self).__init__(context, strategy,
+        super(self.__class__, self).__init__(context, strategy,
                                                         description=DESC_CREATE)
         self.add_option(NODE_ID_OPTION)
 
@@ -50,7 +50,7 @@ class NodeCreateScheduleCommand(CreateScheduleCommand):
 class NodeDeleteScheduleCommand(DeleteScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(NodeDeleteScheduleCommand, self).__init__(context, strategy,
+        super(self.__class__, self).__init__(context, strategy,
                                                         description=DESC_DELETE)
         self.add_option(NODE_ID_OPTION)
 
@@ -58,7 +58,7 @@ class NodeDeleteScheduleCommand(DeleteScheduleCommand):
 class NodeUpdateScheduleCommand(UpdateScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(NodeUpdateScheduleCommand, self).__init__(context, strategy,
+        super(self.__class__, self).__init__(context, strategy,
                                                         description=DESC_UPDATE)
         self.add_option(NODE_ID_OPTION)
 
@@ -66,7 +66,7 @@ class NodeUpdateScheduleCommand(UpdateScheduleCommand):
 class NodeNextRunCommand(NextRunCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(NodeNextRunCommand, self).__init__(context, strategy,
+        super(self.__class__, self).__init__(context, strategy,
                                                  description=DESC_NEXT_RUN)
         self.add_option(NODE_ID_OPTION)
 
@@ -77,7 +77,7 @@ class NodeSyncScheduleStrategy(ScheduleStrategy):
     # See super class for method documentation
 
     def __init__(self, context):
-        super(NodeSyncScheduleStrategy, self).__init__()
+        super(self.__class__, self).__init__()
         self.context = context
         self.api = context.server.consumer_content_schedules
 
