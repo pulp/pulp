@@ -1,8 +1,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        0.90.3
-Release:        2%{?dist}
+Version:        0.97.0
+Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
 Group:          Development/Tools
@@ -46,6 +46,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Mon Jun 03 2013 Jason L Connor <jason.connor@gmail.com> 0.97.0-1
+- initial pass at leaky bucket throttling algorithm (jason.connor@gmail.com)
+
+* Thu May 30 2013 Jason L Connor <jason.connor@gmail.com> 0.95.0-1
+- 967939 - added kwarg processing for ssl file and data configuration options
+  that make both available via the configuration instance
+  (jason.connor@gmail.com)
 * Mon May 20 2013 Jason L Connor <jason.connor@gmail.com> 0.90.3-2
 - changed requires so for epel and fedora; commented out (for now) %%check
   (jason.connor@gmail.com)

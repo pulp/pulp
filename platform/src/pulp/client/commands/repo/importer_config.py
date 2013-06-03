@@ -21,7 +21,7 @@ from pulp.common.plugins import importer_constants as constants
 
 GROUP_NAME_SYNC = _('Synchronization')
 GROUP_NAME_THROTTLING = _('Throttling')
-GROUP_NAME_SSL = _('Feed Authentication')
+GROUP_NAME_SSL = _('Feed SSL')
 GROUP_NAME_PROXY = _('Feed Proxy')
 GROUP_NAME_UNIT_POLICY = _('Repository Contents Behavior')
 
@@ -66,7 +66,7 @@ class OptionsBundle(object):
 
         # -- throttling options -------------------------------------------------------
 
-        d = _('maximum bandwidth used per download thread, in kB/sec, when '
+        d = _('maximum bandwidth used per download thread, in bytes/sec, when '
               'synchronizing the repo')
         self.opt_max_speed = PulpCliOption('--max-speed', d, required=False,
                                            parse_func=parsers.parse_optional_positive_int)

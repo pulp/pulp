@@ -1,3 +1,5 @@
+#!/usr/bin/python
+#
 # Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -12,15 +14,16 @@
 import mock
 
 import base
+import logging
 import mock_plugins
+import mock_agent
 
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.consumer import Consumer, ConsumerGroup, Bind
+from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.itineraries.consumer_group import *
-from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.db.model.consumer import Consumer, ConsumerGroup, Bind
-from pulp.server.managers import factory as managers
-from pulp.server.db.model.criteria import Criteria
-
 
 GROUP_ID = 'group_1'
 CONSUMER_IDS = ('test_1', 'test_2', 'test_3')
@@ -30,6 +33,50 @@ NOTIFY_AGENT = True
 BINDING_CONFIG = {'b': 'b'}
 DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
+
+class ConsumerGroupAssociationTests(base.PulpWebserviceTests):
+    def setUp(self):
+        super(ConsumerGroupAssociationTests, self).setUp()
+        self.manager = managers.consumer_group_manager()
+
+    def clean(self):
+        super(ConsumerGroupAssociationTests, self).clean()
+        ConsumerGroup.get_collection().remove()
+
+    @mock.patch.object(Criteria, 'from_client_input', return_value=Criteria())
+    @mock.patch('pulp.server.managers.consumer.group.cud.ConsumerGroupManager.associate')
+    def test_associate(self, mock_associate, mock_from_client):
+        self.manager.create_consumer_group('cg1')
+
+        post_data = {'criteria': {'filters':{'id':{'$in':['consumer1']}}}}
+        status, body = self.post('/v2/consumer_groups/cg1/actions/associate/', post_data)
+        self.assertEqual(status, 200)
+
+        self.assertEqual(mock_associate.call_count, 1)
+        call_args = mock_associate.call_args[0]
+        self.assertEqual(call_args[0], 'cg1')
+        # verify that it created and used a Criteria instance
+        self.assertEqual(call_args[1], mock_from_client.return_value)
+        self.assertEqual(mock_from_client.call_args[0][0],
+                {'filters':{'id':{'$in':['consumer1']}}})
+
+    @mock.patch.object(Criteria, 'from_client_input', return_value=Criteria())
+    @mock.patch('pulp.server.managers.consumer.group.cud.ConsumerGroupManager.unassociate')
+    def test_unassociate(self, mock_unassociate, mock_from_client):
+        self.manager.create_consumer_group('cg1')
+
+        post_data = {'criteria': {'filters':{'id':{'$in':['consumer1']}}}}
+        status, body = self.post('/v2/consumer_groups/cg1/actions/unassociate/', post_data)
+        self.assertEqual(status, 200)
+
+        self.assertEqual(mock_unassociate.call_count, 1)
+        call_args = mock_unassociate.call_args[0]
+        self.assertEqual(call_args[0], 'cg1')
+        # verify that it created and used a Criteria instance
+        self.assertEqual(call_args[1], mock_from_client.return_value)
+        self.assertEqual(mock_from_client.call_args[0][0],
+                {'filters':{'id':{'$in':['consumer1']}}})
+        
 
 class ContentTest(base.PulpWebserviceTests):
 
