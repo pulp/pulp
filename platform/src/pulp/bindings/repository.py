@@ -246,39 +246,66 @@ class RepositoryHistoryAPI(PulpAPI):
         super(RepositoryHistoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/repositories/%s/history/"
 
-    def sync_history(self, repo_id, limit):
+    def sync_history(self, repo_id, limit=None, sort=None, start_date=None, end_date=None):
         """
         retrieve the sync history for a given repository
 
         :param repo_id: the repository id
-        :type repo_id: basestring
+        :type repo_id: str
         :param limit: the number of history entries to return
         :type limit: int
+        :param sort: indicates the sort direction (options are "ascending" or "descending")
+        :type sort: str
+        :param start_date: only entries that occurred at or after the given iso8601 datetime are returned
+        :type start_date: str
+        :param end_date: only entries that occurred at or before the given iso8601 datetime are returned
+        :type end_date: str
         :return: server response code and response body
         :rtype: pulp.bindings.responses.Response
         """
         path = self.base_path % repo_id + "/sync/"
-        response = self.server.GET(path)
-        response.response_body = sorted(response.response_body, reverse=True)[:limit]
-        return response
+        queries = {}
+        if limit:
+            queries['limit'] = limit
+        if sort:
+            queries['sort'] = sort
+        if start_date:
+            queries['start_date'] = start_date
+        if end_date:
+            queries['end_date'] = end_date
+        return self.server.GET(path, queries)
 
-    def publish_history(self, repo_id, distributor_id, limit):
+    def publish_history(self, repo_id, distributor_id, limit=None, sort=None, start_date=None,
+                        end_date=None):
         """
         retrieve the publish history for a given repository and distributor
 
         :param repo_id: the repository id
-        :type repo_id: basestring
+        :type repo_id: str
         :param distributor_id: the distributor id to retrieve the history for
-        :type distributor_id: basestring
+        :type distributor_id: str
         :param limit: the number of history entries to return
         :type limit: int
+        :param sort: indicates the sort direction (options are "ascending" or "descending")
+        :type sort: str
+        :param start_date: only entries that occurred at or after the given iso8601 datetime are returned
+        :type start_date: str
+        :param end_date: only entries that occurred at or before the given iso8601 datetime are returned
+        :type end_date: str
         :return: server response code and response body
         :rtype: pulp.bindings.responses.Response
         """
         path = self.base_path % repo_id + "/publish/" + "%s/" % distributor_id
-        response = self.server.GET(path)
-        response.response_body = sorted(response.response_body, reverse=True)[:limit]
-        return response
+        queries = {}
+        if limit:
+            queries['limit'] = limit
+        if sort:
+            queries['sort'] = sort
+        if start_date:
+            queries['start_date'] = start_date
+        if end_date:
+            queries['end_date'] = end_date
+        return self.server.GET(path, queries)
 
 
 class RepositoryActionsAPI(PulpAPI):

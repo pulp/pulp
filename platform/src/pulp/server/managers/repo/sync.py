@@ -19,6 +19,7 @@ need to execute syncs asynchronously must be handled at a higher layer.
 
 # Python
 import datetime
+import isodate
 import logging
 import os
 import sys
@@ -36,12 +37,20 @@ from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 
 # -- constants ----------------------------------------------------------------
+
+# Maps user entered query sort parameters to the pymongo representation
+SORT_ASCENDING = 'ascending'
+SORT_DESCENDING = 'descending'
+SORT_DIRECTION = {
+    SORT_ASCENDING: pymongo.ASCENDING,
+    SORT_DESCENDING: pymongo.DESCENDING,
+}
 
 _LOG = logging.getLogger(__name__)
 
@@ -203,35 +212,85 @@ class RepoSyncManager(object):
 
         return result
 
-    def sync_history(self, repo_id, limit=None):
+    def sync_history(self, repo_id, limit=None, sort='descending', start_date=None, end_date=None):
         """
         Returns sync history entries for the given repo, sorted from most recent
         to oldest. If there are no entries, an empty list is returned.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @param limit: maximum number of results to return
-        @type  limit: int
+        :param limit: if specified, the query will only return up to this amount of
+                      entries; default is to limit the entries returned to five.
+        :type limit: int
 
-        @return: list of sync history result instances
-        @rtype:  list of L{pulp.server.db.model.repository.RepoSyncResult}
+        :param sort: Indicates the sort direction of the results, which are sorted by start date. Options
+                     are "ascending" and "descending". Descending is the default.
+        :type sort: str
 
-        @raise MissingResource: if repo_id does not reference a valid repo
+        :param start_date: if specified, no events prior to this date will be returned. Expected to be an
+                           iso8601 datetime string.
+        :type start_date: str
+
+        :param end_date: if specified, no events after this date will be returned. Expected to be an
+                         iso8601 datetime string.
+        :type end_date: str
+
+        :return: list of sync history result instances
+        :rtype:  list of L{pulp.server.db.model.repository.RepoSyncResult}
+
+        :raise MissingResource: if repo_id does not reference a valid repo
+        :raise InvalidValue: if one or more options are invalid
         """
 
         # Validation
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
+        invalid_values = []
+        # Verify the limit makes sense
+        if limit is not None and limit < 1:
+            invalid_values.append('limit')
+
+        # Verify the sort direction is valid
+        if sort not in SORT_DIRECTION:
+            invalid_values.append('sort')
+
+        # Verify that start_date and end_date is valid
+        if start_date is not None:
+            try:
+                dateutils.parse_iso8601_datetime(start_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('start_date')
+        if end_date is not None:
+            try:
+                dateutils.parse_iso8601_datetime(end_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('end_date')
+
+        # Report any invalid values
+        if invalid_values:
+            raise InvalidValue(invalid_values)
+
+        # Assemble the mongo search parameters
+        search_params = {'repo_id': repo_id}
+        # Add in date range limits if specified
+        date_range = {}
+        if start_date:
+            date_range['$gte'] = start_date
+        if end_date:
+            date_range['$lte'] = end_date
+        if len(date_range) > 0:
+            search_params['started'] = date_range
         if limit is None:
-            limit = 10 # default here for each of REST API calls into here
+            # If a limit is not specified, limit the entries to five
+            limit = 5
 
         # Retrieve the entries
-        cursor = RepoSyncResult.get_collection().find({'repo_id' : repo_id})
+        cursor = RepoSyncResult.get_collection().find(search_params)
+        cursor.sort('started', direction=SORT_DIRECTION[sort])
         cursor.limit(limit)
-        cursor.sort('completed', pymongo.DESCENDING)
 
         return list(cursor)
 

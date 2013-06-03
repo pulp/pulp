@@ -54,10 +54,8 @@ class SyncHistoryCommandTests(base.PulpClientTests):
 
         # Assert that render_document_list was called with the correct items, filter, and order
         render_kwargs = mock_render_doc_list.call_args[1]
-        expected_filter = ['added_count', 'completed', 'removed_count', 'repo_id', 'result',
-                           'started', 'summary', 'updated_count']
-        expected_order = ['repo_id', 'result', 'started', 'completed', 'added_count', 'removed_count',
-                          'updated_count', 'summary']
+        expected_filter = expected_order = ['repo_id', 'result', 'started', 'completed', 'added_count',
+                                            'removed_count', 'updated_count', 'summary']
         self.assertEqual(expected_filter.sort(), render_kwargs['filters'].sort())
         self.assertEqual(expected_order, render_kwargs['order'])
         self.assertEqual([], mock_render_doc_list.call_args[0][1])
@@ -147,8 +145,8 @@ class PublishHistoryCommandTests(base.PulpClientTests):
 
         # Assert that render_document_list was called with the correct items, filter, and order
         render_kwargs = mock_render_doc_list.call_args[1]
-        expected_filters = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
-        expected_order = ['repo_id', 'distributor_id', 'result', 'started', 'completed', 'summary']
+        expected_filters = expected_order = ['repo_id', 'distributor_id', 'result', 'started',
+                                             'completed', 'summary']
         self.assertEqual(1, mock_render_doc_list.call_count)
         self.assertEqual(expected_filters, render_kwargs['filters'])
         self.assertEqual(expected_order, render_kwargs['order'])

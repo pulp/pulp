@@ -25,21 +25,32 @@ from pulp.client import validators
 
 # -- constants ----------------------------------------------------------------
 
-# Command descriptions
-DESC_SYNC_HISTORY = _('shows sync history')
-DESC_PUBLISH_HISTORY = _('shows publish history')
+DEFAULT_LIMIT = 5
+
+# Descriptions
+DESC_DETAILS = _('if specified, all history information is displayed')
+DESC_DISTRIBUTOR_ID = _('the distributor id')
+DESC_END_DATE = _('only return entries that occur on or before the given date in iso8601 format'
+                  ' (yyyy-mm-ddThh:mm:ssZ)')
+DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero)')
+DESC_PUBLISH_HISTORY = _('displays the history of publish operations on a repository')
+DESC_SORT = _('indicates the sort direction ("ascending" or "descending") based on the timestamp')
+DESC_SYNC_HISTORY = _('displays the history of sync operations on a repository')
+DESC_START_DATE = _('only return entries that occur on or after the given date in iso8601 format'
+                    ' (yyyy-mm-ddThh:mm:ssZ)')
 
 # Options
-DESC_LIMIT = _('specify how many events to display')
+OPTION_END_DATE = PulpCliOption('--end-date', DESC_END_DATE, required=False,
+                                validate_func=validators.iso8601_datetime_validator)
 OPTION_LIMIT = PulpCliOption('--limit', DESC_LIMIT, required=False,
                              parse_func=parsers.parse_positive_int)
-DEFAULT_LIMIT = 5
-DESC_DISTRIBUTOR_ID = _('the distributor id')
+OPTION_SORT = PulpCliOption('--sort', DESC_SORT, required=False)
 OPTION_DISTRIBUTOR_ID = PulpCliOption('--distributor-id', DESC_DISTRIBUTOR_ID, required=True,
                                       validate_func=validators.id_validator)
+OPTION_START_DATE = PulpCliOption('--start-date', DESC_START_DATE, required=False,
+                                  validate_func=validators.iso8601_datetime_validator)
 
 # Flags
-DESC_DETAILS = _('increase information shown')
 FLAG_DETAILS = PulpCliFlag('--details', DESC_DETAILS, aliases='-d')
 
 # -- commands -----------------------------------------------------------------
@@ -57,36 +68,40 @@ class SyncHistoryCommand(PulpCliCommand):
         super(SyncHistoryCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_REPO_ID)
-        # Option to limit the number of history objects shown
         self.add_option(OPTION_LIMIT)
-        # Flag to display more information about the syncs
+        self.add_option(OPTION_SORT)
+        self.add_option(OPTION_START_DATE)
+        self.add_option(OPTION_END_DATE)
         self.add_flag(FLAG_DETAILS)
+        self.default_fields = ['repo_id', 'result', 'started', 'completed', 'added_count',
+                               'removed_count', 'updated_count']
 
     def run(self, **kwargs):
         # Collect input
-        details = kwargs[FLAG_DETAILS.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         if kwargs[OPTION_LIMIT.keyword] is not None:
             limit = kwargs[OPTION_LIMIT.keyword]
         else:
             limit = DEFAULT_LIMIT
+        start_date = kwargs[OPTION_START_DATE.keyword]
+        end_date = kwargs[OPTION_END_DATE.keyword]
+        sort = kwargs[OPTION_SORT.keyword]
+        details = kwargs[FLAG_DETAILS.keyword]
 
         # Request the sync history from the server
-        result = self.context.server.repo_history.sync_history(repo_id, limit).response_body
+        sync_list = self.context.server.repo_history.sync_history(repo_id, limit, sort, start_date,
+                                                                  end_date).response_body
 
         # Filter the fields to show and define the order in which they are displayed
-        filters = ['result', 'summary', 'repo_id', 'started', 'completed', 'added_count',
-                   'removed_count', 'updated_count']
-        print_order = ['repo_id', 'result', 'started', 'completed', 'added_count', 'removed_count',
-                       'updated_count', 'summary']
         if details is True:
-            filters.append('details')
-            print_order.append('details')
+            self.default_fields.append('summary')
+            self.default_fields.append('details')
+        filters = order = self.default_fields
 
         # Render results
-        title = _('Sync History')
+        title = _('Sync History [ %(repo)s ]') % {'repo': repo_id}
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result, filters=filters, order=print_order)
+        self.context.prompt.render_document_list(sync_list, filters=filters, order=order)
 
 
 class PublishHistoryCommand(PulpCliCommand):
@@ -107,6 +122,8 @@ class PublishHistoryCommand(PulpCliCommand):
         self.add_option(OPTION_LIMIT)
         # Option flag to show more details for each history item
         self.add_flag(FLAG_DETAILS)
+        # Set the default fields to display
+        self.default_fields = ['repo_id', 'distributor_id', 'result', 'started', 'completed']
 
     def run(self, **kwargs):
         # Collect input
@@ -119,17 +136,16 @@ class PublishHistoryCommand(PulpCliCommand):
             limit = DEFAULT_LIMIT
 
         # Request the publish history from the server
-        result = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit)
-        result = result.response_body
+        publish_list = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit)
+        publish_list = publish_list.response_body
 
         # Filter the fields to show and define the order in which they are displayed
-        filters = ['completed', 'distributor_id', 'repo_id', 'result', 'started', 'summary']
-        print_order = ['repo_id', 'distributor_id', 'result', 'started', 'completed', 'summary']
         if details is True:
-            filters.append('details')
-            print_order.append('details')
+            self.default_fields.append('summary')
+            self.default_fields.append('details')
+        filters = order = self.default_fields
 
         # Render results
-        title = _('Publish History')
+        title = _('Publish History [ %(repo)s ]') % {'repo': repo_id}
         self.context.prompt.render_title(title)
-        self.context.prompt.render_document_list(result, filters=filters, order=print_order)
+        self.context.prompt.render_document_list(publish_list, filters=filters, order=order)
