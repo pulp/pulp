@@ -15,6 +15,8 @@ Nodes importer plugins delegate synchronization to one of
 the strategies provided here.
 """
 
+import os
+
 from gettext import gettext as _
 from logging import getLogger
 
@@ -147,10 +149,10 @@ class ImporterStrategy(object):
         """
         try:
             new_unit = Unit(
-                unit['type_id'],
-                unit['unit_key'],
-                unit['metadata'],
-                unit['storage_path'])
+                type_id=unit['type_id'],
+                unit_key=unit['unit_key'],
+                metadata=unit['metadata'],
+                storage_path=unit['storage_path'])
             request.conduit.save_unit(new_unit)
             request.progress.unit_added(details=new_unit.storage_path)
         except Exception:
@@ -192,21 +194,20 @@ class ImporterStrategy(object):
 
         return UnitInventory(manifest, child_units)
 
-    def _storage_path(self, unit):
+    def _update_storage_path(self, unit):
         """
-        Get the storage_path for the unit using the storage_dir defined in
-        the server.conf and the relative_path injected when the unit was published.
+        Update the unit's storage_path using the storage_dir defined in
+        server.conf and the relative_path injected when the unit was published.
         :param unit: A published unit.
         :type unit: dict
-        :return: The localized storage path.
-        :rtype: str
         """
-        storage_dir = pulp_conf.get('server', 'storage_dir')
         storage_path = unit.get(constants.STORAGE_PATH)
-        if storage_path:
-            relative_path = unit[constants.RELATIVE_PATH]
-            storage_path = pathlib.join(storage_dir, relative_path)
-        return storage_path
+        if not storage_path:
+            return
+        storage_dir = pulp_conf.get('server', 'storage_dir')
+        relative_path = unit[constants.RELATIVE_PATH]
+        storage_path = pathlib.join(storage_dir, relative_path)
+        unit[constants.STORAGE_PATH] = storage_path
 
     def _add_units(self, request, unit_inventory):
         """
@@ -234,6 +235,7 @@ class ImporterStrategy(object):
         for unit, unit_ref in units:
             if request.cancelled():
                 return
+            self._update_storage_path(unit)
             if not self._needs_download(unit):
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
@@ -241,7 +243,7 @@ class ImporterStrategy(object):
             url = pathlib.url_join(
                 publishing_details[constants.BASE_URL],
                 pathlib.quote(unit[constants.RELATIVE_PATH]))
-            storage_path = self._storage_path(unit)
+            storage_path = unit[constants.STORAGE_PATH]
             _request = manager.create_request(url, storage_path, unit_ref)
             download_list.append(_request)
         if request.cancelled():
@@ -258,8 +260,9 @@ class ImporterStrategy(object):
         :return: True if has associated file that needs to be downloaded.
         :rtype: bool
         """
-        for option in constants.PUBLISHING_METHODS:
-            if unit.get(option, False):
+        storage_path = unit.get(constants.STORAGE_PATH)
+        if storage_path:
+            if not os.path.exists(storage_path):
                 return True
         return False
 
@@ -277,14 +280,14 @@ class ImporterStrategy(object):
                 return
             try:
                 _unit = AssociatedUnit(
-                    unit['type_id'],
-                    unit['unit_key'],
-                    {},
-                    None,
-                    None,
-                    None,
-                    unit['owner_type'],
-                    unit['owner_id'])
+                    type_id=unit['type_id'],
+                    unit_key=unit['unit_key'],
+                    metadata={},
+                    storage_path=None,
+                    created=None,
+                    updated=None,
+                    owner_type=unit['owner_type'],
+                    owner_id=unit['owner_id'])
                 _unit.id = unit['unit_id']
                 request.conduit.remove_unit(_unit)
             except Exception:
