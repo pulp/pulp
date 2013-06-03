@@ -58,6 +58,7 @@ class TestNonNegativeInt(unittest.TestCase):
 
 class TestIso8601DateTime(unittest.TestCase):
     def test_valid_datetime(self):
+        # Assert no exception is raised for valid formats
         validators.iso8601_datetime_validator('2013-06-02T12:00:00Z')
         validators.iso8601_datetime_validator('2013-06-02T12:00:00-23:00')
 
