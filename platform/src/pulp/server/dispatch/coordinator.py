@@ -334,6 +334,8 @@ class Coordinator(object):
         if not resources:
             return dispatch_constants.CALL_ACCEPTED_RESPONSE, set(), [], []
 
+        # Translate to the old format of resources with resource type and resource_id as a key
+        # to make operation lookups easy in the conflict detection logic
         original_resources = resources
         resources = {}
         for operation, resource_dict in original_resources.items():
