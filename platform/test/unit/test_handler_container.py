@@ -410,8 +410,10 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertTrue(report.succeeded)
         self.assertEqual(report.num_changes, 1)
-        self.assertTrue(report.details[type_id][repo_id]['succeeded'])
-        self.assertEqual(report.details[type_id][repo_id]['details'], {})
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertTrue(details['succeeded'])
+        self.assertEqual(details['details'], {})
 
     def test_bind_failed(self):
         type_id = 'yum'
@@ -430,8 +432,10 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEqual(report.num_changes, 0)
-        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
-        self.assertEqual(report.details[type_id][repo_id]['details'], {'a':1})
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertFalse(details['succeeded'])
+        self.assertEqual(details['details'], {'a':1})
 
     def test_bind_raised(self):
         type_id = 'yum'
@@ -448,8 +452,10 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEqual(report.num_changes, 0)
-        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('message'))
-        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('trace'))
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertTrue(details['details'].has_key('message'))
+        self.assertTrue(details['details'].has_key('trace'))
 
     def test_unbind(self):
         type_id = 'yum'
@@ -464,7 +470,9 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertTrue(report.succeeded)
         self.assertEqual(report.num_changes, 1)
-        self.assertEqual(report.details[type_id][repo_id]['details'], {})
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertEqual(details['details'], {})
 
     def test_unbind_failed(self):
         type_id = 'yum'
@@ -483,8 +491,10 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEqual(report.num_changes, 0)
-        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
-        self.assertEqual(report.details[type_id][repo_id]['details'], {'a':1})
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertFalse(details['succeeded'])
+        self.assertEqual(details['details'], {'a':1})
 
     def test_unbind_raised(self):
         type_id = 'yum'
@@ -501,9 +511,11 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEqual(report.num_changes, 0)
-        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
-        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('message'))
-        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('trace'))
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertFalse(details['succeeded'])
+        self.assertTrue(details['details'].has_key('message'))
+        self.assertTrue(details['details'].has_key('trace'))
 
     def test_unbind_all(self):
         type_id = 'yum'
@@ -518,7 +530,9 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertTrue(report.succeeded)
         self.assertEqual(report.num_changes, 1)
-        self.assertEqual(report.details[type_id][repo_id]['details'], {})
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertEqual(details['details'], {})
 
     def test_unbind_all_failed(self):
         type_id = 'yum'
@@ -537,8 +551,10 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEqual(report.num_changes, 0)
-        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
-        self.assertEqual(report.details[type_id][repo_id]['details'], {'a':1})
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertFalse(details['succeeded'])
+        self.assertEqual(details['details'], {'a':1})
 
     def test_unbind_all_raised(self):
         type_id = 'yum'
@@ -555,9 +571,11 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEqual(report.num_changes, 0)
-        self.assertFalse(report.details[type_id][repo_id]['succeeded'])
-        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('message'))
-        self.assertTrue(report.details[type_id][repo_id]['details'].has_key('trace'))
+        details = report.details[type_id][0]
+        self.assertEqual(details['repo_id'], repo_id)
+        self.assertFalse(details['succeeded'])
+        self.assertTrue(details['details'].has_key('message'))
+        self.assertTrue(details['details'].has_key('trace'))
 
     def test_clean(self):
         type_id = 'yum'
@@ -569,7 +587,8 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertTrue(report.succeeded)
         self.assertEquals(report.num_changes, 1)
-        self.assertEqual(report.details[type_id]['details'], {})
+        details = report.details[type_id]
+        self.assertEqual(details['details'], {})
 
     def test_clean_failed(self):
         type_id = 'yum'
@@ -585,7 +604,8 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEquals(report.num_changes, 0)
-        self.assertEqual(report.details[type_id]['details'], {'a':1})
+        details = report.details[type_id]
+        self.assertEqual(details['details'], {'a':1})
 
     def test_clean_raised(self):
         type_id = 'yum'
@@ -599,5 +619,6 @@ class TestDispatcher(unittest.TestCase):
         pprint(report.dict())
         self.assertFalse(report.succeeded)
         self.assertEquals(report.num_changes, 0)
-        self.assertTrue(report.details[type_id]['details'].has_key('message'))
-        self.assertTrue(report.details[type_id]['details'].has_key('trace'))
+        details = report.details[type_id]
+        self.assertTrue(details['details'].has_key('message'))
+        self.assertTrue(details['details'].has_key('trace'))
