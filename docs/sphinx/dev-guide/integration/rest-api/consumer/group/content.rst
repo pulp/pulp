@@ -1,7 +1,6 @@
 Content Management
 ==================
 
-
 .. _group_content_install:
 
 Install Content on a Consumer Group
@@ -32,7 +31,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 | :response_list:`_`
 
-* :response_code:`202,The install request has been accepted`
+* :response_code:`202,the install request has been accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer does not exist`
 
@@ -81,7 +80,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 | :response_list:`_`
 
-* :response_code:`202,The update request has been accepted`
+* :response_code:`202,the update request has been accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer does not exist`
 
