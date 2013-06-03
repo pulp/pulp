@@ -333,34 +333,8 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-<<<<<<< HEAD
-        manager = managers_factory.consumer_group_manager()
-
-        args = [
-            consumer_group_id,
-            repo_id,
-            distributor_id,
-        ]
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE,
-                consumer_group_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('unbind')
-        ]
-        call_request = CallRequest(manager.unbind,
-                                   args=args,
-                                   tags=tags)
-
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_group_id)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
-
-        return self.ok(execution.execute(call_request))
-=======
         call_requests = consumer_group_unbind_itinerary(group_id, repo_id, distributor_id, {})
         execution.execute_multiple(call_requests)
->>>>>>> master
 
 
 # web.py application -----------------------------------------------------------
