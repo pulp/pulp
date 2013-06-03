@@ -141,8 +141,6 @@ class ConsumerGroupManager(object):
         @type  group_id: str
         @param criteria: Criteria instance representing the set of consumers to associate
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
-        @return: The list of consumer IDs matching the criteria.
-        @rtype: list
         """
         group_collection = validate_existing_consumer_group(group_id)
         consumer_collection = Consumer.get_collection()
@@ -153,7 +151,6 @@ class ConsumerGroupManager(object):
                 {'id': group_id},
                 {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}},
                 safe=True)
-        return consumer_ids
 
     def unassociate(self, group_id, criteria):
         """
@@ -162,8 +159,6 @@ class ConsumerGroupManager(object):
         @type  group_id: str
         @param criteria: Criteria specifying the set of consumers to unassociate
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
-        @return: The list of consumer IDs matching the criteria.
-        @rtype: list
         """
         group_collection = validate_existing_consumer_group(group_id)
         consumer_collection = Consumer.get_collection()
@@ -174,7 +169,6 @@ class ConsumerGroupManager(object):
                 {'id': group_id},
                 {'$pullAll': {'consumer_ids': consumer_ids}},
                 safe=True)
-        return consumer_ids
 
     # notes --------------------------------------------------------------------
 
