@@ -188,9 +188,6 @@ class RepoGroupDistributors(JSONController):
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
-        resources = {dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE : {
-            repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION
-        }}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 action_tag('add_distributor')]
@@ -199,9 +196,9 @@ class RepoGroupDistributors(JSONController):
 
         call_request = CallRequest(distributor_manager.add_distributor,
                                    [repo_group_id, distributor_type_id, distributor_config, distributor_id],
-                                   resources=resources,
                                    weight=weight,
                                    tags=tags)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
         created = execution.execute(call_request)
 
         href = serialization.link.child_link_obj(created['id'])
@@ -233,12 +230,6 @@ class RepoGroupDistributor(JSONController):
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
-        resources = {
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE :
-                    {repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE :
-                    {distributor_id : dispatch_constants.RESOURCE_DELETE_OPERATION},
-                     }
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
                 action_tag('remove_distributor')
@@ -246,9 +237,10 @@ class RepoGroupDistributor(JSONController):
         call_request = CallRequest(distributor_manager.remove_distributor,
                                    args=[repo_group_id, distributor_id],
                                    kwargs={'force' : force},
-                                   resources=resources,
                                    tags=tags,
                                    archive=True)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
+        call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id)
 
         execution.execute(call_request)
         return self.ok(None)
@@ -264,12 +256,6 @@ class RepoGroupDistributor(JSONController):
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
-        resources = {
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE :
-                    {repo_group_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE :
-                    {distributor_id : dispatch_constants.RESOURCE_UPDATE_OPERATION},
-            }
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
                 action_tag('update_distributor')
@@ -277,9 +263,10 @@ class RepoGroupDistributor(JSONController):
 
         call_request = CallRequest(distributor_manager.update_distributor_config,
                                    args=[repo_group_id, distributor_id, distributor_config],
-                                   resources=resources,
                                    tags=tags,
                                    archive=True)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id)
 
         result = execution.execute(call_request)
 

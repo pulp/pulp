@@ -34,7 +34,7 @@ from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResou
 
 # -- constants ----------------------------------------------------------------
 
-_REPO_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_REPO_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 _DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
 
 _LOG = logging.getLogger(__name__)

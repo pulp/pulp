@@ -234,8 +234,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         # delete on content unit is postponed by read
 
         resources = {
-            dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: {
-                content_unit_id: dispatch_constants.RESOURCE_DELETE_OPERATION
+            dispatch_constants.RESOURCE_DELETE_OPERATION: {
+                dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE: [content_unit_id]
             }
         }
         response, blockers, reasons, call_resources = self.coordinator._find_conflicts(resources)
@@ -282,8 +282,8 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         # deleting the repository should be postponed by both binds
 
         resources = {
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                repo_id: dispatch_constants.RESOURCE_DELETE_OPERATION
+            dispatch_constants.RESOURCE_DELETE_OPERATION: {
+                dispatch_constants.RESOURCE_REPOSITORY_TYPE: [repo_id]
             }
         }
 
@@ -310,11 +310,11 @@ class CoordinatorCollisionDetectionTests(CoordinatorTests):
         # a cds sync should be rejected by the deletion
 
         resources = {
-            dispatch_constants.RESOURCE_CDS_TYPE: {
-                cds_id: dispatch_constants.RESOURCE_UPDATE_OPERATION
+            dispatch_constants.RESOURCE_UPDATE_OPERATION: {
+                dispatch_constants.RESOURCE_CDS_TYPE: [cds_id]
             },
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE: {
-                'some_repo': dispatch_constants.RESOURCE_READ_OPERATION
+            dispatch_constants.RESOURCE_READ_OPERATION: {
+                dispatch_constants.RESOURCE_REPOSITORY_TYPE:['some_repo']
             }
         }
 

@@ -358,6 +358,7 @@ class UtilityMethodsTests(base.PulpServerTests):
         self.assertTrue(consumer_manager.is_consumer_id_valid('consumer-1'))
         self.assertTrue(consumer_manager.is_consumer_id_valid('consumer_1'))
         self.assertTrue(consumer_manager.is_consumer_id_valid('_consumer'))
+        self.assertTrue(consumer_manager.is_consumer_id_valid('consumer.1.2'))
 
         self.assertTrue(not consumer_manager.is_consumer_id_valid('consumer 1'))
         self.assertTrue(not consumer_manager.is_consumer_id_valid('consumer#1'))

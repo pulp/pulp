@@ -19,9 +19,9 @@ import base
 import mock_plugins
 import mock
 
-from   pulp.common.util import encode_unicode
+from pulp.common.util import encode_unicode
 from pulp.plugins.loader import api as plugin_api
-from   pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
+from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
@@ -588,6 +588,7 @@ class UtilityMethodsTests(unittest.TestCase):
         self.assertTrue(repo_manager.is_repo_id_valid('repo-1'))
         self.assertTrue(repo_manager.is_repo_id_valid('repo_1'))
         self.assertTrue(repo_manager.is_repo_id_valid('_repo'))
+        self.assertTrue(repo_manager.is_repo_id_valid('repo.1.2'))
 
         self.assertTrue(not repo_manager.is_repo_id_valid('repo 1'))
         self.assertTrue(not repo_manager.is_repo_id_valid('repo#1'))

@@ -37,11 +37,6 @@ def repo_delete_itinerary(repo_id):
     # delete repository
 
     manager = managers.repo_manager()
-    resources = {
-        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-            {repo_id: dispatch_constants.RESOURCE_DELETE_OPERATION}
-    }
-
     tags = [
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
         action_tag('delete')
@@ -50,10 +45,9 @@ def repo_delete_itinerary(repo_id):
     delete_request = CallRequest(
         manager.delete_repo,
         [repo_id],
-        resources=resources,
         tags=tags,
         archive=True)
-
+    delete_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
     call_requests.append(delete_request)
 
     # append unbind itineraries foreach bound consumer
@@ -89,12 +83,6 @@ def distributor_delete_itinerary(repo_id, distributor_id):
     # delete distributor
 
     manager = managers.repo_distributor_manager()
-    resources = {
-        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-            {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-        dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-            {distributor_id: dispatch_constants.RESOURCE_DELETE_OPERATION}
-    }
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
@@ -105,9 +93,11 @@ def distributor_delete_itinerary(repo_id, distributor_id):
     delete_request = CallRequest(
         manager.remove_distributor,
         [repo_id, distributor_id],
-        resources=resources,
         tags=tags,
         archive=True)
+
+    delete_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+    delete_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
 
     call_requests.append(delete_request)
 
@@ -144,12 +134,6 @@ def distributor_update_itinerary(repo_id, distributor_id, config):
     # update the distributor
 
     manager = managers.repo_distributor_manager()
-    resources = {
-        dispatch_constants.RESOURCE_REPOSITORY_TYPE:
-            {repo_id: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-        dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE:
-            {distributor_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}
-    }
 
     tags = [
         resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
@@ -161,10 +145,12 @@ def distributor_update_itinerary(repo_id, distributor_id, config):
         manager.update_distributor_config,
         [repo_id, distributor_id],
         {'distributor_config': config},
-        resources=resources,
         tags=tags,
         archive=True,
         kwarg_blacklist=['distributor_config'])
+
+    update_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
+    update_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
 
     call_requests.append(update_request)
 

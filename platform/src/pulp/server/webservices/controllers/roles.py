@@ -71,17 +71,16 @@ class RolesCollection(JSONController):
 
         # Creation
         manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_CREATE_OPERATION}}
         args = [role_id, display_name, description]
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('create')]
         call_request = CallRequest(manager.create_role,
                                    args,
-                                   resources=resources,
                                    weight=weight,
                                    tags=tags)
-        
+        call_request.creates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
+
         role = execution.execute_sync(call_request)
         role_link = serialization.link.child_link_obj(role_id)
         role.update(role_link)
@@ -120,13 +119,13 @@ class RoleResource(JSONController):
 
         manager = managers.role_manager()
         
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_DELETE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, role_id),
                 action_tag('delete')]
         call_request = CallRequest(manager.delete_role,
                                    [role_id],
-                                   resources=resources,
                                    tags=tags)
+        call_request.deletes_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
+
         return self.ok(execution.execute(call_request))
 
     @auth_required(UPDATE)
@@ -138,13 +137,13 @@ class RoleResource(JSONController):
 
         # Perform update        
         manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('update')]
         call_request = CallRequest(manager.update_role,
                                    [role_id, delta],
-                                   resources=resources,
                                    tags=tags)
+        call_request.updates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
+
         role = execution.execute(call_request)
         role.update(serialization.link.current_link_obj())
         return self.ok(role)
@@ -175,14 +174,13 @@ class RoleUsers(JSONController):
             raise exceptions.InvalidValue(login)
 
         role_manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('add_user_to_role')]
 
         call_request = CallRequest(role_manager.add_user_to_role,
                                    [role_id, login],
-                                   resources=resources,
                                    tags=tags)
+        call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         return self.ok(execution.execute_sync(call_request))
 
 
@@ -195,15 +193,14 @@ class RoleUser(JSONController):
     def DELETE(self, role_id, login):
 
         role_manager = managers.role_manager()
-        resources = {dispatch_constants.RESOURCE_USER_TYPE: {login: dispatch_constants.RESOURCE_UPDATE_OPERATION},
-                     dispatch_constants.RESOURCE_ROLE_TYPE: {role_id: dispatch_constants.RESOURCE_READ_OPERATION}}
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('remove_user_from_role')]
         call_request = CallRequest(role_manager.remove_user_from_role,
                                    [role_id, login],
-                                   resources=resources,
                                    tags=tags,
                                    archive=True)
+        call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
+        call_request.reads_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
         return  self.ok(execution.execute_sync(call_request))
 
 
