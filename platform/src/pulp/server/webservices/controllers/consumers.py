@@ -135,10 +135,6 @@ class Consumer(JSONController):
     @auth_required(DELETE)
     def DELETE(self, id):
         manager = managers.consumer_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id: dispatch_constants.RESOURCE_DELETE_OPERATION}
-        }
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
             action_tag('delete'),
@@ -146,8 +142,8 @@ class Consumer(JSONController):
         call_request = CallRequest(
             manager.unregister,
             [id],
-            resources=resources,
             tags=tags)
+        call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
         return self.ok(execution.execute(call_request))
 
     @auth_required(UPDATE)
@@ -155,10 +151,6 @@ class Consumer(JSONController):
         body = self.params()
         delta = body.get('delta')
         manager = managers.consumer_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {id: dispatch_constants.RESOURCE_UPDATE_OPERATION}
-        }
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
             action_tag('update')
@@ -166,8 +158,8 @@ class Consumer(JSONController):
         call_request = CallRequest(
             manager.update,
             [id, delta],
-            resources=resources,
             tags=tags)
+        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
         consumer = execution.execute(call_request)
         href = serialization.link.current_link_obj()
         consumer.update(href)
@@ -576,10 +568,6 @@ class Profile(JSONController):
         @rtype: dict
         """
         manager = managers.consumer_profile_manager()
-        resources = {
-            dispatch_constants.RESOURCE_CONSUMER_TYPE:
-                {consumer_id:dispatch_constants.RESOURCE_READ_OPERATION},
-        }
         args = [
             consumer_id,
             content_type,
@@ -589,8 +577,8 @@ class Profile(JSONController):
         ]
         call_request = CallRequest(manager.delete,
                                    args=args,
-                                   resources=resources,
                                    tags=tags)
+        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
         return self.ok(execution.execute(call_request))
 
 

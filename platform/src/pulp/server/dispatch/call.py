@@ -149,23 +149,23 @@ class CallRequest(object):
 
     def creates_resource(self, resource_type, resource_id):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
-        type_dict = self.resources.setdefault(resource_type, {})
-        type_dict.update({resource_id: dispatch_constants.RESOURCE_CREATE_OPERATION})
+        operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_CREATE_OPERATION, {})
+        operation_dict.setdefault(resource_type, []).append(resource_id)
 
     def reads_resource(self, resource_type, resource_id):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
-        type_dict = self.resources.setdefault(resource_type, {})
-        type_dict.update({resource_id: dispatch_constants.RESOURCE_READ_OPERATION})
+        operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_READ_OPERATION, {})
+        operation_dict.setdefault(resource_type, []).append(resource_id)
 
     def updates_resource(self, resource_type, resource_id):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
-        type_dict = self.resources.setdefault(resource_type, {})
-        type_dict.update({resource_id: dispatch_constants.RESOURCE_UPDATE_OPERATION})
+        operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_UPDATE_OPERATION, {})
+        operation_dict.setdefault(resource_type, []).append(resource_id)
 
     def deletes_resource(self, resource_type, resource_id):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
-        type_dict = self.resources.setdefault(resource_type, {})
-        type_dict.update({resource_id: dispatch_constants.RESOURCE_DELETE_OPERATION})
+        operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_DELETE_OPERATION, {})
+        operation_dict.setdefault(resource_type, []).append(resource_id)
 
     # convenient dependency management -----------------------------------------
 

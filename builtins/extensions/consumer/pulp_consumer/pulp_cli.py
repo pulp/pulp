@@ -29,8 +29,8 @@ from pulp.client import validators
 def initialize(context):
 
     # Common Options
-    d = 'uniquely identifies the consumer; only alphanumeric, -, and _ allowed'
-    id_option = PulpCliOption('--consumer-id', _(d), required=True, validate_func=validators.id_validator)
+    d = 'uniquely identifies the consumer; only alphanumeric, ., -, and _ allowed'
+    id_option = PulpCliOption('--consumer-id', _(d), required=True, validate_func=validators.id_validator_allow_dots)
 
     d = 'user-readable display name for the consumer'
     name_option = PulpCliOption('--display-name', _(d), required=False)
