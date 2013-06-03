@@ -15,18 +15,19 @@ from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
 
-from pulp.client.validators import id_validator
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.commands.consumer.query import ConsumerListCommand
-from pulp.client.commands.options import DESC_ID, OPTION_REPO_ID, OPTION_CONSUMER_ID
+from pulp.client.commands.options import OPTION_REPO_ID, OPTION_CONSUMER_ID
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
 from pulp_node import constants
-from pulp_node.extension import missing_resources, node_activated, repository_enabled
-from pulp_node.extension import ensure_node_section
+from pulp_node.extension import (missing_resources, node_activated, repository_enabled,
+                                 ensure_node_section)
+from pulp_node.extensions.admin import sync_schedules
+from pulp_node.extensions.admin.options import NODE_ID_OPTION
 from pulp_node.extensions.admin.rendering import ProgressTracker, UpdateRenderer
 
 
@@ -49,6 +50,7 @@ PUBLISH_NAME = 'publish'
 BIND_NAME = 'bind'
 UNBIND_NAME = 'unbind'
 UPDATE_NAME = 'run'
+SCHEDULES_NAME = 'schedules'
 
 
 # --- descriptions -----------------------------------------------------------
@@ -68,6 +70,7 @@ AUTO_PUBLISH_DESC = _('if "true", the nodes information will be automatically pu
 SYNC_DESC = _('child node synchronization commands')
 PUBLISH_DESC = _('publishing commands')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
+SCHEDULES_DESC = _('manage node sync schedules')
 
 
 # --- titles -----------------------------------------------------------------
@@ -77,8 +80,6 @@ REPO_LIST_TITLE = _('Enabled Repositories')
 
 
 # --- options ----------------------------------------------------------------
-
-NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
 
 AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
 
@@ -140,6 +141,12 @@ def initialize(context):
     sync_section = node_section.create_subsection(SYNC_NAME, SYNC_DESC)
     sync_section.add_command(NodeUpdateCommand(context))
 
+    schedules_section = sync_section.create_subsection(SCHEDULES_NAME, SCHEDULES_DESC)
+    schedules_section.add_command(sync_schedules.NodeCreateScheduleCommand(context))
+    schedules_section.add_command(sync_schedules.NodeDeleteScheduleCommand(context))
+    schedules_section.add_command(sync_schedules.NodeUpdateScheduleCommand(context))
+    schedules_section.add_command(sync_schedules.NodeListScheduleCommand(context))
+    schedules_section.add_command(sync_schedules.NodeNextRunCommand(context))
 
 # --- listing ----------------------------------------------------------------
 
