@@ -261,7 +261,7 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def find_applicable_units(self, consumer_profile_and_repo_ids, unit_type_id, unit_ids, config, conduit):
+    def find_applicable_units(self, consumer_profile_and_repo_ids, unit_type_id, unit_criteria, config, conduit):
         """
         Determine whether the content units are applicable to the specified consumers
         and repo ids. The definition of "applicable" is content type specific
@@ -280,8 +280,8 @@ class Profiler(object):
         :param unit_type_id: Common type id of all the units
         :type unit_type_id: str
 
-        :param unit_ids: list of unit ids
-        :type unit_ids: list
+        :param unit_criteria: Criteria representing unit search
+        :type unit_criteria: pulp.plugins.conduits.mixins.Criteria
 
         :param config: plugin configuration
         :type config: pulp.plugins.config.PluginCallConfiguration
