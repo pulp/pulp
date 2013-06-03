@@ -7,8 +7,6 @@ Install Content on a Consumer Group
 -----------------------------------
 
 Install one or more content units on each consumer in the group.  This operation is asynchronous.
-If dependencies are automatically installed or updated, it is reflected in the
-installation report.
 
 The units to be installed are specified in a list.  Each unit in the list of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
@@ -33,7 +31,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 * :response_code:`202,the install request has been accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the consumer does not exist`
+* :response_code:`404,if the consumer group does not exist`
 
 | :return:`A` :ref:`call_report_list`
 
@@ -57,8 +55,6 @@ Update Content on a Consumer Group
 ----------------------------------
 
 Update one or more content units on each consumer in the group.  This operation is asynchronous.
-If dependencies are automatically installed or updated, it is reflected in the
-update report.
 
 The units to be updated are specified in a list.  Each unit in the list of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
@@ -82,7 +78,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 * :response_code:`202,the update request has been accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the consumer does not exist`
+* :response_code:`404,if the consumer group does not exist`
 
 
 | :return:`A` :ref:`call_report_list`
@@ -131,7 +127,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 * :response_code:`202,The uninstall request has been accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the consumer does not exist`
+* :response_code:`404,if the consumer group does not exist`
 
 | :return:`A` :ref:`call_report_list`
 
