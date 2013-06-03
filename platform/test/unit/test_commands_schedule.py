@@ -130,7 +130,7 @@ class TestCreateCommand(base.PulpClientTests):
         # Verify
         args = strategy.create_schedule.call_args[0]
         self.assertEqual('2012-05-22T00:00:00/P1D', args[0])
-        self.assertEqual('10', args[1])
+        self.assertEqual(10, args[1])
         self.assertEqual(True, args[2])
         self.assertEqual('foo', args[3]['extra'])
 
@@ -151,7 +151,7 @@ class TestCreateCommand(base.PulpClientTests):
         # Verify
         args = strategy.create_schedule.call_args[0]
         self.assertEqual('2012-05-22T00:00:00/P1D', args[0])
-        self.assertEqual('10', args[1])
+        self.assertEqual(10, args[1])
         self.assertEqual(True, args[2])
 
         self.assertEqual(2, len(self.prompt.get_write_tags()))
@@ -204,7 +204,7 @@ class TestUpdateCommand(base.PulpClientTests):
         self.assertTrue('schedule' in kwargs)
         self.assertEqual('2012-05-22T00:00:00/P1D', kwargs['schedule'])
         self.assertTrue('failure_threshold' in kwargs)
-        self.assertEqual('1', kwargs['failure_threshold'])
+        self.assertEqual(1, kwargs['failure_threshold'])
         self.assertTrue('enabled' in kwargs)
         self.assertEqual(True, kwargs['enabled'])
 
