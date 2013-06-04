@@ -104,7 +104,7 @@ NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.
 NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled.  Nothing done.')
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
-ALREADY_ACTIVATED_NOTHING_DONE = _('%(t)s already activated as child node.  Nothing done.')
+ALREADY_ACTIVATED_NOTHING_DONE = _('%(n)s already activated as child node.  Nothing done.')
 
 BIND_WARNING = \
     _('Note: Repository [ %(r)s ] will be included in node synchronization.')
@@ -263,7 +263,7 @@ class NodeActivateCommand(PulpCliCommand):
         delta = {'notes': {constants.NODE_NOTE_KEY: True, constants.STRATEGY_NOTE_KEY: strategy}}
 
         if node_activated(self.context, consumer_id):
-            msg = ALREADY_ACTIVATED_NOTHING_DONE % dict(t=CONSUMER)
+            msg = ALREADY_ACTIVATED_NOTHING_DONE % dict(n=CONSUMER)
             self.context.prompt.render_success_message(msg)
             return
 
