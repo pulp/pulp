@@ -289,6 +289,7 @@ class RepoSyncManager(object):
 
         # Retrieve the entries
         cursor = RepoSyncResult.get_collection().find(search_params)
+        # Sort the results on the 'started' field. By default, descending order is used
         cursor.sort('started', direction=SORT_DIRECTION[sort])
         cursor.limit(limit)
 

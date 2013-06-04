@@ -760,6 +760,7 @@ class PublishScheduleResource(JSONController):
 
 # -- history controllers ------------------------------------------------------
 
+
 class RepoSyncHistory(JSONController):
 
     # Scope: Resource
@@ -780,14 +781,13 @@ class RepoSyncHistory(JSONController):
             except ValueError:
                 _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
+        # Error checking is done on these options in the sync manager before the database is queried
         if sort is None:
             sort = 'descending'
         else:
             sort = sort[0]
-
         if start_date:
             start_date = start_date[0]
-
         if end_date:
             end_date = end_date[0]
 
@@ -805,8 +805,11 @@ class RepoPublishHistory(JSONController):
     @auth_required(READ)
     def GET(self, repo_id, distributor_id):
         # Params
-        filters = self.filters(['limit'])
+        filters = self.filters(['limit', 'sort', 'start_date', 'end_date'])
         limit = filters.get('limit', None)
+        sort = filters.get('sort', None)
+        start_date = filters.get('start_date', None)
+        end_date = filters.get('end_date', None)
 
         if limit is not None:
             try:
@@ -814,12 +817,22 @@ class RepoPublishHistory(JSONController):
             except ValueError:
                 _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
+        if sort is None:
+            sort = 'descending'
+        else:
+            sort = sort[0]
+        if start_date:
+            start_date = start_date[0]
+        if end_date:
+            end_date = end_date[0]
 
         publish_manager = manager_factory.repo_publish_manager()
-        entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
+        entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit, sort=sort,
+                                                  start_date=start_date, end_date=end_date)
         return self.ok(entries)
 
 # -- action controllers -------------------------------------------------------
+
 
 class RepoSync(JSONController):
 

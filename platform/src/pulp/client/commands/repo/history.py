@@ -29,7 +29,7 @@ DEFAULT_LIMIT = 5
 
 # Descriptions
 DESC_DETAILS = _('if specified, all history information is displayed')
-DESC_DISTRIBUTOR_ID = _('the distributor id')
+DESC_DISTRIBUTOR_ID = _('the distributor id to display history entries for')
 DESC_END_DATE = _('only return entries that occur on or before the given date in iso8601 format'
                   ' (yyyy-mm-ddThh:mm:ssZ)')
 DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero)')
@@ -43,7 +43,7 @@ DESC_START_DATE = _('only return entries that occur on or after the given date i
 OPTION_END_DATE = PulpCliOption('--end-date', DESC_END_DATE, required=False,
                                 validate_func=validators.iso8601_datetime_validator)
 OPTION_LIMIT = PulpCliOption('--limit', DESC_LIMIT, required=False,
-                             parse_func=parsers.parse_positive_int)
+                             validate_func=validators.positive_int_validator)
 OPTION_SORT = PulpCliOption('--sort', DESC_SORT, required=False)
 OPTION_DISTRIBUTOR_ID = PulpCliOption('--distributor-id', DESC_DISTRIBUTOR_ID, required=True,
                                       validate_func=validators.id_validator)
@@ -80,7 +80,7 @@ class SyncHistoryCommand(PulpCliCommand):
         # Collect input
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = kwargs[OPTION_LIMIT.keyword]
+            limit = int(kwargs[OPTION_LIMIT.keyword])
         else:
             limit = DEFAULT_LIMIT
         start_date = kwargs[OPTION_START_DATE.keyword]
@@ -115,28 +115,33 @@ class PublishHistoryCommand(PulpCliCommand):
 
         super(PublishHistoryCommand, self).__init__(name, description, self.run)
 
-        # History is given for a repo id and distributor id pair
+        # History is given for a repo id and distributor id pair, so these are mandatory
         self.add_option(OPTION_REPO_ID)
         self.add_option(OPTION_DISTRIBUTOR_ID)
-        # Optional limit on the number of history items to show
         self.add_option(OPTION_LIMIT)
-        # Option flag to show more details for each history item
+        self.add_option(OPTION_SORT)
+        self.add_option(OPTION_START_DATE)
+        self.add_option(OPTION_END_DATE)
         self.add_flag(FLAG_DETAILS)
         # Set the default fields to display
         self.default_fields = ['repo_id', 'distributor_id', 'result', 'started', 'completed']
 
     def run(self, **kwargs):
         # Collect input
-        details = kwargs[FLAG_DETAILS.keyword]
-        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
         repo_id = kwargs[OPTION_REPO_ID.keyword]
+        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
         if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = kwargs[OPTION_LIMIT.keyword]
+            limit = int(kwargs[OPTION_LIMIT.keyword])
         else:
             limit = DEFAULT_LIMIT
+        start_date = kwargs[OPTION_START_DATE.keyword]
+        end_date = kwargs[OPTION_END_DATE.keyword]
+        sort = kwargs[OPTION_SORT.keyword]
+        details = kwargs[FLAG_DETAILS.keyword]
 
         # Request the publish history from the server
-        publish_list = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit)
+        publish_list = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit,
+                                                                        sort, start_date, end_date)
         publish_list = publish_list.response_body
 
         # Filter the fields to show and define the order in which they are displayed
