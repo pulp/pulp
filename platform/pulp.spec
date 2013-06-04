@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.15.alpha%{?dist}
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,24 @@ exit 0
 %endif
 
 %changelog
+* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.beta
+- 947445 - allowing consumer ids to allow dots (skarmark@redhat.com)
+- 906420 - update storing of resources used by each task in the taskqueue to
+  allow dots in the repo id (skarmark@redhat.com)
+- 906420 - update storing of resources used by each task in the taskqueue to
+  allow dots in the repo id (skarmark@redhat.com)
+- 968543 - remove conditional in pulp_version macro. (jortel@redhat.com)
+- 927033 - added missing consumer group associate and unassociate webservices
+  tests (skarmark@redhat.com)
+- 927033 - updating consumer group associate and unassociate calls to return a
+  list of all consumers similar to repo group membership instead of just those
+  who fulfil the search criteria, updating unit tests and documentation
+  (skarmark@redhat.com)
+- 965743 - Changed help text to reflect the actual units
+  (jason.dobies@redhat.com)
+- 963823 - Made the feed SSL options group name a bit more accurate
+  (jason.dobies@redhat.com)
+
 * Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
 - 913670 - fix consumer group bind/unbind. (jortel@redhat.com)
 - 878234 - use correct method on coordinator. (jortel@redhat.com)
