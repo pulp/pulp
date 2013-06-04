@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.2.0
-Release: 0.15.alpha%{?dist}
+Release: 0.16.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -253,6 +253,9 @@ fi
 
 
 %changelog
+* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.16.alpha
+- 968543 - remove conditional in pulp_version macro. (jortel@redhat.com)
+
 * Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
 - 
 
