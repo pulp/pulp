@@ -168,8 +168,9 @@ class TestPublishCommand(ClientTests):
 
 class TestActivationCommands(ClientTests):
 
+    @patch(NODE_ACTIVATED_CHECK, return_value=False)
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
-    def test_activate(self, mock_binding):
+    def test_activate(self, mock_binding, *unused):
         # Test
         command = NodeActivateCommand(self.context)
         keywords = {
@@ -186,6 +187,19 @@ class TestActivationCommands(ClientTests):
         }
         self.assertTrue(OPTION_CONSUMER_ID in command.options)
         mock_binding.assert_called_with(NODE_ID, delta)
+
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
+    def test_activate_already_activated(self, mock_binding, *unused):
+        # Setup
+        command = NodeActivateCommand(self.context)
+        keywords = {
+            OPTION_CONSUMER_ID.keyword: NODE_ID,
+            STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY
+        }
+        command.run(**keywords)
+        # Verify
+        self.assertFalse(mock_binding.called)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))

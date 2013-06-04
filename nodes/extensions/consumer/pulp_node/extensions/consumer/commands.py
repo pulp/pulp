@@ -61,6 +61,7 @@ NOT_ACTIVATED_ERROR = _('This consumer is not activated as a node.  See: \'node 
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
 NOT_REGISTERED_MESSAGE = _('This consumer is not registered.')
+ALREADY_ACTIVATED_NOTHING_DONE = _('This consumer already activated as child node.  Nothing done.')
 
 BIND_WARNING = \
     _('Note: Repository [ %(r)s ] will be included in node synchronization.')
@@ -102,6 +103,10 @@ class NodeActivateCommand(PulpCliCommand):
         consumer_id = load_consumer_id(self.context)
         strategy = kwargs[STRATEGY_OPTION.keyword]
         delta = {'notes': {constants.NODE_NOTE_KEY: True, constants.STRATEGY_NOTE_KEY: strategy}}
+
+        if node_activated(self.context, consumer_id):
+            self.context.prompt.render_success_message(ALREADY_ACTIVATED_NOTHING_DONE)
+            return
 
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
