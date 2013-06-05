@@ -24,7 +24,6 @@ import sys
 import traceback
 from gettext import gettext as _
 
-from okaara.parsers import parse_positive_int
 import pymongo
 
 from pulp.common import dateutils, constants

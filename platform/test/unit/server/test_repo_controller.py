@@ -1077,7 +1077,7 @@ class RepoSyncHistoryTests(RepoPluginsTests):
         # Test
         status, body = self.get('/v2/repositories/sync-test/history/sync/')
 
-        # Verify. The default limit to the response body is 5 entries
+        # Verify. The default length of the response body is defined in pulp.common.constants.
         self.assertEqual(200, status)
         self.assertEqual(constants.REPO_HISTORY_LIMIT, len(body))
 
@@ -1145,7 +1145,7 @@ class RepoPublishHistoryTests(RepoPluginsTests):
         # Test
         status, body = self.get('/v2/repositories/pub-test/history/publish/dist-1/')
 
-        # Verify. The default length of the response body is 5.
+        # Verify. The default length of the response body is defined in pulp.common.constants.
         self.assertEqual(200, status)
         self.assertEqual(constants.REPO_HISTORY_LIMIT, len(body))
 

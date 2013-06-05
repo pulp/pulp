@@ -770,18 +770,20 @@ class RepoSyncHistory(JSONController):
     @auth_required(READ)
     def GET(self, repo_id):
         # Params
-        filters = self.filters(['limit', 'sort', 'start_date', 'end_date'])
-        limit = filters.get('limit', None)
-        sort = filters.get('sort', None)
-        start_date = filters.get('start_date', None)
-        end_date = filters.get('end_date', None)
+        filters = self.filters([constants.REPO_HISTORY_FILTER_LIMIT, constants.REPO_HISTORY_FILTER_SORT,
+                                constants.REPO_HISTORY_FILTER_START_DATE,
+                                constants.REPO_HISTORY_FILTER_END_DATE])
+        limit = filters.get(constants.REPO_HISTORY_FILTER_LIMIT, None)
+        sort = filters.get(constants.REPO_HISTORY_FILTER_SORT, None)
+        start_date = filters.get(constants.REPO_HISTORY_FILTER_START_DATE, None)
+        end_date = filters.get(constants.REPO_HISTORY_FILTER_END_DATE, None)
 
         if limit is not None:
             try:
                 limit = int(limit[0])
             except ValueError:
                 _LOG.error('Invalid limit specified [%s]' % limit)
-                raise exceptions.InvalidValue(['limit'])
+                raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
         # Error checking is done on these options in the sync manager before the database is queried
         if sort is None:
             sort = constants.SORT_DESCENDING
@@ -806,18 +808,20 @@ class RepoPublishHistory(JSONController):
     @auth_required(READ)
     def GET(self, repo_id, distributor_id):
         # Params
-        filters = self.filters(['limit', 'sort', 'start_date', 'end_date'])
-        limit = filters.get('limit', None)
-        sort = filters.get('sort', None)
-        start_date = filters.get('start_date', None)
-        end_date = filters.get('end_date', None)
+        filters = self.filters([constants.REPO_HISTORY_FILTER_LIMIT, constants.REPO_HISTORY_FILTER_SORT,
+                                constants.REPO_HISTORY_FILTER_START_DATE,
+                                constants.REPO_HISTORY_FILTER_END_DATE])
+        limit = filters.get(constants.REPO_HISTORY_FILTER_LIMIT, None)
+        sort = filters.get(constants.REPO_HISTORY_FILTER_SORT, None)
+        start_date = filters.get(constants.REPO_HISTORY_FILTER_START_DATE, None)
+        end_date = filters.get(constants.REPO_HISTORY_FILTER_END_DATE, None)
 
         if limit is not None:
             try:
                 limit = int(limit[0])
             except ValueError:
                 _LOG.error('Invalid limit specified [%s]' % limit)
-                raise exceptions.InvalidValue(['limit'])
+                raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
         if sort is None:
             sort = constants.SORT_DESCENDING
         else:

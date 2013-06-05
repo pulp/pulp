@@ -25,8 +25,6 @@ import os
 import sys
 from gettext import gettext as _
 
-from okaara.parsers import parse_positive_int
-
 # Pulp
 from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api

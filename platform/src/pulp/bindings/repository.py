@@ -13,6 +13,7 @@
 
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.search import SearchAPI
+from pulp.common import constants
 
 # Default for update APIs to differentiate between None and not updating the value
 UNSPECIFIED = object()
@@ -266,13 +267,13 @@ class RepositoryHistoryAPI(PulpAPI):
         path = self.base_path % repo_id + "/sync/"
         queries = {}
         if limit:
-            queries['limit'] = limit
+            queries[constants.REPO_HISTORY_FILTER_LIMIT] = limit
         if sort:
-            queries['sort'] = sort
+            queries[constants.REPO_HISTORY_FILTER_SORT] = sort
         if start_date:
-            queries['start_date'] = start_date
+            queries[constants.REPO_HISTORY_FILTER_START_DATE] = start_date
         if end_date:
-            queries['end_date'] = end_date
+            queries[constants.REPO_HISTORY_FILTER_END_DATE] = end_date
         return self.server.GET(path, queries)
 
     def publish_history(self, repo_id, distributor_id, limit=None, sort=None, start_date=None,
@@ -298,13 +299,13 @@ class RepositoryHistoryAPI(PulpAPI):
         path = self.base_path % repo_id + "/publish/" + "%s/" % distributor_id
         queries = {}
         if limit:
-            queries['limit'] = limit
+            queries[constants.REPO_HISTORY_LIMIT] = limit
         if sort:
-            queries['sort'] = sort
+            queries[constants.REPO_HISTORY_FILTER_SORT] = sort
         if start_date:
-            queries['start_date'] = start_date
+            queries[constants.REPO_HISTORY_FILTER_START_DATE] = start_date
         if end_date:
-            queries['end_date'] = end_date
+            queries[constants.REPO_HISTORY_FILTER_END_DATE] = end_date
         return self.server.GET(path, queries)
 
 
