@@ -26,6 +26,7 @@ from pulp.server.itineraries.repository import (
     distributor_update_itinerary,
 )
 from pulp.common.tags import action_tag, resource_tag
+from pulp.common import constants
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria
@@ -748,6 +749,7 @@ class PublishScheduleResource(JSONController):
 
 # -- history controllers ------------------------------------------------------
 
+
 class RepoSyncHistory(JSONController):
 
     # Scope: Resource
@@ -756,18 +758,33 @@ class RepoSyncHistory(JSONController):
     @auth_required(READ)
     def GET(self, repo_id):
         # Params
-        filters = self.filters(['limit'])
-        limit = filters.get('limit', None)
+        filters = self.filters([constants.REPO_HISTORY_FILTER_LIMIT, constants.REPO_HISTORY_FILTER_SORT,
+                                constants.REPO_HISTORY_FILTER_START_DATE,
+                                constants.REPO_HISTORY_FILTER_END_DATE])
+        limit = filters.get(constants.REPO_HISTORY_FILTER_LIMIT, None)
+        sort = filters.get(constants.REPO_HISTORY_FILTER_SORT, None)
+        start_date = filters.get(constants.REPO_HISTORY_FILTER_START_DATE, None)
+        end_date = filters.get(constants.REPO_HISTORY_FILTER_END_DATE, None)
 
         if limit is not None:
             try:
                 limit = int(limit[0])
             except ValueError:
                 _LOG.error('Invalid limit specified [%s]' % limit)
-                raise exceptions.InvalidValue(['limit'])
+                raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
+        # Error checking is done on these options in the sync manager before the database is queried
+        if sort is None:
+            sort = constants.SORT_DESCENDING
+        else:
+            sort = sort[0]
+        if start_date:
+            start_date = start_date[0]
+        if end_date:
+            end_date = end_date[0]
 
         sync_manager = manager_factory.repo_sync_manager()
-        entries = sync_manager.sync_history(repo_id, limit=limit)
+        entries = sync_manager.sync_history(repo_id, limit=limit, sort=sort, start_date=start_date,
+                                            end_date=end_date)
         return self.ok(entries)
 
 
@@ -779,21 +796,36 @@ class RepoPublishHistory(JSONController):
     @auth_required(READ)
     def GET(self, repo_id, distributor_id):
         # Params
-        filters = self.filters(['limit'])
-        limit = filters.get('limit', None)
+        filters = self.filters([constants.REPO_HISTORY_FILTER_LIMIT, constants.REPO_HISTORY_FILTER_SORT,
+                                constants.REPO_HISTORY_FILTER_START_DATE,
+                                constants.REPO_HISTORY_FILTER_END_DATE])
+        limit = filters.get(constants.REPO_HISTORY_FILTER_LIMIT, None)
+        sort = filters.get(constants.REPO_HISTORY_FILTER_SORT, None)
+        start_date = filters.get(constants.REPO_HISTORY_FILTER_START_DATE, None)
+        end_date = filters.get(constants.REPO_HISTORY_FILTER_END_DATE, None)
 
         if limit is not None:
             try:
                 limit = int(limit[0])
             except ValueError:
                 _LOG.error('Invalid limit specified [%s]' % limit)
-                raise exceptions.InvalidValue(['limit'])
+                raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
+        if sort is None:
+            sort = constants.SORT_DESCENDING
+        else:
+            sort = sort[0]
+        if start_date:
+            start_date = start_date[0]
+        if end_date:
+            end_date = end_date[0]
 
         publish_manager = manager_factory.repo_publish_manager()
-        entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit)
+        entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit, sort=sort,
+                                                  start_date=start_date, end_date=end_date)
         return self.ok(entries)
 
 # -- action controllers -------------------------------------------------------
+
 
 class RepoSync(JSONController):
 
