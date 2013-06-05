@@ -25,10 +25,10 @@ import os
 import sys
 from gettext import gettext as _
 
-import pymongo
+from okaara.parsers import parse_positive_int
 
 # Pulp
-from pulp.common import dateutils
+from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
@@ -43,14 +43,6 @@ from pulp.server.managers.repo import _common as common_utils
 
 
 # -- constants ----------------------------------------------------------------
-
-# Maps user entered query sort parameters to the pymongo representation
-SORT_ASCENDING = 'ascending'
-SORT_DESCENDING = 'descending'
-SORT_DIRECTION = {
-    SORT_ASCENDING: pymongo.ASCENDING,
-    SORT_DESCENDING: pymongo.DESCENDING,
-}
 
 _LOG = logging.getLogger(__name__)
 
@@ -212,7 +204,8 @@ class RepoSyncManager(object):
 
         return result
 
-    def sync_history(self, repo_id, limit=None, sort='descending', start_date=None, end_date=None):
+    def sync_history(self, repo_id, limit=None, sort=constants.SORT_DESCENDING, start_date=None,
+                     end_date=None):
         """
         Returns sync history entries for the given repo, sorted from most recent
         to oldest. If there are no entries, an empty list is returned.
@@ -237,7 +230,7 @@ class RepoSyncManager(object):
         :type end_date: str
 
         :return: list of sync history result instances
-        :rtype:  list of L{pulp.server.db.model.repository.RepoSyncResult}
+        :rtype: list
 
         :raise MissingResource: if repo_id does not reference a valid repo
         :raise InvalidValue: if one or more options are invalid
@@ -250,11 +243,16 @@ class RepoSyncManager(object):
 
         invalid_values = []
         # Verify the limit makes sense
-        if limit is not None and limit < 1:
-            invalid_values.append('limit')
+        if limit is not None:
+            try:
+                limit = int(limit)
+                if limit < 1:
+                    invalid_values.append('limit')
+            except ValueError:
+                invalid_values.append('limit')
 
         # Verify the sort direction is valid
-        if sort not in SORT_DIRECTION:
+        if sort not in constants.SORT_DIRECTION:
             invalid_values.append('sort')
 
         # Verify that start_date and end_date is valid
@@ -284,13 +282,13 @@ class RepoSyncManager(object):
         if len(date_range) > 0:
             search_params['started'] = date_range
         if limit is None:
-            # If a limit is not specified, limit the entries to five
-            limit = 5
+            # If a limit is not specified, limit the entries to the default value
+            limit = constants.REPO_HISTORY_LIMIT
 
         # Retrieve the entries
         cursor = RepoSyncResult.get_collection().find(search_params)
         # Sort the results on the 'started' field. By default, descending order is used
-        cursor.sort('started', direction=SORT_DIRECTION[sort])
+        cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
         cursor.limit(limit)
 
         return list(cursor)

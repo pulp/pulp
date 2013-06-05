@@ -11,6 +11,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import pymongo
+
 # key used in a repository's "notes" field with a value describing what type
 # of content is in the repository.
 REPO_NOTE_TYPE_KEY = '_repo-type'
+
+# Maps user entered query sort parameters to the pymongo representation
+SORT_ASCENDING = 'ascending'
+SORT_DESCENDING = 'descending'
+SORT_DIRECTION = {
+    SORT_ASCENDING: pymongo.ASCENDING,
+    SORT_DESCENDING: pymongo.DESCENDING,
+}
+
+# The default limit on the number of history entries to return
+REPO_HISTORY_LIMIT = 5

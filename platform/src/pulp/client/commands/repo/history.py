@@ -17,15 +17,12 @@ Commands for showing a repository's sync and publish history
 
 from gettext import gettext as _
 
-from okaara import parsers
-
+from pulp.common import constants
 from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag, PulpCliCommand
 from pulp.client import validators
 
 # -- constants ----------------------------------------------------------------
-
-DEFAULT_LIMIT = 5
 
 # Descriptions
 DESC_DETAILS = _('if specified, all history information is displayed')
@@ -62,6 +59,17 @@ class SyncHistoryCommand(PulpCliCommand):
     """
 
     def __init__(self, context, name='sync', description=DESC_SYNC_HISTORY):
+        """
+        :param context: The client context used to interact with the client framework and server
+        :type context: pulp.client.extensions.core.ClientContext
+
+        :param name: The name of the command in the history section
+        :type name: str
+
+        :param description: The description to use in the cli
+        :type description: str
+        """
+
         # The context is used to access the server and prompt.
         self.context = context
 
@@ -73,20 +81,27 @@ class SyncHistoryCommand(PulpCliCommand):
         self.add_option(OPTION_START_DATE)
         self.add_option(OPTION_END_DATE)
         self.add_flag(FLAG_DETAILS)
-        self.default_fields = ['repo_id', 'result', 'started', 'completed', 'added_count',
-                               'removed_count', 'updated_count']
+        self.fields_to_display = ['repo_id', 'result', 'started', 'completed', 'added_count',
+                                  'removed_count', 'updated_count']
 
-    def run(self, **kwargs):
+    def run(self, **user_input):
+        """
+        The action to take when the sync history command is executed
+
+        :param user_input: the options and flags provided by the user
+        :type user_input: dict
+        """
+
         # Collect input
-        repo_id = kwargs[OPTION_REPO_ID.keyword]
-        if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = int(kwargs[OPTION_LIMIT.keyword])
+        repo_id = user_input[OPTION_REPO_ID.keyword]
+        if user_input[OPTION_LIMIT.keyword] is not None:
+            limit = int(user_input[OPTION_LIMIT.keyword])
         else:
-            limit = DEFAULT_LIMIT
-        start_date = kwargs[OPTION_START_DATE.keyword]
-        end_date = kwargs[OPTION_END_DATE.keyword]
-        sort = kwargs[OPTION_SORT.keyword]
-        details = kwargs[FLAG_DETAILS.keyword]
+            limit = constants.REPO_HISTORY_LIMIT
+        start_date = user_input[OPTION_START_DATE.keyword]
+        end_date = user_input[OPTION_END_DATE.keyword]
+        sort = user_input[OPTION_SORT.keyword]
+        details = user_input[FLAG_DETAILS.keyword]
 
         # Request the sync history from the server
         sync_list = self.context.server.repo_history.sync_history(repo_id, limit, sort, start_date,
@@ -94,9 +109,9 @@ class SyncHistoryCommand(PulpCliCommand):
 
         # Filter the fields to show and define the order in which they are displayed
         if details is True:
-            self.default_fields.append('summary')
-            self.default_fields.append('details')
-        filters = order = self.default_fields
+            self.fields_to_display.append('summary')
+            self.fields_to_display.append('details')
+        filters = order = self.fields_to_display
 
         # Render results
         title = _('Sync History [ %(repo)s ]') % {'repo': repo_id}
@@ -110,6 +125,17 @@ class PublishHistoryCommand(PulpCliCommand):
     """
 
     def __init__(self, context, name='publish', description=DESC_PUBLISH_HISTORY):
+        """
+        :param context: The client context used to interact with the client framework and server
+        :type context: pulp.client.extensions.core.ClientContext
+
+        :param name: The name of the command in the history section
+        :type name: str
+
+        :param description: The description to use in the cli
+        :type description: str
+        """
+
         # The context is used to access the server and prompt.
         self.context = context
 
@@ -124,20 +150,27 @@ class PublishHistoryCommand(PulpCliCommand):
         self.add_option(OPTION_END_DATE)
         self.add_flag(FLAG_DETAILS)
         # Set the default fields to display
-        self.default_fields = ['repo_id', 'distributor_id', 'result', 'started', 'completed']
+        self.fields_to_display = ['repo_id', 'distributor_id', 'result', 'started', 'completed']
 
-    def run(self, **kwargs):
+    def run(self, **user_input):
+        """
+        The action to take when the sync history command is executed
+
+        :param user_input: the options and flags provided by the user
+        :type user_input: dict
+        """
+
         # Collect input
-        repo_id = kwargs[OPTION_REPO_ID.keyword]
-        distributor_id = kwargs[OPTION_DISTRIBUTOR_ID.keyword]
-        if kwargs[OPTION_LIMIT.keyword] is not None:
-            limit = int(kwargs[OPTION_LIMIT.keyword])
+        repo_id = user_input[OPTION_REPO_ID.keyword]
+        distributor_id = user_input[OPTION_DISTRIBUTOR_ID.keyword]
+        if user_input[OPTION_LIMIT.keyword] is not None:
+            limit = int(user_input[OPTION_LIMIT.keyword])
         else:
-            limit = DEFAULT_LIMIT
-        start_date = kwargs[OPTION_START_DATE.keyword]
-        end_date = kwargs[OPTION_END_DATE.keyword]
-        sort = kwargs[OPTION_SORT.keyword]
-        details = kwargs[FLAG_DETAILS.keyword]
+            limit = constants.REPO_HISTORY_LIMIT
+        start_date = user_input[OPTION_START_DATE.keyword]
+        end_date = user_input[OPTION_END_DATE.keyword]
+        sort = user_input[OPTION_SORT.keyword]
+        details = user_input[FLAG_DETAILS.keyword]
 
         # Request the publish history from the server
         publish_list = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit,
@@ -146,9 +179,9 @@ class PublishHistoryCommand(PulpCliCommand):
 
         # Filter the fields to show and define the order in which they are displayed
         if details is True:
-            self.default_fields.append('summary')
-            self.default_fields.append('details')
-        filters = order = self.default_fields
+            self.fields_to_display.append('summary')
+            self.fields_to_display.append('details')
+        filters = order = self.fields_to_display
 
         # Render results
         title = _('Publish History [ %(repo)s ]') % {'repo': repo_id}

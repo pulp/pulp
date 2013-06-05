@@ -26,6 +26,7 @@ from pulp.server.itineraries.repository import (
     distributor_update_itinerary,
 )
 from pulp.common.tags import action_tag, resource_tag
+from pulp.common import constants
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria
@@ -783,7 +784,7 @@ class RepoSyncHistory(JSONController):
                 raise exceptions.InvalidValue(['limit'])
         # Error checking is done on these options in the sync manager before the database is queried
         if sort is None:
-            sort = 'descending'
+            sort = constants.SORT_DESCENDING
         else:
             sort = sort[0]
         if start_date:
@@ -818,7 +819,7 @@ class RepoPublishHistory(JSONController):
                 _LOG.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue(['limit'])
         if sort is None:
-            sort = 'descending'
+            sort = constants.SORT_DESCENDING
         else:
             sort = sort[0]
         if start_date:

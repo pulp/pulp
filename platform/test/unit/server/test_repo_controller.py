@@ -23,7 +23,7 @@ import mock
 import base
 import dummy_plugins
 
-from pulp.common import dateutils, tags
+from pulp.common import dateutils, tags, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
@@ -1079,7 +1079,7 @@ class RepoSyncHistoryTests(RepoPluginsTests):
 
         # Verify. The default limit to the response body is 5 entries
         self.assertEqual(200, status)
-        self.assertEqual(5, len(body))
+        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(body))
 
     def test_get_no_entries(self):
         """
@@ -1147,7 +1147,7 @@ class RepoPublishHistoryTests(RepoPluginsTests):
 
         # Verify. The default length of the response body is 5.
         self.assertEqual(200, status)
-        self.assertEqual(5, len(body))
+        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(body))
 
     def test_get_no_entries(self):
         """

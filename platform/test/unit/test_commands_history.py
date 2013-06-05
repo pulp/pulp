@@ -37,8 +37,8 @@ class SyncHistoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure the correct options are present
         found_options = set(self.command.options)
-        expected_options = {OPTION_REPO_ID, history.OPTION_LIMIT, history.OPTION_SORT,
-                            history.OPTION_START_DATE, history.OPTION_END_DATE, history.FLAG_DETAILS}
+        expected_options = set((OPTION_REPO_ID, history.OPTION_LIMIT, history.OPTION_SORT,
+                               history.OPTION_START_DATE, history.OPTION_END_DATE, history.FLAG_DETAILS))
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -140,9 +140,9 @@ class PublishHistoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure the correct options are present
         found_options = set(self.command.options)
-        expected_options = {OPTION_REPO_ID, history.OPTION_DISTRIBUTOR_ID, history.OPTION_LIMIT,
-                            history.OPTION_SORT, history.OPTION_START_DATE, history.OPTION_END_DATE,
-                            history.FLAG_DETAILS}
+        expected_options = set((OPTION_REPO_ID, history.OPTION_DISTRIBUTOR_ID, history.OPTION_LIMIT,
+                                history.OPTION_SORT, history.OPTION_START_DATE, history.OPTION_END_DATE,
+                                history.FLAG_DETAILS))
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
