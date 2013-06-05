@@ -23,7 +23,7 @@ import mock
 import base
 import dummy_plugins
 
-from pulp.common import dateutils, tags
+from pulp.common import dateutils, tags, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
@@ -1061,6 +1061,7 @@ class RepoDistributorTests(RepoPluginsTests):
         # Verify
         self.assertEqual(404, status)
 
+
 class RepoSyncHistoryTests(RepoPluginsTests):
 
     def test_get(self):
@@ -1076,9 +1077,9 @@ class RepoSyncHistoryTests(RepoPluginsTests):
         # Test
         status, body = self.get('/v2/repositories/sync-test/history/sync/')
 
-        # Verify
+        # Verify. The default length of the response body is defined in pulp.common.constants.
         self.assertEqual(200, status)
-        self.assertEqual(10, len(body))
+        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(body))
 
     def test_get_no_entries(self):
         """
@@ -1127,6 +1128,7 @@ class RepoSyncHistoryTests(RepoPluginsTests):
         r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '', RepoSyncResult.RESULT_SUCCESS)
         RepoSyncResult.get_collection().save(r, safe=True)
 
+
 class RepoPublishHistoryTests(RepoPluginsTests):
 
     def test_get(self):
@@ -1143,9 +1145,9 @@ class RepoPublishHistoryTests(RepoPluginsTests):
         # Test
         status, body = self.get('/v2/repositories/pub-test/history/publish/dist-1/')
 
-        # Verify
+        # Verify. The default length of the response body is defined in pulp.common.constants.
         self.assertEqual(200, status)
-        self.assertEqual(10, len(body))
+        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(body))
 
     def test_get_no_entries(self):
         """

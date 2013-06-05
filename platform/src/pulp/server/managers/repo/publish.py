@@ -18,14 +18,13 @@ need to execute syncs asynchronously must be handled at a higher layer.
 """
 
 import datetime
+import isodate
 import logging
 import sys
 import traceback
 from gettext import gettext as _
 
-import pymongo
-
-from pulp.common import dateutils
+from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
@@ -33,7 +32,7 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
@@ -239,42 +238,97 @@ class RepoPublishManager(object):
             instance = dateutils.parse_iso8601_datetime(date_str)
             return instance
 
-    def publish_history(self, repo_id, distributor_id, limit=None):
+    def publish_history(self, repo_id, distributor_id, limit=None, sort=constants.SORT_DESCENDING,
+                        start_date=None, end_date=None):
         """
         Returns publish history entries for the give repo, sorted from most
         recent to oldest. If there are no entries, an empty list is returned.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @param distributor_id: identifies the distributor to retrieve history for
-        @type  distributor_id: str
+        :param distributor_id: identifies the distributor to retrieve history for
+        :type  distributor_id: str
 
-        @param limit: maximum number of results to return
-        @type  limit: int
+        :param limit: if specified, the query will only return up to this amount of
+                      entries; default is to limit the entries returned to five.
+        :type limit: int
 
-        @return: list of publish history result instances
-        @rtype:  list of L{pulp.server.db.model.repository.RepoPublishResult}
+        :param sort: Indicates the sort direction of the results, which are sorted by start date. Options
+                     are "ascending" and "descending". Descending is the default.
+        :type sort: str
 
-        @raise MissingResource: if repo_id does not reference a valid repo
+        :param start_date: if specified, no events prior to this date will be returned. Expected to be an
+                           iso8601 datetime string.
+        :type start_date: str
+
+        :param end_date: if specified, no events after this date will be returned. Expected to be an
+                         iso8601 datetime string.
+        :type end_date: str
+
+        :return: list of publish history result instances
+        :rtype: list
+
+        :raise MissingResource: if repo_id does not reference a valid repo
+        :raise InvalidValue: if one or more of the options have invalid values
         """
 
         # Validation
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
-        dist = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        dist = RepoDistributor.get_collection().find_one({'repo_id': repo_id, 'id': distributor_id})
         if dist is None:
             raise MissingResource(distributor_id)
 
+        invalid_values = []
+        # Verify the limit makes sense
+        if limit is not None:
+            try:
+                limit = int(limit)
+                if limit < 1:
+                    invalid_values.append('limit')
+            except ValueError:
+                invalid_values.append('limit')
+
+        # Verify the sort direction is valid
+        if sort not in constants.SORT_DIRECTION:
+            invalid_values.append('sort')
+
+        # Verify that start_date and end_date is valid
+        if start_date is not None:
+            try:
+                dateutils.parse_iso8601_datetime(start_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('start_date')
+        if end_date is not None:
+            try:
+                dateutils.parse_iso8601_datetime(end_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('end_date')
+        # Report any invalid values
+        if invalid_values:
+            raise InvalidValue(invalid_values)
+
+        # Assemble the mongo search parameters
+        search_params = {'repo_id': repo_id, 'distributor_id': distributor_id}
+        date_range = {}
+        if start_date:
+            date_range['$gte'] = start_date
+        if end_date:
+            date_range['$lte'] = end_date
+        if len(date_range) > 0:
+            search_params['started'] = date_range
         if limit is None:
-            limit = 10 # default here for each of REST API calls into here
+            # If a limit is not specified, limit the entries to the default values
+            limit = constants.REPO_HISTORY_LIMIT
 
         # Retrieve the entries
-        cursor = RepoPublishResult.get_collection().find({'repo_id' : repo_id, 'distributor_id' : distributor_id})
+        cursor = RepoPublishResult.get_collection().find(search_params)
+        # Sort the results on the 'started' field. By default, descending order is used
+        cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
         cursor.limit(limit)
-        cursor.sort('completed', pymongo.DESCENDING)
 
         return list(cursor)
 

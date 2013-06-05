@@ -17,9 +17,10 @@ import datetime
 import mock
 import mock_plugins
 
-from pulp.common import dateutils
+from pulp.common import dateutils, constants
 from pulp.plugins.model import PublishReport
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
+from pulp.server.exceptions import InvalidValue
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
@@ -395,14 +396,14 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Test
         entries = self.publish_manager.publish_history('foo', 'dist-1')
 
-        # Verify
-        self.assertEqual(5, len(entries))
+        # Verify. The returned entries should be limited to the constant defined in common.constants.
+        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(entries))
 
-        #   Verify descending order
+        #   Verify the default sort direction is descending order
         for i in range(0, 4):
-            first = dateutils.parse_iso8601_datetime(entries[i]['completed'])
-            second = dateutils.parse_iso8601_datetime(entries[i + 1]['completed'])
-            self.assertTrue(first > second)
+            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+            self.assertTrue(first >= second)
 
     def test_publish_history_with_limit(self):
         """
@@ -415,11 +416,157 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         for i in range(0, 10):
             add_result('dragon', 'fire', i)
 
-        # Test
+        # Test a valid limit
         entries = self.publish_manager.publish_history('dragon', 'fire', limit=3)
+        self.assertEqual(3, len(entries))
+
+    def test_publish_history_invalid_limit(self):
+        """
+        Tests that limit is checked for invalid values
+        """
+
+        # Setup
+        self.repo_manager.create_repo('test_repo')
+        self.distributor_manager.add_distributor('test_repo', 'mock-distributor', {}, True,
+                                                 distributor_id='dist')
+
+        # Verify an invalid limit raises an InvalidValue exception
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_repo', 'dist',
+                          limit=0)
+        # Verify a non-int still raises an InvalidValue exception
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_repo', 'dist',
+                          limit='bacon')
+
+    def test_publish_history_ascending_sort(self):
+        """
+        Tests use the sort parameter to sort the results in ascending order by start time
+        """
+
+        # Setup
+        self.repo_manager.create_repo('test_sort')
+        self.distributor_manager.add_distributor('test_sort', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        # Create some consecutive publish entries
+        date_string = '2013-06-01T12:00:0%sZ'
+        for i in range(0, 10, 2):
+            r = RepoPublishResult.expected_result('test_sort', 'test_dist', 'bar', date_string % str(i),
+                                                  date_string % str(i + 1), 'test-summary',
+                                                  'test-details', RepoPublishResult.RESULT_SUCCESS)
+            RepoPublishResult.get_collection().insert(r, safe=True)
+
+        # Test that returned entries are in ascending order by time
+        entries = self.publish_manager.publish_history('test_sort', 'test_dist',
+                                                       sort=constants.SORT_ASCENDING)
+        self.assertEqual(5, len(entries))
+        for i in range(0, 4):
+            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+            self.assertTrue(first < second)
+
+    def test_publish_history_descending_sort(self):
+        """
+        Tests use the sort parameter to sort the results in descending order by start time
+        """
+
+        # Setup
+        self.repo_manager.create_repo('test_sort')
+        self.distributor_manager.add_distributor('test_sort', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        # Create some consecutive publish entries
+        date_string = '2013-06-01T12:00:0%sZ'
+        for i in range(0, 10, 2):
+            r = RepoPublishResult.expected_result('test_sort', 'test_dist', 'bar', date_string % str(i),
+                                                  date_string % str(i + 1), 'test-summary',
+                                                  'test-details',RepoPublishResult.RESULT_SUCCESS)
+            RepoPublishResult.get_collection().insert(r, safe=True)
+
+        # Test that returned entries are in descending order by time
+        entries = self.publish_manager.publish_history('test_sort', 'test_dist',
+                                                       sort=constants.SORT_DESCENDING)
+        self.assertEqual(5, len(entries))
+        for i in range(0, 4):
+            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+            self.assertTrue(first > second)
+
+    def test_publish_history_invalid_sort(self):
+        """
+        Tests that publish_history checks the sort parameter for invalid values
+        """
+
+         # Setup
+        self.repo_manager.create_repo('test_sort')
+        self.distributor_manager.add_distributor('test_sort', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+
+        # Test that an exception is raised if sort gets an invalid value
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_sort', 'test_dist',
+                          sort='random')
+
+    def test_publish_history_start_date(self):
+
+        # Setup
+        self.repo_manager.create_repo('test_date')
+        self.distributor_manager.add_distributor('test_date', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        # Create three consecutive publish entries
+        date_string = '2013-06-01T12:00:0%sZ'
+        for i in range(0, 6, 2):
+            r = RepoPublishResult.expected_result('test_date', 'test_dist', 'bar', date_string % str(i),
+                                                  date_string % str(i + 1), 'test-summary',
+                                                  'test-details', RepoPublishResult.RESULT_SUCCESS)
+            RepoPublishResult.get_collection().insert(r, safe=True)
 
         # Verify
-        self.assertEqual(3, len(entries))
+        self.assertEqual(3, len(self.publish_manager.publish_history('test_date', 'test_dist')))
+        start_date = '2013-06-01T12:00:02Z'
+        start_entries = self.publish_manager.publish_history('test_date', 'test_dist',
+                                                             start_date=start_date)
+        # Confirm the dates of the retrieved entries are later than or equal to the requested date
+        self.assertEqual(2, len(start_entries))
+        for entries in start_entries:
+            retrieved = dateutils.parse_iso8601_datetime(entries['started'])
+            given_start = dateutils.parse_iso8601_datetime(start_date)
+            self.assertTrue(retrieved >= given_start)
+
+    def test_publish_history_end_date(self):
+
+        # Setup
+        self.repo_manager.create_repo('test_date')
+        self.distributor_manager.add_distributor('test_date', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        # Create three consecutive publish entries
+        date_string = '2013-06-01T12:00:0%sZ'
+        for i in range(0, 6, 2):
+            r = RepoPublishResult.expected_result('test_date', 'test_dist', 'bar', date_string % str(i),
+                                                  date_string % str(i + 1), 'test-summary',
+                                                  'test-details', RepoPublishResult.RESULT_SUCCESS)
+            RepoPublishResult.get_collection().insert(r, safe=True)
+
+        # Verify that all entries retrieved have dates prior to the given end date
+        end_date = '2013-06-01T12:00:03Z'
+        end_entries = self.publish_manager.publish_history('test_date', 'test_dist', end_date=end_date)
+        # Confirm the dates of the retrieved entries are earlier than or equal to the requested date
+        self.assertEqual(2, len(end_entries))
+        for entries in end_entries:
+            retrieved = dateutils.parse_iso8601_datetime(entries['started'])
+            given_end = dateutils.parse_iso8601_datetime(end_date)
+            self.assertTrue(retrieved <= given_end)
+
+    def test_publish_history_invalid_date(self):
+
+        # Setup
+        self.repo_manager.create_repo('test_date')
+        self.distributor_manager.add_distributor('test_date', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        for i in range(1, 5):
+            add_result('test_date', 'test_dist', i)
+
+        # Verify exceptions are raised when malformed dates are given
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_date', 'test_dist',
+                          start_date='2013-56-01T12:00:02Z')
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_date', 'test_dist',
+                          end_date='2013-56-01T12:00:02Z')
 
     def test_publish_history_missing_repo(self):
         """
