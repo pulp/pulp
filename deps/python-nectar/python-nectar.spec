@@ -47,6 +47,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Jun 05 2013 Jay Dobies <jason.dobies@redhat.com> 0.99-1
+- 970741 - Upgraded nectar for error_msg support (jason.dobies@redhat.com)
+
+* Wed Jun 05 2013 Jay Dobies <jason.dobies@redhat.com> 0.99-1
 - Tweaking the version numbering until we come out with 1.0 to make it play
   nicer with tito (jason.dobies@redhat.com)
 
