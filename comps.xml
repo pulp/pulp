@@ -35,6 +35,7 @@
       <packagereq type="default">pulp-puppet-consumer-extensions</packagereq>
       <packagereq type="default">pulp-agent</packagereq>
       <packagereq type="default">pulp-rpm-handlers</packagereq>
+      <packagereq type="default">pulp-rpm-yumplugins</packagereq>
       <packagereq type="default">pulp-puppet-handlers</packagereq>
     </packagelist>
   </group>
