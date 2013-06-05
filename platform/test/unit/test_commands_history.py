@@ -107,19 +107,19 @@ class SyncHistoryCommandTests(base.PulpClientTests):
         args[history.FLAG_DETAILS.keyword] = True
         self.command.run(**args)
 
-        # Assert that render_document_list was called with a filter containing 'details'
+        # Assert that render_doc_list was called with a filter containing 'details' and 'summary'
         render_kwargs = mock_render_doc_list.call_args[1]
-        self.assertTrue('details' in render_kwargs['filters'])
-        self.assertTrue('details' in render_kwargs['order'])
+        self.assertTrue('details' and 'summary' in render_kwargs['filters'])
+        self.assertTrue('details' and 'summary' in render_kwargs['order'])
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document_list', autospec=True)
     def test_run_without_details(self, mock_render_doc_list):
         self.command.run(**self.arguments)
 
-        # Assert that render_document_list was called with a filter containing 'details'
+        # Assert that render_doc_list was called with a filter containing 'details' and 'summary'
         render_kwargs = mock_render_doc_list.call_args[1]
-        self.assertFalse('details' in render_kwargs['filters'])
-        self.assertFalse('details' in render_kwargs['order'])
+        self.assertFalse('details' and 'summary' in render_kwargs['filters'])
+        self.assertFalse('details' and 'summary' in render_kwargs['order'])
 
 
 class PublishHistoryCommandTests(base.PulpClientTests):
@@ -197,16 +197,16 @@ class PublishHistoryCommandTests(base.PulpClientTests):
         args[history.FLAG_DETAILS.keyword] = True
         self.command.run(**args)
 
-        # Assert that render_document_list was called with a filter containing 'details'
+        # Assert that render_doc_list was called with a filter containing 'details' and 'summary'
         render_kwargs = mock_render_doc_list.call_args[1]
-        self.assertTrue('details' in render_kwargs['filters'])
-        self.assertTrue('details' in render_kwargs['order'])
+        self.assertTrue('details' and 'summary' in render_kwargs['filters'])
+        self.assertTrue('details' and 'summary' in render_kwargs['order'])
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document_list', autospec=True)
     def test_run_without_details(self, mock_render_doc_list):
         self.command.run(**self.arguments)
 
-        # Assert that render_document_list was called with a filter that doesn't have 'details'
+        # Assert that render_doc_list was called with a filter that doesn't have 'details' and 'summary'
         render_kwargs = mock_render_doc_list.call_args[1]
-        self.assertFalse('details' in render_kwargs['filters'])
-        self.assertFalse('details' in render_kwargs['order'])
+        self.assertFalse('details' and 'summary' in render_kwargs['filters'])
+        self.assertFalse('details' and 'summary' in render_kwargs['order'])

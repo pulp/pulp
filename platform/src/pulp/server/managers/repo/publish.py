@@ -24,8 +24,6 @@ import sys
 import traceback
 from gettext import gettext as _
 
-import pymongo
-
 from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -39,14 +37,6 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 # -- constants ----------------------------------------------------------------
-
-# Maps user entered query sort parameters to the pymongo representation
-SORT_ASCENDING = 'ascending'
-SORT_DESCENDING = 'descending'
-SORT_DIRECTION = {
-    SORT_ASCENDING: pymongo.ASCENDING,
-    SORT_DESCENDING: pymongo.DESCENDING,
-}
 
 _LOG = logging.getLogger(__name__)
 
