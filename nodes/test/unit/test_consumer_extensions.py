@@ -55,6 +55,7 @@ MIXED_DISTRIBUTORS = [
 
 class TestActivationCommands(ClientTests):
 
+    @patch(NODE_ACTIVATED_CHECK, return_value=False)
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
     def test_activate(self, mock_binding, *unused):
@@ -70,6 +71,16 @@ class TestActivationCommands(ClientTests):
             }
         }
         mock_binding.assert_called_with(NODE_ID, delta)
+
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
+    @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
+    def test_activate_already_activated(self, mock_binding, *unused):
+        command = NodeActivateCommand(self.context)
+        keywords = {STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY}
+        command.run(**keywords)
+        # Verify
+        self.assertFalse(mock_binding.called)
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
