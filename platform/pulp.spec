@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.1.beta%{?dist}
+Release: 0.2.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Jun 06 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.beta
+- 970741 - Upgraded nectar for error_msg support (jason.dobies@redhat.com)
+
 * Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.beta
 - 947445 - allowing consumer ids to allow dots (skarmark@redhat.com)
 - 906420 - update storing of resources used by each task in the taskqueue to
