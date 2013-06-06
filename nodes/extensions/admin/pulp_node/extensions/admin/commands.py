@@ -91,19 +91,20 @@ STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
 REPO_ENABLED = _('Repository enabled.')
 REPO_DISABLED = _('Repository disabled.')
 PUBLISH_SUCCEEDED = _('Publish succeeded.')
-PUBLISH_FAILED = _('Publish failed.  See: pulp.log for details.')
+PUBLISH_FAILED = _('Publish failed. See: pulp.log for details.')
 NODE_ACTIVATED = _('Consumer activated as child node.')
 NODE_DEACTIVATED = _('Child node deactivated.')
 BIND_SUCCEEDED = _('Node bind succeeded.')
 UNBIND_SUCCEEDED = _('Node unbind succeeded')
-ALREADY_ENABLED = _('Repository already enabled.  Nothing done.')
-FAILED_NOT_ENABLED = _('Repository not enabled.  See: the \'node repo enable\' command.')
-NOT_BOUND_NOTHING_DONE = _('Node not bound to repository.  Nothing done.')
-NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node.  See: the \'node activate\' command.')
-NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node.  Nothing done.')
-NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled.  Nothing done.')
-STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported.  Must be on of: %(s)s')
+ALREADY_ENABLED = _('Repository already enabled. Nothing done.')
+FAILED_NOT_ENABLED = _('Repository not enabled. See: the \'node repo enable\' command.')
+NOT_BOUND_NOTHING_DONE = _('Node not bound to repository. No action performed.')
+NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node. See: the \'node activate\' command.')
+NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node. No action performed.')
+NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled. No action performed.')
+STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported. Must be one of: %(s)s')
 RESOURCE_MISSING_ERROR = _('%(t)s [ %(id)s ] not found on the server.')
+ALREADY_ACTIVATED_NOTHING_DONE = _('%(n)s already activated as child node. No action performed.')
 
 BIND_WARNING = \
     _('Note: Repository [ %(r)s ] will be included in node synchronization.')
@@ -260,6 +261,11 @@ class NodeActivateCommand(PulpCliCommand):
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         strategy = kwargs[STRATEGY_OPTION.keyword]
         delta = {'notes': {constants.NODE_NOTE_KEY: True, constants.STRATEGY_NOTE_KEY: strategy}}
+
+        if node_activated(self.context, consumer_id):
+            msg = ALREADY_ACTIVATED_NOTHING_DONE % dict(n=CONSUMER)
+            self.context.prompt.render_success_message(msg)
+            return
 
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
