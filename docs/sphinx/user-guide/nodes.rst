@@ -284,6 +284,14 @@ Current, there are two supported strategies.
    This strategy should be used when the desired effect of synchronization is for the child
    repositories to be an exact mirror of those on the parent.
 
+The *node* level strategy is specified during node activation. Once activated, the strategy may
+be changed by performing a node deactivation followed by an activation specifying the desired
+strategy.
+
+The *repository* level strategy is specified during node binding to a repository. Once bound, the
+strategy may be changed by performing an unbind followed by a bind to the repository specifying the
+desired strategy.
+
 .. note:: The ``additive`` strategy is the default.
 
 Running
