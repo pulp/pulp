@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        0.97.0
+Version:        0.99
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -46,6 +46,17 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Wed Jun 05 2013 Jay Dobies <jason.dobies@redhat.com> 0.99-1
+- 970741 - Upgraded nectar for error_msg support (jason.dobies@redhat.com)
+
+* Wed Jun 05 2013 Jay Dobies <jason.dobies@redhat.com> 0.99-1
+- Tweaking the version numbering until we come out with 1.0 to make it play
+  nicer with tito (jason.dobies@redhat.com)
+
+* Wed Jun 05 2013 Jay Dobies <jason.dobies@redhat.com> 0.97.1-1
+- 970741 - Added error_msg field to the download report
+  (jason.dobies@redhat.com)
+
 * Mon Jun 03 2013 Jason L Connor <jason.connor@gmail.com> 0.97.0-1
 - initial pass at leaky bucket throttling algorithm (jason.connor@gmail.com)
 
