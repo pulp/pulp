@@ -285,7 +285,7 @@ Current, there are two supported strategies.
    repositories to be an exact mirror of those on the parent.
 
 The *node* level strategy is specified during node activation. Once activated, the strategy may
-be changed by performing a node deactivation followed by an activation specifying the desired
+be changed by performing a node deactivation followed by node activation specifying the desired
 strategy.
 
 The *repository* level strategy is specified during node binding to a repository. Once bound, the
