@@ -26,16 +26,15 @@ from pulp.server.managers import factory
 class BindManagerTests(base.PulpAsyncServerTests):
 
     CONSUMER_ID = 'test-consumer'
+    EXTRA_CONSUMER_1 = 'extra_consumer_1'
+    EXTRA_CONSUMER_2 = 'extra_consumer_2'
+    ALL_CONSUMERS = [CONSUMER_ID, EXTRA_CONSUMER_1, EXTRA_CONSUMER_2]
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'test-distributor'
     NOTIFY_AGENT = True
-    BINDING_CONFIG = {'a' : 'a'}
+    BINDING_CONFIG = {'a': 'a'}
 
-    QUERY = dict(
-        consumer_id=CONSUMER_ID,
-        repo_id=REPO_ID,
-        distributor_id=DISTRIBUTOR_ID,
-        )
+    QUERY = dict(consumer_id=CONSUMER_ID, repo_id=REPO_ID, distributor_id=DISTRIBUTOR_ID)
 
     # The methods that use these expect strings, not ints
     ACTION_IDS = '1 2 3 4 5 6 7 8 9'.split()
@@ -69,7 +68,8 @@ class BindManagerTests(base.PulpAsyncServerTests):
             True,
             distributor_id=self.DISTRIBUTOR_ID)
         manager = factory.consumer_manager()
-        manager.register(self.CONSUMER_ID)
+        for consumer_id in self.ALL_CONSUMERS:
+            manager.register(consumer_id)
 
     def test_bind(self):
         # Setup
@@ -391,11 +391,32 @@ class BindManagerTests(base.PulpAsyncServerTests):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        for consumer_id in self.ALL_CONSUMERS:
+            manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        manager.action_pending(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '1')
+        manager.action_pending(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '2')
+        # Test
+        manager.mark_deleted(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Verify
+        self.assertRaises(MissingResource, manager.get_bind, self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.get_bind(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.get_bind(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+    def test_delete_but_not_marked_for_delete(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        for consumer_id in self.ALL_CONSUMERS:
+            manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        manager.action_pending(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '1')
+        manager.action_pending(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '2')
         # Test
         manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        # jortel: please revisit and add assertions
+        # Verify
+        manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.get_bind(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID)
+        manager.get_bind(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID)
 
     def test_delete_with_actions(self):
         # Setup
