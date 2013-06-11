@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.2.beta%{?dist}
+Release: 0.3.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,14 @@ exit 0
 %endif
 
 %changelog
+* Tue Jun 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.beta
+- 927216  - remove reference to CDS in the server.conf security section.
+  (jortel@redhat.com)
+- 928413 - fix query used to determine of bind has pending actions.
+  (jortel@redhat.com)
+- 968012 - Replaced grinder logging config with nectar logging config
+  (jason.dobies@redhat.com)
+
 * Thu Jun 06 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.beta
 - 970741 - Upgraded nectar for error_msg support (jason.dobies@redhat.com)
 
