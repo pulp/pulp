@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.3.beta%{?dist}
+Release: 0.4.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,10 @@ exit 0
 %endif
 
 %changelog
+* Mon Jun 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.beta
+- 973402 - Handle CallReport.progress with value of {} or None.
+  (jortel@redhat.com)
+
 * Tue Jun 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.beta
 - 927216  - remove reference to CDS in the server.conf security section.
   (jortel@redhat.com)
