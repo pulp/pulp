@@ -382,8 +382,8 @@ class ConsumerContentProgressTracker(object):
         self.details = None
 
     def display(self, report):
+        # report can be None or {}
         if report:
-            # report can be None or {}
             self.display_steps(report['steps'])
             self.display_details(report['details'])
 
