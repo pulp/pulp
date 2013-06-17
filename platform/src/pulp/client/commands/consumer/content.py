@@ -382,8 +382,10 @@ class ConsumerContentProgressTracker(object):
         self.details = None
 
     def display(self, report):
-        self.display_steps(report['steps'])
-        self.display_details(report['details'])
+        # report can be None or {}
+        if report:
+            self.display_steps(report['steps'])
+            self.display_details(report['details'])
 
     def display_steps(self, steps):
         num_steps = len(steps)
