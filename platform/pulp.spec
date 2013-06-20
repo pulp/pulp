@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.4.beta%{?dist}
+Release: 0.5.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Jun 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.beta
+- 
+
 * Mon Jun 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.beta
 - 973402 - Handle CallReport.progress with value of {} or None.
   (jortel@redhat.com)
