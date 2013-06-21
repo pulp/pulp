@@ -16,6 +16,7 @@ import base
 from pulp.bindings.responses import Response
 from pulp.client.extensions.core import TAG_FAILURE, TAG_SUCCESS, TAG_PARAGRAPH
 from pulp.client.commands import schedule as commands
+from pulp.client.commands.options import OPTION_REPO_ID
 
 # -- constants ----------------------------------------------------------------
 
@@ -263,3 +264,102 @@ class TestNextRunCommand(base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[0])
         self.assertEqual('2012-05-22T00:00:00Z\n', self.recorder.lines[0])
+
+
+class TestRepoScheduleStrategy(base.PulpClientTests):
+    """
+    Test the RepoScheduleStrategy class.
+    """
+    @mock.patch('pulp.client.commands.schedule.ScheduleStrategy.__init__', autospec=True)
+    def test___init__(self, __init__):
+        """
+        Test the constructor.
+        """
+        fake_api = mock.MagicMock()
+        fake_type_id = 'fake_type_id'
+
+        strat = commands.RepoScheduleStrategy(fake_api, fake_type_id)
+
+        # Make sure our superclass __init__() was called, and the correct attributes were set
+        __init__.assert_called_once_with()
+        self.assertEqual(strat.type_id, fake_type_id)
+        self.assertEqual(strat.api, fake_api)
+
+    def test_create_schedule(self):
+        """
+        Test the create_schedule() method.
+        """
+        fake_api = mock.MagicMock()
+        expected_return_value = 'return_value'
+        fake_api.add_schedule = mock.MagicMock(return_value=expected_return_value)
+        fake_type_id = 'fake_type_id'
+        strat = commands.RepoScheduleStrategy(fake_api, fake_type_id)
+        schedule = '2012-05-22T00:00:00/P1D'
+        failure_threshold = 1
+        enabled = True
+        repo_id = 'awesome_repo'
+        kwargs = {OPTION_REPO_ID.keyword: repo_id}
+
+        return_value = strat.create_schedule(schedule, failure_threshold, enabled, kwargs)
+
+        # For now, the override_config is not configurable, and it is an empty dict
+        expected_override_config = {}
+        fake_api.add_schedule.assert_called_once_with(
+            repo_id, fake_type_id, schedule, expected_override_config, failure_threshold, enabled)
+        self.assertEqual(return_value, expected_return_value)
+
+    def test_delete_schedule(self):
+        """
+        Test the delete_schedule() method.
+        """
+        fake_api = mock.MagicMock()
+        expected_return_value = 'return_value'
+        fake_api.delete_schedule = mock.MagicMock(return_value=expected_return_value)
+        fake_type_id = 'fake_type_id'
+        strat = commands.RepoScheduleStrategy(fake_api, fake_type_id)
+        schedule_id = 'schedule_id'
+        repo_id = 'awesome_repo'
+        kwargs = {OPTION_REPO_ID.keyword: repo_id}
+
+        return_value = strat.delete_schedule(schedule_id, kwargs)
+
+        fake_api.delete_schedule.assert_called_once_with(repo_id, fake_type_id, schedule_id)
+        self.assertEqual(return_value, expected_return_value)
+
+    def test_retrieve_schedules(self):
+        """
+        Test the retrieve_schedules() method.
+        """
+        fake_api = mock.MagicMock()
+        expected_return_value = 'return_value'
+        fake_api.list_schedules = mock.MagicMock(return_value=expected_return_value)
+        fake_type_id = 'fake_type_id'
+        strat = commands.RepoScheduleStrategy(fake_api, fake_type_id)
+        repo_id = 'awesome_repo'
+        kwargs = {OPTION_REPO_ID.keyword: repo_id}
+
+        return_value = strat.retrieve_schedules(kwargs)
+
+        fake_api.list_schedules.assert_called_once_with(repo_id, fake_type_id)
+        self.assertEqual(return_value, expected_return_value)
+
+    def test_update_schedule(self):
+        """
+        Test the update_schedule() method.
+        """
+        fake_api = mock.MagicMock()
+        expected_return_value = 'return_value'
+        fake_api.update_schedule = mock.MagicMock(return_value=expected_return_value)
+        fake_type_id = 'fake_type_id'
+        strat = commands.RepoScheduleStrategy(fake_api, fake_type_id)
+        schedule_id = 'schedule_id'
+        repo_id = 'awesome_repo'
+        other_args = {'a': 1, 'b': 2}
+        kwargs = {OPTION_REPO_ID.keyword: repo_id}
+        kwargs.update(other_args)
+
+        return_value = strat.update_schedule(schedule_id, **kwargs)
+
+        fake_api.update_schedule.assert_called_once_with(repo_id, fake_type_id, schedule_id,
+                                                         **other_args)
+        self.assertEqual(return_value, expected_return_value)
