@@ -355,12 +355,12 @@ class RepoScheduleStrategy(ScheduleStrategy):
         """
         This __init__ method merely stores the api and type_id on self. The api argument should be
         a binding to a PulpAPI that has the following methods: add_schedule, delete_schedule,
-        list_schedules, and update_schedules. The type_id should be an importer's or a distributor's
-        type ID.
+        list_schedules, and update_schedules. Currently, only the SyncAPI and PublishAPI classes offer these
+        method. The type_id should be an importer's or a distributor's type ID.
 
         :param api:     The PulpAPI binding class that this strategy class should wrap.
         :type  api:     pulp.bindings.base.PulpAPI
-        :param type_id: An importer's or a distributor's type ID to be passed to the bindings
+        :param type_id: An importer's or a distributor's ID, to be passed to the api bindings
         :type  type_id: basestring
         """
         super(RepoScheduleStrategy, self).__init__()
