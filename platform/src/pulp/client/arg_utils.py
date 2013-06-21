@@ -182,8 +182,12 @@ def args_to_notes_dict(notes_list, include_none=True):
 
         key = pieces[0]
         value = pieces[1]
+        null_values = (None, '', '""')
 
-        if value in (None, '', '""'):
+        if key in null_values:
+            raise InvalidConfig(_('The key cannot be null'))
+
+        if value in null_values:
             value = None
 
         if value is None and not include_none:
