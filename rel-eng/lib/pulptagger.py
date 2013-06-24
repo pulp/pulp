@@ -114,6 +114,6 @@ class PulpTagger(VersionTagger):
             if match:
                 entry.append(match.group(2).strip())
                 continue
-        if not entry:
+        if len(entry) == 0:
             entry.append(NO_CHANGE_ENTRY)
         return '\n'.join(entry)
