@@ -17,6 +17,7 @@ Utilities for enforcing and parsing command line argument conventions.
 
 from gettext import gettext as _
 
+
 class InvalidConfig(Exception):
     """
     During parsing of the user supplied arguments, this will indicate a
@@ -24,6 +25,7 @@ class InvalidConfig(Exception):
     and i18n'ed to be displayed directly to the user.
     """
     pass
+
 
 def convert_removed_options(args):
     """
@@ -47,8 +49,8 @@ def convert_removed_options(args):
 
     This call will modify the specified args dict in place.
 
-    @param args: key-value pairs to apply removal conventions on.
-    @type  args: dict
+    :param args: key-value pairs to apply removal conventions on.
+    :type  args: dict
     """
 
     # Strip out anything with a None value. The way the parser works, all of
@@ -65,6 +67,7 @@ def convert_removed_options(args):
     for k in convert_keys:
         args[k] = None
 
+
 def convert_boolean_arguments(boolean_keys, args):
     """
     For each given key, if it is in the args dict this call will attempt to convert
@@ -76,14 +79,14 @@ def convert_boolean_arguments(boolean_keys, args):
 
     This call will modify the specified args dict in place.
 
-    @param boolean_keys: list of keys to convert in the given config
-    @type  boolean_keys: list or tuple
+    :param boolean_keys: list of keys to convert in the given config
+    :type  boolean_keys: list or tuple
 
-    @param args: key-value pairs to convert; may include keys not indicated in
+    :param args: key-value pairs to convert; may include keys not indicated in
                  boolean_keys
-    @type  args: dict
+    :type  args: dict
 
-    @raise InvalidConfig: if the value for a supposed boolean key is not parsable
+    :raise InvalidConfig: if the value for a supposed boolean key is not parsable
     """
 
     for key in boolean_keys:
@@ -97,6 +100,7 @@ def convert_boolean_arguments(boolean_keys, args):
         else:
             raise InvalidConfig(_('Value for %(f)s must be either true or false' % {'f' : key}))
 
+
 def convert_file_contents(file_keys, args):
     """
     For each given key, if it is in the args dict this call will attempt to read
@@ -108,14 +112,14 @@ def convert_file_contents(file_keys, args):
 
     This call will modify the specified args dict in place.
 
-    @param file_keys: list of keys to read in as files
-    @type  file_keys: list or tuple
+    :param file_keys: list of keys to read in as files
+    :type  file_keys: list or tuple
 
-    @param args: key-value pairs to convert; may include keys not indicated in
+    :param args: key-value pairs to convert; may include keys not indicated in
                  file_keys
-    @type  args: dict
+    :type  args: dict
 
-    @raise InvalidConfig: if the contents of a file key cannot be read
+    :raise InvalidConfig: if the contents of a file key cannot be read
     """
 
     for key in file_keys:
@@ -127,8 +131,9 @@ def convert_file_contents(file_keys, args):
                 f.close()
 
                 args[key] = contents
-            except:
-                raise InvalidConfig(_('File [%(f)s] cannot be read' % {'f' : filename}))
+            except IOError:
+                raise InvalidConfig(_('File [%(f)s] cannot be read' % {'f': filename}))
+
 
 def arg_to_bool(arg_value):
     """
@@ -137,12 +142,12 @@ def arg_to_bool(arg_value):
     convention, None is returned. The expectation is that the caller will check
     for None and display an appropriate error message.
 
-    @param arg_value: value to parse
-    @type  arg_value: str
+    :param arg_value: value to parse
+    :type  arg_value: str
 
-    @return: boolean equivalent of the user-entered string; None if it cannot
+    :return: boolean equivalent of the user-entered string; None if it cannot
              be parsed
-    @rtype:  bool
+    :rtype:  bool
     """
 
     if arg_value.strip().lower() == 'true':
@@ -151,6 +156,7 @@ def arg_to_bool(arg_value):
         return False
 
     return None
+
 
 def args_to_notes_dict(notes_list, include_none=True):
     """
@@ -166,14 +172,14 @@ def args_to_notes_dict(notes_list, include_none=True):
     :param notes_list: A list of notes in the format 'key=value' to parse to a dict
     :type notes_list: list or tuple
 
-    @param include_none: if true, keys with a value of none will be included
+    :param include_none: if true, keys with a value of none will be included
            in the returned dict; otherwise, only keys with non-none values will
            be present
-    @type  include_none: bool
+    :type  include_none: bool
 
-    @return: dict if one or more notes were specified; None otherwise
+    :return: dict if one or more notes were specified; None otherwise
 
-    @raises InvalidConfig: if one or more of the notes is malformed
+    :raises InvalidConfig: if one or more of the notes is malformed
     """
     # If the argument is already a dict, return it
     if isinstance(notes_list, dict):
@@ -188,8 +194,12 @@ def args_to_notes_dict(notes_list, include_none=True):
 
         key = pieces[0]
         value = pieces[1]
+        null_values = (None, '', '""', '"')
 
-        if value in (None, '', '""'):
+        if key in null_values:
+            raise InvalidConfig(_('Keys cannot be null'))
+
+        if value in null_values:
             value = None
 
         if value is None and not include_none:
