@@ -50,8 +50,8 @@ def parse_notes(value):
 
     try:
         return arg_utils.args_to_notes_dict(value)
-    except arg_utils.InvalidConfig:
-        raise ValueError(_('invalid syntax for specifying notes'))
+    except arg_utils.InvalidConfig, e:
+        raise ValueError(e.args[0])
 
 
 def iso8601(value):
