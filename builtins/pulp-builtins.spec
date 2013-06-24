@@ -98,119 +98,119 @@ client capabilities.
 
 %changelog
 * Mon Jun 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Jun 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Jun 06 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.beta
 - 947445 - allowing consumer ids to allow dots (skarmark@redhat.com)
 - 968543 - remove conditional in pulp_version macro. (jortel@redhat.com)
 
 * Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 24 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.14.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.13.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
 - 950149 - Updated consumer section description after a bunch of stuff was
   moved to type root sections (jason.dobies@redhat.com)
 
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.10.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.9.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.8.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.7.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.6.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
 - 915473 - fixing login api to return a json document with key and certificate
   (skarmark@redhat.com)
 
 * Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
 - 902869 - more robust handling of --force unregistration. (jortel@redhat.com)
 
 * Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
 - 911704 - fixing a typo in the help text for the "event listener http create"
   command (mhrivnak@redhat.com)
 
 * Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.11.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.10.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.9.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.8.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.6.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
 - 882403 - Flushed out the task state to user display mapping as was always the
@@ -227,26 +227,26 @@ client capabilities.
   registered to as well (skarmark@redhat.com)
 
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Dec 19 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Dec 18 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.18.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
 - 882403 - Flushed out the task state to user display mapping as was always the
   intention but never actually came to fruition. (jason.dobies@redhat.com)
 
 * Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.14.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
 - 861383 - more descriptive message on unregister when server does not exist on
@@ -257,7 +257,7 @@ client capabilities.
   both role-id and login cannot be used at the same time (skarmark@redhat.com)
 
 * Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
 - 862290 - Added support in generic list repos command for listing other
@@ -268,16 +268,16 @@ client capabilities.
   registered to as well (skarmark@redhat.com)
 
 * Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.8.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.7.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Nov 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.3.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.2.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.1.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
