@@ -474,35 +474,35 @@ exit 0
   (jason.dobies@redhat.com)
 
 * Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.13.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
 - 923796 - Changed example to not cite a specific command
   (jason.dobies@redhat.com)
 
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.10.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.9.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.8.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.7.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.6.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
 - 952775 - Fixed broken unit filter application when sorted by association
@@ -591,13 +591,13 @@ exit 0
   (jason.connor@gmail.com)
 
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
 - 915795 - Fix logging import statemet in pulp-manage-db. (rbarlow@redhat.com)
 
 * Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
 - 908676 - adding pulp-v1-upgrade-selinux script to enable new selinux policy
@@ -620,30 +620,30 @@ exit 0
   (jason.dobies@redhat.com)
 
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.11.alpha
 - 910419 - added *args and **kwargs to OPTIONS signature to handle regular
   expressions in the url path (jason.connor@gmail.com)
 
 * Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.10.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.9.alpha
 - 906426 - Create the upload directory if someone deletes it
   (jason.dobies@redhat.com)
 
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.8.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.6.alpha
 - 910540 - fix file overlaps in platform packaging. (jortel@redhat.com)
 
 * Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
 - 908510 - Corrected imports to use compat layer (jason.dobies@redhat.com)
@@ -655,7 +655,7 @@ exit 0
   include some mention of puppet modules. (mhrivnak@redhat.com)
 
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
 - 880780 - Added config parsing exception to convey more information in the
@@ -804,20 +804,20 @@ exit 0
 - 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
 
 * Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Dec 19 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Dec 18 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.18.beta
 - 887959 - Removing NameVirtualHost entries from plugin httpd conf files and
   adding it only at one place in main pulp.conf (skarmark@redhat.com)
 
 * Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.16.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
 - 886547 - added check for deleted schedule in scheduled call complete callback
@@ -889,7 +889,7 @@ exit 0
   (jason.connor@gmail.com)
 
 * Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
 - 862290 - Added documentation for the new ListRepositoriesCommand methods
@@ -920,16 +920,16 @@ exit 0
   resolve the server hostname (jason.dobies@redhat.com)
 
 * Mon Nov 26 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.9.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.8.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.7.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.6.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Wed Nov 21 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.5.beta
 - 753680 - Taking this opportunity to quiet the logs a bit too
@@ -938,7 +938,7 @@ exit 0
   (jason.dobies@redhat.com)
 
 * Wed Nov 21 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.4.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Tue Nov 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.3.beta
 - 871858 - Implemented sync and publish status commands
@@ -959,7 +959,7 @@ exit 0
 - 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
 
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.2.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
 
 * Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.1.beta
-- bumped for version and release alignment with other pulp packages
+- Pulp rebuild
