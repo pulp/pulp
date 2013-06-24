@@ -100,7 +100,7 @@ class UpdateCommandTests(base.PulpClientTests):
         kwargs = {OPTION_CONSUMER_ID.keyword: 'test-consumer',
                   OPTION_NAME.keyword: 'Test Consumer',
                   OPTION_DESCRIPTION.keyword: 'Consumer for testing',
-                  OPTION_NOTES.keyword: ['a=a', 'b=b']}
+                  OPTION_NOTES.keyword: {'a': 'a', 'b': 'b'}}
 
         self.command.run(**kwargs)
 

@@ -120,8 +120,7 @@ class ConsumerUpdateCommand(PulpCliCommand):
         delta = dict((k, v) for k, v in kwargs.items() if v is not None)
 
         if OPTION_NOTES.keyword in delta:
-            notes_args = delta.pop(OPTION_NOTES.keyword)
-            delta['notes'] = args_to_notes_dict(notes_args)
+            delta['notes'] = delta.pop(OPTION_NOTES.keyword)
 
         if OPTION_NAME.keyword in delta:
             name = delta.pop(OPTION_NAME.keyword)
