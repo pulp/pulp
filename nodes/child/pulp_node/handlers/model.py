@@ -465,7 +465,7 @@ class DistributorOnChild(ChildEntity, Distributor):
     def update(self, configuration):
         """
         Update this repository-distributor in the child inventory.
-        :param configuration: The configuration that need to be updated.
+        :param configuration: The updated configuration.
         :type configuration: dict
         """
         binding = self.binding.repo_distributor
@@ -554,7 +554,7 @@ class ImporterOnChild(ChildEntity, Importer):
     def update(self, configuration):
         """
         Update this repository-importer in the child inventory.
-        :param configuration: The configuration that need to be updated.
+        :param configuration: The updated configuration.
         :type configuration: dict
         """
         binding = self.binding.repo_importer
