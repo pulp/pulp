@@ -449,11 +449,12 @@ class RepoManager(object):
         @param repo_id: identifies the repo
         @type  repo_id: str
 
-        @param contents: new value to save in the scratchpad; must be anything
-               serializable to the database
+        @param contents: new value to save in the scratchpad; must be a dict.
 
         @raise MissingResource: if there is no repo with repo_id
         """
+        if not isinstance(contents, dict):
+            raise ValueError('scratchpad must be a dict')
 
         repo_coll = Repo.get_collection()
         repo = repo_coll.find_one({'id' : repo_id})
@@ -463,6 +464,21 @@ class RepoManager(object):
 
         repo['scratchpad'] = contents
         repo_coll.save(repo, safe=True)
+
+    def update_scratchpad(self, repo_id, **kwargs):
+        """
+        Update the repository scratchpad with the specified key-value pairs.
+        New keys are added, existing keys are updated.
+        :param repo_id: A repository ID
+        :param kwargs: Keyword arguments used to update the scratchpad.
+        """
+        collection = Repo.get_collection()
+        repository = collection.find_one({'id': repo_id})
+        if repository is None:
+            raise MissingResource(repo_id=repo_id)
+        scratchpad = repository['scratchpad']
+        scratchpad.update(kwargs)
+        collection.save(repository, safe=True)
 
     @staticmethod
     def rebuild_content_unit_counts(repo_ids=None):

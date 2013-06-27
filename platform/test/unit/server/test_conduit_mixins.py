@@ -56,6 +56,13 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         self.assertEqual(mock_call.call_args[0][0], self.repo_id)
         self.assertEqual(mock_call.call_args[0][1], 'foo')
 
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_scratchpad')
+    def test_update_repo_scratchpad(self, mock_call):
+        # Test
+        self.mixin.update_repo_scratchpad(a=1, b=2)
+        # Verify
+        mock_call.assert_called_once_with(self.repo_id, a=1, b=2)
+
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.get_repo_scratchpad')
     def test_set_repo_scratchpad_server_error(self, mock_call):
         # Setup
