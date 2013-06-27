@@ -544,7 +544,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         Tests scratchpad calls for a repo that doesn't exist.
         """
         self.assertRaises(exceptions.MissingResource, self.manager.get_repo_scratchpad, 'foo')
-        self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', 'bar')
+        self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', {})
 
     def test_update_scratchpad(self):
         repo_id = 'scratch-test'
