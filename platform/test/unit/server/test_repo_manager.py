@@ -536,6 +536,9 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         value = self.manager.get_repo_scratchpad(repo_id)
         self.assertEqual(new_value, value)
 
+        # Test - value error
+        self.assertRaises(ValueError, self.manager.set_repo_scratchpad, repo_id, 'bar')
+
     def test_get_set_scratchpad_missing_repo(self):
         """
         Tests scratchpad calls for a repo that doesn't exist.
