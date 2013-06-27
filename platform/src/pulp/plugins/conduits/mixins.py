@@ -95,16 +95,15 @@ class RepoScratchPadMixin(object):
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
-    def update_repo_scratchpad(self, **kwargs):
+    def update_repo_scratchpad(self, scratchpad):
         """
         Update the repository scratchpad with the specified key-value pairs.
         New keys are added; existing keys are updated.
-        :param repo_id: A repository ID
-        :param kwargs: Keyword arguments used to update the scratchpad.
+        :param scratchpad: a dict used to update the scratchpad.
         """
         try:
             manager = manager_factory.repo_manager()
-            manager.update_scratchpad(self.repo_id, **kwargs)
+            manager.update_scratchpad(self.repo_id, scratchpad)
         except Exception, e:
             msg = _('Error updating repository scratchpad for repo [%(r)s]') % {'r': self.repo_id}
             _LOG.exception(msg)

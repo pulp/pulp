@@ -465,19 +465,20 @@ class RepoManager(object):
         repo['scratchpad'] = contents
         repo_coll.save(repo, safe=True)
 
-    def update_scratchpad(self, repo_id, **kwargs):
+    def update_scratchpad(self, repo_id, scratchpad):
         """
         Update the repository scratchpad with the specified key-value pairs.
         New keys are added, existing keys are updated.
         :param repo_id: A repository ID
-        :param kwargs: Keyword arguments used to update the scratchpad.
+        :type repo_id: str
+        :param scratchpad: a dict used to update the scratchpad.
+        :type scratchpad: dict
         """
         collection = Repo.get_collection()
         repository = collection.find_one({'id': repo_id})
         if repository is None:
             raise MissingResource(repo_id=repo_id)
-        scratchpad = repository['scratchpad']
-        scratchpad.update(kwargs)
+        repository['scratchpad'].update(scratchpad)
         collection.save(repository, safe=True)
 
     @staticmethod
