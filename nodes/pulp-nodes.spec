@@ -17,8 +17,8 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: 2.1.2
-Release: 1%{?dist}
+Version: 2.1.3
+Release: 0.1.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -259,6 +259,9 @@ fi
 
 
 %changelog
+* Thu Jun 27 2013 Jeff Ortel <jortel@redhat.com> 2.1.3-0.1.beta
+- Pulp rebuild.
+
 * Tue Jun 18 2013 Jeff Ortel <jortel@redhat.com> 2.1.2-1
 - 
 
