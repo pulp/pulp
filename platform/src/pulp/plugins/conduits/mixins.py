@@ -103,7 +103,7 @@ class RepoScratchPadMixin(object):
         """
         try:
             manager = manager_factory.repo_manager()
-            manager.update_scratchpad(self.repo_id, scratchpad)
+            manager.update_repo_scratchpad(self.repo_id, scratchpad)
         except Exception, e:
             msg = _('Error updating repository scratchpad for repo [%(r)s]') % {'r': self.repo_id}
             _LOG.exception(msg)

@@ -57,7 +57,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         self.assertEqual(mock_call.call_args[0][0], self.repo_id)
         self.assertEqual(mock_call.call_args[0][1], scratchpad)
 
-    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_scratchpad')
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_repo_scratchpad')
     def test_update_repo_scratchpad(self, mock_call):
         scratchpad = dict(a=1, b=2)
         # Test
