@@ -52,20 +52,20 @@ class RepoManager(object):
         Creates a new Pulp repository that is not associated with any importers
         or distributors (those are added later through separate calls).
 
-        @param repo_id: unique identifier for the repo
-        @type  repo_id: str
+        :param repo_id: unique identifier for the repo
+        :type  repo_id: str
 
-        @param display_name: user-friendly name for the repo
-        @type  display_name: str
+        :param display_name: user-friendly name for the repo
+        :type  display_name: str
 
-        @param description: user-friendly text describing the repo's contents
-        @type  description: str
+        :param description: user-friendly text describing the repo's contents
+        :type  description: str
 
-        @param notes: key-value pairs to programmatically tag the repo
-        @type  notes: dict
+        :param notes: key-value pairs to programmatically tag the repo
+        :type  notes: dict
 
-        @raise DuplicateResource: if there is already a repo with the requested ID
-        @raise InvalidValue: if any of the fields are unacceptable
+        :raise DuplicateResource: if there is already a repo with the requested ID
+        :raise InvalidValue: if any of the fields are unacceptable
         """
 
         existing_repo = Repo.get_collection().find_one({'id' : repo_id})
@@ -114,28 +114,28 @@ class RepoManager(object):
           distributor_id - used to refer to the distributor later; if omitted,
                            one will be generated
 
-        @param repo_id: unique identifier for the repo
-        @type  repo_id: str
+        :param repo_id: unique identifier for the repo
+        :type  repo_id: str
 
-        @param display_name: user-friendly name for the repo
-        @type  display_name: str
+        :param display_name: user-friendly name for the repo
+        :type  display_name: str
 
-        @param description: user-friendly text describing the repo's contents
-        @type  description: str
+        :param description: user-friendly text describing the repo's contents
+        :type  description: str
 
-        @param notes: key-value pairs to programmatically tag the repo
-        @type  notes: dict
+        :param notes: key-value pairs to programmatically tag the repo
+        :type  notes: dict
 
-        @param importer_type_id: if specified, an importer with this type ID will
+        :param importer_type_id: if specified, an importer with this type ID will
                be added to the repo
-        @type  importer_type_id: str
+        :type  importer_type_id: str
 
-        @param distributor_list: list of dicts describing the distributors to
+        :param distributor_list: list of dicts describing the distributors to
                add; more details in the docstring above
-        @type  distributor_list: list
+        :type  distributor_list: list
 
-        @raise DuplicateResource: if there is already a repo with the requested ID
-        @raise InvalidValue: if any of the non-ID fields is unacceptable
+        :raise DuplicateResource: if there is already a repo with the requested ID
+        :raise InvalidValue: if any of the non-ID fields is unacceptable
         """
 
         # Let any exceptions out of this call simply bubble up, there's nothing
@@ -187,11 +187,11 @@ class RepoManager(object):
         Deletes the given repository, optionally requesting the associated
         importer clean up any content in the repository.
 
-        @param repo_id: identifies the repo being deleted
-        @type  repo_id: str
+        :param repo_id: identifies the repo being deleted
+        :type  repo_id: str
 
-        @raise MissingResource: if the given repo does not exist
-        @raise OperationFailed: if any part of the delete process fails;
+        :raise MissingResource: if the given repo does not exist
+        :raise OperationFailed: if any part of the delete process fails;
                the exception will contain information on which sections failed
         """
 
@@ -287,13 +287,13 @@ class RepoManager(object):
 
         Other fields found in delta will be ignored.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @param delta: list of attributes and their new values to change
-        @type  delta: dict
+        :param delta: list of attributes and their new values to change
+        :type  delta: dict
 
-        @raise MissingResource: if there is no repo with repo_id
+        :raise MissingResource: if there is no repo with repo_id
         """
 
         repo_coll = Repo.get_collection()
@@ -343,14 +343,14 @@ class RepoManager(object):
 
         {'rpm': 12, 'srpm': 3}
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @param unit_type_id: identifies the unit type to update
-        @type  unit_type_id: str
+        :param unit_type_id: identifies the unit type to update
+        :type  unit_type_id: str
 
-        @param delta: amount by which to change the total count
-        @type  delta: int
+        :param delta: amount by which to change the total count
+        :type  delta: int
         """
         spec = {'id' : repo_id}
         operation = {'$inc' : {'content_unit_counts.%s' % unit_type_id: delta}}
@@ -386,22 +386,22 @@ class RepoManager(object):
         those methods, especially possible exceptions, should be consulted for
         more information.
 
-        @param repo_id: unique identifier for the repo
-        @type  repo_id: str
+        :param repo_id: unique identifier for the repo
+        :type  repo_id: str
 
-        @param repo_delta: list of attributes and their new values to change;
+        :param repo_delta: list of attributes and their new values to change;
                if None, no attempt to update the repo's metadata will be made
-        @type  repo_delta: dict, None
+        :type  repo_delta: dict, None
 
-        @param importer_config: new configuration to use for the repo's importer;
+        :param importer_config: new configuration to use for the repo's importer;
                if None, no attempt will be made to update the importer
-        @type  importer_config: dict, None
+        :type  importer_config: dict, None
 
-        @param distributor_configs: mapping of distributor ID to the new configuration
+        :param distributor_configs: mapping of distributor ID to the new configuration
                to set for it
-        @type  distributor_configs: dict, None
+        :type  distributor_configs: dict, None
 
-        @return: updated repository object, same as returned from update_repo
+        :return: updated repository object, same as returned from update_repo
         """
 
         # Repo Update
@@ -426,10 +426,10 @@ class RepoManager(object):
         """
         Retrieves the contents of the given repository's scratchpad.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @raise MissingResource: if there is no repo with repo_id
+        :raise MissingResource: if there is no repo with repo_id
         """
 
         repo_coll = Repo.get_collection()
@@ -440,29 +440,47 @@ class RepoManager(object):
 
         return dict(repo['scratchpad'])
 
-    def set_repo_scratchpad(self, repo_id, contents):
+    def set_repo_scratchpad(self, repo_id, scratchpad):
         """
         Saves the given contents to the repository's scratchpad. There is no
         attempt to merge in the provided with the current scratchpad, it is
-        simply overridden.
+        simply overridden.  When possible, use update_scratchpad() instead.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @param contents: new value to save in the scratchpad; must be anything
-               serializable to the database
+        :param scratchpad: new value to save in the scratchpad; must be a dict.
 
-        @raise MissingResource: if there is no repo with repo_id
+        :raise MissingResource: if there is no repo with repo_id
         """
+        if not isinstance(scratchpad, dict):
+            raise ValueError('scratchpad must be a dict')
+        collection = Repo.get_collection()
+        result = collection.update({'id': repo_id}, {'$set': {'scratchpad': scratchpad}}, safe=True)
+        if result['n'] == 0:
+            raise MissingResource(repo_id=repo_id)
 
-        repo_coll = Repo.get_collection()
-        repo = repo_coll.find_one({'id' : repo_id})
+    def update_repo_scratchpad(self, repo_id, scratchpad):
+        """
+        Update the repository scratchpad with the specified key-value pairs.
+        New keys are added, existing keys are updated.
 
-        if repo is None:
-            raise MissingResource(repo_id)
+        :param repo_id: A repository ID
+        :type repo_id: str
 
-        repo['scratchpad'] = contents
-        repo_coll.save(repo, safe=True)
+        :param scratchpad: a dict used to update the scratchpad.
+        :type scratchpad: dict
+
+        :raise MissingResource: if there is no repo with repo_id
+        """
+        properties = {}
+        for k, v in scratchpad.items():
+            key = 'scratchpad.%s' % k
+            properties[key] = v
+        collection = Repo.get_collection()
+        result = collection.update({'id': repo_id}, {'$set': properties}, safe=True)
+        if result['n'] == 0:
+            raise MissingResource(repo_id=repo_id)
 
     @staticmethod
     def rebuild_content_unit_counts(repo_ids=None):
@@ -505,8 +523,8 @@ class RepoManager(object):
 
 def is_repo_id_valid(repo_id):
     """
-    @return: true if the repo ID is valid; false otherwise
-    @rtype:  bool
+    :return: true if the repo ID is valid; false otherwise
+    :rtype:  bool
     """
     result = _REPO_ID_REGEX.match(repo_id) is not None
     return result
