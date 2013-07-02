@@ -43,6 +43,7 @@ args = [
     TESTS,
     BUILTIN_TESTS,
     DEVEL_TESTS,
+    'platform/test/upgrade',
 ]
 
 # don't run the server tests in RHEL5.

@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from copy import deepcopy
 import datetime
 
 from pulp.server.db.model.base import Model
@@ -131,13 +132,33 @@ class Bind(Model):
 
 class UnitProfile(Model):
     """
-    Represents an install content unit profile.
-    @ivar consumer_id: A consumer ID.
-    @type consumer_id: str
-    @ivar content_type: The profile (unit) type ID.
-    @type content_type: str
-    @ivar profile: The stored profile.
-    @type profile: dict
+    Represents a consumer profile, which is a data structure that records which content is installed
+    on a particular consumer for a particular type.
+
+    Due to the nature of the data conversion used to generate a profile's hash, it is impossible for
+    Pulp to know if the ordering of list structures found in the profile are significant or
+    not. Therefore, the hash of a list must assume that the ordering of the list is significant. The
+    SON objects that Pulp stores in the database cannot contain Python sets.
+
+    It is up to the plugin Profilers to handle this limitation if they wish to store lists in
+    the database in such a way that the order shouldn't matter for hash comparison purposes. In
+    these cases, the Profiler must order the list in some repeatable manner, so that any two
+    profiles that it wants the platform to consider as being the same will have exactly the same
+    ordering to those lists.
+
+    For example, the RPM profile contains a list of dictionaries, where each dictionary contains
+    information about RPMs stored on a consumer. The order of the list is not important for the
+    purpose of determining what is installed on the system - it might as well be a set. However,
+    since a set cannot be stored in MongoDB, it is up to the RPM Profiler to sort the list of
+    installed RPMs in some repeatable fashion, such that any two consumers that have exactly the
+    same RPMs installed will end up with the same ordering of their RPMs in the database.
+
+    :ivar consumer_id:  A consumer ID.
+    :type consumer_id:  str
+    :ivar content_type: The profile (unit) type ID.
+    :type content_type: str
+    :ivar profile:      The stored profile.
+    :type profile:      object
     """
 
     collection_name = 'consumer_unit_profiles'
@@ -145,19 +166,66 @@ class UnitProfile(Model):
         ('consumer_id', 'content_type'),
     )
 
+    def __hash__(self):
+        """
+        Return a custom hash of self.profile. Since self.profile can be any serializable type, and
+        since not all serializable types are hashable, this method converts the profile to a
+        hashable representation of the profile, and then hashes that. This hash is useful for
+        quickly comparing profiles to determine if they are the same.
+
+        :return: Hash of self.profile
+        :rtype:  int
+        """
+        hashable_profile = self._convert_to_hashable(self.profile)
+        return hash(hashable_profile)
+
     def __init__(self, consumer_id, content_type, profile):
         """
-        @param consumer_id: A consumer ID.
-        @type consumer_id: str
-        @param content_type: The profile (unit) type ID.
-        @type content_type: str
-        @param profile: The stored profile.
-        @type profile: dict
+        :param consumer_id:  A consumer ID.
+        :type consumer_id:   str
+        :param content_type: The profile (unit) type ID.
+        :type content_type:  str
+        :param profile:      The stored profile.
+        :type profile:       object
         """
         super(UnitProfile, self).__init__()
         self.consumer_id = consumer_id
         self.content_type = content_type
         self.profile = profile
+
+    @staticmethod
+    def _convert_to_hashable(unhashable_object):
+        """
+        This method will convert the profile attribute of the UnitProfile into a hashable
+        representation. It will traverse list, tuple, or dictionary structures, ensuring that all
+        the types represented in them are also converted to hashable types.
+
+        Lists will be converted to tuples. Dictionaries will be converted into frozensets of tuples,
+        representing the keys and values found in them. Only lists and dicts get converted.
+
+        Note that this method does not attempt to convert any possible type, but only those
+        explicitly documented above. All types that are the Python equivalent of the allowed JSON
+        types[0] are supported, though not all are converted.
+
+        [0] int, float, str, bool, None, list, dict
+
+        :param unhashable_object: Some object that is not hashable that you need a hashable
+                                  representation of
+        :type  unhashable_object: object
+        :return:                  A hashable representation of self.profile
+        :rtype:                   object
+        """
+        unhashable_object = deepcopy(unhashable_object)
+        if isinstance(unhashable_object, tuple) or isinstance(unhashable_object, list):
+            unhashable_object = list(unhashable_object)
+            for i, item in enumerate(unhashable_object):
+                unhashable_object[i] = UnitProfile._convert_to_hashable(item)
+            unhashable_object = tuple(unhashable_object)
+        elif isinstance(unhashable_object, dict):
+            for key, value in unhashable_object.items():
+                unhashable_object[key] = UnitProfile._convert_to_hashable(value)
+            unhashable_object = frozenset(unhashable_object.items())
+        return unhashable_object
 
 
 class ConsumerHistoryEvent(Model):
