@@ -21,6 +21,7 @@ from tito.common import error_out
 BUGZILLA_REGEX = re.compile('([0-9]+\s+\-\s+)(.+)')
 FEATURE_REGEX = re.compile('([\-]\s+)(.+)')
 EMBEDDED_REGEX = re.compile('(\[\[)([^$]+)(\]\])')
+PULP_REBUILD = 'Pulp rebuild'
 
 # version and release
 VERSION_REGEX = re.compile("^(version:\s*)(.+)$", re.IGNORECASE)
@@ -113,4 +114,6 @@ class PulpTagger(VersionTagger):
             if match:
                 entry.append(match.group(2).strip())
                 continue
+        if len(entry) == 0:
+            entry.append(PULP_REBUILD)
         return '\n'.join(entry)
