@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.2.0
-Release: 0.17.beta%{?dist}
+Release: 0.18.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -253,6 +253,9 @@ fi
 
 
 %changelog
+* Wed Jul 03 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.18.beta
+- Pulp rebuild
+
 * Wed Jul 03 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.17.beta
 - 977948 - fix distributor updating during node sync. (jortel@redhat.com)
 - purge changelog
