@@ -25,7 +25,7 @@ URL: http://createrepo.baseurl.org/
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArchitectures: noarch
 Requires: python >= 2.1, rpm-python, rpm >= 4.1.1, libxml2-python
-Requires: yum-metadata-parser, yum >= 3.4.3-4, python-deltarpm, deltarpm, pyliblzma
+Requires: yum-metadata-parser, yum >= 3.2.29-40, python-deltarpm, deltarpm, pyliblzma
 BuildRequires: python
 
 %description
