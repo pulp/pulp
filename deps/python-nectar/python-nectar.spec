@@ -47,6 +47,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Jul 03 2013 Jeff Ortel <jortel@redhat.com> 0.99-2
+- update nectar in deps/ from upstream. (jortel@redhat.com)
+
+* Wed Jul 03 2013 Jeff Ortel <jortel@redhat.com> 0.99-2
 - 979582 - nectar now compensates for servers that send an incorrect content-
   encoding header for files that are gzipped. (mhrivnak@redhat.com)
 
