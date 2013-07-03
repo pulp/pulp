@@ -233,7 +233,8 @@ class RepositoryDistributorAPI(PulpAPI):
 
     def update(self, repo_id, distributor_id, distributor_config):
         path = self.base_path % repo_id + "%s/" % distributor_id
-        return self.server.PUT(path, distributor_config)
+        body = dict(distributor_config=distributor_config)
+        return self.server.PUT(path, body)
 
 
 class RepositoryHistoryAPI(PulpAPI):
