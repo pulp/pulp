@@ -19,8 +19,8 @@ from pulp.client import arg_utils
 
 class TestConvertRemovedOptions(unittest.TestCase):
     """
-    Tests pulp.client.arg_utils.convert_removed_options, which strips out any keys with a None value, and then converts
-    any keys with a value of "" to None
+    Tests pulp.client.arg_utils.convert_removed_options, which strips out any keys with a None value,
+    and then converts any keys with a value of "" to None
     """
 
     def test_non_empty_values(self):
@@ -51,8 +51,8 @@ class TestConvertRemovedOptions(unittest.TestCase):
 
 class TestConvertBooleanArguments(unittest.TestCase):
     """
-    Tests pulp.client.arg_utils.convert_boolean_arguments, which takes a list or tuple of keys, and an args dict, which
-    is then converted from strings to boolean values
+    Tests pulp.client.arg_utils.convert_boolean_arguments, which takes a list or tuple of keys, and an
+    args dict, which is then converted from strings to boolean values
     """
 
     def test_valid_input(self):
@@ -88,7 +88,8 @@ class TestConvertBooleanArguments(unittest.TestCase):
 
     def test_non_boolean_values(self):
         """
-        Tests that when a value that can't be converted to true or false is given, an arg_utils.InvalidConfig is raised
+        Tests that when a value that can't be converted to true or false is given, an
+        arg_utils.InvalidConfig is raised
         """
         # Setup
         key_list = ['key1', 'key2']
@@ -119,7 +120,7 @@ class TestConvertFileContents(unittest.TestCase):
         mock_file.read.return_value = 'Fake return to a read call'
         mock_open.return_value = mock_file
 
-        # Call convert_file_contents and assert open was called 3 times with the correct filename each time
+        # Call convert_file_contents and assert open was called 3 times with the correct filename
         arg_utils.convert_file_contents(file_keys, args)
         self.assertEqual(2, mock_open.call_count)
         self.assertEqual(mock_open.call_args_list[0][0], ('filename1',))
@@ -256,3 +257,14 @@ class TestArgsToNotesDict(unittest.TestCase):
 
         # Assert all the notes in the test list raise exceptions
         self.assertRaises(arg_utils.InvalidConfig, arg_utils.args_to_notes_dict, test_list)
+
+    def test_dict_arg(self):
+        """
+        Tests to make sure that attempting to parse a dict returns the dict
+        """
+        # Setup
+        test_dict = {'key': 'value', 'key2': 'value2'}
+
+        # Test
+        result = arg_utils.args_to_notes_dict(test_dict)
+        self.assertTrue(test_dict is result)
