@@ -153,12 +153,12 @@ class UnitProfile(Model):
     installed RPMs in some repeatable fashion, such that any two consumers that have exactly the
     same RPMs installed will end up with the same ordering of their RPMs in the database.
 
-    :ivar consumer_id:  A consumer ID.
-    :type consumer_id:  str
-    :ivar content_type: The profile (unit) type ID.
-    :type content_type: str
-    :ivar profile:      The stored profile.
-    :type profile:      object
+    :param consumer_id:  A consumer ID.
+    :type  consumer_id:  str
+    :param content_type: The profile (unit) type ID.
+    :type  content_type: str
+    :param profile:      The stored profile.
+    :type  profile:      object
     """
 
     collection_name = 'consumer_unit_profiles'
@@ -182,11 +182,11 @@ class UnitProfile(Model):
     def __init__(self, consumer_id, content_type, profile):
         """
         :param consumer_id:  A consumer ID.
-        :type consumer_id:   str
+        :type  consumer_id:  str
         :param content_type: The profile (unit) type ID.
-        :type content_type:  str
+        :type  content_type: str
         :param profile:      The stored profile.
-        :type profile:       object
+        :type  profile:      object
         """
         super(UnitProfile, self).__init__()
         self.consumer_id = consumer_id
