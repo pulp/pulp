@@ -15,7 +15,6 @@ import os
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.commands.options import (
     OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES)
 from pulp.client.consumer_utils import load_consumer_id

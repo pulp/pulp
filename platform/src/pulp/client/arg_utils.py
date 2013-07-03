@@ -169,9 +169,9 @@ def args_to_notes_dict(notes_list, include_none=True):
     typically gotten by specifying allow_multiple in the option definition.
 
     The return value will be a dict with entries for each key/value pair parsed.
+
     :param notes_list: A list of notes in the format 'key=value' to parse to a dict
     :type notes_list: list or tuple
-
     :param include_none: if true, keys with a value of none will be included
            in the returned dict; otherwise, only keys with non-none values will
            be present
