@@ -179,7 +179,7 @@ class UnitProfile(Model):
         hashable_profile = self._convert_to_hashable(self.profile)
         return hash(hashable_profile)
 
-    def __init__(self, consumer_id, content_type, profile):
+    def __init__(self, consumer_id, content_type, profile, profile_hash=None):
         """
         :param consumer_id:  A consumer ID.
         :type  consumer_id:  str
@@ -192,6 +192,10 @@ class UnitProfile(Model):
         self.consumer_id = consumer_id
         self.content_type = content_type
         self.profile = profile
+        self.profile_hash = profile_hash
+
+        if self.profile_hash is None:
+            self.profile_hash = hash(self)
 
     @staticmethod
     def _convert_to_hashable(unhashable_object):
