@@ -125,6 +125,23 @@ class TestUnitProfile(unittest.TestCase):
         self.assertEqual(profile.consumer_id, 'consumer_id')
         self.assertEqual(profile.content_type, 'content_type')
         self.assertEqual(profile.profile, 'profile')
+        self.assertEqual(profile.profile_hash, hash(profile.profile))
+
+        # The superclass __init__ should have been called
+        __init__.assert_called_once_with(profile)
+
+    @mock.patch('pulp.server.db.model.consumer.Model.__init__', side_effect=consumer.Model.__init__,
+                autospec=True)
+    def test___init___with_hash(self, __init__):
+        """
+        Test the constructor, passing the optional profile_hash
+        """
+        profile = consumer.UnitProfile('consumer_id', 'content_type', 'profile', 'profile_hash')
+
+        self.assertEqual(profile.consumer_id, 'consumer_id')
+        self.assertEqual(profile.content_type, 'content_type')
+        self.assertEqual(profile.profile, 'profile')
+        self.assertEqual(profile.profile_hash, 'profile_hash')
 
         # The superclass __init__ should have been called
         __init__.assert_called_once_with(profile)
