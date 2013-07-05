@@ -289,18 +289,20 @@ class BindManager(object):
         @type force: bool
         """
         collection = Bind.get_collection()
+        bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
         if not force:
             query = {
-                'consumer_actions.status':{
-                    '$in':[Bind.Status.PENDING, Bind.Status.FAILED]}
+                '$and': [
+                    bind_id,
+                    {'consumer_actions.status': {'$in': [Bind.Status.PENDING, Bind.Status.FAILED]}}
+                ]
             }
             pending = collection.find(query)
             if len(list(pending)):
                 raise Exception, 'outstanding actions, not deleted'
-        query = self.bind_id(consumer_id, repo_id, distributor_id)
         if not force:
-            query['deleted'] = True
-        collection.remove(query, safe=True)
+            bind_id['deleted'] = True
+        collection.remove(bind_id, safe=True)
 
 # --- consumer actions -------------------------------------------------------------------
 

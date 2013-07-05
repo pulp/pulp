@@ -31,6 +31,7 @@ import logging
 
 from pulp.client import parsers
 from pulp.client.arg_utils import convert_boolean_arguments, convert_removed_options
+from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client.validators import interval_iso6801_validator
 
@@ -342,3 +343,48 @@ class ScheduleStrategy(object):
         @rtype:  Response
         """
         raise NotImplementedError()
+
+
+class RepoScheduleStrategy(ScheduleStrategy):
+    """
+    This is a ScheduleStrategy that wraps repository API bindings.
+
+    Please see ScheduleStrategy for the method documentation.
+    """
+    def __init__(self, api, type_id):
+        """
+        This __init__ method merely stores the api and type_id on self. The api argument should be
+        a binding to a PulpAPI that has the following methods: add_schedule, delete_schedule,
+        list_schedules, and update_schedules. Currently, only the SyncAPI and PublishAPI classes offer these
+        method. The type_id should be an importer's or a distributor's type ID.
+
+        :param api:     The PulpAPI binding class that this strategy class should wrap.
+        :type  api:     pulp.bindings.base.PulpAPI
+        :param type_id: An importer's or a distributor's ID, to be passed to the api bindings
+        :type  type_id: basestring
+        """
+        super(RepoScheduleStrategy, self).__init__()
+        self.api = api
+        self.type_id = type_id
+
+    def create_schedule(self, schedule, failure_threshold, enabled, kwargs):
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+
+        # Eventually we'll support passing in sync arguments to the scheduled
+        # call. When we do, override_config will be created here from kwargs.
+        override_config = {}
+
+        return self.api.add_schedule(repo_id, self.type_id, schedule, override_config,
+                                      failure_threshold, enabled)
+
+    def delete_schedule(self, schedule_id, kwargs):
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+        return self.api.delete_schedule(repo_id, self.type_id, schedule_id)
+
+    def retrieve_schedules(self, kwargs):
+        repo_id = kwargs[OPTION_REPO_ID.keyword]
+        return self.api.list_schedules(repo_id, self.type_id)
+
+    def update_schedule(self, schedule_id, **kwargs):
+        repo_id = kwargs.pop(OPTION_REPO_ID.keyword)
+        return self.api.update_schedule(repo_id, self.type_id, schedule_id, **kwargs)

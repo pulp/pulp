@@ -15,7 +15,6 @@ import os
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
-from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.commands.options import (
     OPTION_CONSUMER_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES)
 from pulp.client.consumer_utils import load_consumer_id
@@ -120,8 +119,7 @@ class ConsumerUpdateCommand(PulpCliCommand):
         delta = dict((k, v) for k, v in kwargs.items() if v is not None)
 
         if OPTION_NOTES.keyword in delta:
-            notes_args = delta.pop(OPTION_NOTES.keyword)
-            delta['notes'] = args_to_notes_dict(notes_args)
+            delta['notes'] = delta.pop(OPTION_NOTES.keyword)
 
         if OPTION_NAME.keyword in delta:
             name = delta.pop(OPTION_NAME.keyword)

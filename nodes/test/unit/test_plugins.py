@@ -56,6 +56,7 @@ from pulp_node import constants
 
 
 FAKE_DISTRIBUTOR = 'test_distributor'
+FAKE_DISTRIBUTOR_CONFIG = {'A': 0}
 
 
 # --- testing mock classes ---------------------------------------------------
@@ -159,7 +160,7 @@ class PluginTestBase(WebTest):
         imp_conf = dict(strategy=constants.MIRROR_STRATEGY)
         plugin_api._MANAGER.importers.add_plugin(constants.HTTP_IMPORTER, NodesHttpImporter, imp_conf)
         plugin_api._MANAGER.distributors.add_plugin(constants.HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
-        plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, {})
+        plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
         unit_db.type_definition = \
             Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
@@ -637,13 +638,19 @@ class TestEndToEnd(PluginTestBase):
             dist_conf,
             False,
             constants.HTTP_DISTRIBUTOR)
-        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, {}, False, FAKE_DISTRIBUTOR)
+        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, FAKE_DISTRIBUTOR_CONFIG, False, FAKE_DISTRIBUTOR)
         # bind
         conf = {constants.STRATEGY_KEYWORD: strategy}
         manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
 
-    def clean(self, repo=True, units=True, plugins=False, extra_units=0, extra_repos=None):
+    def clean(self,
+              repo=True,
+              units=True,
+              plugins=False,
+              extra_units=0,
+              extra_repos=None,
+              dist_config=None):
         # remove repository & bindings
         if repo:
             Bind.get_collection().remove()
@@ -662,6 +669,10 @@ class TestEndToEnd(PluginTestBase):
             manager = managers.repo_manager()
             for repo_id in extra_repos:
                 manager.create_repo(repo_id)
+        # distributor config changed
+        if dist_config is not None:
+            manager = managers.repo_distributor_manager()
+            manager.update_distributor_config(self.REPO_ID, FAKE_DISTRIBUTOR, dist_config)
         # clear pulp plugins
         if plugins:
             plugin_api._MANAGER.distributors.plugins = {}
@@ -891,6 +902,55 @@ class TestEndToEnd(PluginTestBase):
         self.verify()
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_merge_dist_changed(self, unused):
+        """
+        Test end-to-end functionality using the mirror strategy. We don't clean the repositories
+        to they will be merged instead of added as new.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy',
+               return_value=MirrorTestStrategy(self, repo=False, units=True, dist_config={'A': 1}))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            handler = NodeHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.MERGED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+        self.verify()
+        path = os.path.join(self.childfs, 'parent', 'client.crt')
+        self.assertTrue(os.path.exists(path))
+        manager = managers.repo_distributor_manager()
+        dist = manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
+        self.assertEqual(dist['config'], FAKE_DISTRIBUTOR_CONFIG)
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_and_delete_extra_units(self, unused):
