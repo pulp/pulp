@@ -16,7 +16,7 @@ import mock
 import base
 
 from pulp.bindings.responses import (Task, Response, STATE_RUNNING, STATE_WAITING,
-    STATE_FINISHED, RESPONSE_REJECTED, RESPONSE_POSTPONED)
+    STATE_FINISHED, RESPONSE_REJECTED, RESPONSE_POSTPONED, STATE_ERROR)
 from pulp.client.commands.repo.status import status
 
 # -- constants ----------------------------------------------------------------
@@ -129,8 +129,7 @@ class StatusTests(base.PulpClientTests):
         self.config['output']['poll_frequency_in_seconds'] = 0 # no need to wait
 
         # Make a mock spinner to track that it's called for each wait
-        mock_spinner = mock.MagicMock()
-        mock_create.return_value = mock_spinner
+        mock_spinner = mock_create.return_value
 
         # Side effect call to simulate polling a number of times before it completes
         def poll(task_id):
@@ -161,6 +160,48 @@ class StatusTests(base.PulpClientTests):
         self.assertEqual(13, mock_get.call_count)
         self.assertEqual(2, mock_spinner.next.call_count)
         self.assertEqual(11, self.renderer.display_report.call_count)
+
+    @mock.patch('sys.exit', autospec=True)
+    @mock.patch('pulp.bindings.tasks.TasksAPI.get_task')
+    @mock.patch('pulp.client.extensions.core.PulpPrompt.create_spinner')
+    def test_internal_display_task_status_failed(self, mock_create, mock_get, mock_exit):
+        # Setup
+        self.config['output']['poll_frequency_in_seconds'] = 0 # no need to wait
+
+        # Make a mock spinner to track that it's called for each wait
+        mock_spinner = mock_create.return_value
+
+        # Side effect call to simulate polling a number of times before it completes
+        def poll(task_id):
+            task = Task(TASK_TEMPLATE)
+
+            # Wait for the first 2 polls
+            if mock_get.call_count < 3:
+                task.state = STATE_WAITING
+
+            # Running for the next 10
+            elif mock_get.call_count < 13:
+                task.state = STATE_RUNNING
+
+            # Finally finish
+            else:
+                task.state = STATE_ERROR
+
+            return Response(200, task)
+
+        mock_get.side_effect = poll
+
+        self.task_id = 'ro'
+
+        # Test
+        status._display_task_status(self.context, self.renderer, self.task_id)
+
+        # Verify
+        self.assertEqual(13, mock_get.call_count)
+        self.assertEqual(2, mock_spinner.next.call_count)
+        self.assertEqual(11, self.renderer.display_report.call_count)
+
+        mock_exit.assert_called_once_with(1)
 
     @mock.patch('pulp.bindings.tasks.TasksAPI.get_task')
     @mock.patch('pulp.client.commands.repo.status.status._display_status')
