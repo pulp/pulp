@@ -59,6 +59,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
+* Mon Jul 08 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21.1.pulp
+- 976568, 981676 - verified campat with yum version included in RHEL 6.4;
+  downgrading dependency. (jortel@redhat.com)
 * Wed May 29 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21
 - 968535 - rebase using version f18/f19 version; includes fix for bz:950724.
   (jortel@redhat.com)
