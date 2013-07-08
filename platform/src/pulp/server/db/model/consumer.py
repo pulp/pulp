@@ -205,8 +205,7 @@ class UnitProfile(Model):
         """
         # Don't use any whitespace in the json separators, and sort dictionary keys to be repeatable
         serialized_profile = json.dumps(profile, separators=(',', ':'), sort_keys=True)
-        hasher = hashlib.sha256()
-        hasher.update(serialized_profile)
+        hasher = hashlib.sha256(serialized_profile)
         return hasher.hexdigest()
 
 
