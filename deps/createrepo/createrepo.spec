@@ -15,7 +15,7 @@ BuildRequires: bash-completion
 Summary: Creates a common metadata repository
 Name: createrepo
 Version: 0.9.9
-Release: 21%{?dist}
+Release: 21.1.pulp%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: %{name}-%{version}.tar.gz
