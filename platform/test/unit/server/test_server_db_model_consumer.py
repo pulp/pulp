@@ -104,6 +104,37 @@ class TestUnitProfile(unittest.TestCase):
         self.assertEqual(consumer.UnitProfile.calculate_hash(profile_1.profile),
                          consumer.UnitProfile.calculate_hash(profile_2.profile))
 
+    def test_calculate_hash_non_ascii_identical_profiles(self):
+        """
+        Test that the hashes of two identical profiles that include non-ASCII characters are equal.
+        """
+        profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
+            {'vendor': 'Fedora Project', 'name': u'¿Donde esta el baño?', 'epoch': 0,
+             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+        profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
+            {'vendor': 'Fedora Project', 'name': u'¿Donde esta el baño?', 'epoch': 0,
+             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+
+        self.assertEqual(consumer.UnitProfile.calculate_hash(profile_1.profile),
+                         consumer.UnitProfile.calculate_hash(profile_2.profile))
+
+    def test_calculate_hash_non_ascii_non_identical_profiles(self):
+        """
+        Test that the hashes of two non-identical profiles that include non-ASCII characters are
+        not equal.
+        """
+        profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
+            {'vendor': 'Fedora Project', 'name': u'¿Donde esta el baño?', 'epoch': 0,
+             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+        # profile_2 has the codepoints for the two Spanish characters above, so this test ensures
+        # that this is considered to be different
+        profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
+            {'vendor': 'Fedora Project', 'name': '\u00bfDonde esta el ba\u00f1o?', 'epoch': 0,
+             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+
+        self.assertNotEqual(consumer.UnitProfile.calculate_hash(profile_1.profile),
+                         consumer.UnitProfile.calculate_hash(profile_2.profile))
+
     def test_calculate_hash_reordered_profiles(self):
         """
         Test that the hashes of two equivalent, but differently ordered profile lists are not the same.
