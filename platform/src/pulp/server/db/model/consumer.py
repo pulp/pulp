@@ -129,6 +129,54 @@ class Bind(Model):
         self.deleted = False
 
 
+class RepoProfileApplicability(Model):
+    """
+    This class models a Mongo collection that is used to store pre-calculated applicability results
+    for a given consumer profile_hash and repository ID. The applicability data is a dictionary
+    structure that represents the applicable units for the given profile and repository.
+
+    The profile itself is included here for ease of recalculating the applicability when a
+    repository's contents change.
+    """
+    collection_name = 'repo_profile_applicability'
+    unique_indices = (
+        ('profile_hash', 'repo_id'),
+    )
+
+    def __init__(self, profile_hash, repo_id, profile, applicability):
+        """
+        Construct a RepoProfileApplicability object.
+
+        :param profile_hash:  The hash of the profile that this object contains applicability data
+                              for
+        :type  profile_hash:  basestring
+        :param repo_id:       The repo ID that this applicability data is for
+        :type  repo_id:       basestring
+        :param profile:       The entire profile that resulted in the profile_hash
+        :type  profile:       object
+        :param applicability: A dictionary structure mapping unit type IDs to lists of applicable
+                              Unit IDs.
+        :type  applicability: dict
+        """
+        super(RepoProfileApplicability, self).__init__()
+
+        self.profile_hash = profile_hash
+        self.repo_id = repo_id
+        self.profile = profile
+        self.applicability = applicability
+
+    def save():
+        """
+        Save any changes made to this RepoProfileApplicability model to the database. If it doesn't
+        exist in the database already, insert a new record to represent it.
+        """
+        self.get_collection().update(
+            {'profile_hash': self.profile_hash, 'repo_id': self.repo_id},
+            {'profile_hash': self.profile_hash, 'repo_id': self.repo_id, 'profile': self.profile,
+             'applicability': self.applicability},
+            upsert=True, safe=True)
+
+
 class UnitProfile(Model):
     """
     Represents an install content unit profile.
@@ -198,7 +246,7 @@ class ConsumerGroup(Model):
     collection_name = 'consumer_groups'
     search_indices = ('display_name', 'consumer_ids')
 
-    def __init__(self, consumer_group_id, display_name=None, description=None, 
+    def __init__(self, consumer_group_id, display_name=None, description=None,
             consumer_ids=None, notes=None):
         super(ConsumerGroup, self).__init__()
 

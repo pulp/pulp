@@ -185,3 +185,23 @@ class ApplicabilityManager(object):
             profiles[typeid] = profile
         return ProfiledConsumer(id, profiles)
 
+
+class RepoProfileApplicabilityManager(object):
+    """
+    This class is useful for querying for RepoProfileApplicability objects in the database.
+    """
+    def create(self, profile_hash, repo_id, profile, applicability):
+        """
+        :param profile_hash:  The hash of the profile that this object contains applicability data
+                              for
+        :type  profile_hash:  basestring
+        :param repo_id:       The repo ID that this applicability data is for
+        :type  repo_id:       basestring
+        :param profile:       The entire profile that resulted in the profile_hash
+        :type  profile:       object
+        :param applicability: A dictionary structure mapping unit type IDs to lists of applicable
+                              Unit IDs.
+        :type  applicability: dict
+        :return:              A new RepoProfileApplicability object
+        :rtype:               pulp.server.db.model.consumer.RepoProfileApplicability
+        """
