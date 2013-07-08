@@ -58,7 +58,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_1))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_1)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
 
     def test_get_profiles(self):
@@ -75,12 +75,12 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_1))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_1)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
         self.assertEquals(profiles[1]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[1]['content_type'], self.TYPE_2)
         self.assertEquals(profiles[1]['profile'], self.PROFILE_2)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_2))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profiles[1]['profile_hash'], expected_hash)
 
     def test_get_profiles_none(self):
@@ -130,7 +130,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_2)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_2))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
 
     def test_multiple_types(self):
@@ -150,12 +150,12 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_1)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_1)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_1))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_1)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
         self.assertEquals(profiles[1]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[1]['content_type'], self.TYPE_2)
         self.assertEquals(profiles[1]['profile'], self.PROFILE_2)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_2))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profiles[1]['profile_hash'], expected_hash)
 
     def test_fetch_by_type1(self):
@@ -172,7 +172,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profile['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profile['content_type'], self.TYPE_1)
         self.assertEquals(profile['profile'], self.PROFILE_1)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_1))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_1)
         self.assertEqual(profile['profile_hash'], expected_hash)
 
     def test_fetch_by_type2(self):
@@ -189,7 +189,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profile['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profile['content_type'], self.TYPE_2)
         self.assertEquals(profile['profile'], self.PROFILE_2)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_2))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profile['profile_hash'], expected_hash)
 
     def test_delete(self):
@@ -213,7 +213,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(profiles[0]['content_type'], self.TYPE_2)
         self.assertEquals(profiles[0]['profile'], self.PROFILE_2)
-        expected_hash = hash(UnitProfile._convert_to_hashable(self.PROFILE_2))
+        expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
 
     def test_consumer_deleted(self):

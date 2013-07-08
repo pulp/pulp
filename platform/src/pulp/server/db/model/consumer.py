@@ -13,6 +13,8 @@
 
 from copy import deepcopy
 import datetime
+import hashlib
+import json
 
 from pulp.server.db.model.base import Model
 from pulp.common import dateutils
@@ -153,31 +155,20 @@ class UnitProfile(Model):
     installed RPMs in some repeatable fashion, such that any two consumers that have exactly the
     same RPMs installed will end up with the same ordering of their RPMs in the database.
 
-    :param consumer_id:  A consumer ID.
-    :type  consumer_id:  str
-    :param content_type: The profile (unit) type ID.
-    :type  content_type: str
-    :param profile:      The stored profile.
-    :type  profile:      object
+    :ivar  consumer_id:  A consumer ID.
+    :itype consumer_id:  str
+    :ivar  content_type: The profile (unit) type ID.
+    :itype content_type: str
+    :ivar  profile:      The stored profile.
+    :itype profile:      object
+    :ivar  profile_hash: A hash of the profile, used for quick comparisons of profiles
+    :itype profile_hash: basestring
     """
 
     collection_name = 'consumer_unit_profiles'
     unique_indices = (
         ('consumer_id', 'content_type'),
     )
-
-    def __hash__(self):
-        """
-        Return a custom hash of self.profile. Since self.profile can be any serializable type, and
-        since not all serializable types are hashable, this method converts the profile to a
-        hashable representation of the profile, and then hashes that. This hash is useful for
-        quickly comparing profiles to determine if they are the same.
-
-        :return: Hash of self.profile
-        :rtype:  int
-        """
-        hashable_profile = self._convert_to_hashable(self.profile)
-        return hash(hashable_profile)
 
     def __init__(self, consumer_id, content_type, profile, profile_hash=None):
         """
@@ -187,6 +178,10 @@ class UnitProfile(Model):
         :type  content_type: str
         :param profile:      The stored profile.
         :type  profile:      object
+        :param profile_hash: A hash of the profile, used for quick comparisons of profiles. If it is
+                             None, the constructor will automatically calculate it based on the
+                             profile.
+        :type  profile_hash: basestring
         """
         super(UnitProfile, self).__init__()
         self.consumer_id = consumer_id
@@ -195,41 +190,24 @@ class UnitProfile(Model):
         self.profile_hash = profile_hash
 
         if self.profile_hash is None:
-            self.profile_hash = hash(self)
+            self.profile_hash = self.calculate_hash(self.profile)
 
     @staticmethod
-    def _convert_to_hashable(unhashable_object):
+    def calculate_hash(profile):
         """
-        This method will convert the profile attribute of the UnitProfile into a hashable
-        representation. It will traverse list, tuple, or dictionary structures, ensuring that all
-        the types represented in them are also converted to hashable types.
+        Return a hash of self.profile. This hash is useful for
+        quickly comparing profiles to determine if they are the same.
 
-        Lists will be converted to tuples. Dictionaries will be converted into frozensets of tuples,
-        representing the keys and values found in them. Only lists and dicts get converted.
-
-        Note that this method does not attempt to convert any possible type, but only those
-        explicitly documented above. All types that are the Python equivalent of the allowed JSON
-        types[0] are supported, though not all are converted.
-
-        [0] int, float, str, bool, None, list, dict
-
-        :param unhashable_object: Some object that is not hashable that you need a hashable
-                                  representation of
-        :type  unhashable_object: object
-        :return:                  A hashable representation of self.profile
-        :rtype:                   object
+        :param profile: The profile structure you wish to hash
+        :type  profile: object
+        :return:        Hash of profile
+        :rtype:         basestring
         """
-        unhashable_object = deepcopy(unhashable_object)
-        if isinstance(unhashable_object, tuple) or isinstance(unhashable_object, list):
-            unhashable_object = list(unhashable_object)
-            for i, item in enumerate(unhashable_object):
-                unhashable_object[i] = UnitProfile._convert_to_hashable(item)
-            unhashable_object = tuple(unhashable_object)
-        elif isinstance(unhashable_object, dict):
-            for key, value in unhashable_object.items():
-                unhashable_object[key] = UnitProfile._convert_to_hashable(value)
-            unhashable_object = frozenset(unhashable_object.items())
-        return unhashable_object
+        # Don't use any whitespace in the json separators, and sort dictionary keys to be repeatable
+        serialized_profile = json.dumps(profile, separators=(',', ':'), sort_keys=True)
+        hasher = hashlib.sha256()
+        hasher.update(serialized_profile)
+        return hasher.hexdigest()
 
 
 class ConsumerHistoryEvent(Model):
