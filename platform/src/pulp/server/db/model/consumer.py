@@ -195,7 +195,7 @@ class UnitProfile(Model):
     @staticmethod
     def calculate_hash(profile):
         """
-        Return a hash of self.profile. This hash is useful for
+        Return a hash of profile. This hash is useful for
         quickly comparing profiles to determine if they are the same.
 
         :param profile: The profile structure you wish to hash
