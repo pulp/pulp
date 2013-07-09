@@ -37,7 +37,7 @@ class CaughtException(NodeError):
     DESCRIPTION = _('An unexpected error occurred.  repo_id=%(repo_id)s')
 
     def __init__(self, exception, repo_id=None):
-        super(CaughtException, self).__init__(
+        super(self.__class__, self).__init__(
             self.ERROR_ID, message=str(exception), repo_id=repo_id)
 
     def __str__(self):
@@ -50,7 +50,7 @@ class PurgeOrphansError(NodeError):
     DESCRIPTION = _('Purge orphans failed with http code [%(http_code)s].')
 
     def __init__(self, http_code):
-        super(PurgeOrphansError, self).__init__(self.ERROR_ID, http_code=http_code)
+        super(self.__class__, self).__init__(self.ERROR_ID, http_code=http_code)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -62,7 +62,7 @@ class RepoSyncRestError(NodeError):
     DESCRIPTION = _('Repository synchronization failed with http code [%(http_code)s].')
 
     def __init__(self, repo_id, http_code):
-        super(RepoSyncRestError, self).__init__(self.ERROR_ID, repo_id=repo_id, http_code=http_code)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id, http_code=http_code)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -74,7 +74,7 @@ class GetBindingsError(NodeError):
     DESCRIPTION = _('Get bindings from the parent failed with http code [%(http_code)s].')
 
     def __init__(self, http_code):
-        super(GetBindingsError, self).__init__(self.ERROR_ID, http_code=http_code)
+        super(self.__class__, self).__init__(self.ERROR_ID, http_code=http_code)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -86,7 +86,7 @@ class GetChildUnitsError(NodeError):
     DESCRIPTION = _('Get units in repository [%(repo_id)s] from the child failed.')
 
     def __init__(self, repo_id):
-        super(GetChildUnitsError, self).__init__(self.ERROR_ID, repo_id=repo_id)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -100,7 +100,7 @@ class GetParentUnitsError(NodeError):
                     'been published')
 
     def __init__(self, repo_id):
-        super(GetParentUnitsError, self).__init__(self.ERROR_ID, repo_id=repo_id)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -114,7 +114,7 @@ class ImporterNotInstalled(NodeError):
                     'importer needs to be installed and loaded by restarting httpd.')
 
     def __init__(self, repo_id, type_id):
-        super(ImporterNotInstalled, self).__init__(self.ERROR_ID, repo_id=repo_id, type_id=type_id)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id, type_id=type_id)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -128,7 +128,7 @@ class DistributorNotInstalled(NodeError):
                     'distributor needs to be installed and loaded by restarting httpd.')
 
     def __init__(self, repo_id, type_id):
-        super(DistributorNotInstalled, self).__init__(self.ERROR_ID, repo_id=repo_id, type_id=type_id)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id, type_id=type_id)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -141,7 +141,7 @@ class ManifestDownloadError(NodeError):
                     'URL [%(url)s]. The cause could be that the repository has not been published.')
 
     def __init__(self, url, error_report):
-        super(ManifestDownloadError, self).__init__(self.ERROR_ID, url=url, error_report=error_report)
+        super(self.__class__, self).__init__(self.ERROR_ID, url=url, error_report=error_report)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -155,7 +155,7 @@ class UnitDownloadError(NodeError):
                     'repository has not been published.')
 
     def __init__(self, url, repo_id, error_report):
-        super(UnitDownloadError, self).__init__(
+        super(self.__class__, self).__init__(
             self.ERROR_ID, url=url, repo_id=repo_id, error_report=error_report)
 
 
@@ -165,7 +165,7 @@ class AddUnitError(NodeError):
     DESCRIPTION = _('Adding a unit associated with repository [%(repo_id)s] failed.')
 
     def __init__(self, repo_id):
-        super(AddUnitError, self).__init__(self.ERROR_ID, repo_id=repo_id)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
@@ -177,7 +177,19 @@ class DeleteUnitError(NodeError):
     DESCRIPTION = _('Deleting a unit associated with repository [%(repo_id)s] failed.')
 
     def __init__(self, repo_id):
-        super(DeleteUnitError, self).__init__(self.ERROR_ID, repo_id=repo_id)
+        super(self.__class__, self).__init__(self.ERROR_ID, repo_id=repo_id)
+
+    def __str__(self):
+        return self.DESCRIPTION % self.details
+
+
+class ProfileUpdateError(NodeError):
+
+    ERROR_ID = 'profile.update'
+    DESCRIPTION = _('Updating the node profile failed with http code [%(http_code)s]')
+
+    def __init__(self, http_code):
+        super(self.__class__, self).__init__(self.ERROR_ID, http_code=http_code)
 
     def __str__(self):
         return self.DESCRIPTION % self.details

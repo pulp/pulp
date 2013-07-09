@@ -34,7 +34,7 @@ from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
 
-from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError
+from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError, ProfileUpdateError
 from pulp_node.poller import TaskPoller
 from pulp_node import constants
 from pulp_node import link
@@ -638,3 +638,26 @@ class BindingsOnParent(ParentEntity):
         :rtype: list
         """
         return [b for b in binds if b['type_id'] in constants.ALL_DISTRIBUTORS]
+
+
+class ProfileOnParent(ParentEntity):
+    """
+    Represents consumer profiles.
+    """
+
+    TYPE_ID = 'node'
+
+    def update(self, profile, type_id=TYPE_ID):
+        """
+        Update the profile on the parent.
+        :param profile: The profile to be updated on the parent node.
+        :type profile: dict
+        :param type_id: The content type ID.
+        :type type_id: str
+        :raise ProfileUpdateError: on error.
+        """
+        bundle = ConsumerSSLCredentialsBundle()
+        node_id = bundle.cn()
+        http = self.binding.profile.send(node_id, type_id, profile)
+        if http.response_code != httplib.CREATED:
+            raise ProfileUpdateError(http.response_code)
