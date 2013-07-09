@@ -19,6 +19,7 @@ from pulp_node.handlers.model import *
 from pulp_node.handlers.validation import Validator
 from pulp_node.error import NodeError, CaughtException
 from pulp_node.handlers.reports import SummaryReport, HandlerProgress, RepositoryReport
+from pulp_node.profiles import build_profile
 
 
 log = getLogger(__name__)
@@ -114,6 +115,9 @@ class HandlerStrategy(object):
 
             # synchronization implemented by subclasses
             self._synchronize(request)
+
+            # update the profile on the parent
+            self._update_profile(request)
 
             # purge orphans
             if request.options.get(constants.PURGE_ORPHANS_KEYWORD):
@@ -219,6 +223,25 @@ class HandlerStrategy(object):
                 log.exception(repo_id)
                 error = CaughtException(e, repo_id)
                 request.summary.errors.append(error)
+
+    def _update_profile(self, request):
+        """
+        Update the profile on the parent node.
+        :param request: A synchronization request.
+        :type request: SyncRequest
+        """
+        if request.cancelled():
+            return
+        try:
+            document = build_profile()
+            profile = ProfileOnParent()
+            profile.update(document)
+        except NodeError, ne:
+            request.summary.errors.append(ne)
+        except Exception, e:
+            log.exception('update profile')
+            error = CaughtException(e)
+            request.summary.errors.append(error)
 
 
 # --- strategies ------------------------------------------------------------------------

@@ -53,6 +53,7 @@ NODE_ERRORS = {
     UnitDownloadError.ERROR_ID: UnitDownloadError.DESCRIPTION,
     AddUnitError.ERROR_ID: AddUnitError.DESCRIPTION,
     DeleteUnitError.ERROR_ID: DeleteUnitError.DESCRIPTION,
+    ProfileUpdateError.ERROR_ID: ProfileUpdateError.DESCRIPTION,
 }
 
 SYNC_TITLE = _('Child Node Synchronization')

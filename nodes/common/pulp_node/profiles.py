@@ -19,6 +19,8 @@ from pulp.server.db import connection
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
 from pulp.plugins.types.database import type_units_collection
 
+from pulp_node import constants
+
 
 # --- constants --------------------------------------------------------------
 
@@ -95,6 +97,9 @@ def fetch_distributors(repo_ids):
     query = {'repo_id': {'$in': repo_ids}}
     collection = RepoDistributor.get_collection()
     for d in collection.find(query, fields=DIST_FIELDS):
+        type_id = d['distributor_type_id']
+        if type_id in constants.ALL_DISTRIBUTORS:
+            continue
         fetched.append(strip(d))
     return fetched
 

@@ -51,6 +51,7 @@ from pulp.agent.lib.dispatcher import Dispatcher
 from pulp_node.manifest import Manifest
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.handlers.reports import RepositoryReport
+from pulp_node.profiles import build_profile, fingerprint
 from pulp_node import error
 from pulp_node import constants
 
@@ -721,6 +722,7 @@ class TestEndToEnd(PluginTestBase):
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
+            profile = build_profile()
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
@@ -735,7 +737,8 @@ class TestEndToEnd(PluginTestBase):
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
             report = dispatcher.update(Conduit(), units, options)
             _report.append(report)
-        test_handler()
+            return profile
+        profile = test_handler()
         # Verify
         report = _report[0].details['node']
         self.assertTrue(report['succeeded'])
@@ -750,6 +753,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['added'], self.NUM_UNITS)
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
+        self.assertEqual(fingerprint(profile), fingerprint(build_profile()))
         self.verify()
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
