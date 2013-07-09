@@ -132,9 +132,12 @@ class FilePublisher(Publisher):
         :type bufsize: int
         :return:
         """
-        with tarfile.open(tar_path, 'w', bufsize=bufsize) as tb:
+        tb = tarfile.open(tar_path, 'w', bufsize=bufsize)
+        try:
             _dir = os.path.basename(path)
             tb.add(path, arcname=_dir)
+        finally:
+            tb.close()
 
     def commit(self):
         """
