@@ -15,7 +15,8 @@ import unittest
 
 import mock
 
-from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupSearchAPI, RepoGroupActionAPI
+from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupDistributorAPI, RepoGroupSearchAPI, \
+    RepoGroupActionAPI
 
 class TestRepoGroupAPI(unittest.TestCase):
     def setUp(self):
@@ -42,6 +43,24 @@ class TestRepoGroupAPI(unittest.TestCase):
         ret = self.api.create(**REPOGROUP)
         self.api.server.POST.assert_called_once_with(self.api.PATH, REPOGROUP)
 
+    def test_create_and_configure(self):
+        # Setup
+        group_id, display_name, description = 'test_id', 'test group', 'test description'
+        distributors = [{'fake': 'distributor'}]
+        notes = {'key': True}
+        expected_repo_group = {
+            'id': group_id,
+            'display_name': display_name,
+            'description': description,
+            'notes': notes,
+            'distributors': distributors,
+        }
+
+        # Test
+        result = self.api.create_and_configure(group_id, display_name, description, notes, distributors)
+        self.api.server.POST.assert_called_once_with(self.api.PATH, expected_repo_group)
+        self.assertEqual(result, self.api.server.POST.return_value)
+
     def test_repogroup(self):
         ret = self.api.repo_group('rg1')
         expected_path = self.api.PATH + 'rg1/'
@@ -60,6 +79,63 @@ class TestRepoGroupAPI(unittest.TestCase):
         expected_path = self.api.PATH + 'rg1/'
         self.api.server.PUT.assert_called_once_with(expected_path, DELTA)
         self.assertEqual(ret, self.api.server.PUT.return_value)
+
+
+class TestRepoGroupDistributorAPI(unittest.TestCase):
+    def setUp(self):
+        self.api = RepoGroupDistributorAPI(mock.MagicMock(autospec=True))
+
+    def test_distributors(self):
+        result = self.api.distributors('group_id')
+        expected_path = self.api.PATH % 'group_id'
+        self.api.server.GET.assert_called_once_with(expected_path)
+        self.assertEqual(result, self.api.server.GET.return_value)
+
+    def test_create(self):
+        # Setup
+        group_id = 'test_id'
+        expected_path = self.api.PATH % group_id
+        distributor_type = 'fake_type'
+        distributor_config = {'fake': 'config'}
+        expected_data = {'distributor_type_id': distributor_type,
+                         'distributor_config': distributor_config,
+                         'distributor_id': None}
+
+        # Test
+        result = self.api.create(group_id, distributor_type, distributor_config, None)
+        self.api.server.POST.assert_called_once_with(expected_path, expected_data)
+        self.assertEqual(result, self.api.server.POST.return_value)
+
+    def test_distributor(self):
+        # Setup
+        group_id, distributor_id = 'test_id', 'test_distributor_id'
+        expected_path = self.api.PATH % group_id + distributor_id + '/'
+
+        # Test
+        result = self.api.distributor(group_id, distributor_id)
+        self.api.server.GET.assert_called_once_with(expected_path)
+        self.assertEqual(result, self.api.server.GET.return_value)
+
+    def test_delete(self):
+        # Setup
+        group_id, distributor_id = 'test_id', 'test_distributor_id'
+        expected_path = self.api.PATH % group_id + distributor_id + '/'
+
+        # Test
+        result = self.api.delete(group_id, distributor_id)
+        self.api.server.DELETE.assert_called_once_with(expected_path)
+        self.assertEqual(result, self.api.server.DELETE.return_value)
+
+    def test_update(self):
+        # Setup
+        group_id, distributor_id = 'test_id', 'test_distributor_id'
+        distributor_config = {'fake': 'config'}
+        expected_path = self.api.PATH % group_id + distributor_id + '/'
+
+        # Test
+        result = self.api.update(group_id, distributor_id, distributor_config)
+        self.api.server.PUT.assert_called_once_with(expected_path, distributor_config)
+        self.assertEqual(result, self.api.server.PUT.return_value)
 
 
 class TestRepoGroupSearchAPI(unittest.TestCase):
@@ -97,3 +173,9 @@ class TestRepoGroupActionAPI(unittest.TestCase):
             'v2/repo_groups/rg1/actions/unassociate/', EXPECTED)
         self.assertEqual(ret, self.api.server.POST.return_value.response_body)
 
+    def test_publish(self):
+        result = self.api.publish('repo_group1', 'distributor_id', {'config': 'value'})
+        expected_data = {'id': 'distributor_id', 'override_config': {'config': 'value'}}
+        self.api.server.POST.assert_called_once_with(
+            'v2/repo_groups/repo_group1/actions/publish/', expected_data)
+        self.assertEqual(result, self.api.server.POST.return_value)

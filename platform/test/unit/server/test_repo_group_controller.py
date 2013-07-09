@@ -170,6 +170,29 @@ class RepoGroupCollectionTests(base.PulpWebserviceTests):
         for k, v in data.items():
             self.assertEqual(found[k], v)
 
+    @mock.patch('pulp.server.managers.repo.group.cud.RepoGroupManager.create_and_configure_repo_group', autospec=True)
+    def test_post_with_distributors(self, mock_create_group):
+        # Setup
+        data = {
+            'id': 'post-group',
+            'display_name': 'Post Group',
+            'description': 'Post Description',
+            'distributors': [{'distributor_type': 'mock-group-distributor',
+                            'distributor_config': {},
+                            'distributor_id': 'dist-1'}]
+        }
+
+        # Test
+        self.post('/v2/repo_groups/', data)
+
+        # Verify create_and_configure_repo_group was called with the correct arguments
+        self.assertEqual(1, mock_create_group.call_count)
+        self.assertEqual(data['id'], mock_create_group.call_args[0][1])
+        self.assertEqual(data['display_name'], mock_create_group.call_args[0][2])
+        self.assertEqual(data['description'], mock_create_group.call_args[0][3])
+        self.assertEqual(data['distributors'], mock_create_group.call_args[1]['distributor_list'])
+
+
     def test_post_missing_value(self):
         # Test
         status, body = self.post('/v2/repo_groups/', {})

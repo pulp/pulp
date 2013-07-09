@@ -52,14 +52,18 @@ class RepoGroupCollection(JSONController):
         description = group_data.pop('description', None)
         repo_ids = group_data.pop('repo_ids', None)
         notes = group_data.pop('notes', None)
+        distributors = group_data.pop('distributors', None)
         if group_data:
             raise pulp_exceptions.InvalidValue(group_data.keys())
+
+        # Create the repo group
         manager = managers_factory.repo_group_manager()
+        args = [group_id, display_name, description, repo_ids, notes]
+        kwargs = {'distributor_list': distributors}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)]
-        call_request = CallRequest(manager.create_repo_group,
-                                   [group_id, display_name, description, repo_ids, notes],
-                                   weight=weight,
+
+        call_request = CallRequest(manager.create_and_configure_repo_group, args, kwargs, weight=weight,
                                    tags=tags)
         call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)
         group = execution.execute_sync(call_request)

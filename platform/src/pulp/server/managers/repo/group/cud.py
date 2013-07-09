@@ -35,17 +35,17 @@ class RepoGroupManager(object):
     def create_repo_group(self, group_id, display_name=None, description=None, repo_ids=None, notes=None):
         """
         Create a new repo group.
-        @param group_id: unique id of the repo group
-        @param display_name: display name of the repo group
-        @type  display_name: str or None
-        @param description: description of the repo group
-        @type  description: str or None
-        @param repo_ids: list of ids for repos initially belonging to the repo group
-        @type  repo_ids: list or None
-        @param notes: notes for the repo group
-        @type  notes: dict or None
-        @return: SON representation of the repo group
-        @rtype:  L{bson.SON}
+        :param group_id: unique id of the repo group
+        :param display_name: display name of the repo group
+        :type  display_name: str or None
+        :param description: description of the repo group
+        :type  description: str or None
+        :param repo_ids: list of ids for repos initially belonging to the repo group
+        :type  repo_ids: list or None
+        :param notes: notes for the repo group
+        :type  notes: dict or None
+        :return: SON representation of the repo group
+        :rtype: bson.SON
         """
         collection = RepoGroup.get_collection()
         repo_group = RepoGroup(group_id, display_name, description, repo_ids, notes)
@@ -55,6 +55,61 @@ class RepoGroupManager(object):
             raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
         group = collection.find_one({'id': group_id})
         return group
+
+    def create_and_configure_repo_group(self, group_id, display_name=None, description=None,
+                                        repo_ids=None, notes=None, distributor_list=()):
+        """
+        Create a new repository group and add distributors in a single call. This is equivalent to
+        calling RepoGroupManager.create_repo_group and then RepoGroupDistributorManager.add_distributor
+        for each distributor in the distributor list.
+
+        :param group_id: unique id of the repository group
+        :type group_id: str
+        :param display_name: user-friendly name of the repository id
+        :type display_name: str or None
+        :param description: description of the repository group
+        :type description: str or None
+        :param repo_ids: the list of repository ids in this repository group
+        :type repo_ids: list of str or None
+        :param notes: A collection of key=value pairs
+        :type notes: dict or None
+        :param distributor_list: A list of dictionaries used to add distributors. The following keys
+                are expected: 'distributor_type', 'distributor_config', and 'distributor_id', which are
+                of type str, dict, and str or None, respectively
+        :type distributor_list: list of dict
+        :return: SON representation of the repo group
+        :rtype: bson.SON
+        """
+
+        # Create the repo group using the vanilla group create method
+        repo_group = self.create_repo_group(group_id, display_name, description, repo_ids, notes)
+
+        distributor_manager = manager_factory.repo_group_distributor_manager()
+
+        # If distributor_list is not None, a list, or a tuple, clean up and stop
+        if distributor_list is not None and not isinstance(distributor_list, (list, tuple)):
+            self.delete_repo_group(group_id)
+            raise pulp_exceptions.InvalidValue(['distributor_list'])
+
+        for distributor in distributor_list or []:
+            if not isinstance(distributor, dict):
+                self.delete_repo_group(group_id)
+                raise pulp_exceptions.InvalidValue(['distributor_list'])
+
+            try:
+                type_id = distributor.get('distributor_type')
+                plugin_config = distributor.get('distributor_config')
+                distributor_id = distributor.get('distributor_id')
+
+                distributor_manager.add_distributor(group_id, type_id, plugin_config, distributor_id)
+            except pulp_exceptions.InvalidValue, e:
+                # Make note a note that the repo was deleted and pass the exception up
+                _LOG.exception('Exception adding distributor [%s] to repo group [%s]; the group will'
+                               ' be deleted' % group_id)
+                self.delete_repo_group(group_id)
+                raise e, None, sys.exc_info()[2]
+
+        return repo_group
 
     def update_repo_group(self, group_id, **updates):
         """
