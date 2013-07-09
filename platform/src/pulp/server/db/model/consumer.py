@@ -146,7 +146,7 @@ class RepoProfileApplicability(Model):
         ('profile_hash', 'repo_id'),
     )
 
-    def __init__(self, profile_hash, repo_id, profile, applicability):
+    def __init__(self, profile_hash, repo_id, profile, applicability, _id=None, **kwargs):
         """
         Construct a RepoProfileApplicability object.
 
@@ -160,6 +160,10 @@ class RepoProfileApplicability(Model):
         :param applicability: A dictionary structure mapping unit type IDs to lists of applicable
                               Unit IDs.
         :type  applicability: dict
+        :param _id:           The MongoDB ID for this object, if it exists in the database
+        :type  _id:           bson.objectid.ObjectId
+        :param kwargs:        unused, but collected to allow instantiation from Mongo query results
+        :type  kwargs:        dict
         """
         super(RepoProfileApplicability, self).__init__()
 
@@ -167,17 +171,28 @@ class RepoProfileApplicability(Model):
         self.repo_id = repo_id
         self.profile = profile
         self.applicability = applicability
+        self._id = _id
 
-    def save():
+    def delete(self):
+        """
+        Delete this RepoProfileApplicability object from the database.
+        """
+        self.get_collection().remove({'_id': self._id}, safe=True)
+
+    def save(self):
         """
         Save any changes made to this RepoProfileApplicability model to the database. If it doesn't
         exist in the database already, insert a new record to represent it.
         """
-        self.get_collection().update(
-            {'profile_hash': self.profile_hash, 'repo_id': self.repo_id},
-            {'profile_hash': self.profile_hash, 'repo_id': self.repo_id, 'profile': self.profile,
-             'applicability': self.applicability},
-            upsert=True, safe=True)
+        # If this object's _id attribute is not None, then it represents an existing DB object.
+        # Else, we need to create an object with this object's attributes
+        new_document = {'profile_hash': self.profile_hash, 'repo_id': self.repo_id,
+                        'profile': self.profile, 'applicability': self.applicability}
+        if self._id is not None:
+            self.get_collection().update({'_id': self._id}, new_document, safe=True)
+        else:
+            # Let's set the _id attribute to the newly created document
+            self._id = self.get_collection().insert(new_document, safe=True)
 
 
 class UnitProfile(Model):
