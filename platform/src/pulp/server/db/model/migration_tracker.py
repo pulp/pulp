@@ -36,17 +36,16 @@ class MigrationTracker(Model):
         :param version: The version we want to set for the MigrationTracker
         :type  version: int
         """
-        super(self.__class__, self).__init__()
+        super(MigrationTracker, self).__init__()
 
         self.name = name
         self.version = version
-        self._collection = self.get_collection()
 
     def save(self):
         """
         Save any changes made to this MigrationTracker to the database. If it doesn't exist in the
         database already, insert a new record to represent it.
         """
-        self._collection.update({'name': self.name},
-                                {'name': self.name, 'version': self.version},
-                                upsert=True, safe=True)
+        self.get_collection().update({'name': self.name},
+                                     {'name': self.name, 'version': self.version},
+                                     upsert=True, safe=True)

@@ -537,7 +537,6 @@ class TestMigrationTracker(MigrationTest):
         mt = MigrationTracker('meaning_of_life', 42)
         self.assertEquals(mt.name, 'meaning_of_life')
         self.assertEquals(mt.version, 42)
-        self.assertEquals(mt._collection, MigrationTracker.get_collection())
 
     def test_save(self):
         # Make sure we are starting off clean
@@ -545,19 +544,19 @@ class TestMigrationTracker(MigrationTest):
         # Instantiate a MigrationTracker
         mt = MigrationTracker('meaning_of_life', 41)
         # At this point there should not be a MigrationTracker in the database
-        self.assertEquals(mt._collection.find({}).count(), 0)
+        self.assertEquals(mt.get_collection().find({}).count(), 0)
         # saving the mt should add it to the DB
         mt.save()
-        self.assertEquals(mt._collection.find({}).count(), 1)
-        mt_bson = mt._collection.find_one({'name': 'meaning_of_life'})
+        self.assertEquals(mt.get_collection().find({}).count(), 1)
+        mt_bson = mt.get_collection().find_one({'name': 'meaning_of_life'})
         self.assertEquals(mt_bson['name'], 'meaning_of_life')
         self.assertEquals(mt_bson['version'], 41)
         # now let's update the version to 42, the correct meaning of life
         mt.version = 42
         mt.save()
         # see if the updated meaning of life made it to the DB
-        self.assertEquals(mt._collection.find({}).count(), 1)
-        mt_bson = mt._collection.find_one({'name': 'meaning_of_life'})
+        self.assertEquals(mt.get_collection().find({}).count(), 1)
+        mt_bson = mt.get_collection().find_one({'name': 'meaning_of_life'})
         self.assertEquals(mt_bson['name'], 'meaning_of_life')
         self.assertEquals(mt_bson['version'], 42)
 
@@ -575,8 +574,8 @@ class TestMigrationTrackerManager(MigrationTest):
         self.assertEquals(mt.name, 'first_prime')
         self.assertEquals(mt.version, 2)
         # Make sure the DB got to the correct state
-        self.assertEquals(mt._collection.find({}).count(), 1)
-        mt_bson = mt._collection.find_one({'name': 'first_prime'})
+        self.assertEquals(mt.get_collection().find({}).count(), 1)
+        mt_bson = mt.get_collection().find_one({'name': 'first_prime'})
         self.assertEquals(mt_bson['name'], 'first_prime')
         self.assertEquals(mt_bson['version'], 2)
 
@@ -600,25 +599,25 @@ class TestMigrationTrackerManager(MigrationTest):
         mt = self.mtm.get_or_create('smallest_perfect_number', defaults={'version': 7})
         self.assertEquals(mt.name, 'smallest_perfect_number')
         self.assertEquals(mt.version, 6)  # not 7
-        mt_bson = mt._collection.find_one({'name': 'smallest_perfect_number'})
+        mt_bson = mt.get_collection().find_one({'name': 'smallest_perfect_number'})
         self.assertEquals(mt_bson['name'], 'smallest_perfect_number')
         self.assertEquals(mt_bson['version'], 6)
         # This will cause a create
-        self.assertEquals(mt._collection.find({'name': 'x^y=y^x'}).count(), 0)
+        self.assertEquals(mt.get_collection().find({'name': 'x^y=y^x'}).count(), 0)
         # 16 is the only number for which x^y = y^x, where x != y
         mt = self.mtm.get_or_create('x^y=y^x', defaults={'version': 16})
-        self.assertEquals(mt._collection.find({'name': 'x^y=y^x'}).count(), 1)
+        self.assertEquals(mt.get_collection().find({'name': 'x^y=y^x'}).count(), 1)
         self.assertEquals(mt.name, 'x^y=y^x')
         self.assertEquals(mt.version, 16)
-        mt_bson = mt._collection.find_one({'name': 'x^y=y^x'})
+        mt_bson = mt.get_collection().find_one({'name': 'x^y=y^x'})
         self.assertEquals(mt_bson['name'], 'x^y=y^x')
         self.assertEquals(mt_bson['version'], 16)
         # Let's use get_or_create without defaults
         mt = self.mtm.get_or_create('None')
-        self.assertEquals(mt._collection.find({'name': 'None'}).count(), 1)
+        self.assertEquals(mt.get_collection().find({'name': 'None'}).count(), 1)
         self.assertEquals(mt.name, 'None')
         self.assertEquals(mt.version, None)
-        mt_bson = mt._collection.find_one({'name': 'None'})
+        mt_bson = mt.get_collection().find_one({'name': 'None'})
         self.assertEquals(mt_bson['name'], 'None')
         self.assertEquals(mt_bson['version'], None)
 
