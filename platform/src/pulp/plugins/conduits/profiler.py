@@ -19,9 +19,9 @@ from gettext import gettext as _
 import logging
 import sys
 
+from pulp.plugins.types import database as types_db
 from pulp.server.managers import factory as managers
-from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin
-from pulp.plugins.conduits.mixins import ProfilerConduitException
+from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException, UnitAssociationCriteria
 
 _LOG = logging.getLogger(__name__)
 
@@ -44,26 +44,52 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
 
-    def search_unit_ids(self, type_id, criteria):
+
+    def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=[]):
         """
-        Searches for units of a given type in the server, regardless of their
-        associations to any repositories and returns a list of unit ids.
+        Searches for units in the given repository with given content type 
+        and returns a unit with unit_id, values of the unit key and any additional 
+        fields requested.
 
-        @param type_id: indicates the type of units being retrieved
-        @type  type_id: str
-        @param criteria: used to query which units are returned
-        @type  criteria: pulp.server.db.model.criteria.Criteria
+        :param repo_id: repo id
+        :type  repo_id: str
 
-        @return: list of unit ids
-        @rtype:  list of str
+        :param content_type_id: content type id of the units
+        :type  content_type_id: str
+
+        :param additional_unit_fields: additional fields from the unit metadata to be added 
+                                       in the result
+        :type additional_unit_fields: list of str
+
+        :return: list of units
+        :rtype:  list of dict
         """
         try:
-            query_manager = managers.content_query_manager()
-            criteria["fields"] = ['_id']
-            units = query_manager.find_by_criteria(type_id, criteria)
-            unit_ids = [u['_id'] for u in units] 
-            return unit_ids
+            query_manager = managers.repo_unit_association_query_manager()
+            criteria = UnitAssociationCriteria(type_ids=[content_type_id])
+            units = query_manager.get_units(repo_id, criteria)
+
+            # Get type definition and unit_key for given content type
+            type_def = types_db.type_definition(content_type_id)
+            key_list = type_def['unit_key']
+
+            # Return only unit_id and unit_key values for each unit
+            all_units = []
+            for unit in units:
+                unit_key = {}
+                for k in key_list:
+                    unit_key[k] = unit['metadata'].pop(k)
+                u = {'unit_key' : unit_key,
+                     'unit_id': unit.pop('unit_id', None)}
+
+                # Add any additional unit fields requested by plugins
+                for field in additional_unit_fields:
+                    u[field] = unit['metadata'].pop(field, None)
+
+                all_units.append(u)
+
+            return all_units
 
         except Exception, e:
-            _LOG.exception(_('Exception from server searching units of type [%s]' % type_id))
+            _LOG.exception(_('Exception from server getting units from repo [%s]' % repo_id))
             raise self.exception_class(e), None, sys.exc_info()[2]
