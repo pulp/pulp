@@ -9,27 +9,27 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import mock
-
-import base
 import logging
-import mock_plugins
-import mock_agent
+
+import mock
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import ApplicabilityReport
 from pulp.server.compat import ObjectId
-from pulp.server.managers import factory
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary,
     consumer_content_update_itinerary,
     consumer_content_uninstall_itinerary)
-from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.managers import factory
+import base
+import mock_plugins
+import mock_agent
 
 
 class ConsumerTest(base.PulpWebserviceTests):
@@ -936,6 +936,87 @@ class TestApplicability(base.PulpWebserviceTests):
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         mock_plugins.reset()
+
+    def test_match_consumers_with_same_applicability(self):
+        """
+        Make sure we can handle consumers that share applicability correctly.
+        """
+        criteria = {
+            'consumer_criteria': {
+                'filters': {'_id': {'$in': ['consumer_1', 'consumer_2']}}}}
+
+        status, body = self.post(self.PATH, criteria)
+
+        # We should get the criteria for the single consumer back
+        self.assertEqual(status, 200)
+        expected_body = [{'consumers': ['consumer_1', 'consumer_2'],
+                          'applicability': {'content_type_1': ['unit_1', 'unit_3']}}]
+        self.assertEqual(body, expected_body)
+
+    def test_match_disparate_consumers(self):
+        """
+        Test that the API handles matching two consumers with different applicability data
+        correctly.
+        """
+        criteria = {
+            'consumer_criteria': {
+                'filters': {'_id': {'$in': ['consumer_1', 'consumer_2']}}}}
+
+        status, body = self.post(self.PATH, criteria)
+
+        # We should get the criteria for the single consumer back
+        self.assertEqual(status, 200)
+        expected_body = [{'consumers': ['consumer_1'],
+                          'applicability': {'content_type_1': ['unit_1', 'unit_3']}},
+                         {'consumers': ['consumer_2'],
+                          'applicability': {'content_type_1': ['unit_2', 'unit_3']}}]
+        self.assertEqual(body, expected_body)
+
+    def test_match_mixed_case(self):
+        """
+        Make sure we can handle a mixed case of consumers.
+        """
+        criteria = {
+            'consumer_criteria': {
+                'filters': {'_id': {'$in': ['consumer_1', 'consumer_2', 'consumer_3']}}}}
+
+        status, body = self.post(self.PATH, criteria)
+
+        # We should get the criteria for the single consumer back
+        self.assertEqual(status, 200)
+        expected_body = [{'consumers': ['consumer_1', 'consumer_2'],
+                          'applicability': {'content_type_1': ['unit_1', 'unit_3']}},
+                         {'consumers': ['consumer_2'],
+                          'applicability': {'content_type_2': ['unit_4']}},
+                         {'consumers': ['consumer_3'],
+                          'applicability': {'content_type_1': ['unit_2']}}]
+        self.assertEqual(body, expected_body)
+
+    def test_match_single_consumer(self):
+        """
+        Test that the API handles matching a single consumer correctly.
+        """
+        criteria = {'consumer_criteria': {'filters': {'_id': 'consumer_1'}}}
+
+        status, body = self.post(self.PATH, criteria)
+
+        # We should get the criteria for the single consumer back
+        self.assertEqual(status, 200)
+        expected_body = [{'consumers': ['consumer_1'],
+                          'applicability': {'content_type_1': ['unit_1', 'unit_3']}}]
+        self.assertEqual(body, expected_body)
+
+    def test_non_matching_consumer_criteria(self):
+        """
+        Test the API call when the given consumer criteria does not match any consumers.
+        """
+        criteria = {'consumer_criteria': {'filters': {'_id': 'does_not_exist'}}}
+
+        status, body = self.post(self.PATH, criteria)
+
+        self.assertEqual(status, 200)
+        # The body should be an empty dictionary, since no consumers matched
+        self.assertEqual(body, {})
 
     def populate(self):
         manager = factory.consumer_manager()
