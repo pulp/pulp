@@ -173,6 +173,9 @@ class RepoProfileApplicability(Model):
         self.applicability = applicability
         self._id = _id
 
+        # The superclass puts an unnecessary (and confusingly named) id attribute on this model. Let's remove it.
+        del self.id
+
     def delete(self):
         """
         Delete this RepoProfileApplicability object from the database.
