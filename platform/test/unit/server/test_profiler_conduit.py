@@ -61,12 +61,12 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         typedb.clean()
         factory.reset()
 
-    def populate(self):
+    def populate(self, additional_key=None):
         self.populate_consumer()
         self.populate_repository()
         self.populate_bindings()
-        self.populate_units('key-1', self.TYPE_1_DEF)
-        self.populate_units('key-2', self.TYPE_2_DEF)
+        self.populate_units('key-1', self.TYPE_1_DEF, additional_key)
+        self.populate_units('key-2', self.TYPE_2_DEF, additional_key)
         self.populate_profile()
 
     def populate_consumer(self):
@@ -90,10 +90,12 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
-    def populate_units(self, key, typedef):
+    def populate_units(self, key, typedef, additional_key=None):
         for i in range(1,10):
             unit_id = 'unit-%s' % self.UNIT_ID
             md = {key:str(i)}
+            if additional_key:
+                md[additional_key] = str(i)
             manager = factory.content_manager()
             manager.add_content_unit(typedef.id, unit_id, md)
             manager = factory.repo_unit_association_manager()
@@ -128,3 +130,35 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         units = conduit.get_units(self.REPO_ID, criteria)
         # Verify
         self.assertEquals(len(units), 9)
+
+    def test_get_repo_units(self):
+        # Setup
+        self.populate()
+        # Test
+        conduit = ProfilerConduit()
+        units1 = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_1_DEF.id, additional_unit_fields=[])
+        units2 = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_2_DEF.id, additional_unit_fields=[])
+
+        # Verify that all the units in the repo with given type are returned along with unit_key
+        self.assertEquals(len(units1), 9)
+        for u in units1:
+            self.assertTrue('key-1' in u['unit_key'])
+            self.assertFalse('key-2' in u['unit_key'])
+        self.assertEquals(len(units2), 9)
+        for u in units2:
+            self.assertTrue('key-2' in u['unit_key'])
+            self.assertFalse('key-1' in u['unit_key'])
+
+    def test_get_repo_units_additional_field(self):
+        # Setup
+        self.populate(additional_key='extra_field')
+        # Test
+        conduit = ProfilerConduit()
+        units = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_1_DEF.id, 
+                                       additional_unit_fields=['extra_field'])
+
+        # Verify that all the units in the repo with given type are returned along with unit_key and extra field
+        self.assertEquals(len(units), 9)
+        for u in units:
+            self.assertTrue('key-1' in u['unit_key'])
+            self.assertTrue('extra_field' in u)
