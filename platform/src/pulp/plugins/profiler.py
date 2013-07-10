@@ -271,7 +271,7 @@ class Profiler(object):
         :type unit_type_id: str
 
         :param unit_profile: a consumer unit profile
-        :type unit_profile: list of dicts
+        :type unit_profile: object
 
         :param bound_repo_id: repo id of a repository to be used to calculate applicability
                               against the given consumer profile
@@ -283,7 +283,7 @@ class Profiler(object):
         :param conduit: provides access to relevant Pulp functionality
         :type conduit: pulp.plugins.conduits.profile.ProfilerConduit
 
-        :return: A list content unit ids
+        :return: A list of content unit ids
         :rtype: List of str
         """
         message = 'Applicability for: %s, not supported' % unit_type_id
