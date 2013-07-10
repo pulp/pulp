@@ -16,6 +16,7 @@ Contains functions for rendering the sync/publish progress reports.
 """
 
 from gettext import gettext as _
+import sys
 import time
 
 # -- public -------------------------------------------------------------------
@@ -131,6 +132,9 @@ def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     # don't want to leave the UI in that half-finished state so this final
     # call is to clean up and render the completed report.
     renderer.display_report(response.response_body.progress)
+
+    if response.response_body.was_failure():
+        sys.exit(1)
 
     return response.response_body
 
