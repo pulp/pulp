@@ -536,12 +536,39 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         value = self.manager.get_repo_scratchpad(repo_id)
         self.assertEqual(new_value, value)
 
+        # Test - value error
+        self.assertRaises(ValueError, self.manager.set_repo_scratchpad, repo_id, 'bar')
+
     def test_get_set_scratchpad_missing_repo(self):
         """
         Tests scratchpad calls for a repo that doesn't exist.
         """
         self.assertRaises(exceptions.MissingResource, self.manager.get_repo_scratchpad, 'foo')
-        self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', 'bar')
+        self.assertRaises(exceptions.MissingResource, self.manager.set_repo_scratchpad, 'foo', {})
+
+    def test_update_scratchpad(self):
+        repo_id = 'scratch-test'
+        # Setup
+        self.manager.create_repo(repo_id)
+        self.manager.set_repo_scratchpad(repo_id, {'A': 1, 'B': 2})
+        # Test
+        # add keys
+        self.manager.update_repo_scratchpad(repo_id, {'C': 3, 'D': 4})
+        scratchpad = self.manager.get_repo_scratchpad(repo_id)
+        self.assertEqual(scratchpad['A'], 1)
+        self.assertEqual(scratchpad['B'], 2)
+        self.assertEqual(scratchpad['C'], 3)
+        self.assertEqual(scratchpad['D'], 4)
+        # update existing
+        self.manager.update_repo_scratchpad(repo_id, {'B': 20, 'D': 40})
+        scratchpad = self.manager.get_repo_scratchpad(repo_id)
+        self.assertEqual(scratchpad['A'], 1)
+        self.assertEqual(scratchpad['B'], 20)
+        self.assertEqual(scratchpad['C'], 3)
+        self.assertEqual(scratchpad['D'], 40)
+        # missing resource
+        self.assertRaises(exceptions.MissingResource, self.manager.update_repo_scratchpad, 'foo', {})
+
 
     def test_update_unit_count_missing_repo(self):
         self.assertRaises(exceptions.PulpExecutionException,

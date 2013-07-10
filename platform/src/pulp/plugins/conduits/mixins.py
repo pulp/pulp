@@ -66,7 +66,7 @@ class RepoScratchPadMixin(object):
         repository-level scratchpad can be seen and edited by all importers
         and distributors on the repository. Care should be taken to not destroy
         any data set by another plugin. This may be used to communicate between
-        importers and distributors relevant data for the repository.
+        importers, distributors and profilers relevant data for the repository.
         """
         try:
             repo_manager = manager_factory.repo_manager()
@@ -79,12 +79,11 @@ class RepoScratchPadMixin(object):
     def set_repo_scratchpad(self, value):
         """
         Saves the given value to the repository-level scratchpad for this
-        repository. It can be retrieved in subsequent importer operations
-        through get_repo_scratchpad. The type for the given value is anything
-        that can be stored in the database (string, list, dict, etc.).
+        repository. It can be retrieved in subsequent importer, distributor
+        and profiler operations through get_repo_scratchpad.
 
         @param value: will overwrite the existing scratchpad
-        @type  value: <serializable>
+        @type  value: dict
 
         @raise ImporterConduitException: wraps any exception that may occur
                in the Pulp server
@@ -94,6 +93,20 @@ class RepoScratchPadMixin(object):
             repo_manager.set_repo_scratchpad(self.repo_id, value)
         except Exception, e:
             _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            raise self.exception_class(e), None, sys.exc_info()[2]
+
+    def update_repo_scratchpad(self, scratchpad):
+        """
+        Update the repository scratchpad with the specified key-value pairs.
+        New keys are added; existing keys are updated.
+        :param scratchpad: a dict used to update the scratchpad.
+        """
+        try:
+            manager = manager_factory.repo_manager()
+            manager.update_repo_scratchpad(self.repo_id, scratchpad)
+        except Exception, e:
+            msg = _('Error updating repository scratchpad for repo [%(r)s]') % {'r': self.repo_id}
+            _LOG.exception(msg)
             raise self.exception_class(e), None, sys.exc_info()[2]
 
 

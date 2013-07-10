@@ -48,13 +48,22 @@ class RepoScratchPadMixinTests(unittest.TestCase):
 
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.set_repo_scratchpad')
     def test_set_repo_scratchpad(self, mock_call):
+        scratchpad = dict(a=1)
         # Test
-        self.mixin.set_repo_scratchpad('foo')
+        self.mixin.set_repo_scratchpad(scratchpad)
 
         # Verify
         self.assertEqual(1, mock_call.call_count)
         self.assertEqual(mock_call.call_args[0][0], self.repo_id)
-        self.assertEqual(mock_call.call_args[0][1], 'foo')
+        self.assertEqual(mock_call.call_args[0][1], scratchpad)
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_repo_scratchpad')
+    def test_update_repo_scratchpad(self, mock_call):
+        scratchpad = dict(a=1, b=2)
+        # Test
+        self.mixin.update_repo_scratchpad(scratchpad)
+        # Verify
+        mock_call.assert_called_once_with(self.repo_id, scratchpad)
 
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.get_repo_scratchpad')
     def test_set_repo_scratchpad_server_error(self, mock_call):
