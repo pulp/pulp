@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -929,7 +927,6 @@ class TestApplicability(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
         profiler = plugin_api.get_profiler_by_type('errata')[0]
-        print profiler
         profiler.find_applicable_units = \
             mock.Mock(side_effect=lambda i,r,t,u,c,x:
                 [ApplicabilityReport(self.SUMMARY, self.DETAILS)])
