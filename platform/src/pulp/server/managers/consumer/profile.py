@@ -58,6 +58,8 @@ class ProfileManager(object):
         try:
             p = self.get_profile(consumer_id, content_type)
             p['profile'] = profile
+            # We store the profile's hash anytime the profile gets altered
+            p['profile_hash'] = UnitProfile.calculate_hash(profile)
         except MissingResource:
             p = UnitProfile(consumer_id, content_type, profile)
         collection = UnitProfile.get_collection()

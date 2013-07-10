@@ -37,8 +37,11 @@ def compress(file_path):
     tmp_path = mktemp(dir=os.path.dirname(file_path))
     try:
         with open(file_path) as fp_in:
-            with gzip.open(tmp_path, 'wb') as fp_out:
+            fp_out = gzip.open(tmp_path, 'wb')
+            try:
                 transfer(fp_in, fp_out)
+            finally:
+                fp_out.close()
         if not file_path.endswith(FILE_SUFFIX):
             file_path += FILE_SUFFIX
         if os.path.exists(file_path):
@@ -59,9 +62,12 @@ def decompress(file_path):
     """
     tmp_path = mktemp(dir=os.path.dirname(file_path))
     try:
-        with gzip.open(file_path) as fp_in:
-            with open(tmp_path, 'w+') as fp_out:
+        with open(tmp_path, 'w+') as fp_out:
+            fp_in = gzip.open(file_path)
+            try:
                 transfer(fp_in, fp_out)
+            finally:
+                fp_in.close()
         file_path = file_path.rstrip(FILE_SUFFIX)
         if os.path.exists(file_path):
             os.unlink(file_path)

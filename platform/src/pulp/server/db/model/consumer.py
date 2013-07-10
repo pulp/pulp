@@ -11,7 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from copy import deepcopy
 import datetime
+import hashlib
+import json
 
 from pulp.server.db.model.base import Model
 from pulp.common import dateutils
@@ -131,13 +134,35 @@ class Bind(Model):
 
 class UnitProfile(Model):
     """
-    Represents an install content unit profile.
-    @ivar consumer_id: A consumer ID.
-    @type consumer_id: str
-    @ivar content_type: The profile (unit) type ID.
-    @type content_type: str
-    @ivar profile: The stored profile.
-    @type profile: dict
+    Represents a consumer profile, which is a data structure that records which content is installed
+    on a particular consumer for a particular type.
+
+    Due to the nature of the data conversion used to generate a profile's hash, it is impossible for
+    Pulp to know if the ordering of list structures found in the profile are significant or
+    not. Therefore, the hash of a list must assume that the ordering of the list is significant. The
+    SON objects that Pulp stores in the database cannot contain Python sets.
+
+    It is up to the plugin Profilers to handle this limitation if they wish to store lists in
+    the database in such a way that the order shouldn't matter for hash comparison purposes. In
+    these cases, the Profiler must order the list in some repeatable manner, so that any two
+    profiles that it wants the platform to consider as being the same will have exactly the same
+    ordering to those lists.
+
+    For example, the RPM profile contains a list of dictionaries, where each dictionary contains
+    information about RPMs stored on a consumer. The order of the list is not important for the
+    purpose of determining what is installed on the system - it might as well be a set. However,
+    since a set cannot be stored in MongoDB, it is up to the RPM Profiler to sort the list of
+    installed RPMs in some repeatable fashion, such that any two consumers that have exactly the
+    same RPMs installed will end up with the same ordering of their RPMs in the database.
+
+    :ivar  consumer_id:  A consumer ID.
+    :itype consumer_id:  str
+    :ivar  content_type: The profile (unit) type ID.
+    :itype content_type: str
+    :ivar  profile:      The stored profile.
+    :itype profile:      object
+    :ivar  profile_hash: A hash of the profile, used for quick comparisons of profiles
+    :itype profile_hash: basestring
     """
 
     collection_name = 'consumer_unit_profiles'
@@ -145,19 +170,43 @@ class UnitProfile(Model):
         ('consumer_id', 'content_type'),
     )
 
-    def __init__(self, consumer_id, content_type, profile):
+    def __init__(self, consumer_id, content_type, profile, profile_hash=None):
         """
-        @param consumer_id: A consumer ID.
-        @type consumer_id: str
-        @param content_type: The profile (unit) type ID.
-        @type content_type: str
-        @param profile: The stored profile.
-        @type profile: dict
+        :param consumer_id:  A consumer ID.
+        :type  consumer_id:  str
+        :param content_type: The profile (unit) type ID.
+        :type  content_type: str
+        :param profile:      The stored profile.
+        :type  profile:      object
+        :param profile_hash: A hash of the profile, used for quick comparisons of profiles. If it is
+                             None, the constructor will automatically calculate it based on the
+                             profile.
+        :type  profile_hash: basestring
         """
         super(UnitProfile, self).__init__()
         self.consumer_id = consumer_id
         self.content_type = content_type
         self.profile = profile
+        self.profile_hash = profile_hash
+
+        if self.profile_hash is None:
+            self.profile_hash = self.calculate_hash(self.profile)
+
+    @staticmethod
+    def calculate_hash(profile):
+        """
+        Return a hash of profile. This hash is useful for
+        quickly comparing profiles to determine if they are the same.
+
+        :param profile: The profile structure you wish to hash
+        :type  profile: object
+        :return:        Hash of profile
+        :rtype:         basestring
+        """
+        # Don't use any whitespace in the json separators, and sort dictionary keys to be repeatable
+        serialized_profile = json.dumps(profile, separators=(',', ':'), sort_keys=True)
+        hasher = hashlib.sha256(serialized_profile)
+        return hasher.hexdigest()
 
 
 class ConsumerHistoryEvent(Model):
