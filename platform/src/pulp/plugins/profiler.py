@@ -39,7 +39,7 @@ class InvalidUnitsRequested(Exception):
 
 class InvalidUnitTypeForApplicability(Exception):
     """
-    Raised by find_applicable_units when applicability for a unit type is not yet supported.
+    Raised by calculate_applicable_units when applicability for a unit type is not yet supported.
     """
 
     def __init__(self, unit_type_id, message):
@@ -261,37 +261,29 @@ class Profiler(object):
 
     # -- applicability ---------------------------------------------------------
 
-    def find_applicable_units(self, consumer_profile_and_repo_ids, unit_type_id, unit_criteria, config, conduit):
+    def calculate_applicable_units(self, unit_type_id, unit_profile, bound_repo_id, config, conduit):
         """
-        Determine whether the content units are applicable to the specified consumers
-        and repo ids. The definition of "applicable" is content type specific
-        and up to the decision of the profiler. Consumers and repo ids are specified
-        as a dictionary:
+        Calculate and return a list of content unit ids applicable to the consumer with given unit_profile.
+        Applicability is calculated against all content units belonging to the given bound repository.
+        The definition of "applicable" is content type specific and up to the decision of the profiler. 
 
-        {<consumer_id> : {'profiled_consumer' : <profiled_consumer>,
-                         'repo_ids' : <repo_ids>},
-         ...
-        }
-
-        :param consumer_profile_and_repo_ids: A dictionary with consumer profile and repo ids
-                        to be considered for applicability, keyed by consumer id.
-        :type consumer_profile_and_repo_ids: dict
-
-        :param unit_type_id: Common type id of all the units
+        :param unit_type_id: Content unit type id
         :type unit_type_id: str
 
-        :param unit_criteria: Criteria representing unit search
-        :type unit_criteria: pulp.plugins.conduits.mixins.Criteria
+        :param unit_profile: unit profile of the consumer
+        :type unit_profile: list of dicts
+
+        :param bound_repo_id: repo id of a repo bound to the given consumer
+        :type bound_repo_id: str
 
         :param config: plugin configuration
-        :type config: pulp.plugins.config.PluginCallConfiguration
+        :type config: pulp.server.plugins.config.PluginCallConfiguration
 
         :param conduit: provides access to relevant Pulp functionality
-        :type conduit: pulp.plugins.conduits.profiler.ProfilerConduit
+        :type conduit: pulp.plugins.conduits.profile.ProfilerConduit
 
-        :return: List of applicability reports.
-        :rtype: List of pulp.plugins.model.ApplicabilityReport
+        :return: A list content unit ids
+        :rtype: List of str
         """
         message = 'Applicability for: %s, not supported' % unit_type_id
         raise InvalidUnitTypeForApplicability(unit_type_id, message)
-
