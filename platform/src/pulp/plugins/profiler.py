@@ -263,17 +263,18 @@ class Profiler(object):
 
     def calculate_applicable_units(self, unit_type_id, unit_profile, bound_repo_id, config, conduit):
         """
-        Calculate and return a list of content unit ids applicable to the consumer with given unit_profile.
+        Calculate and return a list of content unit ids applicable to consumers with given unit_profile.
         Applicability is calculated against all content units belonging to the given bound repository.
         The definition of "applicable" is content type specific and up to the decision of the profiler. 
 
         :param unit_type_id: Content unit type id
         :type unit_type_id: str
 
-        :param unit_profile: unit profile of the consumer
+        :param unit_profile: a consumer unit profile
         :type unit_profile: list of dicts
 
-        :param bound_repo_id: repo id of a repo bound to the given consumer
+        :param bound_repo_id: repo id of a repository to be used to calculate applicability
+                              against the given consumer profile
         :type bound_repo_id: str
 
         :param config: plugin configuration

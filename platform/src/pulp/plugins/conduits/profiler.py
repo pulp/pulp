@@ -19,7 +19,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from   pulp.plugins.types import database as types_db
+from pulp.plugins.types import database as types_db
 from pulp.server.managers import factory as managers
 from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException, UnitAssociationCriteria
 
@@ -51,14 +51,18 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         and returns a unit with unit_id, values of the unit key and any additional 
         fields requested.
 
-        @param repo_id: repo id
-        @type  repo_id: str
+        :param repo_id: repo id
+        :type  repo_id: str
 
-        @param content_type_id: content type id of the units
-        @type  content_type_id: str
+        :param content_type_id: content type id of the units
+        :type  content_type_id: str
 
-        @return: list of units
-        @rtype:  list of dict
+        :param additional_unit_fields: additional fields from the unit metadata to be added 
+                                       in the result
+        :type additional_unit_fields: list of str
+
+        :return: list of units
+        :rtype:  list of dict
         """
         try:
             query_manager = managers.repo_unit_association_query_manager()
