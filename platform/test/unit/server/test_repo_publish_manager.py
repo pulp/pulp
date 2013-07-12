@@ -19,8 +19,9 @@ import mock_plugins
 
 from pulp.common import dateutils, constants
 from pulp.plugins.model import PublishReport
+from pulp.plugins.distributor import Distributor
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.exceptions import InvalidValue
+from pulp.server.exceptions import InvalidValue, PulpDataException
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
@@ -158,6 +159,19 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertEqual({}, call_args[2].plugin_config)
         self.assertEqual(distributor_config, call_args[2].repo_plugin_config)
         self.assertEqual(publish_overrides, call_args[2].override_config)
+
+    def test_publish_bad_override_config(self):
+        """
+        Tests a publish when invalid override configuration is passed.
+        """
+        # Setup
+        mock_object = mock.MagicMock()
+        mock_distributor = mock.Mock(spec=Distributor)
+        mock_distributor.validate_config.return_value = (False, 'fake message')
+
+        # Call the publish helper method and make sure a failed config validation raises an exception
+        self.assertRaises(PulpDataException, self.publish_manager._do_publish, mock_object, mock_object,
+                          mock_distributor, mock_object, mock_object, mock_object)
 
     def test_publish_missing_repo(self):
         """

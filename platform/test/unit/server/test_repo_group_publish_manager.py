@@ -15,12 +15,15 @@ import base
 import datetime
 import mock_plugins
 
+import mock
+
 from pulp.common import dateutils
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.distributor import GroupDistributor
 from pulp.plugins.model import RepositoryGroup, PublishReport
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor, RepoGroupPublishResult
-from pulp.server.exceptions import PulpExecutionException
+from pulp.server.exceptions import PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as manager_factory
 
 # -- test cases ---------------------------------------------------------------
@@ -99,6 +102,19 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
 
         # Clean Up
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = None
+
+    def test_publish_bad_override_config(self):
+        """
+        Tests a publish when invalid override configuration is passed.
+        """
+        # Setup
+        mock_object = mock.MagicMock()
+        mock_distributor = mock.Mock(spec=GroupDistributor)
+        mock_distributor.validate_config.return_value = (False, 'fake message')
+
+        # Call the publish helper method and make sure a failed config validation raises an exception
+        self.assertRaises(PulpDataException, self.publish_manager._do_publish, mock_object, mock_object,
+                          mock_distributor, mock_object, mock_object)
 
     def test_publish_with_plugin_exception(self):
         # Setup
