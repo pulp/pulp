@@ -157,19 +157,9 @@ def unit_cursors(unit_associations):
 def test_1():
     p = build_profile()
     repositories = p['repositories']
-    distributors = p['distributors']
-    unit_associations = p['units']
-
     print '-- Repositories [%.2d] --------------------------------' % len(repositories)
     for r in repositories:
         print r
-    print '-- Distributors [%.2d] --------------------------------' % len(distributors)
-    for d in distributors:
-        print d
-    print '-- Units [%.4d] ---------------------------------------' % len(unit_associations)
-    for u in unit_associations:
-        print u
-
 
 def test_2():
     from pprint import pprint

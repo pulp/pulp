@@ -83,9 +83,9 @@ class NodesHttpDistributor(Distributor):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.HTTP_DISTRIBUTOR,
-            'display_name' : 'Pulp Nodes HTTP Distributor',
-            'types' : ['node',]
+            'id': constants.HTTP_DISTRIBUTOR,
+            'display_name': _('Pulp Nodes HTTP Distributor'),
+            'types': [constants.TYPE_NODE]
         }
 
     def validate_config(self, repo, config, related_repos):

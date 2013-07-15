@@ -68,9 +68,9 @@ class NodesHttpImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.HTTP_IMPORTER,
-            'display_name' : 'Pulp Nodes HTTP Importer',
-            'types' : ['node', 'repository']
+            'id': constants.HTTP_IMPORTER,
+            'display_name': _('Pulp Nodes HTTP Importer'),
+            'types': constants.TYPE_IDS
         }
 
     def __init__(self):

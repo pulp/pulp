@@ -55,3 +55,15 @@ PUBLISHING_METHODS = [PUBLISHED_AS_FILE, PUBLISHED_AS_TARBALL]
 
 NODE_NOTE_KEY = '_child-node'
 STRATEGY_NOTE_KEY = '_node-update-strategy'
+
+
+# --- profiler ---------------------------------------------------------------
+
+NODE_PROFILER_ID = 'node'
+
+
+# --- types ------------------------------------------------------------------
+
+TYPE_NODE = 'node'
+TYPE_REPOSITORY = 'repository'
+TYPE_IDS = [TYPE_NODE, TYPE_REPOSITORY]
