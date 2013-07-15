@@ -269,22 +269,3 @@ class Consumer:
     def __init__(self, id, profiles):
         self.id = id
         self.profiles = profiles
-
-class ApplicabilityReport:
-    """
-    Returned to the pulp server at the end of a find_applicable_units call.
-    This is returned to indicate the applicability of a content
-    unit along with summary and details.
-
-    @ivar summary: arbitrary value that will be returned by default as the log
-                   for the call (should be short)
-    @type summary: just about any serializable object (likely str or dict)
-
-    @ivar details: potentially longer log that will have to be specifically
-                   retrieved through the Pulp REST APIs
-    @type details: just about any serializable object (likley str or dict)
-    """
-
-    def __init__(self, summary, details=None):
-        self.summary = summary
-        self.details = details

@@ -24,7 +24,7 @@ import mock
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
-from pulp.plugins.model import SyncReport, PublishReport, ApplicabilityReport
+from pulp.plugins.model import SyncReport, PublishReport
 
 # -- constants ----------------------------------------------------------------
 
@@ -221,8 +221,8 @@ def install():
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
         profiler.uninstall_units = \
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
-        profiler.find_applicable_units = \
-            mock.Mock(side_effect=lambda i,r,t,u,c,x: [ApplicabilityReport('mocked-summary', 'mocked-details')])
+        profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda t,p,r,c,x: ['mocked-unit1', 'mocked-unit2'])
 
 def reset():
     """
