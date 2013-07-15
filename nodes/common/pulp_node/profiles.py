@@ -35,6 +35,9 @@ REPO_SORT = itemgetter('id')
 DIST_SORT = itemgetter('repo_id', 'distributor_type_id', 'id')
 UNIT_SORT = itemgetter('repo_id', 'unit_fingerprint')
 
+DISTRIBUTORS = 'distributors'
+UNITS = 'units'
+
 
 # --- API --------------------------------------------------------------------
 
@@ -54,7 +57,8 @@ def build_profile(repo_ids=None):
     repositories.sort(key=REPO_SORT)
     distributors.sort(key=DIST_SORT)
     unit_associations.sort(key=UNIT_SORT)
-    return dict(repositories=repositories, distributors=distributors, units=unit_associations)
+    collate(repositories, distributors, unit_associations)
+    return dict(repositories=repositories)
 
 
 # --- utils ------------------------------------------------------------------
@@ -70,6 +74,13 @@ def fingerprint(thing):
     _hash = sha256()
     _hash.update(json_thing)
     return _hash.hexdigest()
+
+
+def collate(repositories, distributors, units):
+    for repo in repositories:
+        repo_id = repo['id']
+        repo[DISTRIBUTORS] = [d for d in distributors if d['repo_id'] == repo_id]
+        repo[UNITS] = [u for u in units if u['repo_id'] == repo_id]
 
 
 def strip(son):
