@@ -41,9 +41,9 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.find_applicable_units = \
-            Mock(side_effect=lambda i,r,t,u,c,x:
-                 [ApplicabilityReport('mysummary', 'mydetails')])
+        profiler.calculate_applicable_units = \
+            Mock(side_effect=lambda t,p,r,c,x:
+                 ['my_unit1', 'my_unit2'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -63,7 +63,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         # Setup
         self.populate()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.find_applicable_units = Mock(side_effect=KeyError)
+        profiler.calculate_applicable_units = Mock(side_effect=KeyError)
         # Test
         user_specified_unit_criteria = {'rpm': {"filters": {"name": {"$in":['zsh','ksh']}}},
                                         'mock-type': {"filters": {"name": {"$in":['abc','def']}}}
@@ -72,7 +72,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         for type_id, criteria in user_specified_unit_criteria.items():
             unit_criteria[type_id] = Criteria.from_client_input(criteria)
         manager = factory.consumer_applicability_manager()
-        result = manager.find_applicable_units(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, unit_criteria)
+        result = manager.calculate_applicable_units(self.CONSUMER_CRITERIA)
         self.assertTrue(result == {})
 
     def test_no_exception_for_profiler_notfound(self):
@@ -86,7 +86,7 @@ class ApplicabilityManagerTests(base.PulpServerTests):
         for type_id, criteria in user_specified_unit_criteria.items():
             unit_criteria[type_id] = Criteria.from_client_input(criteria)
         manager = factory.consumer_applicability_manager()
-        result = manager.find_applicable_units(self.CONSUMER_CRITERIA, self.REPO_CRITERIA, unit_criteria)
+        result = manager.calculate_applicable_units(self.CONSUMER_CRITERIA)
         self.assertTrue(result == {})
 
 

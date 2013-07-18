@@ -584,72 +584,31 @@ class Profile(JSONController):
 
 class ContentApplicability(JSONController):
     """
-    Determine content applicability.
+    Calculate content applicability.
     """
 
     @auth_required(READ)
     def POST(self):
         """
-        Determine content applicability.
+        Calculate content applicability.
         body {
         consumer_criteria:<dict> or None, 
-        repo_criteria:<dict> or None, 
-        unit_criteria: <dict of type_id : unit_criteria> or None,
-        override_config: <dict> or None
         }
 
-        :return: 
-
-        When report_style is 'by_consumer' -
-        A dict of applicability reports keyed by consumer ID.
-            Each consumer report is:
-                { <unit_type_id1> : [<ApplicabilityReport>],
-                  <unit_type_id1> : [<ApplicabilityReport>]},
-                }
-
-        When report_style is 'by_units' -
-        A dict of <unit_type_id1>: [<ApplicabilityReport>]
-        where applicability_report.summary contains a list of applicable consumer ids.
-
-        :rtype: dict
+        :return: A list of of content unit ids 
+        :rtype: list
         """
         body = self.params()
 
         consumer_criteria = body.get('consumer_criteria', None)
-        repo_criteria = body.get('repo_criteria', None)
-        units = body.get('unit_criteria', None)
-        override_config = body.get('override_config', None)
 
         if consumer_criteria:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
 
-        if repo_criteria:
-            repo_criteria = Criteria.from_client_input(repo_criteria)
-
-        # If unit_criteria is not specified, consider all units of all types
-        if not units:
-            units = {}
-            all_unit_type_ids = content_types_db.all_type_ids()
-            for unit_type_id in all_unit_type_ids:
-                units[unit_type_id] = {}
-        # Validate user defined criteria and convert them to Criteria objects
-        unit_criteria = {}
-        for type_id, criteria in units.items():
-            if criteria is None:
-                criteria = {}
-            unit_criteria[type_id] = Criteria.from_client_input(criteria)
-
         manager = managers.consumer_applicability_manager()
-        report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria, override_config)
+        applicable_units = manager.calculate_applicable_units(consumer_criteria)
 
-        for unit_type_id, applicability_reports in report.items():
-            if isinstance(applicability_reports, list):
-                report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in applicability_reports]
-            else:
-                for consumer_id, report_list in applicability_reports.items():
-                    report[unit_type_id][consumer_id] = [serialization.consumer.applicability_report(r) for r in report_list]
-
-        return self.ok(report)
+        return self.ok(applicable_units)
 
 
 class UnitInstallScheduleCollection(JSONController):
