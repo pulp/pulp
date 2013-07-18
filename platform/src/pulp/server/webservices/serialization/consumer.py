@@ -30,8 +30,3 @@ def profile(profile):
         profile['content_type'])
     serialized.update(href)
     return serialized
-
-def applicability_report(report):
-    return dict(
-        summary=report.summary,
-        details=report.details)
