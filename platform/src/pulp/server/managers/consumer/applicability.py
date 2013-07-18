@@ -18,11 +18,105 @@ Contains content applicability management classes
 from gettext import gettext as _
 from logging import getLogger
 
+from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
+from pulp.plugins.model import Consumer as ProfiledConsumer
+from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
+from pulp.server.exceptions import PulpExecutionException, MissingResource
+from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
+from pulp.server.managers.pluginwrapper import PluginWrapper
 
 
 _LOG = getLogger(__name__)
+
+
+class ApplicabilityManager(object):
+
+    def calculate_applicable_units(self, consumer_criteria=None):
+        """
+        Calculate applicable units from bound repositories for given consumers
+
+        :param consumer_criteria: The consumer selection criteria.
+        :type consumer_criteria: dict
+
+        :return: applicability report
+        :rtype: dict
+        """
+        consumer_query_manager = managers.consumer_query_manager()
+        bind_manager = managers.consumer_bind_manager()
+        consumer_profile_manager = managers.consumer_profile_manager()
+
+        # Process Consumer Criteria
+        if consumer_criteria:
+            # Get consumer ids satisfied by specified consumer criteria
+            consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+        else:
+            # Get all consumer ids registered to the Pulp server
+            consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
+
+        result = {}
+        for consumer_id in consumer_ids:
+            result[consumer_id] = {}
+            bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_consumer(consumer_id)]
+            bound_repo_ids = list(set(bound_repo_ids))
+            for bound_repo_id in bound_repo_ids:
+                unit_type_id = 'rpm'
+                try:
+                    unit_profile = consumer_profile_manager.get_profile(consumer_id, 'rpm')
+                except MissingResource:
+                    continue
+                profiler, cfg = self.__profiler(unit_type_id)
+                call_config = PluginCallConfiguration(plugin_config=cfg, repo_plugin_config=None)
+                try:
+                    unit_list = profiler.calculate_applicable_units(unit_type_id, unit_profile['profile'], bound_repo_id, call_config, ProfilerConduit())
+                except PulpExecutionException:
+                    unit_list = None
+
+                if unit_list is None:
+                    _LOG.warn("Profiler for content type [%s] is not returning applicability reports" % unit_type_id)
+                else:
+                    result[consumer_id][bound_repo_id] = unit_list
+
+        return result
+
+    def __profiler(self, type_id):
+        """
+        Find the profiler.
+        Returns the Profiler base class when not matched.
+
+        :param type_id: The content type ID.
+        :type type_id: str
+
+        :return: (profiler, cfg)
+        :rtype: tuple
+        """
+        try:
+            plugin, cfg = plugin_api.get_profiler_by_type(type_id)
+        except plugin_exceptions.PluginNotFound:
+            plugin = Profiler()
+            cfg = {}
+        return PluginWrapper(plugin), cfg
+
+    def __get_consumer_profile(self, consumer_id, type_id):
+        """
+        Get a profiler consumer model object.
+
+        :param consumer_id: A consumer ID.
+        :type consumer_id: str
+
+        :return: Consumer unit profile for given type
+        :rtype: dict
+        """
+        profiles = {}
+        manager = managers.consumer_profile_manager()
+        for p in manager.get_profiles(id):
+            typeid = p['content_type']
+            profile = p['profile']
+            profiles[typeid] = profile
+        return ProfiledConsumer(id, profiles)
 
 
 class DoesNotExist(Exception):

@@ -13,10 +13,10 @@
 
 import mock
 
+from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.loader import api as plugins
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
-from pulp.server.db.model.criteria import Criteria
-from pulp.server.managers import factory as factory
 from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
     _add_repo_ids_to_consumer_map, _format_report, _get_applicability_map,
@@ -24,7 +24,77 @@ from pulp.server.managers.consumer.applicability import (
     retrieve_consumer_applicability)
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.managers import factory as factory
+from pulp.server.managers.consumer.applicability import (MultipleObjectsReturned,
+                                                         DoesNotExist)
 import base
+import mock_plugins
+
+
+class ApplicabilityManagerTests(base.PulpServerTests):
+
+    CONSUMER_IDS = ['test-1', 'test-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [{'id':1}]
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    REPO_CRITERIA = None
+    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
+
+    def setUp(self):
+        base.PulpServerTests.setUp(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        plugins._create_manager()
+        mock_plugins.install()
+        profiler, cfg = plugins.get_profiler_by_type('rpm')
+        profiler.calculate_applicable_units = \
+            Mock(side_effect=lambda t,p,r,c,x:
+                 ['my_unit1', 'my_unit2'])
+
+    def tearDown(self):
+        base.PulpServerTests.tearDown(self)
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate(self):
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        manager = factory.consumer_profile_manager()
+        for id in self.CONSUMER_IDS:
+            manager.create(id, 'rpm', self.PROFILE)
+
+    def test_profiler_no_exception(self):
+        # Setup
+        self.populate()
+        profiler, cfg = plugins.get_profiler_by_type('rpm')
+        profiler.calculate_applicable_units = Mock(side_effect=KeyError)
+        # Test
+        user_specified_unit_criteria = {'rpm': {"filters": {"name": {"$in":['zsh','ksh']}}},
+                                        'mock-type': {"filters": {"name": {"$in":['abc','def']}}}
+                                        }
+        unit_criteria = {}
+        for type_id, criteria in user_specified_unit_criteria.items():
+            unit_criteria[type_id] = Criteria.from_client_input(criteria)
+        manager = factory.consumer_applicability_manager()
+        result = manager.calculate_applicable_units(self.CONSUMER_CRITERIA)
+        self.assertTrue(result == {})
+
+    def test_no_exception_for_profiler_notfound(self):
+        # Setup
+        self.populate()
+        # Test
+        user_specified_unit_criteria = {'rpm': {"filters": {"name": {"$in":['zsh']}}},
+                         'xxx': {"filters": {"name": {"$in":['abc']}}}
+                        }
+        unit_criteria = {}
+        for type_id, criteria in user_specified_unit_criteria.items():
+            unit_criteria[type_id] = Criteria.from_client_input(criteria)
+        manager = factory.consumer_applicability_manager()
+        result = manager.calculate_applicable_units(self.CONSUMER_CRITERIA)
+        self.assertTrue(result == {})
 
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):
@@ -855,7 +925,6 @@ class TestAddRepoIDsToConsumerMap(base.PulpServerTests,
 
         # The order of repo_ids is not important, so we'll use the
         # assert_equal_ignoring_list_order, which will compare the lists as sets
-        
         self.assert_equal_ignoring_list_order(consumer_map, expected_consumer_map)
 
 
@@ -983,7 +1052,7 @@ class TestGetApplicabilityMap(base.PulpServerTests):
         self.assertEqual(a_map, expected_a_map)
 
 
-class TestGetConsumerApplicabilityMap(base.PulpServerTests, 
+class TestGetConsumerApplicabilityMap(base.PulpServerTests,
                                       base.RecursiveUnorderedListComparisonMixin):
     """
     Test the _get_consumer_applicability_map() function.
