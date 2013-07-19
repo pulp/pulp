@@ -9,6 +9,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from copy import deepcopy
 import logging
 
 import mock
@@ -920,10 +921,6 @@ class TestContentApplicability(base.PulpWebserviceTests):
     """
     PATH = '/v2/consumers/actions/content/applicability/'
 
-    def setUp(self):
-        super(TestContentApplicability, self).setUp()
-        plugin_api._create_manager()
-
     def tearDown(self):
         """
         Empty the collections that were written to during this test suite.
@@ -1110,26 +1107,13 @@ class TestContentApplicability(base.PulpWebserviceTests):
 
         # We should get the criteria for the single consumer back
         self.assertEqual(status, 200)
-        print body
         expected_body = [
             {'consumers': ['consumer_1', 'consumer_2'],
              'applicability': {'content_type_2': ['unit_1-0.9.2', 'unit_3-13.0.1']}},
             {'consumers': ['consumer_2'],
              'applicability': {
                  'content_type_2': ['unit_3-13.1.0']}}]
-        # Since order doesn't matter, let's compare sets of the expected data
-        self.assertEqual(len(body), len(expected_body))
-        self.assertEqual(set(body[0]['consumers']), set(expected_body[0]['consumers']))
-        self.assertEqual(body[0]['applicability'].keys(),
-                         expected_body[0]['applicability'].keys())
-        self.assertEqual(set(body[0]['applicability']['content_type_2']),
-                         set(expected_body[0]['applicability']['content_type_2']))
-        self.assertEqual(set(body[1]['consumers']), set(expected_body[1]['consumers']))
-        self.assertEqual(body[1]['applicability'].keys(),
-                         expected_body[1]['applicability'].keys())
-        self.assertEqual(set(body[1]['applicability']['content_type_2']),
-                         set(expected_body[1]['applicability']['content_type_2']))
-
+        self.assert_applicability_matches(body, expected_body)
 
     def test_POST_match_consumers_with_same_applicability(self, consumer_history_manager,
                                                           repo_distributor_manager):
@@ -1168,51 +1152,176 @@ class TestContentApplicability(base.PulpWebserviceTests):
         expected_body = [
             {'consumers': ['consumer_1', 'consumer_2'],
              'applicability': {'content_type': ['unit_1-0.9.2', 'unit_3-13.0.1']}}]
-        # Since order doesn't matter, let's compare sets of the expected data
-        self.assertEqual(len(body), 1)
-        self.assertEqual(set(body[0]['consumers']), set(expected_body[0]['consumers']))
-        self.assertEqual(body[0]['applicability'].keys(), ['content_type'])
-        self.assertEqual(set(body[0]['applicability']['content_type']),
-                         set(expected_body[0]['applicability']['content_type']))
+        self.assert_applicability_matches(body, expected_body)
 
-    def test_POST_match_disparate_consumers(self):
+    def test_POST_match_disparate_consumers(self, consumer_history_manager,
+                                            repo_distributor_manager):
         """
         Test that the POST() method handles matching two consumers with different
         applicability data correctly.
         """
+        # Set up the consumers
+        consumer_ids = ['consumer_1', 'consumer_2']
+        manager = factory.consumer_manager()
+        for consumer_id in consumer_ids:
+            manager.register(consumer_id)
+        # Set up consumer profile data
+        consumer_profiles = {
+            'consumer_1': [{'type': 'content_type_1', 'profile': ['unit_4-1.9']}],
+            'consumer_2': [{'type': 'content_type_1',
+                            'profile': ['unit_1-0.9.1', 'unit_2-1.1.3',
+                                        'unit_3-12.0.13']}]}
+        manager = ProfileManager()
+        profile_map = {}
+        for consumer_id, profiles in consumer_profiles.items():
+            profile_map[consumer_id] = []
+            for profile in profiles:
+                consumer_profile = manager.create(consumer_id, profile['type'],
+                                                  profile['profile'])
+                profile_map[consumer_id].append(
+                    {'hash': consumer_profile.profile_hash,
+                     'profile': consumer_profile.profile})
+        # Create our precalcaulated applicability objects
+        applicabilities = [
+            # Consumer_2's applicability
+            {'profile_hash': profile_map['consumer_2'][0]['hash'],
+             'profile': profile_map['consumer_2'][0]['profile'],
+             'repo_id': 'repo_2',
+             'applicability': {'content_type_1': ['unit_3-13.1.0']}},
+            # Consumer_1's applicability
+            {'profile_hash': profile_map['consumer_1'][0]['hash'],
+             'profile': profile_map['consumer_1'][0]['profile'],
+             'repo_id': 'repo_1',
+             'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1']}}]
+        for a in applicabilities:
+            RepoProfileApplicability.objects.create(a['profile_hash'], a['repo_id'],
+                                                    a['profile'], a['applicability'])
+        # Create repository bindings
+        bind_manager = BindManager()
+        bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
+        bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
         criteria = {
             'consumer_criteria': {
-                'filters': {'_id': {'$in': ['consumer_1', 'consumer_2']}}}}
+                'filters': {'id': {'$in': ['consumer_1', 'consumer_2']}}}}
 
         status, body = self.post(self.PATH, criteria)
 
         # We should get the criteria for the single consumer back
         self.assertEqual(status, 200)
-        expected_body = [{'consumers': ['consumer_1'],
-                          'applicability': {'content_type_1': ['unit_1', 'unit_3']}},
-                         {'consumers': ['consumer_2'],
-                          'applicability': {'content_type_1': ['unit_2', 'unit_3']}}]
-        self.assertEqual(body, expected_body)
+        expected_body = [
+            {'consumers': ['consumer_1'],
+             'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1']}},
+            {'consumers': ['consumer_2'],
+             'applicability': {'content_type_1': ['unit_3-13.1.0']}}]
+        self.assert_applicability_matches(body, expected_body)
 
-    def test_POST_match_mixed_case(self):
+    def test_POST_match_mixed_case(self, consumer_history_manager, repo_distributor_manager):
         """
         Make sure the POST() method can handle a mixed case of consumers.
         """
-        criteria = {
-            'consumer_criteria': {
-                'filters': {'_id': {'$in': ['consumer_1', 'consumer_2', 'consumer_3']}}}}
+        # Set up the consumers
+        consumer_ids = ['consumer_1', 'consumer_2', 'consumer_3']
+        manager = factory.consumer_manager()
+        for consumer_id in consumer_ids:
+            manager.register(consumer_id)
+        # Set up consumer profile data
+        consumer_profiles = {
+            'consumer_1': [{'type': 'content_type_1',
+                            'profile': ['unit_1-0.9.1', 'unit_3-12.9.3']}],
+            'consumer_2': [{'type': 'content_type_1',
+                            'profile': ['unit_1-0.9.1', 'unit_3-12.9.3']},
+                           {'type': 'content_type_2',
+                            'profile': ['unit_3-12.9.0']}],
+            'consumer_3': [{'type': 'content_type_1',
+                            'profile': ['unit_2-2.0.13']}]}
+        manager = ProfileManager()
+        profile_map = {}
+        for consumer_id, profiles in consumer_profiles.items():
+            profile_map[consumer_id] = []
+            for profile in profiles:
+                consumer_profile = manager.create(consumer_id, profile['type'],
+                                                  profile['profile'])
+                profile_map[consumer_id].append(
+                    {'hash': consumer_profile.profile_hash,
+                     'profile': consumer_profile.profile})
+        # Create our precalcaulated applicability objects
+        applicabilities = [
+            # consumer_1 and 2's applicability
+            {'profile_hash': profile_map['consumer_1'][0]['hash'],
+             'profile': profile_map['consumer_1'][0]['profile'],
+             'repo_id': 'repo_1',
+             'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1']}},
+            # Consumer_2's applicability
+            {'profile_hash': profile_map['consumer_2'][1]['hash'],
+             'profile': profile_map['consumer_2'][1]['profile'],
+             'repo_id': 'repo_2',
+             'applicability': {'content_type_2': ['unit_3-13.1.0']}},
+            # Consumer_3's applicability
+            {'profile_hash': profile_map['consumer_3'][0]['hash'],
+             'profile': profile_map['consumer_3'][0]['profile'],
+             'repo_id': 'repo_1',
+             'applicability': {'content_type_1': ['unit_2-3.1.1']}}]
+        for a in applicabilities:
+            RepoProfileApplicability.objects.create(a['profile_hash'], a['repo_id'],
+                                                    a['profile'], a['applicability'])
+        # Create repository bindings
+        bind_manager = BindManager()
+        bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
+        # Consumer_2 is bound to repo_1 and repo_2. It's binding to repo_2 gets it another
+        # applicability
+        bind_manager.bind('consumer_2', 'repo_1', 'distributor_id', False, {})
+        bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
+        bind_manager.bind('consumer_3', 'repo_1', 'distributor_id', False, {})
+        # Match all consumers
+        criteria = {'consumer_criteria': {'filters': {}}}
 
         status, body = self.post(self.PATH, criteria)
 
         # We should get the criteria for the single consumer back
         self.assertEqual(status, 200)
-        expected_body = [{'consumers': ['consumer_1', 'consumer_2'],
-                          'applicability': {'content_type_1': ['unit_1', 'unit_3']}},
-                         {'consumers': ['consumer_2'],
-                          'applicability': {'content_type_2': ['unit_4']}},
-                         {'consumers': ['consumer_3'],
-                          'applicability': {'content_type_1': ['unit_2']}}]
-        self.assertEqual(body, expected_body)
+        expected_body = [
+            {'consumers': ['consumer_1', 'consumer_2'],
+             'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1']}},
+            {'consumers': ['consumer_2'],
+             'applicability': {'content_type_2': ['unit_3-13.1.0']}},
+            {'consumers': ['consumer_3'],
+             'applicability': {'content_type_1': ['unit_2-3.1.1']}}]
+        self.assert_applicability_matches(body, expected_body)
+
+    def assert_applicability_matches(self, a_1, a_2):
+        """
+        This method will assert that the returned applicability data from the POST() method
+        is the same as an expected_body passed to it. Order of lists doesn't matter for
+        applicability, so this method transforms the data into sets first for comparison.
+
+        :param a_1: The first applicability that you wish to test for equality with
+        :type  a_1: list
+        :param a_2: The second applicability that you wish to test for equality with
+        :type  a_2: list
+        """
+        def _convert_to_set(a):
+            """
+            Traverse the given object, a, and turn all lists and dictionaries found in the
+            structure into fronzensets.
+
+            :param a: A structure to traverse, converting lists and dictionaries into
+                      frozensets
+            :type  a: object
+            :return:  A representation of a that has frozensets in place of lists and dicts
+            :rtype:   object
+            """
+            if isinstance(a, (list, tuple)):
+                a = list(deepcopy(a))
+                for index, item in enumerate(a):
+                    a[index] = _convert_to_set(item)
+                a = frozenset(a)
+            elif isinstance(a, dict):
+                a = deepcopy(a)
+                for key, value in a.items():
+                    a[key] = _convert_to_set(value)
+                a = frozenset(a.items())
+            return a
+        self.assertEqual(_convert_to_set(a_1), _convert_to_set(a_2))
 
     def test_POST_match_single_consumer(self):
         """
