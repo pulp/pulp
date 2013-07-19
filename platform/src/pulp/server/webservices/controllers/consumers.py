@@ -788,7 +788,13 @@ class ContentApplicability(JSONController):
         for repo_profile, data in applicability_map.items():
             consumers = frozenset(data['consumers'])
             if consumers in consumer_applicability_map:
-                consumer_applicability_map[consumers].update(data['applicability'])
+                for content_type, applicability in data['applicability'].items():
+                    if content_type in consumer_applicability_map[consumers]:
+                        consumer_applicability_map[consumers][content_type] = list(
+                            set(consumer_applicability_map[consumers][content_type]) |\
+                            set(applicability))
+                    else:
+                        consumer_applicability_map[consumers][content_type] = applicability
             else:
                 consumer_applicability_map[consumers] = data['applicability']
         return consumer_applicability_map
