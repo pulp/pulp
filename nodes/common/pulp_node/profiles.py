@@ -76,10 +76,10 @@ def fingerprint(thing):
 def collate(repositories, distributors, units):
     for repo in repositories:
         repo_id = repo['id']
-        distributors = [d for d in distributors if d['repo_id'] == repo_id]
-        units = [u for u in units if u['repo_id'] == repo_id]
-        repo[constants.PROFILE_DISTRIBUTORS] = distributors
-        repo[constants.PROFILE_UNITS] = units
+        _distributors = [d for d in distributors if d['repo_id'] == repo_id]
+        _units = [u for u in units if u['repo_id'] == repo_id]
+        repo[constants.PROFILE_DISTRIBUTORS] = _distributors
+        repo[constants.PROFILE_UNITS] = _units
 
 
 def strip(son):

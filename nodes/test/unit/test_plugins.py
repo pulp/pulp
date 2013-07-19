@@ -570,7 +570,7 @@ class ProfilerTest(PluginTestBase):
 
     NODE_ID = 'test_node'
 
-    def populate(self, strategy=constants.DEFAULT_STRATEGY):
+    def populate(self, strategy=constants.ADDITIVE_STRATEGY):
         PluginTestBase.populate(self)
         # register child
         manager = managers.consumer_manager()
@@ -592,6 +592,20 @@ class ProfilerTest(PluginTestBase):
         conf = {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}
         manager = managers.consumer_bind_manager()
         manager.bind(self.NODE_ID, self.REPO_ID, FAKE_DISTRIBUTOR, False, conf)
+        # other repositories
+        manager = managers.repo_manager()
+        for repo_id in self.EXTRA_REPO_IDS:
+            manager.create_repo(repo_id)
+
+    def delete_units(self, repo_id, num_units):
+        collection = RepoContentUnit.get_collection()
+        units = list(collection.find({'repo_id': repo_id}))
+        ids = [u['_id'] for u in units[:-num_units]]
+        collection.remove({'_id': {'$in': ids}}, safe=True)
+
+    def delete_repositories(self, repo_ids):
+        collection = Repo.get_collection()
+        collection.remove({'id': {'$in': repo_ids}})
 
     def test_metadata(self):
         # Test
@@ -601,15 +615,32 @@ class ProfilerTest(PluginTestBase):
         self.assertTrue('node' in md['types'])
         self.assertTrue('repository' in md['types'])
 
-    def test_update(self):
+    def test_additive(self):
         self.populate()
-        conduit = ProfilerConduit()
         p = build_profile()
         profiler = NodeProfiler()
         consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        # Test
         units = [1, 2]
         options = {'simulated': True}
+        conduit = ProfilerConduit()
+        self.delete_repositories(self.EXTRA_REPO_IDS)
+        self.delete_units(self.REPO_ID, self.NUM_UNITS / 2)
         translated = profiler.update_units(consumer, units, options, {}, conduit)
+        # Verify
+        self.assertEqual(units, translated)
+
+    def test_mirror(self):
+        self.populate(strategy=constants.MIRROR_STRATEGY)
+        p = build_profile()
+        profiler = NodeProfiler()
+        consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        # Test
+        units = [1, 2]
+        options = {'simulated': True}
+        conduit = ProfilerConduit()
+        translated = profiler.update_units(consumer, units, options, {}, conduit)
+        # Verify
         self.assertEqual(units, translated)
 
 
