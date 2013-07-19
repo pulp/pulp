@@ -35,9 +35,6 @@ REPO_SORT = itemgetter('id')
 DIST_SORT = itemgetter('repo_id', 'distributor_type_id', 'id')
 UNIT_SORT = itemgetter('repo_id', 'unit_fingerprint')
 
-DISTRIBUTORS = 'distributors'
-UNITS = 'units'
-
 
 # --- API --------------------------------------------------------------------
 
@@ -51,14 +48,14 @@ def build_profile(repo_ids=None):
     for unit_id, unit_fingerprint in fetch_units(unit_associations.values()):
         unit_association = unit_associations[unit_id]
         unit_association.pop('unit_id')
-        unit_association['unit_fingerprint'] = unit_fingerprint
+        unit_association[constants.PROFILE_UNIT_FINGERPRINT] = unit_fingerprint
     repositories = repositories.values()
     unit_associations = unit_associations.values()
     repositories.sort(key=REPO_SORT)
     distributors.sort(key=DIST_SORT)
     unit_associations.sort(key=UNIT_SORT)
     collate(repositories, distributors, unit_associations)
-    return dict(repositories=repositories)
+    return {constants.PROFILE_REPOSITORIES: repositories}
 
 
 # --- utils ------------------------------------------------------------------
@@ -79,8 +76,10 @@ def fingerprint(thing):
 def collate(repositories, distributors, units):
     for repo in repositories:
         repo_id = repo['id']
-        repo[DISTRIBUTORS] = [d for d in distributors if d['repo_id'] == repo_id]
-        repo[UNITS] = [u for u in units if u['repo_id'] == repo_id]
+        distributors = [d for d in distributors if d['repo_id'] == repo_id]
+        units = [u for u in units if u['repo_id'] == repo_id]
+        repo[constants.PROFILE_DISTRIBUTORS] = distributors
+        repo[constants.PROFILE_UNITS] = units
 
 
 def strip(son):
@@ -95,7 +94,7 @@ def fetch_repositories(repo_ids=None):
     if repo_ids is None:
         query = ALL
     else:
-        query = {'repo_id': {'$in': repo_ids}}
+        query = {'id': {'$in': repo_ids}}
     fetched = {}
     collection = Repo.get_collection()
     for r in collection.find(query, fields=REPO_FIELDS):
@@ -156,7 +155,7 @@ def unit_cursors(unit_associations):
 
 def test_1():
     p = build_profile()
-    repositories = p['repositories']
+    repositories = p[constants.PROFILE_REPOSITORIES]
     print '-- Repositories [%.2d] --------------------------------' % len(repositories)
     for r in repositories:
         print r

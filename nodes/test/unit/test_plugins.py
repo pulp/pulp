@@ -30,17 +30,19 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
 from pulp_node.distributors.http.distributor import NodesHttpDistributor
 from pulp_node.importers.http.importer import NodesHttpImporter
+from pulp_node.profilers.node import NodeProfiler
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
-from pulp.server.db.model.consumer import Consumer, Bind
+from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.exceptions import MissingResource
 from pulp.plugins import model as plugin_model
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.server.managers import factory as managers
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
@@ -127,6 +129,7 @@ class BadDownloadRequest(DownloadRequest):
 
 class PluginTestBase(WebTest):
 
+    NODE_ID = 'test_node'
     REPO_ID = 'test-repo'
     UNIT_TYPE_ID = 'rpm'
     UNIT_ID = 'test_unit_%d'
@@ -171,6 +174,7 @@ class PluginTestBase(WebTest):
         shutil.rmtree(self.parentfs)
         shutil.rmtree(self.childfs)
         Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
         Bind.get_collection().remove()
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
@@ -560,6 +564,53 @@ class ImporterTest(PluginTestBase):
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
+
+
+class ProfilerTest(PluginTestBase):
+
+    NODE_ID = 'test_node'
+
+    def populate(self, strategy=constants.DEFAULT_STRATEGY):
+        PluginTestBase.populate(self)
+        # register child
+        manager = managers.consumer_manager()
+        manager.register(self.NODE_ID)
+        # distributor
+        manager = managers.repo_distributor_manager()
+        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, {}, False, FAKE_DISTRIBUTOR)
+        manager.add_distributor(
+            self.REPO_ID,
+            constants.HTTP_DISTRIBUTOR,
+            self.dist_conf(),
+            False,
+            constants.HTTP_DISTRIBUTOR)
+        # bind
+        conf = {constants.STRATEGY_KEYWORD: strategy}
+        manager = managers.consumer_bind_manager()
+        manager.bind(self.NODE_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
+        # bind
+        conf = {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}
+        manager = managers.consumer_bind_manager()
+        manager.bind(self.NODE_ID, self.REPO_ID, FAKE_DISTRIBUTOR, False, conf)
+
+    def test_metadata(self):
+        # Test
+        md = NodeProfiler.metadata()
+        # Verify
+        self.assertTrue(isinstance(md, dict))
+        self.assertTrue('node' in md['types'])
+        self.assertTrue('repository' in md['types'])
+
+    def test_update(self):
+        self.populate()
+        conduit = ProfilerConduit()
+        p = build_profile()
+        profiler = NodeProfiler()
+        consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        units = [1, 2]
+        options = {'simulated': True}
+        translated = profiler.update_units(consumer, units, options, {}, conduit)
+        self.assertEqual(units, translated)
 
 
 # --- testing end-to-end -----------------------------------------------------

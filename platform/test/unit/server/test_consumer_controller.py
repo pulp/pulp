@@ -773,6 +773,57 @@ class ContentTest(base.PulpWebserviceTests):
         mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
 
 
+class ContentTranslationTest(base.PulpWebserviceTests):
+
+    CONSUMER_ID = 'test-consumer'
+    UNITS = [1, 2, 3]
+
+    @mock.patch('pulp.server.managers.consumer.translation.ContentTranslationManager.install_units', return_value=UNITS)
+    def test_install(self, mock_manager):
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/translate/install/' % self.CONSUMER_ID
+        body = dict(units=units, options=options)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 200)
+        mock_manager.assert_called_with(self.CONSUMER_ID, units, options)
+        self.assertEqual(body, self.UNITS)
+
+    @mock.patch('pulp.server.managers.consumer.translation.ContentTranslationManager.update_units', return_value=UNITS)
+    def test_update(self, mock_manager):
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/translate/update/' % self.CONSUMER_ID
+        body = dict(units=units, options=options)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 200)
+        mock_manager.assert_called_with(self.CONSUMER_ID, units, options)
+        self.assertEqual(body, self.UNITS)
+
+    @mock.patch('pulp.server.managers.consumer.translation.ContentTranslationManager.uninstall_units', return_value=UNITS)
+    def test_uninstall(self, mock_manager):
+        # Test
+        unit_key = dict(name='zsh')
+        unit = dict(type_id='rpm', unit_key=unit_key)
+        units = [unit,]
+        options = dict(importkeys=True)
+        path = '/v2/consumers/%s/actions/content/translate/uninstall/' % self.CONSUMER_ID
+        body = dict(units=units, options=options)
+        status, body = self.post(path, body)
+        # Verify
+        self.assertEquals(status, 200)
+        mock_manager.assert_called_with(self.CONSUMER_ID, units, options)
+        self.assertEqual(body, self.UNITS)
+
+
 class TestProfiles(base.PulpWebserviceTests):
 
     CONSUMER_ID = 'test-consumer'

@@ -401,6 +401,78 @@ class Content(JSONController):
         result = execution.execute_async(self, call_request)
         return result
 
+
+class ContentTranslation(JSONController):
+    """
+    Content translation controller.
+    """
+
+    @auth_required(READ)
+    def POST(self, consumer_id, action):
+        """
+        Content actions.
+        """
+        method = getattr(self, action, None)
+        if method:
+            return method(consumer_id)
+        else:
+            raise BadRequest()
+
+    def install(self, consumer_id):
+        """
+        Translate the specified units to be installed.
+        Expected body: {units:[], options:<dict>}
+        where unit is: {type_id:<str>, unit_key={}} and the
+        options is a dict of install options.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @return: List of content units
+        @rtype: list
+        """
+        body = self.params()
+        units = body.get('units')
+        options = body.get('options', {})
+        manager = managers.consumer_content_translation_manager()
+        units = manager.install_units(consumer_id, units, options)
+        return self.ok(units)
+
+    def update(self, consumer_id):
+        """
+        Translate the specified units to be updated.
+        Expected body: {units:[], options:<dict>}
+        where unit is: {type_id:<str>, unit_key={}} and the
+        options is a dict of update options.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @return: List of content units
+        @rtype: list
+        """
+        body = self.params()
+        units = body.get('units')
+        options = body.get('options', {})
+        manager = managers.consumer_content_translation_manager()
+        units = manager.update_units(consumer_id, units, options)
+        return self.ok(units)
+
+    def uninstall(self, consumer_id):
+        """
+        Translate the specified units to be uninstalled.
+        Expected body: {units:[], options:<dict>}
+        where unit is: {type_id:<str>, unit_key={}} and the
+        options is a dict of uninstall options.
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
+        @return: List of content units
+        @rtype: list
+        """
+        body = self.params()
+        units = body.get('units')
+        options = body.get('options', {})
+        manager = managers.consumer_content_translation_manager()
+        units = manager.uninstall_units(consumer_id, units, options)
+        return self.ok(units)
+
+
 class ConsumerHistory(JSONController):
 
     @auth_required(READ)
@@ -1053,6 +1125,7 @@ urls = (
     '/([^/]+)/schedules/content/uninstall/', UnitUninstallScheduleCollection,
     '/([^/]+)/schedules/content/uninstall/([^/]+)/', UnitUninstallScheduleResource,
     '/([^/]+)/actions/content/(install|update|uninstall)/$', Content,
+    '/([^/]+)/actions/content/translate/(install|update|uninstall)/$', ContentTranslation,
     '/([^/]+)/history/$', ConsumerHistory,
     '/([^/]+)/$', Consumer,
 )

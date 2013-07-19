@@ -33,6 +33,7 @@ TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
 TYPE_CONSUMER_APPLICABILITY = 'consumer-applicability-manager'
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
 TYPE_CONSUMER_CONTENT       = 'consumer-content-manager'
+TYPE_CONSUMER_TRANSLATION   = 'consumer-content-translation-manager'
 TYPE_CONSUMER_GROUP         = 'consumer-group-manager'
 TYPE_CONSUMER_GROUP_QUERY   = 'consumer-group-query-manager'
 TYPE_CONSUMER_HISTORY       = 'consumer-history-manager'
@@ -148,6 +149,12 @@ def consumer_content_manager():
     @rtype: L{pulp.server.managers.consumer.content.ConsumerContentManager}
     """
     return get_manager(TYPE_CONSUMER_CONTENT)
+
+def consumer_content_translation_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.translation.ContentTranslationManager}
+    """
+    return get_manager(TYPE_CONSUMER_TRANSLATION)
 
 def consumer_group_manager():
     """
@@ -391,6 +398,7 @@ def initialize():
     from pulp.server.managers.consumer.applicability import ApplicabilityManager
     from pulp.server.managers.consumer.bind import BindManager
     from pulp.server.managers.consumer.content import ConsumerContentManager
+    from pulp.server.managers.consumer.translation import ContentTranslationManager
     from pulp.server.managers.consumer.group.cud import ConsumerGroupManager
     from pulp.server.managers.consumer.group.query import ConsumerGroupQueryManager
     from pulp.server.managers.consumer.history import ConsumerHistoryManager
@@ -431,6 +439,7 @@ def initialize():
         TYPE_CONSUMER_APPLICABILITY: ApplicabilityManager,
         TYPE_CONSUMER_BIND: BindManager,
         TYPE_CONSUMER_CONTENT: ConsumerContentManager,
+        TYPE_CONSUMER_TRANSLATION: ContentTranslationManager,
         TYPE_CONSUMER_GROUP: ConsumerGroupManager,
         TYPE_CONSUMER_GROUP_QUERY: ConsumerGroupQueryManager,
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
