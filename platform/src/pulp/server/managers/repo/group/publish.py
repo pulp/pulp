@@ -24,7 +24,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.exceptions import MissingResource, PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
@@ -123,6 +123,12 @@ class RepoGroupPublishManager(object):
         distributor_coll = RepoGroupDistributor.get_collection()
         publish_result_coll = RepoGroupPublishResult.get_collection()
         group_id = group.id
+
+        # Validate the configuration. An empty list is passed for related_repo_groups because
+        # this configuration contains override values valid for this call only.
+        valid, msg = distributor_instance.validate_config(group, call_config, [])
+        if not valid:
+            raise PulpDataException(msg)
 
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
