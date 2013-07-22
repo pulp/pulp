@@ -462,14 +462,14 @@ class DistributorOnChild(ChildEntity, Distributor):
             self.dist_id)
         log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
 
-    def update(self, delta):
+    def update(self, configuration):
         """
         Update this repository-distributor in the child inventory.
-        :param delta: The properties that need to be updated.
-        :type delta: dict
+        :param configuration: The updated configuration.
+        :type configuration: dict
         """
         binding = self.binding.repo_distributor
-        binding.update(self.repo_id, self.dist_id, delta)
+        binding.update(self.repo_id, self.dist_id, configuration)
         log.info('Distributor: %s/%s, updated', self.repo_id, self.dist_id)
 
     def delete(self):
@@ -486,13 +486,11 @@ class DistributorOnChild(ChildEntity, Distributor):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        delta = {}
-        for k,v in parent.details['config'].items():
-            if self.details['config'].get(k) != v:
-                self.details['config'][k] = v
-                delta[k] = v
-        if delta:
-            self.update(delta)
+        key = 'config'
+        parent_configuration = parent.details[key]
+        child_configuration = self.details[key]
+        if child_configuration != parent_configuration:
+            self.update(parent_configuration)
 
 
 class Importer(object):
@@ -553,14 +551,14 @@ class ImporterOnChild(ChildEntity, Importer):
         binding.create(self.repo_id, self.imp_id, conf)
         log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
 
-    def update(self, delta):
+    def update(self, configuration):
         """
         Update this repository-importer in the child inventory.
-        :param delta: The properties that need to be updated.
-        :type delta: dict
+        :param configuration: The updated configuration.
+        :type configuration: dict
         """
         binding = self.binding.repo_importer
-        binding.update(self.repo_id, self.imp_id, delta)
+        binding.update(self.repo_id, self.imp_id, configuration)
         log.info('Importer: %s/%s, updated', self.repo_id, self.imp_id)
 
     def delete(self):
@@ -577,14 +575,9 @@ class ImporterOnChild(ChildEntity, Importer):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        delta = {}
-        for k,v in parent.details['config'].items():
-            if self.details['config'].get(k) != v:
-                self.details['config'][k] = v
-                delta[k] = v
-        if delta:
-            delta = link.unpack_all(delta)
-            self.update(delta)
+        configuration = parent.details['config']
+        unpacked = link.unpack_all(configuration)
+        self.update(unpacked)
 
 
 class BindingsOnParent(ParentEntity):
