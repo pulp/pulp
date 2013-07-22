@@ -97,6 +97,7 @@ class NodeProfiler(Profiler):
         """
         Get the node bindings and specified strategy for a consumer.
         :param consumer_id: A consumer ID.
+        :type consumer_id: str
         :return: A dictionary of bindings keyed by repo_id.
         :rtype: dict
         """
@@ -117,6 +118,7 @@ class NodeProfiler(Profiler):
         """
         Get the node synchronization strategy for the specified consumer.
         :param consumer_id: A consumer ID.
+        :type consumer_id: str
         :return: The node synchronization strategy.
         :rtype: str
         """
