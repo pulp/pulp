@@ -15,13 +15,13 @@ import logging
 import mock
 
 from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.model import ApplicabilityReport
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicability,
                                            UnitProfile)
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.exceptions import InvalidValue
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.itineraries.consumer import (
@@ -31,6 +31,7 @@ from pulp.server.itineraries.consumer import (
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
+from pulp.server.webservices.controllers.consumers import ContentApplicability
 import base
 import mock_plugins
 import mock_agent
@@ -909,19 +910,13 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(status, 404)
 
 
-# We mock this because we don't care about consumer history in this test suite, and it
-# saves some DB access time and cleanup
-@mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-# By mocking this, we can avoid having to create repos and distributors for this test
-# suite
-@mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
 class TestContentApplicability(base.PulpWebserviceTests):
     """
     Test the ContentApplicability controller.
     """
     PATH = '/v2/consumers/actions/content/applicability/'
 
-    def assert_applicability_matches(self, a_1, a_2):
+    def assert_applicability_equal(self, a_1, a_2):
         """
         This method will assert that the returned applicability data from the POST() method
         is the same as an expected_body passed to it. Order of lists doesn't matter for
@@ -966,6 +961,12 @@ class TestContentApplicability(base.PulpWebserviceTests):
         RepoProfileApplicability.get_collection().drop()
         Bind.get_collection().drop()
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_empty_type_limiting(self, consumer_history_manager,
                                       repo_distributor_manager):
         """
@@ -1017,7 +1018,7 @@ class TestContentApplicability(base.PulpWebserviceTests):
         # Consumer 1 is bound to repo 1 and 2
         bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
         bind_manager.bind('consumer_1', 'repo_2', 'distributor_id', False, {})
-        # Consumer 2 is bound to repo 2 and 3 (so it should get an additional unit_3)
+        # Consumer 2 is bound to repo 2 and 3
         bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
         bind_manager.bind('consumer_2', 'repo_3', 'distributor_id', False, {})
         # The content_types below is the empty list, so nothing should come back
@@ -1033,8 +1034,7 @@ class TestContentApplicability(base.PulpWebserviceTests):
         # We told it not to give us any content types, so it should be empty
         self.assertEqual(body, [])
 
-    def test_POST_invalid_consumer_criteria(self, consumer_history_manager,
-                                            repo_distributor_manager):
+    def test_POST_invalid_consumer_criteria(self):
         """
         Test the POST() method with invalid consumer criteria. HTTP 400 BAD REQUEST should be
         raised in each case.
@@ -1047,8 +1047,7 @@ class TestContentApplicability(base.PulpWebserviceTests):
         self.assertEqual(status, 400)
         self.assertEqual(body, "Invalid properties: ['filters']")
 
-    def test_POST_invalid_type_limiting(self, consumer_history_manager,
-                                        repo_distributor_manager):
+    def test_POST_invalid_type_limiting(self):
         """
         Test the POST() method with invalid type limiting criteria.
         """
@@ -1061,6 +1060,12 @@ class TestContentApplicability(base.PulpWebserviceTests):
         self.assertEqual(status, 400)
         self.assertEqual(body, 'Invalid properties: [\'content_types must index a list.\']')
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_limit_by_type(self, consumer_history_manager, repo_distributor_manager):
         """
         Test the POST() method, making sure we allow the caller to limit applicability
@@ -1134,8 +1139,14 @@ class TestContentApplicability(base.PulpWebserviceTests):
             {'consumers': ['consumer_2'],
              'applicability': {
                  'content_type_2': ['unit_3-13.1.0']}}]
-        self.assert_applicability_matches(body, expected_body)
+        self.assert_applicability_equal(body, expected_body)
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_match_consumers_with_same_applicability(self, consumer_history_manager,
                                                           repo_distributor_manager):
         """
@@ -1168,13 +1179,18 @@ class TestContentApplicability(base.PulpWebserviceTests):
 
         status, body = self.post(self.PATH, criteria)
 
-        # We should get the criteria for the single consumer back
         self.assertEqual(status, 200)
         expected_body = [
             {'consumers': ['consumer_1', 'consumer_2'],
              'applicability': {'content_type': ['unit_1-0.9.2', 'unit_3-13.0.1']}}]
-        self.assert_applicability_matches(body, expected_body)
+        self.assert_applicability_equal(body, expected_body)
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_match_disparate_consumers(self, consumer_history_manager,
                                             repo_distributor_manager):
         """
@@ -1227,15 +1243,20 @@ class TestContentApplicability(base.PulpWebserviceTests):
 
         status, body = self.post(self.PATH, criteria)
 
-        # We should get the criteria for the single consumer back
         self.assertEqual(status, 200)
         expected_body = [
             {'consumers': ['consumer_1'],
              'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1']}},
             {'consumers': ['consumer_2'],
              'applicability': {'content_type_1': ['unit_3-13.1.0']}}]
-        self.assert_applicability_matches(body, expected_body)
+        self.assert_applicability_equal(body, expected_body)
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_match_mixed_case(self, consumer_history_manager, repo_distributor_manager):
         """
         Make sure the POST() method can handle a mixed case of consumers.
@@ -1298,7 +1319,6 @@ class TestContentApplicability(base.PulpWebserviceTests):
 
         status, body = self.post(self.PATH, criteria)
 
-        # We should get the criteria for the single consumer back
         self.assertEqual(status, 200)
         expected_body = [
             {'consumers': ['consumer_1', 'consumer_2'],
@@ -1307,8 +1327,14 @@ class TestContentApplicability(base.PulpWebserviceTests):
              'applicability': {'content_type_2': ['unit_3-13.1.0']}},
             {'consumers': ['consumer_3'],
              'applicability': {'content_type_1': ['unit_2-3.1.1']}}]
-        self.assert_applicability_matches(body, expected_body)
+        self.assert_applicability_equal(body, expected_body)
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_match_single_consumer(self, consumer_history_manager,
                                         repo_distributor_manager):
         """
@@ -1378,8 +1404,14 @@ class TestContentApplicability(base.PulpWebserviceTests):
             {'consumers': ['consumer_2'],
              'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1'],
                                'content_type_2': ['unit_3-13.1.0']}}]
-        self.assert_applicability_matches(body, expected_body)
+        self.assert_applicability_equal(body, expected_body)
 
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
     def test_POST_multiple_applicability_data_matches(self, consumer_history_manager,
                                                       repo_distributor_manager):
         """
@@ -1435,10 +1467,9 @@ class TestContentApplicability(base.PulpWebserviceTests):
             {'consumers': ['consumer_1'],
              'applicability': {
                  'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1', 'unit_3-13.1.0']}}]
-        self.assert_applicability_matches(body, expected_body)
+        self.assert_applicability_equal(body, expected_body)
 
-    def test_POST_no_consumer_criteria(self, consumer_history_manager,
-                                       repo_distributor_manager):
+    def test_POST_no_consumer_criteria(self):
         """
         Test the POST() method when no consumer criteria is passed.
         """
@@ -1456,83 +1487,389 @@ class TestContentApplicability(base.PulpWebserviceTests):
         self.assertEqual(status, 400)
         self.assertEqual(body, 'Invalid properties: [\'criteria\']')
 
-    def test_POST_non_matching_consumer_criteria(self):
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
+    def test_POST_non_matching_consumer_criteria(self, consumer_history_manager,
+                                                 repo_distributor_manager):
         """
         Test the POST() method when the given consumer criteria does not match any
         consumers.
         """
-        criteria = {'consumer_criteria': {'filters': {'_id': 'does_not_exist'}}}
+        # Set up the consumers
+        consumer_ids = ['consumer_1']
+        manager = factory.consumer_manager()
+        for consumer_id in consumer_ids:
+            manager.register(consumer_id)
+        # Set up consumer profile data
+        consumer_profiles = {
+            'consumer_1': [{'type': 'content_type_1',
+                            'profile': ['unit_1-0.9.1', 'unit_3-12.9.3']}]}
+        manager = ProfileManager()
+        profile_map = {}
+        for consumer_id, profiles in consumer_profiles.items():
+            profile_map[consumer_id] = []
+            for profile in profiles:
+                consumer_profile = manager.create(consumer_id, profile['type'],
+                                                  profile['profile'])
+                profile_map[consumer_id].append(
+                    {'hash': consumer_profile.profile_hash,
+                     'profile': consumer_profile.profile})
+        # Create our precalcaulated applicability objects
+        applicabilities = [
+            # consumer_1's applicability from repo_1
+            {'profile_hash': profile_map['consumer_1'][0]['hash'],
+             'profile': profile_map['consumer_1'][0]['profile'],
+             'repo_id': 'repo_1',
+             'applicability': {'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1']}},
+            # Consumer_1's applicability from repo_2
+            {'profile_hash': profile_map['consumer_1'][0]['hash'],
+             'profile': profile_map['consumer_1'][0]['profile'],
+             'repo_id': 'repo_2',
+             'applicability': {'content_type_1': ['unit_3-13.1.0']}}]
+        for a in applicabilities:
+            RepoProfileApplicability.objects.create(a['profile_hash'], a['repo_id'],
+                                                    a['profile'], a['applicability'])
+        # Create repository bindings
+        bind_manager = BindManager()
+        bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
+        bind_manager.bind('consumer_1', 'repo_2', 'distributor_id', False, {})
+        criteria = {'consumer_criteria': {'filters': {'id': 'does_not_exist'}}}
 
         status, body = self.post(self.PATH, criteria)
 
+        # We should get no criteria back
         self.assertEqual(status, 200)
-        # The body should be an empty dictionary, since no consumers matched
-        self.assertEqual(body, {})
-
-    def test_unmatched_applicability_data(self, consumer_history_manager,
-                                          repo_distributor_manager):
-        """
-        Assert that applicability data that doesn't match any queried consumers is not
-        returned.
-        """
-        self.fail()
+        self.assert_applicability_equal(body, [])
 
     def test__add_consumers_to_applicability_map(self):
         """
         Test the _add_consumers_to_applicability_map() method.
         """
-        self.fail()
+        consumer_map = {
+            'consumer_1': {'profiles': [{'profile_hash': 'hash_1'},
+                                        {'profile_hash': 'hash_2'}],
+                           'repo_ids': ['repo_1']},
+            'consumer_2': {'profiles': [{'profile_hash': 'hash_2'},
+                                        {'profile_hash': 'hash_3'}],
+                           'repo_ids': ['repo_1', 'repo_2']},
+            'consumer_3': {'profiles': [{'profile_hash': 'hash_1'},
+                                        {'profile_hash': 'hash_4'}],
+                           'repo_ids': ['repo_3']},
+        }
+        # The applicability_map should be altered by _add_consumers_to_applicability_map()
+        # by having the consumers in the consumer_map added to the correct applicability
+        # spots. The applicability_map doesn't have data for every combo of profile and
+        # repo, so that we can make sure the method is able to handle that case
+        # gracefully.
+        applicability_map = {
+            ('hash_1', 'repo_1'): {'consumers': [], 'applicability': ['a_1']},
+            ('hash_2', 'repo_1'): {'consumers': [], 'applicability': ['a_2']},
+            ('hash_2', 'repo_2'): {'consumers': [], 'applicability': ['a_3']},
+            # This one should not match any consumers
+            ('hash_5', 'repo_3'): {'consumers': [], 'applicability': ['a_4']},
+        }
+
+        ContentApplicability._add_consumers_to_applicability_map(consumer_map,
+                                                                 applicability_map)
+
+        expected_applicability_map = {
+            ('hash_1', 'repo_1'): {'consumers': ['consumer_1'],
+                                        'applicability': ['a_1']},
+            ('hash_2', 'repo_1'): {'consumers': ['consumer_1', 'consumer_2'],
+                                        'applicability': ['a_2']},
+            ('hash_2', 'repo_2'): {'consumers': ['consumer_2'],
+                                        'applicability': ['a_3']},
+            ('hash_5', 'repo_3'): {'consumers': [], 'applicability': ['a_4']},
+        }
+        self.assert_applicability_equal(applicability_map, expected_applicability_map)
 
     def test__add_profiles_to_consumer_map_and_get_hashes(self):
         """
         Test the _add_profiles_to_consumer_map_and_get_hashes() method.
         """
-        self.fail()
+        # Set up the consumers
+        consumer_ids = ['consumer_1', 'consumer_2']
+        manager = factory.consumer_manager()
+        for consumer_id in consumer_ids:
+            manager.register(consumer_id)
+        # Set up consumer profile data
+        consumer_profiles = {
+            'consumer_1': [{'type': 'content_type_1',
+                            'profile': ['unit_1-0.9.1', 'unit_3-12.9.3']},
+                           {'type': 'content_type_2',
+                            'profile': 'a_profile'}],
+            'consumer_2': [{'type': 'content_type_2', 'profile': 'a_profile'}]}
+        manager = ProfileManager()
+        profile_map = {}
+        expected_hashes = []
+        for consumer_id, profiles in consumer_profiles.items():
+            profile_map[consumer_id] = []
+            for profile in profiles:
+                consumer_profile = manager.create(consumer_id, profile['type'],
+                                                  profile['profile'])
+                profile_map[consumer_id].append(
+                    {'hash': consumer_profile.profile_hash,
+                     'profile': consumer_profile.profile})
+                expected_hashes.append(consumer_profile.profile_hash)
+        consumer_map = {
+            'consumer_1': {'profiles': []},
+            'consumer_2': {'profiles': []}
+        }
 
-    def test__add_repo_ids_to_consumer_map(self):
+        hashes = ContentApplicability._add_profiles_to_consumer_map_and_get_hashes(
+            consumer_ids, consumer_map)
+
+        self.assertEqual(set(consumer_map.keys()), set(['consumer_1', 'consumer_2']))
+        self.assertEqual(len(consumer_map['consumer_1']['profiles']), 2)
+        self.assertEqual(len(consumer_map['consumer_2']['profiles']), 1)
+        self.assertEqual(set([p['profile_hash'] \
+                              for p in consumer_map['consumer_1']['profiles']]),
+                         set([profile_map['consumer_1'][0]['hash'],
+                              profile_map['consumer_1'][1]['hash']]))
+        self.assertEqual(consumer_map['consumer_2']['profiles'][0]['profile_hash'],
+                         profile_map['consumer_2'][0]['hash'])
+        # _add_profiles_to_consumer_map_and_get_hashes should return a list of unique
+        # hashes, and this test only creates two unique hashes
+        self.assertEqual(len(hashes), 2)
+        self.assertEqual(set(hashes), set(expected_hashes))
+
+    # We mock this because we don't care about consumer history in this test suite, and it
+    # saves some DB access time and cleanup
+    @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
+    # By mocking this, we can avoid having to create repos and distributors for this test
+    # suite
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
+    def test__add_repo_ids_to_consumer_map(self, consumer_history_manager,
+                                                 repo_distributor_manager):
         """
         Test the _add_repo_ids_to_consumer_map() method.
         """
-        self.fail()
+        # Set up the consumers
+        consumer_ids = ['consumer_1', 'consumer_2', 'consumer_3']
+        manager = factory.consumer_manager()
+        for consumer_id in consumer_ids:
+            manager.register(consumer_id)
+        # Create repository bindings. Let's leave consumer_3 unbound.
+        bind_manager = BindManager()
+        bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
+        bind_manager.bind('consumer_2', 'repo_1', 'distributor_id', False, {})
+        bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
+        consumer_map = {
+            'consumer_1': {'repo_ids': []},
+            'consumer_2': {'repo_ids': []},
+            'consumer_3': {'repo_ids': []}}
 
-    def test__format_report(self, consumer_history_manager, repo_distributor_manager):
+        ContentApplicability._add_repo_ids_to_consumer_map(consumer_ids, consumer_map)
+
+        expected_consumer_map = {
+            'consumer_1': {'repo_ids': ['repo_1']},
+            'consumer_2': {'repo_ids': ['repo_1', 'repo_2']},
+            'consumer_3': {'repo_ids': []}}
+
+        # The order of repo_ids is not important, so we'll use the
+        # assert_applicability_equal, which will compare the lists as sets
+        
+        self.assert_applicability_equal(consumer_map, expected_consumer_map)
+
+    def test__format_report(self):
         """
         Test the _format_report() method.
         """
-        self.fail()
+        applicability_map = {
+            frozenset(['consumer_1']): {'type_1': ['unit_1']},
+            frozenset(['consumer_1', 'consumer_2']): {'type_2': ['unit_2']}}
 
-    def test__format_report_removes_empty_applicabilities(self, consumer_history_manager,
-                                                          repo_distributor_manager):
-        """
-        Assert that _format_report() doesn't report applicabilities that didn't match
-        any queried consumers.
-        """
-        self.fail()
+        report = ContentApplicability._format_report(applicability_map)
 
-    def test__get_applicability_map(self):
+        expected_report = [{'consumers': ['consumer_1'],
+                            'applicability': {'type_1': ['unit_1']}},
+                           {'consumers': ['consumer_1', 'consumer_2'],
+                            'applicability': {'type_2': ['unit_2']}}]
+        # The order of lists found in the output isn't important, so we can use
+        # assert_applicability_equal to compare the output and expected output as sets
+        self.assert_applicability_equal(report, expected_report)
+
+    def test__format_report_removes_empty_consumer_lists(self):
         """
-        Test the _get_applicability_map() method.
+        Test the _format_report() method with applicability data that doesn't apply to
+        any consumers.
         """
-        self.fail()
+        applicability_map = {
+            frozenset(['consumer_1']): {'type_1': ['unit_1']},
+            frozenset(['consumer_1', 'consumer_2']): {'type_2': ['unit_2']},
+            frozenset([]): {'type_3': ['unit_3']}}
+
+        report = ContentApplicability._format_report(applicability_map)
+
+        expected_report = [{'consumers': ['consumer_1'],
+                            'applicability': {'type_1': ['unit_1']}},
+                           {'consumers': ['consumer_1', 'consumer_2'],
+                            'applicability': {'type_2': ['unit_2']}}]
+        # The order of lists found in the output isn't important, so we can use
+        # assert_applicability_equal to compare the output and expected output as sets
+        self.assert_applicability_equal(report, expected_report)
+
+    def test__get_applicability_map_content_types_none(self):
+        """
+        Test the _get_applicability_map() method with content_types set to None.
+        """
+        applicabilities = [
+            {'profile_hash': 'hash_1',
+             'profile': 'a_profile',
+             'repo_id': 'repo_1',
+             'applicability': {'type_1': 'a_1'}},
+            {'profile_hash': 'hash_1',
+             'profile': 'a_profile',
+             'repo_id': 'repo_2',
+             'applicability': {'type_1': 'a_2'}},
+            {'profile_hash': 'hash_2',
+             'profile': 'another_profile',
+             'repo_id': 'repo_2',
+             'applicability': {'type_2': 'a_3'}},
+            {'profile_hash': 'hash_3',
+             'profile': 'we leave this off the query',
+             'repo_id': 'repo_1',
+             'applicability': {'type_1': 'a_4'}}]
+        for a in applicabilities:
+            RepoProfileApplicability.objects.create(a['profile_hash'], a['repo_id'],
+                                                    a['profile'], a['applicability'])
+
+        # Leave hash_3 out of the query, so we can make sure it doesn't get returned
+        a_map = ContentApplicability._get_applicability_map(['hash_1', 'hash_2'], None)
+
+        expected_a_map = {
+            ('hash_1', 'repo_1'): {'applicability': {'type_1': 'a_1'}, 'consumers': []},
+            ('hash_1', 'repo_2'): {'applicability': {'type_1': 'a_2'}, 'consumers': []},
+            ('hash_2', 'repo_2'): {'applicability': {'type_2': 'a_3'}, 'consumers': []}}
+        self.assertEqual(a_map, expected_a_map)
+
+    def test__get_applicability_map_content_types_not_none(self):
+        """
+        Assert that _get_applicability_map correctly filters out unwanted types when
+        content_types is passed.
+        """
+        applicabilities = [
+            {'profile_hash': 'hash_1',
+             'profile': 'a_profile',
+             'repo_id': 'repo_1',
+             'applicability': {'type_1': 'a_1'}},
+            {'profile_hash': 'hash_1',
+             'profile': 'a_profile',
+             'repo_id': 'repo_2',
+             'applicability': {'type_1': 'a_2', 'type_2': 'a_5'}},
+            {'profile_hash': 'hash_2',
+             'profile': 'another_profile',
+             'repo_id': 'repo_2',
+             'applicability': {'type_2': 'a_3'}},
+            {'profile_hash': 'hash_3',
+             'profile': 'we leave this off the query',
+             'repo_id': 'repo_1',
+             'applicability': {'type_1': 'a_4'}}]
+        for a in applicabilities:
+            RepoProfileApplicability.objects.create(a['profile_hash'], a['repo_id'],
+                                                    a['profile'], a['applicability'])
+
+        # Leave hash_3 out of the query, so we can make sure it doesn't get returned
+        a_map = ContentApplicability._get_applicability_map(['hash_1', 'hash_2'],
+                                                            ['type_1'])
+
+        expected_a_map = {
+            ('hash_1', 'repo_1'): {'applicability': {'type_1': 'a_1'}, 'consumers': []},
+            ('hash_1', 'repo_2'): {'applicability': {'type_1': 'a_2'}, 'consumers': []}}
+        self.assertEqual(a_map, expected_a_map)
 
     def test__get_consumer_applicability_map(self):
         """
         Test the _get_consumer_applicability_map() method.
         """
-        self.fail()
+        a_map = {
+            ('hash_1', 'repo_1'): {'applicability': {'type_1': ['a_1']},
+                                   'consumers': ['c_1', 'c_2']},
+            ('hash_1', 'repo_2'): {'applicability': {'type_1': ['a_2']},
+                                   'consumers': ['c_2', 'c_3']},
+            # This is the same set of consumers as the first group. The method should
+            # combine these two into the same entry in the output. This one has the same
+            # content_type as the first one too, so it should combine the units together.
+            # TODO: This last bit is questionable, as the platform might should not
+            #       assume that applicability is a list of hashable items.
+            ('hash_1', 'repo_3'): {'applicability': {'type_1': ['a_3']},
+                                   'consumers': ['c_1', 'c_2']},
+            # Another one with the same consumers, but this one's applicability is for
+            # a different content type, which will still combine them together, but as
+            # separate types in the same applicability entry
+            ('hash_1', 'repo_4'): {'applicability': {'type_2': ['a_4']},
+                                   'consumers': ['c_1', 'c_2']}}
 
-    def test__get_consumer_applicability_map_with_repeat_consumer_sets(self):
-        """
-        Test the _get_consumer_applicability_map() method when there is more than one
-        entry in the applicability_map for the same set of consumers.
-        """
-        self.fail()
+        c_a_map = ContentApplicability._get_consumer_applicability_map(a_map)
+
+        expected_c_a_map = {
+            frozenset(['c_1', 'c_2']): {'type_1': ['a_1', 'a_3'], 'type_2': ['a_4']},
+            frozenset(['c_2', 'c_3']): {'type_1': ['a_2']}}
+        self.assert_applicability_equal(c_a_map, expected_c_a_map)
 
     def test__get_consumer_ids(self):
         """
         Test the _get_consumer_ids() method.
         """
-        self.fail()
+        # Set up the consumers
+        consumer_ids = ['consumer_1', 'consumer_2', 'consumer_3']
+        manager = factory.consumer_manager()
+        for consumer_id in consumer_ids:
+            manager.register(consumer_id)
+        ca = ContentApplicability()
+        # We will query just for 1 and 2
+        ca.params = mock.MagicMock(
+            return_value={'consumer_criteria': {'filters': {'id': {'$in': 
+                ['consumer_1', 'consumer_2']}}}})
+
+        consumer_ids = ca._get_consumer_ids()
+
+        self.assertEqual(set(consumer_ids), set(['consumer_1', 'consumer_2']))
+
+    def test__get_consumer_ids_missing_consumer_criteria(self):
+        """
+        Test the _get_consumer_ids() method when consumer_criteria is not provided.
+        """
+        ca = ContentApplicability()
+        ca.params = mock.MagicMock(return_value={})
+
+        self.assertRaises(InvalidValue, ca._get_consumer_ids)
+
+    def test__get_content_types_none(self):
+        """
+        Test the _get_content_types() method when no content_types were passed in.
+        """
+        ca = ContentApplicability()
+        ca.params = mock.MagicMock(return_value={})
+
+        content_types = ca._get_content_types()
+
+        self.assertEqual(content_types, None)
+
+    def test__get_content_types_not_a_list(self):
+        """
+        Test the _get_content_types() method when content_types were passed, but not
+        a list.
+        """
+        ca = ContentApplicability()
+        ca.params = mock.MagicMock(return_value={'content_types': 'c_1'})
+
+        self.assertRaises(InvalidValue, ca._get_content_types)
+
+    def test__get_content_types_not_none(self):
+        """
+        Test the _get_content_types() method when content_types were passed.
+        """
+        ca = ContentApplicability()
+        ca.params = mock.MagicMock(return_value={'content_types': ['c_1', 'c_2']})
+
+        content_types = ca._get_content_types()
+
+        self.assertEqual(content_types, ['c_1', 'c_2'])
 
 
 # scheduled content management tests -------------------------------------------

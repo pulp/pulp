@@ -29,8 +29,6 @@ from pulp.server.itineraries.consumer import (
     consumer_content_update_itinerary)
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
-from pulp.server.managers.consumer.bind import BindManager
-from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.webservices.controllers.base import JSONController
@@ -591,7 +589,8 @@ class ContentApplicability(JSONController):
         """
         Query content applicability for a given consumer criteria query.
 
-        body {consumer_criteria: <dict>}
+        body {consumer_criteria: <dict>,
+              content_types: <list>[optional]}
 
         This method returns a list of dictionaries that each have two keys: 'consumers', and
         'applicability'. 'consumers' will index a list of consumer_ids, for consumers that have
@@ -645,28 +644,33 @@ class ContentApplicability(JSONController):
         # Form the data into the expected output format and return
         return self.ok(self._format_report(consumer_applicability_map))
 
-    def _add_consumers_to_applicability_map(self, consumer_map, applicability_map):
+    @staticmethod
+    def _add_consumers_to_applicability_map(consumer_map, applicability_map):
         """
         For all consumers in the consumer_map, look for their profiles and repos in the
         applicability_map, and if found, add the consumer_ids to the applicability_map.
 
-        :param consumer_map:      A dictionary mapping consumer_ids to a dictionary with key
-                                  'profiles', which indexes a list that this method will append
-                                  the found profiles to.
+        :param consumer_map:      A dictionary mapping consumer_ids to dictionaries with keys
+                                  'profiles' and 'repo_ids'. 'profiles' indexes a list of profiles
+                                  for each consumer_id, and 'repo_ids' indexes a list of repo_ids
+                                  that the consumer is bound to.
         :type  consumer_map:      dict
         :param applicability_map: The mapping of (profile_hash, repo_id) to applicability_data and
-                                  consumer_ids it applies to. This method appends consumer_ids to
-                                  the appropriate lists of consumer_ids
+                                  consumer_ids the data applies to. This method appends
+                                  consumer_ids to the appropriate lists of consumer_ids
         :type  applicability_map: dict
         """
         for consumer_id, repo_profile_data in consumer_map.items():
             for profile in repo_profile_data['profiles']:
                 for repo_id in repo_profile_data['repo_ids']:
                     repo_profile = (profile['profile_hash'], repo_id)
+                    # Only add the consumer to the applicability map if there is applicability_data
+                    # for this combination of repository and profile
                     if repo_profile in applicability_map:
                         applicability_map[repo_profile]['consumers'].append(consumer_id)
 
-    def _add_profiles_to_consumer_map_and_get_hashes(self, consumer_ids, consumer_map):
+    @staticmethod
+    def _add_profiles_to_consumer_map_and_get_hashes(consumer_ids, consumer_map):
         """
         Query for all the profiles associated with the given list of consumer_ids, add those
         profiles to the consumer_map, and then return a list of all profile_hashes.
@@ -690,7 +694,8 @@ class ContentApplicability(JSONController):
         # bit later for applicability data
         return list(set([p['profile_hash'] for p in profiles]))
 
-    def _add_repo_ids_to_consumer_map(self, consumer_ids, consumer_map):
+    @staticmethod
+    def _add_repo_ids_to_consumer_map(consumer_ids, consumer_map):
         """
         Query for all bindings for the given list of consumer_ids, and for each one add the bound
         repo_ids to the consumer_map's entry for the consumer.
@@ -710,7 +715,8 @@ class ContentApplicability(JSONController):
         for b in bindings:
             consumer_map[b['consumer_id']]['repo_ids'].append(b['repo_id'])
 
-    def _format_report(self, consumer_applicability_map):
+    @staticmethod
+    def _format_report(consumer_applicability_map):
         """
         Turn the consumer_applicability_map into the expected response format for this API call.
 
@@ -725,6 +731,8 @@ class ContentApplicability(JSONController):
         """
         report = []
         for consumers, applicability in consumer_applicability_map.items():
+            # If there are no consumers for this applicability data, there is no need to include
+            # it in the report
             if consumers:
                 applicability_data = {'consumers': list(consumers),
                                       'applicability': applicability}
@@ -732,7 +740,8 @@ class ContentApplicability(JSONController):
 
         return report
 
-    def _get_applicability_map(self, profile_hashes, content_types):
+    @staticmethod
+    def _get_applicability_map(profile_hashes, content_types):
         """
         Build an "applicability_map", which is a dictionary that maps tuples of
         (profile_hash, repo_id) to a dictionary of applicability data and consumer_ids. The
@@ -756,6 +765,10 @@ class ContentApplicability(JSONController):
             {'profile_hash': {'$in': profile_hashes}},
             fields=['profile_hash', 'repo_id', 'applicability']))
         if content_types is not None:
+            # The caller has requested us to filter by content_type, so we need to look through the
+            # applicability data and filter out the unwanted content types. Some applicabilities
+            # may end up being empty if they don't have any data for the requested types, so we'll
+            # build a list of those to remove
             empty_applicabilities = []
             for a in applicabilities:
                 for key in a['applicability'].keys():
@@ -771,7 +784,8 @@ class ContentApplicability(JSONController):
             [((a['profile_hash'], a['repo_id']),
                {'applicability': a['applicability'],'consumers': []}) for a in applicabilities])
 
-    def _get_consumer_applicability_map(self, applicability_map):
+    @staticmethod
+    def _get_consumer_applicability_map(applicability_map):
         """
         Massage the applicability_map into a form that will help us to collate applicability
         groups that contain the same data together.
@@ -786,10 +800,14 @@ class ContentApplicability(JSONController):
         """
         consumer_applicability_map = {}
         for repo_profile, data in applicability_map.items():
+            # This will be the key for our map, a set of the consumers that share data
             consumers = frozenset(data['consumers'])
             if consumers in consumer_applicability_map:
                 for content_type, applicability in data['applicability'].items():
                     if content_type in consumer_applicability_map[consumers]:
+                        # TODO: This assumes that the applicability data is a list. We haven't
+                        #       formally defined it as such at the platform level, so this might
+                        #       not be safe. Talk about it with the team before PR.
                         consumer_applicability_map[consumers][content_type] = list(
                             set(consumer_applicability_map[consumers][content_type]) |\
                             set(applicability))
