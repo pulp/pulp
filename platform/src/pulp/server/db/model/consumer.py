@@ -159,7 +159,7 @@ class RepoProfileApplicability(Model):
         :type  repo_id:       basestring
         :param profile:       The entire profile that resulted in the profile_hash
         :type  profile:       object
-        :param applicability: A list of applicable Unit IDs.
+        :param applicability: A dictionary mapping content_type_ids to lists of applicable Unit IDs.
         :type  applicability: dict
         :param _id:           The MongoDB ID for this object, if it exists in the database
         :type  _id:           bson.objectid.ObjectId
