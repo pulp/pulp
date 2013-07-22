@@ -40,7 +40,7 @@ def entry_point():
 # --- exceptions ------------------------------------------------------------------------
 
 
-class NotMatched(Exception):
+class DiscrepancyFound(Exception):
     pass
 
 
@@ -58,6 +58,22 @@ class NodeProfiler(Profiler):
         }
 
     def update_units(self, consumer, units, options, config, conduit):
+        """
+        Translate the node update units.
+        Returns the units for nodes that need to be updated (out-of-sync).
+        :param consumer: A consumer object.
+        :type consumer: pulp.plugins.model.Consumer
+        :param units: A list of content units to be updated.
+        :type units: list of: { type_id:<str>, unit_key:<dict> }
+        :param options: Update options; based on unit type.
+        :type options: dict
+        :param config: plugin configuration
+        :type config: pulp.plugins.config.PluginCallConfiguration
+        :param conduit: provides access to relevant Pulp functionality
+        :type conduit: pulp.plugins.conduits.profiler.ProfilerConduit
+        :return: The translated units
+        :rtype: list of: { type_id:<str>, unit_key:<dict> } 
+        """
         simulated = options.get('simulated', False)
         if not simulated:
             return units
@@ -65,19 +81,25 @@ class NodeProfiler(Profiler):
         bindings = self._bindings(consumer.id)
         repo_ids = bindings.keys()
         profiles = build_profile(repo_ids), consumer.profiles.get(constants.TYPE_NODE)
-        node_strategy = find_strategy(strategy)()
         try:
+            node_strategy = find_strategy(strategy)()
             repositories = node_strategy.bash_repositories(profiles)
             for expected, reported in repositories:
                 repo_id = expected['id']
                 strategy = bindings[repo_id]
                 bind_strategy = find_strategy(strategy)()
                 bind_strategy.bash_units((expected, reported))
-        except NotMatched:
+        except DiscrepancyFound:
             units = []
         return units
 
     def _bindings(self, consumer_id):
+        """
+        Get the node bindings and specified strategy for a consumer.
+        :param consumer_id: A consumer ID.
+        :return: A dictionary of bindings keyed by repo_id.
+        :rtype: dict
+        """
         bindings = {}
         manager = managers.consumer_bind_manager()
         for binding in manager.find_by_consumer(consumer_id):
@@ -92,6 +114,12 @@ class NodeProfiler(Profiler):
         return bindings
 
     def _node_strategy(self, consumer_id):
+        """
+        Get the node synchronization strategy for the specified consumer.
+        :param consumer_id: A consumer ID.
+        :return: The node synchronization strategy.
+        :rtype: str
+        """
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
         notes = consumer['notes']
@@ -102,11 +130,23 @@ class NodeProfiler(Profiler):
 
 
 class Mirror(object):
+    """
+    Determine node synchronization status for the MIRROR strategies.
+    """
 
     def bash_repositories(self, profiles):
+        """
+        Bash the repositories inventoried in the expected and reported
+        profiles to determine the node synchronization status.
+        :param profiles: Tuple containing the expected and reported profiles.
+        :type profiles: tuple(2)
+        :return: The compared repositories based on the strategy.
+        :rtype: list
+        :raise NotFound: When discrepancies found.
+        """
         expected, reported = [p[constants.PROFILE_REPOSITORIES] for p in profiles]
         if len(reported) != len(expected):
-            raise NotMatched()
+            raise DiscrepancyFound()
         repositories = zip(expected, reported)
         for r in repositories:
             expected = dict(r[0])
@@ -114,22 +154,39 @@ class Mirror(object):
             expected.pop(constants.PROFILE_UNITS)
             reported.pop(constants.PROFILE_UNITS)
             if fingerprint(expected) != fingerprint(reported):
-                raise NotMatched()
+                raise DiscrepancyFound()
         return repositories
 
     def bash_units(self, repositories):
+        """
+        Bash the content units inventoried in the expected and reported
+        profiled repositories to determine the repository synchronization status.
+        :param repositories: List of tuple containing the expected and reported profiled
+            repository created using zip().
+        :type repositories: list
+        :raise NotFound: When discrepancies found.
+        """
         expected, reported = [map(fingerprint, r[constants.PROFILE_UNITS]) for r in repositories]
         if expected != reported:
-            raise NotMatched()
+            raise DiscrepancyFound()
 
 
 class Additive(object):
 
     def bash_repositories(self, profiles):
+        """
+        Bash the repositories inventoried in the expected and reported
+        profiles to determine the node synchronization status.
+        :param profiles: Tuple containing the expected and reported profiles.
+        :type profiles: tuple(2)
+        :return: The compared repositories based on the strategy.
+        :rtype: list
+        :raise NotFound: When discrepancies found.
+        """
         expected, reported = [p[constants.PROFILE_REPOSITORIES] for p in profiles]
         reported = [r for r in reported if r['id'] in [e['id'] for e in expected]]
         if len(reported) < len(expected):
-            raise NotMatched()
+            raise DiscrepancyFound()
         repositories = zip(expected, reported)
         for r in repositories:
             expected = dict(r[0])
@@ -137,14 +194,22 @@ class Additive(object):
             expected.pop(constants.PROFILE_UNITS)
             reported.pop(constants.PROFILE_UNITS)
             if fingerprint(expected) != fingerprint(reported):
-                raise NotMatched()
+                raise DiscrepancyFound()
         return repositories
 
     def bash_units(self, repositories):
+        """
+        Bash the content units inventoried in the expected and reported
+        profiled repositories to determine the repository synchronization status.
+        :param repositories: List of tuple containing the expected and reported profiled
+            repository created using zip().
+        :type repositories: list
+        :raise NotFound: When discrepancies found.
+        """
         expected, reported = [map(fingerprint, r[constants.PROFILE_UNITS]) for r in repositories]
         reported = [u for u in reported if u in expected]
         if expected != reported:
-            raise NotMatched()
+            raise DiscrepancyFound()
 
 
 # --- factory ---------------------------------------------------------------------------
