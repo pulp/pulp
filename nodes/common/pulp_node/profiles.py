@@ -40,15 +40,25 @@ UNIT_SORT = itemgetter('repo_id', 'unit_fingerprint')
 
 
 def build_profile(repo_ids=None):
-    init()
+    """
+    Build a nodes profile by interrogating the pulp DB.
+    Use init() to initialize the DB as needed.
+    :param repo_ids: When specified, the profile is restricted to include
+        only the specified repositories.  When not specified, all repositories are included.
+        The contents of the profile are sorted to to better support profile comparisons.
+        See constants for sorting details.
+    :rtype repo_ids: list
+    :return: The node profile.
+    :rtype: dict
+    """
     repositories = fetch_repositories(repo_ids)
     repo_ids = repositories.keys()
     distributors = fetch_distributors(repo_ids)
     unit_associations = fetch_unit_associations(repo_ids)
-    for unit_id, unit_fingerprint in fetch_units(unit_associations.values()):
+    for unit_id, unit in fetch_units(unit_associations.values()):
         unit_association = unit_associations[unit_id]
         unit_association.pop('unit_id')
-        unit_association[constants.PROFILE_UNIT_FINGERPRINT] = unit_fingerprint
+        unit_association[constants.PROFILE_UNIT_FINGERPRINT] = fingerprint(unit)
     repositories = repositories.values()
     unit_associations = unit_associations.values()
     repositories.sort(key=REPO_SORT)
@@ -62,11 +72,20 @@ def build_profile(repo_ids=None):
 
 
 def init():
+    """
+    Initialize the DB.
+    """
     name = pulp_conf.get('database', 'name')
     connection.initialize(name)
 
 
 def fingerprint(thing):
+    """
+    Generate a unique fingerprint of the specified object.
+    :param thing: An object to fingerprint.
+    :type thing: object
+    :return: The generated fingerprint.
+    """
     json_thing = json.dumps(thing, separators=(',', ':'), sort_keys=True)
     _hash = sha256()
     _hash.update(json_thing)
@@ -74,6 +93,12 @@ def fingerprint(thing):
 
 
 def collate(repositories, distributors, units):
+    """
+    Collate the specified distributors and content units within their associated repository.
+    :param repositories: A list of repositories.
+    :param distributors: A list of distributors.
+    :param units: A list of content units.
+    """
     for repo in repositories:
         repo_id = repo['id']
         _distributors = [d for d in distributors if d['repo_id'] == repo_id]
@@ -83,6 +108,13 @@ def collate(repositories, distributors, units):
 
 
 def strip(son):
+    """
+    Remove unwanted json artifacts that are not portable between pulp installations.
+    For example: _id, _namespace.
+    :param son: A SON object retried from the DB.
+    :return: The stripped object.
+    :rtype: dict
+    """
     for key in son.keys():
         if not key.startswith('_'):
             continue
@@ -91,6 +123,15 @@ def strip(son):
 
 
 def fetch_repositories(repo_ids=None):
+    """
+    Fetch repositories from the DB.
+    :param repo_ids: When specified, the profile is restricted to include
+        only the specified repositories.  When not specified, all repositories are included.
+        The contents of the profile are sorted to to better support profile comparisons.
+    :rtype repo_ids: list
+    :return: A dictionary of stripped repositories keyed by repo_id.
+    :rtype: dict
+    """
     if repo_ids is None:
         query = ALL
     else:
@@ -103,6 +144,15 @@ def fetch_repositories(repo_ids=None):
 
 
 def fetch_distributors(repo_ids):
+    """
+    Fetch repository-distributors from the DB.
+    :param repo_ids: When specified, the profile is restricted to include
+        only the specified repositories.  When not specified, all repositories are included.
+        The contents of the profile are sorted to to better support profile comparisons.
+    :rtype repo_ids: list
+    :return: A list of repository-distributors.
+    :rtype: list
+    """
     fetched = []
     query = {'repo_id': {'$in': repo_ids}}
     collection = RepoDistributor.get_collection()
@@ -115,6 +165,15 @@ def fetch_distributors(repo_ids):
 
 
 def fetch_unit_associations(repo_ids):
+    """
+    Fetch content units from the DB.
+    :param repo_ids: When specified, the profile is restricted to include
+        only the specified repositories.  When not specified, all repositories are included.
+        The contents of the profile are sorted to to better support profile comparisons.
+    :rtype repo_ids: list
+    :return: A dictionary of unit-associations keyed by unit_id.
+    :rtype: dict
+    """
     fetched = {}
     query = {'repo_id': {'$in': repo_ids}}
     collection = RepoContentUnit.get_collection()
@@ -125,13 +184,27 @@ def fetch_unit_associations(repo_ids):
 
 
 def fetch_units(unit_associations):
+    """
+    Generator used to fetch the content units associated with the
+    specified unit-associations.
+    :param unit_associations: A list of unit associations.
+    :type unit_associations: list
+    :return: unit_id, stripped unit
+    :rtype: tuple(2)
+    """
     for cursor in unit_cursors(unit_associations):
         for u in cursor:
             unit_id = u['_id']
-            yield unit_id, fingerprint(strip(u))
+            yield unit_id, strip(u)
 
 
 def unit_types(unit_associations):
+    """
+    Get a dictionary of unit_id lists keyed by unit type_id.
+    :param unit_associations: A list of unit associations.
+    :type unit_associations: list
+    :return: A dictionary of unit_id lists keyed by unit type_id.
+    """
     types = {}
     for u in unit_associations:
         type_id = u['unit_type_id']
@@ -142,6 +215,14 @@ def unit_types(unit_associations):
 
 
 def unit_cursors(unit_associations):
+    """
+    Generator used open cursors to all unit collections based on type_id.
+    Each cursor is opened using a query containing only the unit_ids needed
+    from each collection based on the unit-associations.
+    :param unit_associations: A list of unit associations.
+    :type unit_associations: list
+    :return: Open cursors.
+    """
     types = unit_types(unit_associations)
     for type_id, unit_ids in types.items():
         query = {'_id': {'$in': unit_ids}}
