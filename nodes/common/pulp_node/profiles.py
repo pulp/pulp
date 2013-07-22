@@ -25,8 +25,6 @@ from pulp_node import constants
 # --- constants --------------------------------------------------------------
 
 
-ALL = {}
-
 REPO_FIELDS = ('id', 'display_name', 'description', 'notes')
 DIST_FIELDS = ('repo_id', 'distributor_type_id', 'id', 'config')
 UNIT_FIELDS = ('repo_id', 'unit_id', 'unit_type_id')
@@ -133,7 +131,7 @@ def fetch_repositories(repo_ids=None):
     :rtype: dict
     """
     if repo_ids is None:
-        query = ALL
+        query = {}  # ALL
     else:
         query = {'id': {'$in': repo_ids}}
     fetched = {}
@@ -240,6 +238,7 @@ def test_1():
     print '-- Repositories [%.2d] --------------------------------' % len(repositories)
     for r in repositories:
         print r
+
 
 def test_2():
     from pprint import pprint
