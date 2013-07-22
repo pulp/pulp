@@ -570,11 +570,13 @@ class ProfilerTest(PluginTestBase):
 
     NODE_ID = 'test_node'
 
-    def populate(self, strategy=constants.ADDITIVE_STRATEGY):
+    MISSING_REPO_ID = 'missing-repository-id'
+
+    def populate(self, node_strategy=constants.ADDITIVE_STRATEGY, bind_strategy=constants.ADDITIVE_STRATEGY):
         PluginTestBase.populate(self)
         # register child
         manager = managers.consumer_manager()
-        manager.register(self.NODE_ID)
+        manager.register(self.NODE_ID, notes={constants.STRATEGY_NOTE_KEY: node_strategy})
         # distributor
         manager = managers.repo_distributor_manager()
         manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, {}, False, FAKE_DISTRIBUTOR)
@@ -585,7 +587,7 @@ class ProfilerTest(PluginTestBase):
             False,
             constants.HTTP_DISTRIBUTOR)
         # bind
-        conf = {constants.STRATEGY_KEYWORD: strategy}
+        conf = {constants.STRATEGY_KEYWORD: bind_strategy}
         manager = managers.consumer_bind_manager()
         manager.bind(self.NODE_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
         # bind
@@ -594,8 +596,6 @@ class ProfilerTest(PluginTestBase):
         manager.bind(self.NODE_ID, self.REPO_ID, FAKE_DISTRIBUTOR, False, conf)
         # other repositories
         manager = managers.repo_manager()
-        for repo_id in self.EXTRA_REPO_IDS:
-            manager.create_repo(repo_id)
 
     def delete_units(self, repo_id, num_units):
         collection = RepoContentUnit.get_collection()
@@ -630,8 +630,53 @@ class ProfilerTest(PluginTestBase):
         # Verify
         self.assertEqual(units, translated)
 
+    def test_additive_missing_repository(self):
+        self.populate()
+        p = build_profile()
+        profiler = NodeProfiler()
+        consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        self.delete_repositories(self.EXTRA_REPO_IDS)
+        self.delete_units(self.REPO_ID, self.NUM_UNITS / 2)
+        # add and bind repository not reported - simulates missing repositories on the child.
+        manager = managers.repo_manager()
+        manager.create_repo(self.MISSING_REPO_ID)
+        manager = managers.repo_distributor_manager()
+        manager.add_distributor(
+            self.MISSING_REPO_ID,
+            constants.HTTP_DISTRIBUTOR,
+            self.dist_conf(),
+            False,
+            constants.HTTP_DISTRIBUTOR)
+        manager = managers.consumer_bind_manager()
+        conf = {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}
+        manager.bind(self.NODE_ID, self.MISSING_REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
+        # Test
+        units = [1, 2]
+        options = {'simulated': True}
+        conduit = ProfilerConduit()
+        translated = profiler.update_units(consumer, units, options, {}, conduit)
+        # Verify
+        self.assertEqual([], translated)
+
+    def test_additive_missing_unit(self):
+        self.populate()
+        p = build_profile()
+        profiler = NodeProfiler()
+        consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        self.delete_repositories(self.EXTRA_REPO_IDS)
+        self.delete_units(self.REPO_ID, self.NUM_UNITS / 2)
+        # add units not yet reported - simulates missing units on the child.
+        self.add_units(self.NUM_UNITS, self.NUM_UNITS + 1)
+        # Test
+        units = [1, 2]
+        options = {'simulated': True}
+        conduit = ProfilerConduit()
+        translated = profiler.update_units(consumer, units, options, {}, conduit)
+        # Verify
+        self.assertEqual([], translated)
+
     def test_mirror(self):
-        self.populate(strategy=constants.MIRROR_STRATEGY)
+        self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
         p = build_profile()
         profiler = NodeProfiler()
         consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
@@ -642,6 +687,47 @@ class ProfilerTest(PluginTestBase):
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
         self.assertEqual(units, translated)
+
+    def test_mirror_missing_repository(self):
+        self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
+        p = build_profile()
+        profiler = NodeProfiler()
+        consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        # add repository yet reported - simulates missing repository in the child.
+        manager = managers.repo_manager()
+        manager.create_repo(self.MISSING_REPO_ID)
+        manager = managers.repo_distributor_manager()
+        manager.add_distributor(
+            self.MISSING_REPO_ID,
+            constants.HTTP_DISTRIBUTOR,
+            self.dist_conf(),
+            False,
+            constants.HTTP_DISTRIBUTOR)
+        manager = managers.consumer_bind_manager()
+        conf = {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}
+        manager.bind(self.NODE_ID, self.MISSING_REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
+        # Test
+        units = [1, 2]
+        options = {'simulated': True}
+        conduit = ProfilerConduit()
+        translated = profiler.update_units(consumer, units, options, {}, conduit)
+        # Verify
+        self.assertEqual([], translated)
+
+    def test_mirror_missing_units(self):
+        self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
+        p = build_profile()
+        profiler = NodeProfiler()
+        consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
+        # add units not yet reported - simulates missing units on the child.
+        self.add_units(self.NUM_UNITS, self.NUM_UNITS + 1)
+        # Test
+        units = [1, 2]
+        options = {'simulated': True}
+        conduit = ProfilerConduit()
+        translated = profiler.update_units(consumer, units, options, {}, conduit)
+        # Verify
+        self.assertEqual([], translated)
 
 
 # --- testing end-to-end -----------------------------------------------------

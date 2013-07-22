@@ -65,14 +65,14 @@ class NodeProfiler(Profiler):
         bindings = self._bindings(consumer.id)
         repo_ids = bindings.keys()
         profiles = build_profile(repo_ids), consumer.profiles.get(constants.TYPE_NODE)
-        _strategy = find_strategy(strategy)()
+        node_strategy = find_strategy(strategy)()
         try:
-            repositories = _strategy.node(profiles)
+            repositories = node_strategy.bash_repositories(profiles)
             for expected, reported in repositories:
                 repo_id = expected['id']
                 strategy = bindings[repo_id]
-                _strategy = find_strategy(strategy)()
-                _strategy.repository((expected, reported))
+                bind_strategy = find_strategy(strategy)()
+                bind_strategy.bash_units((expected, reported))
         except NotMatched:
             units = []
         return units
@@ -103,7 +103,7 @@ class NodeProfiler(Profiler):
 
 class Mirror(object):
 
-    def node(self, profiles):
+    def bash_repositories(self, profiles):
         expected, reported = [p[constants.PROFILE_REPOSITORIES] for p in profiles]
         if len(reported) != len(expected):
             raise NotMatched()
@@ -117,7 +117,7 @@ class Mirror(object):
                 raise NotMatched()
         return repositories
 
-    def repository(self, repositories):
+    def bash_units(self, repositories):
         expected, reported = [map(fingerprint, r[constants.PROFILE_UNITS]) for r in repositories]
         if expected != reported:
             raise NotMatched()
@@ -125,11 +125,11 @@ class Mirror(object):
 
 class Additive(object):
 
-    def node(self, profiles):
+    def bash_repositories(self, profiles):
         expected, reported = [p[constants.PROFILE_REPOSITORIES] for p in profiles]
+        reported = [r for r in reported if r['id'] in [e['id'] for e in expected]]
         if len(reported) < len(expected):
             raise NotMatched()
-        reported = [r for r in reported if r['id'] in [e['id'] for e in expected]]
         repositories = zip(expected, reported)
         for r in repositories:
             expected = dict(r[0])
@@ -140,7 +140,7 @@ class Additive(object):
                 raise NotMatched()
         return repositories
 
-    def repository(self, repositories):
+    def bash_units(self, repositories):
         expected, reported = [map(fingerprint, r[constants.PROFILE_UNITS]) for r in repositories]
         reported = [u for u in reported if u in expected]
         if expected != reported:
