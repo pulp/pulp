@@ -1794,8 +1794,6 @@ class TestContentApplicability(base.PulpWebserviceTests):
             # This is the same set of consumers as the first group. The method should
             # combine these two into the same entry in the output. This one has the same
             # content_type as the first one too, so it should combine the units together.
-            # TODO: This last bit is questionable, as the platform might should not
-            #       assume that applicability is a list of hashable items.
             ('hash_1', 'repo_3'): {'applicability': {'type_1': ['a_3']},
                                    'consumers': ['c_1', 'c_2']},
             # Another one with the same consumers, but this one's applicability is for

@@ -805,9 +805,10 @@ class ContentApplicability(JSONController):
             if consumers in consumer_applicability_map:
                 for content_type, applicability in data['applicability'].items():
                     if content_type in consumer_applicability_map[consumers]:
-                        # TODO: This assumes that the applicability data is a list. We haven't
-                        #       formally defined it as such at the platform level, so this might
-                        #       not be safe. Talk about it with the team before PR.
+                        # There is already applicability data for this consumer set and
+                        # content type. We will convert the existing data and the new data to
+                        # sets, generate the union of those sets, and turn it back into a list
+                        # so that we can report unique units.
                         consumer_applicability_map[consumers][content_type] = list(
                             set(consumer_applicability_map[consumers][content_type]) |\
                             set(applicability))
