@@ -21,7 +21,7 @@ setup(
             'distributor = pulp_node.distributors.http.distributor:entry_point',
         ],
         'pulp.profilers': [
-            'profiler = pulp_node.profilers.profiler:entry_point',
+            'profiler = pulp_node.profilers.node:entry_point',
         ],
     }
 )
