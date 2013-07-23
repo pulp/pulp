@@ -570,7 +570,6 @@ class ImporterTest(PluginTestBase):
 class ProfilerTest(PluginTestBase):
 
     NODE_ID = 'test_node'
-
     MISSING_REPO_ID = 'missing-repository-id'
 
     def populate(self, node_strategy=constants.ADDITIVE_STRATEGY, bind_strategy=constants.ADDITIVE_STRATEGY):
@@ -629,7 +628,7 @@ class ProfilerTest(PluginTestBase):
         self.delete_units(self.REPO_ID, self.NUM_UNITS / 2)
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
-        self.assertEqual(units, translated)
+        self.assertEqual([], translated)
 
     def test_additive_missing_repository(self):
         self.populate()
@@ -657,7 +656,7 @@ class ProfilerTest(PluginTestBase):
         conduit = ProfilerConduit()
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
-        self.assertEqual([], translated)
+        self.assertEqual(units, translated)
 
     def test_additive_missing_unit(self):
         self.populate()
@@ -674,7 +673,7 @@ class ProfilerTest(PluginTestBase):
         conduit = ProfilerConduit()
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
-        self.assertEqual([], translated)
+        self.assertEqual(units, translated)
 
     def test_mirror(self):
         self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
@@ -690,7 +689,7 @@ class ProfilerTest(PluginTestBase):
         conduit = ProfilerConduit()
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
-        self.assertEqual(units, translated)
+        self.assertEqual([], translated)
 
     def test_mirror_missing_repository(self):
         self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
@@ -716,7 +715,7 @@ class ProfilerTest(PluginTestBase):
         conduit = ProfilerConduit()
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
-        self.assertEqual([], translated)
+        self.assertEqual(units, translated)
 
     def test_mirror_missing_units(self):
         self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
@@ -731,7 +730,7 @@ class ProfilerTest(PluginTestBase):
         conduit = ProfilerConduit()
         translated = profiler.update_units(consumer, units, options, {}, conduit)
         # Verify
-        self.assertEqual([], translated)
+        self.assertEqual(units, translated)
 
 
 # --- testing end-to-end -----------------------------------------------------

@@ -49,7 +49,7 @@ def build_profile(repo_ids=None):
     :return: The node profile.
     :rtype: dict
     """
-    init()
+    init_db()
     repositories = fetch_repositories(repo_ids)
     repo_ids = repositories.keys()
     distributors = fetch_distributors(repo_ids)
@@ -70,12 +70,13 @@ def build_profile(repo_ids=None):
 # --- utils ------------------------------------------------------------------
 
 
-def init():
+def init_db():
     """
     Initialize the DB.
     """
-    name = pulp_conf.get('database', 'name')
-    connection.initialize(name)
+    if connection._connection is None:
+        name = pulp_conf.get('database', 'name')
+        connection.initialize(name)
 
 
 def fingerprint(thing):

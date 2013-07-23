@@ -125,9 +125,10 @@ class NodeProfiler(Profiler):
                 strategy = bindings[repo_id]
                 bind_strategy = find_strategy(strategy)()
                 bind_strategy.bash_units((expected, reported))
-        except Discrepancy, de:
-            log.info(str(de))
-            units = []
+            units = []  # no updated needed
+        except Discrepancy, dx:
+            discrepancy = str(dx)
+            log.info(discrepancy)
         return units
 
     def _bindings(self, consumer_id):
