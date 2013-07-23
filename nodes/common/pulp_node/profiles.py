@@ -49,6 +49,7 @@ def build_profile(repo_ids=None):
     :return: The node profile.
     :rtype: dict
     """
+    init()
     repositories = fetch_repositories(repo_ids)
     repo_ids = repositories.keys()
     distributors = fetch_distributors(repo_ids)

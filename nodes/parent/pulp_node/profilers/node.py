@@ -11,6 +11,7 @@
 
 
 from gettext import gettext as _
+from logging import getLogger
 
 from pulp.plugins.profiler import Profiler
 from pulp.server.managers import factory as managers
@@ -19,7 +20,10 @@ from pulp_node import constants
 from pulp_node.profiles import build_profile, fingerprint
 
 
-# --- i18n ------------------------------------------------------------------------------
+log = getLogger(__name__)
+
+
+# --- constants -------------------------------------------------------------------------
 
 
 STRATEGY_UNSUPPORTED = _('Strategy "%(s)s" not supported')
@@ -40,8 +44,40 @@ def entry_point():
 # --- exceptions ------------------------------------------------------------------------
 
 
-class DiscrepancyFound(Exception):
-    pass
+class Discrepancy(Exception):
+
+    def __init__(self, expected, reported):
+        self.expected = expected
+        self.reported = reported
+
+
+class RepositoryCountDiscrepancy(Discrepancy):
+        
+    def __str__(self):
+        e_cnt = len(self.expected)
+        r_cnt = len(self.reported)
+        msg = _('Repository count discrepancy: expected=%(e_cnt)d reported=%(r_cnt)d')
+        return msg % dict(e_cnt=e_cnt, r_cnt=r_cnt)
+
+
+class RepositoryDiscrepancy(Discrepancy):
+
+    def __str__(self):
+        e_id = self.expected['id']
+        r_id = self.reported['id']
+        msg = _('Repository discrepancy: expected_id=%(e_id)s reported_id=%(r_id)s')
+        return msg % dict(e_id=e_id, r_id=r_id)
+
+
+class UnitDiscrepancy(Discrepancy):
+
+    def __str__(self):
+        e_id = self.expected['id']
+        r_id = self.reported['id']
+        e_cnt = len(self.expected[constants.PROFILE_UNITS])
+        r_cnt = len(self.reported[constants.PROFILE_UNITS])
+        msg = _('Unit discrepancy: expected %(e_id)s=%(e_cnt)d, reported %(r_id)s=%(r_cnt)d')
+        return msg % dict(e_id=e_id, e_cnt=e_cnt, r_id=r_id, r_cnt=r_cnt)
 
 
 # --- profiler -------------------------------------------------------------------------
@@ -89,7 +125,8 @@ class NodeProfiler(Profiler):
                 strategy = bindings[repo_id]
                 bind_strategy = find_strategy(strategy)()
                 bind_strategy.bash_units((expected, reported))
-        except DiscrepancyFound:
+        except Discrepancy, de:
+            log.info(str(de))
             units = []
         return units
 
@@ -148,7 +185,7 @@ class Mirror(object):
         """
         expected, reported = [p[constants.PROFILE_REPOSITORIES] for p in profiles]
         if len(reported) != len(expected):
-            raise DiscrepancyFound()
+            raise RepositoryCountDiscrepancy(expected, reported)
         repositories = zip(expected, reported)
         for r in repositories:
             expected = dict(r[0])
@@ -156,7 +193,7 @@ class Mirror(object):
             expected.pop(constants.PROFILE_UNITS)
             reported.pop(constants.PROFILE_UNITS)
             if fingerprint(expected) != fingerprint(reported):
-                raise DiscrepancyFound()
+                raise RepositoryDiscrepancy(expected, reported)
         return repositories
 
     def bash_units(self, repositories):
@@ -170,7 +207,7 @@ class Mirror(object):
         """
         expected, reported = [map(fingerprint, r[constants.PROFILE_UNITS]) for r in repositories]
         if expected != reported:
-            raise DiscrepancyFound()
+            raise UnitDiscrepancy(*repositories)
 
 
 class Additive(object):
@@ -188,7 +225,7 @@ class Additive(object):
         expected, reported = [p[constants.PROFILE_REPOSITORIES] for p in profiles]
         reported = [r for r in reported if r['id'] in [e['id'] for e in expected]]
         if len(reported) < len(expected):
-            raise DiscrepancyFound()
+            raise RepositoryCountDiscrepancy(expected, reported)
         repositories = zip(expected, reported)
         for r in repositories:
             expected = dict(r[0])
@@ -196,7 +233,7 @@ class Additive(object):
             expected.pop(constants.PROFILE_UNITS)
             reported.pop(constants.PROFILE_UNITS)
             if fingerprint(expected) != fingerprint(reported):
-                raise DiscrepancyFound()
+                raise RepositoryDiscrepancy(expected, reported)
         return repositories
 
     def bash_units(self, repositories):
@@ -211,7 +248,7 @@ class Additive(object):
         expected, reported = [map(fingerprint, r[constants.PROFILE_UNITS]) for r in repositories]
         reported = [u for u in reported if u in expected]
         if expected != reported:
-            raise DiscrepancyFound()
+            raise UnitDiscrepancy(*repositories)
 
 
 # --- factory ---------------------------------------------------------------------------

@@ -679,6 +679,9 @@ class ProfilerTest(PluginTestBase):
     def test_mirror(self):
         self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
         p = build_profile()
+        self.tearDown()
+        self.setUp()
+        self.populate(node_strategy=constants.MIRROR_STRATEGY, bind_strategy=constants.MIRROR_STRATEGY)
         profiler = NodeProfiler()
         consumer = plugin_model.Consumer(self.NODE_ID, {constants.TYPE_NODE: p})
         # Test
