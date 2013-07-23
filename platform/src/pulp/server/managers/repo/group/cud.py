@@ -18,6 +18,7 @@ import sys
 
 from pymongo.errors import DuplicateKeyError
 
+from pulp.common.constants import DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY, DISTRIBUTOR_CONFIG_KEY
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.db.model.repository import Repo
@@ -73,9 +74,9 @@ class RepoGroupManager(object):
         :type repo_ids: list of str or None
         :param notes: A collection of key=value pairs
         :type notes: dict or None
-        :param distributor_list: A list of dictionaries used to add distributors. The following keys
-                are expected: 'distributor_type', 'distributor_config', and 'distributor_id', which are
-                of type str, dict, and str or None, respectively
+        :param distributor_list: A list of dictionaries used to add distributors. The following keys are
+            expected: from pulp.common.constants: DISTRIBUTOR_TYPE_ID_KEY, DISTRIBUTOR_CONFIG_KEY, and
+            DISTRIBUTOR_ID_KEY, which should hold values str, dict, and str or None
         :type distributor_list: list of dict
         :return: SON representation of the repo group
         :rtype: bson.SON
@@ -97,14 +98,14 @@ class RepoGroupManager(object):
                 raise pulp_exceptions.InvalidValue(['distributor_list'])
 
             try:
-                type_id = distributor.get('distributor_type')
-                plugin_config = distributor.get('distributor_config')
-                distributor_id = distributor.get('distributor_id')
+                type_id = distributor.get(DISTRIBUTOR_TYPE_ID_KEY)
+                plugin_config = distributor.get(DISTRIBUTOR_CONFIG_KEY)
+                distributor_id = distributor.get(DISTRIBUTOR_ID_KEY)
 
                 distributor_manager.add_distributor(group_id, type_id, plugin_config, distributor_id)
             except pulp_exceptions.InvalidValue, e:
                 # Make note a note that the repo was deleted and pass the exception up
-                _LOG.exception('Exception adding distributor [%s] to repo group [%s]; the group will'
+                _LOG.exception('Exception adding distributor to repo group [%s]; the group will'
                                ' be deleted' % group_id)
                 self.delete_repo_group(group_id)
                 raise e, None, sys.exc_info()[2]

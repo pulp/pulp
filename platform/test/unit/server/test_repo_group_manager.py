@@ -16,10 +16,11 @@ import shutil
 import traceback
 import unittest
 
-from base import PulpAsyncServerTests
 import mock
-import mock_plugins
 
+from base import PulpAsyncServerTests
+import mock_plugins
+from pulp.common.constants import DISTRIBUTOR_CONFIG_KEY, DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
@@ -113,9 +114,9 @@ class RepoGroupCUDTests(RepoGroupTests):
         display_name = 'A display name'
         description = 'A test repo group'
         notes = {'key': 'value'}
-        distributor_list = [{'distributor_type': 'fake_distributor',
-                             'distributor_config': {'a': 1},
-                             'distributor_id': 'fake_id'}]
+        distributor_list = [{DISTRIBUTOR_TYPE_ID_KEY: 'fake_distributor',
+                             DISTRIBUTOR_CONFIG_KEY: {'a': 1},
+                             DISTRIBUTOR_ID_KEY: 'fake_id'}]
         repo_ids = ['repo1', 'repo2']
 
         # Assert that create_repo_group was called with all the correct arguments

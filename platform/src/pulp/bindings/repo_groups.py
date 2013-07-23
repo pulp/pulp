@@ -13,6 +13,7 @@
 
 from pulp.bindings.search import SearchAPI
 from pulp.bindings.base import PulpAPI
+from pulp.common import constants
 
 class RepoGroupAPI(PulpAPI):
     """
@@ -166,9 +167,9 @@ class RepoGroupDistributorAPI(PulpAPI):
         """
         path = self.PATH % group_id
         data = {
-            'distributor_type_id': distributor_type_id,
-            'distributor_config': distributor_config,
-            'distributor_id': distributor_id,
+            constants.DISTRIBUTOR_TYPE_ID_KEY: distributor_type_id,
+            constants.DISTRIBUTOR_CONFIG_KEY: distributor_config,
+            constants.DISTRIBUTOR_ID_KEY: distributor_id,
         }
         return self.server.POST(path, data)
 

@@ -16,10 +16,11 @@ import mock
 import dummy_plugins
 import base
 import mock_plugins
+from pulp.common.constants import DISTRIBUTOR_CONFIG_KEY, DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY
 from pulp.server.db.model import criteria
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
-from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor, RepoGroupPublishResult
+from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.managers import factory as manager_factory
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
@@ -177,9 +178,9 @@ class RepoGroupCollectionTests(base.PulpWebserviceTests):
             'id': 'post-group',
             'display_name': 'Post Group',
             'description': 'Post Description',
-            'distributors': [{'distributor_type': 'mock-group-distributor',
-                            'distributor_config': {},
-                            'distributor_id': 'dist-1'}]
+            'distributors': [{DISTRIBUTOR_TYPE_ID_KEY: 'mock-group-distributor',
+                            DISTRIBUTOR_CONFIG_KEY: {},
+                            DISTRIBUTOR_ID_KEY: 'dist-1'}]
         }
 
         # Test
@@ -191,7 +192,6 @@ class RepoGroupCollectionTests(base.PulpWebserviceTests):
         self.assertEqual(data['display_name'], mock_create_group.call_args[0][2])
         self.assertEqual(data['description'], mock_create_group.call_args[0][3])
         self.assertEqual(data['distributors'], mock_create_group.call_args[1]['distributor_list'])
-
 
     def test_post_missing_value(self):
         # Test

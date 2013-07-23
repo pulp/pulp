@@ -17,6 +17,7 @@ import mock
 
 from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupDistributorAPI, RepoGroupSearchAPI, \
     RepoGroupActionAPI
+from pulp.common.constants import DISTRIBUTOR_CONFIG_KEY, DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY
 
 class TestRepoGroupAPI(unittest.TestCase):
     def setUp(self):
@@ -97,9 +98,9 @@ class TestRepoGroupDistributorAPI(unittest.TestCase):
         expected_path = self.api.PATH % group_id
         distributor_type = 'fake_type'
         distributor_config = {'fake': 'config'}
-        expected_data = {'distributor_type_id': distributor_type,
-                         'distributor_config': distributor_config,
-                         'distributor_id': None}
+        expected_data = {DISTRIBUTOR_TYPE_ID_KEY: distributor_type,
+                         DISTRIBUTOR_CONFIG_KEY: distributor_config,
+                         DISTRIBUTOR_ID_KEY: None}
 
         # Test
         result = self.api.create(group_id, distributor_type, distributor_config, None)
