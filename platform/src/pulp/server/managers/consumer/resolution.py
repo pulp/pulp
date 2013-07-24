@@ -10,7 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
-Contains content translation classes
+Contains content resolution classes
 """
 
 import sys
@@ -29,24 +29,24 @@ from pulp.server.exceptions import PulpExecutionException, PulpDataException
 _LOG = getLogger(__name__)
 
 
-class ContentTranslationManager(object):
+class ContentResolutionManager(object):
     """
-    The unit translation manager provides methods for translating
+    The unit resolution manager provides methods for translating
     content units for installation, update and un-installation.
     """
     
     def install_units(self, consumer_id, units, options):
         """
         Translate the specified units to be installed.
-        The specified units are translated into the actual units the would be installed
+        The specified units are resolved into the actual units the would be installed
         as determined by the profiler.
         :param consumer_id: The consumer ID.
         :type consumer_id: str
-        :param units: A list of content units to be translated.
+        :param units: A list of content units to be resolved.
         :type units: list of: { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
-        :return: The translated units.
+        :return: The resolved units.
         :rtype: list
         """
         conduit = ProfilerConduit()
@@ -62,15 +62,15 @@ class ContentTranslationManager(object):
     def update_units(self, consumer_id, units, options):
         """
         Translate the specified units to be updated.
-        The specified units are translated into the actual units the would be updated
+        The specified units are resolved into the actual units the would be updated
         as determined by the profiler.
         :param consumer_id: The consumer ID.
         :type consumer_id: str
-        :param units: A list of content units to be translated.
+        :param units: A list of content units to be resolved.
         :type units: list of: { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
-        :return: The translated units.
+        :return: The resolved units.
         :rtype: list
         """
         conduit = ProfilerConduit()
@@ -86,15 +86,15 @@ class ContentTranslationManager(object):
     def uninstall_units(self, consumer_id, units, options):
         """
         Translate the specified units to be uninstalled.
-        The specified units are translated into the actual units the would be uninstalled
+        The specified units are resolved into the actual units the would be uninstalled
         as determined by the profiler.
         :param consumer_id: The consumer ID.
         :type consumer_id: str
-        :param units: A list of content units to be translated.
+        :param units: A list of content units to be resolved.
         :type units: list of: { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
-        :return: The translated units.
+        :return: The resolved units.
         :rtype: list
         """
         conduit = ProfilerConduit()
@@ -162,7 +162,7 @@ def get_profiler(type_id):
 
 def invoke_plugin(method, *args, **kwargs):
     """
-    Invoke plugin method and translate exceptions.
+    Invoke plugin method and resolve exceptions.
     :param method: The plugin method to be invoked.
     :param args: The parameter list
     :param kwargs: The keyword parameters.

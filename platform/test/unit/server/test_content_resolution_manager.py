@@ -54,7 +54,7 @@ class TranslationManagerTests(PulpAsyncServerTests):
     def test_install(self, plugins_mock):
         profiler = Profiler()
         plugins_mock.return_value = profiler, {}
-        manager = managers.consumer_content_translation_manager()
+        manager = managers.content_resolution_manager()
         units = manager.install_units(CONSUMER_ID, UNITS, {})
         self.assertTrue(profiler.install_units.called)
         self.assertEqual(units, ALL_TRANSLATED_UNITS)
@@ -63,7 +63,7 @@ class TranslationManagerTests(PulpAsyncServerTests):
     def test_update(self, plugins_mock):
         profiler = Profiler()
         plugins_mock.return_value = profiler, {}
-        manager = managers.consumer_content_translation_manager()
+        manager = managers.content_resolution_manager()
         units = manager.update_units(CONSUMER_ID, UNITS, {})
         self.assertTrue(profiler.update_units.called)
         self.assertEqual(units, ALL_TRANSLATED_UNITS)
@@ -72,7 +72,7 @@ class TranslationManagerTests(PulpAsyncServerTests):
     def test_uninstall(self, plugins_mock):
         profiler = Profiler()
         plugins_mock.return_value = profiler, {}
-        manager = managers.consumer_content_translation_manager()
+        manager = managers.content_resolution_manager()
         units = manager.uninstall_units(CONSUMER_ID, UNITS, {})
         self.assertTrue(profiler.uninstall_units.called)
         self.assertEqual(units, ALL_TRANSLATED_UNITS)
