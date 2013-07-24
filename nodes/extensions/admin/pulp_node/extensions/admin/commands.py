@@ -17,7 +17,7 @@ from pulp.bindings.exceptions import NotFoundException
 
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.commands.consumer.query import ConsumerListCommand
 from pulp.client.commands.options import OPTION_REPO_ID, OPTION_CONSUMER_ID
@@ -82,12 +82,12 @@ REPO_LIST_TITLE = _('Enabled Repositories')
 
 # --- options ----------------------------------------------------------------
 
-AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
+AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default=True)
 
 STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
                                 default=constants.ADDITIVE_STRATEGY)
 
-FORCE_UPDATE_OPTION = PulpCliOption('--force', FORCE_UPDATE_DESC, required=False, default='false')
+FORCE_UPDATE_OPTION = PulpCliFlag('--force', FORCE_UPDATE_DESC)
 
 
 # --- messages ---------------------------------------------------------------
@@ -121,6 +121,8 @@ ENABLE_WARNING = \
 
 AUTO_PUBLISH_WARNING = \
     _('Warning: enabling with auto-publish may degrade repository synchronization performance.')
+
+NO_UPDATE_REQUIRED = _('No update required')
 
 
 # --- extension loading ------------------------------------------------------
@@ -526,6 +528,10 @@ class NodeUpdateCommand(PollingCommand):
         self.tracker.display(task.progress)
 
     def succeeded(self, task):
-        report = task.result['details'].values()[0]
+        details = task.result['details']
+        if not details:
+            self.prompt.render_success_message(NO_UPDATE_REQUIRED)
+            return
+        report = details.values()[0]
         r = UpdateRenderer(self.context.prompt, report)
         r.render()
