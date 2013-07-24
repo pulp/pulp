@@ -589,13 +589,13 @@ class ContentApplicability(JSONController):
         """
         Query content applicability for a given consumer criteria query.
 
-        body {consumer_criteria: <dict>,
-              content_types: <list>[optional]}
+        body {consumer_criteria: <object>,
+              content_types: <array>[optional]}
 
-        This method returns a list of dictionaries that each have two keys: 'consumers', and
-        'applicability'. 'consumers' will index a list of consumer_ids, for consumers that have
-        the same repository bindings and profiles. 'applicability' will index a dictionary
-        structure that will have keys for each content type that is applicable, and the content
+        This method returns an array of objects that each have two keys: 'consumers', and
+        'applicability'. 'consumers' will index an array of consumer_ids, for consumers that have
+        the same repository bindings and profiles. 'applicability' will index an object
+        that will have keys for each content type that is applicable, and the content
         type ids will index the applicability data for those content types. For example,
 
         [{'consumers': ['consumer_1', 'consumer_2'],
@@ -604,7 +604,7 @@ class ContentApplicability(JSONController):
           'applicability': {'content_type_1': ['unit_1', 'unit_2']}}]
 
         :return: applicability data matching the consumer criteria query
-        :rtype:  list
+        :rtype:  str
         """
         # Get the consumer_ids that match the consumer criteria query that the requestor queried
         # with, and build a map from consumer_id to a dict with profiles and repo_ids for each
@@ -830,7 +830,7 @@ class ContentApplicability(JSONController):
         try:
             consumer_criteria = body.get('consumer_criteria')
         except AttributeError:
-            raise InvalidValue('The input to this method must be a JSON document with a '
+            raise InvalidValue('The input to this method must be a JSON object with a '
                                "'consumer_criteria' key.")
         consumer_criteria = Criteria.from_client_input(consumer_criteria)
         # We only need the consumer ids
@@ -850,7 +850,7 @@ class ContentApplicability(JSONController):
 
         content_types = body.get('content_types', None)
         if content_types is not None and not isinstance(content_types, list):
-            raise InvalidValue('content_types must index a list.')
+            raise InvalidValue('content_types must index an array.')
 
         return content_types
 
