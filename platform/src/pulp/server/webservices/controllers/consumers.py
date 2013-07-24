@@ -798,11 +798,11 @@ class ContentApplicability(JSONController):
         :rtype:                   dict
         """
         consumer_applicability_map = {}
-        for repo_profile, data in applicability_map.items():
+        for repo_profile, data in applicability_map.iteritems():
             # This will be the key for our map, a set of the consumers that share data
             consumers = frozenset(data['consumers'])
             if consumers in consumer_applicability_map:
-                for content_type, applicability in data['applicability'].items():
+                for content_type, applicability in data['applicability'].iteritems():
                     if content_type in consumer_applicability_map[consumers]:
                         # There is already applicability data for this consumer set and
                         # content type. We will convert the existing data and the new data to

@@ -1058,7 +1058,7 @@ class TestContentApplicability(base.PulpWebserviceTests):
             'content_types': 42}
         status, body = self.post(self.PATH, criteria)
         self.assertEqual(status, 400)
-        self.assertEqual(body, 'Invalid properties: [\'content_types must index a list.\']')
+        self.assertEqual(body, 'Invalid properties: [\'content_types must index an array.\']')
 
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
@@ -1477,7 +1477,7 @@ class TestContentApplicability(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, '')
         self.assertEqual(status, 400)
         self.assertEqual(body, 'Invalid properties: ["The input to this method must be a '
-                               'JSON document with a \'consumer_criteria\' key."]')
+                               'JSON object with a \'consumer_criteria\' key."]')
 
         # Test wrong consumer_criteria key
         criteria = {
