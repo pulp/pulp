@@ -39,16 +39,22 @@ class TestCompression(TestCase):
         self.assertFalse(compressed(path))
         self.assertTrue(compressed(compressed_path))
         self.assertEqual(path + FILE_SUFFIX, compressed_path)
-        with gzip.open(compressed_path) as fp:
+        fp = gzip.open(compressed_path)
+        try:
             block_in = fp.read()
+        finally:
+            fp.close()
         self.assertEqual(block, block_in)
 
     def test_decompression(self):
         # Setup
         block = 'A' * 1024
         path = mktemp(dir=self.tmp_dir) + FILE_SUFFIX
-        with gzip.open(path, 'wb') as fp:
+        fp = gzip.open(path, 'wb')
+        try:
             fp.write(block)
+        finally:
+            fp.close()
         # Test
         decompressed_path = decompress(path)
         # Verify
