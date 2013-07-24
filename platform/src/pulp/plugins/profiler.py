@@ -288,5 +288,3 @@ class Profiler(object):
         :rtype: list of str
         """
         raise NotImplementedError()
-#        message = 'Applicability for: %s, not supported' % unit_type_id
-#        raise InvalidUnitTypeForApplicability(unit_type_id, message)
