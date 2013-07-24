@@ -28,7 +28,7 @@ from pulp.server.itineraries.repository import (
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -1017,6 +1017,32 @@ class RepoUnitAdvancedSearch(JSONController):
             units = manager.get_units_across_types(repo_id, criteria=criteria)
 
         return self.ok(units)
+    
+class ContentApplicabilityRegeneration(JSONController):
+    """
+    Content applicability regeneration for updated repositories
+    """
+
+    @auth_required(CREATE)
+    def POST(self):
+        """
+        Regenerate content applicability for given repositories.
+        body {
+        repo_criteria:<dict>,
+        }
+        """
+        body = self.params()
+        repo_criteria = body.get('repo_criteria', {})
+        try:
+            repo_criteria = Criteria.from_client_input(repo_criteria)
+        except:
+            _LOG.error('Error parsing consumer criteria [%s]' % repo_criteria)
+            raise exceptions.PulpDataException(), None, sys.exc_info()[2]
+
+        manager = manager_factory.applicability_regeneration_manager()
+        call_request = CallRequest(manager.regenerate_applicability_for_repos,
+                                   [repo_criteria])
+        return execution.execute_async(self, call_request)
 
 # -- web.py application -------------------------------------------------------
 
@@ -1024,6 +1050,7 @@ class RepoUnitAdvancedSearch(JSONController):
 urls = (
     '/', 'RepoCollection', # collection
     '/search/$', 'RepoSearch', # resource search
+    '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/([^/]+)/$', 'RepoResource', # resource
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection

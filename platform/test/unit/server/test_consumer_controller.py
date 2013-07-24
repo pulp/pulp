@@ -914,7 +914,7 @@ class TestContentApplicability(base.PulpWebserviceTests,
     """
     Test the ContentApplicability controller.
     """
-    PATH = '/v2/consumers/actions/content/applicability/'
+    PATH = '/v2/consumers/content/applicability/'
 
     def tearDown(self):
         """

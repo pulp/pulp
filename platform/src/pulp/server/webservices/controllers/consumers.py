@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import sys
 
 import web
 from web.webapi import BadRequest
@@ -23,7 +24,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue
+from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, PulpDataException
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
@@ -652,6 +653,33 @@ class ContentApplicability(JSONController):
         return content_types
 
 
+class ContentApplicabilityRegeneration(JSONController):
+    """
+    Content applicability regeneration for consumers
+    """
+
+    @auth_required(CREATE)
+    def POST(self):
+        """
+        Regenerate content applicability.
+        body {
+        consumer_criteria:<dict>,
+        }
+        """
+        body = self.params()
+        consumer_criteria = body.get('consumer_criteria', {})
+        try:
+            consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        except:
+            _LOG.error('Error parsing consumer criteria [%s]' % consumer_criteria)
+            raise PulpDataException(), None, sys.exc_info()[2]
+
+        manager = managers.applicability_regeneration_manager()
+        call_request = CallRequest(manager.regenerate_applicability_for_consumers,
+                                   [consumer_criteria])
+        return execution.execute_async(self, call_request)
+
+
 class UnitInstallScheduleCollection(JSONController):
 
     @auth_required(READ)
@@ -1038,9 +1066,10 @@ class UnitUninstallScheduleResource(JSONController):
 
 urls = (
     '/$', Consumers,
-    '/search/$', ConsumerSearch,
+    '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/binding/search/$', BindingSearch,
-    '/actions/content/applicability/$', ContentApplicability,
+    '/content/applicability/$', ContentApplicability,
+    '/search/$', ConsumerSearch,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', Binding,
