@@ -1,184 +1,68 @@
 Content Applicability
 =====================
 
-Determine Content Applicability
--------------------------------
+Query Content Applicability
+---------------------------
 
-Determines whether given content units are applicable to the specified `consumers` using 
-specified `repositories`. What unit *applicability* means varies based on the
-type of content unit. Consumers and repositories can be specified using selection criteria. 
-Please see :ref:`search_api` for more details on how to specify the selection criteria for
-consumers and repositories. Content units to be checked for applicability can be specified 
-in a dictionary keyed by a content type ID, value being a list of dictionaries representing 
-unit metadata used to identify the content units. 
+This method queries Pulp for the applicability data that applies to a set of
+consumers matched by a given :ref:`search_criteria`. The API user may also
+optionally specify an array of content types to which they wish to limit the
+applicability data.
 
-If repo_criteria is not specified, all the repositories bound to given consumers are considered. 
-If consumer_criteria is not specified and repo_criteria is specified, all the consumers registered 
-to the Pulp server which are bound to the specified repositories are checked for applicability. 
-Units are also optional similar to consumer_criteria and repo_criteria. If they are not specified, 
-all units from specified repositories are checked for applicability. You can also specify 
-content type ID with an empty list as a value. In this case, the api will check for all units 
-in given repositories with that content type. 
+.. note::
+   The criteria is used by this API to select which consumers for which Pulp
+   needs to find applicability data. The ``sort`` option can be used in
+   conjunction with ``limit`` and ``skip`` for pagination, but the ``sort``
+   option will not influence the ordering of the returned applicability reports
+   since the consumers are collated together.
 
-This api returns a dictionary containing a list of applicability reports keyed by a consumer ID, 
-further keyed by a content type ID.
+The applicability API will return an array of objects in its response. Each
+object will contain two keys, ``consumers`` and ``applicability``.
+``consumers`` will index an array of consumer ids. These grouped consumer ids
+will allow Pulp to collate consumers that have the same applicability together.
+``applicability`` will index an object. The applicability object will contains
+content types as keys, and each content type will index an array of unit ids.
 
-Each *ApplicabilityReport* is an object:
- * **summary** (<dependent on plugin>) - summary of the applicability calculation
- * **details** (<dependent on plugin>) - details of the applicability calculation
+Each *applicability report* is an object:
+ * **consumers** - array of consumer ids
+ * **applicability** - object with content types as keys, each indexing an
+                       array of applicable unit ids
 
 | :method:`post`
 | :path:`/v2/consumers/actions/content/applicability/`
 | :permission:`read`
 | :param_list:`post`
 
-* :param:`consumer_criteria,object,a consumer criteria object defined in` :ref:`search_criteria`
-* :param:`repo_criteria,object,a repository criteria object defined in` :ref:`search_criteria`
-* :param:`units,dict,a dictionary of list of content unit metadata dictionaries, keyed by a content type ID`
+* :param:`criteria,object,a consumer criteria object defined in` :ref:`search_criteria`
+* :param:`content_types,array,an array of content types that the caller wishes to limit the applicability report to` (optional)
 
 | :response_list:`_`
 
-* :response_code:`200,if the applicability check was performed successfully`
+* :response_code:`200,if the applicability query was performed successfully`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:`a dictionary containing a list of applicability reports (see above) keyed by a consumer ID, 
-           further keyed by a content type ID`
+| :return:`an array of applicability reports`
 
 :sample_request:`_` ::
 
 
  { 
-  'consumer_criteria': {
+  'criteria': {
    'filters': {'id': {'$in': ['sunflower', 'voyager']}},
-   'sort': [['id', 'ascending']]
   },
-  'repo_criteria': {
-   'filters': {'id': {'$in': ['test-repo', 'unbound-repo', 'test_errata']}}
-  },
-  'units': {
-   'erratum': [{'id': 'grinder_test_4'}],
-   'rpm': []
-  }
+  'content_types': ['type_1', 'type_2']
  }
 
 
 :sample_response:`200` ::
 
-
- { 
-  'sunflower': {
-   'erratum': [
-    {'details': {
-      '_content_type_id': 'erratum',
-      '_id': '9a825663-2f03-456e-b55b-f77dbbc5fcb8',
-      '_ns': 'units_erratum',
-      'description': None,
-      'from_str': 'pulp-list@redhat.com',
-      'id': 'grinder_test_4',
-      'issued': '2010-11-7 00:00:00',
-      'pkglist': [{'name': 'F14 Pulp Test Packages',
-                   'packages': [{'arch': 'noarch',
-                                 'epoch': '0',
-                                 'filename': 'grinder_test_package-4.0-1.fc14.noarch.rpm',
-                                 'name': 'grinder_test_package',
-                                 'release': '1.fc14',
-                                 'src': 'grinder_test_package-4.0-1.fc14.src.rpm',
-                                 'sum': ['md5', 'd89e83ed183fa55dfb0bd2eec14db93c'],
-                                 'version': '4.0'}],
-                   'short': 'F14PTP'}],
-      'pushcount': 1,
-      'reboot_suggested': False,
-      'references': [],
-      'release': '',
-      'rights': '',
-      'severity': '',
-      'solution': '',
-      'status': 'final',
-      'summary': '',
-      'title': 'Test Errata referring to grinder_test_package-4.0',
-      'type': 'enhancements',
-      'updated': '2012-7-25 00:00:00',
-      'version': '1'
-     },
-     'summary': {}
-    }
-   ],
-   'rpm': [
-    {'details': {
-      'pulp-test-package x86_64': {
-       'available': {
-        'arch': 'x86_64',
-        'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
-        'checksumtype': 'sha256',
-        'epoch': '0',
-        'name': 'pulp-test-package',
-        'release': '1.fc11',
-        'version': '0.3.1'
-       },
-       'installed': {
-        'arch': 'x86_64',
-        'epoch': 0,
-        'name': 'pulp-test-package',
-        'release': '1.fc11',
-        'vendor': None,
-        'version': '0.2.1'
-       }
-      }
-     },
-     'summary': {}
+ [
+    {
+        'consumers': ['sunflower'],
+        'applicability': {'type_1': ['unit_1_id', 'unit_2_id']}
     },
-    {'details': {
-      'grinder_test_package noarch': {
-       'available': {
-        'arch': 'noarch',
-		'checksum': '78b6e9827dd3f3f02dd1ad16e89a3515a5b1e5ecdf522842a64315e3728aa951',
-        'checksumtype': 'sha256',
-        'epoch': '0',
-        'name': 'grinder_test_package',
-        'release': '1.fc14',
-        'version': '5.0'
-       },
-       'installed': {
-        'arch': 'noarch',
-        'epoch': 0,
-        'name': 'grinder_test_package',
-        'release': '1.fc14',
-        'vendor': None,
-        'version': '3.0'
-       }
-      }
-     }
+    {
+        'consumers': ['sunflower', 'voyager'],
+        'applicability': {'type_1': ['unit_3_id'], 'type_2': ['unit_4_id']}
     }
-   ]
-  },
-  'voyager': {
-   'erratum': [],
-   'rpm': [
-    {'details': {
-      'pulp-test-package x86_64': {
-       'available': {
-        'arch': 'x86_64',
-        'checksum': '6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f',
-        'checksumtype': 'sha256',
-        'epoch': '0',
-        'name': 'pulp-test-package',
-        'release': '1.fc11',
-        'version': '0.3.1'
-       },
-       'installed': {
-        'arch': 'x86_64',
-        'epoch': 0,
-        'name': 'pulp-test-package',
-        'release': '1.fc11',
-        'vendor': None,
-        'version': '0.2.1'
-       }
-      }
-     },
-     'summary': {}
-    }
-   ]
-  }
- }
-
-
+ ]
