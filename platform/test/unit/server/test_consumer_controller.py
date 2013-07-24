@@ -17,13 +17,14 @@ import base
 import logging
 import mock_plugins
 import mock_agent
+import time
 
 from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.model import ApplicabilityReport
 from pulp.server.compat import ObjectId
 from pulp.server.managers import factory
-from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
-from pulp.server.db.model.dispatch import ScheduledCall
+from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile, RepoProfileApplicability
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.dispatch import ScheduledCall, QueuedCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
@@ -908,37 +909,69 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(status, 404)
 
 
-class TestApplicability(base.PulpWebserviceTests):
+class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
 
-    CONSUMER_IDS = ['test-1', 'test-2']
+    CONSUMER_IDS = ['consumer-1', 'consumer-2']
     FILTER = {'id':{'$in':CONSUMER_IDS}}
-    SORT = [('id','ascending')]
-    CONSUMER_CRITERIA = dict(filters=FILTER, sort=SORT)
-    REPO_CRITERIA = None
-    UNIT_CRITERIA = {'erratum': {"filters": {"name": {"$in":['security-patch_123']}}}}
-    PROFILE = [1,2,3]
-    SUMMARY = 'mysummary'
-    DETAILS = 'mydetails'
+    SORT = [{'id':1}]
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
+    REPO_IDS = ['repo-1','repo-2']
+    REPO_CRITERIA = Criteria(filters={'id':{'$in':REPO_IDS}}, sort=[{'id':1}])
+    YUM_DISTRIBUTOR_ID = 'yum_distributor'
 
-    PATH = '/v2/consumers/actions/content/applicability/'
+    PATH = '/v2/consumers/actions/content/regenerate_applicability/'
 
     def setUp(self):
         base.PulpWebserviceTests.setUp(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
-        profiler = plugin_api.get_profiler_by_type('errata')[0]
-        print profiler
-        profiler.find_applicable_units = \
-            mock.Mock(side_effect=lambda i,r,t,u,c,x:
-                [ApplicabilityReport(self.SUMMARY, self.DETAILS)])
+
+        rpm_pkg_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
+        rpm_pkg_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda t,p,r,c,x:
+                 ['rpm-1', 'rpm-2'])
+        rpm_errata_profiler, cfg = plugin_api.get_profiler_by_type('erratum')
+        rpm_errata_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda t,p,r,c,x:
+                 ['errata-1', 'errata-2'])
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
         mock_plugins.reset()
+
+    def populate_repos(self):
+        repo_manager = factory.repo_manager()
+        distributor_manager = factory.repo_distributor_manager()
+        # Create repos and add distributor
+        for repo_id in self.REPO_IDS:
+            repo_manager.create_repo(repo_id)
+            distributor_manager.add_distributor(
+                                                repo_id,
+                                                'mock-distributor',
+                                                {},
+                                                True,
+                                                self.YUM_DISTRIBUTOR_ID)
+
+    def populate_bindings(self):
+        self.populate_repos()
+        bind_manager = factory.consumer_bind_manager()
+        # Add bindings for the given repos and consumers
+        for consumer_id in self.CONSUMER_IDS:
+            for repo_id in self.REPO_IDS:
+                bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
 
     def populate(self):
         manager = factory.consumer_manager()
@@ -948,23 +981,47 @@ class TestApplicability(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    def test_no_missing_values_exception(self):
+    def test_regenerate_applicability(self):
+        # Setup
+        self.populate()
+        self.populate_bindings()
+        # Test
+        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+    def test_regenerate_applicability_no_consumer(self):
+        # Test
+        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        
+    def test_regenerate_applicability_no_bindings(self):
         # Setup
         self.populate()
         # Test
-        body = dict(consumer_criteria=self.CONSUMER_CRITERIA)
-        status, body = self.post(self.PATH, body)
-        self.assertEquals(status, 200)
-        body = dict(unit_criteria=self.UNIT_CRITERIA)
-        status, body = self.post(self.PATH, body)
-        self.assertEquals(status, 200)
+        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    def test_no_consumers(self):
+    def test_regenerate_applicability_wrong_criteria(self):
+        # Setup
+        self.populate()
         # Test
-        body = dict(consumer_criteria=self.CONSUMER_CRITERIA, unit_criteria=self.UNIT_CRITERIA)
-        status, body = self.post(self.PATH, body)
-        self.assertEquals(status, 200)
-        self.assertEquals(len(body), 0)
+        request_body = dict(consumer_criteria='foo')
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertFalse('task_id' in body)
 
 # scheduled content management tests -------------------------------------------
 

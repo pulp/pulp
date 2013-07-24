@@ -21,172 +21,159 @@ from logging import getLogger
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
-from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import RepoProfileApplicability
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.exceptions import PulpExecutionException
+from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as managers
-from pulp.server.managers.pluginwrapper import PluginWrapper
 
+TYPE_RPM_PROFILE = 'rpm'
+APPLICABILITY_CONTENT_TYPE_IDS = ['rpm', 'erratum']
+YUM_DISTRIBUTOR_ID = 'yum_distributor'
 
 _LOG = getLogger(__name__)
 
 
-class ApplicabilityManager(object):
+class ApplicabilityRegenerationManager(object):
 
-    def find_applicable_units(self, consumer_criteria=None, repo_criteria=None, unit_criteria=None, override_config=None):
+    def regenerate_applicability_for_consumers(self, consumer_criteria):
         """
-        Determine and report which of the content units specified by the unit_criteria
-        are applicable to consumers specified by the consumer_criteria
-        with repos specified by repo_criteria. If consumer_criteria is None,
-        all consumers registered to the Pulp server are checked for applicability.
-        If repo_criteria is None, all repos bound to the consumer are taken
-        into consideration. If unit_criteria contains an empty list for a specific type,
-        all units with specific type in the repos bound to the consumer
-        are taken into consideration. 
+        Regenerate and save applicability data for given consumers
 
-        :param consumer_criteria: The consumer selection criteria.
+        :param consumer_criteria: The consumer selection criteria
         :type consumer_criteria: dict
-
-        :param repo_criteria: The repo selection criteria.
-        :type repo_criteria: dict
-
-        :param unit_criteria: A dictionary of type_id : unit selection criteria
-        :type units: dict
-                {<type_id1> : <unit_criteria_for_type_id1>,
-                 <type_id2> : <unit_criteria_for_type_id2>}
-      
-        :param override_config: Additional configuration options to be accepted from user
-        :type override_config: dict
-
-        :return: applicability reports dictionary keyed by content type id
-        :rtype: dict
         """
-        result = {}
-        conduit = ProfilerConduit()
         consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
+        consumer_profile_manager = managers.consumer_profile_manager()
+        profiler_conduit = ProfilerConduit()
 
-        # Process Repo Criteria
-        if repo_criteria:
-            # Get repo ids satisfied by specified repo criteria
-            repo_query_manager = managers.repo_query_manager()
-            repo_criteria_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
-            # if repo_criteria is specified and there are no repos satisfying the criteria, return empty result
-            if not repo_criteria_ids:
-                return result
-        else:
-            repo_criteria_ids = None
+        # Process consumer_criteria
+        consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
 
-        # Process Consumer Criteria
-        if consumer_criteria:
-            # Get consumer ids satisfied by specified consumer criteria
-            consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
-        else:
-            if repo_criteria_ids:
-                # If repo_criteria is specified, get all the consumers bound to the repos
-                # satisfied by repo_criteria
-                bind_criteria = Criteria(filters={"repo_id": {"$in": repo_criteria_ids}})
-                consumer_ids = [b['consumer_id'] for b in bind_manager.find_by_criteria(bind_criteria)]
-                # Remove duplicate consumer ids
-                consumer_ids = list(set(consumer_ids))
-            else:
-                # Get all consumer ids registered to the Pulp server
-                consumer_ids = [c['id'] for c in consumer_query_manager.find_all()]
-        # if there are no relevant consumers, return empty result
-        if not consumer_ids:
-            return result
-        else:
-            # Based on the consumers, get all the repos bound to the consumers in consideration
-            # and find intersection of repo_criteria_ids and consumer_repo_ids
-            bind_criteria = Criteria(filters={"consumer_id": {"$in": consumer_ids}})
-            consumer_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(bind_criteria)]
-            if not repo_criteria_ids:
-                repo_criteria_ids = list(set(consumer_repo_ids))
-            else:
-                repo_criteria_ids = list(set(consumer_repo_ids) & set(repo_criteria_ids))
-            if not repo_criteria_ids:
-                return result
-
-        # Create a dictionary with consumer profile and repo_ids bound to the consumer keyed by consumer id
-        consumer_profile_and_repo_ids = {}
-        all_relevant_repo_ids = set()
         for consumer_id in consumer_ids:
-            # Find repos bound to the consumer in consideration and find an intersection of bound repos to the
-            # repos specified by repo_criteria
-            consumer_bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_consumer(consumer_id)]
-            consumer_bound_repo_ids = list(set(consumer_bound_repo_ids))
-            # If repo_criteria is not specified, use repos bound to the consumer, else take intersection 
-            # of repos specified in the criteria and repos bound to the consumer.
-            if repo_criteria_ids is None:
-                repo_ids = consumer_bound_repo_ids
-            else:
-                repo_ids = list(set(consumer_bound_repo_ids) & set(repo_criteria_ids))
-
-            if repo_ids:
-                # Save all eligible repo ids to get relevant plugin unit keys when unit_criteria is not specified
-                all_relevant_repo_ids = (all_relevant_repo_ids | set(repo_ids))
-                consumer_profile_and_repo_ids[consumer_id] = {'repo_ids': repo_ids}
-                consumer_profile_and_repo_ids[consumer_id]['profiled_consumer'] = self.__profiled_consumer(consumer_id)
-
-        if not unit_criteria:
-            return result
-
-        # Call respective profiler api according to the unit type to check for applicability
-        for unit_type_id, criteria in unit_criteria.items():
-            # Find a profiler for each type id and find units applicable using that profiler.
-            profiler, cfg = self.__profiler(unit_type_id)
-            call_config = PluginCallConfiguration(plugin_config=cfg, repo_plugin_config=None,
-                                                  override_config=override_config)
+            # Get consumer unit profile for supported type
             try:
-                report_list = profiler.find_applicable_units(consumer_profile_and_repo_ids, unit_type_id, criteria, call_config, conduit)
-            except PulpExecutionException:
-                report_list = None
+                unit_profile = consumer_profile_manager.get_profile(consumer_id, TYPE_RPM_PROFILE)
+            except MissingResource:
+                continue
+            # Get repositories bound to the consumer with relevant distributor
+            criteria = Criteria(filters={'consumer_id': consumer_id, 'distributor_id': YUM_DISTRIBUTOR_ID},
+                                fields=['repo_id'])
+            bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
 
-            if report_list is None:
-                _LOG.warn("Profiler for unit type [%s] is not returning applicability reports" % unit_type_id)
-            else:
-                result[unit_type_id] = report_list
+            # Calculate applicability for bound repositories
+            for bound_repo_id in bound_repo_ids:
+                self.regenerate_applicability(unit_profile, bound_repo_id, profiler_conduit, skip_existing=True)
 
-        return result
+    def regenerate_applicability_for_repos(self, repo_criteria=None):
+        """
+        Regenerate and save applicability data affected by given repositories
 
+        :param repo_criteria: The repo selection criteria
+        :type repo_criteria: dict
+        """
+        repo_query_manager = managers.repo_query_manager()
+        bind_manager = managers.consumer_bind_manager()
+        consumer_profile_manager = managers.consumer_profile_manager()
+        profiler_conduit = ProfilerConduit()
 
-    def __profiler(self, typeid):
+        # Process repo criteria
+        criteria_repo_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
+
+        # Get consumers bound to given repositories with relevant distributor
+        criteria = Criteria(filters={'repo_id': {'$in': criteria_repo_ids}, 'distributor_id': YUM_DISTRIBUTOR_ID},
+                            fields=['consumer_id'])
+        consumer_ids = [b['consumer_id'] for b in bind_manager.find_by_criteria(criteria)]
+
+        for consumer_id in consumer_ids:
+            # Get consumer unit profile for supported type
+            try:
+                unit_profile = consumer_profile_manager.get_profile(consumer_id, TYPE_RPM_PROFILE)
+            except MissingResource:
+                continue
+            # Get repositories bound to the consumer with relevant distributor
+            criteria = Criteria(filters={'repo_id': {'$in': criteria_repo_ids},
+                                         'consumer_id': consumer_id,
+                                         'distributor_id': YUM_DISTRIBUTOR_ID},
+                                fields=['repo_id'])
+            bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
+
+            # Calculate applicability for bound repositories and for each supported content type
+            for bound_repo_id in bound_repo_ids:
+                self.regenerate_applicability(unit_profile, bound_repo_id, profiler_conduit, skip_existing=False)
+
+    def regenerate_applicability(self, unit_profile, bound_repo_id, profiler_conduit, skip_existing=True):
+        """
+        Regenerate and save applicability data for given unit profile and repo id.
+
+        :param unit_profile: a consumer unit profile
+        :type unit_profile: object
+
+        :param bound_repo_id: repo id of a repository to be used to calculate applicability
+                              against the given consumer profile
+        :type bound_repo_id: str
+
+        :param profiler_conduit: profiler conduit
+        :type profiler_conduit: pulp.plugins.conduits.profile.ProfilerConduit
+
+        :param skip_existing: flag to indicate whether regeneration should be skipped
+                              for existing RepoProfileApplicability objects
+        :type skip_existing: boolean
+        """
+        query_params = {'repo_id': bound_repo_id, 'profile_hash': unit_profile['profile_hash']}
+        try:
+            existing_applicability = RepoProfileApplicability.objects.get(query_params)
+        except DoesNotExist:
+            existing_applicability = None
+
+        if existing_applicability and skip_existing:
+            return
+
+        applicability = {}
+        for content_type_id in APPLICABILITY_CONTENT_TYPE_IDS:
+            profiler, cfg = self.__profiler(content_type_id)
+            call_config = PluginCallConfiguration(plugin_config=cfg, repo_plugin_config=None)
+            try:
+                unit_id_list = profiler.calculate_applicable_units(content_type_id,
+                                                                   unit_profile['profile'],
+                                                                   bound_repo_id,
+                                                                   call_config,
+                                                                   profiler_conduit)
+            except NotImplementedError:
+                _LOG.warn("Profiler for content type [%s] is not returning applicability reports" % content_type_id)
+                continue
+
+            applicability[content_type_id] = unit_id_list
+
+        if existing_applicability:
+            # Update existing applicability object since skip_existing is False
+            existing_applicability.applicability = applicability
+            existing_applicability.save()
+        else:
+            # Create a new RepoProfileApplicability object and save it in the db
+            RepoProfileApplicability.objects.create(unit_profile['profile_hash'],
+                                                    bound_repo_id,
+                                                    unit_profile,
+                                                    applicability)
+
+    def __profiler(self, type_id):
         """
         Find the profiler.
         Returns the Profiler base class when not matched.
 
-        :param typeid: The content type ID.
-        :type typeid: str
+        :param type_id: The content type ID.
+        :type type_id: str
 
         :return: (profiler, cfg)
         :rtype: tuple
         """
         try:
-            plugin, cfg = plugin_api.get_profiler_by_type(typeid)
+            plugin, cfg = plugin_api.get_profiler_by_type(type_id)
         except plugin_exceptions.PluginNotFound:
             plugin = Profiler()
             cfg = {}
-        return PluginWrapper(plugin), cfg
-
-    def __profiled_consumer(self, id):
-        """
-        Get a profiler consumer model object.
-
-        :param id: A consumer ID.
-        :type id: str
-
-        :return: A populated profiler consumer model object.
-        :rtype: L{ProfiledConsumer}
-        """
-        profiles = {}
-        manager = managers.consumer_profile_manager()
-        for p in manager.get_profiles(id):
-            typeid = p['content_type']
-            profile = p['profile']
-            profiles[typeid] = profile
-        return ProfiledConsumer(id, profiles)
+        return plugin, cfg
 
 
 class DoesNotExist(Exception):
