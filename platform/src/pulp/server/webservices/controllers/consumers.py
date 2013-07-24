@@ -13,6 +13,7 @@
 
 # Python
 import logging
+import sys
 
 # 3rd Party
 import web
@@ -21,7 +22,6 @@ from web.webapi import BadRequest
 # Pulp
 import pulp.server.managers.factory as managers
 from pulp.common.tags import action_tag, resource_tag
-from pulp.plugins.types import database as content_types_db
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
@@ -31,7 +31,7 @@ from pulp.server.dispatch.call import CallRequest, CallReport
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
-from pulp.server.exceptions import MissingResource, MissingValue, InvalidValue
+from pulp.server.exceptions import MissingResource, MissingValue, PulpDataException
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.webservices.controllers.search import SearchController
@@ -582,33 +582,31 @@ class Profile(JSONController):
         return self.ok(execution.execute(call_request))
 
 
-class ContentApplicability(JSONController):
+class ContentApplicabilityRegeneration(JSONController):
     """
-    Calculate content applicability.
+    Content applicability regeneration for consumers
     """
 
-    @auth_required(READ)
+    @auth_required(CREATE)
     def POST(self):
         """
-        Calculate content applicability.
+        Regenerate content applicability.
         body {
-        consumer_criteria:<dict> or None, 
+        consumer_criteria:<dict>,
         }
-
-        :return: A list of of content unit ids 
-        :rtype: list
         """
         body = self.params()
-
-        consumer_criteria = body.get('consumer_criteria', None)
-
-        if consumer_criteria:
+        consumer_criteria = body.get('consumer_criteria', {})
+        try:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        except:
+            _LOG.error('Error parsing consumer criteria [%s]' % consumer_criteria)
+            raise PulpDataException(), None, sys.exc_info()[2]
 
-        manager = managers.consumer_applicability_manager()
-        applicable_units = manager.calculate_applicable_units(consumer_criteria)
-
-        return self.ok(applicable_units)
+        manager = managers.applicability_regeneration_manager()
+        call_request = CallRequest(manager.regenerate_applicability_for_consumers,
+                                   [consumer_criteria])
+        return execution.execute_async(self, call_request)
 
 
 class UnitInstallScheduleCollection(JSONController):
@@ -999,7 +997,7 @@ urls = (
     '/$', Consumers,
     '/search/$', ConsumerSearch,
     '/binding/search/$', BindingSearch,
-    '/actions/content/applicability/$', ContentApplicability,
+    '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', Binding,
