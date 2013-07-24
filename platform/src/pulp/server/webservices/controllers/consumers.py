@@ -732,7 +732,7 @@ class ContentApplicability(JSONController):
         :rtype:                            list
         """
         report = []
-        for consumers, applicability in consumer_applicability_map.items():
+        for consumers, applicability in consumer_applicability_map.iteritems():
             # If there are no consumers for this applicability data, there is no need to include
             # it in the report
             if consumers:
