@@ -60,10 +60,13 @@ STRATEGY_NOTE_KEY = '_node-update-strategy'
 # --- profiler ---------------------------------------------------------------
 
 NODE_PROFILER_ID = 'node'
+
 PROFILE_REPOSITORIES = 'repositories'
 PROFILE_DISTRIBUTORS = 'distributors'
 PROFILE_UNITS = 'units'
 PROFILE_UNIT_FINGERPRINT = 'unit_fingerprint'
+
+FORCED_OPTION = 'force'
 
 
 # --- types ------------------------------------------------------------------

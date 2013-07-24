@@ -71,6 +71,7 @@ SYNC_DESC = _('child node synchronization commands')
 PUBLISH_DESC = _('publishing commands')
 STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additive')
 SCHEDULES_DESC = _('manage node sync schedules')
+FORCE_UPDATE_DESC = _('force node synchronization')
 
 
 # --- titles -----------------------------------------------------------------
@@ -85,6 +86,9 @@ AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, require
 
 STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
                                 default=constants.ADDITIVE_STRATEGY)
+
+FORCE_UPDATE_OPTION = PulpCliOption('--force', FORCE_UPDATE_DESC, required=False, default='false')
+
 
 # --- messages ---------------------------------------------------------------
 
@@ -491,11 +495,14 @@ class NodeUpdateCommand(PollingCommand):
     def __init__(self, context):
         super(NodeUpdateCommand, self).__init__(UPDATE_NAME, UPDATE_DESC, self.run, context)
         self.add_option(NODE_ID_OPTION)
+        self.add_option(FORCE_UPDATE_OPTION)
         self.tracker = ProgressTracker(self.context.prompt)
 
     def run(self, **kwargs):
         node_id = kwargs[NODE_ID_OPTION.keyword]
-        units = [dict(type_id='node', unit_key=None)]
+        forced = kwargs[FORCE_UPDATE_OPTION.keyword]
+        units = [dict(type_id=constants.TYPE_NODE, unit_key=None)]
+        options = {constants.FORCED_OPTION: forced}
 
         if not node_activated(self.context, node_id):
             msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
@@ -503,7 +510,7 @@ class NodeUpdateCommand(PollingCommand):
             return os.EX_USAGE
 
         try:
-            http = self.context.server.consumer_content.update(node_id, units=units, options={})
+            http = self.context.server.consumer_content.update(node_id, units=units, options=options)
             task = http.response_body
             self.poll([task], kwargs)
         except NotFoundException, e:

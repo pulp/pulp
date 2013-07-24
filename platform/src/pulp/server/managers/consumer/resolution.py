@@ -51,7 +51,6 @@ class ContentResolutionManager(object):
         """
         conduit = ProfilerConduit()
         _collated = collated(units)
-        options['simulated'] = True
         for type_id, units in _collated.items():
             consumer = get_consumer(consumer_id)
             profiler, cfg = get_profiler(type_id)
@@ -75,7 +74,6 @@ class ContentResolutionManager(object):
         """
         conduit = ProfilerConduit()
         _collated = collated(units)
-        options['simulated'] = True
         for type_id, units in _collated.items():
             consumer = get_consumer(consumer_id)
             profiler, cfg = get_profiler(type_id)
@@ -99,7 +97,6 @@ class ContentResolutionManager(object):
         """
         conduit = ProfilerConduit()
         _collated = collated(units)
-        options['simulated'] = True
         for type_id, units in _collated.items():
             consumer = get_consumer(consumer_id)
             profiler, cfg = get_profiler(type_id)

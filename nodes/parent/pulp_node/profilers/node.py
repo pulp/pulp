@@ -110,8 +110,8 @@ class NodeProfiler(Profiler):
         :return: The translated units
         :rtype: list of: { type_id:<str>, unit_key:<dict> } 
         """
-        simulated = options.get('simulated', False)
-        if not simulated:
+        forced = options.get(constants.FORCED_OPTION, False)
+        if forced:
             return units
         strategy = self._node_strategy(consumer.id)
         bindings = self._bindings(consumer.id)
