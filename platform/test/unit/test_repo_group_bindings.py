@@ -17,7 +17,8 @@ import mock
 
 from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupDistributorAPI, RepoGroupSearchAPI, \
     RepoGroupActionAPI
-from pulp.common.constants import DISTRIBUTOR_CONFIG_KEY, DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY
+from pulp.common.plugins import distributor_constants
+
 
 class TestRepoGroupAPI(unittest.TestCase):
     def setUp(self):
@@ -45,6 +46,10 @@ class TestRepoGroupAPI(unittest.TestCase):
         self.api.server.POST.assert_called_once_with(self.api.PATH, REPOGROUP)
 
     def test_create_and_configure(self):
+        """
+        Test that create_and_configure results in the correct call to POST and returns whatever POST
+        returns
+        """
         # Setup
         group_id, display_name, description = 'test_id', 'test group', 'test description'
         distributors = [{'fake': 'distributor'}]
@@ -83,31 +88,44 @@ class TestRepoGroupAPI(unittest.TestCase):
 
 
 class TestRepoGroupDistributorAPI(unittest.TestCase):
+    """
+    A set of tests for the RepoGroupDistributorAPI
+    """
     def setUp(self):
         self.api = RepoGroupDistributorAPI(mock.MagicMock(autospec=True))
 
     def test_distributors(self):
+        """
+        Test that the server is called with the expected path and that distributors passes the server
+        return value back up.
+        """
         result = self.api.distributors('group_id')
         expected_path = self.api.PATH % 'group_id'
         self.api.server.GET.assert_called_once_with(expected_path)
         self.assertEqual(result, self.api.server.GET.return_value)
 
     def test_create(self):
+        """
+        Test creating a distributor and associating it with a group
+        """
         # Setup
         group_id = 'test_id'
         expected_path = self.api.PATH % group_id
         distributor_type = 'fake_type'
         distributor_config = {'fake': 'config'}
-        expected_data = {DISTRIBUTOR_TYPE_ID_KEY: distributor_type,
-                         DISTRIBUTOR_CONFIG_KEY: distributor_config,
-                         DISTRIBUTOR_ID_KEY: None}
+        expected_data = {distributor_constants.DISTRIBUTOR_TYPE_ID_KEY: distributor_type,
+                         distributor_constants.DISTRIBUTOR_CONFIG_KEY: distributor_config,
+                         distributor_constants.DISTRIBUTOR_ID_KEY: None}
 
         # Test
-        result = self.api.create(group_id, distributor_type, distributor_config, None)
+        result = self.api.create(group_id, distributor_type, distributor_config)
         self.api.server.POST.assert_called_once_with(expected_path, expected_data)
         self.assertEqual(result, self.api.server.POST.return_value)
 
     def test_distributor(self):
+        """
+        Test retrieving a distributor that is associated with a group
+        """
         # Setup
         group_id, distributor_id = 'test_id', 'test_distributor_id'
         expected_path = self.api.PATH % group_id + distributor_id + '/'
@@ -118,6 +136,9 @@ class TestRepoGroupDistributorAPI(unittest.TestCase):
         self.assertEqual(result, self.api.server.GET.return_value)
 
     def test_delete(self):
+        """
+        Test removing a distributor that is associated with a group
+        """
         # Setup
         group_id, distributor_id = 'test_id', 'test_distributor_id'
         expected_path = self.api.PATH % group_id + distributor_id + '/'
@@ -128,6 +149,9 @@ class TestRepoGroupDistributorAPI(unittest.TestCase):
         self.assertEqual(result, self.api.server.DELETE.return_value)
 
     def test_update(self):
+        """
+        Test updating a distributor that is associated with a group
+        """
         # Setup
         group_id, distributor_id = 'test_id', 'test_distributor_id'
         distributor_config = {'fake': 'config'}
@@ -175,6 +199,9 @@ class TestRepoGroupActionAPI(unittest.TestCase):
         self.assertEqual(ret, self.api.server.POST.return_value.response_body)
 
     def test_publish(self):
+        """
+        Test publishing a repository group results in the correct POST
+        """
         result = self.api.publish('repo_group1', 'distributor_id', {'config': 'value'})
         expected_data = {'id': 'distributor_id', 'override_config': {'config': 'value'}}
         self.api.server.POST.assert_called_once_with(

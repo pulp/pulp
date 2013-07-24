@@ -18,7 +18,7 @@ import sys
 
 from pymongo.errors import DuplicateKeyError
 
-from pulp.common.constants import DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY, DISTRIBUTOR_CONFIG_KEY
+from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.db.model.repository import Repo
@@ -58,7 +58,7 @@ class RepoGroupManager(object):
         return group
 
     def create_and_configure_repo_group(self, group_id, display_name=None, description=None,
-                                        repo_ids=None, notes=None, distributor_list=()):
+                                        repo_ids=None, notes=None, distributor_list=None):
         """
         Create a new repository group and add distributors in a single call. This is equivalent to
         calling RepoGroupManager.create_repo_group and then RepoGroupDistributorManager.add_distributor
@@ -81,30 +81,28 @@ class RepoGroupManager(object):
         :return: SON representation of the repo group
         :rtype: bson.SON
         """
+        if distributor_list is None:
+            distributor_list = ()
+
+        # Validate the distributor list before creating a repo group
+        if not isinstance(distributor_list, (list, tuple)) or not \
+                all(isinstance(dist, dict) for dist in distributor_list):
+            raise pulp_exceptions.InvalidValue(['distributor_list'])
 
         # Create the repo group using the vanilla group create method
         repo_group = self.create_repo_group(group_id, display_name, description, repo_ids, notes)
 
         distributor_manager = manager_factory.repo_group_distributor_manager()
 
-        # If distributor_list is not None, a list, or a tuple, clean up and stop
-        if distributor_list is not None and not isinstance(distributor_list, (list, tuple)):
-            self.delete_repo_group(group_id)
-            raise pulp_exceptions.InvalidValue(['distributor_list'])
-
-        for distributor in distributor_list or []:
-            if not isinstance(distributor, dict):
-                self.delete_repo_group(group_id)
-                raise pulp_exceptions.InvalidValue(['distributor_list'])
-
+        for distributor in distributor_list:
             try:
-                type_id = distributor.get(DISTRIBUTOR_TYPE_ID_KEY)
-                plugin_config = distributor.get(DISTRIBUTOR_CONFIG_KEY)
-                distributor_id = distributor.get(DISTRIBUTOR_ID_KEY)
-
+                # Attempt to add the distributor to the group.
+                type_id = distributor.get(distributor_constants.DISTRIBUTOR_TYPE_ID_KEY)
+                plugin_config = distributor.get(distributor_constants.DISTRIBUTOR_CONFIG_KEY)
+                distributor_id = distributor.get(distributor_constants.DISTRIBUTOR_ID_KEY)
                 distributor_manager.add_distributor(group_id, type_id, plugin_config, distributor_id)
-            except pulp_exceptions.InvalidValue, e:
-                # Make note a note that the repo was deleted and pass the exception up
+            except Exception, e:
+                # If an exception occurs, pass it on after cleaning up the repository group
                 _LOG.exception('Exception adding distributor to repo group [%s]; the group will'
                                ' be deleted' % group_id)
                 self.delete_repo_group(group_id)

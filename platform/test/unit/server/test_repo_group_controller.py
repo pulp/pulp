@@ -16,12 +16,13 @@ import mock
 import dummy_plugins
 import base
 import mock_plugins
-from pulp.common.constants import DISTRIBUTOR_CONFIG_KEY, DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY
+from pulp.common.plugins import distributor_constants
 from pulp.server.db.model import criteria
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.managers import factory as manager_factory
+
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
@@ -171,16 +172,20 @@ class RepoGroupCollectionTests(base.PulpWebserviceTests):
         for k, v in data.items():
             self.assertEqual(found[k], v)
 
-    @mock.patch('pulp.server.managers.repo.group.cud.RepoGroupManager.create_and_configure_repo_group', autospec=True)
+    @mock.patch('pulp.server.managers.repo.group.cud.RepoGroupManager.create_and_configure_repo_group',
+                autospec=True)
     def test_post_with_distributors(self, mock_create_group):
+        """
+        Test creating a repository group and adding distributors to it at the same time
+        """
         # Setup
         data = {
             'id': 'post-group',
             'display_name': 'Post Group',
             'description': 'Post Description',
-            'distributors': [{DISTRIBUTOR_TYPE_ID_KEY: 'mock-group-distributor',
-                            DISTRIBUTOR_CONFIG_KEY: {},
-                            DISTRIBUTOR_ID_KEY: 'dist-1'}]
+            'distributors': [{distributor_constants.DISTRIBUTOR_TYPE_ID_KEY: 'mock-group-distributor',
+                            distributor_constants.DISTRIBUTOR_CONFIG_KEY: {},
+                            distributor_constants.DISTRIBUTOR_ID_KEY: 'dist-1'}]
         }
 
         # Test

@@ -20,7 +20,7 @@ import mock
 
 from base import PulpAsyncServerTests
 import mock_plugins
-from pulp.common.constants import DISTRIBUTOR_CONFIG_KEY, DISTRIBUTOR_ID_KEY, DISTRIBUTOR_TYPE_ID_KEY
+from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
@@ -87,7 +87,7 @@ class RepoGroupCUDTests(RepoGroupTests):
                           self.manager.create_repo_group,
                           group_id)
 
-    def test_create_and_config_defaults(self):
+    def test_create_and_config_no_distributors(self):
         """
         Tests creating a repo group using create_and_configure_repo_group using only the
         required arguments.
@@ -104,9 +104,9 @@ class RepoGroupCUDTests(RepoGroupTests):
 
     @mock.patch('pulp.server.managers.repo.group.distributor.RepoGroupDistributorManager.add_distributor',
                 autospec=True)
-    def test_create_and_config_full(self, mock_add_distributor):
+    def test_create_and_config_distributors(self, mock_add_distributor):
         """
-        Tests creating a repo group using all the keyword arguments
+        Tests creating a repo group and adding distributors
         """
         # Setup
         self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
@@ -114,9 +114,9 @@ class RepoGroupCUDTests(RepoGroupTests):
         display_name = 'A display name'
         description = 'A test repo group'
         notes = {'key': 'value'}
-        distributor_list = [{DISTRIBUTOR_TYPE_ID_KEY: 'fake_distributor',
-                             DISTRIBUTOR_CONFIG_KEY: {'a': 1},
-                             DISTRIBUTOR_ID_KEY: 'fake_id'}]
+        distributor_list = [{distributor_constants.DISTRIBUTOR_TYPE_ID_KEY: 'fake_distributor',
+                             distributor_constants.DISTRIBUTOR_CONFIG_KEY: {'a': 1},
+                             distributor_constants.DISTRIBUTOR_ID_KEY: 'fake_id'}]
         repo_ids = ['repo1', 'repo2']
 
         # Assert that create_repo_group was called with all the correct arguments
@@ -142,11 +142,10 @@ class RepoGroupCUDTests(RepoGroupTests):
         self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
         self.manager.delete_repo_group = mock.MagicMock(autospec=True)
 
-        # Test
+        # Test that an exception is raised an a group is not created
         self.assertRaises(pulp_exceptions.InvalidValue, self.manager.create_and_configure_repo_group,
                           group_id='id', distributor_list='string')
-        self.assertEqual(1, self.manager.delete_repo_group.call_count)
-        self.assertEqual('id', self.manager.delete_repo_group.call_args[0][0])
+        self.assertEqual(0, self.manager.create_repo_group.call_count)
 
     def test_create_and_config_bad_distributor(self):
         """
@@ -154,13 +153,11 @@ class RepoGroupCUDTests(RepoGroupTests):
         """
         # Setup
         self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
-        self.manager.delete_repo_group = mock.MagicMock(autospec=True)
 
-        # Test
+        # Test that an exception is raised an a group is not created
         self.assertRaises(pulp_exceptions.InvalidValue, self.manager.create_and_configure_repo_group,
                           group_id='id', distributor_list=['not a dict'])
-        self.assertEqual(1, self.manager.delete_repo_group.call_count)
-        self.assertEqual('id', self.manager.delete_repo_group.call_args[0][0])
+        self.assertEqual(0, self.manager.create_repo_group.call_count)
 
     @mock.patch('pulp.server.managers.repo.group.distributor.RepoGroupDistributorManager.add_distributor',
                 autospec=True)
@@ -173,9 +170,11 @@ class RepoGroupCUDTests(RepoGroupTests):
         self.manager.delete_repo_group = mock.MagicMock(autospec=True)
         mock_add_distributor.side_effect = pulp_exceptions.InvalidValue(['everything'])
 
-        # Test
+        # Test that if add_distributor fails, an exception is raised and the created group is cleaned up
         self.assertRaises(pulp_exceptions.InvalidValue, self.manager.create_and_configure_repo_group,
                           group_id='id', distributor_list=[{}])
+        self.manager.create_repo_group.assert_called_once_with('id', None, None, None, None)
+        self.manager.delete_repo_group.assert_called_once_with('id')
 
     def test_update_display_name(self):
         group_id = 'update_me'

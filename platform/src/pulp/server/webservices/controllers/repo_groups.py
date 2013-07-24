@@ -13,7 +13,7 @@
 
 import web
 
-from pulp.common import constants as common_constants
+from pulp.common.plugins import distributor_constants
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
@@ -187,9 +187,9 @@ class RepoGroupDistributors(JSONController):
     def POST(self, repo_group_id):
         # Params (validation will occur in the manager)
         params = self.params()
-        distributor_type_id = params.get(common_constants.DISTRIBUTOR_TYPE_ID_KEY, None)
-        distributor_config = params.get(common_constants.DISTRIBUTOR_CONFIG_KEY, None)
-        distributor_id = params.get(common_constants.DISTRIBUTOR_ID_KEY, None)
+        distributor_type_id = params.get(distributor_constants.DISTRIBUTOR_TYPE_ID_KEY, None)
+        distributor_config = params.get(distributor_constants.DISTRIBUTOR_CONFIG_KEY, None)
+        distributor_id = params.get(distributor_constants.DISTRIBUTOR_ID_KEY, None)
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
