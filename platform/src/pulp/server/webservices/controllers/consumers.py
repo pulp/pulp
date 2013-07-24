@@ -685,14 +685,16 @@ class ContentApplicability(JSONController):
                              consumers
         :rtype:              list
         """
-        profiles = list(UnitProfile.get_collection().find(
+        profiles = UnitProfile.get_collection().find(
             {'consumer_id': {'$in': consumer_ids}},
-            fields=['consumer_id', 'profile_hash']))
+            fields=['consumer_id', 'profile_hash'])
+        profile_hashes = set()
         for p in profiles:
-            consumer_map[p['consumer_id']]['profiles'].append(p)
+            consumer_map[p['consumer_id']]['profiles'].append(p.to_dict())
+            profile_hashes.add(p['profile_hash'])
         # Let's return a list of all the unique profile_hashes for the query we will do a
         # bit later for applicability data
-        return list(set([p['profile_hash'] for p in profiles]))
+        return list(profile_hashes)
 
     @staticmethod
     def _add_repo_ids_to_consumer_map(consumer_ids, consumer_map):
@@ -761,28 +763,25 @@ class ContentApplicability(JSONController):
         :return:               The applicability map
         :rtype:                dict
         """
-        applicabilities = list(RepoProfileApplicability.get_collection().find(
+        applicabilities = RepoProfileApplicability.get_collection().find(
             {'profile_hash': {'$in': profile_hashes}},
-            fields=['profile_hash', 'repo_id', 'applicability']))
-        if content_types is not None:
-            # The caller has requested us to filter by content_type, so we need to look through the
-            # applicability data and filter out the unwanted content types. Some applicabilities
-            # may end up being empty if they don't have any data for the requested types, so we'll
-            # build a list of those to remove
-            empty_applicabilities = []
-            for a in applicabilities:
+            fields=['profile_hash', 'repo_id', 'applicability'])
+        return_value = {}
+        for a in applicabilities:
+            if content_types is not None:
+                # The caller has requested us to filter by content_type, so we need to look through
+                # the applicability data and filter out the unwanted content types. Some
+                # applicabilities may end up being empty if they don't have any data for the
+                # requested types, so we'll build a list of those to remove
                 for key in a['applicability'].keys():
                     if key not in content_types:
                         del a['applicability'][key]
-                # If a doesn't have anything worth reporting, append it to our list
+                # If a doesn't have anything worth reporting, move on to the next applicability
                 if not a['applicability']:
-                    empty_applicabilities.append(a)
-            # Remove the empty applicabilities from the list
-            for a in empty_applicabilities:
-                applicabilities.remove(a)
-        return dict(
-            [((a['profile_hash'], a['repo_id']),
-               {'applicability': a['applicability'],'consumers': []}) for a in applicabilities])
+                    continue
+            return_value[(a['profile_hash'], a['repo_id'])] = {'applicability': a['applicability'],
+                                                               'consumers': []}
+        return return_value
 
     @staticmethod
     def _get_consumer_applicability_map(applicability_map):
