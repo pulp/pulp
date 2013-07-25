@@ -30,25 +30,30 @@ _CONNECTION = None
 _DATABASE = None
 
 _LOG = logging.getLogger(__name__)
+_DEFAULT_MAX_POOL_SIZE = 10
 
 # -- connection api ------------------------------------------------------------
 
-def initialize(name=None, seeds=None):
+def initialize(name=None, seeds=None, max_pool_size=None):
     """
     Initialize the connection pool and top-level database for pulp.
     """
     global _CONNECTION, _DATABASE
 
     try:
-        if not name:
+        if name is None:
             name = config.config.get('database', 'name')
 
-        if not seeds:
+        if seeds is None:
             seeds = config.config.get('database', 'seeds')
+
+        if max_pool_size is None:
+            # we may want to make this configurable, but then again, we may not
+            max_pool_size = _DEFAULT_MAX_POOL_SIZE
 
         _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
 
-        _CONNECTION = pymongo.Connection(seeds)
+        _CONNECTION = pymongo.Connection(seeds, max_pool_size=max_pool_size)
 
         _DATABASE = getattr(_CONNECTION, name)
         _DATABASE.add_son_manipulator(NamespaceInjector())
@@ -56,7 +61,7 @@ def initialize(name=None, seeds=None):
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
-    except Exception:
+    except:
         _LOG.critical('Database initialization failed')
         _CONNECTION = None
         _DATABASE = None
@@ -106,24 +111,42 @@ def _retry_decorator(method):
     return retry
 
 
+def _end_request_decorator(method):
+    """
+    Collection instance method decorator to automatically return the query
+    socket to the connection pool once finished
+    """
+
+    @wraps(method)
+    def _with_end_request(*args, **kwargs):
+        try:
+            return method(*args, **kwargs)
+        finally:
+            _CONNECTION.end_request()
+
+    return _with_end_request
+
+
 class PulpCollection(Collection):
     """
     pymongo.collection.Collection wrapper that provides support for retries when
     pymongo.errors.AutoReconnect exception is raised
+    and automatically manages connection sockets for long-running and threaded
+    applications
     """
 
-    _retry_methods = ('insert', 'save', 'update', 'remove', 'drop', 'find',
-                      'find_one', 'count', 'create_index', 'ensure_index',
-                      'drop_index', 'drop_indexes', 'group', 'rename',
-                      'map_reduce')
+    _decorated_methods = ('insert', 'save', 'update', 'remove', 'drop', 'find',
+                          'find_one', 'count', 'create_index', 'ensure_index',
+                          'drop_index', 'drop_indexes', 'group', 'rename', 'map_reduce')
 
     def __init__(self, database, name, create=False, retries=0, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
 
         self.retries = retries
 
-        for m in self._retry_methods:
+        for m in self._decorated_methods:
             setattr(self, m, _retry_decorator(getattr(self, m)))
+            setattr(self, m, _end_request_decorator(getattr(self, m)))
 
     def __getstate__(self):
         return {'name': self.name}
@@ -175,6 +198,14 @@ def get_database():
     :rtype:  pymongo.database.Database
     """
     return _DATABASE
+
+
+def get_connection():
+    """
+    :return: reference to the mongo database connection being used by the server
+    :rtype:  pymongo.connection.Connection
+    """
+    return _CONNECTION
 
 
 def flush_database(asynchronous=True, lock=False):
