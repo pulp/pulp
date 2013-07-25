@@ -31,4 +31,4 @@ class TestDatabase(base.PulpServerTests):
         logging.root.setLevel(logging.ERROR)
 
     def test_database_name(self):
-        self.assertEquals(connection._database.name, self.config.get("database", "name"))
+        self.assertEquals(connection._DATABASE.name, self.config.get("database", "name"))
