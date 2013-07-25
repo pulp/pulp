@@ -225,4 +225,5 @@ def flush_database(asynchronous=True, lock=False):
     assert not (asynchronous and lock)
 
     _CONNECTION.fsync(asyc=asynchronous, lock=lock)
+    _CONNECTION.end_request()
 
