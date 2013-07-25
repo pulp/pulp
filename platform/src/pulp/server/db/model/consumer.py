@@ -140,6 +140,8 @@ class RepoProfileApplicability(Model):
 
     The profile itself is included here for ease of recalculating the applicability when a
     repository's contents change.
+
+    The RepoProfileApplicabilityManager can be accessed through the classlevel "objects" attribute.
     """
     collection_name = 'repo_profile_applicability'
     unique_indices = (
@@ -157,8 +159,7 @@ class RepoProfileApplicability(Model):
         :type  repo_id:       basestring
         :param profile:       The entire profile that resulted in the profile_hash
         :type  profile:       object
-        :param applicability: A dictionary structure mapping unit type IDs to lists of applicable
-                              Unit IDs.
+        :param applicability: A dictionary mapping content_type_ids to lists of applicable Unit IDs.
         :type  applicability: dict
         :param _id:           The MongoDB ID for this object, if it exists in the database
         :type  _id:           bson.objectid.ObjectId

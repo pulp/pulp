@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from copy import deepcopy
 import base64
 import os
 import sys
@@ -237,6 +238,69 @@ class PulpItineraryTests(PulpAsyncServerTests):
 
     def cancel(self, request_id):
         self.coordinator.cancel_call(request_id)
+
+
+class RecursiveUnorderedListComparisonMixin(object):
+    """
+    This mixin adds an assert_equal_ignoring_list_order, which is handy for comparing data
+    structures that are or contain lists wherein the ordering of the lists is not
+    significant.
+    """
+    def assert_equal_ignoring_list_order(self, a, b):
+        """
+        This method will compare items a and b recursively for equality, without taking
+        into consideration ther ordering of any lists found inside them. For example, the
+        following objects would be considered equal:
+
+
+            a = {'a_list': ['a', 'b', 'c']}
+            b = {'a_list': ['b', 'a', 'c']}
+
+        :param a: An object you wish to compare to b
+        :type  a: object
+        :param b: An object you wish to compare to a
+        :type  b: object
+        """
+        def _sort_lists(a):
+            """
+            Traverse the given object, a, and sort all lists and tuples found in the
+            structure.
+
+            :param a: A structure to traverse for lists, sorting them
+            :type  a: object
+            :return:  A representation of a that has all lists sorted
+            :rtype:   object
+            """
+            if isinstance(a, (list, tuple)):
+                # We don't want to alter the original a, so make a deepcopy
+                a = list(deepcopy(a))
+                for index, item in enumerate(a):
+                    a[index] = _sort_lists(item)
+                a = sorted(a)
+            elif isinstance(a, dict):
+                for key, value in a.items():
+                    a[key] = _sort_lists(value)
+            return a
+        self.assertEqual(_sort_lists(a), _sort_lists(b))
+
+    def test_assert_equal_ignoring_list_order(self):
+        """
+        Quick test to make sure our new assertion works. How meta.
+        """
+        self.assert_equal_ignoring_list_order([1, 2, 3], [2, 1, 3])
+        # Test lists embedded in dictionaries
+        self.assert_equal_ignoring_list_order({'a_list': [1, 2, 3]}, {'a_list': [2, 1, 3]})
+        # Test lists of lists
+        self.assert_equal_ignoring_list_order([[1, 2], [3]], [[3], [2, 1]])
+
+        # These should fail
+        # The second list has an extra element
+        self.assertRaises(AssertionError, self.assert_equal_ignoring_list_order,
+                          [1, 2, 3], [2, 1, 3, 3])
+        self.assertRaises(AssertionError, self.assert_equal_ignoring_list_order,
+                          {'a_list': [1, 2, 3]}, {'a_list': [2, 1]})
+        self.assertRaises(AssertionError, self.assert_equal_ignoring_list_order,
+                          [[1, 2], [3]], [[3, 3], [2, 1]])
 
 
 class TaskQueue:
