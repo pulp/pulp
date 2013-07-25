@@ -30,7 +30,6 @@ from pulp.server.itineraries.consumer import (
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.managers.consumer.applicability import retrieve_consumer_applicability
-from pulp.server.managers.consumer.query import ConsumerQueryManager
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -610,20 +609,20 @@ class ContentApplicability(JSONController):
         # with, and build a map from consumer_id to a dict with profiles and repo_ids for each
         # consumer
         try:
-            consumer_ids = self._get_consumer_ids()
+            consumer_criteria = self._get_consumer_criteria()
             content_types = self._get_content_types()
         except InvalidValue, e:
             return self.bad_request(str(e))
 
-        return self.ok(retrieve_consumer_applicability(consumer_ids, content_types))
+        return self.ok(retrieve_consumer_applicability(consumer_criteria, content_types))
 
-    def _get_consumer_ids(self):
+    def _get_consumer_criteria(self):
         """
-        Process the POST data, finding the consumer_criteria given by the user, and resolve it to a
-        list of consumer_ids.
+        Process the POST data, finding the criteria given by the user, and resolve it to Criteria
+        object.
 
-        :return: A list of consumer_ids for which we need to return applicability data
-        :rtype:  list
+        :return: A Criteria object
+        :rtype:  pulp.server.db.model.criteria.Criteria
         """
         body = self.params()
 
@@ -633,9 +632,7 @@ class ContentApplicability(JSONController):
             raise InvalidValue('The input to this method must be a JSON object with a '
                                "'criteria' key.")
         consumer_criteria = Criteria.from_client_input(consumer_criteria)
-        # We only need the consumer ids
-        consumer_criteria['fields'] = ['id']
-        return [c['id'] for c in ConsumerQueryManager.find_by_criteria(consumer_criteria)]
+        return consumer_criteria
 
     def _get_content_types(self):
         """

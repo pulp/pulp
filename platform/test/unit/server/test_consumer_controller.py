@@ -1204,9 +1204,9 @@ class TestContentApplicability(base.PulpWebserviceTests,
                                'content_type_2': ['unit_3-13.1.0']}}]
         self.assert_equal_ignoring_list_order(body, expected_body)
 
-    def test__get_consumer_ids(self):
+    def test__get_consumer_criteria(self):
         """
-        Test the _get_consumer_ids() method.
+        Test the _get_consumer_criteria() method.
         """
         # Set up the consumers
         consumer_ids = ['consumer_1', 'consumer_2', 'consumer_3']
@@ -1216,21 +1216,28 @@ class TestContentApplicability(base.PulpWebserviceTests,
         ca = ContentApplicability()
         # We will query just for 1 and 2
         ca.params = mock.MagicMock(
-            return_value={'criteria': {'filters': {'id': {'$in': 
-                ['consumer_1', 'consumer_2']}}}})
+            return_value={'criteria': {'sort': [['id', 'ascending']], 'limit': '10',
+                                       'skip': '20',
+                                       'filters': {'id': {'$in': 
+                                        ['consumer_1', 'consumer_2']}}}})
 
-        consumer_ids = ca._get_consumer_ids()
+        consumer_criteria = ca._get_consumer_criteria()
 
-        self.assert_equal_ignoring_list_order(consumer_ids, ['consumer_1', 'consumer_2'])
+        self.assertEqual(consumer_criteria['sort'], [('id', 1)])
+        self.assertEqual(consumer_criteria['limit'], 10)
+        self.assertEqual(consumer_criteria['skip'], 20)
+        self.assertEqual(consumer_criteria['filters'],
+                         {'id': {'$in': ['consumer_1', 'consumer_2']}})
+        self.assertEqual(consumer_criteria['fields'], None)
 
-    def test__get_consumer_ids_missing_consumer_criteria(self):
+    def test__get_consumer_criteria_missing_consumer_criteria(self):
         """
         Test the _get_consumer_ids() method when consumer_criteria is not provided.
         """
         ca = ContentApplicability()
         ca.params = mock.MagicMock(return_value={})
 
-        self.assertRaises(InvalidValue, ca._get_consumer_ids)
+        self.assertRaises(InvalidValue, ca._get_consumer_criteria)
 
     def test__get_content_types_none(self):
         """

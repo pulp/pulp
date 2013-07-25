@@ -19,6 +19,7 @@ from gettext import gettext as _
 from logging import getLogger
 
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
+from pulp.server.managers.consumer.query import ConsumerQueryManager
 
 
 _LOG = getLogger(__name__)
@@ -108,10 +109,10 @@ class RepoProfileApplicabilityManager(object):
 RepoProfileApplicability.objects = RepoProfileApplicabilityManager()
 
 
-def retrieve_consumer_applicability(consumer_ids, content_types=None):
+def retrieve_consumer_applicability(consumer_criteria, content_types=None):
     """
-    Query content applicability for a given list of consumer_ids, optionally limiting by content
-    type.
+    Query content applicability for consumers matched by a given consumer_criteria, optionally
+    limiting by content type.
 
     This method returns a list of dictionaries that each have two
     keys: 'consumers', and 'applicability'. 'consumers' will index a list of consumer_ids,
@@ -133,6 +134,9 @@ def retrieve_consumer_applicability(consumer_ids, content_types=None):
     :return: applicability data matching the consumer criteria query
     :rtype:  list
     """
+    # We only need the consumer ids
+    consumer_criteria['fields'] = ['id']
+    consumer_ids = [c['id'] for c in ConsumerQueryManager.find_by_criteria(consumer_criteria)]
     consumer_map = dict([(c, {'profiles': [], 'repo_ids': []}) for c in consumer_ids])
 
     # Fill out the mapping of consumer_ids to profiles, and store the list of profile_hashes

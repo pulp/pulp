@@ -15,6 +15,7 @@ import mock
 
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as factory
 from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
@@ -205,8 +206,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         bind_manager = BindManager()
         for consumer_id in consumer_ids:
             bind_manager.bind(consumer_id, 'repo_id', 'distributor_id', False, {})
+        criteria = Criteria(filters={})
 
-        applicability = retrieve_consumer_applicability(consumer_ids)
+        applicability = retrieve_consumer_applicability(criteria)
 
         expected_applicability = [
             {'consumers': ['consumer_1', 'consumer_2'],
@@ -265,8 +267,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         bind_manager = BindManager()
         bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
         bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
+        criteria = Criteria(filters={})
 
-        applicability = retrieve_consumer_applicability(consumer_ids)
+        applicability = retrieve_consumer_applicability(criteria)
 
         expected_applicability = [
             {'consumers': ['consumer_1'],
@@ -335,9 +338,10 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         # Consumer 2 is bound to repo 2 and 3
         bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
         bind_manager.bind('consumer_2', 'repo_3', 'distributor_id', False, {})
+        criteria = Criteria(filters={})
 
         # The content_types below is the empty list, so nothing should come back
-        applicability = retrieve_consumer_applicability(consumer_ids, content_types=[])
+        applicability = retrieve_consumer_applicability(criteria, content_types=[])
 
         # We told it not to give us any content types, so it should be empty
         self.assertEqual(applicability, [])
@@ -405,9 +409,10 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         # Consumer 2 is bound to repo 2 and 3 (so it should get an additional unit_3)
         bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
         bind_manager.bind('consumer_2', 'repo_3', 'distributor_id', False, {})
+        criteria = Criteria(filters={})
 
         # Pass in that we are only interested in content_type_2
-        applicability = retrieve_consumer_applicability(consumer_ids, ['content_type_2'])
+        applicability = retrieve_consumer_applicability(criteria, ['content_type_2'])
 
         # We should get the criteria for the single content type back
         expected_applicability = [
@@ -481,8 +486,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         bind_manager.bind('consumer_2', 'repo_1', 'distributor_id', False, {})
         bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
         bind_manager.bind('consumer_3', 'repo_1', 'distributor_id', False, {})
+        criteria = Criteria(filters={})
 
-        applicability = retrieve_consumer_applicability(consumer_ids)
+        applicability = retrieve_consumer_applicability(criteria)
 
         expected_applicability = [
             {'consumers': ['consumer_1', 'consumer_2'],
@@ -544,8 +550,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         bind_manager = BindManager()
         bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
         bind_manager.bind('consumer_1', 'repo_2', 'distributor_id', False, {})
+        criteria = Criteria(filters={})
 
-        applicability = retrieve_consumer_applicability(consumer_ids)
+        applicability = retrieve_consumer_applicability(criteria)
 
         # We should get the criteria for the single consumer back
         expected_applicability = [
@@ -604,8 +611,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         bind_manager = BindManager()
         bind_manager.bind('consumer_1', 'repo_1', 'distributor_id', False, {})
         bind_manager.bind('consumer_1', 'repo_2', 'distributor_id', False, {})
+        criteria = Criteria(filters={'id': 'does_not_exist'})
 
-        applicability = retrieve_consumer_applicability(['does_not_exist'])
+        applicability = retrieve_consumer_applicability(criteria)
 
         # We should get no applicability back
         self.assert_equal_ignoring_list_order(applicability, [])
@@ -674,8 +682,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         bind_manager.bind('consumer_2', 'repo_1', 'distributor_id', False, {})
         bind_manager.bind('consumer_2', 'repo_2', 'distributor_id', False, {})
         bind_manager.bind('consumer_3', 'repo_1', 'distributor_id', False, {})
+        criteria = Criteria(filters={'id': 'consumer_2'})
 
-        applicability = retrieve_consumer_applicability(['consumer_2'])
+        applicability = retrieve_consumer_applicability(criteria)
 
         # We should get the criteria for the single consumer back
         expected_applicability = [
