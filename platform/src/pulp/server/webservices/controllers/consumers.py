@@ -29,8 +29,8 @@ from pulp.server.itineraries.consumer import (
     consumer_content_update_itinerary)
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
+from pulp.server.managers.consumer.applicability import retrieve_consumer_applicability
 from pulp.server.managers.consumer.query import ConsumerQueryManager
-from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -589,14 +589,14 @@ class ContentApplicability(JSONController):
         """
         Query content applicability for a given consumer criteria query.
 
-        body {consumer_criteria: <object>,
+        body {criteria: <object>,
               content_types: <array>[optional]}
 
-        This method returns an array of objects that each have two keys: 'consumers', and
-        'applicability'. 'consumers' will index an array of consumer_ids, for consumers that have
-        the same repository bindings and profiles. 'applicability' will index an object
-        that will have keys for each content type that is applicable, and the content
-        type ids will index the applicability data for those content types. For example,
+        This method returns a JSON document containing an array of objects that each have two
+        keys: 'consumers', and 'applicability'. 'consumers' will index an array of consumer_ids,
+        for consumers that have the same repository bindings and profiles. 'applicability' will
+        index an object that will have keys for each content type that is applicable, and the
+        content type ids will index the applicability data for those content types. For example,
 
         [{'consumers': ['consumer_1', 'consumer_2'],
           'applicability': {'content_type_1': ['unit_1', 'unit_3']}},
@@ -614,208 +614,8 @@ class ContentApplicability(JSONController):
             content_types = self._get_content_types()
         except InvalidValue, e:
             return self.bad_request(str(e))
-        consumer_map = dict([(c, {'profiles': [], 'repo_ids': []}) for c in consumer_ids])
 
-        # Fill out the mapping of consumer_ids to profiles, and store the list of profile_hashes
-        profile_hashes = self._add_profiles_to_consumer_map_and_get_hashes(consumer_ids,
-                                                                           consumer_map)
-
-        # Now add in repo_ids that the consumers are bound to
-        self._add_repo_ids_to_consumer_map(consumer_ids, consumer_map)
-        # We don't need the list of consumer_ids anymore, so let's free a little RAM
-        del consumer_ids
-
-        # Now lets get all RepoProfileApplicability objects that have the profile hashes for our
-        # consumers
-        applicability_map = self._get_applicability_map(profile_hashes, content_types)
-        # We don't need the profile_hashes anymore, so let's free some RAM
-        del profile_hashes
-
-        # Now we need to add consumers who match the applicability data to the applicability_map
-        self._add_consumers_to_applicability_map(consumer_map, applicability_map)
-        # We don't need the consumer_map anymore, so let's free it up
-        del consumer_map
-
-        # Collate all the entries for the same sets of consumers together
-        consumer_applicability_map = self._get_consumer_applicability_map(applicability_map)
-        # Free the applicability_map, we don't need it anymore
-        del applicability_map
-
-        # Form the data into the expected output format and return
-        return self.ok(self._format_report(consumer_applicability_map))
-
-    @staticmethod
-    def _add_consumers_to_applicability_map(consumer_map, applicability_map):
-        """
-        For all consumers in the consumer_map, look for their profiles and repos in the
-        applicability_map, and if found, add the consumer_ids to the applicability_map.
-
-        :param consumer_map:      A dictionary mapping consumer_ids to dictionaries with keys
-                                  'profiles' and 'repo_ids'. 'profiles' indexes a list of profiles
-                                  for each consumer_id, and 'repo_ids' indexes a list of repo_ids
-                                  that the consumer is bound to.
-        :type  consumer_map:      dict
-        :param applicability_map: The mapping of (profile_hash, repo_id) to applicability_data and
-                                  consumer_ids the data applies to. This method appends
-                                  consumer_ids to the appropriate lists of consumer_ids
-        :type  applicability_map: dict
-        """
-        for consumer_id, repo_profile_data in consumer_map.items():
-            for profile in repo_profile_data['profiles']:
-                for repo_id in repo_profile_data['repo_ids']:
-                    repo_profile = (profile['profile_hash'], repo_id)
-                    # Only add the consumer to the applicability map if there is applicability_data
-                    # for this combination of repository and profile
-                    if repo_profile in applicability_map:
-                        applicability_map[repo_profile]['consumers'].append(consumer_id)
-
-    @staticmethod
-    def _add_profiles_to_consumer_map_and_get_hashes(consumer_ids, consumer_map):
-        """
-        Query for all the profiles associated with the given list of consumer_ids, add those
-        profiles to the consumer_map, and then return a list of all profile_hashes.
-
-        :param consumer_ids: A list of consumer_ids that we want to map the profiles to
-        :type  consumer_ids: list
-        :param consumer_map: A dictionary mapping consumer_ids to a dictionary with key 'profiles',
-                             which indexes a list that this method will append the found profiles
-                             to.
-        :type  consumer_map: dict
-        :return:             A list of the profile_hashes that were associated with the given
-                             consumers
-        :rtype:              list
-        """
-        profiles = UnitProfile.get_collection().find(
-            {'consumer_id': {'$in': consumer_ids}},
-            fields=['consumer_id', 'profile_hash'])
-        profile_hashes = set()
-        for p in profiles:
-            consumer_map[p['consumer_id']]['profiles'].append(p.to_dict())
-            profile_hashes.add(p['profile_hash'])
-        # Let's return a list of all the unique profile_hashes for the query we will do a
-        # bit later for applicability data
-        return list(profile_hashes)
-
-    @staticmethod
-    def _add_repo_ids_to_consumer_map(consumer_ids, consumer_map):
-        """
-        Query for all bindings for the given list of consumer_ids, and for each one add the bound
-        repo_ids to the consumer_map's entry for the consumer.
-
-        :param consumer_ids: The list of consumer_ids. We could pull this from the consumer_map,
-                             but since we already have this list it's probably more performant to
-                             use it as is.
-        :type  consumer_ids: list
-        :param consumer_map: A dictionary mapping consumer_ids to a dictionary with key 'profiles',
-                             which indexes a list that this method will append the found profiles
-                             to.
-        :type  consumer_map: dict
-        """
-        bindings = Bind.get_collection().find(
-            {'consumer_id': {'$in': consumer_ids}},
-            fields=['consumer_id', 'repo_id'])
-        for b in bindings:
-            consumer_map[b['consumer_id']]['repo_ids'].append(b['repo_id'])
-
-    @staticmethod
-    def _format_report(consumer_applicability_map):
-        """
-        Turn the consumer_applicability_map into the expected response format for this API call.
-
-        :param consumer_applicability_map: A mapping of frozensets of consumers to their
-                                           applicability data
-        :type  consumer_applicability_map: dict
-        :return:                           A list of dictionaries that have two keys, consumers
-                                           and applicability. consumers indexes a list of
-                                           consumer_ids, and applicability indexes the
-                                           applicability data for those consumer_ids.
-        :rtype:                            list
-        """
-        report = []
-        for consumers, applicability in consumer_applicability_map.iteritems():
-            # If there are no consumers for this applicability data, there is no need to include
-            # it in the report
-            if consumers:
-                applicability_data = {'consumers': list(consumers),
-                                      'applicability': applicability}
-                report.append(applicability_data)
-
-        return report
-
-    @staticmethod
-    def _get_applicability_map(profile_hashes, content_types):
-        """
-        Build an "applicability_map", which is a dictionary that maps tuples of
-        (profile_hash, repo_id) to a dictionary of applicability data and consumer_ids. The
-        consumer_ids are just initialized to an empty list, so that a later method can add
-        consumers to it. For example, it might look like:
-
-        {('profile_hash_1', 'repo_1'): {'applicability': {<applicability_data>}, 'consumers': []}}
-
-        :param profile_hashes: A list of profile hashes that the applicabilities should be queried
-                               with. The applicability map is initialized with all applicability
-                               data for all the given profile_hashes.
-        :type  profile_hashes: list
-        :param content_types:  If not None, content_types is a list of content_types to
-                               be included in the applicability data within the
-                               applicability_map
-        :type  content_types:  list or None
-        :return:               The applicability map
-        :rtype:                dict
-        """
-        applicabilities = RepoProfileApplicability.get_collection().find(
-            {'profile_hash': {'$in': profile_hashes}},
-            fields=['profile_hash', 'repo_id', 'applicability'])
-        return_value = {}
-        for a in applicabilities:
-            if content_types is not None:
-                # The caller has requested us to filter by content_type, so we need to look through
-                # the applicability data and filter out the unwanted content types. Some
-                # applicabilities may end up being empty if they don't have any data for the
-                # requested types, so we'll build a list of those to remove
-                for key in a['applicability'].keys():
-                    if key not in content_types:
-                        del a['applicability'][key]
-                # If a doesn't have anything worth reporting, move on to the next applicability
-                if not a['applicability']:
-                    continue
-            return_value[(a['profile_hash'], a['repo_id'])] = {'applicability': a['applicability'],
-                                                               'consumers': []}
-        return return_value
-
-    @staticmethod
-    def _get_consumer_applicability_map(applicability_map):
-        """
-        Massage the applicability_map into a form that will help us to collate applicability
-        groups that contain the same data together.
-
-        :param applicability_map: The mapping of (profile_hash, repo_id) to applicability_data and
-                                  consumer_ids it applies to. This method appends consumer_ids to
-                                  the appropriate lists of consumer_ids
-        :type  applicability_map: dict
-        :return:                  The consumer_applicability_map, which maps frozensets of
-                                  consumer_ids to their collective applicability data.
-        :rtype:                   dict
-        """
-        consumer_applicability_map = {}
-        for repo_profile, data in applicability_map.iteritems():
-            # This will be the key for our map, a set of the consumers that share data
-            consumers = frozenset(data['consumers'])
-            if consumers in consumer_applicability_map:
-                for content_type, applicability in data['applicability'].iteritems():
-                    if content_type in consumer_applicability_map[consumers]:
-                        # There is already applicability data for this consumer set and
-                        # content type. We will convert the existing data and the new data to
-                        # sets, generate the union of those sets, and turn it back into a list
-                        # so that we can report unique units.
-                        consumer_applicability_map[consumers][content_type] = list(
-                            set(consumer_applicability_map[consumers][content_type]) |\
-                            set(applicability))
-                    else:
-                        consumer_applicability_map[consumers][content_type] = applicability
-            else:
-                consumer_applicability_map[consumers] = data['applicability']
-        return consumer_applicability_map
+        return self.ok(retrieve_consumer_applicability(consumer_ids, content_types))
 
     def _get_consumer_ids(self):
         """
@@ -828,10 +628,10 @@ class ContentApplicability(JSONController):
         body = self.params()
 
         try:
-            consumer_criteria = body.get('consumer_criteria')
+            consumer_criteria = body.get('criteria')
         except AttributeError:
             raise InvalidValue('The input to this method must be a JSON object with a '
-                               "'consumer_criteria' key.")
+                               "'criteria' key.")
         consumer_criteria = Criteria.from_client_input(consumer_criteria)
         # We only need the consumer ids
         consumer_criteria['fields'] = ['id']
