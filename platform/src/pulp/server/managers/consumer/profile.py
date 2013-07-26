@@ -121,22 +121,3 @@ class ProfileManager(object):
         query = dict(consumer_id=consumer_id)
         cursor = collection.find(query)
         return list(cursor)
-
-    def find_profiles(self, consumer_ids):
-        """
-        Get all profiles associated with given consumers.
-        @param consumer_ids: A list of consumer IDs.
-        @type consumer_ids: list
-        @return: A dict of:
-            {<consumer_id>:{<content_type>:<profile>}}
-        @rtype: list
-        """
-        profiles = dict([(c, {}) for c in consumer_ids])
-        collection = UnitProfile.get_collection()
-        for p in collection.find({'id':{'$in':profiles.keys()}}):
-            key = p['consumer_id']
-            typeid = p['content_type']
-            profile = p['profile']
-            entry = profiles[key]
-            entry[typeid] = profile
-        return profiles

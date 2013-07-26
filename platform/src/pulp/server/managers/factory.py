@@ -30,7 +30,6 @@ TYPE_CERTIFICATE            = 'certificate-manager'
 TYPE_CERT_GENERATION        = 'cert-generation-manager'
 TYPE_CONSUMER               = 'consumer-manager'
 TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
-TYPE_CONSUMER_APPLICABILITY = 'consumer-applicability-manager'
 TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
 TYPE_CONSUMER_CONTENT       = 'consumer-content-manager'
 TYPE_CONSUMER_GROUP         = 'consumer-group-manager'
@@ -130,12 +129,6 @@ def consumer_agent_manager():
     @rtype: L{pulp.server.managers.consumer.agent.AgentManager}
     """
     return get_manager(TYPE_CONSUMER_AGENT)
-
-def consumer_applicability_manager():
-    """
-    @rtype: L{pulp.server.managers.consumer.applicability.ApplicabilityManager}
-    """
-    return get_manager(TYPE_CONSUMER_APPLICABILITY)
 
 def consumer_bind_manager():
     """
@@ -388,7 +381,6 @@ def initialize():
     from pulp.server.managers.auth.role.query import RoleQueryManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
-    from pulp.server.managers.consumer.applicability import ApplicabilityManager
     from pulp.server.managers.consumer.bind import BindManager
     from pulp.server.managers.consumer.content import ConsumerContentManager
     from pulp.server.managers.consumer.group.cud import ConsumerGroupManager
@@ -419,6 +411,7 @@ def initialize():
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.schedule.aggregate import AggregateScheduleManager
+    import pulp.server.managers.consumer.applicability
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
@@ -428,7 +421,6 @@ def initialize():
         TYPE_CERT_GENERATION: CertGenerationManager,
         TYPE_CONSUMER: ConsumerManager,
         TYPE_CONSUMER_AGENT: AgentManager,
-        TYPE_CONSUMER_APPLICABILITY: ApplicabilityManager,
         TYPE_CONSUMER_BIND: BindManager,
         TYPE_CONSUMER_CONTENT: ConsumerContentManager,
         TYPE_CONSUMER_GROUP: ConsumerGroupManager,
