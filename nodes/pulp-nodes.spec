@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.2.0
-Release: 0.21.beta%{?dist}
+Release: 0.22.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -253,6 +253,10 @@ fi
 
 
 %changelog
+* Fri Jul 26 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.22.beta
+- 988913 - mirror (node) strategy only affect specified repos when units
+  type_id=repository. (jortel@redhat.com)
+
 * Mon Jul 15 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.21.beta
 - Pulp rebuild
 
