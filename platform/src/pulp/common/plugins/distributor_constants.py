@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2013 Red Hat, Inc.
+# Copyright (c) 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# key used in a repository's "notes" field with a value describing what type
-# of content is in the repository.
-REPO_NOTE_TYPE_KEY = '_repo-type'
+# keywords that are expected in a distributor dictionary
+DISTRIBUTOR_TYPE_ID_KEY = 'distributor_type_id'
+DISTRIBUTOR_CONFIG_KEY = 'distributor_config'
+DISTRIBUTOR_ID_KEY = 'distributor_id'
