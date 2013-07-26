@@ -237,7 +237,6 @@ class Mirror(HandlerStrategy):
           - Add/Merge bound repositories as needed.
           - Synchronize all bound repositories.
           - Purge unbound repositories (scope=node only).
-          - Purge orphaned content units.
         :param request: A synchronization request.
         :type request: SyncRequest
         """
