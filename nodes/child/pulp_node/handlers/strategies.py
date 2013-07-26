@@ -49,7 +49,7 @@ class SyncRequest(object):
     :type options: dict
     """
 
-    def __init__(self, conduit, progress, summary, bindings, options):
+    def __init__(self, conduit, progress, summary, bindings, scope, options):
         """
         :param conduit: A handler conduit.
         :type conduit: pulp.agent.lib.conduit.Conduit
@@ -59,6 +59,8 @@ class SyncRequest(object):
         :type summary: SummaryReport
         :param bindings: A list of consumer binding payloads.
         :type bindings: list
+        :param scope: The request scope (node|repository)
+        :type scope: str
         :param options: synchronization options.
         :type options: dict
         """
@@ -66,6 +68,7 @@ class SyncRequest(object):
         self.progress = progress
         self.summary = summary
         self.bindings = sorted(bindings, key=itemgetter('repo_id'))
+        self.scope = scope
         self.options = options
         summary.setup(self.bindings)
 
@@ -231,13 +234,14 @@ class Mirror(HandlerStrategy):
         Synchronize repositories.
           - Add/Merge bound repositories as needed.
           - Synchronize all bound repositories.
-          - Purge unbound repositories.
+          - Purge unbound repositories (scope=node only).
           - Purge orphaned content units.
         :param request: A synchronization request.
         :type request: SyncRequest
         """
         self._merge_repositories(request)
-        self._delete_repositories(request)
+        if request.scope == constants.NODE_SCOPE:
+            self._delete_repositories(request)
 
 
 class Additive(HandlerStrategy):

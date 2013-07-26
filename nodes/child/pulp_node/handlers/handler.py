@@ -71,6 +71,7 @@ class NodeHandler(ContentHandler):
             progress=progress_report,
             summary=summary_report,
             bindings=bindings,
+            scope=constants.NODE_SCOPE,
             options=options)
         strategy = find_strategy(strategy_name)()
         strategy.synchronize(request)
@@ -134,6 +135,7 @@ class RepositoryHandler(ContentHandler):
             progress=progress_report,
             summary=summary_report,
             bindings=bindings,
+            scope=constants.REPOSITORY_SCOPE,
             options=options)
         strategy = find_strategy(strategy_name)()
         strategy.synchronize(request)
