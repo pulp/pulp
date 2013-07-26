@@ -69,6 +69,7 @@ class RepoGroupCollection(JSONController):
         call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)
         group = execution.execute_sync(call_request)
         group.update(serialization.link.child_link_obj(group['id']))
+        group['distributors'] = distributors or []
         return self.created(group['_href'], group)
 
 
