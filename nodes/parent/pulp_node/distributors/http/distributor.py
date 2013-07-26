@@ -44,7 +44,7 @@ def entry_point():
     """
     Entry point that pulp platform uses to load the distributor.
     :return: distributor class and its configuration.
-    :rtype:  Distributor, Configuration
+    :rtype:  Distributor, dict
     """
     with open(CONFIGURATION_PATH) as fp:
         return NodesHttpDistributor, json.load(fp)

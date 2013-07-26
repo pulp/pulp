@@ -48,7 +48,7 @@ def entry_point():
     """
     Entry point that pulp platform uses to load the importer.
     :return: importer class and its configuration
-    :rtype:  Importer, {}
+    :rtype:  Importer, dict
     """
     with open(CONFIGURATION_PATH) as fp:
         return NodesHttpImporter, json.load(fp)
