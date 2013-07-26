@@ -174,6 +174,7 @@ class UserSearch(SearchController):
         super(UserSearch, self).__init__(
             managers.user_query_manager().find_by_criteria)
 
+    @auth_required(READ)
     def GET(self):
         users = self._get_query_results_from_get(is_user_search=True)
         UsersCollection._process_users(users)
