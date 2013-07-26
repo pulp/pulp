@@ -145,7 +145,7 @@ class TypesDatabaseTests(base.PulpServerTests):
     def test_update_failed_create(self):
         """
         Simulates a failure to create a collection by passing in a bad ID for
-        the definition. 
+        the definition.
         """
 
         # Setup
@@ -288,7 +288,7 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         #   Type collection exists
         collection_name = types_db.unit_collection_name(type_def.id)
-        self.assertTrue(collection_name in pulp_db.database().collection_names())
+        self.assertTrue(collection_name in pulp_db.get_database().collection_names())
 
     def test_create_or_update_existing_type_collection(self):
         """
@@ -322,7 +322,7 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         #   Type collection exists
         collection_name = types_db.unit_collection_name(type_def.id)
-        self.assertTrue(collection_name in pulp_db.database().collection_names())
+        self.assertTrue(collection_name in pulp_db.get_database().collection_names())
 
     def test_update_unit_key_single_field(self):
         """
