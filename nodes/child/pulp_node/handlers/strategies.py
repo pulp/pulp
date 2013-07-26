@@ -45,6 +45,8 @@ class SyncRequest(object):
     :type summary: SummaryReport
     :ivar bindings: A list of consumer binding payloads.
     :type bindings: list
+    :ivar scope: Specifies the scope of the request (node|repository).
+    :type scope: str
     :ivar options: synchronization options.
     :type options: dict
     """
