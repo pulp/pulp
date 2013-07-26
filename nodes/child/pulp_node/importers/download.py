@@ -127,8 +127,11 @@ class UnitDownloadManager(AggregatingEventListener):
         os.link(path, tar_path)
         os.unlink(path)
         try:
-            with tarfile.open(tar_path) as fp:
+            fp = tarfile.open(tar_path)
+            try:
                 fp.extractall(path=path)
+            finally:
+                fp.close()
         finally:
             if os.path.exists(tar_path):
                 os.unlink(tar_path)
