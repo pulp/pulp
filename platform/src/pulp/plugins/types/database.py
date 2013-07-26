@@ -142,7 +142,7 @@ def clean():
 
     # Search the database instead of just going on what's in the type listing
     # just in case they got out of sync
-    database = pulp_db.database()
+    database = pulp_db.get_database()
     all_collection_names = database.collection_names()
     type_collection_names = [n for n in all_collection_names if n.startswith(TYPE_COLLECTION_PREFIX)]
     for drop_me in type_collection_names:
@@ -257,7 +257,7 @@ def type_units_unit_key(type_id):
 def _create_or_update_type(type_def):
 
     # Make sure a collection exists for the type
-    database = pulp_db.database()
+    database = pulp_db.get_database()
     collection_name = unit_collection_name(type_def.id)
 
     if collection_name not in database.collection_names():
