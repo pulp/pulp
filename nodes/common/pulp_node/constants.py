@@ -27,6 +27,10 @@ MIRROR_STRATEGY = 'mirror'
 STRATEGIES = [ADDITIVE_STRATEGY, MIRROR_STRATEGY]
 DEFAULT_STRATEGY = ADDITIVE_STRATEGY
 
+NODE_SCOPE = 'node'
+REPOSITORY_SCOPE = 'repository'
+SCOPES = [NODE_SCOPE, REPOSITORY_SCOPE]
+
 
 # --- keywords ---------------------------------------------------------------
 
