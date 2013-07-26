@@ -93,7 +93,8 @@ class RepoGroupCUDTests(RepoGroupTests):
         required arguments.
         """
         # Setup. The result should just be whatever the return value of create_repo_group is.
-        self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
+        self.manager.create_repo_group = mock.MagicMock(spec_set=self.manager.create_repo_group,
+                                                        return_value='potato')
 
         # Test that create_repo_group is called with the correct arguments
         result = self.manager.create_and_configure_repo_group('group_id1')
@@ -109,7 +110,8 @@ class RepoGroupCUDTests(RepoGroupTests):
         Tests creating a repo group and adding distributors
         """
         # Setup
-        self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
+        self.manager.create_repo_group = mock.MagicMock(spec_set=self.manager.create_repo_group,
+                                                        return_value='potato')
         group_id = 'group_id1'
         display_name = 'A display name'
         description = 'A test repo group'
@@ -139,10 +141,11 @@ class RepoGroupCUDTests(RepoGroupTests):
         Test creating a repo group with a distributor_list that isn't a list, tuple or None
         """
         # Setup. Mock out delete because we expect it to be called when distributor validation fails
-        self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
-        self.manager.delete_repo_group = mock.MagicMock(autospec=True)
+        self.manager.create_repo_group = mock.MagicMock(spec_set=self.manager.create_repo_group,
+                                                        return_value='potato')
+        self.manager.delete_repo_group = mock.MagicMock(spec_set=self.manager.delete_repo_group)
 
-        # Test that an exception is raised an a group is not created
+        # Test that an exception is raised and a group is not created
         self.assertRaises(pulp_exceptions.InvalidValue, self.manager.create_and_configure_repo_group,
                           group_id='id', distributor_list='string')
         self.assertEqual(0, self.manager.create_repo_group.call_count)
@@ -152,9 +155,10 @@ class RepoGroupCUDTests(RepoGroupTests):
         Test creating a repo group with a distributor that is not a dictionary
         """
         # Setup
-        self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
+        self.manager.create_repo_group = mock.MagicMock(spec_set=self.manager.create_repo_group,
+                                                        return_value='potato')
 
-        # Test that an exception is raised an a group is not created
+        # Test that an exception is raised and a group is not created
         self.assertRaises(pulp_exceptions.InvalidValue, self.manager.create_and_configure_repo_group,
                           group_id='id', distributor_list=['not a dict'])
         self.assertEqual(0, self.manager.create_repo_group.call_count)
@@ -166,8 +170,9 @@ class RepoGroupCUDTests(RepoGroupTests):
         Test creating a repo group which results the distributor manager raising an InvalidValue
         """
         # Setup
-        self.manager.create_repo_group = mock.MagicMock(autospec=True, return_value='potato')
-        self.manager.delete_repo_group = mock.MagicMock(autospec=True)
+        self.manager.create_repo_group = mock.MagicMock(spec_set=self.manager.create_repo_group,
+                                                        return_value='potato')
+        self.manager.delete_repo_group = mock.MagicMock(spec_set=self.manager.delete_repo_group)
         mock_add_distributor.side_effect = pulp_exceptions.InvalidValue(['everything'])
 
         # Test that if add_distributor fails, an exception is raised and the created group is cleaned up

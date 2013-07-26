@@ -92,12 +92,12 @@ class TestRepoGroupDistributorAPI(unittest.TestCase):
     A set of tests for the RepoGroupDistributorAPI
     """
     def setUp(self):
-        self.api = RepoGroupDistributorAPI(mock.MagicMock(autospec=True))
+        self.api = RepoGroupDistributorAPI(mock.MagicMock())
 
     def test_distributors(self):
         """
-        Test that the server is called with the expected path and that distributors passes the server
-        return value back up.
+        Test that the server is called with the expected path and that the
+        RepoGroupDistributorAPI.distributors method passes the server return value back up.
         """
         result = self.api.distributors('group_id')
         expected_path = self.api.PATH % 'group_id'

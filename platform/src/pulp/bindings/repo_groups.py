@@ -139,7 +139,7 @@ class RepoGroupDistributorAPI(PulpAPI):
     """
     This class is a collection of methods to interact with the group distributors on the pulp server
     """
-    PATH = '/v2/repo_groups/%s/distributors/'
+    PATH = 'v2/repo_groups/%s/distributors/'
 
     def distributors(self, group_id):
         """
