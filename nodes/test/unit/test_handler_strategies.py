@@ -68,6 +68,7 @@ class TestBase(TestCase):
             progress=progress,
             summary=summary,
             bindings=[dict(repo_id=REPO_ID, details={})],
+            scope=constants.NODE_SCOPE,
             options={}
         )
         return request
