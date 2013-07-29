@@ -17,7 +17,6 @@ from gettext import gettext as _
 from nectar.downloaders.curl import HTTPSCurlDownloader
 
 from pulp.plugins.importer import Importer
-from pulp.plugins.util.importer_config import validate_config, InvalidConfig
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 
 from pulp_node import constants
