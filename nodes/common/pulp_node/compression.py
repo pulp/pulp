@@ -30,7 +30,7 @@ def compress(file_path):
     Compress the file at the specified path using GZIP.
     :param file_path: A fully qualified file path.
     :type file_path: str
-    :return: The updated file path.
+    :return: The fully qualified path to the compressed file.
     :rtype: str
     :raise IOError: on I/O errors.
     """
@@ -58,6 +58,8 @@ def decompress(file_path):
     Decompress the file at the specified path using GZIP.
     :param file_path: A fully qualified file path.
     :type file_path: str
+    :return: The fully qualified path to the decompressed file.
+    :rtype: str
     :raise IOError: on I/O errors.
     """
     tmp_path = mktemp(dir=os.path.dirname(file_path))
@@ -68,7 +70,8 @@ def decompress(file_path):
                 transfer(fp_in, fp_out)
             finally:
                 fp_in.close()
-        file_path = file_path.rstrip(FILE_SUFFIX)
+        if file_path.endswith(FILE_SUFFIX):
+            file_path = file_path[:-len(FILE_SUFFIX)]
         if os.path.exists(file_path):
             os.unlink(file_path)
         os.link(tmp_path, file_path)
