@@ -17,7 +17,9 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugins
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.managers import factory as factory
 from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
     _add_repo_ids_to_consumer_map, _format_report, _get_applicability_map,
@@ -25,11 +27,6 @@ from pulp.server.managers.consumer.applicability import (
     retrieve_consumer_applicability)
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
-from pulp.server.db.model.criteria import Criteria
-from pulp.server.managers import factory as factory
-from pulp.server.managers.consumer.applicability import (MultipleObjectsReturned,
-                                                         DoesNotExist)
-
 import base
 import mock_plugins
 
@@ -59,12 +56,12 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
         rpm_pkg_profiler, cfg = plugins.get_profiler_by_type('rpm')
         rpm_pkg_profiler.calculate_applicable_units = \
-            Mock(side_effect=lambda t,p,r,c,x:
-                 ['rpm-1', 'rpm-2'])
+            mock.Mock(side_effect=lambda t,p,r,c,x:
+                      ['rpm-1', 'rpm-2'])
         rpm_errata_profiler, cfg = plugins.get_profiler_by_type('erratum')
         rpm_errata_profiler.calculate_applicable_units = \
-            Mock(side_effect=lambda t,p,r,c,x:
-                 ['errata-1', 'errata-2'])
+            mock.Mock(side_effect=lambda t,p,r,c,x:
+                      ['errata-1', 'errata-2'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
