@@ -174,7 +174,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_consumers()
         self.populate_bindings()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.calculate_applicable_units = Mock(side_effect=NotImplementedError())
+        profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
         # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
@@ -247,7 +247,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_consumers()
         self.populate_bindings()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
-        profiler.calculate_applicable_units = Mock(side_effect=NotImplementedError())
+        profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
         # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)

@@ -56,8 +56,8 @@ class ApplicabilityRegenerationManager(object):
                 unit_profile = consumer_profile_manager.get_profile(consumer_id, TYPE_RPM_PROFILE)
             except MissingResource:
                 continue
-            # Get repositories bound to the consumer with relevant distributor
-            criteria = Criteria(filters={'consumer_id': consumer_id, 'distributor_id': YUM_DISTRIBUTOR_ID},
+            # Get all repositories bound to the consumer
+            criteria = Criteria(filters={'consumer_id': consumer_id},
                                 fields=['repo_id'])
             bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
 
