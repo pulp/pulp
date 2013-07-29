@@ -227,3 +227,71 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertEqual(len(body), len(CONSUMER_IDS) * 3)
         mock_itinerary.assert_called_with(GROUP_ID, REPO_ID, DISTRIBUTOR_TYPE_ID, {})
+
+    def test_bindings_get_auth(self):
+        """
+        Test that when the proper authentication information is missing, the server returns a 401 error
+        when ConsumerGroupBindings.GET is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
+        call_status, call_body = self.get(path)
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
+
+    def test_bindings_post_auth(self):
+        """
+        Test that when the proper authentication information is missing, the server returns a 401 error
+        when ConsumerGroupBindings.POST is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
+        call_status, call_body = self.post(path)
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
+
+    def test_binding_get_auth(self):
+        """
+        Test that when the proper authentication information is missing, the server returns a 401 error
+        when ConsumerGroupBinding.GET is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
+        call_status, call_body = self.get(path)
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
+
+    def test_binding_delete_auth(self):
+        """
+        Test that when the proper authentication information is missing, the server returns a 401 error
+        when ConsumerGroupBinding.DELETE is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
+        call_status, call_body = self.delete(path)
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth

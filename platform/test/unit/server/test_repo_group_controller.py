@@ -19,8 +19,9 @@ import mock_plugins
 from pulp.server.db.model import criteria
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
-from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor, RepoGroupPublishResult
+from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.managers import factory as manager_factory
+
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
@@ -63,6 +64,43 @@ class RepoGroupSearchTests(base.PulpWebserviceTests):
         status, body = self.get('/v2/repo_groups/search/')
         self.assertEqual(status, 200)
         mock_link.assert_called_once_with('rg1')
+
+
+class RepoGroupSearchAuthTests(base.PulpWebserviceTests):
+    """
+    For some reason, these tests aren't discovered while in the RepoGroupSearchTests class.
+    """
+    def test_search_get_auth(self):
+        """
+        Test that when proper authentication is missing, the server returns a 401 error when
+        RepoGroupSearch.GET is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        call_status, call_body = self.get('/v2/repo_groups/search/')
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
+
+    def test_search_post_auth(self):
+        """
+        Test that when proper authentication is missing, the server returns a 401 error when
+        RepoGroupSearch.GET is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        call_status, call_body = self.post('/v2/repo_groups/search/')
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
 
 
 class RepoGroupAssociationTests(base.PulpWebserviceTests):
@@ -539,6 +577,23 @@ class PublishActionTests(base.PulpWebserviceTests):
 
         # Verify
         self.assertEqual(400, status)
+
+    def test_publish_post_auth(self):
+        """
+        Test that when proper authentication is missing, the server returns a 401 error when
+        PublishAction.POST is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        call_status, call_body = self.post('/v2/repo_groups/group_id/actions/publish/')
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
+
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
