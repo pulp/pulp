@@ -39,8 +39,10 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.exceptions import MissingResource
 from pulp.plugins import model as plugin_model
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.common.plugins import importer_constants
 from pulp.server.managers import factory as managers
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
@@ -416,7 +418,7 @@ class TestDistributor(PluginTestBase):
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD, constants.SSL_KEYWORD):
+        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD):
             self.assertTrue(key in importers[0]['config'])
 
     def test_payload_with_ssl(self):
@@ -437,10 +439,11 @@ class TestDistributor(PluginTestBase):
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD, constants.SSL_KEYWORD):
+        for key in (constants.MANIFEST_URL_KEYWORD,
+                    constants.STRATEGY_KEYWORD,
+                    importer_constants.KEY_SSL_CLIENT_CERT,
+                    importer_constants.KEY_SSL_VALIDATION):
             self.assertTrue(key in importers[0]['config'])
-        for key in (constants.CLIENT_CERT_KEYWORD,):
-            self.assertTrue(key in importers[0]['config'][constants.SSL_KEYWORD])
 
     def test_publish(self):
         # Setup
@@ -550,6 +553,7 @@ class ImporterTest(PluginTestBase):
         publisher = dist.publisher(repo, cfg)
         manifest_url = 'file://' + publisher.manifest_path()
         cfg = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        cfg = PluginCallConfiguration(cfg, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
             constants.HTTP_IMPORTER,

@@ -14,10 +14,11 @@
 from logging import getLogger
 from gettext import gettext as _
 
-from nectar.config import DownloaderConfig
 from nectar.downloaders.curl import HTTPSCurlDownloader
 
 from pulp.plugins.importer import Importer
+from pulp.plugins.util.importer_config import validate_config, InvalidConfig
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 
 from pulp_node import constants
 from pulp_node.error import CaughtException
@@ -27,9 +28,6 @@ from pulp_node.importers.strategies import find_strategy, SyncRequest
 
 
 log = getLogger(__name__)
-
-# download concurrency
-MAX_CONCURRENCY = 20
 
 
 # --- i18n ------------------------------------------------------------------------------
@@ -172,18 +170,6 @@ class NodesHttpImporter(Importer):
         :return: A configured downloader
         :rtype: nectar.downloaders.base.Downloader
         """
-        ssl = config.get(constants.SSL_KEYWORD, {})
-        conf = DownloaderConfig(
-            max_concurrent=MAX_CONCURRENCY,
-            ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
-            ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
-            ssl_validation=False)
-        downloader = HTTPSCurlDownloader(conf)
+        configuration = importer_config_to_nectar_config(config.flatten())
+        downloader = HTTPSCurlDownloader(configuration)
         return downloader
-
-    def _safe_str(self, s):
-        if s:
-            return str(s)
-        else:
-            return s
-

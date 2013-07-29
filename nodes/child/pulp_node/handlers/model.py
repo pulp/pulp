@@ -30,6 +30,7 @@ from logging import getLogger
 
 from pulp.common.bundle import Bundle
 from pulp.common.config import Config
+from pulp.common.plugins import importer_constants
 from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
@@ -368,15 +369,21 @@ class RepositoryOnChild(ChildEntity, Repository):
                 dist = DistributorOnChild(self.repo_id, dist_id, {})
                 dist.delete()
 
-    def run_synchronization(self, progress, cancelled):
+    def run_synchronization(self, progress, cancelled, options):
         """
         Run a repo_sync() on this child repository.
         :param progress: A progress report.
         :type progress: pulp_node.progress.RepositoryProgress
+        :param options: node synchronization options.
+        :type options: dict
         :return: The task result.
         """
         poller = TaskPoller(self.binding)
-        http = self.binding.repo_actions.sync(self.repo_id, {})
+        configuration = {
+            importer_constants.KEY_MAX_DOWNLOADS: options.get(constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD),
+            importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD)
+        }
+        http = self.binding.repo_actions.sync(self.repo_id, configuration)
         if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
         task = http.response_body[0]
