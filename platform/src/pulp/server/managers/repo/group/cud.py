@@ -18,6 +18,7 @@ import sys
 
 from pymongo.errors import DuplicateKeyError
 
+from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.db.model.repository import Repo
@@ -35,17 +36,17 @@ class RepoGroupManager(object):
     def create_repo_group(self, group_id, display_name=None, description=None, repo_ids=None, notes=None):
         """
         Create a new repo group.
-        @param group_id: unique id of the repo group
-        @param display_name: display name of the repo group
-        @type  display_name: str or None
-        @param description: description of the repo group
-        @type  description: str or None
-        @param repo_ids: list of ids for repos initially belonging to the repo group
-        @type  repo_ids: list or None
-        @param notes: notes for the repo group
-        @type  notes: dict or None
-        @return: SON representation of the repo group
-        @rtype:  L{bson.SON}
+        :param group_id: unique id of the repo group
+        :param display_name: display name of the repo group
+        :type  display_name: str or None
+        :param description: description of the repo group
+        :type  description: str or None
+        :param repo_ids: list of ids for repos initially belonging to the repo group
+        :type  repo_ids: list or None
+        :param notes: notes for the repo group
+        :type  notes: dict or None
+        :return: SON representation of the repo group
+        :rtype: bson.SON
         """
         collection = RepoGroup.get_collection()
         repo_group = RepoGroup(group_id, display_name, description, repo_ids, notes)
@@ -55,6 +56,59 @@ class RepoGroupManager(object):
             raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
         group = collection.find_one({'id': group_id})
         return group
+
+    def create_and_configure_repo_group(self, group_id, display_name=None, description=None,
+                                        repo_ids=None, notes=None, distributor_list=None):
+        """
+        Create a new repository group and add distributors in a single call. This is equivalent to
+        calling RepoGroupManager.create_repo_group and then RepoGroupDistributorManager.add_distributor
+        for each distributor in the distributor list.
+
+        :param group_id: unique id of the repository group
+        :type group_id: str
+        :param display_name: user-friendly name of the repository id
+        :type display_name: str or None
+        :param description: description of the repository group
+        :type description: str or None
+        :param repo_ids: the list of repository ids in this repository group
+        :type repo_ids: list of str or None
+        :param notes: A collection of key=value pairs
+        :type notes: dict or None
+        :param distributor_list: A list of dictionaries used to add distributors. The following keys are
+            expected: from pulp.common.constants: DISTRIBUTOR_TYPE_ID_KEY, DISTRIBUTOR_CONFIG_KEY, and
+            DISTRIBUTOR_ID_KEY, which should hold values str, dict, and str or None
+        :type distributor_list: list of dict
+        :return: SON representation of the repo group
+        :rtype: bson.SON
+        """
+        if distributor_list is None:
+            distributor_list = ()
+
+        # Validate the distributor list before creating a repo group
+        if not isinstance(distributor_list, (list, tuple)) or not \
+                all(isinstance(dist, dict) for dist in distributor_list):
+            raise pulp_exceptions.InvalidValue(['distributor_list'])
+
+        # Create the repo group using the vanilla group create method
+        repo_group = self.create_repo_group(group_id, display_name, description, repo_ids, notes)
+
+        distributor_manager = manager_factory.repo_group_distributor_manager()
+
+        for distributor in distributor_list:
+            try:
+                # Attempt to add the distributor to the group.
+                type_id = distributor.get(distributor_constants.DISTRIBUTOR_TYPE_ID_KEY)
+                plugin_config = distributor.get(distributor_constants.DISTRIBUTOR_CONFIG_KEY)
+                distributor_id = distributor.get(distributor_constants.DISTRIBUTOR_ID_KEY)
+                distributor_manager.add_distributor(group_id, type_id, plugin_config, distributor_id)
+            except Exception, e:
+                # If an exception occurs, pass it on after cleaning up the repository group
+                _LOG.exception('Exception adding distributor to repo group [%s]; the group will'
+                               ' be deleted' % group_id)
+                self.delete_repo_group(group_id)
+                raise e, None, sys.exc_info()[2]
+
+        return repo_group
 
     def update_repo_group(self, group_id, **updates):
         """
