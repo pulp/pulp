@@ -259,32 +259,23 @@ class Profiler(object):
         """
         return units
 
-    # -- applicability ---------------------------------------------------------
-
-    def calculate_applicable_units(self, unit_type_id, unit_profile, bound_repo_id, config, conduit):
+    def calculate_applicable_units(self, unit_profile, bound_repo_id, config, conduit):
         """
         Calculate and return a list of content unit ids applicable to consumers with given unit_profile.
-        Applicability is calculated against all content units of given type belonging to the given
-        bound repository. The definition of "applicable" is content type specific and up to the decision
-        of the profiler.
+        Applicability is calculated against all content units belonging to the given
+        bound repository. The definition of "applicable" is content type specific and up to the
+        profiler.
 
-        :param unit_type_id: content unit type id
-        :type unit_type_id: str
-
-        :param unit_profile: a consumer unit profile
-        :type unit_profile: object
-
+        :param unit_profile:  a consumer unit profile
+        :type  unit_profile:  object
         :param bound_repo_id: repo id of a repository to be used to calculate applicability
                               against the given consumer profile
-        :type bound_repo_id: str
-
-        :param config: plugin configuration
-        :type config: pulp.server.plugins.config.PluginCallConfiguration
-
-        :param conduit: provides access to relevant Pulp functionality
-        :type conduit: pulp.plugins.conduits.profile.ProfilerConduit
-
-        :return: a list of content unit ids
-        :rtype: list of str
+        :type  bound_repo_id: str
+        :param config:        plugin configuration
+        :type  config:        pulp.server.plugins.config.PluginCallConfiguration
+        :param conduit:       provides access to relevant Pulp functionality
+        :type  conduit:       pulp.plugins.conduits.profile.ProfilerConduit
+        :return:              a list of content unit ids
+        :rtype:               list of str
         """
         raise NotImplementedError()
