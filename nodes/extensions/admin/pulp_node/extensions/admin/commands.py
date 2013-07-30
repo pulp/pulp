@@ -14,8 +14,6 @@ import os
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
-
-from pulp.client import parsers
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
