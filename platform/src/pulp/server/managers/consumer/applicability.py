@@ -34,8 +34,8 @@ logger = getLogger(__name__)
 
 
 class ApplicabilityRegenerationManager(object):
-
-    def regenerate_applicability_for_consumers(self, consumer_criteria):
+    @staticmethod
+    def regenerate_applicability_for_consumers(consumer_criteria):
         """
         Regenerate and save applicability data for given consumers
 
@@ -51,9 +51,9 @@ class ApplicabilityRegenerationManager(object):
         consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
 
         for consumer_id in consumer_ids:
-            # Get consumer unit profile for supported type
+            # Get consumer unit profiles
             try:
-                unit_profile = consumer_profile_manager.get_profile(consumer_id, TYPE_RPM_PROFILE)
+                unit_profiles = consumer_profile_manager.get_profiles(consumer_id)
             except MissingResource:
                 continue
             # Get all repositories bound to the consumer
@@ -61,11 +61,31 @@ class ApplicabilityRegenerationManager(object):
                                 fields=['repo_id'])
             bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
 
+
             # Calculate applicability for bound repositories
             for bound_repo_id in bound_repo_ids:
-                self.regenerate_applicability(unit_profile, bound_repo_id, profiler_conduit, skip_existing=True)
+                # Find out which content types have unit counts greater than zero for these bound repos
+                content_type_ids = ApplicabilityRegenerationManager._get_repo_content_type_ids(bound_repo_id)
 
-    def regenerate_applicability_for_repos(self, repo_criteria=None):
+                # TODO: For each content_type_id, we need to find a profiler that handles that type, and hand that profiler the profile and
+                # bound_repo_id
+                ApplicabilityRegenerationManager.regenerate_applicability(unit_profile, bound_repo_id, profiler_conduit, skip_existing=True)
+
+    @staticmethod
+    def _get_repo_content_type_ids(repo_id):
+        """
+        For the given repo_id, return a list of content_type_ids that have content units counts greater than 0.
+
+        :param repo_id: The repo_id for the repository that we wish to know the unit types contained therein
+        :type  repo_id: basestring
+        :return:        A list of content unit ids that are contained in the repository
+        :rtype:         list
+        """
+        # TODO: Write this method
+        return []
+
+    @staticmethod
+    def regenerate_applicability_for_repos(repo_criteria=None):
         """
         Regenerate and save applicability data affected by given repositories
 
@@ -102,7 +122,8 @@ class ApplicabilityRegenerationManager(object):
             for bound_repo_id in bound_repo_ids:
                 self.regenerate_applicability(unit_profile, bound_repo_id, profiler_conduit, skip_existing=False)
 
-    def regenerate_applicability(self, unit_profile, bound_repo_id, profiler_conduit, skip_existing=True):
+    @staticmethod
+    def regenerate_applicability(unit_profile, bound_repo_id, profiler_conduit, skip_existing=True):
         """
         Regenerate and save applicability data for given unit profile and repo id.
 
@@ -131,7 +152,7 @@ class ApplicabilityRegenerationManager(object):
 
         applicability = {}
         for content_type_id in APPLICABILITY_CONTENT_TYPE_IDS:
-            profiler, cfg = self.__profiler(content_type_id)
+            profiler, cfg = ApplicabilityRegenerationManager.__profiler(content_type_id)
             call_config = PluginCallConfiguration(plugin_config=cfg, repo_plugin_config=None)
             try:
                 unit_id_list = profiler.calculate_applicable_units(content_type_id,
@@ -156,7 +177,8 @@ class ApplicabilityRegenerationManager(object):
                                                     unit_profile,
                                                     applicability)
 
-    def __profiler(self, type_id):
+    @staticmethod
+    def __profiler(type_id):
         """
         Find the profiler.
         Returns the Profiler base class when not matched.
