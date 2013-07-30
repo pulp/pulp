@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import json
+
 from gettext import gettext as _
 from logging import getLogger
 
@@ -28,37 +30,12 @@ from pulp_node.distributors.http.publisher import HttpPublisher
 _LOG = getLogger(__name__)
 
 
-# --- i18n ------------------------------------------------------------------------------
+# --- constants -------------------------------------------------------------------------
 
 PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
 PROPERTY_INVALID = _('Property %(p)s must be: %(v)s')
 
-
-# --- configuration ---------------------------------------------------------------------
-
-
-# This should be in /etc/pulp
-DEFAULT_CONFIGURATION = {
-    constants.PROTOCOL_KEYWORD: 'https',
-    'http': {
-        'alias': [
-            '/pulp/nodes/http/repos',
-            '/var/www/pulp/nodes/http/repos'
-        ]
-    },
-    'https': {
-        'alias': [
-            '/pulp/nodes/https/repos',
-            '/var/www/pulp/nodes/https/repos'
-        ],
-        constants.SSL_KEYWORD: {
-            constants.CLIENT_CERT_KEYWORD: {
-                'local': '/etc/pki/pulp/nodes/local.crt',
-                'child': '/etc/pki/pulp/nodes/parent/client.crt'
-            }
-        }
-    }
-}
+CONFIGURATION_PATH = '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'
 
 
 # --- plugin loading --------------------------------------------------------------------
@@ -68,9 +45,10 @@ def entry_point():
     """
     Entry point that pulp platform uses to load the distributor.
     :return: distributor class and its configuration.
-    :rtype:  Distributor, {}
+    :rtype:  Distributor, dict
     """
-    return NodesHttpDistributor, DEFAULT_CONFIGURATION
+    with open(CONFIGURATION_PATH) as fp:
+        return NodesHttpDistributor, json.load(fp)
 
 
 # --- plugin ----------------------------------------------------------------------------

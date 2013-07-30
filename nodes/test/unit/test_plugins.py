@@ -28,8 +28,8 @@ from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
-from pulp_node.distributors.http.distributor import NodesHttpDistributor
-from pulp_node.importers.http.importer import NodesHttpImporter
+from pulp_node.distributors.http.distributor import NodesHttpDistributor, entry_point as dist_entry_point
+from pulp_node.importers.http.importer import NodesHttpImporter, entry_point as imp_entry_point
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
 
 from pulp.plugins.loader import api as plugin_api
@@ -322,6 +322,12 @@ class TestDistributor(PluginTestBase):
         'repository': None
     }
 
+    def test_entry_point(self):
+        repo = plugin_model.Repository(self.REPO_ID)
+        _class, conf = dist_entry_point()
+        plugin = _class()
+        plugin.validate_config(repo, conf, [])
+
     def test_metadata(self):
         # Test
         md = NodesHttpDistributor.metadata()
@@ -482,6 +488,12 @@ class ImporterTest(PluginTestBase):
         constants.MANIFEST_URL_KEYWORD: 'http://redhat.com',
         constants.PROTOCOL_KEYWORD: 'http'
     }
+
+    def test_entry_point(self):
+        repo = plugin_model.Repository(self.REPO_ID)
+        _class, conf = imp_entry_point()
+        plugin = _class()
+        plugin.validate_config(repo, conf, [])
 
     def test_metadata(self):
         # Test
