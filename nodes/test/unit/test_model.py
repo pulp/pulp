@@ -67,4 +67,4 @@ class TestModel(WebTest):
             importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH
         }
         # Verify
-        binding.assertCalledWith(REPO_ID, expected_conf)
+        binding.assert_called_with(REPO_ID, expected_conf)
