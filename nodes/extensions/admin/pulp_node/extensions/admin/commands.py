@@ -15,6 +15,7 @@ from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
 
+from pulp.client import parsers
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
@@ -24,10 +25,9 @@ from pulp.client.commands.options import OPTION_REPO_ID, OPTION_CONSUMER_ID
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
 from pulp_node import constants
-from pulp_node.extension import (missing_resources, node_activated, repository_enabled,
-                                 ensure_node_section)
+from pulp_node.extension import missing_resources, node_activated, repository_enabled, ensure_node_section
 from pulp_node.extensions.admin import sync_schedules
-from pulp_node.extensions.admin.options import NODE_ID_OPTION
+from pulp_node.extensions.admin.options import NODE_ID_OPTION, MAX_BANDWIDTH_OPTION, MAX_CONCURRENCY_OPTION
 from pulp_node.extensions.admin.rendering import ProgressTracker, UpdateRenderer
 
 
@@ -83,8 +83,8 @@ REPO_LIST_TITLE = _('Enabled Repositories')
 
 AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
 
-STRATEGY_OPTION = PulpCliOption('--strategy', STRATEGY_DESC, required=False,
-                                default=constants.ADDITIVE_STRATEGY)
+STRATEGY_OPTION = \
+    PulpCliOption('--strategy', STRATEGY_DESC, required=False, default=constants.ADDITIVE_STRATEGY)
 
 # --- messages ---------------------------------------------------------------
 
@@ -148,6 +148,7 @@ def initialize(context):
     schedules_section.add_command(sync_schedules.NodeUpdateScheduleCommand(context))
     schedules_section.add_command(sync_schedules.NodeListScheduleCommand(context))
     schedules_section.add_command(sync_schedules.NodeNextRunCommand(context))
+
 
 # --- listing ----------------------------------------------------------------
 
@@ -491,11 +492,19 @@ class NodeUpdateCommand(PollingCommand):
     def __init__(self, context):
         super(NodeUpdateCommand, self).__init__(UPDATE_NAME, UPDATE_DESC, self.run, context)
         self.add_option(NODE_ID_OPTION)
+        self.add_option(MAX_CONCURRENCY_OPTION)
+        self.add_option(MAX_BANDWIDTH_OPTION)
         self.tracker = ProgressTracker(self.context.prompt)
 
     def run(self, **kwargs):
         node_id = kwargs[NODE_ID_OPTION.keyword]
+        max_bandwidth = kwargs[MAX_BANDWIDTH_OPTION.keyword]
+        max_concurrency = kwargs[MAX_CONCURRENCY_OPTION.keyword]
         units = [dict(type_id='node', unit_key=None)]
+        options = {
+            constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: max_bandwidth,
+            constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: max_concurrency,
+        }
 
         if not node_activated(self.context, node_id):
             msg = NOT_ACTIVATED_ERROR % dict(t=CONSUMER, id=node_id)
@@ -503,7 +512,7 @@ class NodeUpdateCommand(PollingCommand):
             return os.EX_USAGE
 
         try:
-            http = self.context.server.consumer_content.update(node_id, units=units, options={})
+            http = self.context.server.consumer_content.update(node_id, units=units, options=options)
             task = http.response_body
             self.poll([task], kwargs)
         except NotFoundException, e:

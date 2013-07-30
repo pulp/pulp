@@ -15,7 +15,7 @@ from mock import patch, Mock
 
 from pulp.common.plugins import importer_constants
 
-from base import WebTest
+from base import WebTest, Response, Task
 from pulp_node.handlers.model import RepositoryOnChild
 from pulp_node import constants
 
@@ -24,19 +24,6 @@ PULP_ID = 'pulp_1'
 REPO_ID = 'repo_1'
 MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
-
-
-class Response(object):
-
-    def __init__(self, code, body=None):
-        self.response_code = code
-        self.response_body = body
-
-
-class Task(object):
-
-    def __init__(self, task_id=0):
-        self.task_id = task_id
 
 
 class TestModel(WebTest):
