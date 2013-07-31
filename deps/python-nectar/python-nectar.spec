@@ -47,6 +47,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Jul 31 2013 Jeff Ortel <jortel@redhat.com> 1.0.0-1
+- bumped nectar to version 1.0.0 (jortel@redhat.com)
+
+* Wed Jul 31 2013 Jeff Ortel <jortel@redhat.com> 1.0.0-1
 - got rid of fancy eventlet concurrency, regular os operations are faster;
   fixed bug where the report state was never started (jason.connor@gmail.com)
 - fixed bug that sets mex_concurrent to None when max_concurrent is not
