@@ -230,5 +230,7 @@ An immediate synchronization can be triggered using the ``node sync run`` comman
  Available Arguments:
 
   --node-id - (required) unique identifier; only alphanumeric, -, and _ allowed
+  --max-downloads - maximum number of downloads permitted to run concurrently
+  --max-speed - maximum bandwidth used per download in bytes/sec
 
 .. warning:: Make sure repositories have been published.
