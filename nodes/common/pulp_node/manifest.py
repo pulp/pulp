@@ -19,6 +19,7 @@ json encoded file.  For performance reasons, the unit files are compressed.
 import os
 import json
 import gzip
+import errno
 
 from logging import getLogger
 
@@ -56,6 +57,7 @@ class Manifest(object):
     def __init__(self, path, manifest_id=None):
         self.id = manifest_id
         self.total_units = 0
+        self.units_size = 0
         self.publishing_details = {}
         if os.path.isdir(path):
             path = pathlib.join(path, MANIFEST_FILE_NAME)
@@ -70,6 +72,7 @@ class Manifest(object):
         state = dict(
             id=self.id,
             total_units=self.total_units,
+            units_size=self.units_size,
             publishing_details=self.publishing_details)
         with open(self.path, 'w+') as fp:
             json.dump(state, fp, indent=2)
@@ -98,6 +101,47 @@ class Manifest(object):
             return UnitIterator(path, self.total_units)
         else:
             return []
+
+    def units_published(self, unit_writer):
+        """
+        Update the manifest publishing information.
+        :param unit_writer: A writer used to publish the units.
+        :type unit_writer: UnitWriter
+        """
+        self.total_units = unit_writer.total_units
+        self.units_size = unit_writer.bytes_written
+
+    def published(self, details):
+        """
+        Update the publishing details.
+        :param details: Publishing details.
+        """
+        self.publishing_details.update(details)
+
+    def has_valid_units(self):
+        """
+        Validate the associated units file by comparing the size of the
+        units file to units_size in the manifest.
+        :return: True if valid.
+        :rtype: bool
+        """
+        try:
+            path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
+            size = os.path.getsize(path)
+            return size == self.units_size
+        except OSError, e:
+            if e.errno != errno.ENOENT:
+                raise
+        return False
+
+    def __eq__(self, other):
+        if isinstance(other, Manifest):
+            return self.id == other.id
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
 
 
 class RemoteManifest(Manifest):
@@ -155,6 +199,8 @@ class UnitWriter(object):
     :type fp: A python file object.
     :ivar total_units: Tracks the total number of units written.
     :type total_units: int
+    :ivar bytes_written: The total number of bytes written.
+    :type bytes_written: int
     """
 
     def __init__(self, path):
@@ -166,6 +212,7 @@ class UnitWriter(object):
         self.path = path
         self.fp = gzip.open(path, 'wb')
         self.total_units = 0
+        self.bytes_written = 0
 
     def add(self, unit):
         """
@@ -188,6 +235,7 @@ class UnitWriter(object):
         """
         if not self.fp.closed:
             self.fp.close()
+            self.bytes_written = os.path.getsize(self.path)
         return self.total_units
 
     def __enter__(self):

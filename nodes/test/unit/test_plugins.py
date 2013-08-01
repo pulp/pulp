@@ -574,7 +574,8 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
-    def test_import_cached_manifest_matched(self):
+    @patch('pulp_node.manifest.RemoteManifest.fetch_units')
+    def test_import_cached_manifest_matched(self, mock_fetch):
         # Setup
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.parentfs)

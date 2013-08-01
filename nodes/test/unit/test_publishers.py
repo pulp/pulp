@@ -96,6 +96,7 @@ class TestHttp(TestCase):
         manifest = RemoteManifest(url, downloader, working_dir)
         manifest.fetch()
         manifest.fetch_units()
+        self.assertTrue(manifest.has_valid_units())
         units = manifest.get_units()
         n = 0
         for unit, ref in units:
