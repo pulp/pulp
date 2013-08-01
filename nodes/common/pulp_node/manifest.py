@@ -18,13 +18,13 @@ json encoded file.  For performance reasons, the unit files are compressed.
 
 import os
 import json
+import gzip
 
 from logging import getLogger
 
 from nectar.request import DownloadRequest
 
 from pulp_node import pathlib
-from pulp_node.compression import compress, decompress, compressed
 
 
 log = getLogger(__name__)
@@ -70,6 +70,8 @@ class Manifest(object):
         :type dir_path: str
         :param downloader: The nectar downloader to be used.
         :type downloader: nectar.downloaders.base.Downloader
+        :return: The fully qulified path to the downloaded manifest.
+        :rtype: str
         :raise HTTPError: on URL errors.
 -       :raise ValueError: on json decoding errors
         """
@@ -77,12 +79,11 @@ class Manifest(object):
         request = DownloadRequest(str(url), destination)
         request_list = [request]
         downloader.download(request_list)
-        if compressed(destination):
-            destination = decompress(destination)
         with open(destination) as fp:
             manifest = json.load(fp)
             self.__dict__.update(manifest)
             self.units_path = pathlib.join(dir_path, os.path.basename(self.units_path))
+        return destination
 
     def fetch_units(self, url, downloader):
         """
@@ -100,21 +101,23 @@ class Manifest(object):
         request = DownloadRequest(str(url), self.units_path)
         request_list = [request]
         downloader.download(request_list)
-        if compressed(self.units_path):
-            self.units_path = decompress(self.units_path)
 
     def read(self, path):
         """
         Read the manifest file at the specified path.
         The manifest is updated using the contents of the read json document.
-        :param path: The absolute path to a json encoded manifest file.
+        :param path: The absolute path to either a json encoded manifest file
+            or a directory containing a the manifest file.
         :type path: str
         :raise IOError: on I/O errors.
         :raise ValueError: on json decoding errors
         """
+        if os.path.isdir(path):
+            path = pathlib.join(path, MANIFEST_FILE_NAME)
         with open(path) as fp:
             manifest = json.load(fp)
             self.__dict__.update(manifest)
+            self.units_path = pathlib.join(os.path.dirname(path), os.path.basename(self.units_path))
 
     def write(self, path):
         """
@@ -174,7 +177,7 @@ class UnitWriter(object):
         :raise IOError: on I/O errors
         """
         self.path = path
-        self.fp = open(path, 'w+')
+        self.fp = gzip.open(path, 'wb')
         self.total_units = 0
 
     def add(self, unit):
@@ -198,7 +201,6 @@ class UnitWriter(object):
         """
         if not self.fp.closed:
             self.fp.close()
-            self.path = compress(self.path)
         return self.total_units
 
     def __enter__(self):
@@ -222,7 +224,7 @@ class UnitIterator:
 
     @staticmethod
     def get_units(path):
-        with open(path) as fp:
+        with gzip.open(path) as fp:
             while True:
                 begin = fp.tell()
                 json_unit = fp.readline()
@@ -287,7 +289,7 @@ class UnitRef(object):
         :raise IOError: on I/O errors.
 -       :raise ValueError: json decoding errors
         """
-        with open(self.path) as fp:
+        with gzip.open(self.path) as fp:
             fp.seek(self.offset)
             json_unit = fp.read(self.length)
             return json.loads(json_unit)

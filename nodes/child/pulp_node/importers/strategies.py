@@ -16,6 +16,7 @@ the strategies provided here.
 """
 
 import os
+import errno
 
 from gettext import gettext as _
 from logging import getLogger
@@ -184,8 +185,16 @@ class ImporterStrategy(object):
             request.progress.begin_manifest_download()
             url = request.config.get(constants.MANIFEST_URL_KEYWORD)
             manifest = Manifest()
-            manifest.fetch(url, request.working_dir, request.downloader)
-            manifest.fetch_units(url, request.downloader)
+            try:
+                manifest.read(request.working_dir)
+            except IOError, e:
+                if e.errno == errno.ENOENT:
+                    pass
+            fetched_manifest = Manifest()
+            fetched_manifest.fetch(url, request.working_dir, request.downloader)
+            if manifest.id != fetched_manifest.id:
+                fetched_manifest.fetch_units(url, request.downloader)
+                manifest = fetched_manifest
         except NodeError:
             raise
         except Exception:
