@@ -569,7 +569,7 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        report = importer.sync_repo(repo, conduit, cfg)
+        importer.sync_repo(repo, conduit, cfg)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -616,6 +616,90 @@ class ImporterTest(PluginTestBase):
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
+        self.assertFalse(mock_fetch.called)
+
+    def test_import_cached_manifest_missing_units(self):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        configuration = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, configuration)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        publisher = dist.publisher(repo, configuration)
+        manifest_path = publisher.manifest_path()
+        manifest = Manifest(manifest_path)
+        manifest.read()
+        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+        # Test
+        importer = NodesHttpImporter()
+        manifest_url = 'file://' + manifest_path
+        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+
+    def test_import_cached_manifest_units_invalid(self):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        configuration = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, configuration)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        publisher = dist.publisher(repo, configuration)
+        manifest_path = publisher.manifest_path()
+        manifest = Manifest(manifest_path)
+        manifest.read()
+        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+        with open(os.path.join(working_dir, UNITS_FILE_NAME), 'w+') as fp:
+            fp.write('invalid-units')
+        # Test
+        importer = NodesHttpImporter()
+        manifest_url = 'file://' + manifest_path
+        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+
 
 
 # --- testing end-to-end -----------------------------------------------------

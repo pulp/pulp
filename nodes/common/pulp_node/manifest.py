@@ -55,6 +55,13 @@ class Manifest(object):
     """
 
     def __init__(self, path, manifest_id=None):
+        """
+        :param path: The path to either a directory containing the standard
+            named manifest or the absolute path to the manifest.
+        :type path: str
+        :param manifest_id: An optional manifest ID.
+        :type manifest_id: str
+        """
         self.id = manifest_id
         self.total_units = 0
         self.units_size = 0
@@ -155,8 +162,7 @@ class RemoteManifest(Manifest):
         :type url: str
         :param downloader: The downloader used for fetch methods.
         :type downloader: nectar.downloaders.base.Downloader
-        :param destination: The path to a directory of filename to where the file
-            downloaded file is to be written.
+        :param destination: An absolute path to a file or directory.
         :type destination: str
         """
         if os.path.isdir(destination):
@@ -193,7 +199,8 @@ class UnitWriter(object):
     """
     Writes json encoded content units to a file.
     This approach is 30x faster than opening, appending, and closing for each unit.
-    :ivar path: The absolute path to the file to be written.
+    :ivar path:  The absolute path to a file or directory.  When a directory is specified,
+        the standard file name is appended.
     :type path: str
     :ivar fp: The file pointer used to write units to the file.
     :type fp: A python file object.
@@ -205,10 +212,13 @@ class UnitWriter(object):
 
     def __init__(self, path):
         """
-        :param path: The absolute path to the file to be written.
+        :param path: The absolute path to a file or directory.
+            When a directory is specified, the standard file name is appended.
         :type path: str
         :raise IOError: on I/O errors
         """
+        if os.path.isdir(path):
+            path = pathlib.join(path, UNITS_FILE_NAME)
         self.path = path
         self.fp = gzip.open(path, 'wb')
         self.total_units = 0

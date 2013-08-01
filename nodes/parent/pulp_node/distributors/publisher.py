@@ -19,7 +19,7 @@ from logging import getLogger
 
 from pulp_node import constants
 from pulp_node import pathlib
-from pulp_node.manifest import Manifest, UnitWriter, MANIFEST_FILE_NAME, UNITS_FILE_NAME
+from pulp_node.manifest import Manifest, UnitWriter
 
 
 log = getLogger(__name__)
@@ -88,18 +88,16 @@ class FilePublisher(Publisher):
         """
         pathlib.mkdir(self.publish_dir)
         self.tmp_dir = mkdtemp(dir=self.publish_dir)
-        units_path = pathlib.join(self.tmp_dir, UNITS_FILE_NAME)
-        manifest_path = pathlib.join(self.tmp_dir, MANIFEST_FILE_NAME)
-        with UnitWriter(units_path) as writer:
+        with UnitWriter(self.tmp_dir) as writer:
             for unit in units:
                 self.publish_unit(unit)
                 writer.add(unit)
         manifest_id = str(uuid4())
-        manifest = Manifest(manifest_path, manifest_id)
+        manifest = Manifest(self.tmp_dir, manifest_id)
         manifest.units_published(writer)
         manifest.write()
         self.staged = True
-        return manifest_path
+        return manifest.path
 
     def publish_unit(self, unit):
         """
