@@ -53,7 +53,7 @@ This call supports the search query parameters as described in
 
 * :response_code:`200,containing the list of repository groups`
 
-| :return:`list of groups in the same format as retrieving a single group; empty list if there are none defined`
+| :return:`list of groups in the same format as retrieving a single group; empty list if there are none`
 
 :sample_response:`200` ::
 
@@ -121,7 +121,8 @@ Retrieves a specific distributor associated with a repository group.
 Retrieve Distributors Associated with a Repository Group
 --------------------------------------------------------
 
-Retrieve all distributors associated with a repository group. If the repository has no associated distributors, an empty list is returned.
+Retrieve all distributors associated with a repository group. If the repository has no
+associated distributors, an empty list is returned.
 
 | :method:`get`
 | :path:`/v2/repo_groups/<group_id>/distributors/`

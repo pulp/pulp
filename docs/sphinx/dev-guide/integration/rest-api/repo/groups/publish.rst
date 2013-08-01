@@ -14,8 +14,10 @@ call always executes asynchronously and will return a :term:`call report`.
 | :permission:`execute`
 | :param_list:`post`
 
-* :param:`id,str,the unique id of the distributor associated with the repository group to use for this publish operation`
-* :param:`?override_config,object,distributor configuration values that override the distributor's default configuration for this publish operation. These settings will not be saved.`
+* :param:`id,str,the unique id of the distributor associated with the repository group to
+  use for this publish operation`
+* :param:`?override_config,object,distributor configuration values that override the distributor's
+  default configuration for this publish operation. These settings will not be saved.`
 
 | :response_list:`_`
 
