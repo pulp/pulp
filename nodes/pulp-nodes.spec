@@ -86,6 +86,7 @@ mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
 # Configuration
 pushd parent
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
 popd
 pushd child
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
@@ -143,6 +144,7 @@ Pulp parent nodes support.
 
 %files parent
 %defattr(-,root,root,-)
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
 %{python_sitelib}/pulp_node/distributors/
@@ -177,6 +179,7 @@ Pulp child nodes support.
 %{python_sitelib}/pulp_node_consumer_extensions*.egg-info
 %{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/
 %doc
 
 
