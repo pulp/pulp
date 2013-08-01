@@ -75,13 +75,13 @@ class TestManifest:
         self.units = [(u, TestUnitRef(u)) for u in units]
         self.publishing_details = {constants.BASE_URL: ''}
 
-    def get_units(self):
+    def get_units(self, *unused):
         return self.units
 
-    def fetch(self):
+    def fetch(self, *unused):
         pass
 
-    def fetch_units(self):
+    def fetch_units(self, *unused):
         pass
 
 
@@ -186,7 +186,9 @@ class TestBase(TestCase):
         request = self.request()
         # Test
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        inventory = UnitInventory(TestManifest([]), [unit])
+        working_dir = ''
+        manifest = TestManifest([])
+        inventory = UnitInventory(working_dir, manifest, [unit])
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
         self.assertEqual(len(request.summary.errors), 1)
@@ -224,7 +226,9 @@ class TestBase(TestCase):
         request.downloader.download = Mock()
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        working_dir = ''
+        manifest = TestManifest(units)
+        inventory = UnitInventory(working_dir, manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -235,7 +239,9 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        inventory = UnitInventory(TestManifest([]), [unit])
+        working_dir = ''
+        manifest = TestManifest([])
+        inventory = UnitInventory(working_dir, manifest, [unit])
         request.conduit.remove_unit = Mock()
         # Test
         strategy = ImporterStrategy()
@@ -257,7 +263,9 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        working_dir = ''
+        manifest = TestManifest(units)
+        inventory = UnitInventory(working_dir, manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -280,7 +288,9 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        working_dir = ''
+        manifest = TestManifest(units)
+        inventory = UnitInventory(working_dir, manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -304,7 +314,9 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        working_dir = ''
+        manifest = TestManifest(units)
+        inventory = UnitInventory(working_dir, manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -328,7 +340,9 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        working_dir = ''
+        manifest = TestManifest(units)
+        inventory = UnitInventory(working_dir, manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)

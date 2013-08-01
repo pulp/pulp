@@ -62,16 +62,13 @@ class TestManifest(TestCase):
         with open(manifest_path) as fp:
             manifest_in = json.load(fp)
         self.assertEqual(manifest.id, manifest_in['id'])
-        self.assertEqual(manifest.units_path, manifest_in['units_path'])
-        self.assertEqual(manifest.units_path, writer.path)
         self.assertEqual(manifest.total_units, manifest_in['total_units'])
         self.assertEqual(manifest.total_units, writer.total_units)
         self.assertEqual(manifest.total_units, len(units))
         self.assertTrue(os.path.exists(manifest_path))
-        self.assertTrue(os.path.exists(manifest.units_path))
         self.assertTrue(os.path.exists(units_path))
         units_in = []
-        fp = gzip.open(manifest.units_path)
+        fp = gzip.open(units_path)
         while True:
             json_unit = fp.readline()
             if json_unit:
@@ -106,10 +103,10 @@ class TestManifest(TestCase):
         url = 'file://%s' % path
         manifest = Manifest()
         manifest.fetch(url, working_dir, downloader)
-        manifest.fetch_units(url, downloader)
+        manifest.fetch_units(url, working_dir, downloader)
         # Verify
         units_in = []
-        for unit, ref in manifest.get_units():
+        for unit, ref in manifest.get_units(working_dir):
             units_in.append(unit)
             _unit = ref.fetch()
             self.assertEqual(unit, _unit)

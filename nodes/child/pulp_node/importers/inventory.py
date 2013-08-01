@@ -62,7 +62,7 @@ class UnitInventory(object):
             _units[key] = unit
         return _units
 
-    def __init__(self, manifest, child_units):
+    def __init__(self, working_dir, manifest, child_units):
         """
         :param manifest: The manifest.
         :type manifest: pulp_node.manifest.Manifest
@@ -70,7 +70,7 @@ class UnitInventory(object):
         :type child_units: iterable
         """
         self.manifest = manifest
-        self.parent_units = self._import_parent_units(manifest.get_units())
+        self.parent_units = self._import_parent_units(manifest.get_units(working_dir))
         self.child_units = self._import_child_units(child_units)
 
     def units_on_parent_only(self):

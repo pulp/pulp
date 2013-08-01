@@ -193,7 +193,7 @@ class ImporterStrategy(object):
             fetched_manifest = Manifest()
             fetched_manifest.fetch(url, request.working_dir, request.downloader)
             if manifest.id != fetched_manifest.id:
-                fetched_manifest.fetch_units(url, request.downloader)
+                fetched_manifest.fetch_units(url, request.working_dir, request.downloader)
                 manifest = fetched_manifest
         except NodeError:
             raise
@@ -201,7 +201,7 @@ class ImporterStrategy(object):
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
-        return UnitInventory(manifest, child_units)
+        return UnitInventory(request.working_dir, manifest, child_units)
 
     def _update_storage_path(self, unit):
         """

@@ -461,13 +461,13 @@ class TestDistributor(PluginTestBase):
         # Verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
-        manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
+        working_dir = self.childfs
         manifest = Manifest()
-        manifest.fetch(url, self.childfs, downloader)
-        manifest.fetch_units(url, downloader)
-        units = [u for u, r in manifest.get_units()]
+        manifest.fetch(url, working_dir, downloader)
+        manifest.fetch_units(url, working_dir, downloader)
+        units = [u for u, r in manifest.get_units(working_dir)]
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
             unit = units[n]
@@ -596,10 +596,11 @@ class ImporterTest(PluginTestBase):
         unit_db.clean()
         publisher = dist.publisher(repo, configuration)
         manifest_path = publisher.manifest_path()
+        units_path = os.path.join(os.path.dirname(manifest_path), UNITS_FILE_NAME)
         manifest = Manifest()
         manifest.read(manifest_path)
         shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
-        shutil.copy(manifest.units_path, os.path.join(working_dir, UNITS_FILE_NAME))
+        shutil.copy(units_path, os.path.join(working_dir, UNITS_FILE_NAME))
         # Test
         importer = NodesHttpImporter()
         manifest_url = 'file://' + manifest_path

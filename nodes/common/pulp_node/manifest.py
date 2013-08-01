@@ -49,8 +49,6 @@ class Manifest(object):
     :type id: str
     :ivar total_units: The number of units in the units file.
     :type total_units: int
-    :ivar unit_path: The path to the downloaded content units file.
-    :type unit_path: str
     :param publishing_details: Details of how units have been published.
     :type publishing_details: dict
     """
@@ -58,7 +56,6 @@ class Manifest(object):
     def __init__(self, manifest_id=None):
         self.id = manifest_id
         self.total_units = 0
-        self.units_path = None
         self.publishing_details = {}
 
     def fetch(self, url, dir_path, downloader):
@@ -70,7 +67,7 @@ class Manifest(object):
         :type dir_path: str
         :param downloader: The nectar downloader to be used.
         :type downloader: nectar.downloaders.base.Downloader
-        :return: The fully qulified path to the downloaded manifest.
+        :return: The fully qualified path to the downloaded manifest.
         :rtype: str
         :raise HTTPError: on URL errors.
 -       :raise ValueError: on json decoding errors
@@ -82,25 +79,29 @@ class Manifest(object):
         with open(destination) as fp:
             manifest = json.load(fp)
             self.__dict__.update(manifest)
-            self.units_path = pathlib.join(dir_path, os.path.basename(self.units_path))
         return destination
 
-    def fetch_units(self, url, downloader):
+    def fetch_units(self, url, dir_path, downloader):
         """
         Fetch the units file referenced in the manifest.
-        The file is decompressed and written to the path specified by units_path.
         :param url: The URL to the manifest.  Used as the base URL.
         :type url: str
+        :param dir_path: The absolute path to a directory for the units manifest.
+        :type dir_path: str
         :param downloader: The nectar downloader to be used.
         :type downloader: nectar.downloaders.base.Downloader
+        :return: The fully qualified path to the downloaded units.
+        :rtype: str
         :raise HTTPError: on URL errors.
 -       :raise ValueError: on json decoding errors
         """
         base_url = url.rsplit('/', 1)[0]
-        url = '/'.join((base_url, os.path.basename(self.units_path)))
-        request = DownloadRequest(str(url), self.units_path)
+        url = '/'.join((base_url, UNITS_FILE_NAME))
+        destination = pathlib.join(dir_path, UNITS_FILE_NAME)
+        request = DownloadRequest(str(url), destination)
         request_list = [request]
         downloader.download(request_list)
+        return destination
 
     def read(self, path):
         """
@@ -117,22 +118,17 @@ class Manifest(object):
         with open(path) as fp:
             manifest = json.load(fp)
             self.__dict__.update(manifest)
-            self.units_path = pathlib.join(os.path.dirname(path), os.path.basename(self.units_path))
 
     def write(self, path):
         """
         Write the manifest to a json encoded file at the specified path.
-        Returns the path to the written manifest just in case it's compressed in the future.
         :param path: The absolute path to the written json encoded manifest file.
         :type path: str
-        :return: The absolute path to the written manifest.
-        :rtype: str
         :raise IOError: on I/O errors.
         :raise ValueError: on json encoding errors
         """
         with open(path, 'w+') as fp:
             json.dump(self.__dict__, fp, indent=2)
-        return path
 
     def set_units(self, writer):
         """
@@ -141,10 +137,9 @@ class Manifest(object):
         :param writer: The writer used to create the units file.
         :type writer: UnitWriter
         """
-        self.units_path = writer.path
         self.total_units = writer.total_units
 
-    def get_units(self):
+    def get_units(self, path):
         """
         Get the content units referenced in the manifest.
         :return: An iterator used to read downloaded content units.
@@ -152,8 +147,10 @@ class Manifest(object):
         :raise IOError: on I/O errors.
 -       :raise ValueError: json decoding errors
         """
+        if os.path.isdir(path):
+            path = pathlib.join(path, UNITS_FILE_NAME)
         if self.total_units:
-            return UnitIterator(self.units_path, self.total_units)
+            return UnitIterator(path, self.total_units)
         else:
             return []
 

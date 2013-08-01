@@ -95,8 +95,8 @@ class TestHttp(TestCase):
         manifest = Manifest()
         url = pathlib.url_join(base_url, manifest_path)
         manifest.fetch(url, working_dir, downloader)
-        manifest.fetch_units(url, downloader)
-        units = manifest.get_units()
+        manifest.fetch_units(url, working_dir, downloader)
+        units = manifest.get_units(working_dir)
         n = 0
         for unit, ref in units:
             if n == 0:
