@@ -27,7 +27,7 @@ from pulp.server.config import config as pulp_conf
 from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.conduit import NodesConduit
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import UnitDownloadManager
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
@@ -184,16 +184,16 @@ class ImporterStrategy(object):
         try:
             request.progress.begin_manifest_download()
             url = request.config.get(constants.MANIFEST_URL_KEYWORD)
-            manifest = Manifest()
+            manifest = Manifest(request.working_dir)
             try:
-                manifest.read(request.working_dir)
+                manifest.read()
             except IOError, e:
                 if e.errno == errno.ENOENT:
                     pass
-            fetched_manifest = Manifest()
-            fetched_manifest.fetch(url, request.working_dir, request.downloader)
+            fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
+            fetched_manifest.fetch()
             if manifest.id != fetched_manifest.id:
-                fetched_manifest.fetch_units(url, request.working_dir, request.downloader)
+                fetched_manifest.fetch_units()
                 manifest = fetched_manifest
         except NodeError:
             raise
@@ -201,7 +201,7 @@ class ImporterStrategy(object):
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
-        return UnitInventory(request.working_dir, manifest, child_units)
+        return UnitInventory(manifest, child_units)
 
     def _update_storage_path(self, unit):
         """

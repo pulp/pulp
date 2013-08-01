@@ -49,7 +49,7 @@ from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
-from pulp_node.manifest import Manifest, MANIFEST_FILE_NAME, UNITS_FILE_NAME
+from pulp_node.manifest import Manifest, RemoteManifest, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
@@ -464,10 +464,10 @@ class TestDistributor(PluginTestBase):
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
         working_dir = self.childfs
-        manifest = Manifest()
-        manifest.fetch(url, working_dir, downloader)
-        manifest.fetch_units(url, working_dir, downloader)
-        units = [u for u, r in manifest.get_units(working_dir)]
+        manifest = RemoteManifest(url, downloader, working_dir)
+        manifest.fetch()
+        manifest.fetch_units()
+        units = [u for u, r in manifest.get_units()]
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
             unit = units[n]
@@ -597,8 +597,8 @@ class ImporterTest(PluginTestBase):
         publisher = dist.publisher(repo, configuration)
         manifest_path = publisher.manifest_path()
         units_path = os.path.join(os.path.dirname(manifest_path), UNITS_FILE_NAME)
-        manifest = Manifest()
-        manifest.read(manifest_path)
+        manifest = Manifest(manifest_path)
+        manifest.read()
         shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
         shutil.copy(units_path, os.path.join(working_dir, UNITS_FILE_NAME))
         # Test

@@ -53,93 +53,39 @@ class Manifest(object):
     :type publishing_details: dict
     """
 
-    def __init__(self, manifest_id=None):
+    def __init__(self, path, manifest_id=None):
         self.id = manifest_id
         self.total_units = 0
         self.publishing_details = {}
-
-    def fetch(self, url, dir_path, downloader):
-        """
-        Fetch the manifest file using the specified URL.
-        :param url: The URL to the manifest.
-        :type url: str
-        :param dir_path: The absolute path to a directory for the downloaded manifest.
-        :type dir_path: str
-        :param downloader: The nectar downloader to be used.
-        :type downloader: nectar.downloaders.base.Downloader
-        :return: The fully qualified path to the downloaded manifest.
-        :rtype: str
-        :raise HTTPError: on URL errors.
--       :raise ValueError: on json decoding errors
-        """
-        destination = pathlib.join(dir_path, MANIFEST_FILE_NAME)
-        request = DownloadRequest(str(url), destination)
-        request_list = [request]
-        downloader.download(request_list)
-        with open(destination) as fp:
-            manifest = json.load(fp)
-            self.__dict__.update(manifest)
-        return destination
-
-    def fetch_units(self, url, dir_path, downloader):
-        """
-        Fetch the units file referenced in the manifest.
-        :param url: The URL to the manifest.  Used as the base URL.
-        :type url: str
-        :param dir_path: The absolute path to a directory for the units manifest.
-        :type dir_path: str
-        :param downloader: The nectar downloader to be used.
-        :type downloader: nectar.downloaders.base.Downloader
-        :return: The fully qualified path to the downloaded units.
-        :rtype: str
-        :raise HTTPError: on URL errors.
--       :raise ValueError: on json decoding errors
-        """
-        base_url = url.rsplit('/', 1)[0]
-        url = '/'.join((base_url, UNITS_FILE_NAME))
-        destination = pathlib.join(dir_path, UNITS_FILE_NAME)
-        request = DownloadRequest(str(url), destination)
-        request_list = [request]
-        downloader.download(request_list)
-        return destination
-
-    def read(self, path):
-        """
-        Read the manifest file at the specified path.
-        The manifest is updated using the contents of the read json document.
-        :param path: The absolute path to either a json encoded manifest file
-            or a directory containing a the manifest file.
-        :type path: str
-        :raise IOError: on I/O errors.
-        :raise ValueError: on json decoding errors
-        """
         if os.path.isdir(path):
             path = pathlib.join(path, MANIFEST_FILE_NAME)
-        with open(path) as fp:
-            manifest = json.load(fp)
-            self.__dict__.update(manifest)
+        self.path = path
 
-    def write(self, path):
+    def write(self):
         """
         Write the manifest to a json encoded file at the specified path.
-        :param path: The absolute path to the written json encoded manifest file.
-        :type path: str
         :raise IOError: on I/O errors.
         :raise ValueError: on json encoding errors
         """
-        with open(path, 'w+') as fp:
-            json.dump(self.__dict__, fp, indent=2)
+        state = dict(
+            id=self.id,
+            total_units=self.total_units,
+            publishing_details=self.publishing_details)
+        with open(self.path, 'w+') as fp:
+            json.dump(state, fp, indent=2)
 
-    def set_units(self, writer):
+    def read(self):
         """
-        Set the associated units file using the specified writer.
-        Updates the units_path and total_units based on what was written by the writer.
-        :param writer: The writer used to create the units file.
-        :type writer: UnitWriter
+        Read the manifest file at the specified path.
+        The manifest is updated using the contents of the read json document.
+        :raise IOError: on I/O errors.
+        :raise ValueError: on json decoding errors
         """
-        self.total_units = writer.total_units
+        with open(self.path) as fp:
+            d = json.load(fp)
+            self.__dict__.update(d)
 
-    def get_units(self, path):
+    def get_units(self):
         """
         Get the content units referenced in the manifest.
         :return: An iterator used to read downloaded content units.
@@ -147,12 +93,56 @@ class Manifest(object):
         :raise IOError: on I/O errors.
 -       :raise ValueError: json decoding errors
         """
-        if os.path.isdir(path):
-            path = pathlib.join(path, UNITS_FILE_NAME)
         if self.total_units:
+            path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
             return UnitIterator(path, self.total_units)
         else:
             return []
+
+
+class RemoteManifest(Manifest):
+    """
+    Represents a remote manifest.
+    """
+
+    def __init__(self, url, downloader, destination):
+        """
+        :param url: The URL to the remote manifest.
+        :type url: str
+        :param downloader: The downloader used for fetch methods.
+        :type downloader: nectar.downloaders.base.Downloader
+        :param destination: The path to a directory of filename to where the file
+            downloaded file is to be written.
+        :type destination: str
+        """
+        if os.path.isdir(destination):
+            destination = pathlib.join(destination, MANIFEST_FILE_NAME)
+        Manifest.__init__(self, destination)
+        self.url = str(url)
+        self.downloader = downloader
+        self.destination = destination
+
+    def fetch(self):
+        """
+        Fetch the manifest file using the specified URL.
+        :raise HTTPError: on URL errors.
+-       :raise ValueError: on json decoding errors
+        """
+        request = DownloadRequest(self.url, self.destination)
+        self.downloader.download([request])
+        self.read()
+
+    def fetch_units(self):
+        """
+        Fetch the units file referenced in the manifest.
+        :raise HTTPError: on URL errors.
+-       :raise ValueError: on json decoding errors
+        """
+        base_url = self.url.rsplit('/', 1)[0]
+        url = pathlib.join(base_url, UNITS_FILE_NAME)
+        destination = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
+        request = DownloadRequest(str(url), destination)
+        self.downloader.download([request])
 
 
 class UnitWriter(object):

@@ -54,9 +54,9 @@ class TestManifest(TestCase):
         for u in units:
             writer.add(u)
         writer.close()
-        manifest = Manifest(self.MANIFEST_ID)
-        manifest.set_units(writer)
-        manifest.write(manifest_path)
+        manifest = Manifest(manifest_path, self.MANIFEST_ID)
+        manifest.total_units = writer.total_units
+        manifest.write()
         # Verify
         self.assertTrue(os.path.exists(manifest_path))
         with open(manifest_path) as fp:
@@ -91,9 +91,9 @@ class TestManifest(TestCase):
         for u in units:
             writer.add(u)
         writer.close()
-        manifest = Manifest(self.MANIFEST_ID)
-        manifest.set_units(writer)
-        manifest.write(manifest_path)
+        manifest = Manifest(manifest_path, self.MANIFEST_ID)
+        manifest.total_units = writer.total_units
+        manifest.write()
         # Test
         cfg = DownloaderConfig()
         downloader = HTTPSCurlDownloader(cfg)
@@ -101,12 +101,12 @@ class TestManifest(TestCase):
         os.makedirs(working_dir)
         path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
         url = 'file://%s' % path
-        manifest = Manifest()
-        manifest.fetch(url, working_dir, downloader)
-        manifest.fetch_units(url, working_dir, downloader)
+        manifest = RemoteManifest(url, downloader, working_dir)
+        manifest.fetch()
+        manifest.fetch_units()
         # Verify
         units_in = []
-        for unit, ref in manifest.get_units(working_dir):
+        for unit, ref in manifest.get_units():
             units_in.append(unit)
             _unit = ref.fetch()
             self.assertEqual(unit, _unit)

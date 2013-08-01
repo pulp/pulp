@@ -95,9 +95,9 @@ class FilePublisher(Publisher):
                 self.publish_unit(unit)
                 writer.add(unit)
         manifest_id = str(uuid4())
-        manifest = Manifest(manifest_id)
-        manifest.set_units(writer)
-        manifest_path = manifest.write(manifest_path)
+        manifest = Manifest(manifest_path, manifest_id)
+        manifest.total_units = writer.total_units
+        manifest.write()
         self.staged = True
         return manifest_path
 
