@@ -54,14 +54,17 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
 
-        rpm_pkg_profiler, cfg = plugins.get_profiler_by_type('rpm')
-        rpm_pkg_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                      ['rpm-1', 'rpm-2'])
-        rpm_errata_profiler, cfg = plugins.get_profiler_by_type('erratum')
-        rpm_errata_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                      ['errata-1', 'errata-2'])
+        yum_profiler, cfg = plugins.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
+
+        yum_profiler.metadata = mock.Mock(return_value={'types':['rpm', 'erratum']})
+
+        applicability_regeneration_manager = factory.applicability_regeneration_manager()
+        applicability_regeneration_manager._get_existing_repo_content_types = mock.Mock(return_value= 
+                                                                                        ['rpm','erratum'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -180,10 +183,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
-        self.assertEqual(len(applicability_list), 2)
-        expected_applicability = {'erratum': ['errata-1', u'errata-2']}
-        for applicability in applicability_list:
-            self.assertEqual(applicability['applicability'], expected_applicability)
+        self.assertEqual(len(applicability_list), 0)
 
     # Applicability regeneration with repo criteria
 

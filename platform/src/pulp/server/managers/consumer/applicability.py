@@ -24,7 +24,6 @@ from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptio
 from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 
@@ -121,7 +120,7 @@ class ApplicabilityRegenerationManager(object):
         :type skip_existing: boolean
         """
         # Get the profiler for content_type of given unit_profile
-        profiler, profiler_cfg = ApplicabilityRegenerationManager.__profiler()
+        profiler, profiler_cfg = ApplicabilityRegenerationManager.__profiler(unit_profile['content_type'])
         call_config = PluginCallConfiguration(plugin_config=profiler_cfg, repo_plugin_config=None)
         # Check if the profiler supports applicability, else return
         if profiler.calculate_applicable_units == Profiler.calculate_applicable_units:
@@ -132,30 +131,30 @@ class ApplicabilityRegenerationManager(object):
         # Regenerate applicability for each bound repository
         for bound_repo_id in bound_repo_ids:
             existing_applicability = ApplicabilityRegenerationManager._get_existing_applicability(bound_repo_id, 
-                                                                                             unit_profile['profile_hash'])
+                                                                                                  unit_profile['profile_hash'])
             if existing_applicability and skip_existing:
                 continue
 
             # Find out which content types have unit counts greater than zero for these bound repos
             repo_content_types = ApplicabilityRegenerationManager._get_existing_repo_content_types(bound_repo_id)
             # Get the intersection of existing types in the repo and the types that the profiler handles. 
-            # If the intersection is not empty, regenerate applicability 
+            # If the intersection is not empty, regenerate applicability
             if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
                 applicability = profiler.calculate_applicable_units(unit_profile['profile'],
                                                                     bound_repo_id,
                                                                     call_config,
                                                                     profiler_conduit)
 
-            if existing_applicability:
-                # Update existing applicability object since skip_existing is False
-                existing_applicability.applicability = applicability
-                existing_applicability.save()
-            else:
-                # Create a new RepoProfileApplicability object and save it in the db
-                RepoProfileApplicability.objects.create(unit_profile['profile_hash'],
-                                                        bound_repo_id,
-                                                        unit_profile['profile'],
-                                                        applicability)
+                if existing_applicability:
+                    # Update existing applicability object since skip_existing is False
+                    existing_applicability.applicability = applicability
+                    existing_applicability.save()
+                else:
+                    # Create a new RepoProfileApplicability object and save it in the db
+                    RepoProfileApplicability.objects.create(unit_profile['profile_hash'],
+                                                            bound_repo_id,
+                                                            unit_profile['profile'],
+                                                            applicability)
 
     @staticmethod
     def _get_existing_repo_content_types(repo_id):
@@ -170,7 +169,7 @@ class ApplicabilityRegenerationManager(object):
         repo_content_types_with_non_zero_unit_count = []
         repo = managers.repo_query_manager().find_by_id(repo_id)
         if repo:
-            for content_type, count in repo['content_unit_counts']:
+            for content_type, count in repo['content_unit_counts'].items():
                 if count > 0:
                     repo_content_types_with_non_zero_unit_count.append(content_type)
         return repo_content_types_with_non_zero_unit_count
