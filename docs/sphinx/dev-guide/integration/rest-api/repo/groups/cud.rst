@@ -163,15 +163,14 @@ restriction is that the distributor ID must be unique across all distributors fo
 Adding a distributor performs the following validation steps before confirming the addition:
 
 * If provided, the distributor ID is is checked for uniqueness in the context of the repository
-group. If not provided, a unique ID is generated.
+  group. If not provided, a unique ID is generated.
 * The distributor plugin is contacted and asked to validate the supplied configuration for the
-distributor. If the distributor indicates the given configuration is invalid, the distributor is
-not added to the repository group.
-* The distributor’s distributor_added method is invoked to allow the distributor to do any
-initialization required for that repository group. If the plugin raises an exception during this call,
-the distributor is not added to the repository group.
+  distributor. If the distributor indicates the given configuration is invalid, the distributor is
+  not added to the repository group.
+* The distributor is contacted and asked to perform any necessary initialization for the distributor.
+  If the plugin raises an exception during this step, the distributor is not added to the repository group.
 * The Pulp database is updated to store the distributor's configuration and the knowledge that the
-repository is associated with the knowledge that the repository group is associated with the distributor.
+  repository is associated with the distributor.
 
 The details of the added distributor are returned from the call.
 
@@ -232,7 +231,7 @@ Disassociate a Distributor from a Repository Group
 
 Disassociating a distributor removes the association between the distributor and the repository
 
-| :method:`post`
+| :method:`delete`
 | :path:`/v2/repo_groups/<group_id>/distributors/<distributor_id>/`
 | :permission:`delete`
 
