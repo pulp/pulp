@@ -125,7 +125,6 @@ class ApplicabilityRegenerationManager(object):
         # Check if the profiler supports applicability, else return
         if profiler.calculate_applicable_units == Profiler.calculate_applicable_units:
             # If base class calculate_applicable_units method is called, skip applicability regeneration
-            logger.warn("Profiler for content type [%s] does not support applicability" % unit_profile['content_type'])
             return
 
         # Regenerate applicability for each bound repository
@@ -139,11 +138,17 @@ class ApplicabilityRegenerationManager(object):
             repo_content_types = ApplicabilityRegenerationManager._get_existing_repo_content_types(bound_repo_id)
             # Get the intersection of existing types in the repo and the types that the profiler handles. 
             # If the intersection is not empty, regenerate applicability
+            logger.info("$$$$$$$$$$ %s : %s" % (repo_content_types, profiler.metadata()['types']))
             if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
-                applicability = profiler.calculate_applicable_units(unit_profile['profile'],
-                                                                    bound_repo_id,
-                                                                    call_config,
-                                                                    profiler_conduit)
+                try:
+                    applicability = profiler.calculate_applicable_units(unit_profile['profile'],
+                                                                        bound_repo_id,
+                                                                        call_config,
+                                                                        profiler_conduit)
+                except NotImplementedError:
+                    logger.warn("Profiler for content type [%s] does not support applicability" %
+                                unit_profile['content_type'])
+                    continue
 
                 if existing_applicability:
                     # Update existing applicability object since skip_existing is False
