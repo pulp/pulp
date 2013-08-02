@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -256,6 +256,9 @@ fi
 
 
 %changelog
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
+- Pulp rebuild
+
 * Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.1.alpha
 - 988913 - mirror (node) strategy only affect specified repos when units
   type_id=repository. (jortel@redhat.com)
