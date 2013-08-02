@@ -7,4 +7,4 @@ Repository Group APIs
    cud
    retrieval
    members
-   distributors
+   publish

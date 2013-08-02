@@ -1,4 +1,4 @@
-Creation, Delete, and Update
+Creation, Deletion, and Configuration
 ============================
 
 .. _create_repo_group:
@@ -19,8 +19,9 @@ or removed from the group using the :doc:`membership calls<members>`.
 * :param:`id,string,unique identifier for the group`
 * :param:`?display_name,string,user-friendly name for the repository group`
 * :param:`?description,string,user-friendly text describing the group's purpose`
-* :param:`?repo_ids,object,list of repositories to add to the group`
+* :param:`?repo_ids,array,list of repository ids to add to the group`
 * :param:`?notes,object,key-value pairs to programmatically tag the group`
+* :param:`?distributors,array,list of distributors to associate with the group on creation`
 
 | :response_list:`_`
 
@@ -33,22 +34,50 @@ or removed from the group using the :doc:`membership calls<members>`.
 :sample_request:`_` ::
 
  {
-  "id": "demo-group"
+  "id": "demo-group",
+  "display_name": "Demo Group",
+  "description": "Demo group description",
+  "notes": {
+    "key": "value"
+  },
+  "repo_ids": [
+    "demo-repo1", 
+    "demo-repo2"
+  ],
+  "distributors": [
+    {
+      "distributor_type_id": "demo_group_distributor",
+      "distributor_config": {},
+      "distributor_id": "optional_distributor_id"
+    }
+  ],
  }
 
 :sample_response:`201` ::
 
  {
   "scratchpad": null,
-  "display_name": null,
-  "description": null,
+  "id": "demo-group",
+  "display_name": "Demo Group",
+  "description": "Demo group description",
   "_ns": "repo_groups",
-  "notes": {},
-  "repo_ids": [],
+  "notes": {
+    "key": "value"
+  },
+  "repo_ids": [
+    "demo-repo1",
+    "demo-repo2"
+  ],
+  "distributors": [
+    {
+      "distributor_type_id": "demo_group_distributor",
+      "distributor_config": {},
+      "distributor_id": "optional_distributor_id"
+    }
+  ],
   "_id": {
     "$oid": "500ed9888a905b04e9000021"
   },
-  "id": "demo-group",
   "_href": "/pulp/api/v2/repo_groups/demo-group/"
  }
 
@@ -120,3 +149,96 @@ remain unaffected. A note is removed by specifying its key with a value of null.
   "id": "demo-group",
   "_href": "/pulp/api/v2/repo_groups/demo-group/"
  }
+
+Associate a Distributor to a Repository Group
+---------------------------------------------
+
+Configures a group distributor for a previously created Pulp repository group. The possible
+configuration values are contingent on the type of distributor being added; each distributor
+type will support a different set of values relevant to how it functions.
+
+Multiple distributors may be associated with a repository group at a given time. The only
+restriction is that the distributor ID must be unique across all distributors for a given repository.
+
+Adding a distributor performs the following validation steps before confirming the addition:
+
+* If provided, the distributor ID is is checked for uniqueness in the context of the repository
+  group. If not provided, a unique ID is generated.
+* The distributor plugin is contacted and asked to validate the supplied configuration for the
+  distributor. If the distributor indicates the given configuration is invalid, the distributor is
+  not added to the repository group.
+* The distributor is contacted and asked to perform any necessary initialization for the distributor.
+  If the plugin raises an exception during this step, the distributor is not added to the repository group.
+* The Pulp database is updated to store the distributor's configuration and the knowledge that the
+  repository is associated with the distributor.
+
+The details of the added distributor are returned from the call.
+
+| :method:`post`
+| :path:`/v2/repo_groups/<group_id>/distributors/`
+| :permission:`create`
+| :param_list:`post`
+
+* :param:`distributor_type_id,string,indicates the type of distributor being associated with
+  the repository group; there must be a distributor installed in the Pulp server with this ID`
+* :param:`distributor_config,object,configuration the repository group will use to drive the
+  behavior of the distributor`
+* :param:`?distributor_id,string,if specified, this value will be used to refer to the
+  distributor; if not specified, a unique id will be generated`
+
+| :response_list:`_`
+
+* :response_code:`201,if the distributor was successfully added`
+* :response_code:`400,if one or more of the required parameters is missing, the distributor type
+  ID refers to a non-existent distributor, or the distributor indicates the supplied configuration
+  is invalid`
+* :response_code:`404,if there is no repository with the given ID`
+* :response_code:`500,if the distributor raises an error during initialization`
+
+| :return:`database representation of the distributor (not the full repository details,
+  just the distributor)`
+
+:sample_request:`_` ::
+
+ {
+  "distributor_type_id": "demo_group_distributor",
+  "distributor_config": {
+    "config_key": "config_value"
+  },
+  "distributor_id": "optional_unique_id"
+ }
+
+:sample_response:`201` ::
+
+ {
+  "_href": "/pulp/api/v2/repo_groups/demo-group/distributors/demo_group_distributor/",
+  "_id": {
+    "$oid": "51f2c2e7eefe871d8c2d6049"
+  },
+  "_ns": "repo_group_distributors",
+  "config": {
+    "config_key": "config_value"
+  },
+  "distributor_type_id": "demo_group_distributor",
+  "id": "optional_unique_id",
+  "last_publish": null,
+  "repo_group_id": "demo-group",
+  "scratchpad": null
+ }
+
+Disassociate a Distributor from a Repository Group
+--------------------------------------------------
+
+Disassociating a distributor removes the association between the distributor and the repository
+
+| :method:`delete`
+| :path:`/v2/repo_groups/<group_id>/distributors/<distributor_id>/`
+| :permission:`delete`
+
+| :response_list:`_`
+
+* :response_code:`200,if the distributor was successfully removed`
+* :response_code:`404,if there was repository group or distributor with the specified IDs`
+* :response_code:`500,if the server raises an error during disassociation`
+
+| :return:`null`

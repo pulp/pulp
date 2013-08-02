@@ -53,7 +53,7 @@ This call supports the search query parameters as described in
 
 * :response_code:`200,containing the list of repository groups`
 
-| :return:`list of groups in the same format as retrieving a single group; empty list if there are none defined`
+| :return:`list of groups in the same format as retrieving a single group; empty list if there are none`
 
 :sample_response:`200` ::
 
@@ -88,3 +88,65 @@ This call supports the search query parameters as described in
   }
  ]
 
+Retrieve a Distributor Associated with a Repository Group
+---------------------------------------------------------
+
+Retrieves a specific distributor associated with a repository group.
+
+| :method:`get`
+| :path:`/v2/repo_groups/<group_id>/distributors/<distributor_id>/`
+| :permission:`read`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`200,containing the distributor`
+* :response_code:`404,if the specified group or distributor ID does not exist`
+
+:sample_response:`200` ::
+
+ {
+  "_href": "/pulp/api/v2/repo_groups/demo-group/distributors/demo_group_distributor/",
+  "_id": {
+    "$oid": "51f2ccb5eefe871d8c2d605c"
+  },
+  "_ns": "repo_group_distributors",
+  "config": {'http': False, u'https': True},
+  "distributor_type_id": "demo_group_distributor",
+  "id": "unique_id",
+  "last_publish": null,
+  "repo_group_id": "demo-group",
+  "scratchpad": null
+ }
+
+Retrieve Distributors Associated with a Repository Group
+--------------------------------------------------------
+
+Retrieve all distributors associated with a repository group. If the repository has no
+associated distributors, an empty list is returned.
+
+| :method:`get`
+| :path:`/v2/repo_groups/<group_id>/distributors/`
+| :permission:`read`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`200,containing the array of distributor objects`
+* :response_code:`404,if the specified group does not exist`
+
+:sample_response:`200` ::
+
+ [
+  {
+    "_href": "/pulp/api/v2/repo_groups/demo-group/distributors/demo_group_distributor/",
+    "_id": {
+      "$oid": "51f2ccb5eefe871d8c2d605c"
+    },
+    "_ns": "repo_group_distributors",
+    "config": {'http': False, u'https': True},
+    "distributor_type_id": "demo_group_distributor",
+    "id": "unique_id",
+    "last_publish": null,
+    "repo_group_id": "demo-group",
+    "scratchpad": null
+  }
+ ]
