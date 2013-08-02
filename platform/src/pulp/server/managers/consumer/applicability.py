@@ -138,7 +138,6 @@ class ApplicabilityRegenerationManager(object):
             repo_content_types = ApplicabilityRegenerationManager._get_existing_repo_content_types(bound_repo_id)
             # Get the intersection of existing types in the repo and the types that the profiler handles. 
             # If the intersection is not empty, regenerate applicability
-            logger.info("$$$$$$$$$$ %s : %s" % (repo_content_types, profiler.metadata()['types']))
             if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
                 try:
                     applicability = profiler.calculate_applicable_units(unit_profile['profile'],
