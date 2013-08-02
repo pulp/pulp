@@ -432,6 +432,24 @@ exit 0
 %endif
 
 %changelog
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.1.alpha
+- 976561 - added and explicit pool size for the socket "pool" added a new
+  decorator around the query methods that calls end_request in order to manage
+  the sockets automagically (jason.connor@gmail.com)
+- 981736 - when a sync fails, pulp-admin's exit code is now 1 instead of 0.
+  (mhrivnak@redhat.com)
+- 977948 - fix distributor updating during node sync. (jortel@redhat.com)
+- purge changelog
+- 973402 - Handle CallReport.progress with value of {} or None.
+  (jortel@redhat.com)
+- 927216  - remove reference to CDS in the server.conf security section.
+  (jortel@redhat.com)
+- 928413 - fix query used to determine of bind has pending actions.
+  (jortel@redhat.com)
+- 970741 - Upgraded nectar for error_msg support (jason.dobies@redhat.com)
+- 968012 - Replaced grinder logging config with nectar logging config
+  (jason.dobies@redhat.com)
+
 * Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.16.alpha
 - 947445 - allowing consumer ids to allow dots (skarmark@redhat.com)
 - 906420 - update storing of resources used by each task in the taskqueue to
