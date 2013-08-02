@@ -1334,6 +1334,16 @@ class DependencyResolutionTests(RepoControllersTests):
         self.assertEqual(400, status)
         self.assertEqual(0, mock_resolve_method.call_count)
 
+    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
+    def test_post_auth_required(self, mock_headers):
+        """
+        Test that when the proper authentication information is missing, the server returns a 401 error
+        when RepoResolveDependencies.POST is called
+        """
+        call_status, call_body = self.post('/v2/repositories/repo/actions/resolve_dependencies/')
+        self.assertEqual(401, call_status)
+
+
 class RepoAssociateTests(RepoControllersTests):
 
     def setUp(self):

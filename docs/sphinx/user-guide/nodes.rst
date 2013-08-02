@@ -306,7 +306,7 @@ The synchronization can be requested using the admin client. See: the ``node syn
 
 ::
 
- $ pulp-admin node sync --node-id <node-id>
+ $ pulp-admin node sync run --node-id <node-id>
 
 Scheduling
 ^^^^^^^^^^
@@ -397,7 +397,7 @@ Anywhere Using Admin Client
 
 ::
 
- $ pulp-admin node sync --node-id child-1
+ $ pulp-admin node sync run --node-id child-1
 
 
 Tips & Troubleshooting

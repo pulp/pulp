@@ -67,6 +67,29 @@ class RepoGroupSearchTests(base.PulpWebserviceTests):
         mock_link.assert_called_once_with('rg1')
 
 
+class RepoGroupSearchAuthTests(base.PulpWebserviceTests):
+    """
+    For some reason, these tests aren't discovered while in the RepoGroupSearchTests class.
+    """
+    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
+    def test_search_get_auth(self, mock_headers):
+        """
+        Test that when proper authentication is missing, the server returns a 401 error when
+        RepoGroupSearch.GET is called
+        """
+        call_status, call_body = self.get('/v2/repo_groups/search/')
+        self.assertEqual(401, call_status)
+
+    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
+    def test_search_post_auth(self, mock_headers):
+        """
+        Test that when proper authentication is missing, the server returns a 401 error when
+        RepoGroupSearch.GET is called
+        """
+        call_status, call_body = self.post('/v2/repo_groups/search/')
+        self.assertEqual(401, call_status)
+
+
 class RepoGroupAssociationTests(base.PulpWebserviceTests):
     def setUp(self):
         super(RepoGroupAssociationTests, self).setUp()
@@ -567,6 +590,23 @@ class PublishActionTests(base.PulpWebserviceTests):
 
         # Verify
         self.assertEqual(400, status)
+
+    def test_publish_post_auth(self):
+        """
+        Test that when proper authentication is missing, the server returns a 401 error when
+        PublishAction.POST is called
+        """
+        # Setup. Remove valid authentication information.
+        old_auth = base.PulpWebserviceTests.HEADERS
+        base.PulpWebserviceTests.HEADERS = {}
+
+        # Test that a call results in a 401 status
+        call_status, call_body = self.post('/v2/repo_groups/group_id/actions/publish/')
+        self.assertEqual(401, call_status)
+
+        # Clean up
+        base.PulpWebserviceTests.HEADERS = old_auth
+
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')

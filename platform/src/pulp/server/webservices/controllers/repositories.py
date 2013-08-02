@@ -986,6 +986,7 @@ class RepoResolveDependencies(JSONController):
     # Scope: Actions
     # POST:  Resolve and return dependencies for one or more units
 
+    @auth_required(READ)
     def POST(self, repo_id):
         # Params
         params = self.params()
