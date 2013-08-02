@@ -56,6 +56,7 @@ from pulp_node import constants
 
 
 FAKE_DISTRIBUTOR = 'test_distributor'
+FAKE_ID = 'fake_plugin_id'
 FAKE_DISTRIBUTOR_CONFIG = {'A': 0}
 
 
@@ -638,7 +639,7 @@ class TestEndToEnd(PluginTestBase):
             dist_conf,
             False,
             constants.HTTP_DISTRIBUTOR)
-        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, FAKE_DISTRIBUTOR_CONFIG, False, FAKE_DISTRIBUTOR)
+        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, FAKE_DISTRIBUTOR_CONFIG, False, FAKE_ID)
         # bind
         conf = {constants.STRATEGY_KEYWORD: strategy}
         manager = managers.consumer_bind_manager()
@@ -672,7 +673,7 @@ class TestEndToEnd(PluginTestBase):
         # distributor config changed
         if dist_config is not None:
             manager = managers.repo_distributor_manager()
-            manager.update_distributor_config(self.REPO_ID, FAKE_DISTRIBUTOR, dist_config)
+            manager.update_distributor_config(self.REPO_ID, FAKE_ID, dist_config)
         # clear pulp plugins
         if plugins:
             plugin_api._MANAGER.distributors.plugins = {}
@@ -688,7 +689,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertTrue(manifest_url.endswith('%s/manifest.json' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
-        manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
+        manager.get_distributor(self.REPO_ID, FAKE_ID)
         self.assertRaises(MissingResource, manager.get_distributor, self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         # check units
         manager = managers.repo_unit_association_query_manager()
@@ -1000,7 +1001,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
         manager = managers.repo_distributor_manager()
-        dist = manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
+        dist = manager.get_distributor(self.REPO_ID, FAKE_ID)
         self.assertEqual(dist['config'], FAKE_DISTRIBUTOR_CONFIG)
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
