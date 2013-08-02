@@ -14,7 +14,7 @@
 
 Name: pulp-builtins
 Version: 2.3.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.alpha%{?dist}
 Summary: Pulp builtin extensions
 Group: Development/Languages
 License: GPLv2
@@ -97,6 +97,12 @@ client capabilities.
 
 
 %changelog
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
+- Pulp rebuild
+
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.1.alpha
+- purge changelog
+
 * Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.16.alpha
 - 947445 - allowing consumer ids to allow dots (skarmark@redhat.com)
 - 968543 - remove conditional in pulp_version macro. (jortel@redhat.com)
