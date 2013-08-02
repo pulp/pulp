@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.22.beta%{?dist}
+Release: 0.23.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.23.beta
+- Pulp rebuild
+
 * Fri Jul 26 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.22.beta
 - 976561 - added and explicit pool size for the socket "pool" added a new
   decorator around the query methods that calls end_request in order to manage
