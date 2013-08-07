@@ -24,7 +24,7 @@ from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
     _add_repo_ids_to_consumer_map, _format_report, _get_applicability_map,
     _get_consumer_applicability_map, DoesNotExist, MultipleObjectsReturned,
-    retrieve_consumer_applicability)
+    retrieve_consumer_applicability, ApplicabilityRegenerationManager)
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
 import base
@@ -54,14 +54,16 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
 
-        rpm_pkg_profiler, cfg = plugins.get_profiler_by_type('rpm')
-        rpm_pkg_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                      ['rpm-1', 'rpm-2'])
-        rpm_errata_profiler, cfg = plugins.get_profiler_by_type('erratum')
-        rpm_errata_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                      ['errata-1', 'errata-2'])
+        yum_profiler, cfg = plugins.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
+
+        yum_profiler.metadata = mock.Mock(return_value={'types':['rpm', 'erratum']})
+
+        ApplicabilityRegenerationManager._get_existing_repo_content_types = mock.Mock(return_value= 
+                                                                                        ['rpm','erratum'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -127,7 +129,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
         for applicability in applicability_list:
             self.assertEqual(applicability['applicability'], expected_applicability)
-            self.assertTrue(applicability['profile']['profile'] in [self.PROFILE1, self.PROFILE2])
+            self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
 
     def test_regenerate_applicability_for_consumers_with_same_profiles(self):
         # Setup
@@ -141,7 +143,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(len(applicability_list), 2)
         expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
         for applicability in applicability_list:
-            self.assertEqual(applicability['profile']['profile'], self.PROFILE1)
+            self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
     def test_regenerate_applicability_for_empty_consumer_criteria(self):
@@ -156,7 +158,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(len(applicability_list), 2)
         expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
         for applicability in applicability_list:
-            self.assertEqual(applicability['profile']['profile'], self.PROFILE1)
+            self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
     def test_regenerate_applicability_for_consumer_criteria_no_bindings(self):
@@ -180,10 +182,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
-        self.assertEqual(len(applicability_list), 2)
-        expected_applicability = {'erratum': ['errata-1', u'errata-2']}
-        for applicability in applicability_list:
-            self.assertEqual(applicability['applicability'], expected_applicability)
+        self.assertEqual(len(applicability_list), 0)
 
     # Applicability regeneration with repo criteria
 
@@ -200,7 +199,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
         for applicability in applicability_list:
             self.assertEqual(applicability['applicability'], expected_applicability)
-            self.assertTrue(applicability['profile']['profile'] in [self.PROFILE1, self.PROFILE2])
+            self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
 
     def test_regenerate_applicability_for_repos_with_same_consumer_profiles(self):
         # Setup
@@ -214,7 +213,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(len(applicability_list), 2)
         expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
         for applicability in applicability_list:
-            self.assertEqual(applicability['profile']['profile'], self.PROFILE1)
+            self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
     def test_regenerate_applicability_for_empty_repo_criteria(self):
@@ -229,7 +228,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(len(applicability_list), 2)
         expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
         for applicability in applicability_list:
-            self.assertEqual(applicability['profile']['profile'], self.PROFILE1)
+            self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
     def test_regenerate_applicability_for_repo_criteria_no_bindings(self):
