@@ -115,7 +115,6 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
                 bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
 
     # Applicability regeneration with consumer criteria
- 
     def test_regenerate_applicability_for_consumers_with_different_profiles(self):
         # Setup
         self.populate_consumers_different_profiles()

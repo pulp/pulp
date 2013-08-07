@@ -37,23 +37,6 @@ class InvalidUnitsRequested(Exception):
         self.units = units
         self.message = message
 
-class InvalidUnitTypeForApplicability(Exception):
-    """
-    Raised by calculate_applicable_units when applicability for a unit type is not yet supported.
-    """
-
-    def __init__(self, unit_type_id, message):
-        """
-        :param unit_type_id: unit type id
-        :type  unit_type_id: str
-
-        :param message: suitable message when the operation is aborted
-        :type  message: str
-        """
-        Exception.__init__(self, message)
-        self.unit_type_id = unit_type_id
-        self.message = message
-
 
 class Profiler(object):
     """
@@ -102,9 +85,6 @@ class Profiler(object):
 
         {type_id:"ZIP", unit_key:{"name":"myapp.zip"}}
     """
-
-    # -- plugin lifecycle ------------------------------------------------------
-
     @classmethod
     def metadata(cls):
         """
@@ -126,9 +106,7 @@ class Profiler(object):
         """
         raise NotImplementedError()
 
-    # -- translations ----------------------------------------------------------
-
-    def update_profile(self, consumer, profile, config, conduit):
+    def update_profile(self, consumer, content_type, profile, config):
         """
         Notification that the consumer has reported the installed unit
         profile.  The profiler has this opportunity to translate the
@@ -136,20 +114,16 @@ class Profiler(object):
         should raise an appropriate exception.  See: Profile Translation
         examples in class documentation.
 
-        :param consumer: A consumer.
-        :type consumer: pulp.plugins.model.Consumer
-
-        :param profile: The reported profile.
-        :type profile: list
-
-        :param config: plugin configuration
-        :type config: pulp.plugins.config.PluginCallConfiguration
-
-        :param conduit: provides access to relevant Pulp functionality
-        :type conduit: pulp.plugins.conduits.profiler.ProfilerConduit
-
-        :return: The translated profile.
-        :rtype: list
+        :param consumer:     A consumer.
+        :type  consumer:     pulp.plugins.model.Consumer
+        :param content_type: The content type id that corresponds to the profile
+        :type  content_type: basestring
+        :param profile:      The reported profile.
+        :type  profile:      list
+        :param config:       plugin configuration
+        :type  config:       pulp.plugins.config.PluginCallConfiguration
+        :return:             The translated profile.
+        :rtype:              list
         """
         return profile
 
@@ -261,8 +235,8 @@ class Profiler(object):
 
     def calculate_applicable_units(self, unit_profile, bound_repo_id, config, conduit):
         """
-        Calculate and return a list of content unit ids applicable to consumers with given unit_profile.
-        Applicability is calculated against all content units belonging to the given
+        Calculate and return a list of content unit ids applicable to consumers with given
+        unit_profile. Applicability is calculated against all content units belonging to the given
         bound repository. The definition of "applicable" is content type specific and up to the
         profiler.
 
