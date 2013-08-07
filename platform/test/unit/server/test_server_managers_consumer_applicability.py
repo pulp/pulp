@@ -252,10 +252,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
-        self.assertEqual(len(applicability_list), 2)
-        expected_applicability = {'erratum': ['errata-1', u'errata-2']}
-        for applicability in applicability_list:
-            self.assertEqual(applicability['applicability'], expected_applicability)
+        self.assertEqual(len(applicability_list), 0)
 
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):
