@@ -123,7 +123,10 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
     def test_missing_consumer(self):
         # Test
         manager = factory.consumer_profile_manager()
-        self.assertRaises(MissingResource, manager.update, self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        # self.CONSUMER_ID is not an existing consumer, as it is not built during setUp(), so this
+        # should raise MissingResource
+        self.assertRaises(MissingResource, manager.update, self.CONSUMER_ID, self.TYPE_1,
+                          self.PROFILE_1)
 
     def test_update(self):
         # Setup

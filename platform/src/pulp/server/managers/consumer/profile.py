@@ -62,6 +62,8 @@ class ProfileManager(object):
             # Profiler
             profiler, config = (Profiler(), {})
         consumer = ConsumerQueryManager().find_by_id(consumer_id)
+        if not consumer:
+            raise MissingResource
         # Allow the profiler a chance to update the profile before we save it
         profile = profiler.update_profile(consumer, content_type, profile, config)
 
