@@ -604,7 +604,20 @@ class RepoDistributor(JSONController):
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
+        """
+        Used to update a repo distributor instance. This requires update permissions.
+        The expected parameters are 'distributor_config', which is a dictionary containing configuration
+        values accepted by the distributor type, and 'delta', which is a dictionary containing other
+        configuration values for the distributor (like the auto_publish flag, for example). Currently,
+        the only supported value in the delta is 'auto_publish', which should have a boolean value.
+
+        :param repo_id: The repository ID
+        :type  repo_id: str
+        :param distributor_id: The unique distributor ID of the distributor instance to update.
+        :type  distributor_id: str
+        """
         params = self.params()
+        delta = params.get('delta', None)
         # validate
         manager = manager_factory.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
@@ -616,7 +629,7 @@ class RepoDistributor(JSONController):
                 repo_id)
             raise exceptions.MissingValue(['distributor_config'])
         # update
-        call_requests = distributor_update_itinerary(repo_id, distributor_id, config)
+        call_requests = distributor_update_itinerary(repo_id, distributor_id, config, delta)
         execution.execute_multiple(call_requests)
 
 

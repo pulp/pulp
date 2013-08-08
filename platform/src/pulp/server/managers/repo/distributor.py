@@ -248,27 +248,30 @@ class RepoDistributorManager(object):
         # Update the database to reflect the removal
         distributor_coll.remove({'_id': repo_distributor['_id']}, safe=True)
 
-    def update_distributor_config(self, repo_id, distributor_id, distributor_config):
+    def update_distributor_config(self, repo_id, distributor_id, distributor_config, auto_publish=None):
         """
         Attempts to update the saved configuration for the given distributor.
         The distributor will be asked if the new configuration is valid. If not,
         this method will raise an error and the existing configuration will
         remain unchanged.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
+        :param repo_id: identifies the repo
+        :type  repo_id: str
 
-        @param distributor_id: identifies the distributor on the repo
-        @type  distributor_id: str
+        :param distributor_id: identifies the distributor on the repo
+        :type  distributor_id: str
 
-        @param distributor_config: new configuration values to use
-        @type  distributor_config: dict
+        :param distributor_config: new configuration values to use
+        :type  distributor_config: dict
 
-        @return: the updated distributor
-        @rtype:  dict
+        :param auto_publish: If true, this distributor is used automatically during a sync operation
+        :type auto_publish: bool
 
-        @raise MissingResource: if the given repo or distributor doesn't exist
-        @raise PulpDataException: if the plugin rejects the given changes
+        :return: the updated distributor
+        :rtype:  dict
+
+        :raise MissingResource: if the given repo or distributor doesn't exist
+        :raise PulpDataException: if the plugin rejects the given changes
         """
 
         repo_coll = Repo.get_collection()
@@ -336,6 +339,13 @@ class RepoDistributorManager(object):
 
         if not valid_config:
             raise PulpDataException(message)
+
+        # Confirm that the auto_publish value is sane before updating the value, if if it exists
+        if auto_publish is not None:
+            if isinstance(auto_publish, bool):
+                repo_distributor['auto_publish'] = auto_publish
+            else:
+                raise InvalidValue(['auto_publish'])
 
         # If we got this far, the new config is valid, so update the database
         repo_distributor['config'] = merged_config

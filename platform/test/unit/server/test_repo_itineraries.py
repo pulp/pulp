@@ -129,3 +129,13 @@ class TestDeletes(PulpItineraryTests):
         dist = RepoDistributor.get_collection().find_one({'repo_id' : self.REPO_ID})
         self.assertEqual(new_config, dict(dist['config']))
 
+    def test_distributor_update_auto_publish(self):
+        # Setup
+        self.populate()
+        new_config = {'key': 'value'}
+        delta = {'auto_publish': False}
+        expected_kwargs = {'auto_publish': False, 'distributor_config': new_config}
+
+        # Test that the keyword arguments for the CallRequest contain the expected values
+        itinerary = distributor_update_itinerary(self.REPO_ID, self.DISTRIBUTOR_ID, new_config, delta)
+        self.assertEqual(expected_kwargs, itinerary[0].kwargs)

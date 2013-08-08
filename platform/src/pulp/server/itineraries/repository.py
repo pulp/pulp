@@ -118,15 +118,26 @@ def distributor_delete_itinerary(repo_id, distributor_id):
     return call_requests
 
 
-def distributor_update_itinerary(repo_id, distributor_id, config):
+def distributor_update_itinerary(repo_id, distributor_id, config, delta=None):
     """
     Get the itinerary for updating a repository distributor.
-      1. Update the distributor on the sever.
+      1. Update the distributor on the server.
       2. (re)bind any bound consumers.
-    @param repo_id: A repository ID.
-    @type repo_id: str
-    @return: A list of call_requests known as an itinerary.
-    @rtype list
+
+    :param repo_id:         A repository ID.
+    :type  repo_id:         str
+    :param distributor_id:  A unique distributor id
+    :type  distributor_id:  str
+    :param config:          A configuration dictionary for a distributor instance. The contents of this
+                                dict depends on the type of distributor.
+    :type  config:          dict
+    :param delta:           A dictionary used to change other saved configuration values for a
+                                distributor instance. This currently only supports the 'auto_publish'
+                                keyword, which should have a value of type bool
+    :type  delta:           dict
+
+    :return: A list of call_requests known as an itinerary.
+    :rtype: list
     """
 
     call_requests = []
@@ -141,13 +152,14 @@ def distributor_update_itinerary(repo_id, distributor_id, config):
         action_tag('update_distributor')
     ]
 
-    update_request = CallRequest(
-        manager.update_distributor_config,
-        [repo_id, distributor_id],
-        {'distributor_config': config},
-        tags=tags,
-        archive=True,
-        kwarg_blacklist=['distributor_config'])
+    # Retrieve configuration options from the delta
+    auto_publish = None
+    if delta is not None:
+        auto_publish = delta.get('auto_publish')
+
+    update_request = CallRequest(manager.update_distributor_config, [repo_id, distributor_id],
+                                 {'distributor_config': config, 'auto_publish': auto_publish}, tags=tags,
+                                 archive=True, kwarg_blacklist=['distributor_config', 'auto_publish'])
 
     update_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
     update_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
