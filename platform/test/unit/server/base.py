@@ -25,6 +25,7 @@ srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../../src/"
 sys.path.insert(0, srcdir)
 
 from pulp.common.compat import json
+from pulp.plugins.profiler import Profiler
 from pulp.server import config
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
@@ -58,7 +59,32 @@ def load_test_config():
 
     return config.config
 
-# base unittest class ----------------------------------------------------------
+
+class MockProfiler(Profiler):
+    """
+    We don't want our tests to use real profilers that they discover through the entry point system,
+    so this class is a special Profiler for testing.
+    """
+    def __init__(self, content_types=None):
+        super(MockProfiler, self).__init__()
+        if content_types == None:
+            content_types = []
+        self.__class__.__content_types = content_types
+
+    @classmethod
+    def metadata(cls):
+        return {
+            'id': 'test_profiler',
+            'display_name': 'Test Profiler',
+            'types': cls.__content_types}
+
+
+def mock_get_profiler_by_type(content_type):
+    """
+    Return the superclass Profiler and an empty config.
+    """
+    return MockProfiler(content_type), {}
+
 
 class PulpServerTests(unittest.TestCase):
     """

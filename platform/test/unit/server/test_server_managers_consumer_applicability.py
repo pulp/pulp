@@ -31,6 +31,8 @@ import base
 import mock_plugins
 
 
+@mock.patch('pulp.server.managers.consumer.profile.plugin_api.get_profiler_by_type',
+            base.mock_get_profiler_by_type)
 class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
     CONSUMER_IDS = ['consumer-1', 'consumer-2']
@@ -54,7 +56,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
 
-        yum_profiler, cfg = plugins.get_profiler_by_type('rpm')
+        yum_profiler, cfg = base.mock_get_profiler_by_type('rpm')
         yum_profiler.calculate_applicable_units = \
             mock.Mock(side_effect=lambda p,r,c,x:
                       {'rpm': ['rpm-1', 'rpm-2'],
@@ -62,8 +64,8 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
         yum_profiler.metadata = mock.Mock(return_value={'types':['rpm', 'erratum']})
 
-        ApplicabilityRegenerationManager._get_existing_repo_content_types = mock.Mock(return_value= 
-                                                                                        ['rpm','erratum'])
+        ApplicabilityRegenerationManager._get_existing_repo_content_types = mock.Mock(
+            return_value=['rpm','erratum'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -91,8 +93,8 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             manager.register(id)
         manager = factory.consumer_profile_manager()
         manager.create(self.CONSUMER_IDS[0], 'rpm', self.PROFILE1)
-        manager.create(self.CONSUMER_IDS[1], 'rpm', self.PROFILE2)   
- 
+        manager.create(self.CONSUMER_IDS[1], 'rpm', self.PROFILE2)
+
     def populate_repos(self):
         repo_manager = factory.repo_manager()
         distributor_manager = factory.repo_distributor_manager()
