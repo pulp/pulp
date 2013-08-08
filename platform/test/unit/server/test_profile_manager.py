@@ -19,10 +19,9 @@ import pymongo
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
+import mock_plugins
 
 
-@mock.patch('pulp.server.managers.consumer.profile.plugin_api.get_profiler_by_type',
-            base.mock_get_profiler_by_type)
 class ProfileManagerTests(base.PulpAsyncServerTests):
 
     CONSUMER_ID = 'test-consumer'
@@ -36,6 +35,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         super(ProfileManagerTests, self).setUp()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
+        mock_plugins.install()
 
     def tearDown(self):
         super(ProfileManagerTests, self).tearDown()

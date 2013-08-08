@@ -31,8 +31,6 @@ import base
 import mock_plugins
 
 
-@mock.patch('pulp.server.managers.consumer.profile.plugin_api.get_profiler_by_type',
-            base.mock_get_profiler_by_type)
 class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
     CONSUMER_IDS = ['consumer-1', 'consumer-2']
@@ -56,7 +54,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         plugins._create_manager()
         mock_plugins.install()
 
-        yum_profiler, cfg = base.mock_get_profiler_by_type('rpm')
+        yum_profiler, cfg = plugins.get_profiler_by_type('rpm')
         yum_profiler.calculate_applicable_units = \
             mock.Mock(side_effect=lambda p,r,c,x:
                       {'rpm': ['rpm-1', 'rpm-2'],
