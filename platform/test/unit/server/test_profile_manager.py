@@ -13,14 +13,24 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base
+import mock
 import pymongo
 
+from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
 
-# -- test cases ---------------------------------------------------------------
 
+def get_profiler_by_type(content_type):
+    """
+    Return the superclass Profiler and an empty config.
+    """
+    return Profiler(), {}
+
+
+@mock.patch('pulp.server.managers.consumer.profile.plugin_api.get_profiler_by_type',
+            get_profiler_by_type)
 class ProfileManagerTests(base.PulpAsyncServerTests):
 
     CONSUMER_ID = 'test-consumer'
