@@ -10,7 +10,7 @@ optionally specify an array of content types to which they wish to limit the
 applicability data.
 
 .. note::
-   The criteria is used by this API to select which consumers for which Pulp
+   The criteria is used by this API to select the consumers for which Pulp
    needs to find applicability data. The ``sort`` option can be used in
    conjunction with ``limit`` and ``skip`` for pagination, but the ``sort``
    option will not influence the ordering of the returned applicability reports
@@ -20,7 +20,7 @@ The applicability API will return an array of objects in its response. Each
 object will contain two keys, ``consumers`` and ``applicability``.
 ``consumers`` will index an array of consumer ids. These grouped consumer ids
 will allow Pulp to collate consumers that have the same applicability together.
-``applicability`` will index an object. The applicability object will contains
+``applicability`` will index an object. The applicability object will contain
 content types as keys, and each content type will index an array of unit ids.
 
 Each *applicability report* is an object:
