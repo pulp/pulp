@@ -1359,7 +1359,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    def test_regenerate_applicability_no_consumer(self):
+    def test_regenerate_applicability_no_consumers(self):
         # Test
         request_body = dict(consumer_criteria={'filters':self.FILTER})
         status, body = self.post(self.PATH, request_body)
@@ -1379,6 +1379,18 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
+    def test_regenerate_applicability_no_criteria(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = {}
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertTrue('missing_property_names' in body)
+        self.assertTrue(body['missing_property_names'] == ['consumer_criteria'])
+        self.assertFalse('task_id' in body)
+
     def test_regenerate_applicability_wrong_criteria(self):
         # Setup
         self.populate()
@@ -1387,6 +1399,8 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 400)
+        self.assertTrue('property_names' in body)
+        self.assertTrue(body['property_names'] == ['consumer_criteria'])
         self.assertFalse('task_id' in body)
 
 

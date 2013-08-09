@@ -661,18 +661,20 @@ class ContentApplicabilityRegeneration(JSONController):
     @auth_required(CREATE)
     def POST(self):
         """
-        Regenerate content applicability.
+        Creates an async task to regenerate content applicability data for given consumers.
+
         body {
         consumer_criteria:<dict>,
         }
         """
         body = self.params()
-        consumer_criteria = body.get('consumer_criteria', {})
+        consumer_criteria = body.get('consumer_criteria', None)
+        if consumer_criteria is None:
+            raise MissingValue('consumer_criteria')
         try:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
         except:
-            _LOG.error('Error parsing consumer criteria [%s]' % consumer_criteria)
-            raise PulpDataException(), None, sys.exc_info()[2]
+            raise InvalidValue('consumer_criteria')
 
         manager = managers.applicability_regeneration_manager()
         call_request = CallRequest(manager.regenerate_applicability_for_consumers,
