@@ -245,6 +245,81 @@ The details of the added distributor are returned from the call.
  }
 
 
+Update a Distributor Associated with a Repository
+-------------------------------------------------
+
+Update the configuration for a :term:`distributor` that has already been associated with a
+repository. This performs the following actions:
+
+1. Updates the distributor on the server.
+2. Rebinds any bound consumers.
+
+Any distributor configuration value that is not specified remains unchanged.
+
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+However, each :ref:`bind` is itself performed in multiple steps.  The total number of returned
+call_requests depends on how many consumers are bound to the repository.
+
+| :method:`put`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
+| :permission:`update`
+
+| :response_list:`_`
+
+* :response_code:`202,if the request was accepted by the server to update the distributor
+  when the repository is available`
+* :response_code:`404,if there is no repository or distributor with the specified IDs`
+* :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
+  in the future`
+
+| :return:`A call report list`
+
+:sample_request:`_` ::
+
+ {
+  "distributor_config": {
+    "demo_key": "demo_value"
+  },
+  "delta": {
+    "auto_publish": true
+  }
+ }
+
+:sample_response:`202` ::
+
+ [
+  {
+   "task_group_id": "bf828f3f-505f-4a1d-8a32-fb2c8b679d6d",
+   "call_request_id": "6c22d630-786a-492c-a2e3-db0dafabf160",
+   "exception": null,
+   "_href": "/pulp/api/v2/task_groups/bf828f3f-505f-4a1d-8a32-fb2c8b679d6d/",
+   "task_id": "6c22d630-786a-492c-a2e3-db0dafabf160",
+   "call_request_tags": [
+     "pulp:repository:demo-repo",
+     "pulp:repository_distributor:demo_distributor",
+     "pulp:action:update_distributor"
+   ],
+   "reasons": [],
+   "start_time": null,
+   "traceback": null,
+   "schedule_id": null,
+   "finish_time": null,
+   "state": "waiting",
+   "result": null,
+   "dependency_failures": {},
+   "call_request_group_id": "bf828f3f-505f-4a1d-8a32-fb2c8b679d6d",
+   "progress": {},
+   "principal_login": "admin",
+   "response": "accepted",
+   "tags": [
+     "pulp:repository:demo-repo",
+     "pulp:repository_distributor:demo_distributor",
+     "pulp:action:update_distributor"
+   ]
+  }
+ ]
+
+
 .. _distributor_disassociate:
 
 Disassociate a Distributor from a Repository

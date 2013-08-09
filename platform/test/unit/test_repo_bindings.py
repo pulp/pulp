@@ -15,7 +15,9 @@ import unittest
 
 import mock
 
-from pulp.bindings.repository import RepositorySearchAPI, RepositoryUnitAPI
+from pulp.bindings.server import PulpConnection
+from pulp.bindings.repository import RepositorySearchAPI, RepositoryUnitAPI, RepositoryDistributorAPI
+
 
 class TestRepoSearchAPI(unittest.TestCase):
     def test_path_defined(self):
@@ -104,3 +106,20 @@ class TestRepoUnitCopyAPI(unittest.TestCase):
         self.api.copy('repo1', 'repo2', type_ids=['rpm'])
         self.assertEqual(self.api.server.POST.call_args[0][1].get('source_repo_id', None), 'repo1')
 
+
+class TestRepositoryDistributorAPI(unittest.TestCase):
+    """
+    Tests for the RepositoryDistributorAPI.
+    """
+    def setUp(self):
+        self.api = RepositoryDistributorAPI(mock.MagicMock(spec=PulpConnection))
+
+    def test_update(self):
+        # Setup
+        expected_path = self.api.base_path % 'test-repo' + 'test-distributor/'
+        expected_body = {'distributor_config': {'key': 'value'}, 'delta': {'auto_publish': True}}
+
+        # Test
+        result = self.api.update('test-repo', 'test-distributor', {'key': 'value'}, {'auto_publish': True})
+        self.api.server.PUT.assert_called_once_with(expected_path, expected_body)
+        self.assertEqual(result, self.api.server.PUT.return_value)

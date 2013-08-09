@@ -380,6 +380,29 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         call_config = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][1]
         self.assertEqual(expected_config, call_config.repo_plugin_config)
 
+    def test_update_auto_publish(self):
+        # Setup
+        self.repo_manager.create_repo('test-repo')
+        config = {'key': 'value'}
+        distributor = self.distributor_manager.add_distributor('test-repo', 'mock-distributor', config,
+                                                               True)
+
+        # Test
+        self.distributor_manager.update_distributor_config('test-repo', distributor['id'], {}, False)
+        repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'test-repo'})
+        self.assertFalse(repo_dist['auto_publish'])
+
+    def test_update_invalid_auto_publish(self):
+        # Setup
+        self.repo_manager.create_repo('test-repo')
+        config = {'key': 'value'}
+        distributor = self.distributor_manager.add_distributor('test-repo', 'mock-distributor', config,
+                                                               True)
+
+        # Test that an exception is raised if you hand update_distributor_config a bad auto_publish
+        self.assertRaises(exceptions.InvalidValue, self.distributor_manager.update_distributor_config,
+                          'test-repo', distributor['id'], {}, 'notbool')
+
     def test_update_missing_repo(self):
         """
         Tests updating the distributor config on a repo that doesn't exist.
