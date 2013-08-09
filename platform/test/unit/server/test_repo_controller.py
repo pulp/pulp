@@ -1677,6 +1677,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('pulp:action:applicability_regeneration' in body['tags'])
 
     def test_regenerate_applicability_no_consumer(self):
         # Test

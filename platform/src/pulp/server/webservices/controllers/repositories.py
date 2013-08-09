@@ -1041,10 +1041,13 @@ class ContentApplicabilityRegeneration(JSONController):
             raise exceptions.InvalidValue('repo_criteria')
 
         manager = manager_factory.applicability_regeneration_manager()
-        install_tag = action_tag('applicability_regeneration')
+        regeneration_tag = action_tag('applicability_regeneration')
         call_request = CallRequest(manager.regenerate_applicability_for_repos,
                                    [repo_criteria],
-                                   tags = [install_tag])
+                                   tags = [regeneration_tag])
+        # allow only one applicability regeneration task at a time
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                      dispatch_constants.RESOURCE_ANY_ID)
         return execution.execute_async(self, call_request)
 
 # -- web.py application -------------------------------------------------------
