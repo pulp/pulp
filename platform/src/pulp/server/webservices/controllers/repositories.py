@@ -1020,28 +1020,31 @@ class RepoUnitAdvancedSearch(JSONController):
     
 class ContentApplicabilityRegeneration(JSONController):
     """
-    Content applicability regeneration for updated repositories
+    Content applicability regeneration for updated repositories.
     """
 
     @auth_required(CREATE)
     def POST(self):
         """
-        Regenerate content applicability for given repositories.
-        body {
-        repo_criteria:<dict>,
-        }
+        Creates an async task to regenerate content applicability data for given updated
+        repositories.
+
+        body {repo_criteria:<dict>}
         """
         body = self.params()
-        repo_criteria = body.get('repo_criteria', {})
+        repo_criteria = body.get('repo_criteria', None)
+        if repo_criteria is None:
+            raise exceptions.MissingValue('repo_criteria')
         try:
             repo_criteria = Criteria.from_client_input(repo_criteria)
         except:
-            _LOG.error('Error parsing consumer criteria [%s]' % repo_criteria)
-            raise exceptions.PulpDataException(), None, sys.exc_info()[2]
+            raise exceptions.InvalidValue('repo_criteria')
 
         manager = manager_factory.applicability_regeneration_manager()
+        install_tag = action_tag('applicability_regeneration')
         call_request = CallRequest(manager.regenerate_applicability_for_repos,
-                                   [repo_criteria])
+                                   [repo_criteria],
+                                   tags = [install_tag])
         return execution.execute_async(self, call_request)
 
 # -- web.py application -------------------------------------------------------

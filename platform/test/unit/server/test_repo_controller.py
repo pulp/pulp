@@ -1621,14 +1621,11 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
 
-        rpm_pkg_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
-        rpm_pkg_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                 ['rpm-1', 'rpm-2'])
-        rpm_errata_profiler, cfg = plugin_api.get_profiler_by_type('erratum')
-        rpm_errata_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                 ['errata-1', 'errata-2'])
+        yum_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
@@ -1701,13 +1698,26 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
+    def test_regenerate_applicability_no_criteria(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = {}
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertTrue('missing_property_names' in body)
+        self.assertTrue(body['missing_property_names'] == ['repo_criteria'])
+        self.assertFalse('task_id' in body)
+
     def test_regenerate_applicability_wrong_criteria(self):
         # Setup
         self.populate()
         # Test
         request_body = dict(repo_criteria='foo')
-        status, body = self.post(self.PATH, request_body)      
+        status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 400)
+        self.assertTrue('property_names' in body)
+        self.assertTrue(body['property_names'] == ['repo_criteria'])
         self.assertFalse('task_id' in body)
-

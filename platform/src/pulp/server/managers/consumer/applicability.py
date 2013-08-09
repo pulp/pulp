@@ -35,7 +35,7 @@ class ApplicabilityRegenerationManager(object):
     @staticmethod
     def regenerate_applicability_for_consumers(consumer_criteria):
         """
-        Regenerate and save applicability data for given consumers
+        Regenerate and save applicability data for given updated consumers.
 
         :param consumer_criteria: The consumer selection criteria
         :type consumer_criteria: dict
@@ -49,11 +49,13 @@ class ApplicabilityRegenerationManager(object):
         consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
 
         for consumer_id in consumer_ids:
-            # Get all consumer unit profiles
+            # Get all unit profiles for the consumer
             unit_profiles = consumer_profile_manager.get_profiles(consumer_id)
             # Get all repo ids bound to the consumer
             criteria = Criteria(filters={'consumer_id': consumer_id}, fields=['repo_id'])
             bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
+            if not bound_repo_ids:
+                continue
 
             # Regenerate applicability for each unit profile that supports applicability
             for unit_profile in unit_profiles:
@@ -65,7 +67,7 @@ class ApplicabilityRegenerationManager(object):
     @staticmethod
     def regenerate_applicability_for_repos(repo_criteria=None):
         """
-        Regenerate and save applicability data affected by given repositories
+        Regenerate and save applicability data affected by given updated repositories.
 
         :param repo_criteria: The repo selection criteria
         :type repo_criteria: dict
@@ -77,21 +79,25 @@ class ApplicabilityRegenerationManager(object):
 
         # Process repo criteria
         criteria_repo_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
+        if not criteria_repo_ids:
+            return
 
         # Get consumers bound to given repositories
         criteria = Criteria(filters={'repo_id': {'$in': criteria_repo_ids}}, fields=['consumer_id'])
         consumer_ids = [b['consumer_id'] for b in bind_manager.find_by_criteria(criteria)]
-        # Remove dumplicate consumer ids
+        # Remove duplicate consumer ids
         consumer_ids = list(set(consumer_ids))
 
         for consumer_id in consumer_ids:
-            # Get consumer unit profiles
+            # Get all unit profiles for the consumer
             unit_profiles = consumer_profile_manager.get_profiles(consumer_id)
             # Get repositories from criteria_repo_ids that are bound to this consumer 
             criteria = Criteria(filters={'repo_id': {'$in': criteria_repo_ids},
                                          'consumer_id': consumer_id},
                                 fields=['repo_id'])
             bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
+            if not bound_repo_ids:
+                continue
 
             # Regenerate applicability for each unit profile that supports applicability
             for unit_profile in unit_profiles:
@@ -122,6 +128,7 @@ class ApplicabilityRegenerationManager(object):
         # Get the profiler for content_type of given unit_profile
         profiler, profiler_cfg = ApplicabilityRegenerationManager.__profiler(unit_profile['content_type'])
         call_config = PluginCallConfiguration(plugin_config=profiler_cfg, repo_plugin_config=None)
+
         # Check if the profiler supports applicability, else return
         if profiler.calculate_applicable_units == Profiler.calculate_applicable_units:
             # If base class calculate_applicable_units method is called, skip applicability regeneration

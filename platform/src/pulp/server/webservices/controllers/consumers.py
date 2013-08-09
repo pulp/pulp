@@ -655,7 +655,7 @@ class ContentApplicability(JSONController):
 
 class ContentApplicabilityRegeneration(JSONController):
     """
-    Content applicability regeneration for consumers
+    Content applicability regeneration for updated consumers.
     """
 
     @auth_required(CREATE)
@@ -663,9 +663,7 @@ class ContentApplicabilityRegeneration(JSONController):
         """
         Creates an async task to regenerate content applicability data for given consumers.
 
-        body {
-        consumer_criteria:<dict>,
-        }
+        body {consumer_criteria:<dict>}
         """
         body = self.params()
         consumer_criteria = body.get('consumer_criteria', None)
@@ -677,8 +675,10 @@ class ContentApplicabilityRegeneration(JSONController):
             raise InvalidValue('consumer_criteria')
 
         manager = managers.applicability_regeneration_manager()
+        install_tag = action_tag('applicability_regeneration')
         call_request = CallRequest(manager.regenerate_applicability_for_consumers,
-                                   [consumer_criteria])
+                                   [consumer_criteria],
+                                   tags=[install_tag])
         return execution.execute_async(self, call_request)
 
 

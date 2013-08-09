@@ -1299,14 +1299,11 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         plugin_api._create_manager()
         mock_plugins.install()
 
-        rpm_pkg_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
-        rpm_pkg_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                 ['rpm-1', 'rpm-2'])
-        rpm_errata_profiler, cfg = plugin_api.get_profiler_by_type('erratum')
-        rpm_errata_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda t,p,r,c,x:
-                 ['errata-1', 'errata-2'])
+        yum_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
