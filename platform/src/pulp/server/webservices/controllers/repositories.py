@@ -609,7 +609,7 @@ class RepoDistributor(JSONController):
         The expected parameters are 'distributor_config', which is a dictionary containing configuration
         values accepted by the distributor type, and 'delta', which is a dictionary containing other
         configuration values for the distributor (like the auto_publish flag, for example). Currently,
-        the only supported value in the delta is 'auto_publish', which should have a boolean value.
+        the only supported key in the delta is 'auto_publish', which should have a boolean value.
 
         :param repo_id:         The repository ID
         :type  repo_id:         str

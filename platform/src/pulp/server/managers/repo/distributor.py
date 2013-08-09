@@ -340,7 +340,7 @@ class RepoDistributorManager(object):
         if not valid_config:
             raise PulpDataException(message)
 
-        # Confirm that the auto_publish value is sane before updating the value, if if it exists
+        # Confirm that the auto_publish value is sane before updating the value, if it exists
         if auto_publish is not None:
             if isinstance(auto_publish, bool):
                 repo_distributor['auto_publish'] = auto_publish
