@@ -240,11 +240,11 @@ class RepositoryDistributorAPI(PulpAPI):
         :param distributor_id:      The unique distributor id
         :type distributor_id:       str
         :param distributor_config:  The distributor config dictionary. Supported values depend on the
-                                        type of distributor
+                                    type of distributor
         :type distributor_config:   dict
         :param delta:               A dictionary with values to change in the distributor configuration.
-                                        Currently, only 'auto_publish' is supported, and should be a
-                                        boolean value
+                                    Currently, only 'auto_publish' is supported, and should be a
+                                    boolean value
         :type  delta:               dict
         """
         path = self.base_path % repo_id + "%s/" % distributor_id

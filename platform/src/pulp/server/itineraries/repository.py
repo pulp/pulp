@@ -129,11 +129,11 @@ def distributor_update_itinerary(repo_id, distributor_id, config, delta=None):
     :param distributor_id:  A unique distributor id
     :type  distributor_id:  str
     :param config:          A configuration dictionary for a distributor instance. The contents of this
-                                dict depends on the type of distributor.
+                            dict depends on the type of distributor.
     :type  config:          dict
     :param delta:           A dictionary used to change other saved configuration values for a
-                                distributor instance. This currently only supports the 'auto_publish'
-                                keyword, which should have a value of type bool
+                            distributor instance. This currently only supports the 'auto_publish'
+                            keyword, which should have a value of type bool
     :type  delta:           dict
 
     :return: A list of call_requests known as an itinerary.

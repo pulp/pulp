@@ -611,10 +611,10 @@ class RepoDistributor(JSONController):
         configuration values for the distributor (like the auto_publish flag, for example). Currently,
         the only supported value in the delta is 'auto_publish', which should have a boolean value.
 
-        :param repo_id: The repository ID
-        :type  repo_id: str
-        :param distributor_id: The unique distributor ID of the distributor instance to update.
-        :type  distributor_id: str
+        :param repo_id:         The repository ID
+        :type  repo_id:         str
+        :param distributor_id:  The unique distributor ID of the distributor instance to update.
+        :type  distributor_id:  str
         """
         params = self.params()
         delta = params.get('delta', None)
