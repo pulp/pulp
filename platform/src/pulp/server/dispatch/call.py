@@ -147,22 +147,26 @@ class CallRequest(object):
 
     # convenient resources management ------------------------------------------
 
-    def creates_resource(self, resource_type, resource_id):
+    # In each of the following methods, if resource_id is not supplied by the caller,
+    # it is set to dispatch_constants.RESOURCE_ANY_ID to support resource locking
+    # for all resources of specific type
+
+    def creates_resource(self, resource_type, resource_id=dispatch_constants.RESOURCE_ANY_ID):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
         operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_CREATE_OPERATION, {})
         operation_dict.setdefault(resource_type, []).append(resource_id)
 
-    def reads_resource(self, resource_type, resource_id):
+    def reads_resource(self, resource_type, resource_id=dispatch_constants.RESOURCE_ANY_ID):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
         operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_READ_OPERATION, {})
         operation_dict.setdefault(resource_type, []).append(resource_id)
 
-    def updates_resource(self, resource_type, resource_id):
+    def updates_resource(self, resource_type, resource_id=dispatch_constants.RESOURCE_ANY_ID):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
         operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_UPDATE_OPERATION, {})
         operation_dict.setdefault(resource_type, []).append(resource_id)
 
-    def deletes_resource(self, resource_type, resource_id):
+    def deletes_resource(self, resource_type, resource_id=dispatch_constants.RESOURCE_ANY_ID):
         assert resource_type in dispatch_constants.RESOURCE_TYPES
         operation_dict = self.resources.setdefault(dispatch_constants.RESOURCE_DELETE_OPERATION, {})
         operation_dict.setdefault(resource_type, []).append(resource_id)
