@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
-import sys
 
 import web
 from web.webapi import BadRequest
@@ -24,7 +23,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, PulpDataException
+from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)

@@ -225,7 +225,7 @@ def migration_tracker_manager():
     """
     @rtype: L{pulp.server.managers.migration_tracker.MigrationTrackerManager}
     """
-    return get_manager(TYPE_MIGRATION_MANAGER)
+    return get_manager(TYPE_MIGRATION_TRACKER)
 
 def password_manager():
     """
