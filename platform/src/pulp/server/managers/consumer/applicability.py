@@ -27,7 +27,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 
-logger = getLogger(__name__)
+_LOG = getLogger(__name__)
 
 
 class ApplicabilityRegenerationManager(object):
@@ -147,7 +147,7 @@ class ApplicabilityRegenerationManager(object):
                                                                         call_config,
                                                                         profiler_conduit)
                 except NotImplementedError:
-                    logger.warn("Profiler for content type [%s] does not support applicability" %
+                    _LOG.warn("Profiler for content type [%s] does not support applicability" %
                                 unit_profile['content_type'])
                     continue
 
