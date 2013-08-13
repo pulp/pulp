@@ -135,7 +135,7 @@ class PulpCollection(Collection):
     applications
     """
 
-    _decorated_methods = ('get_last_error_options', 'set_last_error_options', 'unset_last_error_options',
+    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options', 'unset_lasterror_options',
                           'insert', 'save', 'update', 'remove', 'drop', 'find', 'find_one', 'count',
                           'create_index', 'ensure_index', 'drop_index', 'drop_indexes', 'reindex',
                           'index_information', 'options', 'group', 'rename', 'distinct', 'map_reduce',
