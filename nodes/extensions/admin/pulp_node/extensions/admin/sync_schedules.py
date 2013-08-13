@@ -16,7 +16,9 @@ from pulp.client.commands.schedule import (
     DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
     UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
 
-from pulp_node.extensions.admin.options import NODE_ID_OPTION
+from pulp_node import constants
+from pulp_node.extensions.admin.options import NODE_ID_OPTION, MAX_BANDWIDTH_OPTION, MAX_CONCURRENCY_OPTION
+
 
 # -- constants ----------------------------------------------------------------
 
@@ -29,46 +31,45 @@ DESC_NEXT_RUN = _('displays the next scheduled sync run for a child node')
 # A node sync is considered an update operation on the REST API
 SYNC_OPERATION = 'update'
 
+
 # -- commands -----------------------------------------------------------------
 
 class NodeListScheduleCommand(ListScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(self.__class__, self).__init__(context, strategy,
-                                                      description=DESC_LIST)
+        super(self.__class__, self).__init__(context, strategy, description=DESC_LIST)
         self.add_option(NODE_ID_OPTION)
 
 
 class NodeCreateScheduleCommand(CreateScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(self.__class__, self).__init__(context, strategy,
-                                                        description=DESC_CREATE)
+        super(self.__class__, self).__init__(context, strategy, description=DESC_CREATE)
         self.add_option(NODE_ID_OPTION)
+        self.add_option(MAX_BANDWIDTH_OPTION)
+        self.add_option(MAX_CONCURRENCY_OPTION)
 
 
 class NodeDeleteScheduleCommand(DeleteScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(self.__class__, self).__init__(context, strategy,
-                                                        description=DESC_DELETE)
+        super(self.__class__, self).__init__(context, strategy, description=DESC_DELETE)
         self.add_option(NODE_ID_OPTION)
 
 
 class NodeUpdateScheduleCommand(UpdateScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(self.__class__, self).__init__(context, strategy,
-                                                        description=DESC_UPDATE)
+        super(self.__class__, self).__init__(context, strategy, description=DESC_UPDATE)
         self.add_option(NODE_ID_OPTION)
 
 
 class NodeNextRunCommand(NextRunCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
-        super(self.__class__, self).__init__(context, strategy,
-                                                 description=DESC_NEXT_RUN)
+        super(self.__class__, self).__init__(context, strategy, description=DESC_NEXT_RUN)
         self.add_option(NODE_ID_OPTION)
+
 
 # -- framework classes --------------------------------------------------------
 
@@ -83,14 +84,21 @@ class NodeSyncScheduleStrategy(ScheduleStrategy):
 
     def create_schedule(self, schedule, failure_threshold, enabled, kwargs):
         node_id = kwargs[NODE_ID_OPTION.keyword]
-
-        # Eventually we'll support passing in sync arguments to the scheduled
-        # call. When we do, override_config will be created here from kwargs.
-        options = {}
-        units = {'unit_key': None, 'type_id': 'node'} # entire node
-
-        return self.api.add_schedule(SYNC_OPERATION, node_id, schedule, units, failure_threshold,
-                                     enabled, options)
+        max_bandwidth = kwargs[MAX_BANDWIDTH_OPTION.keyword]
+        max_concurrency = kwargs[MAX_CONCURRENCY_OPTION.keyword]
+        units = [dict(type_id='node', unit_key=None)]
+        options = {
+            constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: max_bandwidth,
+            constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: max_concurrency,
+        }
+        return self.api.add_schedule(
+            SYNC_OPERATION,
+            node_id,
+            schedule,
+            units,
+            failure_threshold,
+            enabled,
+            options)
 
     def delete_schedule(self, schedule_id, kwargs):
         node_id = kwargs[NODE_ID_OPTION.keyword]
