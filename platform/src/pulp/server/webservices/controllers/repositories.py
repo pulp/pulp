@@ -1046,7 +1046,8 @@ class ContentApplicabilityRegeneration(JSONController):
                                    [repo_criteria],
                                    tags = [regeneration_tag])
         # allow only one applicability regeneration task at a time
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                      dispatch_constants.RESOURCE_ANY_ID)
         return execution.execute_async(self, call_request)
 
 # -- web.py application -------------------------------------------------------
