@@ -75,40 +75,40 @@ class PulpCollectionFailure(PulpException):
     """
 
 
-def _retry_decorator(method):
+def _retry_decorator(full_name=None, retries=0):
     """
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
     """
 
-    # 'self' is not passed into the method below as the super call in the
-    # constructor has already bound self to the method
-    self = method.im_self
+    def _decorator(method):
 
-    @wraps(method)
-    def retry(*args, **kwargs):
+        @wraps(method)
+        def retry(*args, **kwargs):
 
-        tries = 0
+            tries = 0
 
-        while tries <= self.retries:
+            while tries <= retries:
 
-            try:
-                return method(*args, **kwargs)
+                try:
+                    return method(*args, **kwargs)
 
-            except AutoReconnect:
-                tries += 1
+                except AutoReconnect:
+                    tries += 1
 
-                _LOG.warn(_('%s operation failed on %s: tries remaining: %d') %
-                          (method.__name__, self.full_name, self.retries - tries + 1))
+                    _LOG.warn(_('%s operation failed on %s: tries remaining: %d') %
+                              (method.__name__, full_name, retries - tries + 1))
 
-                if tries <= self.retries:
-                    time.sleep(0.3)
+                    if tries <= retries:
+                        time.sleep(0.3)
 
-        raise PulpCollectionFailure(
-            _('%s operation failed on %s: database connection still down after %d tries') %
-            (method.__name__, self.full_name, (self.retries + 1)))
+            raise PulpCollectionFailure(
+                _('%s operation failed on %s: database connection still down after %d tries') %
+                (method.__name__, full_name, (retries + 1)))
 
-    return retry
+        return retry
+
+    return _decorator
 
 
 def _end_request_decorator(method):
@@ -147,7 +147,7 @@ class PulpCollection(Collection):
         self.retries = retries
 
         for m in self._decorated_methods:
-            setattr(self, m, _retry_decorator(getattr(self, m)))
+            setattr(self, m, _retry_decorator(self.full_name, self.retries)(getattr(self, m)))
             setattr(self, m, _end_request_decorator(getattr(self, m)))
 
     def __getstate__(self):
