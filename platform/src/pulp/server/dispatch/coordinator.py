@@ -348,10 +348,9 @@ class Coordinator(object):
         rejecting_call_requests = set()
         rejecting_reasons = []
 
-        call_resource_collection = CallResource.get_collection()
         call_resources = resource_dict_to_call_resources(resources)
         or_query = filter_dicts(call_resources, ('resource_type', 'resource_id'))
-        cursor = call_resource_collection.find({'$or': or_query})
+        cursor = self.call_resource_collection.find({'$or': or_query})
 
         for call_resource in cursor:
             proposed_operation = resources[call_resource['resource_type']][call_resource['resource_id']]
