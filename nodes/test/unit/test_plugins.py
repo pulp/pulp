@@ -702,7 +702,6 @@ class TestEndToEnd(PluginTestBase):
         # distributor
         manager = managers.repo_distributor_manager()
         manager.get_distributor(self.REPO_ID, FAKE_ID)
-        self.assertRaises(MissingResource, manager.get_distributor, self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
