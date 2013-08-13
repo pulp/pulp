@@ -989,7 +989,8 @@ class RepoDistributorTests(RepoPluginsTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.webservices.controllers.repositories.distributor_update_itinerary', wraps=distributor_update_itinerary)
+    @mock.patch('pulp.server.webservices.controllers.repositories.distributor_update_itinerary',
+                wraps=distributor_update_itinerary)
     @mock.patch('pulp.server.itineraries.repository.bind_itinerary', wraps=bind_itinerary)
     @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_distributor')
     def test_update(self, mock_find, mock_bind_itinerary, mock_update_itinerary):
@@ -1030,9 +1031,29 @@ class RepoDistributorTests(RepoPluginsTests):
             self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # verify itineraries called
-        mock_update_itinerary.assert_called_with(repo_id, distributor_id, new_config)
+        mock_update_itinerary.assert_called_with(repo_id, distributor_id, new_config, None)
         mock_bind_itinerary.assert_called_with(consumer_id, repo_id, distributor_id, notify_agent,
                                                binding_config, {})
+
+    @mock.patch('pulp.server.webservices.controllers.repositories.distributor_update_itinerary',
+                wraps=distributor_update_itinerary)
+    def test_update_auto_publish(self, mock_update_itinerary):
+
+        # Setup
+        repo_id = 'test-repo'
+        distributor_id = 'test-distributor'
+        self.repo_manager.create_repo(repo_id)
+        self.distributor_manager.add_distributor(repo_id, 'dummy-distributor', {}, True,
+                                                 distributor_id)
+        new_config = {'key': 'updated'}
+        delta = {'auto_publish': False}
+        body = {'distributor_config': new_config, 'delta': delta}
+        path = '/v2/repositories/%s/distributors/%s/' % (repo_id, distributor_id)
+
+        # Test
+        status, body = self.put(path, params=body)
+        mock_update_itinerary.assert_called_once_with(repo_id, distributor_id, new_config, delta)
+        self.assertEqual(202, status)
 
     def test_update_bad_request(self):
         """
@@ -1333,6 +1354,16 @@ class DependencyResolutionTests(RepoControllersTests):
         # Verify
         self.assertEqual(400, status)
         self.assertEqual(0, mock_resolve_method.call_count)
+
+    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
+    def test_post_auth_required(self, mock_headers):
+        """
+        Test that when the proper authentication information is missing, the server returns a 401 error
+        when RepoResolveDependencies.POST is called
+        """
+        call_status, call_body = self.post('/v2/repositories/repo/actions/resolve_dependencies/')
+        self.assertEqual(401, call_status)
+
 
 class RepoAssociateTests(RepoControllersTests):
 

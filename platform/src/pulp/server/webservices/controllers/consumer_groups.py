@@ -236,7 +236,7 @@ class ConsumerGroupBindings(JSONController):
     is idempotent.
     """
 
-    #@auth_required(READ)
+    @auth_required(authorization.READ)
     def GET(self, consumer_group_id, repo_id=None):
         """
         Fetch all bind objects referencing the

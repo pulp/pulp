@@ -78,12 +78,14 @@ class RepoGroupSearch(SearchController):
         super(RepoGroupSearch, self).__init__(
             managers_factory.repo_group_query_manager().find_by_criteria)
 
+    @auth_required(authorization.READ)
     def GET(self):
         items = self._get_query_results_from_get()
         for item in items:
             item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
+    @auth_required(authorization.READ)
     def POST(self):
         items = self._get_query_results_from_post()
         for item in items:
@@ -288,6 +290,7 @@ class PublishAction(JSONController):
     # Scope: Action
     # POST: Trigger a group publish
 
+    @auth_required(authorization.EXECUTE)
     def POST(self, repo_group_id):
         params = self.params()
         distributor_id = params.get('id', None)

@@ -70,8 +70,4 @@ class Context(object):
         """
         value = config.get('messaging', option)
         initial, duration = value.split(':')
-        if initial:
-            initial = int(initial)
-        if duration:
-            duration = int(duration)
-        return (initial, duration)
+        return initial, duration

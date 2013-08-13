@@ -231,9 +231,24 @@ class RepositoryDistributorAPI(PulpAPI):
         path = self.base_path % repo_id + "%s/" % distributor_id
         return self.server.DELETE(path)
 
-    def update(self, repo_id, distributor_id, distributor_config):
+    def update(self, repo_id, distributor_id, distributor_config, delta=None):
+        """
+        Update a repository distributor configuration.
+
+        :param repo_id:             The repository ID
+        :type repo_id:              str
+        :param distributor_id:      The unique distributor id
+        :type distributor_id:       str
+        :param distributor_config:  The distributor config dictionary. Supported values depend on the
+                                    type of distributor
+        :type distributor_config:   dict
+        :param delta:               A dictionary with values to change in the distributor configuration.
+                                    Currently, only 'auto_publish' is supported, and should be a
+                                    boolean value
+        :type  delta:               dict
+        """
         path = self.base_path % repo_id + "%s/" % distributor_id
-        body = dict(distributor_config=distributor_config)
+        body = dict(distributor_config=distributor_config, delta=delta)
         return self.server.PUT(path, body)
 
 
