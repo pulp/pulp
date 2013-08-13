@@ -135,9 +135,11 @@ class PulpCollection(Collection):
     applications
     """
 
-    _decorated_methods = ('insert', 'save', 'update', 'remove', 'drop', 'find',
-                          'find_one', 'count', 'create_index', 'ensure_index',
-                          'drop_index', 'drop_indexes', 'group', 'rename', 'map_reduce')
+    _decorated_methods = ('get_last_error_options', 'set_last_error_options', 'unset_last_error_options',
+                          'insert', 'save', 'update', 'remove', 'drop', 'find', 'find_one', 'count',
+                          'create_index', 'ensure_index', 'drop_index', 'drop_indexes', 'reindex',
+                          'index_information', 'options', 'group', 'rename', 'distinct', 'map_reduce',
+                          'inline_map_reduce', 'find_and_modify')
 
     def __init__(self, database, name, create=False, retries=0, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
