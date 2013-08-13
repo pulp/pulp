@@ -43,7 +43,6 @@ class ApplicabilityRegenerationManager(object):
         consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
         consumer_profile_manager = managers.consumer_profile_manager()
-        profiler_conduit = ProfilerConduit()
 
         # Process consumer_criteria
         consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
@@ -61,7 +60,6 @@ class ApplicabilityRegenerationManager(object):
             for unit_profile in unit_profiles:
                 ApplicabilityRegenerationManager.regenerate_applicability(unit_profile, 
                                                                           bound_repo_ids, 
-                                                                          profiler_conduit, 
                                                                           skip_existing=True)
 
     @staticmethod
@@ -75,7 +73,6 @@ class ApplicabilityRegenerationManager(object):
         repo_query_manager = managers.repo_query_manager()
         bind_manager = managers.consumer_bind_manager()
         consumer_profile_manager = managers.consumer_profile_manager()
-        profiler_conduit = ProfilerConduit()
 
         # Process repo criteria
         criteria_repo_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
@@ -103,11 +100,10 @@ class ApplicabilityRegenerationManager(object):
             for unit_profile in unit_profiles:
                 ApplicabilityRegenerationManager.regenerate_applicability(unit_profile, 
                                                                           bound_repo_ids, 
-                                                                          profiler_conduit, 
                                                                           skip_existing=False)
 
     @staticmethod
-    def regenerate_applicability(unit_profile, bound_repo_ids, profiler_conduit, skip_existing=True):
+    def regenerate_applicability(unit_profile, bound_repo_ids, skip_existing=True):
         """
         Regenerate and save applicability data for given unit profile and repo ids.
 
@@ -117,9 +113,6 @@ class ApplicabilityRegenerationManager(object):
         :param bound_repo_ids: repo ids to be used to calculate applicability
                               against the given unit profile
         :type bound_repo_ids: str
-
-        :param profiler_conduit: profiler conduit
-        :type profiler_conduit: pulp.plugins.conduits.profile.ProfilerConduit
 
         :param skip_existing: flag to indicate whether regeneration should be skipped
                               for existing RepoProfileApplicability objects
@@ -133,6 +126,8 @@ class ApplicabilityRegenerationManager(object):
         if profiler.calculate_applicable_units == Profiler.calculate_applicable_units:
             # If base class calculate_applicable_units method is called, skip applicability regeneration
             return
+
+        profiler_conduit = ProfilerConduit()
 
         # Regenerate applicability for each bound repository
         for bound_repo_id in bound_repo_ids:
