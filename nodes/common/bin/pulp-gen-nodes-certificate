@@ -13,10 +13,20 @@
 # in this software or its documentation.
 #
 
+READ_CA_SCRIPT=\
+$(cat << END
+from pulp.server.config import config as pulp_conf
+print pulp_conf.get('security', 'cakey')
+print pulp_conf.get('security', 'cacert')
+END
+)
+
+CA=(`python -c "$READ_CA_SCRIPT"`)
+
 PKI=/etc/pki/pulp
 PKI_NODES=$PKI/nodes
-CA_KEY=$PKI/ca.key
-CA_CRT=$PKI/ca.crt
+CA_KEY=${CA[0]}
+CA_CRT=${CA[1]}
 BASE='nodes'
 TMP=/tmp/$RANDOM
 CN='admin:admin:0'
