@@ -13,25 +13,27 @@
 # in this software or its documentation.
 #
 
-READ_CA_SCRIPT=\
+READ_PULP_CONF=\
 $(cat << END
 from pulp.server.config import config as pulp_conf
 print pulp_conf.get('security', 'cakey')
 print pulp_conf.get('security', 'cacert')
+print pulp_conf.get('server', 'default_login')
+print pulp_conf.get('server', 'default_password')
 END
 )
 
-CA=(`python -c "$READ_CA_SCRIPT"`)
+PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 
 PKI=/etc/pki/pulp
 PKI_NODES=$PKI/nodes
-CA_KEY=${CA[0]}
-CA_CRT=${CA[1]}
+CA_KEY=${PULP_CONF[0]}
+CA_CRT=${PULP_CONF[1]}
 BASE='nodes'
 TMP=/tmp/$RANDOM
-CN='admin:admin:0'
-ORG='PULP'
-ORG_UNIT='NODES'
+CN="${PULP_CONF[2]}:${PULP_CONF[3]}:0"
+ORG="PULP"
+ORG_UNIT="NODES"
 
 mkdir -p $TMP
 mkdir -p $PKI_NODES
