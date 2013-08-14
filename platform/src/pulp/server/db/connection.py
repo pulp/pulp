@@ -54,6 +54,11 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
 
         _CONNECTION = pymongo.Connection(seeds, max_pool_size=max_pool_size)
+        # Decorate the methods that actually send messages to the db over the
+        # network. These are the methods that call start_request, and the
+        # decorator causes them call an corresponding end_request
+        _CONNECTION._send_message = _end_request_decorator(_CONNECTION._send_message)
+        _CONNECTION._send_message_with_response = _end_request_decorator(_CONNECTION._send_message_with_response)
 
         _DATABASE = getattr(_CONNECTION, name)
         _DATABASE.add_son_manipulator(NamespaceInjector())
@@ -148,7 +153,6 @@ class PulpCollection(Collection):
 
         for m in self._decorated_methods:
             setattr(self, m, _retry_decorator(self.full_name, self.retries)(getattr(self, m)))
-            setattr(self, m, _end_request_decorator(getattr(self, m)))
 
     def __getstate__(self):
         return {'name': self.name}
