@@ -54,6 +54,11 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
 
         _CONNECTION = pymongo.Connection(seeds, max_pool_size=max_pool_size)
+        # Decorate the methods that actually send messages to the db over the
+        # network. These are the methods that call start_request, and the
+        # decorator causes them call an corresponding end_request
+        _CONNECTION._send_message = _end_request_decorator(_CONNECTION._send_message)
+        _CONNECTION._send_message_with_response = _end_request_decorator(_CONNECTION._send_message_with_response)
 
         _DATABASE = getattr(_CONNECTION, name)
         _DATABASE.add_son_manipulator(NamespaceInjector())
@@ -75,40 +80,40 @@ class PulpCollectionFailure(PulpException):
     """
 
 
-def _retry_decorator(method):
+def _retry_decorator(full_name=None, retries=0):
     """
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
     """
 
-    # 'self' is not passed into the method below as the super call in the
-    # constructor has already bound self to the method
-    self = method.im_self
+    def _decorator(method):
 
-    @wraps(method)
-    def retry(*args, **kwargs):
+        @wraps(method)
+        def retry(*args, **kwargs):
 
-        tries = 0
+            tries = 0
 
-        while tries <= self.retries:
+            while tries <= retries:
 
-            try:
-                return method(*args, **kwargs)
+                try:
+                    return method(*args, **kwargs)
 
-            except AutoReconnect:
-                tries += 1
+                except AutoReconnect:
+                    tries += 1
 
-                _LOG.warn(_('%s operation failed on %s: tries remaining: %d') %
-                          (method.__name__, self.full_name, self.retries - tries + 1))
+                    _LOG.warn(_('%s operation failed on %s: tries remaining: %d') %
+                              (method.__name__, full_name, retries - tries + 1))
 
-                if tries <= self.retries:
-                    time.sleep(0.3)
+                    if tries <= retries:
+                        time.sleep(0.3)
 
-        raise PulpCollectionFailure(
-            _('%s operation failed on %s: database connection still down after %d tries') %
-            (method.__name__, self.full_name, (self.retries + 1)))
+            raise PulpCollectionFailure(
+                _('%s operation failed on %s: database connection still down after %d tries') %
+                (method.__name__, full_name, (retries + 1)))
 
-    return retry
+        return retry
+
+    return _decorator
 
 
 def _end_request_decorator(method):
@@ -135,9 +140,11 @@ class PulpCollection(Collection):
     applications
     """
 
-    _decorated_methods = ('insert', 'save', 'update', 'remove', 'drop', 'find',
-                          'find_one', 'count', 'create_index', 'ensure_index',
-                          'drop_index', 'drop_indexes', 'group', 'rename', 'map_reduce')
+    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options', 'unset_lasterror_options',
+                          'insert', 'save', 'update', 'remove', 'drop', 'find', 'find_one', 'count',
+                          'create_index', 'ensure_index', 'drop_index', 'drop_indexes', 'reindex',
+                          'index_information', 'options', 'group', 'rename', 'distinct', 'map_reduce',
+                          'inline_map_reduce', 'find_and_modify')
 
     def __init__(self, database, name, create=False, retries=0, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
@@ -145,8 +152,7 @@ class PulpCollection(Collection):
         self.retries = retries
 
         for m in self._decorated_methods:
-            setattr(self, m, _retry_decorator(getattr(self, m)))
-            setattr(self, m, _end_request_decorator(getattr(self, m)))
+            setattr(self, m, _retry_decorator(self.full_name, self.retries)(getattr(self, m)))
 
     def __getstate__(self):
         return {'name': self.name}
