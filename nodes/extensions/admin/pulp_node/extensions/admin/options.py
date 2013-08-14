@@ -14,9 +14,26 @@
 Contains options and flags common across nodes commands.
 """
 
+from gettext import gettext as _
+
 from pulp.client.commands.options import DESC_ID
 from pulp.client.extensions.extensions import PulpCliOption
 from pulp.client.validators import id_validator
+from pulp.client.parsers import parse_optional_positive_int
 
+
+# --- descriptions -----------------------------------------------------------
+
+MAX_BANDWIDTH_DESC = _('maximum bandwidth used per download in bytes/sec')
+MAX_CONCURRENCY_DESC = _('maximum number of downloads permitted to run concurrently')
+
+
+# --- options ----------------------------------------------------------------
 
 NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
+
+MAX_BANDWIDTH_OPTION = \
+    PulpCliOption('--max-speed', MAX_BANDWIDTH_DESC, required=False, parse_func=parse_optional_positive_int)
+
+MAX_CONCURRENCY_OPTION = \
+    PulpCliOption('--max-downloads', MAX_CONCURRENCY_DESC, required=False, parse_func=parse_optional_positive_int)

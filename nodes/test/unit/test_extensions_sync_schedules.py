@@ -16,8 +16,14 @@ import mock
 from pulp.client.commands.schedule import CreateScheduleCommand, ListScheduleCommand, \
     DeleteScheduleCommand, UpdateScheduleCommand, NextRunCommand
 
+from pulp_node import constants
 from pulp_node.extensions.admin import sync_schedules
-from pulp_node.extensions.admin.options import NODE_ID_OPTION
+from pulp_node.extensions.admin.options import NODE_ID_OPTION, MAX_BANDWIDTH_OPTION, MAX_CONCURRENCY_OPTION
+
+
+NODE_ID = 'node-1'
+MAX_BANDWIDTH = 12345
+MAX_CONCURRENCY = 321
 
 
 class CommandTests(unittest.TestCase):
@@ -37,6 +43,8 @@ class CommandTests(unittest.TestCase):
         command = sync_schedules.NodeCreateScheduleCommand(self.context)
         self.assertTrue(isinstance(command, CreateScheduleCommand))
         self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(MAX_BANDWIDTH_OPTION in command.options)
+        self.assertTrue(MAX_CONCURRENCY_OPTION in command.options)
         self.assertEqual(command.description, sync_schedules.DESC_CREATE)
         self.assertTrue(isinstance(command.strategy, sync_schedules.NodeSyncScheduleStrategy))
 
@@ -77,40 +85,53 @@ class NodeSyncScheduleStrategyTests(unittest.TestCase):
         schedule = '1900-01-01'
         failure_threshold = 5
         enabled = True
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : 'node-1'}
+        kwargs = {
+            NODE_ID_OPTION.keyword: NODE_ID,
+            MAX_BANDWIDTH_OPTION.keyword: MAX_BANDWIDTH,
+            MAX_CONCURRENCY_OPTION.keyword: MAX_CONCURRENCY
+        }
         self.strategy.create_schedule(schedule, failure_threshold, enabled, kwargs)
 
         # Verify
-        expected_units = {'unit_key' : None, 'type_id' : 'node'}
-        self.api.add_schedule.assert_called_once_with(sync_schedules.SYNC_OPERATION, 'node-1',
-                                                      schedule, expected_units,
-                                                      failure_threshold, enabled, {})
+        expected_units = [dict(type_id='node', unit_key=None)]
+        options = {
+            constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: MAX_BANDWIDTH,
+            constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: MAX_CONCURRENCY,
+        }
+        self.api.add_schedule.assert_called_once_with(
+            sync_schedules.SYNC_OPERATION,
+            NODE_ID,
+            schedule,
+            expected_units,
+            failure_threshold,
+            enabled,
+            options)
 
     def test_delete(self):
         # Test
         schedule_id = 'abcdef'
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : 'node-1'}
+        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : NODE_ID}
         self.strategy.delete_schedule(schedule_id, kwargs)
 
         # Verify
         self.api.delete_schedule.assert_called_once_with(sync_schedules.SYNC_OPERATION,
-                                                         'node-1', schedule_id)
+                                                         NODE_ID, schedule_id)
 
     def test_retrieve(self):
         # Test
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : 'node-1'}
+        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : NODE_ID}
         self.strategy.retrieve_schedules(kwargs)
 
         # Verify
-        self.api.list_schedules.assert_called_once_with(sync_schedules.SYNC_OPERATION, 'node-1')
+        self.api.list_schedules.assert_called_once_with(sync_schedules.SYNC_OPERATION, NODE_ID)
 
     def test_update(self):
         # Test
         schedule_id = 'abcdef'
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : 'node-1', 'extra' : 'e'}
+        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : NODE_ID, 'extra' : 'e'}
         self.strategy.update_schedule(schedule_id, **kwargs)
 
         # Verify
         self.api.update_schedule.assert_called_once_with(sync_schedules.SYNC_OPERATION,
-                                                         'node-1', schedule_id,
+                                                         NODE_ID, schedule_id,
                                                          **{'extra' : 'e'})
