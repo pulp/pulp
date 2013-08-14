@@ -68,9 +68,12 @@ class LoginCommand(PulpCliCommand):
 
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
 
-        f = open(cert_filename, 'w')
-        f.write(key_cert)
-        f.close()
+        #Create the certificate file with user access only permissions 0600
+        f = os.fdopen(os.open(cert_filename, os.O_WRONLY | os.O_CREAT, 600), 'w')
+        try:
+            f.write(key_cert)
+        finally:
+            f.close()
 
         # Parse the certificate to extract the expiration date
         expiration_date = None
