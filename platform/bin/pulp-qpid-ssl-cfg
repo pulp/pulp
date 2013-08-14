@@ -192,8 +192,10 @@ cp $DIR/*.db $INST_DIR/nss
 cp $DIR/$PWDFILE $INST_DIR/nss
 
 # update perms
-chmod 644 $INST_DIR/*.crt
-chmod 644 $INST_DIR/nss/*
+chmod 640 $INST_DIR/*.crt
+chgrp apache $INST_DIR/*.crt
+chmod 640 $INST_DIR/nss/*
+chgrp qpidd $INST_DIR/nss/*
 
 echo ""
 echo "Artifacts copied to: $INST_DIR."
