@@ -176,3 +176,9 @@ class Response:
     def __init__(self, code, body):
         self.response_code = code
         self.response_body = body
+
+
+class Task:
+
+    def __init__(self, task_id=0):
+        self.task_id = task_id

@@ -43,6 +43,9 @@ SSL_KEYWORD = 'ssl'
 CA_CERT_KEYWORD = 'ca_cert'
 CLIENT_CERT_KEYWORD = 'client_cert'
 
+MAX_DOWNLOAD_BANDWIDTH_KEYWORD = 'max_download_bandwidth'
+MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
+
 
 # --- unit/publishing --------------------------------------------------------
 

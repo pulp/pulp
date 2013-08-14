@@ -204,7 +204,7 @@ class TestBase(TestCase):
         conduit = TestConduit(1)
         # Test
         repository = RepositoryOnChild(REPO_ID)
-        repository.run_synchronization(None, conduit.cancelled)
+        repository.run_synchronization(None, conduit.cancelled, {})
         # Verify
         mock_cancel.assert_called_with(TASK_ID)
 
