@@ -335,8 +335,6 @@ class RepositoryOnChild(ChildEntity, Repository):
     def merge_distributors(self, parent):
         """
         Merge distributors.
-          - Delete distributors associated to this child repository but not
-            associated with the parent repository.
           - Merge distributors associated with this child repository AND
             associated with parent repository.
           - Add distributors associated with the parent repository but NOT
@@ -344,7 +342,6 @@ class RepositoryOnChild(ChildEntity, Repository):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        self.delete_distributors(parent)
         for details in parent.distributors:
             dist_id = details['id']
             dist = Distributor(self.repo_id, dist_id, details)
@@ -354,20 +351,6 @@ class RepositoryOnChild(ChildEntity, Repository):
             else:
                 mydist = DistributorOnChild(self.repo_id, dist_id, details)
                 mydist.add()
-
-    def delete_distributors(self, parent):
-        """
-        Delete distributors associated with this child repository but not
-        associated with the parent repository.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
-        """
-        parent_ids = [d['id'] for d in parent.distributors]
-        for details in self.distributors:
-            dist_id = details['id']
-            if dist_id not in parent_ids:
-                dist = DistributorOnChild(self.repo_id, dist_id, {})
-                dist.delete()
 
     def run_synchronization(self, progress, cancelled, options):
         """
