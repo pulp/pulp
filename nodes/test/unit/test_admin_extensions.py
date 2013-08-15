@@ -14,7 +14,7 @@ import sys
 
 from mock import patch
 
-from base import ClientTests, Response
+from base import ClientTests, Response, Task
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
@@ -29,6 +29,8 @@ from pulp_node.handlers.reports import SummaryReport
 
 NODE_ID = 'test_node'
 REPOSITORY_ID = 'test_repository'
+MAX_BANDWIDTH = 12345
+MAX_CONCURRENCY = 54321
 
 
 # --- binding mocks ----------------------------------------------------------
@@ -38,6 +40,7 @@ NODE_ACTIVATED_CHECK = 'pulp_node.extensions.admin.commands.node_activated'
 
 CONSUMER_LIST_API = 'pulp.bindings.consumer.ConsumerAPI.consumers'
 NODE_ACTIVATE_API = 'pulp.bindings.consumer.ConsumerAPI.update'
+NODE_UPDATE_API = 'pulp.bindings.consumer.ConsumerContentAPI.update'
 REPO_LIST_API = 'pulp.bindings.repository.RepositoryAPI.repositories'
 DISTRIBUTORS_API = 'pulp.bindings.repository.RepositoryDistributorAPI.distributors'
 PUBLISH_API = 'pulp.bindings.repository.RepositoryActionsAPI.publish'
@@ -45,6 +48,7 @@ REPO_ENABLE_API = 'pulp.bindings.repository.RepositoryDistributorAPI.create'
 REPO_DISABLE_API = 'pulp.bindings.repository.RepositoryDistributorAPI.delete'
 BIND_API = 'pulp.bindings.consumer.BindingsAPI.bind'
 UNBIND_API = 'pulp.bindings.consumer.BindingsAPI.unbind'
+POLLING_API = 'pulp.client.commands.polling.PollingCommand.poll'
 
 
 # --- responses --------------------------------------------------------------
@@ -365,6 +369,33 @@ class TestBindCommands(ClientTests):
         self.assertTrue(OPTION_REPO_ID in command.options)
         self.assertTrue(NODE_ID_OPTION in command.options)
         mock_binding.assert_called_with(NODE_ID, REPOSITORY_ID, constants.HTTP_DISTRIBUTOR)
+
+
+class TestUpdateCommands(ClientTests):
+
+    @patch(POLLING_API)
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(NODE_UPDATE_API, return_value=Response(202, {}))
+    def test_update(self, mock_update, mock_activated, *unused):
+        # Test
+        command = NodeUpdateCommand(self.context)
+        keywords = {
+            NODE_ID_OPTION.keyword: NODE_ID,
+            MAX_BANDWIDTH_OPTION.keyword: MAX_BANDWIDTH,
+            MAX_CONCURRENCY_OPTION.keyword: MAX_CONCURRENCY
+        }
+        command.run(**keywords)
+        # Verify
+        units = [dict(type_id='node', unit_key=None)]
+        options = {
+            constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: MAX_BANDWIDTH,
+            constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: MAX_CONCURRENCY,
+        }
+        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(MAX_BANDWIDTH_OPTION in command.options)
+        self.assertTrue(MAX_CONCURRENCY_OPTION in command.options)
+        mock_update.assert_called_with(NODE_ID, units=units, options=options)
+        mock_activated.assert_called_with(self.context, NODE_ID)
 
 
 class TestRenderers(ClientTests):

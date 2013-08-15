@@ -269,7 +269,8 @@ class UnitIterator:
 
     @staticmethod
     def get_units(path):
-        with gzip.open(path) as fp:
+        fp = gzip.open(path)
+        try:
             while True:
                 begin = fp.tell()
                 json_unit = fp.readline()
@@ -281,6 +282,8 @@ class UnitIterator:
                     yield (unit, ref)
                 else:
                     break
+        finally:
+            fp.close()
 
     def __init__(self, path, total_units):
         """
@@ -334,7 +337,10 @@ class UnitRef(object):
         :raise IOError: on I/O errors.
 -       :raise ValueError: json decoding errors
         """
-        with gzip.open(self.path) as fp:
+        fp = gzip.open(self.path)
+        try:
             fp.seek(self.offset)
             json_unit = fp.read(self.length)
             return json.loads(json_unit)
+        finally:
+            fp.close()

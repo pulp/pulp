@@ -186,7 +186,7 @@ class HandlerStrategy(object):
         """
         repo = RepositoryOnChild(repo_id)
         progress = request.progress.find_report(repo_id)
-        importer_report = repo.run_synchronization(progress, request.cancelled)
+        importer_report = repo.run_synchronization(progress, request.cancelled, request.options)
         if request.cancelled():
             request.summary[repo_id].action = RepositoryReport.CANCELLED
             return

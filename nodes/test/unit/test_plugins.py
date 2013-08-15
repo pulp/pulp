@@ -40,8 +40,11 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.exceptions import MissingResource
 from pulp.plugins import model as plugin_model
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
+from pulp.common.plugins import importer_constants
 from pulp.server.managers import factory as managers
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
@@ -424,7 +427,7 @@ class TestDistributor(PluginTestBase):
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD, constants.SSL_KEYWORD):
+        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD):
             self.assertTrue(key in importers[0]['config'])
 
     def test_payload_with_ssl(self):
@@ -445,10 +448,11 @@ class TestDistributor(PluginTestBase):
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD, constants.SSL_KEYWORD):
+        for key in (constants.MANIFEST_URL_KEYWORD,
+                    constants.STRATEGY_KEYWORD,
+                    importer_constants.KEY_SSL_CLIENT_CERT,
+                    importer_constants.KEY_SSL_VALIDATION):
             self.assertTrue(key in importers[0]['config'])
-        for key in (constants.CLIENT_CERT_KEYWORD,):
-            self.assertTrue(key in importers[0]['config'][constants.SSL_KEYWORD])
 
     def test_publish(self):
         # Setup
@@ -539,9 +543,13 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
-    def test_import(self):
+    @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
+           wraps=importer_config_to_nectar_config)
+    def test_import(self, *mocks):
         # Setup
         self.populate()
+        max_concurrency = 5
+        max_bandwidth = 12345
         pulp_conf.set('server', 'storage_dir', self.parentfs)
         dist = NodesHttpDistributor()
         working_dir = os.path.join(self.childfs, 'working_dir')
@@ -563,17 +571,26 @@ class ImporterTest(PluginTestBase):
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
         manifest_url = 'file://' + publisher.manifest_path()
-        cfg = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
+            importer_constants.KEY_MAX_SPEED: max_bandwidth,
+        }
+        configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
             constants.HTTP_IMPORTER,
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, cfg)
+        importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
+        mock_importer_config_to_nectar_config = mocks[0]
+        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
 
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
     def test_import_cached_manifest_matched(self, mock_fetch):
@@ -607,6 +624,7 @@ class ImporterTest(PluginTestBase):
         importer = NodesHttpImporter()
         manifest_url = 'file://' + manifest_path
         configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
             constants.HTTP_IMPORTER,
@@ -648,6 +666,7 @@ class ImporterTest(PluginTestBase):
         importer = NodesHttpImporter()
         manifest_url = 'file://' + manifest_path
         configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
             constants.HTTP_IMPORTER,
@@ -690,6 +709,7 @@ class ImporterTest(PluginTestBase):
         importer = NodesHttpImporter()
         manifest_url = 'file://' + manifest_path
         configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
             constants.HTTP_IMPORTER,
@@ -830,7 +850,6 @@ class TestEndToEnd(PluginTestBase):
         # distributor
         manager = managers.repo_distributor_manager()
         manager.get_distributor(self.REPO_ID, FAKE_ID)
-        self.assertRaises(MissingResource, manager.get_distributor, self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
