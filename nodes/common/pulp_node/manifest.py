@@ -122,6 +122,7 @@ class Manifest(object):
         """
         Update the publishing details.
         :param details: Publishing details.
+        :type details: dict
         """
         self.publishing_details.update(details)
 
