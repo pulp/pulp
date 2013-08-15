@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 class pulp_prereq {
   $os_downcase = downcase($::operatingsystem)
   
@@ -11,15 +23,15 @@ class pulp_prereq {
     name     =>'pulp-v2-stable',
     baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/v2/stable/\
 ${os_downcase}-${os_release}/${::architecture}/",
-    enabled  =>1,
+    enabled  =>0,
     gpgcheck =>0,
   }
   yumrepo {
     'pulp-v2-testing':
     name     =>'pulp-v2-testing',
-    baseurl  =>"http://rsepos.fedorapeople.org/repos/pulp/pulp/v2/testing/\
+    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/v2/testing/\
 ${os_downcase}-${os_release}/${::architecture}/",
-    enabled  =>0,
+    enabled  =>1,
     gpgcheck =>0,
   }
   yumrepo {
@@ -128,7 +140,7 @@ ${os_downcase}-${os_release}/${::architecture}/",
 
 class pulp_test_prereq {
   #packages needed to run unit tests
-  $testPackages = ['python-nose','python-coverage','python-mock']
+  $testPackages = ['python-nose','python-coverage','python-mock','git','python-pip','gcc','python-devel','python-paste']
   package { $testPackages:
       ensure => 'installed'
   }
