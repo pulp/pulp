@@ -84,6 +84,11 @@ def _retry_decorator(full_name=None, retries=0):
     """
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
+    :param full_name: the full name of the database collection
+    :type  full_name: str
+    :param retries: the number of times to retry the operation before allowing 
+                    the exception to blow the stack
+    :type  retries: int
     """
 
     def _decorator(method):
