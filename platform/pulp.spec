@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.2.0
-Release: 0.25.beta%{?dist}
+Release: 0.26.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,12 @@ exit 0
 %endif
 
 %changelog
+* Thu Aug 15 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.26.beta
+- 976561 - updated the list of decorated collection methods to match the
+  Collection object in 2.1.1 (jason.connor@gmail.com)
+- 976561 - removed superfluous re-fetching of collection we already have a
+  handle to (jason.connor@gmail.com)
+
 * Mon Aug 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.25.beta
 - Pulp rebuild
 
