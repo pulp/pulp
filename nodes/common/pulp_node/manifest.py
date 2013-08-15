@@ -18,13 +18,14 @@ json encoded file.  For performance reasons, the unit files are compressed.
 
 import os
 import json
+import gzip
+import errno
 
 from logging import getLogger
 
 from nectar.request import DownloadRequest
 
 from pulp_node import pathlib
-from pulp_node.compression import compress, decompress, compressed
 
 
 log = getLogger(__name__)
@@ -49,97 +50,50 @@ class Manifest(object):
     :type id: str
     :ivar total_units: The number of units in the units file.
     :type total_units: int
-    :ivar unit_path: The path to the downloaded content units file.
-    :type unit_path: str
     :param publishing_details: Details of how units have been published.
     :type publishing_details: dict
     """
 
-    def __init__(self, manifest_id=None):
+    def __init__(self, path, manifest_id=None):
+        """
+        :param path: The path to either a directory containing the standard
+            named manifest or the absolute path to the manifest.
+        :type path: str
+        :param manifest_id: An optional manifest ID.
+        :type manifest_id: str
+        """
         self.id = manifest_id
         self.total_units = 0
-        self.units_path = None
+        self.units_size = 0
         self.publishing_details = {}
+        if os.path.isdir(path):
+            path = pathlib.join(path, MANIFEST_FILE_NAME)
+        self.path = path
 
-    def fetch(self, url, dir_path, downloader):
-        """
-        Fetch the manifest file using the specified URL.
-        :param url: The URL to the manifest.
-        :type url: str
-        :param dir_path: The absolute path to a directory for the downloaded manifest.
-        :type dir_path: str
-        :param downloader: The nectar downloader to be used.
-        :type downloader: nectar.downloaders.base.Downloader
-        :raise HTTPError: on URL errors.
--       :raise ValueError: on json decoding errors
-        """
-        destination = pathlib.join(dir_path, MANIFEST_FILE_NAME)
-        request = DownloadRequest(str(url), destination)
-        request_list = [request]
-        downloader.download(request_list)
-        if compressed(destination):
-            destination = decompress(destination)
-        with open(destination) as fp:
-            manifest = json.load(fp)
-            self.__dict__.update(manifest)
-            self.units_path = pathlib.join(dir_path, os.path.basename(self.units_path))
-
-    def fetch_units(self, url, downloader):
-        """
-        Fetch the units file referenced in the manifest.
-        The file is decompressed and written to the path specified by units_path.
-        :param url: The URL to the manifest.  Used as the base URL.
-        :type url: str
-        :param downloader: The nectar downloader to be used.
-        :type downloader: nectar.downloaders.base.Downloader
-        :raise HTTPError: on URL errors.
--       :raise ValueError: on json decoding errors
-        """
-        base_url = url.rsplit('/', 1)[0]
-        url = '/'.join((base_url, os.path.basename(self.units_path)))
-        request = DownloadRequest(str(url), self.units_path)
-        request_list = [request]
-        downloader.download(request_list)
-        if compressed(self.units_path):
-            self.units_path = decompress(self.units_path)
-
-    def read(self, path):
-        """
-        Read the manifest file at the specified path.
-        The manifest is updated using the contents of the read json document.
-        :param path: The absolute path to a json encoded manifest file.
-        :type path: str
-        :raise IOError: on I/O errors.
-        :raise ValueError: on json decoding errors
-        """
-        with open(path) as fp:
-            manifest = json.load(fp)
-            self.__dict__.update(manifest)
-
-    def write(self, path):
+    def write(self):
         """
         Write the manifest to a json encoded file at the specified path.
-        Returns the path to the written manifest just in case it's compressed in the future.
-        :param path: The absolute path to the written json encoded manifest file.
-        :type path: str
-        :return: The absolute path to the written manifest.
-        :rtype: str
         :raise IOError: on I/O errors.
         :raise ValueError: on json encoding errors
         """
-        with open(path, 'w+') as fp:
-            json.dump(self.__dict__, fp, indent=2)
-        return path
+        state = dict(
+            id=self.id,
+            total_units=self.total_units,
+            units_size=self.units_size,
+            publishing_details=self.publishing_details)
+        with open(self.path, 'w+') as fp:
+            json.dump(state, fp, indent=2)
 
-    def set_units(self, writer):
+    def read(self):
         """
-        Set the associated units file using the specified writer.
-        Updates the units_path and total_units based on what was written by the writer.
-        :param writer: The writer used to create the units file.
-        :type writer: UnitWriter
+        Read the manifest file at the specified path.
+        The manifest is updated using the contents of the read json document.
+        :raise IOError: on I/O errors.
+        :raise ValueError: on json decoding errors
         """
-        self.units_path = writer.path
-        self.total_units = writer.total_units
+        with open(self.path) as fp:
+            d = json.load(fp)
+            self.__dict__.update(d)
 
     def get_units(self):
         """
@@ -150,32 +104,126 @@ class Manifest(object):
 -       :raise ValueError: json decoding errors
         """
         if self.total_units:
-            return UnitIterator(self.units_path, self.total_units)
+            path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
+            return UnitIterator(path, self.total_units)
         else:
             return []
+
+    def units_published(self, unit_writer):
+        """
+        Update the manifest publishing information.
+        :param unit_writer: A writer used to publish the units.
+        :type unit_writer: UnitWriter
+        """
+        self.total_units = unit_writer.total_units
+        self.units_size = unit_writer.bytes_written
+
+    def published(self, details):
+        """
+        Update the publishing details.
+        :param details: Publishing details.
+        :type details: dict
+        """
+        self.publishing_details.update(details)
+
+    def has_valid_units(self):
+        """
+        Validate the associated units file by comparing the size of the
+        units file to units_size in the manifest.
+        :return: True if valid.
+        :rtype: bool
+        """
+        try:
+            path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
+            size = os.path.getsize(path)
+            return size == self.units_size
+        except OSError, e:
+            if e.errno != errno.ENOENT:
+                raise
+        return False
+
+    def __eq__(self, other):
+        if isinstance(other, Manifest):
+            return self.id == other.id
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
+
+
+class RemoteManifest(Manifest):
+    """
+    Represents a remote manifest.
+    """
+
+    def __init__(self, url, downloader, destination):
+        """
+        :param url: The URL to the remote manifest.
+        :type url: str
+        :param downloader: The downloader used for fetch methods.
+        :type downloader: nectar.downloaders.base.Downloader
+        :param destination: An absolute path to a file or directory.
+        :type destination: str
+        """
+        if os.path.isdir(destination):
+            destination = pathlib.join(destination, MANIFEST_FILE_NAME)
+        Manifest.__init__(self, destination)
+        self.url = str(url)
+        self.downloader = downloader
+        self.destination = destination
+
+    def fetch(self):
+        """
+        Fetch the manifest file using the specified URL.
+        :raise HTTPError: on URL errors.
+-       :raise ValueError: on json decoding errors
+        """
+        request = DownloadRequest(self.url, self.destination)
+        self.downloader.download([request])
+        self.read()
+
+    def fetch_units(self):
+        """
+        Fetch the units file referenced in the manifest.
+        :raise HTTPError: on URL errors.
+-       :raise ValueError: on json decoding errors
+        """
+        base_url = self.url.rsplit('/', 1)[0]
+        url = pathlib.join(base_url, UNITS_FILE_NAME)
+        destination = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
+        request = DownloadRequest(str(url), destination)
+        self.downloader.download([request])
 
 
 class UnitWriter(object):
     """
     Writes json encoded content units to a file.
     This approach is 30x faster than opening, appending, and closing for each unit.
-    :ivar path: The absolute path to the file to be written.
+    :ivar path:  The absolute path to a file or directory.  When a directory is specified,
+        the standard file name is appended.
     :type path: str
     :ivar fp: The file pointer used to write units to the file.
     :type fp: A python file object.
     :ivar total_units: Tracks the total number of units written.
     :type total_units: int
+    :ivar bytes_written: The total number of bytes written.
+    :type bytes_written: int
     """
 
     def __init__(self, path):
         """
-        :param path: The absolute path to the file to be written.
+        :param path: The absolute path to a file or directory.
+            When a directory is specified, the standard file name is appended.
         :type path: str
         :raise IOError: on I/O errors
         """
+        if os.path.isdir(path):
+            path = pathlib.join(path, UNITS_FILE_NAME)
         self.path = path
-        self.fp = open(path, 'w+')
+        self.fp = gzip.open(path, 'wb')
         self.total_units = 0
+        self.bytes_written = 0
 
     def add(self, unit):
         """
@@ -198,7 +246,7 @@ class UnitWriter(object):
         """
         if not self.fp.closed:
             self.fp.close()
-            self.path = compress(self.path)
+            self.bytes_written = os.path.getsize(self.path)
         return self.total_units
 
     def __enter__(self):
@@ -222,7 +270,8 @@ class UnitIterator:
 
     @staticmethod
     def get_units(path):
-        with open(path) as fp:
+        fp = gzip.open(path)
+        try:
             while True:
                 begin = fp.tell()
                 json_unit = fp.readline()
@@ -234,6 +283,8 @@ class UnitIterator:
                     yield (unit, ref)
                 else:
                     break
+        finally:
+            fp.close()
 
     def __init__(self, path, total_units):
         """
@@ -287,7 +338,10 @@ class UnitRef(object):
         :raise IOError: on I/O errors.
 -       :raise ValueError: json decoding errors
         """
-        with open(self.path) as fp:
+        fp = gzip.open(self.path)
+        try:
             fp.seek(self.offset)
             json_unit = fp.read(self.length)
             return json.loads(json_unit)
+        finally:
+            fp.close()

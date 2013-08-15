@@ -48,11 +48,12 @@ class HttpPublisher(FilePublisher):
         :rtype: str
         """
         manifest_path = super(self.__class__, self).publish(units)
-        manifest = Manifest()
-        manifest.read(manifest_path)
-        manifest.publishing_details[constants.BASE_URL] = \
-            pathlib.url_join(self.base_url, self.alias[0], self.repo_id)
-        manifest.write(manifest_path)
+        manifest = Manifest(manifest_path)
+        manifest.read()
+        base_url = pathlib.url_join(self.base_url, self.alias[0], self.repo_id)
+        details = {constants.BASE_URL: base_url}
+        manifest.published(details)
+        manifest.write()
         return manifest_path
 
     def manifest_path(self):
