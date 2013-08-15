@@ -444,8 +444,8 @@ class AddUnitMixin(object):
         - Creates or updates Pulp's knowledge of the content unit.
         - Associates the unit to the repository being synchronized.
 
-        This call is idempotent. If the unit already exists or the association
-        already exists, this call will have no effect.
+        If a unit with the provided unit key already exists, it is updated with
+        the attributes on the passed-in unit.
 
         A reference to the provided unit is returned from this call. This call
         will populate the unit's id field with the UUID for the unit.
