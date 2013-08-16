@@ -9,9 +9,12 @@ set -x
 env
 cd $WORKSPACE
 
-pushd nectar
-sudo pip-python install -e .
-popd
+if [ [$OS_NAME -ne "RedHat"] && [$OS_VERSION -ne 5] ]; then
+    pushd nectar
+    sudo pip-python install -e .
+    popd
+fi
+
 pushd pulp
 sudo pip-python install -e platform/src/
 sudo pip-python install -e pulp_devel/
