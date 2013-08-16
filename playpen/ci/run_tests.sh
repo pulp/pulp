@@ -9,7 +9,7 @@ set -x
 mkdir $WORKSPACE/test
 
 cd $WORKSPACE/pulp
-python run-tests.py  --with-xunit --xunit-file ../test/puppetTest.xml --process-timeout=360
+python run-tests.py  --with-xunit --xunit-file ../test/puppetTest.xml
 # nosetests platform/test/unit/ --with-xunit --xunit-file platformTest.xml --process-timeout=360
 # nosetests builtins/test/unit/ --with-xunit --xunit-file builtinsTest.xml --process-timeout=360
 # nosetests pulp_devel/test/unit/ --with-xunit --xunit-file builtinsTest.xml --process-timeout=360
