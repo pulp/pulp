@@ -10,11 +10,9 @@ env
 cd $WORKSPACE
 
 pushd nectar
-git pull
 sudo pip-python install -e .
 popd
 pushd pulp
-git pull
 sudo pip-python install -e platform/src/
 sudo pip-python install -e pulp_devel/
 sudo pip-python install -e nodes/common
@@ -23,13 +21,11 @@ sudo pip-python install -e nodes/child
 sudo python pulp-dev.py -I
 popd
 pushd pulp_rpm
-git pull
 sudo pip-python install -e pulp_rpm/src/
 sudo pip-python install -e plugins/
 sudo python pulp-dev.py -I
 popd
 pushd pulp_puppet
-git pull
 sudo pip-python install -e pulp_puppet_common/
 sudo pip-python install -e pulp_puppet_extensions_admin/
 sudo pip-python install -e pulp_puppet_extensions_consumer/
