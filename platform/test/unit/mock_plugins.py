@@ -61,11 +61,21 @@ class MockGroupDistributor(mock.Mock):
     def metadata(cls):
         return {'types' : ['mock-type']}
 
+
 class MockProfiler(mock.Mock):
+    def __init__(self, content_types=None):
+        super(MockProfiler, self).__init__()
+        if content_types == None:
+            content_types = ['mock-type', 'type-1', 'erratum']
+        self.__class__.__content_types = content_types
 
     @classmethod
     def metadata(cls):
-        return {'types' : ['mock-type', 'type-1', 'errata']}
+        return {
+            'id': 'test_profiler',
+            'display_name': 'Test Profiler',
+            'types': cls.__content_types}
+
 
 class MockRpmProfiler(mock.Mock):
 
@@ -214,7 +224,7 @@ def install():
 
     for profiler in MOCK_PROFILERS:
         profiler.update_profile = \
-            mock.Mock(side_effect=lambda i,p,c,x: p)
+            mock.Mock(side_effect=lambda consumer,content_type,profile,config: profile)
         profiler.install_units = \
             mock.Mock(side_effect=lambda i,u,o,c,x: sorted(u))
         profiler.update_units = \

@@ -19,6 +19,7 @@ import unittest
 from pprint import pformat
 
 import mock
+import mock_plugins
 
 import base
 import dummy_plugins
@@ -27,7 +28,8 @@ from pulp.common import dateutils, tags
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.consumer import UnitProfile, Consumer, Bind, RepoProfileApplicability
+from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (
     Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
@@ -1591,3 +1593,132 @@ class UnitCriteriaTests(unittest.TestCase):
 
         self.assertTrue('$not' in and_list[1])
         self.assertEqual(and_list[1]['$not'], re.compile('ython$'))
+
+
+
+class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
+
+    CONSUMER_IDS = ['consumer-1', 'consumer-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [{'id':1}]
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
+    REPO_IDS = ['repo-1','repo-2']
+    REPO_FILTER = {'id':{'$in':REPO_IDS}}
+    REPO_CRITERIA = Criteria(filters=REPO_FILTER, sort=[{'id':1}])
+    YUM_DISTRIBUTOR_ID = 'yum_distributor'
+
+    PATH = '/v2/repositories/actions/content/regenerate_applicability/'
+
+    def setUp(self):
+        base.PulpWebserviceTests.setUp(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
+        plugin_api._create_manager()
+        mock_plugins.install()
+
+        yum_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
+
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate_repos(self):
+        repo_manager = manager_factory.repo_manager()
+        distributor_manager = manager_factory.repo_distributor_manager()
+        # Create repos and add distributor
+        for repo_id in self.REPO_IDS:
+            repo_manager.create_repo(repo_id)
+            distributor_manager.add_distributor(
+                                                repo_id,
+                                                'mock-distributor',
+                                                {},
+                                                True,
+                                                self.YUM_DISTRIBUTOR_ID)
+
+    def populate_bindings(self):
+        self.populate_repos()
+        bind_manager = manager_factory.consumer_bind_manager()
+        # Add bindings for the given repos and consumers
+        for consumer_id in self.CONSUMER_IDS:
+            for repo_id in self.REPO_IDS:
+                bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
+
+    def populate(self):
+        manager = manager_factory.consumer_manager()
+        for consumer_id in self.CONSUMER_IDS:
+            manager.register(consumer_id)
+        manager = manager_factory.consumer_profile_manager()
+        for consumer_id in self.CONSUMER_IDS:
+            manager.create(consumer_id, 'rpm', self.PROFILE)
+
+    def test_regenerate_applicability(self):
+        # Setup
+        self.populate()
+        self.populate_bindings()
+        # Test
+        request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('pulp:action:applicability_regeneration' in body['tags'])
+
+    def test_regenerate_applicability_no_consumer(self):
+        # Test
+        request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        
+    def test_regenerate_applicability_no_bindings(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+    def test_regenerate_applicability_no_criteria(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = {}
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertTrue('missing_property_names' in body)
+        self.assertTrue(body['missing_property_names'] == ['repo_criteria'])
+        self.assertFalse('task_id' in body)
+
+    def test_regenerate_applicability_wrong_criteria(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = dict(repo_criteria='foo')
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertTrue('property_names' in body)
+        self.assertTrue(body['property_names'] == ['repo_criteria'])
+        self.assertFalse('task_id' in body)

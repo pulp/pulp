@@ -26,7 +26,6 @@ _LOG = getLogger(__name__)
 
 
 class ConsumerQueryManager(object):
-    
     """
     Manager used to process queries on consumers. Consumers returned from
     these calls are consumer SON objects from the database.

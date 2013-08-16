@@ -13,18 +13,245 @@
 
 import mock
 
+from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.loader import api as plugins
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.managers import factory as factory
 from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
     _add_repo_ids_to_consumer_map, _format_report, _get_applicability_map,
     _get_consumer_applicability_map, DoesNotExist, MultipleObjectsReturned,
-    retrieve_consumer_applicability)
+    retrieve_consumer_applicability, ApplicabilityRegenerationManager)
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
 import base
+import mock_plugins
+
+
+class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
+
+    CONSUMER_IDS = ['consumer-1', 'consumer-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [{'id':1}]
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    PROFILE1 = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
+    PROFILE2 = [{'name':'zsh', 'version':'2.0'}, {'name':'ksh', 'version':'2.0'}]
+    REPO_IDS = ['repo-1','repo-2']
+    REPO_CRITERIA = Criteria(filters={'id':{'$in':REPO_IDS}}, sort=[{'id':1}])
+    YUM_DISTRIBUTOR_ID = 'yum_distributor'
+
+    def setUp(self):
+        base.PulpServerTests.setUp(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
+        plugins._create_manager()
+        mock_plugins.install()
+
+        yum_profiler, cfg = plugins.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
+
+        yum_profiler.metadata = mock.Mock(return_value={'types':['rpm', 'erratum']})
+
+        ApplicabilityRegenerationManager._get_existing_repo_content_types = mock.Mock(
+            return_value=['rpm','erratum'])
+
+    def tearDown(self):
+        base.PulpServerTests.tearDown(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate_consumers(self):
+        # Register consumers with rpm profiles
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        manager = factory.consumer_profile_manager()
+        for id in self.CONSUMER_IDS:
+            manager.create(id, 'rpm', self.PROFILE1)
+
+    def populate_consumers_different_profiles(self):
+        # Register consumers with rpm profiles
+        manager = factory.consumer_manager()
+        for id in self.CONSUMER_IDS:
+            manager.register(id)
+        manager = factory.consumer_profile_manager()
+        manager.create(self.CONSUMER_IDS[0], 'rpm', self.PROFILE1)
+        manager.create(self.CONSUMER_IDS[1], 'rpm', self.PROFILE2)
+
+    def populate_repos(self):
+        repo_manager = factory.repo_manager()
+        distributor_manager = factory.repo_distributor_manager()
+        # Create repos and add distributor
+        for repo_id in self.REPO_IDS:
+            repo_manager.create_repo(repo_id)
+            distributor_manager.add_distributor(
+                                                repo_id,
+                                                'mock-distributor',
+                                                {},
+                                                True,
+                                                self.YUM_DISTRIBUTOR_ID)
+
+    def populate_bindings(self):
+        self.populate_repos()
+        bind_manager = factory.consumer_bind_manager()
+        # Add bindings for the given repos and consumers
+        for consumer_id in self.CONSUMER_IDS:
+            for repo_id in self.REPO_IDS:
+                bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
+
+    # Applicability regeneration with consumer criteria
+    def test_regenerate_applicability_for_consumers_with_different_profiles(self):
+        # Setup
+        self.populate_consumers_different_profiles()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 4)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['applicability'], expected_applicability)
+            self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
+
+    def test_regenerate_applicability_for_consumers_with_same_profiles(self):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 2)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['profile'], self.PROFILE1)
+            self.assertEqual(applicability['applicability'], expected_applicability)
+
+    def test_regenerate_applicability_for_empty_consumer_criteria(self):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(Criteria())
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 2)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['profile'], self.PROFILE1)
+            self.assertEqual(applicability['applicability'], expected_applicability)
+
+    def test_regenerate_applicability_for_consumer_criteria_no_bindings(self):
+        # Setup
+        self.populate_consumers()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(applicability_list, [])
+
+    def test_regenerate_applicability_for_consumers_profiler_notfound(self):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        profiler, cfg = plugins.get_profiler_by_type('rpm')
+        profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 0)
+
+    # Applicability regeneration with repo criteria
+
+    def test_regenerate_applicability_for_repos_with_different_consumer_profiles(self):
+        # Setup
+        self.populate_consumers_different_profiles()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 4)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['applicability'], expected_applicability)
+            self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
+
+    def test_regenerate_applicability_for_repos_with_same_consumer_profiles(self):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 2)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['profile'], self.PROFILE1)
+            self.assertEqual(applicability['applicability'], expected_applicability)
+
+    def test_regenerate_applicability_for_empty_repo_criteria(self):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(Criteria())
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 2)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['profile'], self.PROFILE1)
+            self.assertEqual(applicability['applicability'], expected_applicability)
+
+    def test_regenerate_applicability_for_repo_criteria_no_bindings(self):
+        # Setup
+        self.populate_repos()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(applicability_list, [])
+
+    def test_regenerate_applicability_for_repos_profiler_notfound(self):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        profiler, cfg = plugins.get_profiler_by_type('rpm')
+        profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 0)
 
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):
@@ -855,7 +1082,6 @@ class TestAddRepoIDsToConsumerMap(base.PulpServerTests,
 
         # The order of repo_ids is not important, so we'll use the
         # assert_equal_ignoring_list_order, which will compare the lists as sets
-        
         self.assert_equal_ignoring_list_order(consumer_map, expected_consumer_map)
 
 
@@ -983,7 +1209,7 @@ class TestGetApplicabilityMap(base.PulpServerTests):
         self.assertEqual(a_map, expected_a_map)
 
 
-class TestGetConsumerApplicabilityMap(base.PulpServerTests, 
+class TestGetConsumerApplicabilityMap(base.PulpServerTests,
                                       base.RecursiveUnorderedListComparisonMixin):
     """
     Test the _get_consumer_applicability_map() function.

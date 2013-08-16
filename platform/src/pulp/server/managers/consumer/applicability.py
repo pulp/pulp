@@ -18,11 +18,205 @@ Contains content applicability management classes
 from gettext import gettext as _
 from logging import getLogger
 
+from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
+from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 
-
 _LOG = getLogger(__name__)
+
+
+class ApplicabilityRegenerationManager(object):
+
+    @staticmethod
+    def regenerate_applicability_for_consumers(consumer_criteria):
+        """
+        Regenerate and save applicability data for given updated consumers.
+
+        :param consumer_criteria: The consumer selection criteria
+        :type consumer_criteria: dict
+        """
+        consumer_query_manager = managers.consumer_query_manager()
+        bind_manager = managers.consumer_bind_manager()
+        consumer_profile_manager = managers.consumer_profile_manager()
+
+        # Process consumer_criteria
+        consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
+
+        for consumer_id in consumer_ids:
+            # Get all unit profiles for the consumer
+            unit_profiles = consumer_profile_manager.get_profiles(consumer_id)
+            # Get all repo ids bound to the consumer
+            criteria = Criteria(filters={'consumer_id': consumer_id}, fields=['repo_id'])
+            bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
+            if not bound_repo_ids:
+                continue
+
+            # Regenerate applicability for each unit profile that supports applicability
+            for unit_profile in unit_profiles:
+                ApplicabilityRegenerationManager.regenerate_applicability(unit_profile, 
+                                                                          bound_repo_ids, 
+                                                                          skip_existing=True)
+
+    @staticmethod
+    def regenerate_applicability_for_repos(repo_criteria=None):
+        """
+        Regenerate and save applicability data affected by given updated repositories.
+
+        :param repo_criteria: The repo selection criteria
+        :type repo_criteria: dict
+        """
+        repo_query_manager = managers.repo_query_manager()
+        bind_manager = managers.consumer_bind_manager()
+        consumer_profile_manager = managers.consumer_profile_manager()
+
+        # Process repo criteria
+        criteria_repo_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
+        if not criteria_repo_ids:
+            return
+
+        # Get consumers bound to given repositories
+        criteria = Criteria(filters={'repo_id': {'$in': criteria_repo_ids}}, fields=['consumer_id'])
+        consumer_ids = [b['consumer_id'] for b in bind_manager.find_by_criteria(criteria)]
+        # Remove duplicate consumer ids
+        consumer_ids = list(set(consumer_ids))
+
+        for consumer_id in consumer_ids:
+            # Get all unit profiles for the consumer
+            unit_profiles = consumer_profile_manager.get_profiles(consumer_id)
+            # Get repositories from criteria_repo_ids that are bound to this consumer 
+            criteria = Criteria(filters={'repo_id': {'$in': criteria_repo_ids},
+                                         'consumer_id': consumer_id},
+                                fields=['repo_id'])
+            bound_repo_ids = [b['repo_id'] for b in bind_manager.find_by_criteria(criteria)]
+            if not bound_repo_ids:
+                continue
+
+            # Regenerate applicability for each unit profile that supports applicability
+            for unit_profile in unit_profiles:
+                ApplicabilityRegenerationManager.regenerate_applicability(unit_profile, 
+                                                                          bound_repo_ids, 
+                                                                          skip_existing=False)
+
+    @staticmethod
+    def regenerate_applicability(unit_profile, bound_repo_ids, skip_existing=True):
+        """
+        Regenerate and save applicability data for given unit profile and repo ids.
+
+        :param unit_profile: a consumer unit profile
+        :type unit_profile: object
+
+        :param bound_repo_ids: repo ids to be used to calculate applicability
+                              against the given unit profile
+        :type bound_repo_ids: str
+
+        :param skip_existing: flag to indicate whether regeneration should be skipped
+                              for existing RepoProfileApplicability objects
+        :type skip_existing: boolean
+        """
+        # Get the profiler for content_type of given unit_profile
+        profiler, profiler_cfg = ApplicabilityRegenerationManager.__profiler(unit_profile['content_type'])
+        call_config = PluginCallConfiguration(plugin_config=profiler_cfg, repo_plugin_config=None)
+
+        # Check if the profiler supports applicability, else return
+        if profiler.calculate_applicable_units == Profiler.calculate_applicable_units:
+            # If base class calculate_applicable_units method is called, skip applicability regeneration
+            return
+
+        profiler_conduit = ProfilerConduit()
+
+        # Regenerate applicability for each bound repository
+        for bound_repo_id in bound_repo_ids:
+            existing_applicability = ApplicabilityRegenerationManager._get_existing_applicability(bound_repo_id, 
+                                                                                                  unit_profile['profile_hash'])
+            if existing_applicability and skip_existing:
+                continue
+
+            # Find out which content types have unit counts greater than zero for these bound repos
+            repo_content_types = ApplicabilityRegenerationManager._get_existing_repo_content_types(bound_repo_id)
+            # Get the intersection of existing types in the repo and the types that the profiler handles. 
+            # If the intersection is not empty, regenerate applicability
+            if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
+                try:
+                    applicability = profiler.calculate_applicable_units(unit_profile['profile'],
+                                                                        bound_repo_id,
+                                                                        call_config,
+                                                                        profiler_conduit)
+                except NotImplementedError:
+                    _LOG.warn("Profiler for content type [%s] does not support applicability" %
+                                unit_profile['content_type'])
+                    continue
+
+                if existing_applicability:
+                    # Update existing applicability object since skip_existing is False
+                    existing_applicability.applicability = applicability
+                    existing_applicability.save()
+                else:
+                    # Create a new RepoProfileApplicability object and save it in the db
+                    RepoProfileApplicability.objects.create(unit_profile['profile_hash'],
+                                                            bound_repo_id,
+                                                            unit_profile['profile'],
+                                                            applicability)
+
+    @staticmethod
+    def _get_existing_repo_content_types(repo_id):
+        """
+        For the given repo_id, return a list of content_type_ids that have content units counts greater than 0.
+
+        :param repo_id: The repo_id for the repository that we wish to know the unit types contained therein
+        :type  repo_id: basestring
+        :return:        A list of content type ids that have unit counts greater than 0
+        :rtype:         list
+        """
+        repo_content_types_with_non_zero_unit_count = []
+        repo = managers.repo_query_manager().find_by_id(repo_id)
+        if repo:
+            for content_type, count in repo['content_unit_counts'].items():
+                if count > 0:
+                    repo_content_types_with_non_zero_unit_count.append(content_type)
+        return repo_content_types_with_non_zero_unit_count
+
+    @staticmethod
+    def _get_existing_applicability(repo_id, profile_hash):
+        """
+        Check if applicability for given repo and profle hash is already calculated.
+        
+        :param repo_id:      repo id
+        :type repo_id:       basestring
+        :param profile_hash: unit profile hash
+        :type profile_hash:  basestring
+        :return:             existing RepoProfileApplicability object for given repo id and profile hash or None
+        :type:               pulp.server.db.model.consumer.RepoProfileApplicability
+        """
+        query_params = {'repo_id': repo_id, 'profile_hash': profile_hash}
+        try:
+            existing_applicability = RepoProfileApplicability.objects.get(query_params)
+        except DoesNotExist:
+            existing_applicability = None
+        return existing_applicability
+
+    @staticmethod
+    def __profiler(type_id):
+        """
+        Find the profiler.
+        Returns the Profiler base class when not matched.
+
+        :param type_id: The content type ID.
+        :type type_id: str
+
+        :return: (profiler, cfg)
+        :rtype: tuple
+        """
+        try:
+            plugin, cfg = plugin_api.get_profiler_by_type(type_id)
+        except plugin_exceptions.PluginNotFound:
+            plugin = Profiler()
+            cfg = {}
+        return plugin, cfg
 
 
 class DoesNotExist(Exception):

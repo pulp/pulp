@@ -10,6 +10,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import time
 
 import mock
 
@@ -17,7 +18,8 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicability,
                                            UnitProfile)
-from pulp.server.db.model.dispatch import ScheduledCall
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.dispatch import ScheduledCall, QueuedCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import InvalidValue
@@ -32,6 +34,7 @@ from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.server.webservices.controllers.consumers import ContentApplicability
 import base
+import mock_agent
 import mock_plugins
 import mock_agent
 
@@ -914,7 +917,7 @@ class TestContentApplicability(base.PulpWebserviceTests,
     """
     Test the ContentApplicability controller.
     """
-    PATH = '/v2/consumers/actions/content/applicability/'
+    PATH = '/v2/consumers/content/applicability/'
 
     def tearDown(self):
         """
@@ -1270,6 +1273,133 @@ class TestContentApplicability(base.PulpWebserviceTests,
         content_types = ca._get_content_types()
 
         self.assertEqual(content_types, ['c_1', 'c_2'])
+
+
+class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
+
+    CONSUMER_IDS = ['consumer-1', 'consumer-2']
+    FILTER = {'id':{'$in':CONSUMER_IDS}}
+    SORT = [{'id':1}]
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
+    REPO_IDS = ['repo-1','repo-2']
+    REPO_CRITERIA = Criteria(filters={'id':{'$in':REPO_IDS}}, sort=[{'id':1}])
+    YUM_DISTRIBUTOR_ID = 'yum_distributor'
+
+    PATH = '/v2/consumers/actions/content/regenerate_applicability/'
+
+    def setUp(self):
+        base.PulpWebserviceTests.setUp(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
+        plugin_api._create_manager()
+        mock_plugins.install()
+
+        yum_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
+        yum_profiler.calculate_applicable_units = \
+            mock.Mock(side_effect=lambda p,r,c,x:
+                      {'rpm': ['rpm-1', 'rpm-2'],
+                       'erratum': ['errata-1', 'errata-2']})
+
+    def tearDown(self):
+        base.PulpWebserviceTests.tearDown(self)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        Bind.get_collection().remove()
+        Consumer.get_collection().remove()
+        UnitProfile.get_collection().remove()
+        RepoProfileApplicability.get_collection().remove()
+        mock_plugins.reset()
+
+    def populate_repos(self):
+        repo_manager = factory.repo_manager()
+        distributor_manager = factory.repo_distributor_manager()
+        # Create repos and add distributor
+        for repo_id in self.REPO_IDS:
+            repo_manager.create_repo(repo_id)
+            distributor_manager.add_distributor(
+                                                repo_id,
+                                                'mock-distributor',
+                                                {},
+                                                True,
+                                                self.YUM_DISTRIBUTOR_ID)
+
+    def populate_bindings(self):
+        self.populate_repos()
+        bind_manager = factory.consumer_bind_manager()
+        # Add bindings for the given repos and consumers
+        for consumer_id in self.CONSUMER_IDS:
+            for repo_id in self.REPO_IDS:
+                bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
+
+    def populate(self):
+        manager = factory.consumer_manager()
+        for consumer_id in self.CONSUMER_IDS:
+            manager.register(consumer_id)
+        manager = factory.consumer_profile_manager()
+        for consumer_id in self.CONSUMER_IDS:
+            manager.create(consumer_id, 'rpm', self.PROFILE)
+
+    def test_regenerate_applicability(self):
+        # Setup
+        self.populate()
+        self.populate_bindings()
+        # Test
+        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('pulp:action:applicability_regeneration' in body['tags'])
+
+    def test_regenerate_applicability_no_consumers(self):
+        # Test
+        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+    def test_regenerate_applicability_no_bindings(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+
+    def test_regenerate_applicability_no_criteria(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = {}
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertTrue('missing_property_names' in body)
+        self.assertTrue(body['missing_property_names'] == ['consumer_criteria'])
+        self.assertFalse('task_id' in body)
+
+    def test_regenerate_applicability_wrong_criteria(self):
+        # Setup
+        self.populate()
+        # Test
+        request_body = dict(consumer_criteria='foo')
+        status, body = self.post(self.PATH, request_body)
+        # Verify
+        self.assertEquals(status, 400)
+        self.assertTrue('property_names' in body)
+        self.assertTrue(body['property_names'] == ['consumer_criteria'])
+        self.assertFalse('task_id' in body)
 
 
 class ScheduledUnitInstallTests(base.PulpWebserviceTests):
