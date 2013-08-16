@@ -34,4 +34,4 @@ sudo rm -Rf /etc/pki/pulp/*
 # sudo rm -Rf pulp_puppet
 # sudo rm -Rf nectar
 
-echo "Finished cleaning up.
+echo "Finished cleaning up."
