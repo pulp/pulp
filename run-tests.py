@@ -14,6 +14,7 @@
 import os
 import subprocess
 import sys
+import argparse
 
 # Find and eradicate any existing .pyc files, so they do not eradicate us!
 PROJECT_DIR = os.path.dirname(__file__)
@@ -49,4 +50,19 @@ args = [
 if sys.version_info < (2, 6):
     args.extend(['-e', 'server'])
 
+#add ability to specify nosetest options
+parser = argparse.ArgumentParser()
+parser.add_argument('--xunit-file')
+parser.add_argument('--with-xunit', action='store_true')
+parser.add_argument('--process-timeout', type=int)
+arguments = parser.parse_args()
+
+if hasattr(arguments, "with_xunit"):
+    args.extend(['--with-xunit'])
+if hasattr(arguments, "xunit_file"):
+    args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
+if hasattr(arguments, "process_timeout"):
+    args.extend(['--process-timeout',  + arguments.process_timeout])
+
+#Call the test process
 subprocess.call(args)
