@@ -49,7 +49,7 @@ args = [
 # don't run the server tests in RHEL5.
 if sys.version_info < (2, 6):
     args.extend(['-e', 'server'])
-    args.extend(['-e', 'nodes'])
+    args.extend(['-e', 'pulp_node'])
 
 #add ability to specify nosetest options
 parser = argparse.ArgumentParser()
