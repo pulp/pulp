@@ -49,20 +49,18 @@ args = [
 # don't run the server tests in RHEL5.
 if sys.version_info < (2, 6):
     args.extend(['-e', 'server'])
+    args.extend(['-e', 'nodes'])
 
 #add ability to specify nosetest options
 parser = argparse.ArgumentParser()
 parser.add_argument('--xunit-file')
 parser.add_argument('--with-xunit', action='store_true')
-#parser.add_argument('--process-timeout', type=int)
 arguments = parser.parse_args()
 
 if hasattr(arguments, "with_xunit"):
     args.extend(['--with-xunit','--process-timeout=360'])
 if hasattr(arguments, "xunit_file"):
     args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
-#if hasattr(arguments, "process_timeout"):
-#    args.extend(['--process-timeout',  + arguments.process_timeout])
 
 #Call the test process
 subprocess.call(args)
