@@ -25,6 +25,7 @@ srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../../src/"
 sys.path.insert(0, srcdir)
 
 from pulp.common.compat import json
+from pulp.plugins.profiler import Profiler
 from pulp.server import config
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
@@ -58,7 +59,6 @@ def load_test_config():
 
     return config.config
 
-# base unittest class ----------------------------------------------------------
 
 class PulpServerTests(unittest.TestCase):
     """

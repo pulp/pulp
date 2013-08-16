@@ -24,50 +24,51 @@ do so may indirectly break other tests.
 # -- constants ----------------------------------------------------------------
 
 # Keys used to look up a specific builtin manager (please alphabetize)
-TYPE_AUTHENTICATION         = 'authentication-manager'
-TYPE_CDS                    = 'cds-manager'
-TYPE_CERTIFICATE            = 'certificate-manager'
-TYPE_CERT_GENERATION        = 'cert-generation-manager'
-TYPE_CONSUMER               = 'consumer-manager'
-TYPE_CONSUMER_AGENT         = 'consumer-agent-manager'
-TYPE_CONSUMER_BIND          = 'consumer-bind-manager'
-TYPE_CONSUMER_CONTENT       = 'consumer-content-manager'
-TYPE_CONSUMER_GROUP         = 'consumer-group-manager'
-TYPE_CONSUMER_GROUP_QUERY   = 'consumer-group-query-manager'
-TYPE_CONSUMER_HISTORY       = 'consumer-history-manager'
-TYPE_CONSUMER_PROFILE       = 'consumer-profile-manager'
-TYPE_CONSUMER_QUERY         = 'consumer-query-manager'
-TYPE_CONTENT                = 'content-manager'
-TYPE_CONTENT_ORPHAN         = 'content-orphan-manager'
-TYPE_CONTENT_QUERY          = 'content-query-manager'
-TYPE_CONTENT_UPLOAD         = 'content-upload-manager'
-TYPE_DEPENDENCY             = 'dependencies-manager'
-TYPE_EVENT_FIRE             = 'event-fire-manager'
-TYPE_EVENT_LISTENER         = 'event-listener-manager'
-TYPE_MIGRATION_TRACKER      = 'migration-tracker-manager'
-TYPE_PASSWORD               = 'password-manager'
-TYPE_PERMISSION             = 'permission-manager'
-TYPE_PERMISSION_QUERY       = 'permission-query-manager'
-TYPE_PLUGIN_MANAGER         = 'plugin-manager'
-TYPE_PRINCIPAL              = 'principal'
-TYPE_REPO                   = 'repo-manager'
-TYPE_REPO_ASSOCIATION       = 'repo-association-manager'
-TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
-TYPE_REPO_GROUP             = 'repo-group-manager'
-TYPE_REPO_GROUP_DISTRIBUTOR = 'repo-group-distributor'
-TYPE_REPO_GROUP_PUBLISH     = 'repo-group-publish'
-TYPE_REPO_GROUP_QUERY       = 'repo-group-query-manager'
-TYPE_REPO_IMPORTER          = 'repo-importer-manager'
-TYPE_REPO_DISTRIBUTOR       = 'repo-distributor-manager'
-TYPE_REPO_PUBLISH           = 'repo-publish-manager'
-TYPE_REPO_QUERY             = 'repo-query-manager'
-TYPE_REPO_SYNC              = 'repo-sync-manager'
-TYPE_ROLE                   = 'role-manager'
-TYPE_ROLE_QUERY             = 'role-query-manager'
-TYPE_SCHEDULE               = 'schedule-manager'
-TYPE_TOPIC_PUBLISH          = 'topic-publish-manager'
-TYPE_USER                   = 'user-manager'
-TYPE_USER_QUERY             = 'user-query-manager'
+TYPE_APPLICABILITY_REGENERATION = 'application-regeneration-manager'
+TYPE_AUTHENTICATION             = 'authentication-manager'
+TYPE_CDS                        = 'cds-manager'
+TYPE_CERTIFICATE                = 'certificate-manager'
+TYPE_CERT_GENERATION            = 'cert-generation-manager'
+TYPE_CONSUMER                   = 'consumer-manager'
+TYPE_CONSUMER_AGENT             = 'consumer-agent-manager'
+TYPE_CONSUMER_BIND              = 'consumer-bind-manager'
+TYPE_CONSUMER_CONTENT           = 'consumer-content-manager'
+TYPE_CONSUMER_GROUP             = 'consumer-group-manager'
+TYPE_CONSUMER_GROUP_QUERY       = 'consumer-group-query-manager'
+TYPE_CONSUMER_HISTORY           = 'consumer-history-manager'
+TYPE_CONSUMER_PROFILE           = 'consumer-profile-manager'
+TYPE_CONSUMER_QUERY             = 'consumer-query-manager'
+TYPE_CONTENT                    = 'content-manager'
+TYPE_CONTENT_ORPHAN             = 'content-orphan-manager'
+TYPE_CONTENT_QUERY              = 'content-query-manager'
+TYPE_CONTENT_UPLOAD             = 'content-upload-manager'
+TYPE_DEPENDENCY                 = 'dependencies-manager'
+TYPE_EVENT_FIRE                 = 'event-fire-manager'
+TYPE_EVENT_LISTENER             = 'event-listener-manager'
+TYPE_MIGRATION_TRACKER          = 'migration-tracker-manager'
+TYPE_PASSWORD                   = 'password-manager'
+TYPE_PERMISSION                 = 'permission-manager'
+TYPE_PERMISSION_QUERY           = 'permission-query-manager'
+TYPE_PLUGIN_MANAGER             = 'plugin-manager'
+TYPE_PRINCIPAL                  = 'principal'
+TYPE_REPO                       = 'repo-manager'
+TYPE_REPO_ASSOCIATION           = 'repo-association-manager'
+TYPE_REPO_ASSOCIATION_QUERY     = 'repo-association-query-manager'
+TYPE_REPO_GROUP                 = 'repo-group-manager'
+TYPE_REPO_GROUP_DISTRIBUTOR     = 'repo-group-distributor'
+TYPE_REPO_GROUP_PUBLISH         = 'repo-group-publish'
+TYPE_REPO_GROUP_QUERY           = 'repo-group-query-manager'
+TYPE_REPO_IMPORTER              = 'repo-importer-manager'
+TYPE_REPO_DISTRIBUTOR           = 'repo-distributor-manager'
+TYPE_REPO_PUBLISH               = 'repo-publish-manager'
+TYPE_REPO_QUERY                 = 'repo-query-manager'
+TYPE_REPO_SYNC                  = 'repo-sync-manager'
+TYPE_ROLE                       = 'role-manager'
+TYPE_ROLE_QUERY                 = 'role-query-manager'
+TYPE_SCHEDULE                   = 'schedule-manager'
+TYPE_TOPIC_PUBLISH              = 'topic-publish-manager'
+TYPE_USER                       = 'user-manager'
+TYPE_USER_QUERY                 = 'user-query-manager'
 
 
 # Mapping of key to class that will be instantiated in the factory method
@@ -99,6 +100,12 @@ class InvalidType(Exception):
 
 # Be sure to add an entry to test_syntactic_sugar_methods in test_manager_factory.py
 # to verify the correct type of manager is returned.
+
+def applicability_regeneration_manager():
+    """
+    @rtype: L{pulp.server.managers.consumer.applicability.ApplicabilityRegenerationManager}
+    """
+    return get_manager(TYPE_APPLICABILITY_REGENERATION)
 
 def authentication_manager():
     """
@@ -214,13 +221,11 @@ def event_listener_manager():
     """
     return get_manager(TYPE_EVENT_LISTENER)
 
-
 def migration_tracker_manager():
     """
     @rtype: L{pulp.server.managers.migration_tracker.MigrationTrackerManager}
     """
-    return get_manager(TYPE_MIGRATION_MANAGER)
-
+    return get_manager(TYPE_MIGRATION_TRACKER)
 
 def password_manager():
     """
@@ -381,6 +386,7 @@ def initialize():
     from pulp.server.managers.auth.role.query import RoleQueryManager
     from pulp.server.managers.consumer.cud import ConsumerManager
     from pulp.server.managers.consumer.agent import AgentManager
+    from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
     from pulp.server.managers.consumer.bind import BindManager
     from pulp.server.managers.consumer.content import ConsumerContentManager
     from pulp.server.managers.consumer.group.cud import ConsumerGroupManager
@@ -416,6 +422,7 @@ def initialize():
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {
+        TYPE_APPLICABILITY_REGENERATION: ApplicabilityRegenerationManager,
         TYPE_AUTHENTICATION : AuthenticationManager,
         TYPE_CERTIFICATE : CertificateManager,
         TYPE_CERT_GENERATION: CertGenerationManager,

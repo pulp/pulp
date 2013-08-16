@@ -652,6 +652,38 @@ class ContentApplicability(JSONController):
         return content_types
 
 
+class ContentApplicabilityRegeneration(JSONController):
+    """
+    Content applicability regeneration for updated consumers.
+    """
+
+    @auth_required(CREATE)
+    def POST(self):
+        """
+        Creates an async task to regenerate content applicability data for given consumers.
+
+        body {consumer_criteria:<dict>}
+        """
+        body = self.params()
+        consumer_criteria = body.get('consumer_criteria', None)
+        if consumer_criteria is None:
+            raise MissingValue('consumer_criteria')
+        try:
+            consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        except:
+            raise InvalidValue('consumer_criteria')
+
+        manager = managers.applicability_regeneration_manager()
+        regeneration_tag = action_tag('applicability_regeneration')
+        call_request = CallRequest(manager.regenerate_applicability_for_consumers,
+                                   [consumer_criteria],
+                                   tags=[regeneration_tag])
+        # allow only one applicability regeneration task at a time
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                      dispatch_constants.RESOURCE_ANY_ID)
+        return execution.execute_async(self, call_request)
+
+
 class UnitInstallScheduleCollection(JSONController):
 
     @auth_required(READ)
@@ -1038,9 +1070,10 @@ class UnitUninstallScheduleResource(JSONController):
 
 urls = (
     '/$', Consumers,
-    '/search/$', ConsumerSearch,
+    '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/binding/search/$', BindingSearch,
-    '/actions/content/applicability/$', ContentApplicability,
+    '/content/applicability/$', ContentApplicability,
+    '/search/$', ConsumerSearch,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', Binding,
