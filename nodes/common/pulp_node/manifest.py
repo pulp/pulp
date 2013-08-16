@@ -33,7 +33,7 @@ log = getLogger(__name__)
 
 # --- constants -------------------------------------------------------------------------
 
-
+MANIFEST_VERSION = 1
 MANIFEST_FILE_NAME = 'manifest.json'
 UNITS_FILE_NAME = 'units.json.gz'
 
@@ -63,6 +63,7 @@ class Manifest(object):
         :type manifest_id: str
         """
         self.id = manifest_id
+        self.version = MANIFEST_VERSION
         self.total_units = 0
         self.units_size = 0
         self.publishing_details = {}
@@ -78,6 +79,7 @@ class Manifest(object):
         """
         state = dict(
             id=self.id,
+            version=self.version,
             total_units=self.total_units,
             units_size=self.units_size,
             publishing_details=self.publishing_details)
@@ -125,6 +127,18 @@ class Manifest(object):
         :type details: dict
         """
         self.publishing_details.update(details)
+
+    def is_valid(self):
+        """
+        Get whether the manifest is valid.
+        To start with, compare the version number.
+        :return: True if valid.
+        :rtype: bool
+        """
+        try:
+            return self.has_valid_units() and self.version == MANIFEST_VERSION
+        except AttributeError:
+            return False
 
     def has_valid_units(self):
         """

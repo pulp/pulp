@@ -192,7 +192,7 @@ class ImporterStrategy(object):
                     pass
             fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
             fetched_manifest.fetch()
-            if manifest != fetched_manifest or not manifest.has_valid_units():
+            if manifest != fetched_manifest or not manifest.is_valid():
                 fetched_manifest.fetch_units()
                 manifest = fetched_manifest
         except NodeError:
@@ -201,7 +201,10 @@ class ImporterStrategy(object):
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
-        return UnitInventory(manifest, child_units)
+        parent_units = manifest.get_units()
+        base_URL = manifest.publishing_details[constants.BASE_URL]
+        inventory = UnitInventory(base_URL, parent_units, child_units)
+        return inventory
 
     def _update_storage_path(self, unit):
         """
@@ -240,7 +243,6 @@ class ImporterStrategy(object):
         units = unit_inventory.units_on_parent_only()
         request.progress.begin_adding_units(len(units))
         manager = UnitDownloadManager(self, request)
-        publishing_details = unit_inventory.manifest.publishing_details
         for unit, unit_ref in units:
             if request.cancelled():
                 return
@@ -249,11 +251,10 @@ class ImporterStrategy(object):
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
                 continue
-            url = pathlib.url_join(
-                publishing_details[constants.BASE_URL],
-                pathlib.quote(unit[constants.RELATIVE_PATH]))
+            unit_path = pathlib.quote(unit[constants.RELATIVE_PATH])
+            unit_URL = pathlib.url_join(unit_inventory.base_URL, unit_path)
             storage_path = unit[constants.STORAGE_PATH]
-            _request = manager.create_request(url, storage_path, unit_ref)
+            _request = manager.create_request(unit_URL, storage_path, unit_ref)
             download_list.append(_request)
         if request.cancelled():
             return
