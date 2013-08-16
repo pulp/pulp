@@ -19,7 +19,7 @@ from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptio
 from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import UnitProfile
 from pulp.server.exceptions import MissingResource
-from pulp.server.managers.consumer.cud import ConsumerManager
+from pulp.server.managers import factory
 from logging import getLogger
 
 
@@ -61,7 +61,7 @@ class ProfileManager(object):
             # Not all profile types have a type specific profiler, so let's use the baseclass
             # Profiler
             profiler, config = (Profiler(), {})
-        consumer = ConsumerManager().get_consumer(consumer_id)
+        consumer = factory.consumer_manager().get_consumer(consumer_id)
         # Allow the profiler a chance to update the profile before we save it
         profile = profiler.update_profile(consumer, content_type, profile, config)
 
