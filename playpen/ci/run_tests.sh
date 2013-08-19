@@ -16,7 +16,7 @@ python run-tests.py  --with-xunit --xunit-file ../test/pulpTest.xml
 # nosetests pulp_devel/test/unit/ --with-xunit --xunit-file builtinsTest.xml --process-timeout=360
 
 cd $WORKSPACE/pulp_rpm
-python run-tests.py
+python run-tests.py  --with-xunit --xunit-file ../test/pulpTest.xml
 # nosetests pulp_rpm/test/unit/ --with-xunit --xunit-file puppetTest.xml --process-timeout=360
 
 cd $WORKSPACE/pulp_puppet
