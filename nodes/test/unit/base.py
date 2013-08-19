@@ -72,7 +72,7 @@ class ServerTests(TestCase):
     @classmethod
     def tearDownClass(cls):
         name = pulp_conf.get('database', 'name')
-        connection._connection.drop_database(name)
+        connection._CONNECTION.drop_database(name)
 
     def setUp(self):
         QueuedCall.get_collection().remove()
@@ -176,3 +176,9 @@ class Response:
     def __init__(self, code, body):
         self.response_code = code
         self.response_body = body
+
+
+class Task:
+
+    def __init__(self, task_id=0):
+        self.task_id = task_id

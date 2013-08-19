@@ -20,11 +20,12 @@ from pulp_node.error import ImporterNotInstalled, DistributorNotInstalled
 
 TYPE_ID = 'id'
 REPO_ID = 'id'
+DISTRIBUTOR_TYPE_ID = 'distributor_type_id'
+IMPORTER_TYPE_ID = 'importer_type_id'
 IMPORTERS = 'importers'
 DISTRIBUTORS = 'distributors'
 REPOSITORY = 'repository'
 DETAILS = 'details'
-
 
 # --- validation -------------------------------------------------------------
 
@@ -71,11 +72,11 @@ class Validator(object):
             details = binding[DETAILS]
             repo_id = details[REPOSITORY][REPO_ID]
             for plugin in details[IMPORTERS]:
-                type_id = plugin[TYPE_ID]
+                type_id = plugin[IMPORTER_TYPE_ID]
                 if not child.has_importer(type_id):
                     errors.append(ImporterNotInstalled(repo_id, type_id))
             for plugin in details[DISTRIBUTORS]:
-                type_id = plugin[TYPE_ID]
+                type_id = plugin[DISTRIBUTOR_TYPE_ID]
                 if not child.has_distributor(type_id):
                     errors.append(DistributorNotInstalled(repo_id, type_id))
         return errors

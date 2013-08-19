@@ -16,6 +16,7 @@ import sys
 import tempfile
 import shutil
 import random
+import gzip
 
 from copy import deepcopy
 
@@ -28,8 +29,8 @@ from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
-from pulp_node.distributors.http.distributor import NodesHttpDistributor
-from pulp_node.importers.http.importer import NodesHttpImporter
+from pulp_node.distributors.http.distributor import NodesHttpDistributor, entry_point as dist_entry_point
+from pulp_node.importers.http.importer import NodesHttpImporter, entry_point as imp_entry_point
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
 
 from pulp.plugins.loader import api as plugin_api
@@ -39,8 +40,11 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.exceptions import MissingResource
 from pulp.plugins import model as plugin_model
+from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
+from pulp.common.plugins import importer_constants
 from pulp.server.managers import factory as managers
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
@@ -48,7 +52,7 @@ from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp.agent.lib.container import CONTENT, Container
 from pulp.agent.lib.dispatcher import Dispatcher
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import Manifest, RemoteManifest, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
@@ -56,6 +60,8 @@ from pulp_node import constants
 
 
 FAKE_DISTRIBUTOR = 'test_distributor'
+FAKE_ID = 'fake_plugin_id'
+FAKE_DISTRIBUTOR_CONFIG = {'A': 0}
 
 
 # --- testing mock classes ---------------------------------------------------
@@ -159,7 +165,7 @@ class PluginTestBase(WebTest):
         imp_conf = dict(strategy=constants.MIRROR_STRATEGY)
         plugin_api._MANAGER.importers.add_plugin(constants.HTTP_IMPORTER, NodesHttpImporter, imp_conf)
         plugin_api._MANAGER.distributors.add_plugin(constants.HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
-        plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, {})
+        plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
         unit_db.type_definition = \
             Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
@@ -318,6 +324,12 @@ class TestDistributor(PluginTestBase):
         'repository': None
     }
 
+    def test_entry_point(self):
+        repo = plugin_model.Repository(self.REPO_ID)
+        _class, conf = dist_entry_point()
+        plugin = _class()
+        plugin.validate_config(repo, conf, [])
+
     def test_metadata(self):
         # Test
         md = NodesHttpDistributor.metadata()
@@ -415,7 +427,7 @@ class TestDistributor(PluginTestBase):
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD, constants.SSL_KEYWORD):
+        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD):
             self.assertTrue(key in importers[0]['config'])
 
     def test_payload_with_ssl(self):
@@ -436,10 +448,11 @@ class TestDistributor(PluginTestBase):
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD, constants.SSL_KEYWORD):
+        for key in (constants.MANIFEST_URL_KEYWORD,
+                    constants.STRATEGY_KEYWORD,
+                    importer_constants.KEY_SSL_CLIENT_CERT,
+                    importer_constants.KEY_SSL_VALIDATION):
             self.assertTrue(key in importers[0]['config'])
-        for key in (constants.CLIENT_CERT_KEYWORD,):
-            self.assertTrue(key in importers[0]['config'][constants.SSL_KEYWORD])
 
     def test_publish(self):
         # Setup
@@ -453,12 +466,12 @@ class TestDistributor(PluginTestBase):
         # Verify
         conf = DownloaderConfig()
         downloader = HTTPSCurlDownloader(conf)
-        manifest = Manifest()
         pub = dist.publisher(repo, self.dist_conf())
         url = '/'.join((pub.base_url, pub.manifest_path()))
-        manifest = Manifest()
-        manifest.fetch(url, self.childfs, downloader)
-        manifest.fetch_units(url, downloader)
+        working_dir = self.childfs
+        manifest = RemoteManifest(url, downloader, working_dir)
+        manifest.fetch()
+        manifest.fetch_units()
         units = [u for u, r in manifest.get_units()]
         self.assertEqual(len(units), self.NUM_UNITS)
         for n in range(0, self.NUM_UNITS):
@@ -477,6 +490,12 @@ class ImporterTest(PluginTestBase):
         constants.MANIFEST_URL_KEYWORD: 'http://redhat.com',
         constants.PROTOCOL_KEYWORD: 'http'
     }
+
+    def test_entry_point(self):
+        repo = plugin_model.Repository(self.REPO_ID)
+        _class, conf = imp_entry_point()
+        plugin = _class()
+        plugin.validate_config(repo, conf, [])
 
     def test_metadata(self):
         # Test
@@ -524,9 +543,13 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
-    def test_import(self):
+    @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
+           wraps=importer_config_to_nectar_config)
+    def test_import(self, *mocks):
         # Setup
         self.populate()
+        max_concurrency = 5
+        max_bandwidth = 12345
         pulp_conf.set('server', 'storage_dir', self.parentfs)
         dist = NodesHttpDistributor()
         working_dir = os.path.join(self.childfs, 'working_dir')
@@ -548,17 +571,156 @@ class ImporterTest(PluginTestBase):
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
         manifest_url = 'file://' + publisher.manifest_path()
-        cfg = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
+            importer_constants.KEY_MAX_SPEED: max_bandwidth,
+        }
+        configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
             constants.HTTP_IMPORTER,
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        report = importer.sync_repo(repo, conduit, cfg)
+        importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
+        mock_importer_config_to_nectar_config = mocks[0]
+        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
+
+    @patch('pulp_node.manifest.RemoteManifest.fetch_units')
+    def test_import_cached_manifest_matched(self, mock_fetch):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        configuration = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, configuration)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        publisher = dist.publisher(repo, configuration)
+        manifest_path = publisher.manifest_path()
+        units_path = os.path.join(os.path.dirname(manifest_path), UNITS_FILE_NAME)
+        manifest = Manifest(manifest_path)
+        manifest.read()
+        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+        shutil.copy(units_path, os.path.join(working_dir, UNITS_FILE_NAME))
+        # Test
+        importer = NodesHttpImporter()
+        manifest_url = 'file://' + manifest_path
+        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = PluginCallConfiguration(configuration, {})
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+        self.assertFalse(mock_fetch.called)
+
+    def test_import_cached_manifest_missing_units(self):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        configuration = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, configuration)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        publisher = dist.publisher(repo, configuration)
+        manifest_path = publisher.manifest_path()
+        manifest = Manifest(manifest_path)
+        manifest.read()
+        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+        # Test
+        importer = NodesHttpImporter()
+        manifest_url = 'file://' + manifest_path
+        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = PluginCallConfiguration(configuration, {})
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+
+    def test_import_cached_manifest_units_invalid(self):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        configuration = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, configuration)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        publisher = dist.publisher(repo, configuration)
+        manifest_path = publisher.manifest_path()
+        manifest = Manifest(manifest_path)
+        manifest.read()
+        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+        with open(os.path.join(working_dir, UNITS_FILE_NAME), 'w+') as fp:
+            fp.write('invalid-units')
+        # Test
+        importer = NodesHttpImporter()
+        manifest_url = 'file://' + manifest_path
+        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        configuration = PluginCallConfiguration(configuration, {})
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+
 
 
 # --- testing end-to-end -----------------------------------------------------
@@ -637,13 +799,19 @@ class TestEndToEnd(PluginTestBase):
             dist_conf,
             False,
             constants.HTTP_DISTRIBUTOR)
-        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, {}, False, FAKE_DISTRIBUTOR)
+        manager.add_distributor(self.REPO_ID, FAKE_DISTRIBUTOR, FAKE_DISTRIBUTOR_CONFIG, False, FAKE_ID)
         # bind
         conf = {constants.STRATEGY_KEYWORD: strategy}
         manager = managers.consumer_bind_manager()
         manager.bind(self.PULP_ID, self.REPO_ID, constants.HTTP_DISTRIBUTOR, False, conf)
 
-    def clean(self, repo=True, units=True, plugins=False, extra_units=0, extra_repos=None):
+    def clean(self,
+              repo=True,
+              units=True,
+              plugins=False,
+              extra_units=0,
+              extra_repos=None,
+              dist_config=None):
         # remove repository & bindings
         if repo:
             Bind.get_collection().remove()
@@ -662,6 +830,10 @@ class TestEndToEnd(PluginTestBase):
             manager = managers.repo_manager()
             for repo_id in extra_repos:
                 manager.create_repo(repo_id)
+        # distributor config changed
+        if dist_config is not None:
+            manager = managers.repo_distributor_manager()
+            manager.update_distributor_config(self.REPO_ID, FAKE_ID, dist_config)
         # clear pulp plugins
         if plugins:
             plugin_api._MANAGER.distributors.plugins = {}
@@ -677,8 +849,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertTrue(manifest_url.endswith('%s/manifest.json' % self.REPO_ID))
         # distributor
         manager = managers.repo_distributor_manager()
-        manager.get_distributor(self.REPO_ID, FAKE_DISTRIBUTOR)
-        self.assertRaises(MissingResource, manager.get_distributor, self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        manager.get_distributor(self.REPO_ID, FAKE_ID)
         # check units
         manager = managers.repo_unit_association_query_manager()
         units = manager.get_units(self.REPO_ID)
@@ -847,6 +1018,57 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(len(all), 1 + len(self.EXTRA_REPO_IDS))
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_mirror_repository_scope(self, *unused):
+        """
+        Test end-to-end functionality using the mirror strategy and
+        invoke using 'repository' units.  The goal is to make sure that the
+        extra repositories are not affected.  Behaves like the additive strategy.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy',
+               return_value=AdditiveTestStrategy(self, extra_repos=self.EXTRA_REPO_IDS))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            units = [{'type_id': 'repository', 'unit_key': {'repo_id': self.REPO_ID}}]
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            container = Container(self.parentfs)
+            dispatcher = Dispatcher(container)
+            container.handlers[CONTENT]['node'] = NodeHandler(self)
+            container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
+            report = dispatcher.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        # Verify
+        report = _report[0].details['repository']
+        self.assertTrue(report['succeeded'])
+        errors = report['details']['errors']
+        repositories = report['details']['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.ADDED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+        self.verify()
+        manager = managers.repo_query_manager()
+        all = manager.find_all()
+        self.assertEqual(len(all), 1 + len(self.EXTRA_REPO_IDS))
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge(self, unused):
         """
         Test end-to-end functionality using the mirror strategy. We don't clean the repositories
@@ -891,6 +1113,55 @@ class TestEndToEnd(PluginTestBase):
         self.verify()
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
+
+    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    def test_handler_merge_dist_changed(self, unused):
+        """
+        Test end-to-end functionality using the mirror strategy. We don't clean the repositories
+        to they will be merged instead of added as new.
+        """
+        _report = []
+        conn = PulpConnection(None, server_wrapper=self)
+        binding = Bindings(conn)
+        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
+        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.handlers.handler.find_strategy',
+               return_value=MirrorTestStrategy(self, repo=False, units=True, dist_config={'A': 1}))
+        def test_handler(*unused):
+            # publish
+            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            pulp_conf.set('server', 'storage_dir', self.parentfs)
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            units = []
+            options = dict(strategy=constants.MIRROR_STRATEGY)
+            handler = NodeHandler(self)
+            pulp_conf.set('server', 'storage_dir', self.childfs)
+            report = handler.update(Conduit(), units, options)
+            _report.append(report)
+        test_handler()
+        # Verify
+        report = _report[0]
+        self.assertTrue(report.succeeded)
+        errors = report.details['errors']
+        repositories = report.details['repositories']
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(repositories), 1)
+        repository = repositories[0]
+        self.assertEqual(repository['repo_id'], self.REPO_ID)
+        self.assertEqual(repository['action'], RepositoryReport.MERGED)
+        units = repository['units']
+        self.assertEqual(units['added'], self.NUM_UNITS)
+        self.assertEqual(units['updated'], 0)
+        self.assertEqual(units['removed'], 0)
+        self.verify()
+        path = os.path.join(self.childfs, 'parent', 'client.crt')
+        self.assertTrue(os.path.exists(path))
+        manager = managers.repo_distributor_manager()
+        dist = manager.get_distributor(self.REPO_ID, FAKE_ID)
+        self.assertEqual(dist['config'], FAKE_DISTRIBUTOR_CONFIG)
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_and_delete_extra_units(self, unused):

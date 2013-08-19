@@ -21,7 +21,7 @@ from nectar.config import DownloaderConfig
 from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.distributors.http.publisher import HttpPublisher
-from pulp_node.manifest import Manifest
+from pulp_node.manifest import RemoteManifest
 
 
 class TestHttp(TestCase):
@@ -92,10 +92,11 @@ class TestHttp(TestCase):
         manifest_path = p.manifest_path()
         working_dir = os.path.join(self.tmpdir, 'working_dir')
         os.makedirs(working_dir)
-        manifest = Manifest()
         url = pathlib.url_join(base_url, manifest_path)
-        manifest.fetch(url, working_dir, downloader)
-        manifest.fetch_units(url, downloader)
+        manifest = RemoteManifest(url, downloader, working_dir)
+        manifest.fetch()
+        manifest.fetch_units()
+        self.assertTrue(manifest.has_valid_units())
         units = manifest.get_units()
         n = 0
         for unit, ref in units:
@@ -112,8 +113,11 @@ class TestHttp(TestCase):
             else:
                 self.assertTrue(os.path.islink(path))
             if n == 0:
-                with tarfile.open(path) as tb:
+                tb = tarfile.open(path)
+                try:
                     files = sorted(tb.getnames())
+                finally:
+                    tb.close()
                 self.assertEqual(len(files), self.NUM_TARED_FILES + 1)
             else:
                 with open(path, 'rb') as fp:

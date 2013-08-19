@@ -17,8 +17,8 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: 2.2.0
-Release: 0.4.beta%{?dist}
+Version: 2.3.0
+Release: 0.2.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -82,13 +82,20 @@ mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins/types
 mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/http
 mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/https
 mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
+mkdir -p %{buildroot}/%{_bindir}
 
 # Configuration
 pushd parent
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
 popd
 pushd child
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
+
+# Scripts
+pushd common
+cp bin/* %{buildroot}/%{_bindir}
 popd
 
 # Types
@@ -124,6 +131,7 @@ Pulp nodes common modules.
 %defattr(-,root,root,-)
 %dir %{python_sitelib}/pulp_node
 %dir %{python_sitelib}/pulp_node/extensions
+%{_bindir}/pulp-gen-nodes-certificate
 %{python_sitelib}/pulp_node/extensions/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
@@ -143,6 +151,7 @@ Pulp parent nodes support.
 
 %files parent
 %defattr(-,root,root,-)
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
 %{python_sitelib}/pulp_node/distributors/
@@ -163,7 +172,7 @@ Requires: pulp-consumer-client = %{pulp_version}
 Requires: pulp-agent = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 Requires: gofer >= 0.74
-Requires: python-nectar >= 0.97.0
+Requires: python-nectar >= 1.0.0
 
 %description child
 Pulp child nodes support.
@@ -177,6 +186,7 @@ Pulp child nodes support.
 %{python_sitelib}/pulp_node_consumer_extensions*.egg-info
 %{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/
 %doc
 
 
@@ -201,47 +211,7 @@ Pulp nodes admin client extensions.
 
 %post common
 # Generate the certificate used to access the local server.
-
-PKI=/etc/pki/pulp
-PKI_NODES=$PKI/nodes
-CA_KEY=$PKI/ca.key
-CA_CRT=$PKI/ca.crt
-BASE='nodes'
-TMP=/tmp/$RANDOM
-CN='admin:admin:0'
-ORG='PULP'
-ORG_UNIT='NODES'
-
-mkdir -p $TMP
-mkdir -p $PKI_NODES
-
-# create client key
-openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
-
-# create signing request for client
-openssl req \
-  -new \
-  -key $TMP/$BASE.key \
-  -out $TMP/$BASE.req \
-  -subj "/CN=$CN/O=$ORG/OU=$ORG_UNIT" &> /dev/null
-
-# sign server request w/ CA key and gen x.509 cert.
-openssl x509 \
-  -req  \
-  -in $TMP/$BASE.req \
-  -out $TMP/$BASE.xx \
-  -sha1 \
-  -CA $CA_CRT \
-  -CAkey $CA_KEY \
-  -CAcreateserial \
-  -set_serial $RANDOM \
-  -days 3650 &> /dev/null
-
-# bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/local.crt
-
-# clean
-rm -rf $TMP
+pulp-gen-nodes-certificate
 
 %postun
 # clean up the nodes certificate.
@@ -253,50 +223,51 @@ fi
 
 
 %changelog
-* Mon Jun 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.beta
-- 
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
+- Pulp rebuild
 
-* Tue Jun 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.beta
+* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.1.alpha
+- 988913 - mirror (node) strategy only affect specified repos when units
+  type_id=repository. (jortel@redhat.com)
+- 977948 - fix distributor updating during node sync. (jortel@redhat.com)
+- purge changelog
 - 924832 - check if node is already activated. (jortel@redhat.com)
 
-* Thu Jun 06 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.beta
-- 
-
-* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.beta
+* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.16.alpha
 - 968543 - remove conditional in pulp_version macro. (jortel@redhat.com)
 
 * Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
-- 
+- Pulp rebuild
 
 * Fri May 24 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.14.alpha
-- 
+- Pulp rebuild
 
 * Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.13.alpha
-- 
+- Pulp rebuild
 
 * Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
-- 
+- Pulp rebuild
 
 * Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
-- 
+- Pulp rebuild
 
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.10.alpha
-- 
+- Pulp rebuild
 
 * Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.9.alpha
-- 
+- Pulp rebuild
 
 * Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.8.alpha
-- 
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
-- 
+- Pulp rebuild
 
 * Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
 - 955356 - pulp-nodes-child requires: pulp-agent. (jortel@redhat.com)
 
 * Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
-- 
+- Pulp rebuild
 
 * Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
 - 922229 - fix progress rendering. rendering depends on bindings processed in a
@@ -318,25 +289,25 @@ fi
   (jortel@redhat.com)
 
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
-- 
+- Pulp rebuild
 
 * Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
-- 
+- Pulp rebuild
 
 * Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
-- 
+- Pulp rebuild
 
 * Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
-- 
+- Pulp rebuild
 
 * Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
-- 
+- Pulp rebuild
 
 * Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
-- 
+- Pulp rebuild
 
 * Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
-- 
+- Pulp rebuild
 
 * Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
 - new package built with tito

@@ -11,13 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import json
+
 from logging import getLogger
 from gettext import gettext as _
 
-from nectar.config import DownloaderConfig
 from nectar.downloaders.curl import HTTPSCurlDownloader
 
 from pulp.plugins.importer import Importer
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 
 from pulp_node import constants
 from pulp_node.error import CaughtException
@@ -28,31 +30,25 @@ from pulp_node.importers.strategies import find_strategy, SyncRequest
 
 log = getLogger(__name__)
 
-# download concurrency
-MAX_CONCURRENCY = 20
 
-
-# --- i18n ------------------------------------------------------------------------------
+# --- constants -------------------------------------------------------------------------
 
 PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
 STRATEGY_UNSUPPORTED = _('Strategy %(s)s not supported')
 
+CONFIGURATION_PATH = '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'
+
 
 # --- plugin loading --------------------------------------------------------------------
-
-
-DEFAULT_CONFIGURATION = {
-    constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY,
-}
-
 
 def entry_point():
     """
     Entry point that pulp platform uses to load the importer.
     :return: importer class and its configuration
-    :rtype:  Importer, {}
+    :rtype:  Importer, dict
     """
-    return NodesHttpImporter, DEFAULT_CONFIGURATION
+    with open(CONFIGURATION_PATH) as fp:
+        return NodesHttpImporter, json.load(fp)
 
 
 # --- plugin ----------------------------------------------------------------------------
@@ -126,7 +122,7 @@ class NodesHttpImporter(Importer):
 
         try:
             downloader = self._downloader(config)
-            strategy_name = config.get(constants.STRATEGY_KEYWORD)
+            strategy_name = config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
             progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
             request = SyncRequest(
                 importer=self,
@@ -172,18 +168,6 @@ class NodesHttpImporter(Importer):
         :return: A configured downloader
         :rtype: nectar.downloaders.base.Downloader
         """
-        ssl = config.get(constants.SSL_KEYWORD, {})
-        conf = DownloaderConfig(
-            max_concurrent=MAX_CONCURRENCY,
-            ssl_ca_cert_path=self._safe_str(ssl.get(constants.CA_CERT_KEYWORD)),
-            ssl_client_cert_path=self._safe_str(ssl.get(constants.CLIENT_CERT_KEYWORD)),
-            ssl_validation=False)
-        downloader = HTTPSCurlDownloader(conf)
+        configuration = importer_config_to_nectar_config(config.flatten())
+        downloader = HTTPSCurlDownloader(configuration)
         return downloader
-
-    def _safe_str(self, s):
-        if s:
-            return str(s)
-        else:
-            return s
-

@@ -30,6 +30,7 @@ from logging import getLogger
 
 from pulp.common.bundle import Bundle
 from pulp.common.config import Config
+from pulp.common.plugins import importer_constants
 from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.server import PulpConnection
@@ -334,8 +335,6 @@ class RepositoryOnChild(ChildEntity, Repository):
     def merge_distributors(self, parent):
         """
         Merge distributors.
-          - Delete distributors associated to this child repository but not
-            associated with the parent repository.
           - Merge distributors associated with this child repository AND
             associated with parent repository.
           - Add distributors associated with the parent repository but NOT
@@ -343,7 +342,6 @@ class RepositoryOnChild(ChildEntity, Repository):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        self.delete_distributors(parent)
         for details in parent.distributors:
             dist_id = details['id']
             dist = Distributor(self.repo_id, dist_id, details)
@@ -354,29 +352,21 @@ class RepositoryOnChild(ChildEntity, Repository):
                 mydist = DistributorOnChild(self.repo_id, dist_id, details)
                 mydist.add()
 
-    def delete_distributors(self, parent):
-        """
-        Delete distributors associated with this child repository but not
-        associated with the parent repository.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
-        """
-        parent_ids = [d['id'] for d in parent.distributors]
-        for details in self.distributors:
-            dist_id = details['id']
-            if dist_id not in parent_ids:
-                dist = DistributorOnChild(self.repo_id, dist_id, {})
-                dist.delete()
-
-    def run_synchronization(self, progress, cancelled):
+    def run_synchronization(self, progress, cancelled, options):
         """
         Run a repo_sync() on this child repository.
         :param progress: A progress report.
         :type progress: pulp_node.progress.RepositoryProgress
+        :param options: node synchronization options.
+        :type options: dict
         :return: The task result.
         """
         poller = TaskPoller(self.binding)
-        http = self.binding.repo_actions.sync(self.repo_id, {})
+        configuration = {
+            importer_constants.KEY_MAX_DOWNLOADS: options.get(constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD),
+            importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD)
+        }
+        http = self.binding.repo_actions.sync(self.repo_id, configuration)
         if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
         task = http.response_body[0]
@@ -462,14 +452,14 @@ class DistributorOnChild(ChildEntity, Distributor):
             self.dist_id)
         log.info('Distributor: %s/%s, added', self.repo_id, self.dist_id)
 
-    def update(self, delta):
+    def update(self, configuration):
         """
         Update this repository-distributor in the child inventory.
-        :param delta: The properties that need to be updated.
-        :type delta: dict
+        :param configuration: The updated configuration.
+        :type configuration: dict
         """
         binding = self.binding.repo_distributor
-        binding.update(self.repo_id, self.dist_id, delta)
+        binding.update(self.repo_id, self.dist_id, configuration)
         log.info('Distributor: %s/%s, updated', self.repo_id, self.dist_id)
 
     def delete(self):
@@ -486,13 +476,11 @@ class DistributorOnChild(ChildEntity, Distributor):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        delta = {}
-        for k,v in parent.details['config'].items():
-            if self.details['config'].get(k) != v:
-                self.details['config'][k] = v
-                delta[k] = v
-        if delta:
-            self.update(delta)
+        key = 'config'
+        parent_configuration = parent.details[key]
+        child_configuration = self.details[key]
+        if child_configuration != parent_configuration:
+            self.update(parent_configuration)
 
 
 class Importer(object):
@@ -553,14 +541,14 @@ class ImporterOnChild(ChildEntity, Importer):
         binding.create(self.repo_id, self.imp_id, conf)
         log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
 
-    def update(self, delta):
+    def update(self, configuration):
         """
         Update this repository-importer in the child inventory.
-        :param delta: The properties that need to be updated.
-        :type delta: dict
+        :param configuration: The updated configuration.
+        :type configuration: dict
         """
         binding = self.binding.repo_importer
-        binding.update(self.repo_id, self.imp_id, delta)
+        binding.update(self.repo_id, self.imp_id, configuration)
         log.info('Importer: %s/%s, updated', self.repo_id, self.imp_id)
 
     def delete(self):
@@ -577,14 +565,9 @@ class ImporterOnChild(ChildEntity, Importer):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        delta = {}
-        for k,v in parent.details['config'].items():
-            if self.details['config'].get(k) != v:
-                self.details['config'][k] = v
-                delta[k] = v
-        if delta:
-            delta = link.unpack_all(delta)
-            self.update(delta)
+        configuration = parent.details['config']
+        unpacked = link.unpack_all(configuration)
+        self.update(unpacked)
 
 
 class BindingsOnParent(ParentEntity):

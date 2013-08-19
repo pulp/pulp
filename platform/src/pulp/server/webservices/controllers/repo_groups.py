@@ -13,6 +13,7 @@
 
 import web
 
+from pulp.common.plugins import distributor_constants
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
@@ -52,18 +53,23 @@ class RepoGroupCollection(JSONController):
         description = group_data.pop('description', None)
         repo_ids = group_data.pop('repo_ids', None)
         notes = group_data.pop('notes', None)
+        distributors = group_data.pop('distributors', None)
         if group_data:
             raise pulp_exceptions.InvalidValue(group_data.keys())
+
+        # Create the repo group
         manager = managers_factory.repo_group_manager()
+        args = [group_id, display_name, description, repo_ids, notes]
+        kwargs = {'distributor_list': distributors}
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)]
-        call_request = CallRequest(manager.create_repo_group,
-                                   [group_id, display_name, description, repo_ids, notes],
-                                   weight=weight,
+
+        call_request = CallRequest(manager.create_and_configure_repo_group, args, kwargs, weight=weight,
                                    tags=tags)
         call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)
         group = execution.execute_sync(call_request)
         group.update(serialization.link.child_link_obj(group['id']))
+        group['distributors'] = distributors or []
         return self.created(group['_href'], group)
 
 
@@ -72,12 +78,14 @@ class RepoGroupSearch(SearchController):
         super(RepoGroupSearch, self).__init__(
             managers_factory.repo_group_query_manager().find_by_criteria)
 
+    @auth_required(authorization.READ)
     def GET(self):
         items = self._get_query_results_from_get()
         for item in items:
             item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
+    @auth_required(authorization.READ)
     def POST(self):
         items = self._get_query_results_from_post()
         for item in items:
@@ -182,9 +190,9 @@ class RepoGroupDistributors(JSONController):
     def POST(self, repo_group_id):
         # Params (validation will occur in the manager)
         params = self.params()
-        distributor_type_id = params.get('distributor_type_id', None)
-        distributor_config = params.get('distributor_config', None)
-        distributor_id = params.get('distributor_id', None)
+        distributor_type_id = params.get(distributor_constants.DISTRIBUTOR_TYPE_ID_KEY, None)
+        distributor_config = params.get(distributor_constants.DISTRIBUTOR_CONFIG_KEY, None)
+        distributor_id = params.get(distributor_constants.DISTRIBUTOR_ID_KEY, None)
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
@@ -282,6 +290,7 @@ class PublishAction(JSONController):
     # Scope: Action
     # POST: Trigger a group publish
 
+    @auth_required(authorization.EXECUTE)
     def POST(self, repo_group_id):
         params = self.params()
         distributor_id = params.get('id', None)

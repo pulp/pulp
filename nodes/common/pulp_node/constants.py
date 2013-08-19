@@ -27,6 +27,10 @@ MIRROR_STRATEGY = 'mirror'
 STRATEGIES = [ADDITIVE_STRATEGY, MIRROR_STRATEGY]
 DEFAULT_STRATEGY = ADDITIVE_STRATEGY
 
+NODE_SCOPE = 'node'
+REPOSITORY_SCOPE = 'repository'
+SCOPES = [NODE_SCOPE, REPOSITORY_SCOPE]
+
 
 # --- keywords ---------------------------------------------------------------
 
@@ -38,6 +42,9 @@ PURGE_ORPHANS_KEYWORD = 'purge_orphans'
 SSL_KEYWORD = 'ssl'
 CA_CERT_KEYWORD = 'ca_cert'
 CLIENT_CERT_KEYWORD = 'client_cert'
+
+MAX_DOWNLOAD_BANDWIDTH_KEYWORD = 'max_download_bandwidth'
+MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
 
 
 # --- unit/publishing --------------------------------------------------------

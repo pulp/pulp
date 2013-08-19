@@ -20,11 +20,11 @@ import shutil
 import base
 import mock_plugins
 
-from pulp.common import dateutils
+from pulp.common import dateutils, constants
 from pulp.plugins.model import SyncReport
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.exceptions import PulpExecutionException
+from pulp.server.exceptions import PulpExecutionException, InvalidValue
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as repo_importer_manager
@@ -400,20 +400,20 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Setup
         self.repo_manager.create_repo('creeper')
-        for i in range(1, 6):
+        for i in range(1, 10):
             add_result('creeper', i)
 
         # Test
         entries = self.sync_manager.sync_history('creeper')
 
-        # Verify
-        self.assertEqual(5, len(entries))
+        # Verify. The returned entries should be limited to the constant defined in common.constants.
+        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(entries))
 
-        #    Verify descending order
+        # Verify descending order.
         for i in range(0, 4):
-            first = dateutils.parse_iso8601_datetime(entries[i]['completed'])
-            second = dateutils.parse_iso8601_datetime(entries[i + 1]['completed'])
-            self.assertTrue(first > second)
+            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+            self.assertTrue(first >= second)
 
     def test_sync_history_with_limit(self):
         """
@@ -425,11 +425,148 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         for i in range(1, 10):
             add_result('zombie', i)
 
-        # Test
+        # Test with a valid limit
         entries = self.sync_manager.sync_history('zombie', limit=3)
-
-        # Verify
         self.assertEqual(3, len(entries))
+
+    def test_sync_history_invalid_limit(self):
+        """
+        Tests that limit is checked for invalid values
+        """
+
+        # Setup
+        self.repo_manager.create_repo('test_repo')
+        for i in range(1, 5):
+            add_result('test_repo', i)
+
+        # Try an invalid limit
+        self.assertRaises(InvalidValue, self.sync_manager.sync_history, 'test_repo', limit=0)
+        # Try a non-int value
+        self.assertRaises(InvalidValue, self.sync_manager.sync_history, 'test_repo', limit='string')
+
+    def test_sync_history_ascending_sort(self):
+        """
+        Tests the sort functionality of sync_history
+        """
+
+        # Setup
+        self.repo_manager.create_repo('test_sort')
+        date_string = '2013-06-01T12:00:0%sZ'
+        # Add some consecutive sync entries
+        for i in range(0, 10, 2):
+            r = RepoSyncResult.expected_result('test_sort', 'foo', 'bar', date_string % str(i),
+                                               date_string % str(i + 1), 1, 1, 1, '', '',
+                                               RepoSyncResult.RESULT_SUCCESS)
+            RepoSyncResult.get_collection().save(r, safe=True)
+
+        # Test sort by ascending start date
+        entries = self.sync_manager.sync_history(repo_id='test_sort', sort=constants.SORT_ASCENDING)
+        self.assertEqual(5, len(entries))
+        # Verify that each entry has a earlier completed date than the next one
+        for i in range(0, 4):
+            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+            self.assertTrue(first < second)
+
+    def test_sync_history_descending_sort(self):
+
+        # Setup
+        self.repo_manager.create_repo('test_sort')
+        date_string = '2013-06-01T12:00:0%sZ'
+        # Add some consecutive sync entries
+        for i in range(0, 10, 2):
+            r = RepoSyncResult.expected_result('test_sort', 'foo', 'bar', date_string % str(i),
+                                               date_string % str(i + 1), 1, 1, 1, '', '',
+                                               RepoSyncResult.RESULT_SUCCESS)
+            RepoSyncResult.get_collection().save(r, safe=True)
+
+        # Test sort by descending start date
+        entries = self.sync_manager.sync_history(repo_id='test_sort', sort=constants.SORT_DESCENDING)
+        self.assertEqual(5, len(entries))
+        # Verify that each entry has a later completed date than the next one
+        for i in range(0, 4):
+            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
+            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+            self.assertTrue(first > second)
+
+    def test_sync_history_invalid_sort(self):
+
+        # Setup
+        self.repo_manager.create_repo('test_sort')
+        for i in range(1, 5):
+            add_result('test_sort', i)
+
+        # Verify an InvalidValue exception is raised if an incorrect sort option is given
+        self.assertRaises(InvalidValue, self.sync_manager.sync_history, repo_id='test_sort', sort='rand')
+
+    def test_sync_history_start_date(self):
+        """
+        Tests the functionality of requesting sync history after a given date
+        """
+
+        # Setup
+        self.repo_manager.create_repo('test_repo')
+        # A date string to fake some dates
+        date_string = '2013-06-01T12:00:0%sZ'
+        # Create 3 entries, with each date entry one second later
+        for i in range(0, 6, 2):
+            r = RepoSyncResult.expected_result('test_repo', 'foo', 'bar', date_string % str(i),
+                                               date_string % str(i + 1), 1, 1, 1, '', '',
+                                               RepoSyncResult.RESULT_SUCCESS)
+            RepoSyncResult.get_collection().save(r, safe=True)
+
+        # Verify three entries in test_repo
+        self.assertEqual(3, len(self.sync_manager.sync_history('test_repo')))
+        # Retrieve the last two entries
+        start_date = '2013-06-01T12:00:02Z'
+        start_entries = self.sync_manager.sync_history('test_repo', start_date=start_date)
+
+        # Verify all entries have dates greater than or equal to the given start date
+        self.assertEqual(2, len(start_entries))
+        for entries in start_entries:
+            retrieved = dateutils.parse_iso8601_datetime(entries['started'])
+            given_start = dateutils.parse_iso8601_datetime(start_date)
+            self.assertTrue(retrieved >= given_start)
+
+    def test_sync_history_end_date(self):
+        """
+        Tests the functionality of requesting sync history before a given date
+        """
+        # Setup
+        self.repo_manager.create_repo('test_repo')
+        # A date string to fake some dates
+        date_string = '2013-06-01T12:00:0%sZ'
+        # Create 3 entries, with each date entry one second later
+        for i in range(0, 6, 2):
+            r = RepoSyncResult.expected_result('test_repo', 'foo', 'bar', date_string % str(i),
+                                               date_string % str(i + 1), 1, 1, 1, '', '',
+                                               RepoSyncResult.RESULT_SUCCESS)
+            RepoSyncResult.get_collection().save(r, safe=True)
+
+        # Verify three entries in test_repo
+        self.assertEqual(3, len(self.sync_manager.sync_history('test_repo')))
+        # Retrieve the first two entries
+        end_date = '2013-06-01T12:00:03Z'
+        end_entries = self.sync_manager.sync_history('test_repo', end_date=end_date)
+        # Confirm the dates of the retrieved entries are earlier than or equal to the requested date
+        self.assertEqual(2, len(end_entries))
+        for entry in end_entries:
+            retrieved = dateutils.parse_iso8601_datetime(entry['started'])
+            given_end = dateutils.parse_iso8601_datetime(end_date)
+            self.assertTrue(retrieved <= given_end)
+
+    def test_sync_history_invalid_date(self):
+
+        # Setup
+        self.repo_manager.create_repo('test_repo')
+        for i in range(1, 5):
+            add_result('test_repo', i)
+
+        # Verify an InvalidValue exception is raised with malformed dates
+        self.assertRaises(InvalidValue, self.sync_manager.sync_history, 'test_repo',
+                          start_date='2013-56-01T12:00:02')
+        self.assertRaises(InvalidValue, self.sync_manager.sync_history, 'test_repo',
+                          end_date='2013-56-01T12:00:02')
 
     def test_sync_history_missing_repo(self):
         """
@@ -476,5 +613,7 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '', RepoSyncResult.RESULT_SUCCESS)
+    r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),
+                                       dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '',
+                                       RepoSyncResult.RESULT_SUCCESS)
     RepoSyncResult.get_collection().save(r, safe=True)

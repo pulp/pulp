@@ -15,7 +15,7 @@ BuildRequires: bash-completion
 Summary: Creates a common metadata repository
 Name: createrepo
 Version: 0.9.9
-Release: 21%{?dist}
+Release: 21.2.pulp%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: %{name}-%{version}.tar.gz
@@ -25,7 +25,7 @@ URL: http://createrepo.baseurl.org/
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArchitectures: noarch
 Requires: python >= 2.1, rpm-python, rpm >= 4.1.1, libxml2-python
-Requires: yum-metadata-parser, yum >= 3.4.3-4, python-deltarpm, deltarpm, pyliblzma
+Requires: yum-metadata-parser, yum >= 3.2.29-40, python-deltarpm, deltarpm, pyliblzma
 BuildRequires: python
 
 %description
@@ -59,6 +59,13 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/createrepo
 
 %changelog
+* Mon Jul 08 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21.2.pulp
+- correct a typo in the changelog. (jortel@redhat.com)
+
+* Mon Jul 08 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21.1.pulp
+- 976568, 981676 - verified compat with version of yum included in RHEL 6.4;
+  downgrading dependency. (jortel@redhat.com)
+
 * Wed May 29 2013 Jeff Ortel <jortel@redhat.com> 0.9.9-21
 - 968535 - rebase using version f18/f19 version; includes fix for bz:950724.
   (jortel@redhat.com)

@@ -11,9 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import json
+
 from gettext import gettext as _
 from logging import getLogger
 
+from pulp.common.plugins import importer_constants
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
@@ -27,37 +30,12 @@ from pulp_node.distributors.http.publisher import HttpPublisher
 _LOG = getLogger(__name__)
 
 
-# --- i18n ------------------------------------------------------------------------------
+# --- constants -------------------------------------------------------------------------
 
 PROPERTY_MISSING = _('Missing required configuration property: %(p)s')
 PROPERTY_INVALID = _('Property %(p)s must be: %(v)s')
 
-
-# --- configuration ---------------------------------------------------------------------
-
-
-# This should be in /etc/pulp
-DEFAULT_CONFIGURATION = {
-    constants.PROTOCOL_KEYWORD: 'https',
-    'http': {
-        'alias': [
-            '/pulp/nodes/http/repos',
-            '/var/www/pulp/nodes/http/repos'
-        ]
-    },
-    'https': {
-        'alias': [
-            '/pulp/nodes/https/repos',
-            '/var/www/pulp/nodes/https/repos'
-        ],
-        constants.SSL_KEYWORD: {
-            constants.CLIENT_CERT_KEYWORD: {
-                'local': '/etc/pki/pulp/nodes/local.crt',
-                'child': '/etc/pki/pulp/nodes/parent/client.crt'
-            }
-        }
-    }
-}
+CONFIGURATION_PATH = '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'
 
 
 # --- plugin loading --------------------------------------------------------------------
@@ -67,9 +45,10 @@ def entry_point():
     """
     Entry point that pulp platform uses to load the distributor.
     :return: distributor class and its configuration.
-    :rtype:  Distributor, {}
+    :rtype:  Distributor, dict
     """
-    return NodesHttpDistributor, DEFAULT_CONFIGURATION
+    with open(CONFIGURATION_PATH) as fp:
+        return NodesHttpDistributor, json.load(fp)
 
 
 # --- plugin ----------------------------------------------------------------------------
@@ -241,16 +220,15 @@ class NodesHttpDistributor(Distributor):
         protocol = config.get(constants.PROTOCOL_KEYWORD)
         manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
         protocol_section = config.get(protocol)
-        ssl_dict = protocol_section.get('ssl', {})
-        ssl_conf = self._ssl_conf(ssl_dict)
+        ssl_dict = protocol_section.get(constants.SSL_KEYWORD, {})
         strategy = binding_config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
-        conf = {
+        configuration = {
             constants.STRATEGY_KEYWORD: strategy,
             constants.MANIFEST_URL_KEYWORD: manifest_url,
             constants.PROTOCOL_KEYWORD: protocol,
-            constants.SSL_KEYWORD: ssl_conf,
         }
-        return conf
+        configuration.update(self._ssl_conf(ssl_dict))
+        return configuration
 
     def _ssl_conf(self, ssl_dict):
         """
@@ -264,13 +242,18 @@ class NodesHttpDistributor(Distributor):
         """
         if not ssl_dict:
             return {}
-        conf = {}
-        for key in (constants.CLIENT_CERT_KEYWORD,):
-            value = ssl_dict.get(key)
+        configuration = {
+            importer_constants.KEY_SSL_VALIDATION: False,
+        }
+        certificates = (
+            (constants.CLIENT_CERT_KEYWORD, importer_constants.KEY_SSL_CLIENT_CERT),
+        )
+        for key_in, key_out in certificates:
+            value = ssl_dict.get(key_in)
             path = value['local']
             path_out = value['child']
-            conf[key] = link.pack(path, path_out)
-        return conf
+            configuration[key_out] = link.pack(path, path_out)
+        return configuration
 
     def _add_distributors(self, repo_id, payload):
         """

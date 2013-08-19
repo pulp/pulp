@@ -186,7 +186,8 @@ class TestBase(TestCase):
         request = self.request()
         # Test
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        inventory = UnitInventory(TestManifest([]), [unit])
+        manifest = TestManifest([])
+        inventory = UnitInventory(manifest, [unit])
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
         self.assertEqual(len(request.summary.errors), 1)
@@ -201,7 +202,7 @@ class TestBase(TestCase):
         self.assertRaises(GetChildUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.conduit.NodesConduit.get_units', return_value=[])
-    @patch('pulp_node.manifest.Manifest.fetch', side_effect=ValueError())
+    @patch('pulp_node.manifest.RemoteManifest.fetch', side_effect=ValueError())
     def test_get_parent_units_exception(self, *unused):
         # Setup
         request = self.request()
@@ -210,7 +211,7 @@ class TestBase(TestCase):
         self.assertRaises(GetParentUnitsError, strategy._unit_inventory, request)
 
     @patch('pulp_node.conduit.NodesConduit.get_units', return_value=[])
-    @patch('pulp_node.manifest.Manifest.fetch', side_effect=MANIFEST_ERROR)
+    @patch('pulp_node.manifest.RemoteManifest.fetch', side_effect=MANIFEST_ERROR)
     def test_get_parent_units_manifest_error(self, *unused):
         # Setup
         request = self.request()
@@ -224,7 +225,8 @@ class TestBase(TestCase):
         request.downloader.download = Mock()
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        manifest = TestManifest(units)
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -235,7 +237,8 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        inventory = UnitInventory(TestManifest([]), [unit])
+        manifest = TestManifest([])
+        inventory = UnitInventory(manifest, [unit])
         request.conduit.remove_unit = Mock()
         # Test
         strategy = ImporterStrategy()
@@ -257,7 +260,8 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        manifest = TestManifest(units)
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -280,7 +284,8 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        manifest = TestManifest(units)
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -304,7 +309,8 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        manifest = TestManifest(units)
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -328,7 +334,8 @@ class TestBase(TestCase):
             storage_path='/tmp/node/testing/%s' % unit_id,
             relative_path='testing/%s' % unit_id)
         units = [unit]
-        inventory = UnitInventory(TestManifest(units), [])
+        manifest = TestManifest(units)
+        inventory = UnitInventory(manifest, [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)

@@ -31,6 +31,8 @@ DIRS = (
     '/etc/pulp/consumer/conf.d',
     '/etc/pulp/server',
     '/etc/pulp/server/plugins.conf.d',
+    '/etc/pulp/server/plugins.conf.d/nodes/importer',
+    '/etc/pulp/server/plugins.conf.d/nodes/distributor',
     '/etc/pulp/agent',
     '/etc/pulp/agent/conf.d',
     '/etc/pulp/vhosts80',
@@ -115,6 +117,10 @@ LINKS = (
 
     # Pulp Nodes
     ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
+    ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
+     '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
+    ('nodes/parent/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf',
+     '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'),
     ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
     ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 )
