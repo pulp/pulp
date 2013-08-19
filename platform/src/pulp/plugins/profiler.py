@@ -37,23 +37,6 @@ class InvalidUnitsRequested(Exception):
         self.units = units
         self.message = message
 
-class InvalidUnitTypeForApplicability(Exception):
-    """
-    Raised by find_applicable_units when applicability for a unit type is not yet supported.
-    """
-
-    def __init__(self, unit_type_id, message):
-        """
-        :param unit_type_id: unit type id
-        :type  unit_type_id: str
-
-        :param message: suitable message when the operation is aborted
-        :type  message: str
-        """
-        Exception.__init__(self, message)
-        self.unit_type_id = unit_type_id
-        self.message = message
-
 
 class Profiler(object):
     """
@@ -102,9 +85,6 @@ class Profiler(object):
 
         {type_id:"ZIP", unit_key:{"name":"myapp.zip"}}
     """
-
-    # -- plugin lifecycle ------------------------------------------------------
-
     @classmethod
     def metadata(cls):
         """
@@ -126,9 +106,7 @@ class Profiler(object):
         """
         raise NotImplementedError()
 
-    # -- translations ----------------------------------------------------------
-
-    def update_profile(self, consumer, profile, config, conduit):
+    def update_profile(self, consumer, content_type, profile, config):
         """
         Notification that the consumer has reported the installed unit
         profile.  The profiler has this opportunity to translate the
@@ -136,20 +114,16 @@ class Profiler(object):
         should raise an appropriate exception.  See: Profile Translation
         examples in class documentation.
 
-        :param consumer: A consumer.
-        :type consumer: pulp.plugins.model.Consumer
-
-        :param profile: The reported profile.
-        :type profile: list
-
-        :param config: plugin configuration
-        :type config: pulp.plugins.config.PluginCallConfiguration
-
-        :param conduit: provides access to relevant Pulp functionality
-        :type conduit: pulp.plugins.conduits.profiler.ProfilerConduit
-
-        :return: The translated profile.
-        :rtype: list
+        :param consumer:     A consumer.
+        :type  consumer:     pulp.plugins.model.Consumer
+        :param content_type: The content type id that corresponds to the profile
+        :type  content_type: basestring
+        :param profile:      The reported profile.
+        :type  profile:      list
+        :param config:       plugin configuration
+        :type  config:       pulp.plugins.config.PluginCallConfiguration
+        :return:             The translated profile.
+        :rtype:              list
         """
         return profile
 
@@ -259,39 +233,23 @@ class Profiler(object):
         """
         return units
 
-    # -- applicability ---------------------------------------------------------
-
-    def find_applicable_units(self, consumer_profile_and_repo_ids, unit_type_id, unit_criteria, config, conduit):
+    def calculate_applicable_units(self, unit_profile, bound_repo_id, config, conduit):
         """
-        Determine whether the content units are applicable to the specified consumers
-        and repo ids. The definition of "applicable" is content type specific
-        and up to the decision of the profiler. Consumers and repo ids are specified
-        as a dictionary:
+        Calculate and return a list of content unit ids applicable to consumers with given
+        unit_profile. Applicability is calculated against all content units belonging to the given
+        bound repository. The definition of "applicable" is content type specific and up to the
+        profiler.
 
-        {<consumer_id> : {'profiled_consumer' : <profiled_consumer>,
-                         'repo_ids' : <repo_ids>},
-         ...
-        }
-
-        :param consumer_profile_and_repo_ids: A dictionary with consumer profile and repo ids
-                        to be considered for applicability, keyed by consumer id.
-        :type consumer_profile_and_repo_ids: dict
-
-        :param unit_type_id: Common type id of all the units
-        :type unit_type_id: str
-
-        :param unit_criteria: Criteria representing unit search
-        :type unit_criteria: pulp.plugins.conduits.mixins.Criteria
-
-        :param config: plugin configuration
-        :type config: pulp.plugins.config.PluginCallConfiguration
-
-        :param conduit: provides access to relevant Pulp functionality
-        :type conduit: pulp.plugins.conduits.profiler.ProfilerConduit
-
-        :return: List of applicability reports.
-        :rtype: List of pulp.plugins.model.ApplicabilityReport
+        :param unit_profile:  a consumer unit profile
+        :type  unit_profile:  object
+        :param bound_repo_id: repo id of a repository to be used to calculate applicability
+                              against the given consumer profile
+        :type  bound_repo_id: str
+        :param config:        plugin configuration
+        :type  config:        pulp.server.plugins.config.PluginCallConfiguration
+        :param conduit:       provides access to relevant Pulp functionality
+        :type  conduit:       pulp.plugins.conduits.profile.ProfilerConduit
+        :return:              a list of content unit ids
+        :rtype:               list of str
         """
-        message = 'Applicability for: %s, not supported' % unit_type_id
-        raise InvalidUnitTypeForApplicability(unit_type_id, message)
-
+        raise NotImplementedError()

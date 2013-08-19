@@ -13,13 +13,17 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import base
+import mock
 import pymongo
 
+from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
+from pulp.server.managers.consumer.cud import ConsumerManager
+from pulp.server.managers.consumer.profile import ProfileManager
+import mock_plugins
 
-# -- test cases ---------------------------------------------------------------
 
 class ProfileManagerTests(base.PulpAsyncServerTests):
 
@@ -34,6 +38,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         super(ProfileManagerTests, self).setUp()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
+        mock_plugins.install()
 
     def tearDown(self):
         super(ProfileManagerTests, self).tearDown()
@@ -113,7 +118,10 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
     def test_missing_consumer(self):
         # Test
         manager = factory.consumer_profile_manager()
-        self.assertRaises(MissingResource, manager.update, self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        # self.CONSUMER_ID is not an existing consumer, as it is not built during setUp(), so this
+        # should raise MissingResource
+        self.assertRaises(MissingResource, manager.update, self.CONSUMER_ID, self.TYPE_1,
+                          self.PROFILE_1)
 
     def test_update(self):
         # Setup
@@ -132,6 +140,46 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         self.assertEquals(profiles[0]['profile'], self.PROFILE_2)
         expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
+
+    def test_update_calls_profiler_update_profile(self):
+        """
+        Assert that the update() method calls the profiler update_profile() method.
+        """
+        self.populate()
+        profile_manager = ProfileManager()
+
+        profile_manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+
+        consumer_manager = ConsumerManager()
+        consumer = consumer_manager.get_consumer(self.CONSUMER_ID)
+        # The profiler should have been called once with the consumer, content_type, profile, and
+        # and empty config (our MockProfile has an empty config)
+        mock_plugins.MOCK_PROFILER.update_profile.assert_called_once_with(
+            consumer, self.TYPE_1, self.PROFILE_1, {})
+
+    @mock.patch('pulp.server.managers.consumer.profile.Profiler.update_profile',
+                side_effect=Profiler.update_profile, autospec=True)
+    def test_update_with_content_type_without_profiler(self, update_profile):
+        """
+        Test the update() call with a content_type for which there isn't a Profiler. The method
+        should instantiate the baseclass Profiler with an empty config.
+        """
+        self.populate()
+        profile_manager = ProfileManager()
+        untype = 'non_existing_type_doesnt_exist'
+
+        profile_manager.update(self.CONSUMER_ID, untype, self.PROFILE_1)
+
+        consumer_manager = ConsumerManager()
+        consumer = consumer_manager.get_consumer(self.CONSUMER_ID)
+        # The profiler should have been called once with the consumer, content_type, profile, and
+        # and empty config (our MockProfile has an empty config)
+        self.assertEqual(mock_plugins.MOCK_PROFILER.update_profile.call_count, 0)
+        # The profiler should be the first parameter (self) passed to update_profile, and we need it
+        # to assert that the correct call was made with update_profile
+        profiler = update_profile.mock_calls[0][1][0]
+        update_profile.assert_called_once_with(profiler, consumer, untype,
+                                               self.PROFILE_1, {})
 
     def test_multiple_types(self):
         # Setup

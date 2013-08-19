@@ -109,6 +109,7 @@ RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE = 'repository_distributor'
 RESOURCE_REPOSITORY_IMPORTER_TYPE = 'repository_importer'
 RESOURCE_REPOSITORY_GROUP_TYPE = 'repository_group'
 RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE = 'repository_group_distributor'
+RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE = 'repository_profile_applicability'
 RESOURCE_ROLE_TYPE = 'role'
 RESOURCE_SCHEDULE_TYPE = 'schedule'
 RESOURCE_USER_TYPE = 'user'
@@ -124,9 +125,14 @@ RESOURCE_TYPES = (RESOURCE_CDS_TYPE,
                   RESOURCE_REPOSITORY_IMPORTER_TYPE,
                   RESOURCE_REPOSITORY_GROUP_TYPE,
                   RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE,
+                  RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
                   RESOURCE_ROLE_TYPE,
                   RESOURCE_SCHEDULE_TYPE,
                   RESOURCE_USER_TYPE)
+
+# any resource id --------------------------------------------------------------
+
+RESOURCE_ANY_ID = "RESOURCE_ANY_ID"
 
 # resource operations  ---------------------------------------------------------
 

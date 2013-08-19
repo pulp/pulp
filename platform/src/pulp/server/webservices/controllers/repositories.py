@@ -29,7 +29,7 @@ from pulp.common.tags import action_tag, resource_tag
 from pulp.common import constants
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
-from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -1063,6 +1063,38 @@ class RepoUnitAdvancedSearch(JSONController):
             units = manager.get_units_across_types(repo_id, criteria=criteria)
 
         return self.ok(units)
+    
+class ContentApplicabilityRegeneration(JSONController):
+    """
+    Content applicability regeneration for updated repositories.
+    """
+
+    @auth_required(CREATE)
+    def POST(self):
+        """
+        Creates an async task to regenerate content applicability data for given updated
+        repositories.
+
+        body {repo_criteria:<dict>}
+        """
+        body = self.params()
+        repo_criteria = body.get('repo_criteria', None)
+        if repo_criteria is None:
+            raise exceptions.MissingValue('repo_criteria')
+        try:
+            repo_criteria = Criteria.from_client_input(repo_criteria)
+        except:
+            raise exceptions.InvalidValue('repo_criteria')
+
+        manager = manager_factory.applicability_regeneration_manager()
+        regeneration_tag = action_tag('applicability_regeneration')
+        call_request = CallRequest(manager.regenerate_applicability_for_repos,
+                                   [repo_criteria],
+                                   tags = [regeneration_tag])
+        # allow only one applicability regeneration task at a time
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                      dispatch_constants.RESOURCE_ANY_ID)
+        return execution.execute_async(self, call_request)
 
 # -- web.py application -------------------------------------------------------
 
@@ -1070,6 +1102,7 @@ class RepoUnitAdvancedSearch(JSONController):
 urls = (
     '/', 'RepoCollection', # collection
     '/search/$', 'RepoSearch', # resource search
+    '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/([^/]+)/$', 'RepoResource', # resource
 
     '/([^/]+)/importers/$', 'RepoImporters', # sub-collection

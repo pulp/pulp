@@ -15,14 +15,149 @@
 This module contains tests for the pulp.server.db.model.consumer module.
 """
 
-from copy import deepcopy
-import math
 import unittest
 
 import mock
 
+from base import PulpServerTests
 from pulp.server.db.model import consumer
 
+
+class TestRepoProfileApplicability(PulpServerTests):
+    """
+    Test the RepoProfileApplicability Model.
+    """
+    def setUp(self):
+        self.collection = consumer.RepoProfileApplicability.get_collection()
+
+    def tearDown(self):
+        self.collection.drop()
+
+    def test___init___no__id(self):
+        """
+        Test the constructor without passing an _id.
+        """
+        profile_hash = 'hash'
+        repo_id = 'repo_id'
+        profile = ['a', 'profile']
+        applicability_data = {'type_id': ['package a', 'package c']}
+
+        applicability = consumer.RepoProfileApplicability(
+            profile_hash=profile_hash, repo_id=repo_id, profile=profile,
+            applicability=applicability_data)
+
+        self.assertEqual(applicability.profile_hash, profile_hash)
+        self.assertEqual(applicability.repo_id, repo_id)
+        self.assertEqual(applicability.profile, profile)
+        self.assertEqual(applicability.applicability, applicability_data)
+        # Since we didn't set an _id, it should be None
+        self.assertEqual(applicability._id, None)
+
+    def test___init___with__id(self):
+        """
+        Test the constructor with an _id.
+        """
+        profile_hash = 'hash'
+        repo_id = 'repo_id'
+        profile = ['a', 'profile']
+        applicability_data = {'type_id': ['package a', 'package c']}
+        _id = 'an ID'
+
+        applicability = consumer.RepoProfileApplicability(
+            profile_hash=profile_hash, repo_id=repo_id, profile=profile,
+            applicability=applicability_data, _id=_id)
+
+        self.assertEqual(applicability.profile_hash, profile_hash)
+        self.assertEqual(applicability.repo_id, repo_id)
+        self.assertEqual(applicability.profile, profile)
+        self.assertEqual(applicability.applicability, applicability_data)
+        # Since we didn't set an _id, it should be None
+        self.assertEqual(applicability._id, _id)
+
+    def test_delete(self):
+        profile_hash = 'hash'
+        repo_id = 'repo_id'
+        profile = ['a', 'profile']
+        applicability_data = {'type_id': ['package a', 'package c']}
+        # Start by making a RepoProfileApplicability object
+        applicability = consumer.RepoProfileApplicability(
+            profile_hash=profile_hash, repo_id=repo_id, profile=profile,
+            applicability=applicability_data)
+        # At this point, there should be nothing in the database
+        self.assertEqual(self.collection.find().count(), 0)
+        # Saving the model should store it in the database
+        applicability.save()
+        # Now, we have our one object in the DB
+        self.assertEqual(self.collection.find().count(), 1)
+
+        # Calling delete() on the object should "take care" of it, if you know what I mean
+        applicability.delete()
+
+        # Now there should be no objects
+        self.assertEqual(self.collection.find().count(), 0)
+
+    def test_save_existing(self):
+        """
+        Test the save() method with an existing object.
+        """
+        profile_hash = 'hash'
+        repo_id = 'repo_id'
+        profile = ['a', 'profile']
+        applicability_data = {'type_id': ['package a', 'package c']}
+        # Start by making a RepoProfileApplicability object
+        applicability = consumer.RepoProfileApplicability(
+            profile_hash=profile_hash, repo_id=repo_id, profile=profile,
+            applicability=applicability_data)
+        # At this point, there should be nothing in the database
+        self.assertEqual(self.collection.find().count(), 0)
+        # Saving the model should store it in the database
+        applicability.save()
+        # Now, let's alter the applicability data a bit
+        applicability_data['new_type_id'] = ['package d']
+        applicability.applicability = applicability_data
+
+        # Saving the object should write the changes to the DB
+        applicability.save()
+
+        # There should be one entry in the DB
+        self.assertEqual(self.collection.find().count(), 1)
+        document = self.collection.find_one()
+        self.assertEqual(document['profile_hash'], profile_hash)
+        self.assertEqual(document['repo_id'], repo_id)
+        self.assertEqual(document['profile'], profile)
+        self.assertEqual(document['applicability'], applicability_data)
+
+        # Our applicability object should still have the correct _id attribute
+        self.assertEqual(applicability._id, document['_id'])
+
+    def test_save_new(self):
+        """
+        Test the save() method with a new object that is not in the DB yet.
+        """
+        profile_hash = 'hash'
+        repo_id = 'repo_id'
+        profile = ['a', 'profile']
+        applicability_data = {'type_id': ['package a', 'package c']}
+        # Start by making a RepoProfileApplicability object
+        applicability = consumer.RepoProfileApplicability(
+            profile_hash=profile_hash, repo_id=repo_id, profile=profile,
+            applicability=applicability_data)
+        # At this point, there should be nothing in the database
+        self.assertEqual(self.collection.find().count(), 0)
+
+        # Saving the model should store it in the database
+        applicability.save()
+
+        # There should now be one entry in the DB
+        self.assertEqual(self.collection.find().count(), 1)
+        document = self.collection.find_one()
+        self.assertEqual(document['profile_hash'], profile_hash)
+        self.assertEqual(document['repo_id'], repo_id)
+        self.assertEqual(document['profile'], profile)
+        self.assertEqual(document['applicability'], applicability_data)
+
+        # Our applicability object should now have the correct _id attribute
+        self.assertEqual(applicability._id, document['_id'])
 
 class TestUnitProfile(unittest.TestCase):
     """

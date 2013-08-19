@@ -132,6 +132,73 @@ class Bind(Model):
         self.deleted = False
 
 
+class RepoProfileApplicability(Model):
+    """
+    This class models a Mongo collection that is used to store pre-calculated applicability results
+    for a given consumer profile_hash and repository ID. The applicability data is a dictionary
+    structure that represents the applicable units for the given profile and repository.
+
+    The profile itself is included here for ease of recalculating the applicability when a
+    repository's contents change.
+
+    The RepoProfileApplicabilityManager can be accessed through the classlevel "objects" attribute.
+    """
+    collection_name = 'repo_profile_applicability'
+    unique_indices = (
+        ('profile_hash', 'repo_id'),
+    )
+
+    def __init__(self, profile_hash, repo_id, profile, applicability, _id=None, **kwargs):
+        """
+        Construct a RepoProfileApplicability object.
+
+        :param profile_hash:  The hash of the profile that this object contains applicability data
+                              for
+        :type  profile_hash:  basestring
+        :param repo_id:       The repo ID that this applicability data is for
+        :type  repo_id:       basestring
+        :param profile:       The entire profile that resulted in the profile_hash
+        :type  profile:       object
+        :param applicability: A dictionary mapping content_type_ids to lists of applicable Unit IDs.
+        :type  applicability: dict
+        :param _id:           The MongoDB ID for this object, if it exists in the database
+        :type  _id:           bson.objectid.ObjectId
+        :param kwargs:        unused, but collected to allow instantiation from Mongo query results
+        :type  kwargs:        dict
+        """
+        super(RepoProfileApplicability, self).__init__()
+
+        self.profile_hash = profile_hash
+        self.repo_id = repo_id
+        self.profile = profile
+        self.applicability = applicability
+        self._id = _id
+
+        # The superclass puts an unnecessary (and confusingly named) id attribute on this model. Let's remove it.
+        del self.id
+
+    def delete(self):
+        """
+        Delete this RepoProfileApplicability object from the database.
+        """
+        self.get_collection().remove({'_id': self._id}, safe=True)
+
+    def save(self):
+        """
+        Save any changes made to this RepoProfileApplicability model to the database. If it doesn't
+        exist in the database already, insert a new record to represent it.
+        """
+        # If this object's _id attribute is not None, then it represents an existing DB object.
+        # Else, we need to create an object with this object's attributes
+        new_document = {'profile_hash': self.profile_hash, 'repo_id': self.repo_id,
+                        'profile': self.profile, 'applicability': self.applicability}
+        if self._id is not None:
+            self.get_collection().update({'_id': self._id}, new_document, safe=True)
+        else:
+            # Let's set the _id attribute to the newly created document
+            self._id = self.get_collection().insert(new_document, safe=True)
+
+
 class UnitProfile(Model):
     """
     Represents a consumer profile, which is a data structure that records which content is installed
@@ -247,7 +314,7 @@ class ConsumerGroup(Model):
     collection_name = 'consumer_groups'
     search_indices = ('display_name', 'consumer_ids')
 
-    def __init__(self, consumer_group_id, display_name=None, description=None, 
+    def __init__(self, consumer_group_id, display_name=None, description=None,
             consumer_ids=None, notes=None):
         super(ConsumerGroup, self).__init__()
 

@@ -11,34 +11,31 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import logging
 
-# 3rd Party
 import web
 from web.webapi import BadRequest
 
-# Pulp
-import pulp.server.managers.factory as managers
 from pulp.common.tags import action_tag, resource_tag
-from pulp.plugins.types import database as content_types_db
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
-from pulp.server.exceptions import MissingResource, MissingValue, InvalidValue
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
-from pulp.server.webservices.controllers.search import SearchController
+from pulp.server.managers.consumer.applicability import retrieve_consumer_applicability
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
+import pulp.server.managers.factory as managers
 
 # -- constants ----------------------------------------------------------------
 
@@ -584,72 +581,107 @@ class Profile(JSONController):
 
 class ContentApplicability(JSONController):
     """
-    Determine content applicability.
+    Query content applicability.
     """
-
     @auth_required(READ)
     def POST(self):
         """
-        Determine content applicability.
-        body {
-        consumer_criteria:<dict> or None, 
-        repo_criteria:<dict> or None, 
-        unit_criteria: <dict of type_id : unit_criteria> or None,
-        override_config: <dict> or None
-        }
+        Query content applicability for a given consumer criteria query.
 
-        :return: 
+        body {criteria: <object>,
+              content_types: <array>[optional]}
 
-        When report_style is 'by_consumer' -
-        A dict of applicability reports keyed by consumer ID.
-            Each consumer report is:
-                { <unit_type_id1> : [<ApplicabilityReport>],
-                  <unit_type_id1> : [<ApplicabilityReport>]},
-                }
+        This method returns a JSON document containing an array of objects that each have two
+        keys: 'consumers', and 'applicability'. 'consumers' will index an array of consumer_ids,
+        for consumers that have the same repository bindings and profiles. 'applicability' will
+        index an object that will have keys for each content type that is applicable, and the
+        content type ids will index the applicability data for those content types. For example,
 
-        When report_style is 'by_units' -
-        A dict of <unit_type_id1>: [<ApplicabilityReport>]
-        where applicability_report.summary contains a list of applicable consumer ids.
+        [{'consumers': ['consumer_1', 'consumer_2'],
+          'applicability': {'content_type_1': ['unit_1', 'unit_3']}},
+         {'consumers': ['consumer_2', 'consumer_3'],
+          'applicability': {'content_type_1': ['unit_1', 'unit_2']}}]
 
-        :rtype: dict
+        :return: applicability data matching the consumer criteria query
+        :rtype:  str
+        """
+        # Get the consumer_ids that match the consumer criteria query that the requestor queried
+        # with, and build a map from consumer_id to a dict with profiles and repo_ids for each
+        # consumer
+        try:
+            consumer_criteria = self._get_consumer_criteria()
+            content_types = self._get_content_types()
+        except InvalidValue, e:
+            return self.bad_request(str(e))
+
+        return self.ok(retrieve_consumer_applicability(consumer_criteria, content_types))
+
+    def _get_consumer_criteria(self):
+        """
+        Process the POST data, finding the criteria given by the user, and resolve it to Criteria
+        object.
+
+        :return: A Criteria object
+        :rtype:  pulp.server.db.model.criteria.Criteria
         """
         body = self.params()
 
+        try:
+            consumer_criteria = body.get('criteria')
+        except AttributeError:
+            raise InvalidValue('The input to this method must be a JSON object with a '
+                               "'criteria' key.")
+        consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        return consumer_criteria
+
+    def _get_content_types(self):
+        """
+        Get the list of content_types that the caller wishes to limit the response to. If the
+        caller did not include content types, this will return None.
+
+        :return: The list of content_types that the applicability query should be limited to,
+                 or None if not specified
+        :rtype:  list or None
+        """
+        body = self.params()
+
+        content_types = body.get('content_types', None)
+        if content_types is not None and not isinstance(content_types, list):
+            raise InvalidValue('content_types must index an array.')
+
+        return content_types
+
+
+class ContentApplicabilityRegeneration(JSONController):
+    """
+    Content applicability regeneration for updated consumers.
+    """
+
+    @auth_required(CREATE)
+    def POST(self):
+        """
+        Creates an async task to regenerate content applicability data for given consumers.
+
+        body {consumer_criteria:<dict>}
+        """
+        body = self.params()
         consumer_criteria = body.get('consumer_criteria', None)
-        repo_criteria = body.get('repo_criteria', None)
-        units = body.get('unit_criteria', None)
-        override_config = body.get('override_config', None)
-
-        if consumer_criteria:
+        if consumer_criteria is None:
+            raise MissingValue('consumer_criteria')
+        try:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        except:
+            raise InvalidValue('consumer_criteria')
 
-        if repo_criteria:
-            repo_criteria = Criteria.from_client_input(repo_criteria)
-
-        # If unit_criteria is not specified, consider all units of all types
-        if not units:
-            units = {}
-            all_unit_type_ids = content_types_db.all_type_ids()
-            for unit_type_id in all_unit_type_ids:
-                units[unit_type_id] = {}
-        # Validate user defined criteria and convert them to Criteria objects
-        unit_criteria = {}
-        for type_id, criteria in units.items():
-            if criteria is None:
-                criteria = {}
-            unit_criteria[type_id] = Criteria.from_client_input(criteria)
-
-        manager = managers.consumer_applicability_manager()
-        report = manager.find_applicable_units(consumer_criteria, repo_criteria, unit_criteria, override_config)
-
-        for unit_type_id, applicability_reports in report.items():
-            if isinstance(applicability_reports, list):
-                report[unit_type_id] = [serialization.consumer.applicability_report(r) for r in applicability_reports]
-            else:
-                for consumer_id, report_list in applicability_reports.items():
-                    report[unit_type_id][consumer_id] = [serialization.consumer.applicability_report(r) for r in report_list]
-
-        return self.ok(report)
+        manager = managers.applicability_regeneration_manager()
+        regeneration_tag = action_tag('applicability_regeneration')
+        call_request = CallRequest(manager.regenerate_applicability_for_consumers,
+                                   [consumer_criteria],
+                                   tags=[regeneration_tag])
+        # allow only one applicability regeneration task at a time
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                      dispatch_constants.RESOURCE_ANY_ID)
+        return execution.execute_async(self, call_request)
 
 
 class UnitInstallScheduleCollection(JSONController):
@@ -1038,9 +1070,10 @@ class UnitUninstallScheduleResource(JSONController):
 
 urls = (
     '/$', Consumers,
-    '/search/$', ConsumerSearch,
+    '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/binding/search/$', BindingSearch,
-    '/actions/content/applicability/$', ContentApplicability,
+    '/content/applicability/$', ContentApplicability,
+    '/search/$', ConsumerSearch,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', Binding,

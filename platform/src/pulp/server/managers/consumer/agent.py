@@ -212,14 +212,6 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.content.uninstall(units, options)
 
-    def send_profile(self, consumer_id):
-        """
-        Send the content profile(s).
-        :param consumer_id: The consumer ID.
-        :type consumer_id: str
-        """
-        _LOG.info(consumer_id)
-
     def cancel_request(self, consumer_id, task_id):
         """
         Cancel an agent request associated with the specified task ID.
