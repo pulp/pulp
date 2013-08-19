@@ -184,7 +184,7 @@ class HandlerStrategy(object):
         :param repo_id: A repository ID.
         :type repo_id: str
         """
-        skip = request.options.get(constants.SKIP_REPOSITORY_SYNCHRONIZATION_KEYWORD, False)
+        skip = request.options.get(constants.SKIP_CONTENT_UPDATE_KEYWORD, False)
         if skip:
             log.warn('repository synchronization skipped')
             return

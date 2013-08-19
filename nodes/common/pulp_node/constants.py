@@ -46,7 +46,7 @@ CLIENT_CERT_KEYWORD = 'client_cert'
 MAX_DOWNLOAD_BANDWIDTH_KEYWORD = 'max_download_bandwidth'
 MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
 
-SKIP_REPOSITORY_SYNCHRONIZATION_KEYWORD = 'skip_repository_synchronization'
+SKIP_CONTENT_UPDATE_KEYWORD = 'skip_content_update'
 
 
 # --- unit/publishing --------------------------------------------------------

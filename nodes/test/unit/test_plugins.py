@@ -990,7 +990,7 @@ class TestEndToEnd(PluginTestBase):
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = {
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-                constants.SKIP_REPOSITORY_SYNCHRONIZATION_KEYWORD: True
+                constants.SKIP_CONTENT_UPDATE_KEYWORD: True
             }
             units = [{'type_id': 'node', 'unit_key': None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
