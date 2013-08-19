@@ -20,17 +20,3 @@ git clone git://github.com/pulp/nectar.git      -b $PULP_GIT_NECTAR_BRANCH
 git clone git://github.com/pulp/pulp.git        -b $PULP_GIT_PULP_BRANCH
 git clone git://github.com/pulp/pulp_rpm.git    -b $PULP_GIT_PULP_RPM_BRANCH
 git clone git://github.com/pulp/pulp_puppet.git -b $PULP_GIT_PULP_PUPPET_BRANCH
-
-#Make sure we have the latest version
-pushd nectar
-git pull
-popd
-pushd pulp
-git pull
-popd
-pushd pulp_rpm
-git pull
-popd
-pushd pulp_puppet
-git pull
-popd
