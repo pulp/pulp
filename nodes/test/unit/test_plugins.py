@@ -250,10 +250,7 @@ class PluginTestBase(WebTest):
 
     def dist_conf_with_ssl(self):
         ssl = {
-            'client_cert':{
-                'local':os.path.join(self.parentfs, 'local.crt'),
-                'child':os.path.join(self.childfs, 'parent', 'client.crt')
-            }
+            'client_cert': os.path.join(self.parentfs, 'local.crt')
         }
         d = self.dist_conf()
         d['file']['ssl'] = ssl
@@ -1160,8 +1157,6 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
         self.verify()
-        path = os.path.join(self.childfs, 'parent', 'client.crt')
-        self.assertTrue(os.path.exists(path))
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_dist_changed(self, unused):
@@ -1206,8 +1201,6 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
         self.verify()
-        path = os.path.join(self.childfs, 'parent', 'client.crt')
-        self.assertTrue(os.path.exists(path))
         manager = managers.repo_distributor_manager()
         dist = manager.get_distributor(self.REPO_ID, FAKE_ID)
         self.assertEqual(dist['config'], FAKE_DISTRIBUTOR_CONFIG)
@@ -1256,8 +1249,6 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], self.NUM_EXTRA_UNITS)
         self.verify()
-        path = os.path.join(self.childfs, 'parent', 'client.crt')
-        self.assertTrue(os.path.exists(path))
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_and_delete_repositories(self, unused):
@@ -1314,8 +1305,6 @@ class TestEndToEnd(PluginTestBase):
             self.assertEqual(units['removed'], 0)
         # verify end result
         self.verify()
-        path = os.path.join(self.childfs, 'parent', 'client.crt')
-        self.assertTrue(os.path.exists(path))
 
     @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
     def test_handler_unit_errors(self, *unused):

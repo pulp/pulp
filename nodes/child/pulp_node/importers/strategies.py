@@ -190,6 +190,9 @@ class ImporterStrategy(object):
             except IOError, e:
                 if e.errno == errno.ENOENT:
                     pass
+            except ValueError:
+                # json decoding failed
+                pass
             fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
             fetched_manifest.fetch()
             if manifest != fetched_manifest or \
