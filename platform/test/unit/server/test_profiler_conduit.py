@@ -142,12 +142,12 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         # Verify that all the units in the repo with given type are returned along with unit_key
         self.assertEquals(len(units1), 9)
         for u in units1:
-            self.assertTrue('key-1' in u['unit_key'])
-            self.assertFalse('key-2' in u['unit_key'])
+            self.assertTrue('key-1' in u.unit_key)
+            self.assertFalse('key-2' in u.unit_key)
         self.assertEquals(len(units2), 9)
         for u in units2:
-            self.assertTrue('key-2' in u['unit_key'])
-            self.assertFalse('key-1' in u['unit_key'])
+            self.assertTrue('key-2' in u.unit_key)
+            self.assertFalse('key-1' in u.unit_key)
 
     def test_get_repo_units_additional_field(self):
         # Setup
@@ -160,5 +160,5 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         # Verify that all the units in the repo with given type are returned along with unit_key and extra field
         self.assertEquals(len(units), 9)
         for u in units:
-            self.assertTrue('key-1' in u['unit_key'])
-            self.assertTrue('extra_field' in u)
+            self.assertTrue('key-1' in u.unit_key)
+            self.assertTrue('extra_field' in u.metadata)

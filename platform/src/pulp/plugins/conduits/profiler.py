@@ -19,9 +19,10 @@ from gettext import gettext as _
 import logging
 import sys
 
+from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException, UnitAssociationCriteria
+from pulp.plugins.model import Unit
 from pulp.plugins.types import database as types_db
 from pulp.server.managers import factory as managers
-from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException, UnitAssociationCriteria
 
 _LOG = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
     def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=[]):
         """
         Searches for units in the given repository with given content type 
-        and returns a unit with unit_id, values of the unit key and any additional 
+        and returns a plugin unit with containing unit key and any additional 
         fields requested.
 
         :param repo_id: repo id
@@ -61,8 +62,8 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
                                        in the result
         :type additional_unit_fields: list of str
 
-        :return: list of units
-        :rtype:  list of dict
+        :return: list of unit instances
+        :rtype:  list of pulp.plugins.model.Unit
         """
         try:
             query_manager = managers.repo_unit_association_query_manager()
@@ -73,18 +74,18 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
             type_def = types_db.type_definition(content_type_id)
             key_list = type_def['unit_key']
 
-            # Return only unit_id and unit_key values for each unit
+            # Return plugin units with unit_key and required metadata values for each unit
             all_units = []
             for unit in units:
                 unit_key = {}
+                metadata = {}
                 for k in key_list:
                     unit_key[k] = unit['metadata'].pop(k)
-                u = {'unit_key' : unit_key,
-                     'unit_id': unit.pop('unit_id', None)}
-
-                # Add any additional unit fields requested by plugins
+                # Add unit_id and any additional unit fields requested by plugins
+                metadata['unit_id'] = unit.pop('unit_id', None)
                 for field in additional_unit_fields:
-                    u[field] = unit['metadata'].pop(field, None)
+                    metadata[field] = unit['metadata'].pop(field, None)
+                u = Unit(content_type_id, unit_key, metadata, None)
 
                 all_units.append(u)
 
