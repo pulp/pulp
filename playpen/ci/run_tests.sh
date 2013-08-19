@@ -16,11 +16,12 @@ python run-tests.py  --with-xunit --xunit-file ../test/pulpTest.xml
 # nosetests pulp_devel/test/unit/ --with-xunit --xunit-file builtinsTest.xml --process-timeout=360
 
 cd $WORKSPACE/pulp_rpm
-python run-tests.py  --with-xunit --xunit-file ../test/pulpTest.xml
+python run-tests.py  --with-xunit --xunit-file ../test/pulp_rpmTest.xml
 # nosetests pulp_rpm/test/unit/ --with-xunit --xunit-file puppetTest.xml --process-timeout=360
 
 cd $WORKSPACE/pulp_puppet
-bash run-tests.sh
+python run-tests.py  --with-xunit --xunit-file ../test/pulp_puppetTest.xml
+#bash run-tests.sh
 # nosetests  pulp_puppet_common/test/unit/ --with-xunit --xunit-file puppetTest.xml --process-timeout=360
 # nosetests  pulp_puppet_extensions_admin/test/unit/ --with-xunit --xunit-file puppetTest.xml --process-timeout=360
 # nosetests  pulp_puppet_extensions_consumer/test/unit/ --with-xunit --xunit-file puppetTest.xml --process-timeout=360
