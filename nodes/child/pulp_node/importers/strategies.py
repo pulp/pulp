@@ -192,7 +192,8 @@ class ImporterStrategy(object):
                     pass
             fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
             fetched_manifest.fetch()
-            if manifest != fetched_manifest or not manifest.is_valid() or not manifest.has_valid_units():
+            if manifest != fetched_manifest or \
+                    not manifest.is_valid() or not manifest.has_valid_units():
                 fetched_manifest.fetch_units()
                 manifest = fetched_manifest
             if not manifest.is_valid():
