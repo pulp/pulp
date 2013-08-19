@@ -15,6 +15,9 @@ sudo rm -Rf pulp_rpm
 sudo rm -Rf pulp_puppet
 sudo rm -Rf nectar
 
+# clean up the records from previous test case runs
+sudo rm -Rf test
+
 #Clone the workspaces
 git clone git://github.com/pulp/nectar.git      -b $PULP_GIT_NECTAR_BRANCH
 git clone git://github.com/pulp/pulp.git        -b $PULP_GIT_PULP_BRANCH
