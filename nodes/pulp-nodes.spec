@@ -82,6 +82,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/pulp/plugins/types
 mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/http
 mkdir -p %{buildroot}/%{_var}/lib/pulp/nodes/published/https
 mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
+mkdir -p %{buildroot}/%{_bindir}
 
 # Configuration
 pushd parent
@@ -90,6 +91,11 @@ cp -R etc/pulp %{buildroot}/%{_sysconfdir}
 popd
 pushd child
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
+
+# Scripts
+pushd common
+cp bin/* %{buildroot}/%{_bindir}
 popd
 
 # Types
@@ -125,6 +131,7 @@ Pulp nodes common modules.
 %defattr(-,root,root,-)
 %dir %{python_sitelib}/pulp_node
 %dir %{python_sitelib}/pulp_node/extensions
+%{_bindir}/pulp-gen-nodes-certificate
 %{python_sitelib}/pulp_node/extensions/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
@@ -204,47 +211,7 @@ Pulp nodes admin client extensions.
 
 %post common
 # Generate the certificate used to access the local server.
-
-PKI=/etc/pki/pulp
-PKI_NODES=$PKI/nodes
-CA_KEY=$PKI/ca.key
-CA_CRT=$PKI/ca.crt
-BASE='nodes'
-TMP=/tmp/$RANDOM
-CN='admin:admin:0'
-ORG='PULP'
-ORG_UNIT='NODES'
-
-mkdir -p $TMP
-mkdir -p $PKI_NODES
-
-# create client key
-openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
-
-# create signing request for client
-openssl req \
-  -new \
-  -key $TMP/$BASE.key \
-  -out $TMP/$BASE.req \
-  -subj "/CN=$CN/O=$ORG/OU=$ORG_UNIT" &> /dev/null
-
-# sign server request w/ CA key and gen x.509 cert.
-openssl x509 \
-  -req  \
-  -in $TMP/$BASE.req \
-  -out $TMP/$BASE.xx \
-  -sha1 \
-  -CA $CA_CRT \
-  -CAkey $CA_KEY \
-  -CAcreateserial \
-  -set_serial $RANDOM \
-  -days 3650 &> /dev/null
-
-# bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/local.crt
-
-# clean
-rm -rf $TMP
+pulp-gen-nodes-certificate
 
 %postun
 # clean up the nodes certificate.
