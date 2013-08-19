@@ -184,6 +184,10 @@ class HandlerStrategy(object):
         :param repo_id: A repository ID.
         :type repo_id: str
         """
+        skip = request.options.get(constants.SKIP_REPOSITORY_SYNCHRONIZATION_KEYWORD, False)
+        if skip:
+            log.warn('repository synchronization skipped')
+            return
         repo = RepositoryOnChild(repo_id)
         progress = request.progress.find_report(repo_id)
         importer_report = repo.run_synchronization(progress, request.cancelled, request.options)

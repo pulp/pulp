@@ -46,6 +46,8 @@ CLIENT_CERT_KEYWORD = 'client_cert'
 MAX_DOWNLOAD_BANDWIDTH_KEYWORD = 'max_download_bandwidth'
 MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
 
+SKIP_REPOSITORY_SYNCHRONIZATION_KEYWORD = 'skip_repository_synchronization'
+
 
 # --- unit/publishing --------------------------------------------------------
 
@@ -62,3 +64,8 @@ PUBLISHING_METHODS = [PUBLISHED_AS_FILE, PUBLISHED_AS_TARBALL]
 
 NODE_NOTE_KEY = '_child-node'
 STRATEGY_NOTE_KEY = '_node-update-strategy'
+
+
+# --- settings ---------------------------------------------------------------
+
+DEFAULT_DOWNLOAD_CONCURRENCY = 20

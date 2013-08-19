@@ -136,7 +136,7 @@ class Manifest(object):
         :rtype: bool
         """
         try:
-            return self.has_valid_units() and self.version == MANIFEST_VERSION
+            return self.version == MANIFEST_VERSION
         except AttributeError:
             return False
 

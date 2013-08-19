@@ -51,7 +51,7 @@ class TestModel(WebTest):
         binding = mocks[1]
         expected_conf = {
             importer_constants.KEY_MAX_DOWNLOADS: MAX_CONCURRENCY,
-            importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH
+            importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH,
         }
         # Verify
         binding.assert_called_with(REPO_ID, expected_conf)

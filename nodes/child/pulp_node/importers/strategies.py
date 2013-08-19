@@ -31,7 +31,7 @@ from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import UnitDownloadManager
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
-    DeleteUnitError, CaughtException)
+    DeleteUnitError, InvalidManifestError, CaughtException)
 
 
 log = getLogger(__name__)
@@ -192,15 +192,18 @@ class ImporterStrategy(object):
                     pass
             fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
             fetched_manifest.fetch()
-            if manifest != fetched_manifest or not manifest.is_valid():
+            if manifest != fetched_manifest or not manifest.is_valid() or not manifest.has_valid_units():
                 fetched_manifest.fetch_units()
                 manifest = fetched_manifest
+            if not manifest.is_valid():
+                raise InvalidManifestError()
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
+        # build the inventory
         parent_units = manifest.get_units()
         base_URL = manifest.publishing_details[constants.BASE_URL]
         inventory = UnitInventory(base_URL, parent_units, child_units)
