@@ -281,6 +281,8 @@ class ImporterStrategy(object):
         if storage_path:
             if not os.path.exists(storage_path):
                 return True
+            if os.path.getsize(storage_path) != unit[constants.FILE_SIZE]:
+                return True
         return False
 
     def _delete_units(self, request, unit_inventory):

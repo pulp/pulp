@@ -105,11 +105,13 @@ class FilePublisher(Publisher):
         :param unit: A content unit.
         :type unit: dict
         """
-        storage_path = unit.get('storage_path')
+        storage_path = unit.get(constants.STORAGE_PATH)
         if not storage_path:
             # not all units have associated files.
+            unit[constants.FILE_SIZE] = 0
             return unit, None
-        relative_path = unit['relative_path']
+        unit[constants.FILE_SIZE] = os.path.getsize(storage_path)
+        relative_path = unit[constants.RELATIVE_PATH]
         published_path = pathlib.join(self.tmp_dir, relative_path)
         pathlib.mkdir(os.path.dirname(published_path))
         if os.path.isdir(storage_path):

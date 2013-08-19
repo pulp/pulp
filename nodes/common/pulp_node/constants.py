@@ -54,6 +54,7 @@ SKIP_CONTENT_UPDATE_KEYWORD = 'skip_content_update'
 BASE_URL = 'base_url'
 STORAGE_PATH = 'storage_path'
 RELATIVE_PATH = 'relative_path'
+FILE_SIZE = 'size'
 
 PUBLISHED_AS_FILE = 'published_as_file'
 PUBLISHED_AS_TARBALL = 'published_as_tarball'
