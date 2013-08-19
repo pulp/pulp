@@ -50,8 +50,6 @@ args = [
 if sys.version_info < (2, 6):
     args.extend(['-e', 'server'])
 
-#args.extend(['-e', 'server', '-v', '--collect-only'])
-
 #add ability to specify nosetest options
 parser = argparse.ArgumentParser()
 parser.add_argument('--xunit-file')
@@ -63,6 +61,5 @@ if arguments.with_xunit:
 if arguments.xunit_file:
     args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
-print " ".join(args)
 #Call the test process
 subprocess.call(args)
