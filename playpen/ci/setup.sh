@@ -9,7 +9,7 @@ set -x
 env
 cd $WORKSPACE
 
-if [ [$OS_NAME -ne "RedHat"] && [$OS_VERSION -ne 5] ]; then
+if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" != "5" ]; then
     pushd nectar
     sudo pip-python install -e .
     popd
