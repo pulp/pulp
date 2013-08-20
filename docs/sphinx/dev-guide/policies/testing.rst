@@ -59,7 +59,7 @@ this construct is unnecessary.
 Coverage
 --------
 
-Each Pulp git repository contains a script named ``run-tests.sh``. This script
+Each Pulp git repository contains a script named ``run-tests.py``. This script
 will run all of the unit tests for that repository and generate coverage reports.
 The python ``coverage`` library is used to produce the reports and must be
 installed before running that script. An HTML version of the coverage report
