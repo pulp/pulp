@@ -23,7 +23,9 @@ function setup {
     popd
 }
 
-if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" != "5" ]; then
+if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" == "5" ]; then
+    # don't install nectar on RHEL 5
+else
     setup 'nectar'
 fi
 
