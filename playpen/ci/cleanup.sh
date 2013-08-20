@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This script expects to run within the Jenkins Build Process
-# The purpose of the script is to clean up after a build & test suite has been run in order to return the server to the
-# pre build/test execution state.
+# The purpose of the script is to clean up after a build & test suite has been run in order to return the
+# server to the pre build/test execution state.
 
 echo "Cleaning up after the build"
 set -x
