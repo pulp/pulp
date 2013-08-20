@@ -15,8 +15,9 @@ import base64
 import locale
 import logging
 import urllib
-from types import NoneType
+import oauth2 as oauth
 
+from types import NoneType
 from M2Crypto import SSL, httpslib
 
 try:
@@ -24,9 +25,10 @@ try:
 except ImportError:
     import simplejson as json
 
-import pulp.bindings.exceptions as exceptions
+from pulp.bindings import exceptions
 from pulp.bindings.responses import Response, Task
 from pulp.common.util import ensure_utf_8
+
 
 # -- server connection --------------------------------------------------------
 
@@ -40,9 +42,20 @@ class PulpConnection(object):
     for unit testing purposes.
     """
 
-    def __init__(self, host, port=443, path_prefix='/pulp/api', timeout=120,
-                 logger=None, api_responses_logger=None,
-                 username=None, password=None, cert_filename=None, server_wrapper=None):
+    def __init__(self,
+                 host,
+                 port=443,
+                 path_prefix='/pulp/api',
+                 timeout=120,
+                 logger=None,
+                 api_responses_logger=None,
+                 username=None,
+                 password=None,
+                 oauth_key=None,
+                 oauth_secret=None,
+                 oauth_user='admin',
+                 cert_filename=None,
+                 server_wrapper=None):
 
         self.host = host
         self.port = port
@@ -56,6 +69,9 @@ class PulpConnection(object):
         self.username = username
         self.password = password
         self.cert_filename = cert_filename
+        self.oauth_key = oauth_key
+        self.oauth_secret = oauth_secret
+        self.oauth_user = oauth_user
 
         # Locale
         default_locale = locale.getdefaultlocale()[0]
@@ -208,7 +224,8 @@ class PulpConnection(object):
             if path.startswith('/'):
                 path = path[1:]
             path = '/'.join((self.path_prefix, path))
-            # Check if path is ascii and uses appropriate characters, else convert to binary or unicode as necessary.
+            # Check if path is ascii and uses appropriate characters,
+            # else convert to binary or unicode as necessary.
         try:
             path = urllib.quote(str(path))
         except UnicodeEncodeError:
@@ -219,6 +236,7 @@ class PulpConnection(object):
         if queries:
             path = '?'.join((path, queries))
         return path
+
 
 # -- wrapper classes ----------------------------------------------------------
 
@@ -231,11 +249,15 @@ class HTTPSServerWrapper(object):
     """
 
     def __init__(self, pulp_connection):
+        """
+        :param pulp_connection: A pulp connection object.
+        :type pulp_connection: PulpConnection
+        """
         self.pulp_connection = pulp_connection
 
     def request(self, method, url, body):
 
-        headers = dict(self.pulp_connection.headers) # copy so we don't affect the calling method
+        headers = dict(self.pulp_connection.headers)  # copy so we don't affect the calling method
 
         # Create a new connection each time since HTTPSConnection has problems
         # reusing a connection for multiple calls (lame).
@@ -249,9 +271,23 @@ class HTTPSServerWrapper(object):
             ssl_context.set_session_timeout(self.pulp_connection.timeout)
             ssl_context.load_cert(self.pulp_connection.cert_filename)
 
+        # oauth configuration
+        if self.pulp_connection.oauth_key and self.pulp_connection.oauth_secret:
+            oauth_consumer = oauth.Consumer(
+                self.pulp_connection.oauth_key,
+                self.pulp_connection.oauth_secret)
+            oauth_request = oauth.Request.from_consumer_and_token(
+                oauth_consumer,
+                http_method=method,
+                http_url='https://%s:%d%s' % (self.pulp_connection.host, self.pulp_connection.port, url))
+            oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), oauth_consumer, None)
+            headers.update(oauth_request.to_header())
+            headers['pulp-user'] = self.pulp_connection.oauth_user
+
         # Can't pass in None, so need to decide between two signatures (also lame)
         if ssl_context is not None:
-            connection = httpslib.HTTPSConnection(self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
+            connection = httpslib.HTTPSConnection(
+                self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
         else:
             connection = httpslib.HTTPSConnection(self.pulp_connection.host, self.pulp_connection.port)
 
