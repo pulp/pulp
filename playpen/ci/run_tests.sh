@@ -10,10 +10,10 @@ mkdir $WORKSPACE/test
 
 
 cd $WORKSPACE/pulp
-python run-tests.py  --with-xunit --xunit-file ../test/pulpTest.xml
+python run-tests.py  --with-xunit --xunit-file ../test/pulp_test.xml
 
 cd $WORKSPACE/pulp_rpm
-python run-tests.py  --with-xunit --xunit-file ../test/pulp_rpmTest.xml
+python run-tests.py  --with-xunit --xunit-file ../test/pulp_rpm_test.xml
 
 cd $WORKSPACE/pulp_puppet
-python run-tests.py  --with-xunit --xunit-file ../test/pulp_puppetTest.xml
+python run-tests.py  --with-xunit --xunit-file ../test/pulp_puppet_test.xml

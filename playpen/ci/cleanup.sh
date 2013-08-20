@@ -28,10 +28,4 @@ sudo rm -Rf /var/lib/pulp/*
 sudo rm -Rf /usr/lib/pulp/*
 sudo rm -Rf /etc/pki/pulp/*
 
-#Don't remove the source directories so they can be inspected if something goes wrong
-# sudo rm -Rf pulp
-# sudo rm -Rf pulp_rpm
-# sudo rm -Rf pulp_puppet
-# sudo rm -Rf nectar
-
 echo "Finished cleaning up."
