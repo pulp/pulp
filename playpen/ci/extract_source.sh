@@ -5,8 +5,7 @@
 echo "Setting up after source control extract"
 set -x
 env
-# Jenkins isn't setting the workspace properly on slave nodes so resetting it here
-export WORKSPACE=$HOME/workspace/$JOB_NAME
+
 cd $WORKSPACE
 
 #delete the directories if they exist already

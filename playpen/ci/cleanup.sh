@@ -5,8 +5,6 @@
 
 echo "Cleaning up after the build"
 set -x
-env
-export WORKSPACE=$HOME/workspace/$JOB_NAME
 cd $WORKSPACE
 sudo pip-python uninstall -y Pulp-Platform
 sudo pip-python uninstall -y pulp-devel
