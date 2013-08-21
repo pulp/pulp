@@ -26,7 +26,9 @@ from pulp.server.managers.consumer.applicability import (
     _get_consumer_applicability_map, DoesNotExist, MultipleObjectsReturned,
     retrieve_consumer_applicability, ApplicabilityRegenerationManager)
 from pulp.server.managers.consumer.bind import BindManager
+from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.consumer.profile import ProfileManager
+from pulp.server.managers.repo.cud import RepoManager
 import base
 import mock_plugins
 
@@ -262,13 +264,19 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         Store the collection on self.
         """
+        super(TestRepoProfileApplicabilityManager, self).setUp()
+        mock_plugins.install()
         self.collection = RepoProfileApplicability.get_collection()
 
     def tearDown(self):
         """
         Clean up the collection.
         """
+        super(TestRepoProfileApplicabilityManager, self).tearDown()
         self.collection.drop()
+        Repo.get_collection().drop()
+        Consumer.get_collection().drop()
+        UnitProfile.get_collection().drop()
 
     def test_create(self):
         """
@@ -385,6 +393,108 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         self.assertRaises(DoesNotExist,
                           RepoProfileApplicability.objects.get, {})
+
+    def test_remove_orphans(self):
+        """
+        Test the remove_orphans() method with various cases
+        """
+        # Create a RepoProfileApplicability object that references an existing repo and profile.
+        repo = RepoManager().create_repo('a_repo_id')
+        consumer = ConsumerManager().register('consumer_id')
+        profile_1 = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
+        profile_2 = ProfileManager().create(consumer.id, 'other_content_type', 'more_profile_data')
+        # This one should remain
+        rpa_1 = RepoProfileApplicability.objects.create(profile_1.profile_hash, repo['id'],
+                                                        profile_1.profile, 'applicability_data')
+        # This one should be removed, because it references a profile_hash that doesn't exist
+        rpa_2 = RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
+                                                        profile_1.profile, 'applicability_data')
+        # This one should be removed, because it references a repo_id that doesn't exist
+        rpa_3 = RepoProfileApplicability.objects.create(
+            profile_1.profile_hash, 'repo_doesnt_exist', profile_1.profile, 'applicability_data_2')
+        # This one should also remain
+        rpa_4 = RepoProfileApplicability.objects.create(profile_2.profile_hash, repo['id'],
+                                                        profile_2.profile, 'applicability_data')
+        # There should be four rpas
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 4)
+
+        # Order the RPAs to be cleaned
+        RepoProfileApplicability.objects.remove_orphans()
+
+        # rpa_2 and rpa_3 should have been removed
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
+        existing_rpas = RepoProfileApplicability.objects.filter({})
+        existing_rpa_ids = [rpa.id for rpa in existing_rpas]
+        self.assertEqual(set(existing_rpa_ids), set([rpa_1.id, rpa_4.id]))
+
+    def test_remove_orphans_missing_profile_hash(self):
+        """
+        Test the remove_orphans() method with a non-existing profile_hash
+        """
+        # Create a RepoProfileApplicability object that references an existing repo and profile.
+        repo = RepoManager().create_repo('a_repo_id')
+        consumer = ConsumerManager().register('consumer_id')
+        profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
+        rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
+                                                        profile.profile, 'applicability_data')
+        # This one should be removed, because it references a profile_hash that doesn't exist
+        rpa_2 = RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
+                                                        profile.profile, 'applicability_data')
+        # There should be two rpas
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
+
+        # Order the RPAs to be cleaned
+        RepoProfileApplicability.objects.remove_orphans()
+
+        # rpa_2 should have been removed
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
+        existing_rpa = RepoProfileApplicability.objects.get({})
+        self.assertEqual(rpa_1.id, existing_rpa.id)
+
+    def test_remove_orphans_missing_repo(self):
+        """
+        Test the remove_orphans() method with a non-existing repo_id
+        """
+        # Create a RepoProfileApplicability object that references an existing repo and profile.
+        repo = RepoManager().create_repo('a_repo_id')
+        consumer = ConsumerManager().register('consumer_id')
+        profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
+        rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
+                                                        profile.profile, 'applicability_data')
+        # This one should be removed, because it references a repo_id that doesn't exist
+        rpa_2 = RepoProfileApplicability.objects.create(profile.profile_hash, 'repo_doesnt_exist',
+                                                        profile.profile, 'applicability_data_2')
+        # There should be two rpas
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
+
+        # Order the RPAs to be cleaned
+        RepoProfileApplicability.objects.remove_orphans()
+
+        # rpa_2 should have been removed
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
+        existing_rpa = RepoProfileApplicability.objects.get({})
+        self.assertEqual(rpa_1.id, existing_rpa.id)
+
+    def test_remove_orphans_nothing_to_remove(self):
+        """
+        Test the remove_orphans() method, when there is nothing to remove.
+        """
+        # Create a RepoProfileApplicability object that references an existing repo and profile.
+        repo = RepoManager().create_repo('a_repo_id')
+        consumer = ConsumerManager().register('consumer_id')
+        profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
+        rpa = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
+                                                      profile.profile, 'applicability_data')
+        # The new rpa should be the only one
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
+
+        # Order the RPAs to be cleaned
+        RepoProfileApplicability.objects.remove_orphans()
+
+        # Nothing should have been removed
+        self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
+        existing_rpa = RepoProfileApplicability.objects.get({})
+        self.assertEqual(rpa.id, existing_rpa.id)
 
 
 class TestRetrieveConsumerApplicability(base.PulpServerTests,
