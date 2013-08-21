@@ -12,16 +12,11 @@
 
 class pulp_prereq {
   $os_downcase = downcase($::operatingsystem)
-  
-  if $::operatingsystem == 'Fedora' and $::operatingsystemrelease == 19 {
-    $os_release = 18
-  } else {
-    $os_release = $::operatingsystemrelease
-  }
+
   yumrepo {
     'pulp-v2-stable':
     name     =>'pulp-v2-stable',
-    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/v2/stable/\
+    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/stable/2/\
 ${os_downcase}-${os_release}/${::architecture}/",
     enabled  =>0,
     gpgcheck =>0,
@@ -29,79 +24,59 @@ ${os_downcase}-${os_release}/${::architecture}/",
   yumrepo {
     'pulp-v2-testing':
     name     =>'pulp-v2-testing',
-    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/v2/testing/\
+    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/testing/\
 ${os_downcase}-${os_release}/${::architecture}/",
     enabled  =>1,
     gpgcheck =>0,
   }
-  yumrepo {
-    'pulp-v1-stable':
-    name     =>'pulp-v1-stable',
-    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/v1/stable/\
-${os_downcase}-${os_release}/${::architecture}/",
-    enabled  =>0,
-    gpgcheck =>0,
-  }
-
 
   #packages needed for pulp server
   $base_packages = [
-    'mongodb-server',
     'httpd',
+    'mongodb-server',
     'qpid-cpp-server',
     'qpid-cpp-client',
-    #'python-qpid',
     'qpid-cpp-client-ssl',
     'qpid-cpp-client-rdma']
   $pulp_server_packages = [
-    #server section
-    'python-pymongo',
-    'python-setuptools',
-    'python-webpy',
-    'python-okaara',
-    'python-oauth2', # >= 1.5.170-2.pulp
-    'python-httplib2',
-    'python-isodate', # >= 0.5.0-1.pulp
-    'python-BeautifulSoup',
-    'python-qpid',
-    #'python-nectar', #nectar is installed as part of the build
-    'mod_ssl',
-    'openssl',
-    'nss-tools',
-    'python-ldap',
-    'python-gofer',
-    'crontabs',
     'acl',
+    'createrepo', # >= 0.9.9-21
+    'crontabs',
+    'genisoimage',
+    'gofer', #  >= 0.76
+    'grinder', # >= 0.1.16
+    'm2crypto', # >= 0.21.1.pulp-7
+    'mod_ssl',
     'mod_wsgi', # >= 3.4-1.pulp
     'mongodb',
-    'm2crypto', # >= 0.21.1.pulp-7
-    'genisoimage',
-    # common section
-    'python-iniparse',
-    # agent section
-    'gofer', #  >= 0.76
-    # selinux
+    'nss-tools',
+    'openssl',
     'policycoreutils-python',
-    'selinux-policy-targeted',
-    #pulp_puppet
-    'python-pycurl',
-    #pulp_rpm
-    'createrepo', # >= 0.9.9-21
-    'python-rhsm', # >= 1.8.0
-    'grinder', # >= 0.1.16
     'pyliblzma',
+    'python-BeautifulSoup',
+    'python-isodate', # >= 0.5.0-1.pulp
+    'python-iniparse',
+    'python-gofer',
+    'python-httplib2',
+    'python-ldap',
+    'python-oauth2', # >= 1.5.170-2.pulp
+    'python-okaara',
+    'python-pycurl',
+    'python-pymongo',
+    'python-qpid',
+    'python-rhsm', # >= 1.8.0
+    'python-setuptools',
+    'python-webpy',
+    'selinux-policy-targeted',
     'yum'
   ]
 
   $build_requires = [
-    #pulp
-    'rpm-python',
-    'make',
     'checkpolicy',
-    'selinux-policy-devel',
-    'hardlink'
-    #pulp_puppet
-    #'python2-devel', # should maybe be python26-devel
+    'hardlink',
+    'make',
+    'rpm-python',
+    'selinux-policy-devel'
     ]
   $list_to_flatten = [$base_packages,$build_requires,$pulp_server_packages]
   $package_list = flatten($list_to_flatten)
