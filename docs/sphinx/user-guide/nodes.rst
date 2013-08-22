@@ -104,10 +104,6 @@ To install *Nodes* child support, follow the instructions below.
  $ sudo service pulp-agent restart
 
 
-.. note:: Installing the *Nodes* child support installs the pulp-consumer package
-          group as a dependency.
-
-
 Admin Client Extensions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
