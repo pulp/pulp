@@ -47,15 +47,6 @@ NODE_SCHEMA = (
 
 # --- configuration ----------------------------------------------------------
 
-def node_id():
-    """
-    Get the node ID.
-    :return: The node ID.
-    :rtype: str
-    """
-    node_conf = node_configuration()
-    return node_conf.main.node_id
-
 
 def node_configuration(path=NODE_CONFIGURATION_PATH):
     """
