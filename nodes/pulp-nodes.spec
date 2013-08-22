@@ -168,10 +168,7 @@ Summary: Pulp child nodes support
 Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
-Requires: pulp-consumer-client = %{pulp_version}
-Requires: pulp-agent = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
-Requires: gofer >= 0.74
 Requires: python-nectar >= 1.0.0
 
 %description child
@@ -182,18 +179,16 @@ Pulp child nodes support.
 %{python_sitelib}/pulp_node/importers/
 %{python_sitelib}/pulp_node/handlers/
 %{python_sitelib}/pulp_node_child*.egg-info
-%{python_sitelib}/pulp_node/extensions/consumer/
-%{python_sitelib}/pulp_node_consumer_extensions*.egg-info
 %{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
 %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/
 %doc
 
 
-# ---- Admin Extension -------------------------------------------------------
+# ---- Admin Extensions ------------------------------------------------------
 
 %package admin-extensions
-Summary: Pulp parent nodes support
+Summary: Pulp admin client extensions
 Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-admin-client = %{pulp_version}
@@ -206,6 +201,25 @@ Pulp nodes admin client extensions.
 %{python_sitelib}/pulp_node/extensions/admin/
 %{python_sitelib}/pulp_node_admin_extensions*.egg-info
 %doc
+
+
+# ---- Consumer Extensions ---------------------------------------------------
+
+%package consumer-extensions
+Summary: Pulp consumer client extensions
+Group: Development/Languages
+Requires: %{name}-common = %{version}
+Requires: pulp-consumer-client = %{pulp_version}
+
+%description consumer-extensions
+Pulp nodes consumer client extensions.
+
+%files consumer-extensions
+%defattr(-,root,root,-)
+%{python_sitelib}/pulp_node/extensions/consumer/
+%{python_sitelib}/pulp_node_consumer_extensions*.egg-info
+%doc
+
 
 # ----------------------------------------------------------------------------
 
