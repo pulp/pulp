@@ -67,7 +67,7 @@ def node_id():
 def node_configuration(path=NODE_CONFIGURATION_PATH):
     """
     Get the node configuration object.
-    The node configuration is overridden with values from the pulp consumer
+    The node configuration is defaulted using values from the pulp consumer
     configuration and certificate when installed.
     :param path: The optional path to the configuration.
     :return: The configuration object.
