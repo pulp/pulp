@@ -67,8 +67,8 @@ def node_id():
 def node_configuration(path=NODE_CONFIGURATION_PATH):
     """
     Get the node configuration object.
-    The node configuration is defaulted using values from the pulp consumer
-    configuration and certificate when installed.
+    The node configuration is overridden using values from the pulp
+    consumer.conf and defaulted using server.conf as appropriate.
     :param path: The optional path to the configuration.
     :return: The configuration object.
     :rtype: pulp.common.config.Graph
@@ -86,8 +86,17 @@ def node_configuration(path=NODE_CONFIGURATION_PATH):
         node_id = cert.cn()
         node_conf.update(dict(main=dict(node_id=node_id)))
         node_conf.update(dict(parent_oauth=dict(host=host, port=port)))
+    node_graph = node_conf.graph()
+    pulp_conf = pulp_configuration()
+    oauth = node_graph.oauth
+    defaults = dict(
+        oauth=dict(
+            host=oauth.host or pulp_conf.server.host or socket.gethostname(),
+            key=oauth.key or pulp_conf.oauth.oauth_key,
+            secret=oauth.secret or pulp_conf.oauth.oauth_secret))
+    node_conf.update(defaults)
     node_conf.validate(NODE_SCHEMA)
-    return node_conf.graph()
+    return node_graph
 
 
 def pulp_configuration(path=SERVER_CONFIGURATION_PATH):
@@ -117,7 +126,8 @@ def parent_bindings():
         oauth_key=oauth.key,
         oauth_secret=oauth.secret,
         oauth_user=oauth.user_id)
-    return Bindings(connection)
+    bindings = Bindings(connection)
+    return bindings
 
 
 def pulp_bindings():
@@ -128,14 +138,13 @@ def pulp_bindings():
     :return: A pulp bindings object.
     :rtype: Bindings
     """
-    pulp_conf = pulp_configuration()
     node_conf = node_configuration()
     oauth = node_conf.oauth
-    host = oauth.host or pulp_conf.server.host or socket.gethostname()
     connection = PulpConnection(
-        host=host,
+        host=oauth.host,
         port=int(oauth.port),
-        oauth_key=node_conf.oauth.key or pulp_conf.oauth.oauth_key,
-        oauth_secret=oauth.secret or pulp_conf.oauth.oauth_secret,
-        oauth_user=node_conf.oauth.user_id)
-    return Bindings(connection)
+        oauth_key=oauth.key,
+        oauth_secret=oauth.secret,
+        oauth_user=oauth.user_id)
+    bindings = Bindings(connection)
+    return bindings
