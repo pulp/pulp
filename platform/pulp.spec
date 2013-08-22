@@ -204,9 +204,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
-%{_bindir}/pulp-v1-upgrade
-%{_bindir}/pulp-v1-upgrade-selinux
-%{_bindir}/pulp-v1-upgrade-publish
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
