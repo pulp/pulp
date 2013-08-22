@@ -73,7 +73,19 @@ To install *Nodes* parent support, follow the instructions below.
 
   $ sudo yum install pulp-nodes-parent
 
-2. Restart Apache.
+2. The communication between the child and parent nodes is secured using OAuth.  The parent node
+   must have OAuth enabled and configured.  Oauth is enabled and configured with a unique, generated
+   *key* and *secret* during installation.  Edit the ``/etc/pulp/server.conf`` and ensure proper
+   configuration.
+
+::
+
+ [oauth]
+ enabled: true
+ oauth_key: 3KIEJD78
+ oauth_secret: L7JSUWJ9
+
+3. Restart Apache.
 
 ::
 
@@ -91,13 +103,51 @@ To install *Nodes* child support, follow the instructions below.
 
  $ sudo yum install pulp-nodes-child
 
-2. Restart Apache.
+2. The communication between the child and parent nodes is secured using OAuth. The child node
+   must have OAuth enabled and configured. Oauth is enabled and configured with a unique, generated
+   *key* and *secret* during installation. Edit the ``/etc/pulp/server.conf`` and ensure proper
+   configuration.
+
+::
+
+ [oauth]
+ enabled: true
+ oauth_key: 3KIEJD78
+ oauth_secret: L7JSUWJ9
+
+3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match  values found in
+   ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match a
+   user with administration privileges on the parent node. Properties marked as (optional) are
+   defaulted using values read from other pulp configuration files as appropriate.  Users may specify
+   values here as overrides or to provide values when the referenced *other* pulp configuration files
+   are not installed.  See :ref:`node_quick_start` for abbreviated list of properties to edit.
+
+::
+
+ [main]
+ node_id=  <read from pulp consumer certificate>
+
+ [oauth]
+ host=     <read from /etc/pulp/server.conf>
+ port=     <read from /etc/pulp/server.conf>
+ key=      <read from /etc/pulp/server.conf>
+ secret=   <read from /etc/pulp/server.conf>
+ user_id=  <EDIT: admin user on parent node>
+
+ [parent_oauth]
+ host=     <read from /etc/pulp/consumer/consumer.conf>
+ port=     <read from /etc/pulp/consumer/consumer.conf>
+ key=      <EDIT: matching value from parent /etc/pulp/server.conf>
+ secret=   <EDIT: matching value from parent /etc/pulp/server.conf>
+ user_id=  <admin user on parent node>
+
+4. Restart Apache.
 
 ::
 
  $ sudo service httpd restart
 
-3. Restart the Pulp agent.
+5. Restart the Pulp agent.
 
 ::
 
@@ -318,6 +368,8 @@ creation, removal, and listing of node sync schedules can be found under the
 ``node sync schedules`` command.
 
 
+.. _node_quick_start:
+
 Quick Start
 -----------
 
@@ -361,29 +413,44 @@ On the Pulp server to be used as the child node:
 ::
 
   $ sudo yum install pulp-nodes-child
-  $ sudo service httpd restart && service pulp-agent restart
 
-2. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
+2. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
+   ``/etc/pulp/server.conf`` on the parent node.
+
+::
+
+ [parent_oauth]
+ key=      <matching value from parent /etc/pulp/server.conf>
+ secret=   <matching value from parent /etc/pulp/server.conf>
+
+3. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
 
 ::
 
  [server]
  host = parent.redhat.com
 
-3. Register as a consumer.  This command will prompt for a password.
+4. Restart services.
+
+::
+
+ $ sudo service httpd restart && service pulp-agent restart
+
+
+5. Register as a consumer.  This command will prompt for a password.
 
 ::
 
  $ pulp-consumer -u admin register --consumer-id child-1
 
-4. Activate the node.
+6. Activate the node.
 
 ::
 
  $ pulp-consumer node activate
 
 
-5. Bind to the ``pulp-goodness`` repository.
+7. Bind to the ``pulp-goodness`` repository.
 
 ::
 
