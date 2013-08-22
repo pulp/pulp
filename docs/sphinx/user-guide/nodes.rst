@@ -124,9 +124,6 @@ To install *Nodes* child support, follow the instructions below.
 
 ::
 
- [main]
- node_id=  <read from pulp consumer certificate>
-
  [oauth]
  host=     <read from /etc/pulp/server.conf>
  port=     <read from /etc/pulp/server.conf>
