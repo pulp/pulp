@@ -63,7 +63,7 @@ class NodeHandler(ContentHandler):
         """
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
-        bindings = BindingsOnParent.fetch_all()
+        bindings = BindingsOnParent.fetch_all(conduit.consumer_id)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(
@@ -127,7 +127,7 @@ class RepositoryHandler(ContentHandler):
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
         repo_ids = [key['repo_id'] for key in units if key]
-        bindings = BindingsOnParent.fetch(repo_ids)
+        bindings = BindingsOnParent.fetch(conduit.consumer_id, repo_ids)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(

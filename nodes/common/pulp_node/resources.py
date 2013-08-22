@@ -13,7 +13,6 @@ import os
 import socket
 
 from pulp.common.config import Config, REQUIRED, OPTIONAL, NUMBER, ANY
-from pulp.common.bundle import Bundle
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
 
@@ -25,12 +24,6 @@ SERVER_CONFIGURATION_PATH = '/etc/pulp/server.conf'
 CONSUMER_CONFIGURATION_PATH = '/etc/pulp/consumer/consumer.conf'
 
 NODE_SCHEMA = (
-    ('main', REQUIRED,
-        (
-            ('node_id', REQUIRED, ANY),
-            ('node_cert', REQUIRED, ANY),
-        )
-    ),
     ('oauth', REQUIRED,
         (
             ('host', OPTIONAL, ANY),
@@ -80,20 +73,15 @@ def node_configuration(path=NODE_CONFIGURATION_PATH):
         conf = conf.graph()
         host = conf.server.host
         port = conf.server.port
-        cert_path = os.path.join(
-            conf.filesystem.id_cert_dir, conf.filesystem.id_cert_filename)
-        cert = Bundle(cert_path)
-        node_id = cert.cn()
-        node_conf.update(dict(main=dict(node_id=node_id)))
         node_conf.update(dict(parent_oauth=dict(host=host, port=port)))
     node_graph = node_conf.graph()
-    pulp_conf = pulp_configuration()
+    conf = pulp_configuration()
     oauth = node_graph.oauth
     defaults = dict(
         oauth=dict(
-            host=oauth.host or pulp_conf.server.host or socket.gethostname(),
-            key=oauth.key or pulp_conf.oauth.oauth_key,
-            secret=oauth.secret or pulp_conf.oauth.oauth_secret))
+            host=oauth.host or conf.server.host or socket.gethostname(),
+            key=oauth.key or conf.oauth.oauth_key,
+            secret=oauth.secret or conf.oauth.oauth_secret))
     node_conf.update(defaults)
     node_conf.validate(NODE_SCHEMA)
     return node_graph

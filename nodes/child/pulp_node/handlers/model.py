@@ -514,26 +514,30 @@ class ImporterOnChild(ChildEntity, Importer):
 
 class BindingsOnParent(ParentEntity):
     """
-    Represents a parent consumer binding to a repository.
+    Represents a parent node bindings to a repository.
     """
 
     @classmethod
-    def fetch_all(cls):
+    def fetch_all(cls, node_id):
         """
         Fetch a list of ALL bind payloads for this consumer.
+        :param node_id: The node ID.
+        :type node_id: str
         :return: List of bind payloads.
         :rtype: list
         """
-        http = ParentEntity.binding.bind.find_by_id(resources.node_id())
+        http = ParentEntity.binding.bind.find_by_id(node_id)
         if http.response_code == httplib.OK:
             return cls.filtered(http.response_body)
         else:
             raise GetBindingsError(http.response_code)
 
     @classmethod
-    def fetch(cls, repo_ids):
+    def fetch(cls, node_id, repo_ids):
         """
         Fetch a list of bind payloads for the specified list of repository ID.
+        :param node_id: The node ID.
+        :type node_id: str
         :param repo_ids: A list of repository IDs.
         :type repo_ids:  list
         :return: List of bind payloads.
@@ -541,7 +545,7 @@ class BindingsOnParent(ParentEntity):
         """
         binds = []
         for repo_id in repo_ids:
-            http = ParentEntity.binding.bind.find_by_id(resources.node_id(), repo_id)
+            http = ParentEntity.binding.bind.find_by_id(node_id, repo_id)
             if http.response_code == httplib.OK:
                 binds.extend(cls.filtered(http.response_body))
             else:

@@ -127,6 +127,17 @@ class BadDownloadRequest(DownloadRequest):
         DownloadRequest.__init__(self, url, *args, **kwargs)
 
 
+class AgentConduit(Conduit):
+
+    def __init__(self, node_id=None):
+        self.node_id = node_id
+
+    @property
+    def consumer_id(self):
+        return self.node_id
+
+
+
 # --- testing base classes ---------------------------------------------------
 
 
@@ -272,14 +283,14 @@ class AgentHandlerTest(PluginTestBase):
         # Setup
         handler = NodeHandler({})
         # Test & Verify
-        self.assertRaises(error.GetBindingsError, handler.update, Conduit(), [], {})
+        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], {})
 
     @patch('pulp_node.handlers.model.BindingsOnParent.fetch', side_effect=error.GetBindingsError(500))
     def test_repository_handler_get_bindings_failed(self, *unused):
         # Setup
         handler = RepositoryHandler({})
         # Test & Verify
-        self.assertRaises(error.GetBindingsError, handler.update, Conduit(), [], {})
+        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], {})
 
 
 # --- pulp plugin tests --------------------------------------------
@@ -878,8 +889,7 @@ class TestEndToEnd(PluginTestBase):
                 self.assertTrue(os.path.isdir(storage_path))
                 self.assertEqual(len(os.listdir(storage_path)), 1)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_mirror(self, *unused):
+    def test_handler_mirror(self):
         """
         Test end-to-end functionality using the mirroring strategy.
         """
@@ -904,7 +914,8 @@ class TestEndToEnd(PluginTestBase):
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = dispatcher.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -923,8 +934,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['removed'], 0)
         self.verify()
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_cancelled(self, *unused):
+    def test_handler_cancelled(self):
         """
         Test end-to-end functionality using the mirroring strategy.
         """
@@ -950,7 +960,8 @@ class TestEndToEnd(PluginTestBase):
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = dispatcher.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -968,8 +979,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_additive(self, *unused):
+    def test_handler_additive(self):
         """
         Test end-to-end functionality using the additive strategy.
         """
@@ -995,7 +1005,8 @@ class TestEndToEnd(PluginTestBase):
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = dispatcher.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1017,8 +1028,7 @@ class TestEndToEnd(PluginTestBase):
         all = manager.find_all()
         self.assertEqual(len(all), 1 + len(self.EXTRA_REPO_IDS))
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_mirror_repository_scope(self, *unused):
+    def test_handler_mirror_repository_scope(self):
         """
         Test end-to-end functionality using the mirror strategy and
         invoke using 'repository' units.  The goal is to make sure that the
@@ -1046,7 +1056,8 @@ class TestEndToEnd(PluginTestBase):
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = dispatcher.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1068,8 +1079,7 @@ class TestEndToEnd(PluginTestBase):
         all = manager.find_all()
         self.assertEqual(len(all), 1 + len(self.EXTRA_REPO_IDS))
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_merge(self, unused):
+    def test_handler_merge(self):
         """
         Test end-to-end functionality using the mirror strategy. We don't clean the repositories
         to they will be merged instead of added as new.
@@ -1093,7 +1103,8 @@ class TestEndToEnd(PluginTestBase):
             options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1114,8 +1125,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_merge_dist_changed(self, unused):
+    def test_handler_merge_dist_changed(self):
         """
         Test end-to-end functionality using the mirror strategy. We don't clean the repositories
         to they will be merged instead of added as new.
@@ -1139,7 +1149,8 @@ class TestEndToEnd(PluginTestBase):
             options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1163,8 +1174,7 @@ class TestEndToEnd(PluginTestBase):
         dist = manager.get_distributor(self.REPO_ID, FAKE_ID)
         self.assertEqual(dist['config'], FAKE_DISTRIBUTOR_CONFIG)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_merge_and_delete_extra_units(self, unused):
+    def test_handler_merge_and_delete_extra_units(self):
         """
         Test end-to-end functionality using the mirror strategy.  We only clean the units so
         the repositories will be merged.  During the clean, we add units on the child that are
@@ -1189,7 +1199,8 @@ class TestEndToEnd(PluginTestBase):
             options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1210,8 +1221,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_merge_and_delete_repositories(self, unused):
+    def test_handler_merge_and_delete_repositories(self):
         """
         Test end-to-end functionality using the mirror strategy.  We only clean the units so
         the repositories will be merged.  During the clean, we add repositories on the child that
@@ -1236,7 +1246,8 @@ class TestEndToEnd(PluginTestBase):
             options = dict(strategy=constants.MIRROR_STRATEGY)
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1268,8 +1279,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_unit_errors(self, *unused):
+    def test_handler_unit_errors(self):
         """
         Test end-to-end functionality using the additive strategy with unit download errors.
         """
@@ -1293,7 +1303,8 @@ class TestEndToEnd(PluginTestBase):
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1315,8 +1326,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['removed'], 0)
         self.verify(num_units_added)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_handler_nothing_updated(self, *unused):
+    def test_handler_nothing_updated(self):
         """
         Test end-to-end functionality using the additive strategy with nothing updated.
         """
@@ -1339,7 +1349,8 @@ class TestEndToEnd(PluginTestBase):
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1357,7 +1368,6 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     @patch('pulp_node.importers.strategies.Mirror._add_units', side_effect=Exception())
     def test_importer_exception(self, *unused):
         """
@@ -1388,7 +1398,8 @@ class TestEndToEnd(PluginTestBase):
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
-            report = handler.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = handler.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1409,8 +1420,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['removed'], 0)
         self.verify(0)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_missing_plugins(self, *unused):
+    def test_missing_plugins(self):
         """
         Test end-to-end functionality using the mirror strategy with missing distributor plugins.
         """
@@ -1435,7 +1445,8 @@ class TestEndToEnd(PluginTestBase):
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = dispatcher.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
@@ -1456,8 +1467,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
 
-    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
-    def test_repository_handler(self, *unused):
+    def test_repository_handler(self):
         """
         Test end-to-end functionality using the mirror strategy. We add extra repositories on the
         child that are not on the parent and expect them to be preserved.
@@ -1483,7 +1493,8 @@ class TestEndToEnd(PluginTestBase):
             dispatcher = Dispatcher(container)
             container.handlers[CONTENT]['node'] = NodeHandler(self)
             container.handlers[CONTENT]['repository'] = RepositoryHandler(self)
-            report = dispatcher.update(Conduit(), units, options)
+            agent_conduit = AgentConduit(self.PULP_ID)
+            report = dispatcher.update(agent_conduit, units, options)
             _report.append(report)
         test_handler()
         # Verify
