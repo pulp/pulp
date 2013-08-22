@@ -878,7 +878,7 @@ class TestEndToEnd(PluginTestBase):
                 self.assertTrue(os.path.isdir(storage_path))
                 self.assertEqual(len(os.listdir(storage_path)), 1)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_mirror(self, *unused):
         """
         Test end-to-end functionality using the mirroring strategy.
@@ -923,7 +923,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['removed'], 0)
         self.verify()
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_cancelled(self, *unused):
         """
         Test end-to-end functionality using the mirroring strategy.
@@ -968,7 +968,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_additive(self, *unused):
         """
         Test end-to-end functionality using the additive strategy.
@@ -1017,7 +1017,7 @@ class TestEndToEnd(PluginTestBase):
         all = manager.find_all()
         self.assertEqual(len(all), 1 + len(self.EXTRA_REPO_IDS))
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_mirror_repository_scope(self, *unused):
         """
         Test end-to-end functionality using the mirror strategy and
@@ -1068,7 +1068,7 @@ class TestEndToEnd(PluginTestBase):
         all = manager.find_all()
         self.assertEqual(len(all), 1 + len(self.EXTRA_REPO_IDS))
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge(self, unused):
         """
         Test end-to-end functionality using the mirror strategy. We don't clean the repositories
@@ -1114,7 +1114,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_dist_changed(self, unused):
         """
         Test end-to-end functionality using the mirror strategy. We don't clean the repositories
@@ -1163,7 +1163,7 @@ class TestEndToEnd(PluginTestBase):
         dist = manager.get_distributor(self.REPO_ID, FAKE_ID)
         self.assertEqual(dist['config'], FAKE_DISTRIBUTOR_CONFIG)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_and_delete_extra_units(self, unused):
         """
         Test end-to-end functionality using the mirror strategy.  We only clean the units so
@@ -1210,7 +1210,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_merge_and_delete_repositories(self, unused):
         """
         Test end-to-end functionality using the mirror strategy.  We only clean the units so
@@ -1268,7 +1268,7 @@ class TestEndToEnd(PluginTestBase):
         path = os.path.join(self.childfs, 'parent', 'client.crt')
         self.assertTrue(os.path.exists(path))
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_unit_errors(self, *unused):
         """
         Test end-to-end functionality using the additive strategy with unit download errors.
@@ -1315,7 +1315,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['removed'], 0)
         self.verify(num_units_added)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_handler_nothing_updated(self, *unused):
         """
         Test end-to-end functionality using the additive strategy with nothing updated.
@@ -1357,7 +1357,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     @patch('pulp_node.importers.strategies.Mirror._add_units', side_effect=Exception())
     def test_importer_exception(self, *unused):
         """
@@ -1409,7 +1409,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['removed'], 0)
         self.verify(0)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_missing_plugins(self, *unused):
         """
         Test end-to-end functionality using the mirror strategy with missing distributor plugins.
@@ -1456,7 +1456,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
 
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp_node.resources.Bundle.cn', return_value=PULP_ID)
     def test_repository_handler(self, *unused):
         """
         Test end-to-end functionality using the mirror strategy. We add extra repositories on the
