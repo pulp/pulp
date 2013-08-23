@@ -147,6 +147,21 @@ class ManifestDownloadError(NodeError):
         return self.DESCRIPTION % self.details
 
 
+class InvalidManifestError(NodeError):
+
+    ERROR_ID = 'manifest.not-valid'
+    DESCRIPTION = _('Published manifest not valid. '
+                    'The cause is most likely a pulp-nodes software version mismatch between the '
+                    'parent and child nodes.  Or, the software has been updated and the repository'
+                    '(manifest) needs to be republished.')
+
+    def __init__(self):
+        super(InvalidManifestError, self).__init__(self.ERROR_ID)
+
+    def __str__(self):
+        return self.DESCRIPTION
+
+
 class UnitDownloadError(NodeError):
 
     ERROR_ID = 'download.unit'
