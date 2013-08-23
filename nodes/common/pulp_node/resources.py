@@ -12,7 +12,7 @@
 import os
 import socket
 
-from pulp.common.config import Config, REQUIRED, OPTIONAL, NUMBER, ANY
+from pulp.common.config import Config, REQUIRED, NUMBER, ANY
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
 
@@ -26,10 +26,10 @@ CONSUMER_CONFIGURATION_PATH = '/etc/pulp/consumer/consumer.conf'
 NODE_SCHEMA = (
     ('oauth', REQUIRED,
         (
-            ('host', OPTIONAL, ANY),
-            ('port', OPTIONAL, NUMBER),
-            ('key', OPTIONAL, ANY),
-            ('secret', OPTIONAL, ANY),
+            ('host', REQUIRED, ANY),
+            ('port', REQUIRED, NUMBER),
+            ('key', REQUIRED, ANY),
+            ('secret', REQUIRED, ANY),
             ('user_id', REQUIRED, ANY),
         )
     ),
