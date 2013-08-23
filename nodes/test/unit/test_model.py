@@ -36,7 +36,7 @@ class TestModel(WebTest):
 
     @patch('pulp_node.poller.TaskPoller.join')
     @patch('pulp.bindings.repository.RepositoryActionsAPI.sync', return_value=Response(httplib.ACCEPTED, [Task()]))
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.agent.lib.conduit.Conduit.consumer_id')
     def test_repository(self, *mocks):
         # Setup
         repository = RepositoryOnChild(REPO_ID)

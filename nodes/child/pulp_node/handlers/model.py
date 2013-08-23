@@ -22,28 +22,20 @@ associated plugins.  Content units are not represented here.  That is the
 responsibility of the nodes importers.
 """
 
-import os
-import socket
 import httplib
 
 from logging import getLogger
 
-from pulp.common.bundle import Bundle
-from pulp.common.config import Config
 from pulp.common.plugins import importer_constants
-from pulp.bindings.bindings import Bindings as PulpBindings
 from pulp.bindings.exceptions import NotFoundException
-from pulp.bindings.server import PulpConnection
 
 from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError
 from pulp_node.poller import TaskPoller
 from pulp_node import constants
+from pulp_node import resources
 
 
 log = getLogger(__name__)
-
-
-CONFIG_PATH = '/etc/pulp/consumer/consumer.conf'
 
 
 # --- utils -----------------------------------------------------------------------------
@@ -62,56 +54,6 @@ def subdict(adict, *keylist):
     return dict([t for t in adict.items() if t[0] in keylist])
 
 
-# --- pulp bindings ---------------------------------------------------------------------
-
-
-class ChildPulpBindings(PulpBindings):
-    """
-    Child Pulp (REST) API.
-    """
-
-    def __init__(self):
-        host = socket.gethostname()
-        port = 443
-        cert = '/etc/pki/pulp/nodes/local.crt'
-        connection = PulpConnection(host, port, cert_filename=cert)
-        PulpBindings.__init__(self, connection)
-
-
-class ParentPulpBindings(PulpBindings):
-    """
-    Parent Pulp (REST) API.
-    """
-
-    def __init__(self):
-        cfg = Config(CONFIG_PATH)
-        server = cfg['server']
-        host = server['host']
-        port = int(server['port'])
-        files = cfg['filesystem']
-        cert = os.path.join(files['id_cert_dir'], files['id_cert_filename'])
-        connection = PulpConnection(host, port, cert_filename=cert)
-        PulpBindings.__init__(self, connection)
-
-
-# --- certificate bundles ---------------------------------------------------------------
-
-
-class ConsumerSSLCredentialsBundle(Bundle):
-    """
-    A bundled consumer certificate and private key.
-    """
-
-    def __init__(self):
-        """
-        Read from file-system on construction.
-        """
-        cfg = Config(CONFIG_PATH)
-        files = cfg['filesystem']
-        path = os.path.join(files['id_cert_dir'], files['id_cert_filename'])
-        Bundle.__init__(self, path)
-
-
 # --- model objects ---------------------------------------------------------------------
 
 
@@ -121,7 +63,7 @@ class ChildEntity(object):
     :cvar binding: A REST API binding.
     :type binding: PulpBindings
     """
-    binding = ChildPulpBindings()
+    binding = resources.pulp_bindings()
 
 
 class ParentEntity(object):
@@ -130,7 +72,7 @@ class ParentEntity(object):
     :cvar binding: A REST API binding.
     :type binding: PulpBindings
     """
-    binding = ParentPulpBindings()
+    binding = resources.parent_bindings()
 
 
 class Repository(object):
@@ -571,38 +513,38 @@ class ImporterOnChild(ChildEntity, Importer):
 
 class BindingsOnParent(ParentEntity):
     """
-    Represents a parent consumer binding to a repository.
+    Represents a parent node bindings to a repository.
     """
 
     @classmethod
-    def fetch_all(cls):
+    def fetch_all(cls, node_id):
         """
         Fetch a list of ALL bind payloads for this consumer.
+        :param node_id: The node ID.
+        :type node_id: str
         :return: List of bind payloads.
         :rtype: list
         """
-        bundle = ConsumerSSLCredentialsBundle()
-        myid = bundle.cn()
-        http = ParentEntity.binding.bind.find_by_id(myid)
+        http = ParentEntity.binding.bind.find_by_id(node_id)
         if http.response_code == httplib.OK:
             return cls.filtered(http.response_body)
         else:
             raise GetBindingsError(http.response_code)
 
     @classmethod
-    def fetch(cls, repo_ids):
+    def fetch(cls, node_id, repo_ids):
         """
         Fetch a list of bind payloads for the specified list of repository ID.
+        :param node_id: The node ID.
+        :type node_id: str
         :param repo_ids: A list of repository IDs.
         :type repo_ids:  list
         :return: List of bind payloads.
         :rtype: list
         """
         binds = []
-        bundle = ConsumerSSLCredentialsBundle()
-        myid = bundle.cn()
         for repo_id in repo_ids:
-            http = ParentEntity.binding.bind.find_by_id(myid, repo_id)
+            http = ParentEntity.binding.bind.find_by_id(node_id, repo_id)
             if http.response_code == httplib.OK:
                 binds.extend(cls.filtered(http.response_body))
             else:

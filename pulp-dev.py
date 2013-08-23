@@ -116,6 +116,7 @@ LINKS = (
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
     # Pulp Nodes
+    ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
     ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
     ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
      '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
