@@ -91,7 +91,7 @@ class ApplicabilityRegenerationManager(object):
 
         # Create a set of (repo_id, (profile_hash, content_type))
         repo_profile_hashes = set()
-        for repo_id, consumer_id_list in repo_consumers_map:
+        for repo_id, consumer_id_list in repo_consumers_map.items():
             for consumer_id in consumer_id_list:
                 for unit_profile_tuple in consumer_unit_profiles_map[consumer_id]:
                     repo_profile_hashes.add((repo_id, unit_profile_tuple))
