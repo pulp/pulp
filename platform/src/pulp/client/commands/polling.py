@@ -157,7 +157,7 @@ class PollingCommand(PulpCliCommand):
         except KeyboardInterrupt:
             # Gracefully handle if the user aborts the polling.
             return RESULT_ABORTED
-        except Exception as e:
+        except Exception, e:
             # If any task raises an Exception and there is a error_message specified in the
             # task results that error should be displayed to the end user
             #if task and task.result and 'error_message' in task.result:
