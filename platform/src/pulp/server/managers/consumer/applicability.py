@@ -124,8 +124,6 @@ class ApplicabilityRegenerationManager(object):
         # Process repo criteria
         repo_criteria.fields = ['id']
         repo_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
-        if not repo_ids:
-            return
 
         for repo_id in repo_ids:
             # Find all existing applicabilities for given repo_id
@@ -186,11 +184,11 @@ class ApplicabilityRegenerationManager(object):
                                                                     call_config,
                                                                     profiler_conduit)
             except NotImplementedError:
-                _LOG.warn("Profiler for content type [%s] does not support applicability" % content_type)
+                _LOG.debug("Profiler for content type [%s] does not support applicability" % content_type)
                 return
 
             if existing_applicability:
-                # Update existing applicability object since skip_existing is False
+                # Update existing applicability object
                 existing_applicability.applicability = applicability
                 existing_applicability.save()
             else:
