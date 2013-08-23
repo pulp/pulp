@@ -191,6 +191,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_bindings()
         # Test
         manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
@@ -206,6 +207,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_bindings()
         # Test
         manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
@@ -221,6 +223,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_bindings()
         # Test
         manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         manager.regenerate_applicability_for_repos(Criteria())
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())

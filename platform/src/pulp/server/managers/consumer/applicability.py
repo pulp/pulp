@@ -92,13 +92,13 @@ class ApplicabilityRegenerationManager(object):
 
         for repo_id in repo_ids:
             # Find all existing applicabilities for given repo_id
-            existing_applicabilities = RepoProfileApplicability.get_collection().find({'repo_id':repo_id})
+            existing_applicabilities = RepoProfileApplicability.objects.filter({'repo_id':repo_id})
             for existing_applicability in existing_applicabilities:
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
-                                                                     fields=['profile','id','content_type'])
+                                                                     fields=['id','content_type'])
                 # Regenerate applicability data for given unit_profile and repo id
-                ApplicabilityRegenerationManager.regenerate_applicability(unit_profile['profile_hash'],
+                ApplicabilityRegenerationManager.regenerate_applicability(profile_hash,
                                                                           unit_profile['content_type'],
                                                                           unit_profile['id'],
                                                                           repo_id,
