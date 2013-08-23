@@ -48,31 +48,68 @@ class ApplicabilityRegenerationManager(object):
         consumer_criteria.fields = ['id']
         consumer_ids = [c['id'] for c in consumer_query_manager.find_by_criteria(consumer_criteria)]
 
+        # Following logic of checking existing applicability and getting required data
+        # to generate applicability is a bit more complicated than what it could be 'by design'.
+        # It is to optimize the number of db queries and improving applicability generation performance.
+        # Please consider the implications for applicability generation time when making any modifications
+        # to this code.
+
         # Get all unit profiles associated with given consumers
         unit_profile_criteria = Criteria(filters={'consumer_id':{'$in':consumer_ids}},
                                          fields=['consumer_id','profile_hash','content_type','id'])
         all_unit_profiles = consumer_profile_manager.find_by_criteria(unit_profile_criteria)
+
+        # Create a consumer-profile map with consumer id as the key and profile details tuple as the value
+        consumer_unit_profiles_map = {}
+        # Also create a map of profile_id keyed by profile_hash for instant lookup.
+        profile_hash_profile_id_map = {}
+        for unit_profile in all_unit_profiles:
+            profile_hash = unit_profile['profile_hash']
+            content_type = unit_profile['content_type']
+            consumer_id = unit_profile['consumer_id']
+            profile_id = unit_profile['id']
+
+            profile_tuple = (profile_hash, content_type)
+            # Add profile tuple to the list of profiles for a consumer if it doesn't already exist
+            if profile_tuple not in consumer_unit_profiles_map.setdefault(consumer_id, []):
+                consumer_unit_profiles_map[consumer_id].append(profile_tuple)
+
+            # We need just one profile_id per profile_hash to be used in regenerate_applicability method
+            # to get the actual profile corresponding to given profile_hash.
+            if profile_hash not in profile_hash_profile_id_map:
+                profile_hash_profile_id_map[profile_hash] = profile_id
 
         # Get all repos bound to given consumers
         bind_criteria = Criteria(filters={'consumer_id': {'$in':consumer_ids}},
                                  fields=['repo_id','consumer_id'])
         all_repo_bindings = bind_manager.find_by_criteria(bind_criteria)
 
-        # Find matching profiles and bindings with common consumer_id
-        for unit_profile in all_unit_profiles:
-            for repo_binding in all_repo_bindings:
-                if unit_profile['consumer_id'] == repo_binding['consumer_id']:
-                    # Check if applicability for given profile_hash and bound_repo_id already exists
-                    existing_applicability = ApplicabilityRegenerationManager._get_existing_applicability(
-                                                                                repo_binding['repo_id'],
-                                                                                unit_profile['profile_hash'])
-                    if existing_applicability:
-                        continue
-                    # If applicability does not exist, generate applicability data for given profile and repo id 
-                    ApplicabilityRegenerationManager.regenerate_applicability(unit_profile['profile_hash'],
-                                                                              unit_profile['content_type'],
-                                                                              unit_profile['id'],
-                                                                              repo_binding['repo_id'])
+        # Create a repo-consumer map with repo_id as the key and consumer_id list as the value
+        repo_consumers_map = {}
+        for repo_binding in all_repo_bindings:
+            repo_consumers_map.setdefault(repo_binding['repo_id'], []).append(repo_binding['consumer_id'])
+
+        # Create a set of (repo_id, (profile_hash, content_type))
+        repo_profile_hashes = set()
+        for repo_id, consumer_id_list in repo_consumers_map:
+            for consumer_id in consumer_id_list:
+                for unit_profile_tuple in consumer_unit_profiles_map[consumer_id]:
+                    repo_profile_hashes.add((repo_id, unit_profile_tuple))
+
+        # Iterate through each tuple in repo_profile_hashes set and regenerate applicability, if it doesn't exist
+        # These are all guaranteed to be unique tuples because of the logic used to create maps and sets above,
+        # eliminating multiple unnecessary queries to check for existing applicability for same profiles.
+        for repo_id, (profile_hash, content_type) in repo_profile_hashes:
+            # Check if applicability for given profile_hash and repo_id already exists
+            existing_applicability = ApplicabilityRegenerationManager._get_existing_applicability(repo_id,
+                                                                                                  profile_hash)
+            if existing_applicability:
+                continue
+            # If applicability does not exist, generate applicability data for given profile and repo id
+            ApplicabilityRegenerationManager.regenerate_applicability(profile_hash,
+                                                                      content_type,
+                                                                      profile_hash_profile_id_map[profile_hash],
+                                                                      repo_id)
 
     @staticmethod
     def regenerate_applicability_for_repos(repo_criteria=None):
