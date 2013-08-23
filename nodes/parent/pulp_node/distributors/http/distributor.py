@@ -21,7 +21,6 @@ from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 
-from pulp_node import link
 from pulp_node import constants
 from pulp_node.conduit import NodesConduit
 from pulp_node.distributors.http.publisher import HttpPublisher
@@ -233,7 +232,6 @@ class NodesHttpDistributor(Distributor):
     def _ssl_conf(self, ssl_dict):
         """
         Build the SSL configuration.
-        The certificate paths are replaced with packed links.
         :param ssl_dict: The SSL part of the configuration.
         :type ssl_dict: dict
         :return: A built SSL configuration.
@@ -245,14 +243,11 @@ class NodesHttpDistributor(Distributor):
         configuration = {
             importer_constants.KEY_SSL_VALIDATION: False,
         }
-        certificates = (
-            (constants.CLIENT_CERT_KEYWORD, importer_constants.KEY_SSL_CLIENT_CERT),
-        )
-        for key_in, key_out in certificates:
-            value = ssl_dict.get(key_in)
-            path = value['local']
-            path_out = value['child']
-            configuration[key_out] = link.pack(path, path_out)
+        path = ssl_dict.get(constants.CLIENT_CERT_KEYWORD)
+        if path:
+            with open(path) as fp:
+                pem = fp.read()
+            configuration[importer_constants.KEY_SSL_CLIENT_CERT] = pem
         return configuration
 
     def _add_distributors(self, repo_id, payload):

@@ -41,6 +41,16 @@ class TestManifest(TestCase):
             for k, v in units_in[i].items():
                 self.assertEqual(units_out[i][k], v)
 
+    def test_validation(self):
+        # Setup
+        manifest_path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)
+        manifest = Manifest(manifest_path, self.MANIFEST_ID)
+        # Test valid
+        self.assertTrue(manifest.is_valid())
+        # Test version mismatch
+        manifest.version += 1
+        self.assertFalse(manifest.is_valid())
+
     def test_publishing(self):
         # Setup
         units = []
@@ -55,7 +65,7 @@ class TestManifest(TestCase):
             writer.add(u)
         writer.close()
         manifest = Manifest(manifest_path, self.MANIFEST_ID)
-        manifest.total_units = writer.total_units
+        manifest.units_published(writer)
         manifest.write()
         # Verify
         self.assertTrue(os.path.exists(manifest_path))
@@ -85,14 +95,13 @@ class TestManifest(TestCase):
         for i in range(0, self.NUM_UNITS):
             unit = dict(unit_id=i, type_id='T', unit_key={})
             units.append(unit)
-            # Test
         units_path = os.path.join(self.tmp_dir, UNITS_FILE_NAME)
         writer = UnitWriter(units_path)
         for u in units:
             writer.add(u)
         writer.close()
         manifest = Manifest(manifest_path, self.MANIFEST_ID)
-        manifest.total_units = writer.total_units
+        manifest.units_published(writer)
         manifest.write()
         # Test
         cfg = DownloaderConfig()
@@ -105,6 +114,8 @@ class TestManifest(TestCase):
         manifest.fetch()
         manifest.fetch_units()
         # Verify
+        self.assertTrue(manifest.is_valid())
+        self.assertTrue(manifest.has_valid_units())
         units_in = []
         for unit, ref in manifest.get_units():
             units_in.append(unit)

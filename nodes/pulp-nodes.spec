@@ -216,7 +216,7 @@ pulp-gen-nodes-certificate
 %postun
 # clean up the nodes certificate.
 if [ $1 -eq 0 ]; then
-  rm /etc/pki/pulp/nodes/local.crt
+  rm -rf /etc/pki/pulp/nodes
 fi
 
 # ----------------------------------------------------------------------------

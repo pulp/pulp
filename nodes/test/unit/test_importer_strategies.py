@@ -186,8 +186,7 @@ class TestBase(TestCase):
         request = self.request()
         # Test
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        manifest = TestManifest([])
-        inventory = UnitInventory(manifest, [unit])
+        inventory = UnitInventory('', [], [unit])
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
         self.assertEqual(len(request.summary.errors), 1)
@@ -226,7 +225,7 @@ class TestBase(TestCase):
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
         units = [unit]
         manifest = TestManifest(units)
-        inventory = UnitInventory(manifest, [])
+        inventory = UnitInventory('', manifest.get_units(), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -237,8 +236,7 @@ class TestBase(TestCase):
         # Setup
         request = self.request(1)
         unit = dict(unit_id='abc', type_id='T', unit_key={}, metadata={})
-        manifest = TestManifest([])
-        inventory = UnitInventory(manifest, [unit])
+        inventory = UnitInventory('', [], [unit])
         request.conduit.remove_unit = Mock()
         # Test
         strategy = ImporterStrategy()
@@ -251,7 +249,6 @@ class TestBase(TestCase):
         unit_id = str(uuid4())
         request = self.request(2)
         request.downloader.download = Mock()
-        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
             unit_id=unit_id,
             type_id='T',
@@ -261,7 +258,7 @@ class TestBase(TestCase):
             relative_path='testing/%s' % unit_id)
         units = [unit]
         manifest = TestManifest(units)
-        inventory = UnitInventory(manifest, [])
+        inventory = UnitInventory('', manifest.get_units(), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -275,7 +272,6 @@ class TestBase(TestCase):
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
             unit_id=unit_id,
             type_id='T',
@@ -285,7 +281,7 @@ class TestBase(TestCase):
             relative_path='testing/%s' % unit_id)
         units = [unit]
         manifest = TestManifest(units)
-        inventory = UnitInventory(manifest, [])
+        inventory = UnitInventory('', manifest.get_units(), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -300,7 +296,6 @@ class TestBase(TestCase):
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
             unit_id=unit_id,
             type_id='T',
@@ -310,7 +305,7 @@ class TestBase(TestCase):
             relative_path='testing/%s' % unit_id)
         units = [unit]
         manifest = TestManifest(units)
-        inventory = UnitInventory(manifest, [])
+        inventory = UnitInventory('', manifest.get_units(), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
@@ -325,7 +320,6 @@ class TestBase(TestCase):
         request.downloader = HTTPCurlDownloader(DownloaderConfig())
         request.downloader.download = Mock(side_effect=request.downloader.download)
         request.downloader.cancel = Mock()
-        download = dict(url='http://redhat.com/%s' % unit_id)
         unit = dict(
             unit_id=unit_id,
             type_id='T',
@@ -335,7 +329,7 @@ class TestBase(TestCase):
             relative_path='testing/%s' % unit_id)
         units = [unit]
         manifest = TestManifest(units)
-        inventory = UnitInventory(manifest, [])
+        inventory = UnitInventory('', manifest.get_units(), [])
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
