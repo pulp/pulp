@@ -26,10 +26,6 @@ class PulpException(Exception):
     """
     http_status_code = httplib.INTERNAL_SERVER_ERROR
 
-    def __init__(self, *args):
-        Exception.__init__(self, *args)
-        self.message = None
-
     def __str__(self):
         class_name = self.__class__.__name__
         msg = _('Pulp exception occurred: %(c)s') % {'c': class_name}
@@ -207,6 +203,10 @@ class PulpDataException(PulpException):
     """
     # NOTE intermediate exception class, no overrides will be provided
     http_status_code = httplib.BAD_REQUEST
+
+    def __init__(self, units, message=None):
+        PulpException.__init__(self, message)
+        self.units = units
 
 
 class InvalidValue(PulpDataException):

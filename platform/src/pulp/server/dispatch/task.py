@@ -173,9 +173,12 @@ class Task(object):
         @type  traceback: TracebackType instance
         """
         assert self.call_report.state is dispatch_constants.CALL_RUNNING_STATE
-
         self.call_report.exception = exception
         self.call_report.traceback = traceback
+
+        # Save the exception message to send back to the client
+        if exception is not None:
+            self.call_report.result = {'error_message': exception.message}
 
         _LOG.info(_('FAILURE: %(t)s') % {'t': str(self)})
 
