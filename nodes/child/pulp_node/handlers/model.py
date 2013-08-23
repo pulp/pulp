@@ -33,7 +33,6 @@ from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsErr
 from pulp_node.poller import TaskPoller
 from pulp_node import constants
 from pulp_node import resources
-from pulp_node import link
 
 
 log = getLogger(__name__)
@@ -304,8 +303,11 @@ class RepositoryOnChild(ChildEntity, Repository):
         :return: The task result.
         """
         poller = TaskPoller(self.binding)
+        max_download = options.get(
+            constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD,
+            constants.DEFAULT_DOWNLOAD_CONCURRENCY)
         configuration = {
-            importer_constants.KEY_MAX_DOWNLOADS: options.get(constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD),
+            importer_constants.KEY_MAX_DOWNLOADS: max_download,
             importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD)
         }
         http = self.binding.repo_actions.sync(self.repo_id, configuration)
@@ -479,7 +481,6 @@ class ImporterOnChild(ChildEntity, Importer):
         """
         binding = self.binding.repo_importer
         conf = self.details['config']
-        conf = link.unpack_all(conf)
         binding.create(self.repo_id, self.imp_id, conf)
         log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
 
@@ -507,9 +508,7 @@ class ImporterOnChild(ChildEntity, Importer):
         :param parent: The parent repository.
         :type parent: ParentRepository
         """
-        configuration = parent.details['config']
-        unpacked = link.unpack_all(configuration)
-        self.update(unpacked)
+        self.update(parent.details['config'])
 
 
 class BindingsOnParent(ParentEntity):

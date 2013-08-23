@@ -62,15 +62,16 @@ class UnitInventory(object):
             _units[key] = unit
         return _units
 
-    def __init__(self, manifest, child_units):
+    def __init__(self, base_URL, parent_units, child_units):
         """
-        :param manifest: The manifest.
-        :type manifest: pulp_node.manifest.Manifest
+        :param base_URL: The base URL for downloading parent units.
+        :param parent_units: The content units in the parent node.
+        :type parent_units: iterable
         :param child_units: The content units in the child node.
         :type child_units: iterable
         """
-        self.manifest = manifest
-        self.parent_units = self._import_parent_units(manifest.get_units())
+        self.base_URL = base_URL
+        self.parent_units = self._import_parent_units(parent_units)
         self.child_units = self._import_child_units(child_units)
 
     def units_on_parent_only(self):

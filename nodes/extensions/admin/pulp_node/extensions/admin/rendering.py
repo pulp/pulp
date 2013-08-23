@@ -53,6 +53,7 @@ NODE_ERRORS = {
     UnitDownloadError.ERROR_ID: UnitDownloadError.DESCRIPTION,
     AddUnitError.ERROR_ID: AddUnitError.DESCRIPTION,
     DeleteUnitError.ERROR_ID: DeleteUnitError.DESCRIPTION,
+    InvalidManifestError.ERROR_ID: InvalidManifestError.DESCRIPTION,
 }
 
 SYNC_TITLE = _('Child Node Synchronization')
