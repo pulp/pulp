@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.0.0
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -46,8 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
-* Wed Jul 31 2013 Jeff Ortel <jortel@redhat.com> 1.0.0-1
-- bumped nectar to version 1.0.0 (jortel@redhat.com)
+* Fri Aug 23 2013 Jason L Connor <jason.connor@gmail.com> 1.1.0-1
+- new threaded downloader and unit tests (jason.connor@gmail.com)
+- bumped nectar version to 1.1 (jason.connor@gmail.com)
 
 * Wed Jul 31 2013 Jeff Ortel <jortel@redhat.com> 1.0.0-1
 - got rid of fancy eventlet concurrency, regular os operations are faster;
