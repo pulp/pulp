@@ -197,16 +197,13 @@ class NotImplemented(PulpExecutionException):
 
 # data exceptions --------------------------------------------------------------
 
+
 class PulpDataException(PulpException):
     """
     Base class of exceptions raised due to data validation errors.
     """
     # NOTE intermediate exception class, no overrides will be provided
     http_status_code = httplib.BAD_REQUEST
-
-    def __init__(self, units, message=None):
-        PulpException.__init__(self, message)
-        self.units = units
 
 
 class InvalidValue(PulpDataException):

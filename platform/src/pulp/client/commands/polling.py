@@ -160,7 +160,6 @@ class PollingCommand(PulpCliCommand):
         except Exception, e:
             # If any task raises an Exception and there is a error_message specified in the
             # task results that error should be displayed to the end user
-            #if task and task.result and 'error_message' in task.result:
             if task and task.result and 'error_message' in task.result:
                 self.context.prompt.render_failure_message(task.result['error_message'])
             else:
