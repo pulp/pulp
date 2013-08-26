@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
 from pulp_node.distributors.http.distributor import NodesHttpDistributor, entry_point as dist_entry_point
 from pulp_node.importers.http.importer import NodesHttpImporter, entry_point as imp_entry_point
+from pulp_node.profilers.nodes import NodeProfiler, entry_point as profiler_entry_point
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
 
 from pulp.plugins.loader import api as plugin_api
@@ -153,6 +154,8 @@ class PluginTestBase(WebTest):
     CA_CERT = 'CA_CERTIFICATE'
     CLIENT_CERT = 'CLIENT_CERTIFICATE_AND_KEY'
 
+    PARENT_SETTINGS = {constants.HOST: 'pulp.redhat.com', constants.PORT: 443}
+
     @classmethod
     def tmpdir(cls, role):
         dir = tempfile.mkdtemp(dir=cls.TMP_ROOT, prefix=role)
@@ -175,6 +178,7 @@ class PluginTestBase(WebTest):
         plugin_api._MANAGER.importers.add_plugin(constants.HTTP_IMPORTER, NodesHttpImporter, imp_conf)
         plugin_api._MANAGER.distributors.add_plugin(constants.HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
         plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
+        plugin_api._MANAGER.profilers.add_plugin(constants.PROFILER_ID, NodeProfiler, {})
         unit_db.type_definition = \
             Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
         unit_db.type_units_unit_key = \
@@ -279,7 +283,11 @@ class AgentHandlerTest(PluginTestBase):
         # Setup
         handler = NodeHandler({})
         # Test & Verify
-        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], {})
+        options = {
+            constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+        }
+        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], options)
 
     @patch('pulp_node.handlers.model.RepositoryBinding.fetch',
            side_effect=error.GetBindingsError(500))
@@ -287,10 +295,36 @@ class AgentHandlerTest(PluginTestBase):
         # Setup
         handler = RepositoryHandler({})
         # Test & Verify
-        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], {})
+        options = {
+            constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+        }
+        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], options)
 
 
 # --- pulp plugin tests --------------------------------------------
+
+
+class TestProfiler(PluginTestBase):
+
+    def test_entry_point(self):
+        _class, conf = profiler_entry_point()
+        plugin = _class()
+        self.assertTrue(isinstance(plugin, NodeProfiler))
+
+    def test_update_units(self):
+        host = 'abc'
+        port = 443
+        units = [1, 2, 3]
+        options = {}
+        p = NodeProfiler()
+        pulp_conf.set('server', 'server_name', host)
+        _units = p.update_units(None, units, options, None, None)
+        self.assertTrue(constants.PARENT_SETTINGS in options)
+        settings = options[constants.PARENT_SETTINGS]
+        self.assertEqual(settings[constants.HOST], host)
+        self.assertEqual(settings[constants.PORT], port)
+        self.assertEqual(units, _units)
 
 
 class TestDistributor(PluginTestBase):
@@ -1004,7 +1038,11 @@ class TestEndToEnd(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.MIRROR_STRATEGY, purge_orphans=True)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+                constants.PURGE_ORPHANS_KEYWORD: True,
+            }
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
@@ -1050,7 +1088,11 @@ class TestEndToEnd(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.MIRROR_STRATEGY, purge_orphans=True)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+                constants.PURGE_ORPHANS_KEYWORD: True,
+            }
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
@@ -1096,6 +1138,7 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
                 constants.SKIP_CONTENT_UPDATE_KEYWORD: True
             }
@@ -1144,7 +1187,10 @@ class TestEndToEnd(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.ADDITIVE_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.ADDITIVE_STRATEGY,
+            }
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
@@ -1195,7 +1241,10 @@ class TestEndToEnd(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             units = [{'type_id': 'repository', 'unit_key': {'repo_id': self.REPO_ID}}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
@@ -1246,7 +1295,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             agent_conduit = AgentConduit(self.PULP_ID)
@@ -1290,7 +1342,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             agent_conduit = AgentConduit(self.PULP_ID)
@@ -1338,7 +1393,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             agent_conduit = AgentConduit(self.PULP_ID)
@@ -1383,7 +1441,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             agent_conduit = AgentConduit(self.PULP_ID)
@@ -1437,7 +1498,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
@@ -1483,7 +1547,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
@@ -1532,7 +1599,10 @@ class TestEndToEnd(PluginTestBase):
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             handler = NodeHandler(self)
             pulp_conf.set('server', 'storage_dir', self.childfs)
             os.makedirs(os.path.join(self.childfs, 'content'))
@@ -1576,7 +1646,10 @@ class TestEndToEnd(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.MIRROR_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
             units = [{'type_id':'node', 'unit_key':None}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)
@@ -1624,7 +1697,10 @@ class TestEndToEnd(PluginTestBase):
             repo = Repository(self.REPO_ID)
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, self.dist_conf())
-            options = dict(strategy=constants.ADDITIVE_STRATEGY)
+            options = {
+                constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
+                constants.STRATEGY_KEYWORD: constants.ADDITIVE_STRATEGY,
+            }
             units = [{'type_id':'repository', 'unit_key':dict(repo_id=self.REPO_ID)}]
             pulp_conf.set('server', 'storage_dir', self.childfs)
             container = Container(self.parentfs)

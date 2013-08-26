@@ -67,3 +67,11 @@ STRATEGY_NOTE_KEY = '_node-update-strategy'
 # --- settings ---------------------------------------------------------------
 
 DEFAULT_DOWNLOAD_CONCURRENCY = 20
+
+
+# --- profiling --------------------------------------------------------------
+
+PROFILER_ID = 'node'
+PARENT_SETTINGS = 'parent_settings'
+HOST = 'host'
+PORT = 'port'

@@ -26,6 +26,25 @@ from pulp_node.handlers.model import RepositoryBinding
 log = getLogger(__name__)
 
 
+# --- utils ------------------------------------------------------------------
+
+
+def parent_bindings(options):
+    """
+    Get the parent API bindings based on handler options.
+    :param options: Update options.
+    :return: A configured parent API bindings.
+    :rtype: pulp.bindings.bindings.Bindings
+    """
+    settings = options[constants.PARENT_SETTINGS]
+    host = settings[constants.HOST]
+    port = settings[constants.PORT]
+    return resources.parent_bindings(host, port)
+
+
+# --- handlers ---------------------------------------------------------------
+
+
 class NodeHandler(ContentHandler):
 
     def update(self, conduit, units, options):
@@ -64,8 +83,8 @@ class NodeHandler(ContentHandler):
         """
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
-        parent_bindings = resources.parent_bindings('localhost')
-        bindings = RepositoryBinding.fetch_all(parent_bindings, conduit.consumer_id)
+        pulp_bindings = parent_bindings(options)
+        bindings = RepositoryBinding.fetch_all(pulp_bindings, conduit.consumer_id)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(
@@ -129,8 +148,8 @@ class RepositoryHandler(ContentHandler):
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
         repo_ids = [key['repo_id'] for key in units if key]
-        parent_bindings = resources.parent_bindings('localhost')
-        bindings = RepositoryBinding.fetch(parent_bindings, conduit.consumer_id, repo_ids)
+        pulp_bindings = parent_bindings(options)
+        bindings = RepositoryBinding.fetch(pulp_bindings, conduit.consumer_id, repo_ids)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(

@@ -54,7 +54,7 @@ def node_configuration(path=NODE_CONFIGURATION_PATH):
 
 # --- pulp bindings ----------------------------------------------------------
 
-def parent_bindings(host):
+def parent_bindings(host, port=443):
     """
     Get a pulp bindings object for the parent node.
     :return: A pulp bindings object.
@@ -64,7 +64,7 @@ def parent_bindings(host):
     oauth = node_conf.parent_oauth
     connection = PulpConnection(
         host=host,
-        port=443,
+        port=port,
         oauth_key=oauth.key,
         oauth_secret=oauth.secret,
         oauth_user=oauth.user_id)
