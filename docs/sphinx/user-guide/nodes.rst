@@ -117,26 +117,17 @@ To install *Nodes* child support, follow the instructions below.
 
 3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match  values found in
    ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match a
-   user with administration privileges on the parent node. Properties marked as (optional) are
-   defaulted using values read from other pulp configuration files as appropriate.  Users may specify
-   values here as overrides or to provide values when the referenced *other* pulp configuration files
-   are not installed.  See :ref:`node_quick_start` for abbreviated list of properties to edit.
+   user with administration privileges on the parent node.
 
 ::
 
  [oauth]
- host=     <read from /etc/pulp/server.conf>
- port=     <read from /etc/pulp/server.conf>
- key=      <read from /etc/pulp/server.conf>
- secret=   <read from /etc/pulp/server.conf>
- user_id=  <EDIT: admin user on parent node>
+ user_id:  <EDIT: admin user on parent node>
 
  [parent_oauth]
- host=     <read from /etc/pulp/consumer/consumer.conf>
- port=     <read from /etc/pulp/consumer/consumer.conf>
- key=      <EDIT: matching value from parent /etc/pulp/server.conf>
- secret=   <EDIT: matching value from parent /etc/pulp/server.conf>
- user_id=  <admin user on parent node>
+ key:      <EDIT: matching value from parent /etc/pulp/server.conf>
+ secret:   <EDIT: matching value from parent /etc/pulp/server.conf>
+ user_id:  <admin user on parent node>
 
 4. Restart Apache.
 
@@ -417,8 +408,8 @@ On the Pulp server to be used as the child node:
 ::
 
  [parent_oauth]
- key=      <matching value from parent /etc/pulp/server.conf>
- secret=   <matching value from parent /etc/pulp/server.conf>
+ key:    <matching value from parent /etc/pulp/server.conf>
+ secret: <matching value from parent /etc/pulp/server.conf>
 
 3. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
 

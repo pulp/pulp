@@ -12,14 +12,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 """
-Provides classes representing representing the database objects contained
-in either a parent or child pulp server.  Parent objects are read-only and
-are used for querying, comparison and merging to child objects.  Child objects
-are used for querying, comparison and merging from remote objects. Unlike remote
-objects, child objects are also used to apply changes to the child database and
-to trigger repository synchronization. These objects cover repositories and their
-associated plugins.  Content units are not represented here.  That is the
-responsibility of the nodes importers.
+Provides classes representing the database objects contained in either
+the parent or child pulp server.  Parent objects are read-only and are used for querying,
+comparison and merging to child objects.  Child objects are used for querying, comparison
+and merging from remote objects. Unlike parent objects, child objects are also used to apply
+changes to the child database and to trigger repository synchronization. These objects cover
+repositories and their associated plugins.  Content units are not represented here.  That is
+the responsibility of the nodes importers.
 """
 
 import httplib

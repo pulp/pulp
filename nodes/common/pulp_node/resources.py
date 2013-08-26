@@ -23,8 +23,6 @@ CONSUMER_CONFIGURATION_PATH = '/etc/pulp/consumer/consumer.conf'
 NODE_SCHEMA = (
     ('oauth', REQUIRED,
         (
-            ('key', REQUIRED, ANY),
-            ('secret', REQUIRED, ANY),
             ('user_id', REQUIRED, ANY),
         )
     ),
@@ -85,11 +83,13 @@ def pulp_bindings():
     node_conf = node_configuration()
     oauth = node_conf.oauth
     host = pulp_conf.get('server', 'server_name'),
+    key = pulp_conf.get('oauth', 'oauth_key'),
+    secret = pulp_conf.get('oauth', 'oauth_secret'),
     connection = PulpConnection(
         host=host,
         port=443,
-        oauth_key=oauth.key,
-        oauth_secret=oauth.secret,
+        oauth_key=key,
+        oauth_secret=secret,
         oauth_user=oauth.user_id)
     bindings = Bindings(connection)
     return bindings
