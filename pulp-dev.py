@@ -100,6 +100,7 @@ LINKS = (
     ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
     ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
     ('platform/bin/pulp-manage-db', '/usr/bin/pulp-manage-db'),
+    ('platform/bin/pulp-monthly', '/usr/bin/pulp-monthly'),
 
     # Server Configuration
     ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),

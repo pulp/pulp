@@ -26,10 +26,6 @@ class PulpException(Exception):
     """
     http_status_code = httplib.INTERNAL_SERVER_ERROR
 
-    def __init__(self, *args):
-        Exception.__init__(self, *args)
-        self.message = None
-
     def __str__(self):
         class_name = self.__class__.__name__
         msg = _('Pulp exception occurred: %(c)s') % {'c': class_name}
@@ -200,6 +196,7 @@ class NotImplemented(PulpExecutionException):
         return {'operation_name': self.operation_name}
 
 # data exceptions --------------------------------------------------------------
+
 
 class PulpDataException(PulpException):
     """
