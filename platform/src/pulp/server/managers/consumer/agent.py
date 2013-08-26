@@ -229,7 +229,8 @@ class AgentManager(object):
         try:
             return call(*args, **kwargs)
         except InvalidUnitsRequested, e:
-            raise PulpDataException(e.units, e.message)
+            trace = sys.exc_info()[2]
+            raise PulpDataException(e.message), None, trace
         except Exception:
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
