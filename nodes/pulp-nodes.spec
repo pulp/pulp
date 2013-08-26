@@ -158,6 +158,7 @@ Pulp parent nodes support.
 %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
+%{python_sitelib}/pulp_node/profilers/
 %{python_sitelib}/pulp_node/distributors/
 %{python_sitelib}/pulp_node_parent*.egg-info
 %{_var}/lib/pulp/nodes
