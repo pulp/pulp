@@ -144,6 +144,10 @@ class PollingCommand(PulpCliCommand):
 
                 if task.was_failure():
                     self.failed(task)
+                    # Check for the error_message in the task_result generically
+                    # so individual handlers don't have to process it.
+                    if task and task.result and 'error_message' in task.result:
+                        self.context.prompt.render_failure_message(task.result['error_message'])
                     break
 
                 if task.was_cancelled():
@@ -159,7 +163,9 @@ class PollingCommand(PulpCliCommand):
             return RESULT_ABORTED
         except Exception, e:
             # If any task raises an Exception and there is a error_message specified in the
-            # task results that error should be displayed to the end user
+            # task results that error should be displayed to the end user.
+            # This block should only be hit if one of the task processing items goes horribly wrong
+            # and not as part of regular processing.
             if task and task.result and 'error_message' in task.result:
                 self.context.prompt.render_failure_message(task.result['error_message'])
             else:
