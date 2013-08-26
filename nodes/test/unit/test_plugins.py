@@ -273,14 +273,16 @@ class PluginTestBase(WebTest):
 
 class AgentHandlerTest(PluginTestBase):
 
-    @patch('pulp_node.handlers.model.BindingsOnParent.fetch_all', side_effect=error.GetBindingsError(500))
+    @patch('pulp_node.handlers.model.RepositoryBinding.fetch_all',
+           side_effect=error.GetBindingsError(500))
     def test_node_handler_get_bindings_failed(self, *unused):
         # Setup
         handler = NodeHandler({})
         # Test & Verify
         self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], {})
 
-    @patch('pulp_node.handlers.model.BindingsOnParent.fetch', side_effect=error.GetBindingsError(500))
+    @patch('pulp_node.handlers.model.RepositoryBinding.fetch',
+           side_effect=error.GetBindingsError(500))
     def test_repository_handler_get_bindings_failed(self, *unused):
         # Setup
         handler = RepositoryHandler({})
@@ -991,8 +993,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -1036,8 +1038,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         @patch('pulp.agent.lib.conduit.Conduit.cancelled', return_value=True)
         def test_handler(*unused):
@@ -1082,8 +1084,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -1130,8 +1132,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=AdditiveTestStrategy(self, extra_repos=self.EXTRA_REPO_IDS))
         def test_handler(*unused):
@@ -1181,8 +1183,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=AdditiveTestStrategy(self, extra_repos=self.EXTRA_REPO_IDS))
         def test_handler(*unused):
@@ -1231,8 +1233,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, units=True))
         def test_handler(*unused):
@@ -1275,8 +1277,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, units=True, dist_config={'A': 1}))
         def test_handler(*unused):
@@ -1323,8 +1325,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, extra_units=self.NUM_EXTRA_UNITS))
         def test_handler(*unused):
@@ -1368,8 +1370,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, units=True, extra_repos=self.EXTRA_REPO_IDS))
         def test_handler(*unused):
@@ -1422,8 +1424,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
@@ -1469,8 +1471,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         def test_handler(*unused):
             # publish
@@ -1512,8 +1514,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
             # publish
@@ -1563,8 +1565,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self, plugins=True))
         def test_handler(*unused):
             # publish
@@ -1611,8 +1613,8 @@ class TestEndToEnd(PluginTestBase):
         _report = []
         conn = PulpConnection(None, server_wrapper=self)
         binding = Bindings(conn)
-        @patch('pulp_node.handlers.strategies.ChildEntity.binding', binding)
-        @patch('pulp_node.handlers.strategies.ParentEntity.binding', binding)
+        @patch('pulp_node.resources.pulp_bindings', return_value=binding)
+        @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         def test_handler(*unused):
             # publish

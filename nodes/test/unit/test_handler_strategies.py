@@ -15,7 +15,7 @@ from mock import Mock, patch
 
 from pulp_node.handlers.strategies import *
 from pulp_node.error import *
-from pulp_node.handlers.model import RepositoryOnChild
+from pulp_node.handlers.model import Repository
 from pulp_node.handlers.reports import SummaryReport, HandlerProgress
 
 
@@ -101,7 +101,7 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.errors), 1)
         self.assertEqual(request.summary.errors[0].error_id, ImporterNotInstalled.ERROR_ID)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch', side_effect=ValueError())
+    @patch('pulp_node.handlers.model.Repository.fetch', side_effect=ValueError())
     def test_synchronize_merge_exception(self, *unused):
         # Setup
         request = self.request()
@@ -112,7 +112,7 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.errors), 1)
         self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch', side_effect=ValueError())
+    @patch('pulp_node.handlers.model.Repository.fetch', side_effect=ValueError())
     def test_merge_repositories_exception(self, *unused):
         # Setup
         request = self.request()
@@ -123,7 +123,7 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.errors), 1)
         self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch', side_effect=RepoSyncRestError(REPO_ID, 401))
+    @patch('pulp_node.handlers.model.Repository.fetch', side_effect=RepoSyncRestError(REPO_ID, 401))
     def test_merge_repositories_node_error(self, *unused):
         # Setup
         request = self.request()
@@ -135,8 +135,8 @@ class TestBase(TestCase):
         self.assertEqual(request.summary.errors[0].error_id, RepoSyncRestError.ERROR_ID)
         self.assertEqual(request.summary.errors[0].details['http_code'], 401)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch_all', return_value=[TestRepo(123)])
-    @patch('pulp_node.handlers.model.RepositoryOnChild.delete', side_effect=ValueError())
+    @patch('pulp_node.handlers.model.Repository.fetch_all', return_value=[TestRepo(123)])
+    @patch('pulp_node.handlers.model.Repository.delete', side_effect=ValueError())
     def test_delete_repositories_exception(self, *unused):
         # Setup
         request = self.request()
@@ -147,8 +147,8 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.errors), 1)
         self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch_all', return_value=[TestRepo(123)])
-    @patch('pulp_node.handlers.model.RepositoryOnChild.delete', side_effect=CaughtException(ValueError()))
+    @patch('pulp_node.handlers.model.Repository.fetch_all', return_value=[TestRepo(123)])
+    @patch('pulp_node.handlers.model.Repository.delete', side_effect=CaughtException(ValueError()))
     def test_delete_repositories_node_error(self, *unused):
         # Setup
         request = self.request()
@@ -159,7 +159,7 @@ class TestBase(TestCase):
         self.assertEqual(len(request.summary.errors), 1)
         self.assertEqual(request.summary.errors[0].error_id, CaughtException.ERROR_ID)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch_all', return_value=[REPO_ID])
+    @patch('pulp_node.handlers.model.Repository.fetch_all', return_value=[REPO_ID])
     def test_merge_repositories_cancelled(self, *unused):
         # Setup
         request = self.request(1)
@@ -177,7 +177,7 @@ class TestBase(TestCase):
         self.assertEqual(units.updated, 0)
         self.assertEqual(units.removed, 0)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.fetch_all', return_value=[TestRepo(REPO_ID)])
+    @patch('pulp_node.handlers.model.Repository.fetch_all', return_value=[TestRepo(REPO_ID)])
     def test_delete_repositories_cancelled(self, *unused):
         # Setup
         request = self.request(1)
@@ -195,15 +195,15 @@ class TestBase(TestCase):
         self.assertEqual(units.updated, 0)
         self.assertEqual(units.removed, 0)
 
-    @patch('pulp_node.handlers.model.RepositoryOnChild.binding.repo_actions.sync',
+    @patch('pulp.bindings.repository.RepositoryActionsAPI.sync',
            return_value=TestResponse(202, [TestTask(TASK_ID)]))
-    @patch('pulp_node.handlers.model.RepositoryOnChild.binding.tasks.cancel_task',
+    @patch('pulp.bindings.tasks.TasksAPI.cancel_task',
            return_value=TestResponse(200))
     def test_model_repo_sync_cancelled(self, mock_cancel, *unused):
         # Setup
         conduit = TestConduit(1)
         # Test
-        repository = RepositoryOnChild(REPO_ID)
+        repository = Repository(REPO_ID)
         repository.run_synchronization(None, conduit.cancelled, {})
         # Verify
         mock_cancel.assert_called_with(TASK_ID)

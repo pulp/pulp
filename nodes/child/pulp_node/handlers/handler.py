@@ -17,9 +17,10 @@ from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
 
 from pulp_node import constants
+from pulp_node import resources
 from pulp_node.handlers.strategies import find_strategy, SyncRequest
 from pulp_node.handlers.reports import HandlerProgress, SummaryReport
-from pulp_node.handlers.model import BindingsOnParent
+from pulp_node.handlers.model import RepositoryBinding
 
 
 log = getLogger(__name__)
@@ -63,7 +64,8 @@ class NodeHandler(ContentHandler):
         """
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
-        bindings = BindingsOnParent.fetch_all(conduit.consumer_id)
+        parent_bindings = resources.parent_bindings('localhost')
+        bindings = RepositoryBinding.fetch_all(parent_bindings, conduit.consumer_id)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(
@@ -127,7 +129,8 @@ class RepositoryHandler(ContentHandler):
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
         repo_ids = [key['repo_id'] for key in units if key]
-        bindings = BindingsOnParent.fetch(conduit.consumer_id, repo_ids)
+        parent_bindings = resources.parent_bindings('localhost')
+        bindings = RepositoryBinding.fetch(parent_bindings, conduit.consumer_id, repo_ids)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(

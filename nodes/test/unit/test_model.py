@@ -16,7 +16,7 @@ from mock import patch, Mock
 from pulp.common.plugins import importer_constants
 
 from base import WebTest, Response, Task
-from pulp_node.handlers.model import RepositoryOnChild
+from pulp_node.handlers.model import Repository
 from pulp_node import constants
 
 
@@ -39,7 +39,7 @@ class TestModel(WebTest):
     @patch('pulp.agent.lib.conduit.Conduit.consumer_id')
     def test_repository(self, *mocks):
         # Setup
-        repository = RepositoryOnChild(REPO_ID)
+        repository = Repository(REPO_ID)
         progress = Mock()
         cancelled = Mock(return_value=False)
         # Test

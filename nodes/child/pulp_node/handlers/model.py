@@ -57,25 +57,23 @@ def subdict(adict, *keylist):
 # --- model objects ---------------------------------------------------------------------
 
 
-class ChildEntity(object):
+class Entity(object):
     """
-    A Child (local) entity.
-    :cvar binding: A REST API binding.
-    :type binding: PulpBindings
+    Model entity base.
     """
-    binding = resources.pulp_bindings()
+
+    @staticmethod
+    def purge_orphans():
+        """
+        Purge orphaned units within the inventory.
+        """
+        bindings = resources.pulp_bindings()
+        http = bindings.content_orphan.remove_all()
+        if http.response_code != httplib.ACCEPTED:
+            raise PurgeOrphansError(http.response_code)
 
 
-class ParentEntity(object):
-    """
-    A Parent (remote) entity.
-    :cvar binding: A REST API binding.
-    :type binding: PulpBindings
-    """
-    binding = resources.parent_bindings()
-
-
-class Repository(object):
+class Repository(Entity):
     """
     Represents a repository database object.
     :ivar repo_id: Repository ID.
@@ -95,10 +93,51 @@ class Repository(object):
         self.repo_id = repo_id
         self.details = details or {}
 
+    @staticmethod
+    def fetch_all():
+        """
+        Fetch all repositories from the inventory.
+        :return: A list of: Repository
+        :rtype: list
+        """
+        repositories = []
+        bindings = resources.pulp_bindings()
+        for repository in bindings.repo_search.search():
+            repo_id = repository['id']
+            details = {
+                'repository': repository,
+                'distributors': []
+            }
+            r = Repository(repo_id, details)
+            repositories.append(r)
+        return repositories
+
+    @staticmethod
+    def fetch(repo_id):
+        """
+        Fetch a specific repository from the inventory.
+        :param repo_id: Repository ID.
+        :type repo_id: str
+        :return: The fetched repository.
+        :rtype: Repository
+        """
+        details = {}
+        bindings = resources.pulp_bindings()
+        try:
+            http = bindings.repo.repository(repo_id)
+            details['repository'] = http.response_body
+            http = bindings.repo_distributor.distributors(repo_id)
+            details['distributors'] = http.response_body
+            http = bindings.repo_importer.importers(repo_id)
+            details['importers'] = http.response_body
+            return Repository(repo_id, details)
+        except NotFoundException:
+            return None
+
     @property
     def basic_properties(self):
         """
-        Get basic mutable properties within the bind payload I{details}.
+        Get basic mutable properties within the bind payload details.
         :return: A dict of basic properties.
         :rtype: dict
         """
@@ -107,7 +146,7 @@ class Repository(object):
     @property
     def distributors(self):
         """
-        Get the list of distributors defined in the bind payload I{details}.
+        Get the list of distributors defined in the bind payload details.
         :return: A list of distributors.
         :rtype: list
         """
@@ -116,75 +155,19 @@ class Repository(object):
     @property
     def importers(self):
         """
-        Get the list of importers defined in the bind payload I{details}.
+        Get the list of importers defined in the bind payload details.
         :return: A list of importers.
         :rtype: list
         """
         return self.details['importers']
 
-    def __str__(self):
-        return 'repository: %s' % self.repo_id
-
-
-class RepositoryOnChild(ChildEntity, Repository):
-    """
-    Represents a repository associated with the child inventory.
-    """
-
-    @classmethod
-    def fetch_all(cls):
-        """
-        Fetch all repositories from the child inventory.
-        :return: A list of: RepositoryOnChild
-        :rtype: list
-        """
-        all = []
-        for repo in cls.binding.repo_search.search():
-            repo_id = repo['id']
-            details = {
-                'repository':repo,
-                'distributors':[]
-            }
-            r = cls(repo_id, details)
-            all.append(r)
-        return all
-
-    @classmethod
-    def fetch(cls, repo_id):
-        """
-        Fetch a specific repository from the child inventory.
-        :param repo_id: Repository ID.
-        :type repo_id: str
-        :return: The fetched repository.
-        :rtype: RepositoryOnChild
-        """
-        details = {}
-        try:
-            http = cls.binding.repo.repository(repo_id)
-            details['repository'] = http.response_body
-            http = cls.binding.repo_distributor.distributors(repo_id)
-            details['distributors'] = http.response_body
-            http = cls.binding.repo_importer.importers(repo_id)
-            details['importers'] = http.response_body
-            return cls(repo_id, details)
-        except NotFoundException:
-            return None
-
-    @classmethod
-    def purge_orphans(cls):
-        """
-        Purge orphaned units within the child inventory.
-        """
-        http = cls.binding.content_orphan.remove_all()
-        if http.response_code != httplib.ACCEPTED:
-            raise PurgeOrphansError(http.response_code)
-
     def add(self):
         """
-        Add the child repository and associated plugins..
+        Add the repository and associated plugins.
         """
         # repository
-        self.binding.repo.create(
+        bindings = resources.pulp_bindings()
+        bindings.repo.create(
             self.repo_id,
             self.basic_properties['display_name'],
             self.basic_properties['description'],
@@ -192,117 +175,118 @@ class RepositoryOnChild(ChildEntity, Repository):
         # distributors
         for details in self.distributors:
             dist_id = details['id']
-            dist = DistributorOnChild(self.repo_id, dist_id, details)
+            dist = Distributor(self.repo_id, dist_id, details)
             dist.add()
         # importers
         for details in self.importers:
             imp_id = details['id']
-            importer = ImporterOnChild(self.repo_id, imp_id, details)
+            importer = Importer(self.repo_id, imp_id, details)
             importer.add()
         log.info('Repository: %s, added', self.repo_id)
 
     def update(self, delta):
         """
-        Update this child repository.
+        Update this repository.
         :param delta: The properties that need to be updated.
         :type delta: dict
         """
-        self.binding.repo.update(self.repo_id, delta)
+        bindings = resources.pulp_bindings()
+        bindings.repo.update(self.repo_id, delta)
         log.info('Repository: %s, updated', self.repo_id)
 
     def delete(self):
         """
-        Delete the child repository.
+        Delete this repository.
         """
-        self.binding.repo.delete(self.repo_id)
+        bindings = resources.pulp_bindings()
+        bindings.repo.delete(self.repo_id)
         log.info('Repository: %s, deleted', self.repo_id)
 
-    def merge(self, parent):
+    def merge(self, repository):
         """
-        Merge parent repositories.
+        Merge another repository.
           1. Determine the delta and update the repository properties.
           2. Merge importers
           3. Merge distributors
-        :param parent: The parent repository.
-        :type parent: ParentRepository
+        :param repository: Another repository.
+        :type repository: Repository
         """
         delta = {}
-        for k,v in parent.basic_properties.items():
+        for k, v in repository.basic_properties.items():
             if self.basic_properties.get(k) != v:
                 self.basic_properties[k] = v
                 delta[k] = v
         if delta:
             self.update(delta)
-        self.merge_importers(parent)
-        self.merge_distributors(parent)
+        self.merge_importers(repository)
+        self.merge_distributors(repository)
 
-    def merge_importers(self, parent):
+    def merge_importers(self, repository):
         """
         Merge importers.
-          - Delete importers associated to this child repository but not
-            associated with the parent repository.
-          - Merge importers associated with this child repository AND associated
-            with parent repository.
-          - Add importers associated with the parent repository but NOT associated
-            with this child repository.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
+          - Delete importers associated to this repository but not
+            associated with the other repository.
+          - Merge importers associated with this repository AND associated
+            with the other repository.
+          - Add importers associated with the other repository but NOT associated
+            with this repository.
+        :param repository: Another repository.
+        :type repository: Repository
         """
-        self.delete_importers(parent)
-        for details in parent.importers:
+        self.delete_importers(repository)
+        for details in repository.importers:
             imp_id = details['id']
-            imp = Importer(self.repo_id, imp_id, details)
-            myimp = ImporterOnChild.fetch(self.repo_id, imp_id)
-            if myimp:
-                myimp.merge(imp)
+            importer_in = Importer(self.repo_id, imp_id, details)
+            importer = Importer.fetch(self.repo_id, imp_id)
+            if importer:
+                importer.merge(importer_in)
             else:
-                myimp = ImporterOnChild(self.repo_id, imp_id, details)
-                myimp.add()
+                importer_in.add()
 
-    def delete_importers(self, parent):
+    def delete_importers(self, repository):
         """
-        Delete importers associated with this child repository but not
-        associated with the parent repository.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
+        Delete importers associated with this repository but not
+        associated with the other repository.
+        :param repository: Another repository.
+        :type repository: Repository
         """
-        parent_ids = [d['id'] for d in parent.importers]
+        wanted_ids = [d['id'] for d in repository.importers]
         for details in self.importers:
             imp_id = details['id']
-            if imp_id not in parent_ids:
-                imp = ImporterOnChild(self.repo_id, imp_id, {})
-                imp.delete()
+            if imp_id not in wanted_ids:
+                importer = Importer(self.repo_id, imp_id, {})
+                importer.delete()
 
-    def merge_distributors(self, parent):
+    def merge_distributors(self, repository):
         """
         Merge distributors.
-          - Merge distributors associated with this child repository AND
-            associated with parent repository.
-          - Add distributors associated with the parent repository but NOT
-            associated with this child repository.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
+          - Merge distributors associated with this repository AND
+            associated with the other repository.
+          - Add distributors associated with the other repository but
+            NOT associated with this repository.
+        :param repository: Another repository.
+        :type repository: Repository
         """
-        for details in parent.distributors:
+        for details in repository.distributors:
             dist_id = details['id']
-            dist = Distributor(self.repo_id, dist_id, details)
-            mydist = DistributorOnChild.fetch(self.repo_id, dist_id)
-            if mydist:
-                mydist.merge(dist)
+            distributor_in = Distributor(self.repo_id, dist_id, details)
+            distributor = Distributor.fetch(self.repo_id, dist_id)
+            if distributor:
+                distributor.merge(distributor_in)
             else:
-                mydist = DistributorOnChild(self.repo_id, dist_id, details)
-                mydist.add()
+                distributor_in.add()
 
     def run_synchronization(self, progress, cancelled, options):
         """
-        Run a repo_sync() on this child repository.
+        Run a repo_sync() on this repository.
         :param progress: A progress report.
         :type progress: pulp_node.progress.RepositoryProgress
         :param options: node synchronization options.
         :type options: dict
         :return: The task result.
         """
-        poller = TaskPoller(self.binding)
+        bindings = resources.pulp_bindings()
+        poller = TaskPoller(bindings)
         max_download = options.get(
             constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD,
             constants.DEFAULT_DOWNLOAD_CONCURRENCY)
@@ -310,7 +294,7 @@ class RepositoryOnChild(ChildEntity, Repository):
             importer_constants.KEY_MAX_DOWNLOADS: max_download,
             importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD)
         }
-        http = self.binding.repo_actions.sync(self.repo_id, configuration)
+        http = bindings.repo_actions.sync(self.repo_id, configuration)
         if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
         task = http.response_body[0]
@@ -325,14 +309,18 @@ class RepositoryOnChild(ChildEntity, Repository):
         :param task: A running task.
         :type task: pulp.bindings.responses.Task
         """
-        http = self.binding.tasks.cancel_task(task.task_id)
+        bindings = resources.pulp_bindings()
+        http = bindings.tasks.cancel_task(task.task_id)
         if http.response_code == httplib.ACCEPTED:
             log.info('Task [%s] cancelled', task.task_id)
         else:
             log.error('Task [%s] cancellation failed http=%s', task.task_id, http.response_code)
 
+    def __str__(self):
+        return 'repository: %s' % self.repo_id
 
-class Distributor(object):
+
+class Distributor(Entity):
     """
     Represents a repository-distributor association.
     :ivar repo_id: Repository ID.
@@ -342,6 +330,25 @@ class Distributor(object):
     :ivar details: Distributor details as modeled in the bind payload.
     :type details: dict
     """
+
+    @staticmethod
+    def fetch(repo_id, dist_id):
+        """
+        Fetch the repository-distributor from the inventory.
+        :param repo_id: The repository ID.
+        :type repo_id: str
+        :param dist_id: A distributor ID.
+        :type dist_id: str
+        :return: The fetched distributor.
+        :rtype: Distributor
+        """
+        try:
+            bindings = resources.pulp_bindings()
+            http = bindings.repo_distributor.distributor(repo_id, dist_id)
+            details = http.response_body
+            return Distributor(repo_id, dist_id, details)
+        except NotFoundException:
+            return None
 
     def __init__(self, repo_id, dist_id, details):
         """
@@ -356,39 +363,12 @@ class Distributor(object):
         self.dist_id = dist_id
         self.details = subdict(details, 'config', 'auto_publish', 'distributor_type_id')
 
-    def __str__(self):
-        return 'distributor: %s.%s' % (self.repo_id, self.dist_id)
-
-
-class DistributorOnChild(ChildEntity, Distributor):
-    """
-    Represents a repository-distributor associated with the child inventory.
-    """
-
-    @classmethod
-    def fetch(cls, repo_id, dist_id):
-        """
-        Fetch the repository-distributor from the child inventory.
-        :param repo_id: The repository ID.
-        :type repo_id: str
-        :param dist_id: A distributor ID.
-        :type dist_id: str
-        :return: The fetched distributor.
-        :rtype: DistributorOnChild
-        """
-        try:
-            binding = cls.binding.repo_distributor
-            http = binding.distributor(repo_id, dist_id)
-            details = http.response_body
-            return cls(repo_id, dist_id, details)
-        except NotFoundException:
-            return None
-
     def add(self):
         """
-        Add this repository-distributor to the child inventory.
+        Add this repository-distributor to the inventory.
         """
-        self.binding.repo_distributor.create(
+        bindings = resources.pulp_bindings()
+        bindings.repo_distributor.create(
             self.repo_id,
             self.details['distributor_type_id'],
             self.details['config'],
@@ -398,36 +378,38 @@ class DistributorOnChild(ChildEntity, Distributor):
 
     def update(self, configuration):
         """
-        Update this repository-distributor in the child inventory.
+        Update this repository-distributor in the inventory.
         :param configuration: The updated configuration.
         :type configuration: dict
         """
-        binding = self.binding.repo_distributor
-        binding.update(self.repo_id, self.dist_id, configuration)
+        bindings = resources.pulp_bindings()
+        bindings.repo_distributor.update(self.repo_id, self.dist_id, configuration)
         log.info('Distributor: %s/%s, updated', self.repo_id, self.dist_id)
 
     def delete(self):
         """
-        Delete this repository-distributor from the child inventory.
+        Delete this distributor.
         """
-        binding = self.binding.repo_distributor
-        binding.delete(self.repo_id, self.dist_id)
+        bindings = resources.pulp_bindings()
+        bindings.repo_distributor.delete(self.repo_id, self.dist_id)
         log.info('Distributor: %s/%s, deleted', self.repo_id, self.dist_id)
 
-    def merge(self, parent):
+    def merge(self, distributor):
         """
-        Merge the distributor configuration from the parent.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
+        Merge the distributor configuration from another distributor.
+        :param distributor: Another distributor.
+        :type distributor: Distributor
         """
         key = 'config'
-        parent_configuration = parent.details[key]
-        child_configuration = self.details[key]
-        if child_configuration != parent_configuration:
-            self.update(parent_configuration)
+        configuration = distributor.details[key]
+        if self.details[key] != configuration:
+            self.update(configuration)
+
+    def __str__(self):
+        return 'distributor: %s.%s' % (self.repo_id, self.dist_id)
 
 
-class Importer(object):
+class Importer(Entity):
     """
     Represents a repository-importer association.
     :ivar repo_id: Repository ID.
@@ -437,6 +419,21 @@ class Importer(object):
     :ivar details: Importer details as modeled in the bind payload.
     :type details: dict
     """
+
+    @staticmethod
+    def fetch(repo_id, imp_id):
+        """
+        Fetch the repository-importer from the inventory.
+        :return: The fetched importer.
+        :rtype: Importer
+        """
+        try:
+            bindings = resources.pulp_bindings()
+            http = bindings.repo_importer.importer(repo_id, imp_id)
+            details = http.response_body
+            return Importer(repo_id, imp_id, details)
+        except NotFoundException:
+            return None
 
     def __init__(self, repo_id, imp_id, details):
         """
@@ -451,90 +448,73 @@ class Importer(object):
         self.imp_id = imp_id
         self.details = details
 
-    def __str__(self):
-        return 'importer: %s.%s' % (self.repo_id, self.imp_id)
-
-
-class ImporterOnChild(ChildEntity, Importer):
-    """
-    Represents a repository-importer associated with the child inventory.
-    """
-
-    @classmethod
-    def fetch(cls, repo_id, imp_id):
-        """
-        Fetch the repository-importer from the child inventory.
-        :return: The fetched importer.
-        :rtype: ImporterOnChild
-        """
-        try:
-            binding = cls.binding.repo_importer
-            http = binding.importer(repo_id, imp_id)
-            details = http.response_body
-            return cls(repo_id, imp_id, details)
-        except NotFoundException:
-            return None
-
     def add(self):
         """
-        Add this importer to the child inventory.
+        Add this importer to the inventory.
         """
-        binding = self.binding.repo_importer
         conf = self.details['config']
-        binding.create(self.repo_id, self.imp_id, conf)
+        bindings = resources.pulp_bindings()
+        bindings.repo_importer.create(self.repo_id, self.imp_id, conf)
         log.info('Importer %s/%s, added', self.repo_id, self.imp_id)
 
     def update(self, configuration):
         """
-        Update this repository-importer in the child inventory.
+        Update this importer.
         :param configuration: The updated configuration.
         :type configuration: dict
         """
-        binding = self.binding.repo_importer
-        binding.update(self.repo_id, self.imp_id, configuration)
+        bindings = resources.pulp_bindings()
+        bindings.repo_importer.update(self.repo_id, self.imp_id, configuration)
         log.info('Importer: %s/%s, updated', self.repo_id, self.imp_id)
 
     def delete(self):
         """
-        Delete this repository-importer from the child inventory.
+        Delete this importer.
         """
-        binding = self.binding.repo_importer
-        binding.delete(self.repo_id, self.imp_id)
+        bindings = resources.pulp_bindings()
+        bindings.repo_importer.delete(self.repo_id, self.imp_id)
         log.info('Importer: %s/%s, deleted', self.repo_id, self.imp_id)
 
-    def merge(self, parent):
+    def merge(self, importer):
         """
-        Merge this importer configuration from the parent importer.
-        :param parent: The parent repository.
-        :type parent: ParentRepository
+        Merge this importer configuration from another importer.
+        :param importer: Another importer.
+        :type importer: Importer
         """
-        self.update(parent.details['config'])
+        self.update(importer.details['config'])
+
+    def __str__(self):
+        return 'importer: %s.%s' % (self.repo_id, self.imp_id)
 
 
-class BindingsOnParent(ParentEntity):
+class RepositoryBinding(Entity):
     """
     Represents a parent node bindings to a repository.
     """
 
-    @classmethod
-    def fetch_all(cls, node_id):
+    @staticmethod
+    def fetch_all(bindings, node_id):
         """
         Fetch a list of ALL bind payloads for this consumer.
+        :param bindings: A pulp API object.
+        :type bindings: pulp.bindings.bindings.Bindings
         :param node_id: The node ID.
         :type node_id: str
         :return: List of bind payloads.
         :rtype: list
         """
-        http = ParentEntity.binding.bind.find_by_id(node_id)
+        http = bindings.bind.find_by_id(node_id)
         if http.response_code == httplib.OK:
-            return cls.filtered(http.response_body)
+            return RepositoryBinding.filtered(http.response_body)
         else:
             raise GetBindingsError(http.response_code)
 
-    @classmethod
-    def fetch(cls, node_id, repo_ids):
+    @staticmethod
+    def fetch(bindings, node_id, repo_ids):
         """
         Fetch a list of bind payloads for the specified list of repository ID.
+        :param bindings: A pulp API object.
+        :type bindings: pulp.bindings.bindings.Bindings
         :param node_id: The node ID.
         :type node_id: str
         :param repo_ids: A list of repository IDs.
@@ -544,15 +524,15 @@ class BindingsOnParent(ParentEntity):
         """
         binds = []
         for repo_id in repo_ids:
-            http = ParentEntity.binding.bind.find_by_id(node_id, repo_id)
+            http = bindings.bind.find_by_id(node_id, repo_id)
             if http.response_code == httplib.OK:
-                binds.extend(cls.filtered(http.response_body))
+                binds.extend(RepositoryBinding.filtered(http.response_body))
             else:
                 raise GetBindingsError(http.response_code)
         return binds
 
-    @classmethod
-    def filtered(cls, binds):
+    @staticmethod
+    def filtered(binds):
         """
         Get a filtered list of binds.
           - Includes only the nodes_ distributors.
