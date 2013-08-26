@@ -144,6 +144,7 @@ class RepoProfileApplicability(Model):
     The RepoProfileApplicabilityManager can be accessed through the classlevel "objects" attribute.
     """
     collection_name = 'repo_profile_applicability'
+
     unique_indices = (
         ('profile_hash', 'repo_id'),
     )
@@ -174,7 +175,8 @@ class RepoProfileApplicability(Model):
         self.applicability = applicability
         self._id = _id
 
-        # The superclass puts an unnecessary (and confusingly named) id attribute on this model. Let's remove it.
+        # The superclass puts an unnecessary (and confusingly named) id attribute on this model.
+        # Let's remove it.
         del self.id
 
     def delete(self):
