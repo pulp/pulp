@@ -161,17 +161,6 @@ class PollingCommand(PulpCliCommand):
         except KeyboardInterrupt:
             # Gracefully handle if the user aborts the polling.
             return RESULT_ABORTED
-        except Exception, e:
-            # If any task raises an Exception and there is a error_message specified in the
-            # task results that error should be displayed to the end user.
-            # This block should only be hit if one of the task processing items goes horribly wrong
-            # and not as part of regular processing.
-            if task and task.result and 'error_message' in task.result:
-                self.context.prompt.render_failure_message(task.result['error_message'])
-            else:
-                # No error_message was presented so re-raise the exception to allow the
-                # generic unexpected error to process
-                raise e
 
     def _poll_task(self, task):
         """
