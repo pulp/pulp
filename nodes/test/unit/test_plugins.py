@@ -718,10 +718,108 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
+    @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
+           wraps=importer_config_to_nectar_config)
+    def test_import_unit_files_already_exist(self, *mocks):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        cfg = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, cfg)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        parent_content = os.path.join(self.parentfs, 'content')
+        child_content = os.path.join(self.childfs, 'content')
+        shutil.copytree(parent_content, child_content)
+        # Test
+        importer = NodesHttpImporter()
+        publisher = dist.publisher(repo, cfg)
+        manifest_url = 'file://' + publisher.manifest_path()
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+        }
+        configuration = PluginCallConfiguration(configuration, {})
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+        mock_importer_config_to_nectar_config = mocks[0]
+        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
+    @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
+           wraps=importer_config_to_nectar_config)
+    def test_import_unit_files_already_exist_size_mismatch(self, *mocks):
+        # Setup
+        self.populate()
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        cfg = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, cfg)
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoContentUnit.get_collection().remove()
+        unit_db.clean()
+        parent_content = os.path.join(self.parentfs, 'content')
+        child_content = os.path.join(self.childfs, 'content')
+        shutil.copytree(parent_content, child_content)
+        for fn in os.listdir(child_content):
+            path = os.path.join(child_content, fn)
+            if os.path.isdir(path):
+                continue
+            with open(path, 'w') as fp:
+                fp.truncate()
+        # Test
+        importer = NodesHttpImporter()
+        publisher = dist.publisher(repo, cfg)
+        manifest_url = 'file://' + publisher.manifest_path()
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+        }
+        configuration = PluginCallConfiguration(configuration, {})
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        units = conduit.get_units()
+        self.assertEquals(len(units), self.NUM_UNITS)
+        mock_importer_config_to_nectar_config = mocks[0]
+        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
 
 # --- testing end-to-end -----------------------------------------------------
-
 
 class TestEndToEnd(PluginTestBase):
     """

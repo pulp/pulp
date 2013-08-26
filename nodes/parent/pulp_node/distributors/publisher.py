@@ -25,6 +25,41 @@ from pulp_node.manifest import Manifest, UnitWriter
 log = getLogger(__name__)
 
 
+# --- utils --------------------------------------------------------
+
+def tar_path(path):
+    """
+    Construct the tarball path.
+    :param path: A path
+    :type path: str
+    :return: The modified path
+    """
+    return path + '.TGZ'
+
+
+def tar_dir(path, tar_path, bufsize=65535):
+    """
+    Tar up the directory at the specified path.
+    :param path: The absolute path to a directory.
+    :type path: str
+    :param tar_path: The target path.
+    :type tar_path: str
+    :param bufsize: The buffer size to be used.
+    :type bufsize: int
+    :return: The path to the tarball
+    """
+    tb = tarfile.open(tar_path, 'w', bufsize=bufsize)
+    try:
+        _dir = os.path.basename(path)
+        tb.add(path, arcname=_dir)
+        return tar_path
+    finally:
+        tb.close()
+
+
+# --- publisher ----------------------------------------------------
+
+
 class Publisher(object):
     """
     The publisher does the heavy lifting for nodes distributor.
@@ -105,37 +140,19 @@ class FilePublisher(Publisher):
         :param unit: A content unit.
         :type unit: dict
         """
-        storage_path = unit.get('storage_path')
+        storage_path = unit.get(constants.STORAGE_PATH)
         if not storage_path:
             # not all units have associated files.
             return unit, None
-        relative_path = unit['relative_path']
+        relative_path = unit[constants.RELATIVE_PATH]
         published_path = pathlib.join(self.tmp_dir, relative_path)
         pathlib.mkdir(os.path.dirname(published_path))
+        unit[constants.FILE_SIZE] = os.path.getsize(storage_path)
         if os.path.isdir(storage_path):
-            self.tar_dir(storage_path, published_path)
-            unit[constants.PUBLISHED_AS_TARBALL] = True
+            tar_dir(storage_path, tar_path(published_path))
+            unit[constants.TARBALL_PATH] = tar_path(relative_path)
         else:
             os.symlink(storage_path, published_path)
-            unit[constants.PUBLISHED_AS_FILE] = True
-
-    def tar_dir(self, path, tar_path, bufsize=65535):
-        """
-        Tar up the directory at the specified path.
-        :param path: The absolute path to a directory.
-        :type path: str
-        :param tar_path: The target path.
-        :type tar_path: str
-        :param bufsize: The buffer size to be used.
-        :type bufsize: int
-        :return:
-        """
-        tb = tarfile.open(tar_path, 'w', bufsize=bufsize)
-        try:
-            _dir = os.path.basename(path)
-            tb.add(path, arcname=_dir)
-        finally:
-            tb.close()
 
     def commit(self):
         """
