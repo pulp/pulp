@@ -38,6 +38,8 @@ def untar_dir(path, storage_path):
     Replaces the tarball at the specified path with the extracted directory tree.
     :param path: The absolute path to a tarball.
     :type path: str
+    :param storage_path: The path into which the content is extracted.
+    :type storage_path: str
     :raise IOError: on i/o errors.
     """
     try:
