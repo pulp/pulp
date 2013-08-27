@@ -291,7 +291,8 @@ class Repository(Entity):
             constants.DEFAULT_DOWNLOAD_CONCURRENCY)
         configuration = {
             importer_constants.KEY_MAX_DOWNLOADS: max_download,
-            importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD)
+            importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD),
+            importer_constants.KEY_SSL_CLIENT_CERT: options.get(constants.NODE_CERTIFICATE),
         }
         http = bindings.repo_actions.sync(self.repo_id, configuration)
         if http.response_code != httplib.ACCEPTED:

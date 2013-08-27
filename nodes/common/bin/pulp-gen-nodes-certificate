@@ -21,10 +21,19 @@ print pulp_conf.get('security', 'cacert')
 END
 )
 
-PULP_CONF=(`python -c "$READ_PULP_CONF"`)
+READ_NODE_CONF=\
+$(cat << END
+from pulp_node import resources
+node_conf = resources.node_configuration()
+print node_conf.main.node_certificate
+END
+)
 
-PKI=/etc/pki/pulp
-PKI_NODES=$PKI/nodes
+PULP_CONF=(`python -c "$READ_PULP_CONF"`)
+NODE_CONF=(`python -c "$READ_NODE_CONF"`)
+
+
+NODE_CRT=${NODE_CONF[0]}
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 BASE='nodes'
@@ -59,9 +68,7 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/node.crt
+cat $TMP/$BASE.key $TMP/$BASE.xx > $NODE_CRT
 
 # clean
 rm -rf $TMP
-rm -f $PKI_NODES/local.crt   # deprecated
-rm -f $PKI_NODES/parent.crt  # deprecated

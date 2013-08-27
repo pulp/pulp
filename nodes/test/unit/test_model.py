@@ -24,6 +24,7 @@ PULP_ID = 'pulp_1'
 REPO_ID = 'repo_1'
 MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
+SSL_CERT = 98765
 
 
 class TestModel(WebTest):
@@ -46,12 +47,14 @@ class TestModel(WebTest):
         options = {
             constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: MAX_CONCURRENCY,
             constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: MAX_BANDWIDTH,
+            constants.NODE_CERTIFICATE: SSL_CERT,
         }
         repository.run_synchronization(progress, cancelled, options)
         binding = mocks[1]
         expected_conf = {
             importer_constants.KEY_MAX_DOWNLOADS: MAX_CONCURRENCY,
             importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH,
+            importer_constants.KEY_SSL_CLIENT_CERT: SSL_CERT,
         }
         # Verify
         binding.assert_called_with(REPO_ID, expected_conf)

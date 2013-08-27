@@ -21,6 +21,11 @@ NODE_CONFIGURATION_PATH = '/etc/pulp/nodes.conf'
 CONSUMER_CONFIGURATION_PATH = '/etc/pulp/consumer/consumer.conf'
 
 NODE_SCHEMA = (
+    ('main', REQUIRED,
+        (
+            ('node_certificate', REQUIRED, ANY),
+        )
+    ),
     ('oauth', REQUIRED,
         (
             ('user_id', REQUIRED, ANY),

@@ -44,6 +44,7 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.common.plugins import importer_constants
+from pulp.common.config import Config
 from pulp.server.managers import factory as managers
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
@@ -150,11 +151,13 @@ class PluginTestBase(WebTest):
     NUM_UNITS = 10
     NUM_EXTRA_UNITS = 5
     EXTRA_REPO_IDS = ('extra_1', 'extra_2')
+    NODE_CERTIFICATE = 'KEY-AND-CERTIFICATE'
 
-    CA_CERT = 'CA_CERTIFICATE'
-    CLIENT_CERT = 'CLIENT_CERTIFICATE_AND_KEY'
-
-    PARENT_SETTINGS = {constants.HOST: 'pulp.redhat.com', constants.PORT: 443}
+    PARENT_SETTINGS = {
+        constants.HOST: 'pulp.redhat.com',
+        constants.PORT: 443,
+        constants.NODE_CERTIFICATE: NODE_CERTIFICATE,
+    }
 
     @classmethod
     def tmpdir(cls, role):
@@ -205,17 +208,14 @@ class PluginTestBase(WebTest):
         manager.create_repo(self.REPO_ID)
         # add units
         units = self.add_units(0, self.NUM_UNITS)
-        # CA
         self.units = units
-        path = os.path.join(self.parentfs, 'ca.crt')
-        fp = open(path, 'w+')
-        fp.write(self.CA_CERT)
-        fp.close()
-        # client cert
-        path = os.path.join(self.parentfs, 'local.crt')
-        fp = open(path, 'w+')
-        fp.write(self.CLIENT_CERT)
-        fp.close()
+
+    def node_configuration(self):
+        path = os.path.join(self.parentfs, 'node.crt')
+        with open(path, 'w+') as fp:
+            fp.write(self.NODE_CERTIFICATE)
+        node_conf = Config({'main': {constants.NODE_CERTIFICATE: path}})
+        return node_conf.graph()
 
     def add_units(self, begin, end):
         units = []
@@ -263,14 +263,6 @@ class PluginTestBase(WebTest):
             'file':{'alias':self.alias},
         }
 
-    def dist_conf_with_ssl(self):
-        ssl = {
-            'client_cert': os.path.join(self.parentfs, 'local.crt')
-        }
-        d = self.dist_conf()
-        d['file']['ssl'] = ssl
-        return d
-
 
 # --- handler tests ------------------------------------------------
 
@@ -312,7 +304,11 @@ class TestProfiler(PluginTestBase):
         plugin = _class()
         self.assertTrue(isinstance(plugin, NodeProfiler))
 
-    def test_update_units(self):
+    @patch('pulp_node.resources.node_configuration')
+    def test_update_units(self, mock_get_node_conf):
+        # Setup
+        mock_get_node_conf.return_value = self.node_configuration()
+        # Test
         host = 'abc'
         port = 443
         units = [1, 2, 3]
@@ -320,10 +316,12 @@ class TestProfiler(PluginTestBase):
         p = NodeProfiler()
         pulp_conf.set('server', 'server_name', host)
         _units = p.update_units(None, units, options, None, None)
+        # Verify
         self.assertTrue(constants.PARENT_SETTINGS in options)
         settings = options[constants.PARENT_SETTINGS]
         self.assertEqual(settings[constants.HOST], host)
         self.assertEqual(settings[constants.PORT], port)
+        self.assertEqual(settings[constants.NODE_CERTIFICATE], self.NODE_CERTIFICATE)
         self.assertEqual(units, _units)
 
 
@@ -341,29 +339,21 @@ class TestDistributor(PluginTestBase):
             'alias': [
                 '/pulp/nodes/https/repos',
                 '/var/www/pulp/nodes/https/repos'
-            ],
-            constants.SSL_KEYWORD: {
-                constants.CLIENT_CERT_KEYWORD: {
-                    'local': '/etc/pki/pulp/nodes/local.crt',
-                    'child': '/etc/pki/pulp/nodes/parent/client.crt'
-                }
-            }
+            ]
         }
     }
 
     PAYLOAD = {
+        'repository': None,
         'distributors': [],
         'importers': [
             {'id': 'nodes_http_importer',
              'importer_type_id': 'nodes_http_importer',
              'config': {
                  'manifest_url': 'file://localhost/%(tmp_dir)s/%(repo_id)s/manifest.json',
-                 'protocol': 'file',
-                 'ssl': {},
-                 'strategy': 'additive'
+                 'strategy': constants.ADDITIVE_STRATEGY
              }, }
-        ],
-        'repository': None
+        ]
     }
 
     def test_entry_point(self):
@@ -470,30 +460,6 @@ class TestDistributor(PluginTestBase):
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
         for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD):
-            self.assertTrue(key in importers[0]['config'])
-
-    def test_payload_with_ssl(self):
-        # Setup
-        self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        # Test
-        dist = NodesHttpDistributor()
-        repo = Repository(self.REPO_ID)
-        payload = dist.create_consumer_payload(repo, self.dist_conf_with_ssl(), {})
-        # Verify
-        distributors = payload['distributors']
-        importers = payload['importers']
-        repository = payload['repository']
-        self.assertTrue(isinstance(distributors, list))
-        self.assertTrue(isinstance(importers, list))
-        self.assertTrue(isinstance(repository, dict))
-        self.assertTrue(len(importers), 1)
-        for key in ('id', 'importer_type_id', 'config'):
-            self.assertTrue(key in importers[0])
-        for key in (constants.MANIFEST_URL_KEYWORD,
-                    constants.STRATEGY_KEYWORD,
-                    importer_constants.KEY_SSL_CLIENT_CERT,
-                    importer_constants.KEY_SSL_VALIDATION):
             self.assertTrue(key in importers[0]['config'])
 
     def test_publish(self):
@@ -916,7 +882,7 @@ class TestEndToEnd(PluginTestBase):
 
     PULP_ID = 'child'
 
-    def populate(self, strategy=constants.DEFAULT_STRATEGY, ssl=False):
+    def populate(self, strategy=constants.DEFAULT_STRATEGY):
         PluginTestBase.populate(self)
         # register child
         manager = managers.consumer_manager()
@@ -930,10 +896,7 @@ class TestEndToEnd(PluginTestBase):
         }
         manager.set_importer(self.REPO_ID, constants.HTTP_IMPORTER, importer_conf)
         # add distributors
-        if ssl:
-            dist_conf = self.dist_conf_with_ssl()
-        else:
-            dist_conf = self.dist_conf()
+        dist_conf = self.dist_conf()
         manager = managers.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -1288,7 +1251,7 @@ class TestEndToEnd(PluginTestBase):
                return_value=MirrorTestStrategy(self, repo=False, units=True))
         def test_handler(*unused):
             # publish
-            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            self.populate(constants.MIRROR_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
@@ -1335,7 +1298,7 @@ class TestEndToEnd(PluginTestBase):
                return_value=MirrorTestStrategy(self, repo=False, units=True, dist_config={'A': 1}))
         def test_handler(*unused):
             # publish
-            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            self.populate(constants.MIRROR_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
@@ -1386,7 +1349,7 @@ class TestEndToEnd(PluginTestBase):
                return_value=MirrorTestStrategy(self, repo=False, extra_units=self.NUM_EXTRA_UNITS))
         def test_handler(*unused):
             # publish
-            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            self.populate(constants.MIRROR_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
@@ -1434,7 +1397,7 @@ class TestEndToEnd(PluginTestBase):
                return_value=MirrorTestStrategy(self, repo=False, units=True, extra_repos=self.EXTRA_REPO_IDS))
         def test_handler(*unused):
             # publish
-            self.populate(constants.MIRROR_STRATEGY, ssl=True)
+            self.populate(constants.MIRROR_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
