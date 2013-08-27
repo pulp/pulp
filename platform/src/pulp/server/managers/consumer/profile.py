@@ -131,3 +131,17 @@ class ProfileManager(object):
         query = dict(consumer_id=consumer_id)
         cursor = collection.find(query)
         return list(cursor)
+
+    @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Return a list of unit profiles that match the provided criteria.
+
+        @param criteria:    A Criteria object representing a search you want
+                            to perform
+        @type  criteria:    pulp.server.db.model.criteria.Criteria
+
+        @return:    list of UnitProfile instances
+        @rtype:     list
+        """
+        return UnitProfile.get_collection().query(criteria)

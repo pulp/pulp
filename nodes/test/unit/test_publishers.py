@@ -100,19 +100,18 @@ class TestHttp(TestCase):
         units = manifest.get_units()
         n = 0
         for unit, ref in units:
-            if n == 0:
-                self.assertTrue(unit[constants.PUBLISHED_AS_TARBALL])
-            else:
-                self.assertFalse(unit.get(constants.PUBLISHED_AS_TARBALL, False))
-            path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
             self.assertEqual(
                 manifest.publishing_details[constants.BASE_URL],
                 pathlib.url_join(base_url, publish_dir, repo_id))
-            if n == 0:
+            if n == 0:  # TARBALL
+                path = pathlib.join(publish_dir, repo_id, unit[constants.TARBALL_PATH])
                 self.assertTrue(os.path.isfile(path))
             else:
+                path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
                 self.assertTrue(os.path.islink(path))
-            if n == 0:
+                self.assertEqual(unit[constants.FILE_SIZE], os.path.getsize(path))
+            if n == 0:  # TARBALL
+                path = pathlib.join(publish_dir, repo_id, unit[constants.TARBALL_PATH])
                 tb = tarfile.open(path)
                 try:
                     files = sorted(tb.getnames())
@@ -120,6 +119,7 @@ class TestHttp(TestCase):
                     tb.close()
                 self.assertEqual(len(files), self.NUM_TARED_FILES + 1)
             else:
+                path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
                 with open(path, 'rb') as fp:
                     unit_content = fp.read()
                     self.assertEqual(unit_content, unit_content)

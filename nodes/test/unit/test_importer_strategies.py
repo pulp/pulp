@@ -337,6 +337,21 @@ class TestBase(TestCase):
         self.assertTrue(request.downloader.download.called)
         self.assertTrue(request.downloader.cancel.called)
 
+    def test_needs_update(self):
+        # Setup
+        path = os.path.join(self.TMP_ROOT, 'unit_1')
+        with open(path, 'w+') as fp:
+            fp.write('123')
+        size = os.path.getsize(path)
+        strategy = ImporterStrategy()
+        # Test
+        unit = {constants.STORAGE_PATH: path, constants.FILE_SIZE: size}
+        self.assertFalse(strategy._needs_download(unit))
+        unit = {constants.STORAGE_PATH: '&&&&&&&', constants.FILE_SIZE: size}
+        self.assertTrue(strategy._needs_download(unit))
+        unit = {constants.STORAGE_PATH: path, constants.FILE_SIZE: size + 1}
+        self.assertTrue(strategy._needs_download(unit))
+
     def test_strategy_factory(self):
         for name, strategy in STRATEGIES.items():
             self.assertEqual(find_strategy(name), strategy)
