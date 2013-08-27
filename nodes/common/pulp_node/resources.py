@@ -82,9 +82,9 @@ def pulp_bindings():
     """
     node_conf = node_configuration()
     oauth = node_conf.oauth
-    host = pulp_conf.get('server', 'server_name'),
-    key = pulp_conf.get('oauth', 'oauth_key'),
-    secret = pulp_conf.get('oauth', 'oauth_secret'),
+    host = pulp_conf.get('server', 'server_name')
+    key = pulp_conf.get('oauth', 'oauth_key')
+    secret = pulp_conf.get('oauth', 'oauth_secret')
     connection = PulpConnection(
         host=host,
         port=443,

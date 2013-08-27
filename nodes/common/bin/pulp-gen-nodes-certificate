@@ -18,8 +18,6 @@ $(cat << END
 from pulp.server.config import config as pulp_conf
 print pulp_conf.get('security', 'cakey')
 print pulp_conf.get('security', 'cacert')
-print pulp_conf.get('server', 'default_login')
-print pulp_conf.get('server', 'default_password')
 END
 )
 
@@ -31,7 +29,7 @@ CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 BASE='nodes'
 TMP=/tmp/$RANDOM
-CN="${PULP_CONF[2]}:${PULP_CONF[3]}:0"
+CN=`hostname`
 ORG="PULP"
 ORG_UNIT="NODES"
 
@@ -61,7 +59,9 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/local.crt
+cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/node.crt
 
 # clean
 rm -rf $TMP
+rm -f $PKI_NODES/local.crt   # deprecated
+rm -f $PKI_NODES/parent.crt  # deprecated

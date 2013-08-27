@@ -54,6 +54,26 @@ and *Consumer* support installed.
 .. image:: images/node-anatomy.png
 
 
+Authentication
+--------------
+
+The *child* node is authenticated to the *parent* node's REST API using Oauth.
+The connection is SSL but no client certificate is required. The *parent* node publishes
+content which is downloaded (as needed) by the *child* node using HTTPS requiring client
+certificate that has been signed by the Pulp CA.
+
+During installation of the *Nodes* packages, an x.509 certificate is generated and signed
+using the Pulp CA (specified in server.conf) and stored in ``/etc/pkp/pulp/nodes/node.crt``.
+The certificate is generated using ``/usr/bin/pulp-gen-nodes-certificate`` which is provided
+by the *Nodes* packages.
+
+The node private key and certificate are sent to the *child* node at the beginning of each
+synchronization request to be used as the HTTPS credentials.
+
+If the Pulp CA is changed after installation, administrators **must** regenerate the *Nodes*
+certificate using *pulp-gen-nodes-certificate*.
+
+
 Installation
 ------------
 
