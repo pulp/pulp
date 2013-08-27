@@ -137,11 +137,11 @@ class DistributorNotInstalled(NodeError):
 class ManifestDownloadError(NodeError):
 
     ERROR_ID = 'download.parent.manifest'
-    DESCRIPTION = _('Received error report [%(error_report)s] while downloading the manifest at '
+    DESCRIPTION = _('Received error [%(message)s] while downloading the manifest at '
                     'URL [%(url)s]. The cause could be that the repository has not been published.')
 
-    def __init__(self, url, error_report):
-        super(ManifestDownloadError, self).__init__(self.ERROR_ID, url=url, error_report=error_report)
+    def __init__(self, url, message):
+        super(ManifestDownloadError, self).__init__(self.ERROR_ID, url=url, message=message)
 
     def __str__(self):
         return self.DESCRIPTION % self.details
