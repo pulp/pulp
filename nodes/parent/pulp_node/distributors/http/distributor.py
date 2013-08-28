@@ -16,12 +16,12 @@ import json
 from gettext import gettext as _
 from logging import getLogger
 
-from pulp.common.plugins import importer_constants
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.conduit import NodesConduit
 from pulp_node.distributors.http.publisher import HttpPublisher
 
@@ -216,7 +216,7 @@ class NodesHttpDistributor(Distributor):
         :rtype: dict
         """
         publisher = self.publisher(repo, config)
-        manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
+        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
         strategy = binding_config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
         configuration = {
             constants.STRATEGY_KEYWORD: strategy,
