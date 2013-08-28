@@ -187,9 +187,7 @@ class AgentManagerTests(base.PulpServerTests):
             manager.install_content(self.CONSUMER_ID, invalid_units, {})
             self.fail()
         except PulpDataException, e:
-            args = e.data_dict()['args']
-            self.assertEqual(args[0], invalid_units)
-            self.assertEqual(args[1], message)
+            self.assertEqual(e.message, message)
 
     def test_content_update(self):
         # Setup
@@ -227,9 +225,7 @@ class AgentManagerTests(base.PulpServerTests):
             manager.update_content(self.CONSUMER_ID, invalid_units, {})
             self.fail()
         except PulpDataException, e:
-            args = e.data_dict()['args']
-            self.assertEqual(args[0], invalid_units)
-            self.assertEqual(args[1], message)
+            self.assertEqual(e.message, message)
 
     def test_content_uninstall(self):
         # Setup
@@ -268,6 +264,4 @@ class AgentManagerTests(base.PulpServerTests):
             manager.uninstall_content(self.CONSUMER_ID, invalid_units, {})
             self.fail()
         except PulpDataException, e:
-            args = e.data_dict()['args']
-            self.assertEqual(args[0], invalid_units)
-            self.assertEqual(args[1], message)
+            self.assertEqual(e.message, message)
