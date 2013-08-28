@@ -17,6 +17,7 @@ import base
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
+from pulp.server.auth.ldap_connection import LDAPConnection
 from pulp.server.db.model.auth import User, Role
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.exceptions as exceptions
@@ -168,3 +169,22 @@ class UserManagerTests(base.PulpServerTests):
         criteria = Criteria()
         self.user_query_manager.find_by_criteria(criteria)
         mock_query.assert_called_once_with(criteria)
+
+    def test_add_user_from_ldap(self):
+        ldap_connection = LDAPConnection()
+        ldap_login = 'test-ldap-login'
+        ldap_name = 'test-ldap-name'
+        user = ldap_connection._add_from_ldap(username=ldap_login, userdata=({},{'gecos':ldap_name}))
+        self.assertEqual(user['login'], ldap_login)
+        self.assertEqual(user['name'], ldap_name)
+
+    def test_add_user_from_ldap_invalid_gecos(self):
+        # Make sure that if gecos is not a basestring with user's name in it, we default it to user login
+        # without raising any error
+        ldap_connection = LDAPConnection()
+        ldap_login = 'test-ldap-login'
+        ldap_gecos = ['blah','blah']
+        user = ldap_connection._add_from_ldap(username=ldap_login, userdata=({},{'gecos':ldap_gecos}))
+        self.assertEqual(user['login'], ldap_login)
+        self.assertEqual(user['name'], ldap_login)
+

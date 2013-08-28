@@ -133,7 +133,7 @@ class LDAPConnection:
     def _add_from_ldap(self, username, userdata):
         """
         @param username:  Username to be added
-        @param user: tuple of user data as returned by lookup_user
+        @param userdata: tuple of user data as returned by lookup_user
 
         Adds a user to the pulp user database with no password and
         returns a pulp.server.db.model.User object
@@ -141,9 +141,9 @@ class LDAPConnection:
         user = User.get_collection().find_one({'login' : username})
         if user is None:
             attrs = userdata[1]
-            try:
+            if 'gecos' in attrs and isinstance(attrs['gecos'], basestring):
                 name = attrs['gecos']
-            except KeyError:
+            else:
                 name = username
             user =  self.user_manager.create_user(login=username, name=name)
             if config.has_option('ldap', 'default_role'):
