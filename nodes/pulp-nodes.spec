@@ -172,7 +172,7 @@ Requires: pulp-consumer-client = %{pulp_version}
 Requires: pulp-agent = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 Requires: gofer >= 0.74
-Requires: python-nectar >= 1.0.0
+Requires: python-nectar >= 1.1.0
 
 %description child
 Pulp child nodes support.
