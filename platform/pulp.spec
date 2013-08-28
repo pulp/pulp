@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.3.alpha%{?dist}
+Release: 0.4.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -435,6 +435,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.4.alpha
+- Pulp rebuild
+
 * Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
 - 956711 - Raise an error to the client if an attempt is made to install an
   errata that does not exist in a repository bound to the consumer
