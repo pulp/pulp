@@ -26,6 +26,8 @@ MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
 SSL_CERT = 98765
 
+PARENT_SETTINGS = {constants.NODE_CERTIFICATE: SSL_CERT}
+
 
 class TestModel(WebTest):
 
@@ -47,7 +49,7 @@ class TestModel(WebTest):
         options = {
             constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: MAX_CONCURRENCY,
             constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: MAX_BANDWIDTH,
-            constants.NODE_CERTIFICATE: SSL_CERT,
+            constants.PARENT_SETTINGS: PARENT_SETTINGS,
         }
         repository.run_synchronization(progress, cancelled, options)
         binding = mocks[1]

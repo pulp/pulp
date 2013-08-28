@@ -43,7 +43,7 @@ ORG="PULP"
 ORG_UNIT="NODES"
 
 mkdir -p $TMP
-mkdir -p $PKI_NODES
+mkdir -p `dirname $NODE_CRT`
 
 # create client key
 openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null

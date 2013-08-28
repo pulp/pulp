@@ -496,7 +496,6 @@ class ImporterTest(PluginTestBase):
     VALID_CONFIGURATION = {
         constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY,
         constants.MANIFEST_URL_KEYWORD: 'http://redhat.com',
-        constants.PROTOCOL_KEYWORD: 'http',
     }
 
     def test_entry_point(self):
@@ -892,7 +891,6 @@ class TestEndToEnd(PluginTestBase):
         importer_conf = {
             constants.MANIFEST_URL_KEYWORD: 'http://redhat.com',
             constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY,
-            constants.PROTOCOL_KEYWORD: 'file',
         }
         manager.set_importer(self.REPO_ID, constants.HTTP_IMPORTER, importer_conf)
         # add distributors

@@ -216,13 +216,11 @@ class NodesHttpDistributor(Distributor):
         :rtype: dict
         """
         publisher = self.publisher(repo, config)
-        protocol = config.get(constants.PROTOCOL_KEYWORD)
         manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
         strategy = binding_config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
         configuration = {
             constants.STRATEGY_KEYWORD: strategy,
             constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.PROTOCOL_KEYWORD: protocol,
         }
         return configuration
 

@@ -55,6 +55,13 @@ class TestRepo:
 REPO_ID = 'foo'
 TYPE_ID = 'random_importer'
 TASK_ID = 'test_task'
+NODE_CERTIFICATE = 'POAOISFDX'
+
+PARENT_SETTINGS = {
+    constants.HOST: 'pulp.redhat.com',
+    constants.PORT: 443,
+    constants.NODE_CERTIFICATE: NODE_CERTIFICATE,
+}
 
 
 class TestBase(TestCase):
@@ -69,7 +76,7 @@ class TestBase(TestCase):
             summary=summary,
             bindings=[dict(repo_id=REPO_ID, details={})],
             scope=constants.NODE_SCOPE,
-            options={}
+            options={constants.PARENT_SETTINGS: PARENT_SETTINGS}
         )
         return request
 
@@ -204,7 +211,8 @@ class TestBase(TestCase):
         conduit = TestConduit(1)
         # Test
         repository = Repository(REPO_ID)
-        repository.run_synchronization(None, conduit.cancelled, {})
+        options = options={constants.PARENT_SETTINGS: PARENT_SETTINGS}
+        repository.run_synchronization(None, conduit.cancelled, options)
         # Verify
         mock_cancel.assert_called_with(TASK_ID)
 

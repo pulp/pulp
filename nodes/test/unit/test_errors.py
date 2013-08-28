@@ -134,22 +134,22 @@ class TestErrors(TestCase):
     def test_manifest_download(self):
         # Test
         url = 'http://redhat.com/manifest'
-        ne = ManifestDownloadError(url, error_report='abc')
+        ne = ManifestDownloadError(url, message='abc')
         # Verify
         self.assertEqual(ne.error_id, ManifestDownloadError.ERROR_ID)
         self.assertEqual(ne.details['url'], url)
-        self.assertEqual(ne.details['error_report'], 'abc')
+        self.assertEqual(ne.details['message'], 'abc')
         self.assertTrue(isinstance(str(ne), str))
 
     def test_unit_download(self):
         # Test
         url = 'http://redhat.com/unit_1'
-        ne = UnitDownloadError(url, repo_id='repo_1', error_report='abc')
+        ne = UnitDownloadError(url, repo_id='repo_1', message='abc')
         # Verify
         self.assertEqual(ne.error_id, UnitDownloadError.ERROR_ID)
         self.assertEqual(ne.details['url'], url)
         self.assertEqual(ne.details['repo_id'], 'repo_1')
-        self.assertEqual(ne.details['error_report'], 'abc')
+        self.assertEqual(ne.details['message'], 'abc')
         self.assertTrue(isinstance(str(ne), str))
 
     def test_add_unit(self):
@@ -167,6 +167,12 @@ class TestErrors(TestCase):
         self.assertEqual(ne.error_id, DeleteUnitError.ERROR_ID)
         self.assertEqual(ne.details['repo_id'], 'repo_1')
         self.assertTrue(isinstance(str(ne), str))
+
+    def test_invalid_manifest(self):
+        # Test
+        ne = InvalidManifestError()
+        # Verify
+        self.assertEqual(ne.error_id, InvalidManifestError.ERROR_ID)
 
 
 class TestErrorList(TestCase):
