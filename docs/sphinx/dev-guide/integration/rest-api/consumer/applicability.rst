@@ -1,7 +1,7 @@
 Content Applicability
 =====================
 
-Generate Content Applicability For Updated Consumers
+Generate Content Applicability for Updated Consumers
 ----------------------------------------------------
 
 This API regenerates applicability data for a given set of consumers 
@@ -68,7 +68,7 @@ and postponed until current task is completed.
  }
 
 
-Generate Content Applicability For Updated Repositories
+Generate Content Applicability for Updated Repositories
 -------------------------------------------------------
 
 This API regenerates applicability data for a given set of repositories 
