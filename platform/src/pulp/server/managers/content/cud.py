@@ -13,6 +13,7 @@
 
 import uuid
 
+from pulp.common import dateutils
 from pulp.plugins.types import database as content_types_db
 from pulp.server.exceptions import InvalidValue
 
@@ -37,7 +38,11 @@ class ContentManager(object):
         collection = content_types_db.type_units_collection(content_type)
         if unit_id is None:
             unit_id = str(uuid.uuid4())
-        unit_doc = {'_id': unit_id, '_content_type_id': content_type}
+        unit_doc = {
+            '_id': unit_id,
+            '_content_type_id': content_type,
+            '_last_updated': dateutils.now_utc_timestamp()
+        }
         unit_doc.update(unit_metadata)
         collection.insert(unit_doc, safe=True)
         return unit_id
@@ -52,6 +57,7 @@ class ContentManager(object):
         @param unit_metadata_delta: metadata fields that have changed
         @type unit_metadata_delta: dict
         """
+        unit_metadata_delta['_last_updated'] = dateutils.now_utc_timestamp()
         collection = content_types_db.type_units_collection(content_type)
         collection.update({'_id': unit_id}, {'$set': unit_metadata_delta}, safe=True)
 
