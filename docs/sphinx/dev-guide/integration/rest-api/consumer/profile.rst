@@ -30,17 +30,40 @@ it is replaced with the profile supplied in this call.
 
  {
    "content_type": "rpm",
-   "profile": {"version": "1.0", "name": "zsh"}
-
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"},
+               {"arch": "x86_64",
+                "epoch": 0,
+                "name": "rpm-libs",
+                "release": "8.fc17",
+                "vendor": "Fedora Project",
+                "version": "4.9.1.3"}]
  }
 
 :sample_response:`201` ::
 
  {
-   "profile": {"version": "1.0", "name": "zsh"},
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"},
+               {"arch": "x86_64",
+                "epoch": 0,
+                "name": "rpm-libs",
+                "release": "8.fc17",
+                "vendor": "Fedora Project",
+                "version": "4.9.1.3"}],
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",
    "content_type": "rpm",
+   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
+   "profile_hash": "2ecdf09a0f1f6ea43b5a991b468866bc07bcf8c2ac8251395ef2d78adf6e5c5b",
    "_id": {"$oid": "5008500ae138230abe000095"},
    "id": "5008500ae138230abe000095"
  }
@@ -58,10 +81,9 @@ using the specified content type.
 
 | :method:`put`
 | :path:`/v2/consumers/<consumer_id>/profiles/<content-type>/`
-| :permission:`create`
-| :param_list:`post`
+| :permission:`update`
+| :param_list:`put`
 
-* :param:`content_type,string,the content type ID`
 * :param:`profile,object,the content profile`
 
 | :response_list:`_`
@@ -75,18 +97,40 @@ using the specified content type.
 :sample_request:`_` ::
 
  {
-   "content_type": "rpm",
-   "profile": {"version": "1.0", "name": "zsh"}
-
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"},
+               {"arch": "x86_64",
+                "epoch": 0,
+                "name": "rpm-libs",
+                "release": "8.fc17",
+                "vendor": "Fedora Project",
+                "version": "4.9.1.3"}]
  }
 
 :sample_response:`201` ::
 
  {
-   "profile": {"version": "1.0", "name": "zsh"},
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"},
+               {"arch": "x86_64",
+                "epoch": 0,
+                "name": "rpm-libs",
+                "release": "8.fc17",
+                "vendor": "Fedora Project",
+                "version": "4.9.1.3"}],
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",
    "content_type": "rpm",
+   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
+   "profile_hash": "2abcf09a0f1f6ea43b5a991b468866bc07bcf8c2ac8251395ef2d78adf6e5c5b",
    "_id": {"$oid": "5008500ae138230abe000095"},
    "id": "5008500ae138230abe000095"
  }
@@ -95,7 +139,7 @@ using the specified content type.
 Retrieve All Profiles
 ---------------------
 
-Retrieves information on all :term:`unit profile` associated with
+Retrieves information on all :term:`unit profile`s associated with
 a :term:`consumer`.
 
 | :method:`get`
@@ -112,25 +156,42 @@ a :term:`consumer`.
 :sample_response:`200` ::
 
  [
-   {
-     "profile": {"version": "2.0", "arch": "x86_64", "name": "ksh"},
-     "_href": "/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
-     "content_type": "rpm",
-     "_ns": "consumer_unit_profiles",
-     "_id": {"$oid": "5008518fe138230b7a000088"},
-     "id": "5008518fe138230b7a000088",
-     "consumer_id": "test-consumer"
-   },
-   {
-     "profile": {"version": "1.0", "name": "zsh"},
-     "_href": "/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
-     "content_type": "rpm",
-     "_ns": "consumer_unit_profiles",
-     "_id": {"$oid": "5008518fe138230b7a000087"},
-     "id": "5008518fe138230b7a000087",
-     "consumer_id": "test-consumer"
-   }
+  {"_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/test-content-type/",
+   "_id": {"$oid": "521d92b1e5e7102f7500004a"},
+   "_ns": "consumer_unit_profiles",
+   "consumer_id": "test-consumer",
+   "content_type": "test-content-type",
+   "id": "521d92b1e5e7102f7500004a",
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"},
+               {"arch": "x86_64",
+                "epoch": 0,
+                "name": "rpm-libs",
+                "release": "8.fc17",
+                "vendor": "Fedora Project",
+                "version": "4.9.1.3"}],
+   "profile_hash": "15df1c6105edacd6b167d2e9dd87311b069f50cebb2f7968ef185c1d6eae5197"
+  },
+  {"_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
+   "_id": {"$oid": "5217d77de5e710796700000c"},
+   "_ns": "consumer_unit_profiles",
+   "consumer_id": "test-consumer",
+   "content_type": "rpm",
+   "id": "5217d77de5e710796700000c",
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"}],
+   "profile_hash": "15df1c6105edacd6b167d2e9dd87311b069f50cebb2f7968ef185c1d6eae5197"
+  }
  ]
+
 
 Retrieve a Profile By Content Type
 ----------------------------------
@@ -152,11 +213,23 @@ content type.
 :sample_response:`200` ::
 
  {
-   "profile": {"version": "2.0", "arch": "x86_64", "name": "ksh"},
-   "_href": "/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
-   "content_type": "rpm",
+   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/test-content-type/",
+   "_id": {"$oid": "521d92b1e5e7102f7500004a"},
    "_ns": "consumer_unit_profiles",
-   "_id": {"$oid": "5008518fe138230b7a000088"},
-   "id": "5008518fe138230b7a000088",
-   "consumer_id": "test-consumer"
+   "consumer_id": "test-consumer",
+   "content_type": "test-content-type",
+   "id": "521d92b1e5e7102f7500004a",
+   "profile": [{"arch": "i686",
+                "epoch": 0,
+                "name": "glib2",
+                "release": "2.fc17",
+                "vendor": "Fedora Project",
+                "version": "2.32.4"},
+               {"arch": "x86_64",
+                "epoch": 0,
+                "name": "rpm-libs",
+                "release": "8.fc17",
+                "vendor": "Fedora Project",
+                "version": "4.9.1.3"}],
+   "profile_hash": "15df1c6105edacd6b167d2e9dd87311b069f50cebb2f7968ef185c1d6eae5197"
  }
