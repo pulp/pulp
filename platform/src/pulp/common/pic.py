@@ -205,6 +205,21 @@ def query_applicability(consumer_criteria, content_types):
     return POST('/pulp/api/v2/consumers/content/applicability/', options)
 
 
+def create_consumer_profile(consumer_id, content_type, profile):
+    options = {'content_type':content_type,
+               'profile':profile}
+    return POST('/pulp/api/v2/consumers/%s/profiles/' % consumer_id, options)
+
+
+def replace_consumer_profile(consumer_id, content_type, profile):
+    options = {'profile':profile}
+    return PUT('/pulp/api/v2/consumers/%s/profiles/%s/' % (consumer_id, content_type),
+                options)
+
+def get_consumer_profiles(consumer_id):
+    return GET('/v2/consumers/%s/profiles/' % consumer_id)
+
+
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
