@@ -17,7 +17,7 @@ class pulp_prereq {
     'pulp-v2-stable':
     name     =>'pulp-v2-stable',
     baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/stable/2/\
-${os_downcase}-${os_release}/${::architecture}/",
+${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     enabled  =>0,
     gpgcheck =>0,
   }
@@ -25,7 +25,7 @@ ${os_downcase}-${os_release}/${::architecture}/",
     'pulp-v2-testing':
     name     =>'pulp-v2-testing',
     baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/testing/\
-${os_downcase}-${os_release}/${::architecture}/",
+${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     enabled  =>1,
     gpgcheck =>0,
   }
