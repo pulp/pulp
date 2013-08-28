@@ -178,7 +178,7 @@ class UserManagerTests(base.PulpServerTests):
         self.assertEqual(user['login'], ldap_login)
         self.assertEqual(user['name'], ldap_name)
 
-    def test_add_user_from_ldap_invalid_gecos(self):
+    def test_add_user_from_ldap_unsupported_gecos(self):
         # Make sure that if gecos is not a basestring with user's name in it, we default it to user login
         # without raising any error
         ldap_connection = LDAPConnection()
