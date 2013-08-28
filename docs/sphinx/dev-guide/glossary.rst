@@ -81,3 +81,11 @@ Glossary
     A list of :term:`content unit` installed on a :term:`consumer`.  The
     structure and content of each item in the profile varies based on the
     unit type.
+
+  applicability data
+    Applicability data for a consumer consists of lists of applicable :term:`content unit` ids, 
+    keyed by a content unit type. The definition of applicability itself defers for each content type. 
+    For example, in case of an rpm, a content unit is considered applicable to a consumer 
+    when an older version of the content unit installed on that consumer can be updated 
+    to the given content unit.
+

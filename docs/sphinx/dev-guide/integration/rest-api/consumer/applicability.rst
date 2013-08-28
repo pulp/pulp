@@ -4,13 +4,13 @@ Content Applicability
 Generate Content Applicability for Updated Consumers
 ----------------------------------------------------
 
-This API regenerates applicability data for a given set of consumers 
+This API regenerates :ref:`applicability data` for a given set of consumers 
 matched by a given :ref:`search_criteria` asynchronously and saves it 
 in the Pulp database. It should be used when a consumer profile is updated 
 or consumer-repository bindings are updated. Applicability data is regenerated 
 for all unit profiles associated with given consumers and for all content types 
 that define applicability. Generated applicability data can be queried using 
-:ref:`Query Content Applicability` API described below.
+`Query Content Applicability` API described below.
 
 The API will return a :ref:`Call Report`. User can check whether the applicability 
 generation is completed using task id in the :ref:`Call Report`. You can run 
@@ -73,18 +73,18 @@ and postponed until current task is completed.
 Generate Content Applicability for Updated Repositories
 -------------------------------------------------------
 
-This API regenerates applicability data for a given set of repositories 
+This API regenerates :ref:`applicability data` for a given set of repositories 
 matched by a given :ref:`search_criteria` asynchronously and saves it 
 in the Pulp database. It should be used when a repository content is updated. 
 Only `existing` applicability data is regenerated for given repositories. 
 If applicability data for a consumer-repository combination does not already 
-exist, it should be generated using the API ref:`Generate Content Applicability 
+exist, it should be generated using the API `Generate Content Applicability 
 for Updated Consumers`.
 
 If any new content types that support applicability are added 
 to the given repositories, applicability data is generated for them as well.
 Generated applicability data can be queried using 
-:ref:`Query Content Applicability` API described below.
+`Query Content Applicability` API described below.
 
 The API will return a :ref:`Call Report`. User can check whether the applicability 
 generation is completed using task id in the :ref:`Call Report`. You can run 
