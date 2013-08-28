@@ -76,7 +76,11 @@ Generate Content Applicability for Updated Repositories
 This API regenerates applicability data for a given set of repositories 
 matched by a given :ref:`search_criteria` asynchronously and saves it 
 in the Pulp database. It should be used when a repository content is updated. 
-All `existing` applicability data is regenerated for given repositories. 
+Only `existing` applicability data is regenerated for given repositories. 
+If applicability data for a consumer-repository combination does not already 
+exist, it should be generated using the API ref:`Generate Content Applicability 
+for Updated Consumers`.
+
 If any new content types that support applicability are added 
 to the given repositories, applicability data is generated for them as well.
 Generated applicability data can be queried using 
