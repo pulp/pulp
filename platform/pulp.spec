@@ -130,6 +130,9 @@ cp bin/* %{buildroot}/%{_bindir}
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 
+# Cron
+cp -R etc/cron.monthly %{buildroot}/%{_sysconfdir}
+
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
