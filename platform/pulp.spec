@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.2.alpha%{?dist}
+Release: 0.3.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -432,6 +432,17 @@ exit 0
 %endif
 
 %changelog
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
+- 956711 - Raise an error to the client if an attempt is made to install an
+  errata that does not exist in a repository bound to the consumer
+  (bcourt@redhat.com)
+- 991500 - updating get_repo_units conduit call to return plugin units instead
+  of dictionary (skarmark@redhat.com)
+- 976561 - updated the list of decorated collection methods to match the
+  Collection object in 2.1.1 (jason.connor@gmail.com)
+- 976561 - removed superfluous re-fetching of collection we already have a
+  handle to (jason.connor@gmail.com)
+
 * Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
 - Pulp rebuild
 
