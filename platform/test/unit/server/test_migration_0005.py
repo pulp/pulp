@@ -19,7 +19,7 @@ from pulp.plugins.types.database import TYPE_COLLECTION_PREFIX
 
 ID = 'id'
 LAST_UPDATED = '_last_updated'
-MIGRATION = 'pulp.server.db.migrations.0005_unit_last_modified'
+MIGRATION = 'pulp.server.db.migrations.0005_unit_last_updated'
 
 
 def test_collections(n=3):
@@ -71,8 +71,8 @@ class TestMigration_0005(PulpServerTests):
             for unit in collection.find({}):
                 self.assertTrue(LAST_UPDATED in unit)
                 unit_id = unit[ID]
-                last_modified = unit[LAST_UPDATED]
+                last_updated = unit[LAST_UPDATED]
                 if unit_id % 2 == 0:
-                    self.assertEqual(last_modified, 1)
+                    self.assertEqual(last_updated, 1)
                 else:
-                    self.assertTrue(isinstance(last_modified, float))
+                    self.assertTrue(isinstance(last_updated, float))
