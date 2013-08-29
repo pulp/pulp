@@ -16,7 +16,7 @@ The API will return a :ref:`Call Report`. Users can check whether the applicabil
 generation is completed using task id in the :ref:`Call Report`. You can run 
 a single applicability generation task at a time. If an applicability generation 
 task is running, any new applicability generation tasks requested are queued 
-and postponed until current task is completed.
+and postponed until the current task is completed.
 
 | :method:`post`
 | :path:`/pulp/api/v2/consumers/actions/content/regenerate_applicability/`
@@ -75,7 +75,7 @@ Generate Content Applicability for Updated Repositories
 
 This API regenerates :ref:`applicability data` for a given set of repositories 
 matched by a given :ref:`search_criteria` asynchronously and saves it 
-in the Pulp database. It should be used when a repository content is updated. 
+in the Pulp database. It should be used when a repository's content is updated. 
 Only `existing` applicability data is regenerated for given repositories. 
 If applicability data for a consumer-repository combination does not already 
 exist, it should be generated using the API `Generate Content Applicability 
@@ -90,7 +90,7 @@ The API will return a :ref:`Call Report`. Users can check whether the applicabil
 generation is completed using task id in the :ref:`Call Report`. You can run 
 a single applicability generation task at a time. If an applicability generation 
 task is running, any new applicability generation tasks requested are queued 
-and postponed until current task is completed.
+and postponed until the current task is completed.
 
 | :method:`post`
 | :path:`/pulp/api/v2/repositories/actions/content/regenerate_applicability/`
