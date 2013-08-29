@@ -44,7 +44,7 @@ class Importer(object):
 
     # -- repo lifecycle -------------------------------------------------------
 
-    def validate_config(self, repo, config, related_repos):
+    def validate_config(self, repo, config):
         """
         Allows the importer to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -70,11 +70,6 @@ class Importer(object):
         :param config: plugin configuration instance; the proposed repo
                        configuration is found within
         :type  config: pulp.plugins.config.PluginCallConfiguration
-
-        :param related_repos: list of other repositories using this distributor
-               type; empty list if there are none; entries are of type
-               pulp.plugins.model.RelatedRepository
-        :type  related_repos: list
 
         :return: tuple of (bool, str) to describe the result
         :rtype:  tuple

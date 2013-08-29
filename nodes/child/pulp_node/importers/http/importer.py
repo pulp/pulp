@@ -72,16 +72,14 @@ class NodesHttpImporter(Importer):
     def __init__(self):
         self.cancelled = False
 
-    def validate_config(self, repo, config, related_repos):
+    def validate_config(self, repo, config):
         """
         Validate the configuration.
         :param repo: A repository object.
         :type repo: pulp.plugins.model.Repository
         :param config: The importer configuration to validate.
         :param config: pulp.plugins.config.PluginCallConfiguration
-        :param related_repos: List of other repositories associated with this
-            importer type.  Each item is: pulp.server.plugins.model.RelatedRepository
-        :type related_repos: list
+
         :return: A tuple of: (is_valid, reason):
             is_valid : (bool) True when config if deemed valid.
             reason: (str) The reason of the validation failure.

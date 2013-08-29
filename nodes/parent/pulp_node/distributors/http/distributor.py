@@ -66,7 +66,7 @@ class NodesHttpDistributor(Distributor):
             'types' : ['node',]
         }
 
-    def validate_config(self, repo, config, related_repos):
+    def validate_config(self, repo, config, config_conduit):
         """
         Layout:
           {
