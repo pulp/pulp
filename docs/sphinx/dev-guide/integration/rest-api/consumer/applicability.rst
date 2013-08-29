@@ -10,9 +10,9 @@ in the Pulp database. It should be used when a consumer profile is updated
 or consumer-repository bindings are updated. Applicability data is regenerated 
 for all unit profiles associated with given consumers and for all content types 
 that define applicability. Generated applicability data can be queried using 
-`Query Content Applicability` API described below.
+the `Query Content Applicability` API described below.
 
-The API will return a :ref:`Call Report`. User can check whether the applicability 
+The API will return a :ref:`Call Report`. Users can check whether the applicability 
 generation is completed using task id in the :ref:`Call Report`. You can run 
 a single applicability generation task at a time. If an applicability generation 
 task is running, any new applicability generation tasks requested are queued 
@@ -84,9 +84,9 @@ for Updated Consumers`.
 If any new content types that support applicability are added 
 to the given repositories, applicability data is generated for them as well.
 Generated applicability data can be queried using 
-`Query Content Applicability` API described below.
+the `Query Content Applicability` API described below.
 
-The API will return a :ref:`Call Report`. User can check whether the applicability 
+The API will return a :ref:`Call Report`. Users can check whether the applicability 
 generation is completed using task id in the :ref:`Call Report`. You can run 
 a single applicability generation task at a time. If an applicability generation 
 task is running, any new applicability generation tasks requested are queued 
