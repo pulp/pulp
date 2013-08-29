@@ -184,12 +184,16 @@ class ApplicabilityRegenerationManager(object):
         # Get the intersection of existing types in the repo and the types that the profiler handles.
         # If the intersection is not empty, regenerate applicability
         if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
-            # Get the actual profile for the given profile_id
-            unit_profile = UnitProfile.get_collection().find_one({'id': profile_id}, 
-                                                                 fields=['profile'])
+            # Get the actual profile for existing_applicability or lookup using profile_id
+            if existing_applicability:
+                profile = existing_applicability.profile
+            else:
+                unit_profile = UnitProfile.get_collection().find_one({'id': profile_id},
+                                                                     fields=['profile'])
+                profile = unit_profile['profile']
             call_config = PluginCallConfiguration(plugin_config=profiler_cfg, repo_plugin_config=None)
             try:
-                applicability = profiler.calculate_applicable_units(unit_profile['profile'],
+                applicability = profiler.calculate_applicable_units(profile,
                                                                     bound_repo_id,
                                                                     call_config,
                                                                     profiler_conduit)
