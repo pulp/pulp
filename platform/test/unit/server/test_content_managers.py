@@ -72,6 +72,7 @@ class PulpContentCUDTests(PulpContentTests):
         self.assertNotEqual(unit_id, None)
         units = self.query_manager.list_content_units(TYPE_1_DEF.id)
         self.assertEqual(len(units), 1)
+        self.assertTrue('_last_updated' in units[0])
 
     def test_update_content_unit(self):
         unit_id = self.cud_manager.add_content_unit(TYPE_1_DEF.id, None, TYPE_1_UNITS[0])
@@ -80,6 +81,7 @@ class PulpContentCUDTests(PulpContentTests):
         self.cud_manager.update_content_unit(TYPE_1_DEF.id, unit_id, {'search-1': 'two'})
         unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_id)
         self.assertTrue(unit['search-1'] == 'two')
+        self.assertTrue('_last_updated' in unit)
 
     def test_delete_content_unit(self):
         unit_id = self.cud_manager.add_content_unit(TYPE_1_DEF.id, None, TYPE_1_UNITS[0])
