@@ -270,6 +270,19 @@ class ImporterStrategy(object):
         request.downloader.download(download_list)
         request.summary.errors.extend(manager.error_list())
 
+    def _update_units(self, request, unit_inventory):
+        """
+        Update units that have been updated on the parent since
+        added or last updated on the child inventory.
+        :param request: A synchronization request.
+        :type request: SyncRequest
+        :param unit_inventory: The inventory of both parent and child content units.
+        :type unit_inventory: UnitInventory
+        """
+        for unit, ref in unit_inventory.updated_units():
+            unit = ref.fetch()
+            self.add_unit(request, unit)
+
     def _path_and_destination(self, unit):
         """
         Get the path component of the download URL and download destination.
@@ -354,6 +367,7 @@ class Mirror(ImporterStrategy):
         """
         unit_inventory = self._unit_inventory(request)
         self._add_units(request, unit_inventory)
+        self._update_units(request, unit_inventory)
         self._delete_units(request, unit_inventory)
 
 
@@ -376,6 +390,7 @@ class Additive(ImporterStrategy):
         """
         unit_inventory = self._unit_inventory(request)
         self._add_units(request, unit_inventory)
+        self._update_units(request, unit_inventory)
 
 
 # --- factory ---------------------------------------------------------------------------

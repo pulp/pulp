@@ -35,6 +35,7 @@ from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
+from pulp.server.db import connection
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
@@ -146,7 +147,8 @@ class PluginTestBase(WebTest):
     REPO_ID = 'test-repo'
     UNIT_TYPE_ID = 'rpm'
     UNIT_ID = 'test_unit_%d'
-    UNIT_METADATA = {'A':'a','B':'b', 'N': 0}
+    UNIT_KEY = {'A': 'a', 'B': 'b', 'N': 0}
+    UNIT_METADATA = {'name': 'Elvis', 'age': 42}
     TYPEDEF_ID = UNIT_TYPE_ID
     NUM_UNITS = 10
     NUM_EXTRA_UNITS = 5
@@ -183,7 +185,7 @@ class PluginTestBase(WebTest):
         plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
         plugin_api._MANAGER.profilers.add_plugin(constants.PROFILER_ID, NodeProfiler, {})
         unit_db.type_definition = \
-            Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_METADATA))
+            Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY))
         unit_db.type_units_unit_key = \
             Mock(return_value=['A', 'B', 'N'])
 
@@ -224,7 +226,8 @@ class PluginTestBase(WebTest):
             os.makedirs(storage_dir)
         for n in range(begin, end):
             unit_id = self.UNIT_ID % n
-            unit = dict(self.UNIT_METADATA)
+            unit = dict(self.UNIT_KEY)
+            unit.update(self.UNIT_METADATA)
             unit['N'] = n
             # add unit file
             storage_path = os.path.join(storage_dir, '.'.join((unit_id, self.UNIT_TYPE_ID)))
@@ -486,6 +489,10 @@ class TestDistributor(PluginTestBase):
             unit = units[n]
             created = self.units[n]
             for p, v in unit['unit_key'].items():
+                self.assertEqual(created[p], v)
+            for p, v in unit['metadata'].items():
+                if p in ('_ns', '_content_type_id'):
+                    continue
                 self.assertEqual(created[p], v)
             self.assertEqual(created.get('_storage_path'), unit['storage_path'])
             self.assertEqual(unit['type_id'], self.UNIT_TYPE_ID)
@@ -829,6 +836,54 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
+    @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
+           wraps=importer_config_to_nectar_config)
+    def test_import_modified_units(self, *mocks):
+        # Setup
+        self.populate()
+        max_concurrency = 5
+        max_bandwidth = 12345
+        pulp_conf.set('server', 'storage_dir', self.parentfs)
+        dist = NodesHttpDistributor()
+        working_dir = os.path.join(self.childfs, 'working_dir')
+        os.makedirs(working_dir)
+        repo = Repository(self.REPO_ID, working_dir)
+        cfg = {
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
+        }
+        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+        dist.publish_repo(repo, conduit, cfg)
+        # make the published unit have a newer _last_updated.
+        collection = connection.get_collection(unit_db.unit_collection_name(self.UNIT_TYPE_ID))
+        unit = collection.find_one({'N': 0})
+        unit['age'] = 84
+        unit['_last_updated'] -= 1
+        collection.update({'N': 0}, unit, safe=True)
+        # Test
+        importer = NodesHttpImporter()
+        publisher = dist.publisher(repo, cfg)
+        manifest_url = 'file://' + publisher.manifest_path()
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
+            importer_constants.KEY_MAX_SPEED: max_bandwidth,
+        }
+        configuration = PluginCallConfiguration(configuration, {})
+        conduit = RepoSyncConduit(
+            self.REPO_ID,
+            constants.HTTP_IMPORTER,
+            RepoContentUnit.OWNER_TYPE_IMPORTER,
+            constants.HTTP_IMPORTER)
+        pulp_conf.set('server', 'storage_dir', self.childfs)
+        importer.sync_repo(repo, conduit, configuration)
+        # Verify
+        unit = collection.find_one({'N': 0})
+        self.assertEqual(unit['age'], 42)
 
 
 # --- testing end-to-end -----------------------------------------------------
