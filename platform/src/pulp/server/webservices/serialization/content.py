@@ -15,9 +15,10 @@
 Module for content serialization.
 """
 
+from pulp.common import dateutils
 from pulp.server.webservices import http
+from pulp.server.webservices.serialization import db
 
-import db
 
 # constants --------------------------------------------------------------------
 
@@ -39,6 +40,8 @@ def content_unit_obj(content_unit):
     Serialize a content unit.
     """
     serial = db.scrub_mongo_fields(content_unit)
+    last_updated = content_unit['_last_updated']
+    content_unit['_last_updated'] = dateutils.format_iso8601_timestamp(last_updated)
     return serial
 
 # utility functions ------------------------------------------------------------

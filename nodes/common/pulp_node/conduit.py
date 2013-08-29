@@ -66,9 +66,9 @@ class UnitsIterator:
         for key in typedef['unit_key']:
             unit_key[key] = metadata.pop(key, None)
         metadata.pop('_id', None)
-        metadata.pop('_id', None)
         storage_dir = pulp_conf.get('server', 'storage_dir')
         storage_path = metadata.pop('_storage_path', None)
+        last_updated = metadata.pop('_last_updated', 0.0)
         if storage_path:
             relative_path = storage_path[len(storage_dir):].lstrip('/')
         else:
@@ -79,6 +79,7 @@ class UnitsIterator:
             unit_key=unit_key,
             storage_path=storage_path,
             relative_path=relative_path,
+            last_updated=last_updated,
             owner_type=unit.get('owner_type'),
             owner_id=unit.get('owner_id'),
             metadata=metadata)

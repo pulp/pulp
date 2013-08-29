@@ -12,6 +12,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import time
 import datetime
 import unittest
 import isodate
@@ -154,6 +155,16 @@ class TestParseDatetimeOrDate(unittest.TestCase):
     def test_datetime(self):
         ret = dateutils.parse_iso8601_datetime_or_date('2012-07-31T09:43:15')
         self.assertTrue(isinstance(ret, datetime.datetime))
+
+
+class TestFormatting(unittest.TestCase):
+
+    def test_formatting_timestamp(self):
+        dt = datetime.datetime(2012, 10, 24, tzinfo=None)
+        ts = time.mktime(dt.timetuple())
+        formatted = dateutils.format_iso8601_timestamp(ts)
+        self.assertEqual(formatted, '2012-10-24T00:00:00')
+
 
 # datetime math tests ----------------------------------------------------------
 
