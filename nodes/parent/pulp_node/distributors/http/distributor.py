@@ -16,12 +16,12 @@ import json
 from gettext import gettext as _
 from logging import getLogger
 
-from pulp.common.plugins import importer_constants
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
+from pulp_node import pathlib
 from pulp_node.conduit import NodesConduit
 from pulp_node.distributors.http.publisher import HttpPublisher
 
@@ -216,38 +216,12 @@ class NodesHttpDistributor(Distributor):
         :rtype: dict
         """
         publisher = self.publisher(repo, config)
-        protocol = config.get(constants.PROTOCOL_KEYWORD)
-        manifest_url = '/'.join((publisher.base_url, publisher.manifest_path()))
-        protocol_section = config.get(protocol)
-        ssl_dict = protocol_section.get(constants.SSL_KEYWORD, {})
+        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
         strategy = binding_config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
         configuration = {
             constants.STRATEGY_KEYWORD: strategy,
             constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.PROTOCOL_KEYWORD: protocol,
         }
-        configuration.update(self._ssl_conf(ssl_dict))
-        return configuration
-
-    def _ssl_conf(self, ssl_dict):
-        """
-        Build the SSL configuration.
-        :param ssl_dict: The SSL part of the configuration.
-        :type ssl_dict: dict
-        :return: A built SSL configuration.
-        :rtype: dict
-        :see: Link
-        """
-        if not ssl_dict:
-            return {}
-        configuration = {
-            importer_constants.KEY_SSL_VALIDATION: False,
-        }
-        path = ssl_dict.get(constants.CLIENT_CERT_KEYWORD)
-        if path:
-            with open(path) as fp:
-                pem = fp.read()
-            configuration[importer_constants.KEY_SSL_CLIENT_CERT] = pem
         return configuration
 
     def _add_distributors(self, repo_id, payload):

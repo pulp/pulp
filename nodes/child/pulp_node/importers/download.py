@@ -155,6 +155,6 @@ class UnitDownloadManager(AggregatingEventListener):
         """
         error_list = []
         for report in self.failed_reports:
-            error = UnitDownloadError(report.url, self.request.repo_id, report.error_report)
+            error = UnitDownloadError(report.url, self.request.repo_id, report.error_msg)
             error_list.append(error)
         return error_list

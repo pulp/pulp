@@ -39,10 +39,6 @@ PROTOCOL_KEYWORD = 'protocol'
 MANIFEST_URL_KEYWORD = 'manifest_url'
 PURGE_ORPHANS_KEYWORD = 'purge_orphans'
 
-SSL_KEYWORD = 'ssl'
-CA_CERT_KEYWORD = 'ca_cert'
-CLIENT_CERT_KEYWORD = 'client_cert'
-
 MAX_DOWNLOAD_BANDWIDTH_KEYWORD = 'max_download_bandwidth'
 MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
 
@@ -67,3 +63,12 @@ STRATEGY_NOTE_KEY = '_node-update-strategy'
 # --- settings ---------------------------------------------------------------
 
 DEFAULT_DOWNLOAD_CONCURRENCY = 20
+
+
+# --- profiling --------------------------------------------------------------
+
+PROFILER_ID = 'node'
+PARENT_SETTINGS = 'parent_settings'
+NODE_CERTIFICATE = 'node_certificate'
+HOST = 'host'
+PORT = 'port'

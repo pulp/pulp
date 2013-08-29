@@ -85,6 +85,9 @@ mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
 mkdir -p %{buildroot}/%{_bindir}
 
 # Configuration
+pushd common
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
 pushd parent
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
@@ -132,6 +135,7 @@ Pulp nodes common modules.
 %dir %{python_sitelib}/pulp_node
 %dir %{python_sitelib}/pulp_node/extensions
 %{_bindir}/pulp-gen-nodes-certificate
+%config(noreplace) %{_sysconfdir}/pulp/nodes.conf
 %{python_sitelib}/pulp_node/extensions/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
@@ -154,6 +158,7 @@ Pulp parent nodes support.
 %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
+%{python_sitelib}/pulp_node/profilers/
 %{python_sitelib}/pulp_node/distributors/
 %{python_sitelib}/pulp_node_parent*.egg-info
 %{_var}/lib/pulp/nodes
