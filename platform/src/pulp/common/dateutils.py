@@ -282,7 +282,7 @@ def format_iso8601_interval(interval, start_time=None, recurrences=None):
     @type recurrences: int
     @param recurrences: (optional) number of times intercal recures
     @rtype: str
-    @return: iso8601 representaion of the passed in time interval
+    @return: iso8601 representation of the passed in time interval
     """
     parts = []
     if recurrences is not None:
@@ -291,6 +291,18 @@ def format_iso8601_interval(interval, start_time=None, recurrences=None):
         parts.append(format_iso8601_datetime(start_time))
     parts.append(isodate.strftime(interval, isodate.D_DEFAULT))
     return '/'.join(parts)
+
+
+def format_iso8601_timestamp(timestamp):
+    """
+    Format a UNIX timestamp as an iso8601 string.
+    @type timestamp: A UNIX timestamp.
+    @param timestamp: float
+    @rtype: str
+    @return: iso8601 representation of the passed in timestamp
+    """
+    dt = datetime.datetime.fromtimestamp(timestamp)
+    return format_iso8601_datetime(dt)
 
 # timestamp functions ----------------------------------------------------------
 
@@ -304,6 +316,7 @@ def datetime_to_utc_timestamp(dt):
     """
     udt = to_naive_utc_datetime(dt)
     return time.mktime(udt.timetuple())
+
 
 def now_utc_timestamp():
     """
