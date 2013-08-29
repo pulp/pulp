@@ -177,17 +177,48 @@ def schedules():
 def sync_history(id):
     return GET('/repositories/%s/history/sync/' % id)
 
-def content_applicability():
-    criteria = { "sort": [["id", "ascending"]],
-                 "filters": {"id": {"$in": ["test-consumer"]}}}
-    units = { 
-             "rpm": [ {"filename": "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"},
-                      {"name": "pulp-dot-2.0-test"}
-                    ]
-            }
-    options = {"units":units, 
-               "consumer_criteria":criteria }
-    return POST('/pulp/api/v2/consumers/actions/content/applicability/', options)
+
+def regenerate_content_applicability_for_consumers(consumer_criteria):
+    """
+    Regenerate content applicability data for given consumers
+    """
+    options = {"consumer_criteria":consumer_criteria}
+    return POST('/pulp/api/v2/consumers/actions/content/regenerate_applicability/', options)
+
+
+def regenerate_content_applicability_for_repos(repo_criteria):
+    """
+    Regenerate content applicability data for all consumers affected by given repositories
+    """
+    options = {"repo_criteria":repo_criteria}
+    return POST('/pulp/api/v2/repositories/actions/content/regenerate_applicability/', options)
+
+
+def register_consumer(consumer_id):
+    options = {"id":consumer_id}
+    return POST('/pulp/api/v2/consumers/', options)
+
+
+def query_applicability(consumer_criteria, content_types):
+    options = {'criteria':consumer_criteria,
+               'content_types':content_types}
+    return POST('/pulp/api/v2/consumers/content/applicability/', options)
+
+
+def create_consumer_profile(consumer_id, content_type, profile):
+    options = {'content_type':content_type,
+               'profile':profile}
+    return POST('/pulp/api/v2/consumers/%s/profiles/' % consumer_id, options)
+
+
+def replace_consumer_profile(consumer_id, content_type, profile):
+    options = {'profile':profile}
+    return PUT('/pulp/api/v2/consumers/%s/profiles/%s/' % (consumer_id, content_type),
+                options)
+
+def get_consumer_profiles(consumer_id):
+    return GET('/v2/consumers/%s/profiles/' % consumer_id)
+
 
 # -----------------------------------------------------------------------------
 

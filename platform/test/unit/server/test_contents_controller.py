@@ -93,7 +93,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
 
     @mock.patch(
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=[{'_id':'foo'}])
+        return_value=[{'_id':'foo', '_last_updated': 0}])
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
     def test_add_repo_memberships_criteria(self, mock_find_assoc, mock_find_unit):
         status, body = self.get('/v2/content/units/rpm/search/?include_repos=true')
@@ -105,7 +105,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
 
     @mock.patch(
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=[{'_id':'foo'}])
+        return_value=[{'_id':'foo', '_last_updated': 0}])
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
     def test_add_repo_memberships_get(self, mock_find_assoc, mock_find_unit):
         mock_find_assoc.return_value = [{'unit_id':'foo', 'repo_id':'repo1'}]
@@ -116,7 +116,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
 
     @mock.patch(
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=[{'_id':'foo'}])
+        return_value=[{'_id':'foo', '_last_updated': 0}])
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
     def test_add_repo_memberships_post(self, mock_find_assoc, mock_find_unit):
         mock_find_assoc.return_value = [{'unit_id':'foo', 'repo_id':'repo1'}]

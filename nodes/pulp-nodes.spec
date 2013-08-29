@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.2.alpha%{?dist}
+Release: 0.4.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -177,7 +177,7 @@ Requires: pulp-consumer-client = %{pulp_version}
 Requires: pulp-agent = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 Requires: gofer >= 0.74
-Requires: python-nectar >= 1.0.0
+Requires: python-nectar >= 1.1.0
 
 %description child
 Pulp child nodes support.
@@ -228,6 +228,13 @@ fi
 
 
 %changelog
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.4.alpha
+- Pulp rebuild
+
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
+- 991201 - use plugin specific attribute for type_id. (jortel@redhat.com)
+- 989627 - dont use rstrip() to remove a file suffix. (jortel@redhat.com)
+
 * Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
 - Pulp rebuild
 
