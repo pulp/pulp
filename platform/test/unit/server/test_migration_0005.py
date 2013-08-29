@@ -17,7 +17,7 @@ from pulp.server.db import connection
 from pulp.server.db.migrate.models import MigrationModule
 from pulp.plugins.types.database import TYPE_COLLECTION_PREFIX
 
-ID = 'id'
+ID = '_id'
 LAST_UPDATED = '_last_updated'
 MIGRATION = 'pulp.server.db.migrations.0005_unit_last_updated'
 

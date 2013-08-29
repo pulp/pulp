@@ -11,13 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.common import dateutils
 from pulp.server.db import connection
 from pulp.plugins.types.database import TYPE_COLLECTION_PREFIX
 
 
 LAST_UPDATED = '_last_updated'
 QUERY = {LAST_UPDATED: {'$exists': False}}
+NEVER = 0.0
 
 
 def migrate(*args, **kwargs):
@@ -30,7 +30,5 @@ def migrate(*args, **kwargs):
             continue
         collection = connection.get_collection(name)
         for unit in collection.find(QUERY):
-            object_id = unit['_id']
-            dt = object_id.generation_time
-            unit[LAST_UPDATED] = dateutils.datetime_to_utc_timestamp(dt)
+            unit[LAST_UPDATED] = NEVER
             collection.save(unit, safe=True)
