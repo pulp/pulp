@@ -68,7 +68,7 @@ class UnitsIterator:
         metadata.pop('_id', None)
         storage_dir = pulp_conf.get('server', 'storage_dir')
         storage_path = metadata.pop('_storage_path', None)
-        last_updated = metadata.pop('_last_updated', None)
+        last_updated = metadata.pop('_last_updated', 0.0)
         if storage_path:
             relative_path = storage_path[len(storage_dir):].lstrip('/')
         else:
