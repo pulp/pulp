@@ -90,7 +90,6 @@ class NodesHttpImporter(Importer):
         errors = []
 
         for key in (constants.MANIFEST_URL_KEYWORD,
-                    constants.PROTOCOL_KEYWORD,
                     constants.STRATEGY_KEYWORD):
             value = config.get(key)
             if not value:

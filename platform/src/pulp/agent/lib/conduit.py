@@ -21,6 +21,15 @@ class Conduit:
     into the handler framework.
     """
 
+    @property
+    def consumer_id(self):
+        """
+        Get the current consumer ID
+        :return: The unique consumer ID of the currently running agent
+        :rtype:  str
+        """
+        raise NotImplementedError()
+
     def get_consumer_config(self):
         """
         Get the consumer configuration.

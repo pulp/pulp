@@ -17,12 +17,33 @@ from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
 
 from pulp_node import constants
+from pulp_node import resources
 from pulp_node.handlers.strategies import find_strategy, SyncRequest
 from pulp_node.handlers.reports import HandlerProgress, SummaryReport
-from pulp_node.handlers.model import BindingsOnParent
+from pulp_node.handlers.model import RepositoryBinding
 
 
 log = getLogger(__name__)
+
+
+# --- utils ------------------------------------------------------------------
+
+
+def parent_bindings(options):
+    """
+    Get the parent API bindings based on handler options.
+    :param options: Update options.
+    :type options: dict
+    :return: A configured parent API bindings.
+    :rtype: pulp.bindings.bindings.Bindings
+    """
+    settings = options[constants.PARENT_SETTINGS]
+    host = settings[constants.HOST]
+    port = settings[constants.PORT]
+    return resources.parent_bindings(host, port)
+
+
+# --- handlers ---------------------------------------------------------------
 
 
 class NodeHandler(ContentHandler):
@@ -63,7 +84,8 @@ class NodeHandler(ContentHandler):
         """
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
-        bindings = BindingsOnParent.fetch_all()
+        pulp_bindings = parent_bindings(options)
+        bindings = RepositoryBinding.fetch_all(pulp_bindings, conduit.consumer_id)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(
@@ -127,7 +149,8 @@ class RepositoryHandler(ContentHandler):
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
         repo_ids = [key['repo_id'] for key in units if key]
-        bindings = BindingsOnParent.fetch(repo_ids)
+        pulp_bindings = parent_bindings(options)
+        bindings = RepositoryBinding.fetch(pulp_bindings, conduit.consumer_id, repo_ids)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(
