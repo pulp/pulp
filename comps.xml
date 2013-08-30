@@ -39,4 +39,29 @@
       <packagereq type="default">pulp-puppet-handlers</packagereq>
     </packagelist>
   </group>
+  <group>
+    <id>pulp-nodes-parent</id>
+    <name>Pulp Nodes Parent</name>
+    <description>
+      Pulp nodes parent packages.
+    </description>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">pulp-nodes-parent</packagereq>
+      <packagereq type="mandatory">pulp-nodes-admin-extensions</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>pulp-nodes-child</id>
+    <name>Pulp Nodes Child</name>
+    <description>
+      Pulp nodes child packages.
+    </description>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">pulp-nodes-child</packagereq>
+      <packagereq type="mandatory">pulp-nodes-consumer-extensions</packagereq>
+      <packagereq type="mandatory">pulp-agent</packagereq>
+    </packagelist>
+  </group>
 </comps>
