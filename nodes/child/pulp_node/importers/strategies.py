@@ -31,7 +31,7 @@ from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import UnitDownloadManager
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
-    DeleteUnitError, CaughtException)
+    DeleteUnitError, InvalidManifestError, CaughtException)
 
 
 log = getLogger(__name__)
@@ -190,25 +190,37 @@ class ImporterStrategy(object):
             except IOError, e:
                 if e.errno == errno.ENOENT:
                     pass
+            except ValueError:
+                # json decoding failed
+                pass
             fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
             fetched_manifest.fetch()
-            if manifest != fetched_manifest or not manifest.has_valid_units():
+            if manifest != fetched_manifest or \
+                    not manifest.is_valid() or not manifest.has_valid_units():
                 fetched_manifest.fetch_units()
                 manifest = fetched_manifest
+            if not manifest.is_valid():
+                raise InvalidManifestError()
         except NodeError:
             raise
         except Exception:
             log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
-        return UnitInventory(manifest, child_units)
+        # build the inventory
+        parent_units = manifest.get_units()
+        base_URL = manifest.publishing_details[constants.BASE_URL]
+        inventory = UnitInventory(base_URL, parent_units, child_units)
+        return inventory
 
-    def _update_storage_path(self, unit):
+    def _reset_storage_path(self, unit):
         """
-        Update the unit's storage_path using the storage_dir defined in
+        Reset the storage_path using the storage_dir defined in
         server.conf and the relative_path injected when the unit was published.
         :param unit: A published unit.
         :type unit: dict
+        :return: The re-oriented storage path.
+        :rtype: str
         """
         storage_path = unit.get(constants.STORAGE_PATH)
         if not storage_path:
@@ -240,26 +252,40 @@ class ImporterStrategy(object):
         units = unit_inventory.units_on_parent_only()
         request.progress.begin_adding_units(len(units))
         manager = UnitDownloadManager(self, request)
-        publishing_details = unit_inventory.manifest.publishing_details
         for unit, unit_ref in units:
             if request.cancelled():
                 return
-            self._update_storage_path(unit)
+            self._reset_storage_path(unit)
             if not self._needs_download(unit):
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
                 continue
-            url = pathlib.url_join(
-                publishing_details[constants.BASE_URL],
-                pathlib.quote(unit[constants.RELATIVE_PATH]))
-            storage_path = unit[constants.STORAGE_PATH]
-            _request = manager.create_request(url, storage_path, unit_ref)
+            unit_path, destination = self._path_and_destination(unit)
+            unit_URL = pathlib.url_join(unit_inventory.base_URL, unit_path)
+            _request = manager.create_request(unit_URL, destination, unit, unit_ref)
             download_list.append(_request)
         if request.cancelled():
             return
         request.downloader.event_listener = manager
         request.downloader.download(download_list)
         request.summary.errors.extend(manager.error_list())
+
+    def _path_and_destination(self, unit):
+        """
+        Get the path component of the download URL and download destination.
+        :param unit: A content unit.
+        :type unit: dict
+        :return: (path, destination)
+        :rtype: tuple(2)
+        """
+        storage_path = unit[constants.STORAGE_PATH]
+        tar_path = unit.get(constants.TARBALL_PATH)
+        if not tar_path:
+            relative_path = unit[constants.RELATIVE_PATH]
+            return pathlib.quote(relative_path), storage_path
+        else:
+            return pathlib.quote(tar_path),\
+                pathlib.join(os.path.dirname(storage_path), os.path.basename(tar_path))
 
     def _needs_download(self, unit):
         """
@@ -272,6 +298,8 @@ class ImporterStrategy(object):
         storage_path = unit.get(constants.STORAGE_PATH)
         if storage_path:
             if not os.path.exists(storage_path):
+                return True
+            if os.path.getsize(storage_path) != unit[constants.FILE_SIZE]:
                 return True
         return False
 

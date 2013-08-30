@@ -12,7 +12,6 @@
 import os
 import tarfile
 
-from tempfile import mktemp
 from logging import getLogger
 
 from nectar.listener import AggregatingEventListener
@@ -26,8 +25,35 @@ from pulp_node.error import UnitDownloadError
 log = getLogger(__name__)
 
 
+# --- constants --------------------------------------------------------------
+
+STORAGE_PATH = constants.STORAGE_PATH
 UNIT_REF = 'unit_ref'
 
+
+# --- utils -------------------------------------------------------------------
+
+def untar_dir(path, storage_path):
+    """
+    Replaces the tarball at the specified path with the extracted directory tree.
+    :param path: The absolute path to a tarball.
+    :type path: str
+    :param storage_path: The path into which the content is extracted.
+    :type storage_path: str
+    :raise IOError: on i/o errors.
+    """
+    try:
+        fp = tarfile.open(path)
+        try:
+            fp.extractall(path=storage_path)
+        finally:
+            fp.close()
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)
+
+
+# --- downloading ------------------------------------------------------------
 
 class UnitDownloadManager(AggregatingEventListener):
     """
@@ -40,20 +66,25 @@ class UnitDownloadManager(AggregatingEventListener):
     """
 
     @staticmethod
-    def create_request(url, storage_path, unit_ref):
+    def create_request(unit_URL, destination, unit, unit_ref):
         """
         Create a nectar download request compatible with the listener.
-        :param url: The download URL.
-        :type url: str
-
-        :param storage_path: The absolute path to where the file is to be downloaded.
-        :type storage_path: str
+        :param unit_URL: The download URL.
+        :type unit_URL: str
+        :param destination: The absolute path to where the file is to be downloaded.
+        :type destination: str
+        :param unit: A published content unit.
+        :type unit: dict
         :param unit_ref: A reference to the unit association.
         :type unit_ref: pulp_node.manifest.UnitRef.
         :return: A nectar download request.
         :rtype: DownloadRequest
         """
-        return DownloadRequest(url, storage_path, data={UNIT_REF: unit_ref})
+        data = {
+            STORAGE_PATH: unit[constants.STORAGE_PATH],
+            UNIT_REF: unit_ref
+        }
+        return DownloadRequest(unit_URL, destination, data=data)
 
     def __init__(self, strategy, request):
         """
@@ -94,12 +125,13 @@ class UnitDownloadManager(AggregatingEventListener):
         :type report: nectar.report.DownloadReport.
         """
         super(self.__class__, self).download_succeeded(report)
+        storage_path = report.data[STORAGE_PATH]
         unit_ref = report.data[UNIT_REF]
         unit = unit_ref.fetch()
-        unit['storage_path'] = report.destination
+        unit[constants.STORAGE_PATH] = storage_path
         self._strategy.add_unit(self.request, unit)
-        if unit.get(constants.PUBLISHED_AS_TARBALL):
-            self.untar_dir(report.destination)
+        if unit.get(constants.TARBALL_PATH):
+            untar_dir(report.destination, storage_path)
         if self.request.cancelled():
             self.request.downloader.cancel()
 
@@ -115,27 +147,6 @@ class UnitDownloadManager(AggregatingEventListener):
         if self.request.cancelled():
             self.request.downloader.cancel()
 
-    def untar_dir(self, path):
-        """
-        Replaces the tarball at the specified path with the extracted directory tree.
-        :param path: The absolute path to a tarball.
-        :type path: str
-        :raise IOError: on i/o errors.
-        """
-        parent_dir = os.path.dirname(path)
-        tar_path = mktemp(dir=parent_dir)
-        os.link(path, tar_path)
-        os.unlink(path)
-        try:
-            fp = tarfile.open(tar_path)
-            try:
-                fp.extractall(path=path)
-            finally:
-                fp.close()
-        finally:
-            if os.path.exists(tar_path):
-                os.unlink(tar_path)
-
     def error_list(self):
         """
         Return the aggregated list of errors.
@@ -144,6 +155,6 @@ class UnitDownloadManager(AggregatingEventListener):
         """
         error_list = []
         for report in self.failed_reports:
-            error = UnitDownloadError(report.url, self.request.repo_id, report.error_report)
+            error = UnitDownloadError(report.url, self.request.repo_id, report.error_msg)
             error_list.append(error)
         return error_list

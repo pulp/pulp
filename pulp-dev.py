@@ -100,6 +100,7 @@ LINKS = (
     ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
     ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
     ('platform/bin/pulp-manage-db', '/usr/bin/pulp-manage-db'),
+    ('platform/bin/pulp-monthly', '/usr/bin/pulp-monthly'),
 
     # Server Configuration
     ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
@@ -116,6 +117,7 @@ LINKS = (
     ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
     # Pulp Nodes
+    ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
     ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
     ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
      '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),

@@ -122,7 +122,7 @@ class HandlerStrategy(object):
 
             # purge orphans
             if request.options.get(constants.PURGE_ORPHANS_KEYWORD):
-                RepositoryOnChild.purge_orphans()
+                Repository.purge_orphans()
         except NodeError, ne:
             request.summary.errors.append(ne)
         except Exception, e:
@@ -158,14 +158,14 @@ class HandlerStrategy(object):
                     request.summary[repo_id].action = RepositoryReport.CANCELLED
                     continue
                 parent = Repository(repo_id, details)
-                child = RepositoryOnChild.fetch(repo_id)
+                child = Repository.fetch(repo_id)
                 progress = request.progress.find_report(repo_id)
                 progress.begin_merging()
                 if child:
                     request.summary[repo_id].action = RepositoryReport.MERGED
                     child.merge(parent)
                 else:
-                    child = RepositoryOnChild(repo_id, parent.details)
+                    child = Repository(repo_id, parent.details)
                     request.summary[repo_id].action = RepositoryReport.ADDED
                     child.add()
                 self._synchronize_repository(request, repo_id)
@@ -184,8 +184,12 @@ class HandlerStrategy(object):
         :param repo_id: A repository ID.
         :type repo_id: str
         """
-        repo = RepositoryOnChild(repo_id)
         progress = request.progress.find_report(repo_id)
+        skip = request.options.get(constants.SKIP_CONTENT_UPDATE_KEYWORD, False)
+        if skip:
+            progress.finished()
+            return
+        repo = Repository(repo_id)
         importer_report = repo.run_synchronization(progress, request.cancelled, request.options)
         if request.cancelled():
             request.summary[repo_id].action = RepositoryReport.CANCELLED
@@ -208,7 +212,7 @@ class HandlerStrategy(object):
         :type request: SyncRequest
         """
         repositories_on_parent = [b['repo_id'] for b in request.bindings]
-        repositories_on_child = [r.repo_id for r in RepositoryOnChild.fetch_all()]
+        repositories_on_child = [r.repo_id for r in Repository.fetch_all()]
         for repo_id in sorted(repositories_on_child):
             if request.cancelled():
                 request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.CANCELLED)
@@ -216,7 +220,7 @@ class HandlerStrategy(object):
             try:
                 if repo_id not in repositories_on_parent:
                     request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.DELETED)
-                    repo = RepositoryOnChild(repo_id)
+                    repo = Repository(repo_id)
                     repo.delete()
             except NodeError, ne:
                 request.summary.errors.append(ne)

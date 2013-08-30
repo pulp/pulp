@@ -189,7 +189,6 @@ class ConsumerSearch(SearchController):
         return self.ok(consumers)
 
 
-
 class Bindings(JSONController):
     """
     Consumer bindings represents the collection of
@@ -199,7 +198,7 @@ class Bindings(JSONController):
     is idempotent.
     """
 
-    #@auth_required(READ)
+    @auth_required(READ)
     def GET(self, consumer_id, repo_id=None):
         """
         Fetch all bind objects referencing the

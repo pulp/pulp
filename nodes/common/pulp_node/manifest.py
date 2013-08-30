@@ -24,8 +24,10 @@ import errno
 from logging import getLogger
 
 from nectar.request import DownloadRequest
+from nectar.listener import AggregatingEventListener
 
 from pulp_node import pathlib
+from pulp_node.error import ManifestDownloadError
 
 
 log = getLogger(__name__)
@@ -33,7 +35,7 @@ log = getLogger(__name__)
 
 # --- constants -------------------------------------------------------------------------
 
-
+MANIFEST_VERSION = 1
 MANIFEST_FILE_NAME = 'manifest.json'
 UNITS_FILE_NAME = 'units.json.gz'
 
@@ -63,6 +65,7 @@ class Manifest(object):
         :type manifest_id: str
         """
         self.id = manifest_id
+        self.version = MANIFEST_VERSION
         self.total_units = 0
         self.units_size = 0
         self.publishing_details = {}
@@ -78,6 +81,7 @@ class Manifest(object):
         """
         state = dict(
             id=self.id,
+            version=self.version,
             total_units=self.total_units,
             units_size=self.units_size,
             publishing_details=self.publishing_details)
@@ -125,6 +129,18 @@ class Manifest(object):
         :type details: dict
         """
         self.publishing_details.update(details)
+
+    def is_valid(self):
+        """
+        Get whether the manifest is valid.
+        To start with, compare the version number.
+        :return: True if valid.
+        :rtype: bool
+        """
+        try:
+            return self.version == MANIFEST_VERSION
+        except AttributeError:
+            return False
 
     def has_valid_units(self):
         """
@@ -176,16 +192,23 @@ class RemoteManifest(Manifest):
     def fetch(self):
         """
         Fetch the manifest file using the specified URL.
+        :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
 -       :raise ValueError: on json decoding errors
         """
+        listener = AggregatingEventListener()
         request = DownloadRequest(self.url, self.destination)
+        self.downloader.event_listener = listener
         self.downloader.download([request])
+        if listener.failed_reports:
+            report = listener.failed_reports[0]
+            raise ManifestDownloadError(self.url, report.error_msg)
         self.read()
 
     def fetch_units(self):
         """
         Fetch the units file referenced in the manifest.
+        :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
 -       :raise ValueError: on json decoding errors
         """
@@ -193,7 +216,12 @@ class RemoteManifest(Manifest):
         url = pathlib.join(base_url, UNITS_FILE_NAME)
         destination = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
         request = DownloadRequest(str(url), destination)
+        listener = AggregatingEventListener()
+        self.downloader.event_listener = listener
         self.downloader.download([request])
+        if listener.failed_reports:
+            report = listener.failed_reports[0]
+            raise ManifestDownloadError(self.url, report.error_msg)
 
 
 class UnitWriter(object):

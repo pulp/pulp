@@ -16,7 +16,7 @@ from mock import patch, Mock
 from pulp.common.plugins import importer_constants
 
 from base import WebTest, Response, Task
-from pulp_node.handlers.model import RepositoryOnChild
+from pulp_node.handlers.model import Repository
 from pulp_node import constants
 
 
@@ -24,6 +24,9 @@ PULP_ID = 'pulp_1'
 REPO_ID = 'repo_1'
 MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
+SSL_CERT = 98765
+
+PARENT_SETTINGS = {constants.NODE_CERTIFICATE: SSL_CERT}
 
 
 class TestModel(WebTest):
@@ -36,22 +39,25 @@ class TestModel(WebTest):
 
     @patch('pulp_node.poller.TaskPoller.join')
     @patch('pulp.bindings.repository.RepositoryActionsAPI.sync', return_value=Response(httplib.ACCEPTED, [Task()]))
-    @patch('pulp_node.handlers.strategies.Bundle.cn', return_value=PULP_ID)
+    @patch('pulp.agent.lib.conduit.Conduit.consumer_id')
     def test_repository(self, *mocks):
         # Setup
-        repository = RepositoryOnChild(REPO_ID)
+        repository = Repository(REPO_ID)
         progress = Mock()
         cancelled = Mock(return_value=False)
         # Test
         options = {
             constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: MAX_CONCURRENCY,
             constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: MAX_BANDWIDTH,
+            constants.PARENT_SETTINGS: PARENT_SETTINGS,
         }
         repository.run_synchronization(progress, cancelled, options)
         binding = mocks[1]
         expected_conf = {
+            importer_constants.KEY_SSL_VALIDATION: False,
             importer_constants.KEY_MAX_DOWNLOADS: MAX_CONCURRENCY,
-            importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH
+            importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH,
+            importer_constants.KEY_SSL_CLIENT_CERT: SSL_CERT,
         }
         # Verify
         binding.assert_called_with(REPO_ID, expected_conf)

@@ -18,25 +18,32 @@ $(cat << END
 from pulp.server.config import config as pulp_conf
 print pulp_conf.get('security', 'cakey')
 print pulp_conf.get('security', 'cacert')
-print pulp_conf.get('server', 'default_login')
-print pulp_conf.get('server', 'default_password')
+END
+)
+
+READ_NODE_CONF=\
+$(cat << END
+from pulp_node import resources
+node_conf = resources.node_configuration()
+print node_conf.main.node_certificate
 END
 )
 
 PULP_CONF=(`python -c "$READ_PULP_CONF"`)
+NODE_CONF=(`python -c "$READ_NODE_CONF"`)
 
-PKI=/etc/pki/pulp
-PKI_NODES=$PKI/nodes
+
+NODE_CRT=${NODE_CONF[0]}
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 BASE='nodes'
 TMP=/tmp/$RANDOM
-CN="${PULP_CONF[2]}:${PULP_CONF[3]}:0"
+CN=`hostname`
 ORG="PULP"
 ORG_UNIT="NODES"
 
 mkdir -p $TMP
-mkdir -p $PKI_NODES
+mkdir -p `dirname $NODE_CRT`
 
 # create client key
 openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
@@ -61,7 +68,7 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $PKI_NODES/local.crt
+cat $TMP/$BASE.key $TMP/$BASE.xx > $NODE_CRT
 
 # clean
 rm -rf $TMP

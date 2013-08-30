@@ -11,7 +11,7 @@
 
 import httplib
 
-from pulp_node.handlers.model import ChildEntity
+from pulp_node import resources
 from pulp_node.error import ImporterNotInstalled, DistributorNotInstalled
 
 
@@ -82,7 +82,7 @@ class Validator(object):
         return errors
 
 
-class ChildServer(ChildEntity):
+class ChildServer(object):
 
     def __init__(self):
         self.importers = self._importers()
@@ -95,14 +95,16 @@ class ChildServer(ChildEntity):
         return type_id in self.distributors
 
     def _importers(self):
-        http = self.binding.server_info.get_importers()
+        bindings = resources.pulp_bindings()
+        http = bindings.server_info.get_importers()
         if http.response_code == httplib.OK:
             return set([p[TYPE_ID] for p in http.response_body])
         else:
             raise Exception('get importers failed:%d', http.response_code)
 
     def _distributors(self):
-        http = self.binding.server_info.get_distributors()
+        bindings = resources.pulp_bindings()
+        http = bindings.server_info.get_distributors()
         if http.response_code == httplib.OK:
             return set([p[TYPE_ID] for p in http.response_body])
         else:

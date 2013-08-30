@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.2.alpha%{?dist}
+Release: 0.5.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -130,6 +130,9 @@ cp bin/* %{buildroot}/%{_bindir}
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 
+# Cron
+cp -R etc/cron.monthly %{buildroot}/%{_sysconfdir}
+
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/*.egg-info
 
@@ -167,7 +170,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.0.0
+Requires: python-nectar >= 1.1.0
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -203,10 +206,10 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
 %{_bindir}/pulp-manage-db
+%{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
-%{_bindir}/pulp-v1-upgrade
-%{_bindir}/pulp-v1-upgrade-selinux
-%{_bindir}/pulp-v1-upgrade-publish
+%defattr(700,root,root,-)
+%config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
@@ -221,6 +224,18 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_sysconfdir}/pki/%{name}/ca.crt
 /srv/%{name}/webservices.wsgi
 %doc
+
+%post server
+SECTION="oauth"
+MATCH_SECTION="/^\[$SECTION\]$/"
+KEY="oauth_key:"
+SECRET="oauth_secret:"
+function generate() {
+  echo `< /dev/urandom tr -dc A-Z0-9 | head -c8`
+}
+sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
+    -e "$MATCH_SECTION,/^$/s/^$SECRET$/$SECRET $(generate)/" \
+    -i %{_sysconfdir}/%{name}/server.conf
 
 
 # ---- Common ------------------------------------------------------------------
@@ -432,6 +447,23 @@ exit 0
 %endif
 
 %changelog
+* Thu Aug 29 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.5.alpha
+- Pulp rebuild
+
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.4.alpha
+- Pulp rebuild
+
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
+- 956711 - Raise an error to the client if an attempt is made to install an
+  errata that does not exist in a repository bound to the consumer
+  (bcourt@redhat.com)
+- 991500 - updating get_repo_units conduit call to return plugin units instead
+  of dictionary (skarmark@redhat.com)
+- 976561 - updated the list of decorated collection methods to match the
+  Collection object in 2.1.1 (jason.connor@gmail.com)
+- 976561 - removed superfluous re-fetching of collection we already have a
+  handle to (jason.connor@gmail.com)
+
 * Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
 - Pulp rebuild
 

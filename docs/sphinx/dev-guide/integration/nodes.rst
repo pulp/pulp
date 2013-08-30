@@ -147,6 +147,33 @@ Sample POST body:
 ::
 
  {
-   "units": [{"unit_key": null, "type_id": "node"}],
+   "units": [{"type_id": "node", "unit_key": null}],
    "options": {}
  }
+
+
+To skip the repository synchronization phase of the update, specify the ``skip_content_update`` option
+with a value of ``true``.
+
+Sample POST body:
+
+::
+
+ {
+   "units": [{"type_id": "node", "unit_key": null}],
+   "options": {"skip_content_update": true}
+ }
+
+
+To synchronize individual repositories, use the ``type_id`` of ``repository`` and specify the
+repository ID using the ``repo_id`` keyword in the ``unit_key``.
+
+Sample POST body:
+
+::
+
+ {
+   "units": [{"type_id": "repository", "unit_key": {"repo_id": "abc"}}],
+   "options": {}
+ }
+

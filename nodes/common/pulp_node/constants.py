@@ -39,12 +39,10 @@ PROTOCOL_KEYWORD = 'protocol'
 MANIFEST_URL_KEYWORD = 'manifest_url'
 PURGE_ORPHANS_KEYWORD = 'purge_orphans'
 
-SSL_KEYWORD = 'ssl'
-CA_CERT_KEYWORD = 'ca_cert'
-CLIENT_CERT_KEYWORD = 'client_cert'
-
 MAX_DOWNLOAD_BANDWIDTH_KEYWORD = 'max_download_bandwidth'
 MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
+
+SKIP_CONTENT_UPDATE_KEYWORD = 'skip_content_update'
 
 
 # --- unit/publishing --------------------------------------------------------
@@ -52,13 +50,25 @@ MAX_DOWNLOAD_CONCURRENCY_KEYWORD = 'max_download_concurrency'
 BASE_URL = 'base_url'
 STORAGE_PATH = 'storage_path'
 RELATIVE_PATH = 'relative_path'
-
-PUBLISHED_AS_FILE = 'published_as_file'
-PUBLISHED_AS_TARBALL = 'published_as_tarball'
-PUBLISHING_METHODS = [PUBLISHED_AS_FILE, PUBLISHED_AS_TARBALL]
+FILE_SIZE = 'size'
+TARBALL_PATH = 'tgz_path'
 
 
 # --- consumer notes ---------------------------------------------------------
 
 NODE_NOTE_KEY = '_child-node'
 STRATEGY_NOTE_KEY = '_node-update-strategy'
+
+
+# --- settings ---------------------------------------------------------------
+
+DEFAULT_DOWNLOAD_CONCURRENCY = 20
+
+
+# --- profiling --------------------------------------------------------------
+
+PROFILER_ID = 'node'
+PARENT_SETTINGS = 'parent_settings'
+NODE_CERTIFICATE = 'node_certificate'
+HOST = 'host'
+PORT = 'port'

@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.2.alpha%{?dist}
+Release: 0.5.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -85,6 +85,9 @@ mkdir -p %{buildroot}/%{_var}/www/pulp/nodes
 mkdir -p %{buildroot}/%{_bindir}
 
 # Configuration
+pushd common
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
 pushd parent
 cp -R etc/httpd %{buildroot}/%{_sysconfdir}
 cp -R etc/pulp %{buildroot}/%{_sysconfdir}
@@ -132,6 +135,7 @@ Pulp nodes common modules.
 %dir %{python_sitelib}/pulp_node
 %dir %{python_sitelib}/pulp_node/extensions
 %{_bindir}/pulp-gen-nodes-certificate
+%config(noreplace) %{_sysconfdir}/pulp/nodes.conf
 %{python_sitelib}/pulp_node/extensions/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
@@ -154,6 +158,7 @@ Pulp parent nodes support.
 %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
 %defattr(-,apache,apache,-)
+%{python_sitelib}/pulp_node/profilers/
 %{python_sitelib}/pulp_node/distributors/
 %{python_sitelib}/pulp_node_parent*.egg-info
 %{_var}/lib/pulp/nodes
@@ -169,7 +174,8 @@ Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
-Requires: python-nectar >= 1.0.0
+Requires: gofer >= 0.74
+Requires: python-nectar >= 1.1.0
 
 %description child
 Pulp child nodes support.
@@ -230,13 +236,23 @@ pulp-gen-nodes-certificate
 %postun
 # clean up the nodes certificate.
 if [ $1 -eq 0 ]; then
-  rm /etc/pki/pulp/nodes/local.crt
+  rm -rf /etc/pki/pulp/nodes
 fi
 
 # ----------------------------------------------------------------------------
 
 
 %changelog
+* Thu Aug 29 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.5.alpha
+- Pulp rebuild
+
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.4.alpha
+- Pulp rebuild
+
+* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
+- 991201 - use plugin specific attribute for type_id. (jortel@redhat.com)
+- 989627 - dont use rstrip() to remove a file suffix. (jortel@redhat.com)
+
 * Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
 - Pulp rebuild
 
