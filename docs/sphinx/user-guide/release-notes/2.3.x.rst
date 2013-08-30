@@ -34,6 +34,11 @@ You can see the complete list of bugs that were
 
 API Changes
 -----------
+#. Importers no longer pass the related repositories to the validate_config(...) method.
+#. Distributors now pass a pulp.plugins.conduits.repo_config.RepoConfigConduit instead of the related
+   repositories to the validate_confg(...) method.  The RepoConfigConduit is used to provide
+   methods for performing the kind of cross repository searching & validation that formerly had to be done
+   manually by comparing the configuration each related repository.
 
 Upgrade Instructions for 2.2.x --> 2.3.0
 ----------------------------------------
