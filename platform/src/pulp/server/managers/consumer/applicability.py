@@ -60,10 +60,10 @@ class ApplicabilityRegenerationManager(object):
                                          fields=['consumer_id','profile_hash','content_type','id'])
         all_unit_profiles = consumer_profile_manager.find_by_criteria(unit_profile_criteria)
 
-        # Create a consumer-profile map with consumer id as the key and profile details tuple 
-        # as the value
+        # Create a consumer-profile map with consumer id as the key and list of tuples 
+        # with profile details as the value
         consumer_unit_profiles_map = {}
-        # Also create a map of profile_id keyed by profile_hash for instant lookup.
+        # Also create a map of profile_id keyed by profile_hash for profile lookup.
         profile_hash_profile_id_map = {}
         for unit_profile in all_unit_profiles:
             profile_hash = unit_profile['profile_hash']
@@ -72,11 +72,10 @@ class ApplicabilityRegenerationManager(object):
             profile_id = unit_profile['id']
 
             profile_tuple = (profile_hash, content_type)
-            # Add profile tuple to the list of profiles for a consumer if it doesn't already exist
-            if profile_tuple not in consumer_unit_profiles_map.setdefault(consumer_id, []):
-                consumer_unit_profiles_map[consumer_id].append(profile_tuple)
+            # Add this tuple to the list of profile tuples for a consumer
+            consumer_unit_profiles_map.setdefault(consumer_id, []).append(profile_tuple)
 
-            # We need just one profile_id per profile_hash in regenerate_applicability method
+            # We need just one profile_id per profile_hash to be used in regenerate_applicability method
             # to get the actual profile corresponding to given profile_hash.
             if profile_hash not in profile_hash_profile_id_map:
                 profile_hash_profile_id_map[profile_hash] = profile_id
@@ -104,10 +103,7 @@ class ApplicabilityRegenerationManager(object):
         # to check for existing applicability for same profiles.
         for repo_id, (profile_hash, content_type) in repo_profile_hashes:
             # Check if applicability for given profile_hash and repo_id already exists
-            existing_applicability = ApplicabilityRegenerationManager._get_existing_applicability(
-                                                                                    repo_id,
-                                                                                    profile_hash)
-            if existing_applicability:
+            if ApplicabilityRegenerationManager._is_existing_applicability(repo_id, profile_hash):
                 continue
             # If applicability does not exist, generate applicability data for given profile 
             # and repo id.
@@ -133,8 +129,10 @@ class ApplicabilityRegenerationManager(object):
 
         for repo_id in repo_ids:
             # Find all existing applicabilities for given repo_id
-            existing_applicabilities = RepoProfileApplicability.objects.filter({'repo_id':repo_id})
+            existing_applicabilities = RepoProfileApplicability.get_collection().find({'repo_id':repo_id})
             for existing_applicability in existing_applicabilities:
+                # Convert cursor to RepoProfileApplicability object
+                existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
                                                                      fields=['id','content_type'])
@@ -184,12 +182,16 @@ class ApplicabilityRegenerationManager(object):
         # Get the intersection of existing types in the repo and the types that the profiler handles.
         # If the intersection is not empty, regenerate applicability
         if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
-            # Get the actual profile for the given profile_id
-            unit_profile = UnitProfile.get_collection().find_one({'id': profile_id}, 
-                                                                 fields=['profile'])
+            # Get the actual profile for existing_applicability or lookup using profile_id
+            if existing_applicability:
+                profile = existing_applicability.profile
+            else:
+                unit_profile = UnitProfile.get_collection().find_one({'id': profile_id},
+                                                                     fields=['profile'])
+                profile = unit_profile['profile']
             call_config = PluginCallConfiguration(plugin_config=profiler_cfg, repo_plugin_config=None)
             try:
-                applicability = profiler.calculate_applicable_units(unit_profile['profile'],
+                applicability = profiler.calculate_applicable_units(profile,
                                                                     bound_repo_id,
                                                                     call_config,
                                                                     profiler_conduit)
@@ -228,7 +230,7 @@ class ApplicabilityRegenerationManager(object):
         return repo_content_types_with_non_zero_unit_count
 
     @staticmethod
-    def _get_existing_applicability(repo_id, profile_hash):
+    def _is_existing_applicability(repo_id, profile_hash):
         """
         Check if applicability for given repo and profle hash is already calculated.
         
@@ -236,15 +238,13 @@ class ApplicabilityRegenerationManager(object):
         :type repo_id:       basestring
         :param profile_hash: unit profile hash
         :type profile_hash:  basestring
-        :return:             existing RepoProfileApplicability object for given repo id and profile hash or None
-        :type:               pulp.server.db.model.consumer.RepoProfileApplicability
+        :return:             true if applicability exists, false otherwise
+        :type:               boolean
         """
         query_params = {'repo_id': repo_id, 'profile_hash': profile_hash}
-        try:
-            existing_applicability = RepoProfileApplicability.objects.get(query_params)
-        except DoesNotExist:
-            existing_applicability = None
-        return existing_applicability
+        if RepoProfileApplicability.get_collection().find_one(query_params, fields=['_id']):
+            return True
+        return False
 
     @staticmethod
     def __profiler(type_id):
