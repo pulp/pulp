@@ -28,7 +28,6 @@ class RepoConfigConduit(object):
 
     def __init__(self, distributor_type):
         self.distributor_type = distributor_type
-        pass
 
     def get_repo_distributors_by_relative_url(self, rel_url):
         """
