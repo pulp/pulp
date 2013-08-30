@@ -80,7 +80,7 @@ class UnitInventory(object):
         """
         Listing of units contained in the parent inventory
         but not contained in the child inventory.
-        :return: List of (unit ref).
+        :return: List of (unit, ref).
         :rtype: list
         """
         return [r for k, r in self.parent_units.items() if k not in self.child_units]
@@ -97,17 +97,16 @@ class UnitInventory(object):
     def updated_units(self):
         """
         Listing of units updated on the parent.
-        :return: List of (unit ref).
+        :return: List of (unit, ref).
         :rtype: list
         """
         updated = []
-        for key, unit_and_ref in self.parent_units.items():
+        for key, (unit, ref) in self.parent_units.items():
             child_unit = self.child_units.get(key)
             if child_unit is None:
                 continue
-            unit, ref = unit_and_ref
             parent_last_updated = unit.get(constants.LAST_UPDATED, 0)
             child_last_updated = child_unit.get(constants.LAST_UPDATED, 0)
             if parent_last_updated > child_last_updated:
-                updated.append(unit_and_ref)
+                updated.append((unit, ref))
         return updated
