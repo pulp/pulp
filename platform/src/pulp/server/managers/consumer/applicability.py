@@ -242,7 +242,7 @@ class ApplicabilityRegenerationManager(object):
         :type:               boolean
         """
         query_params = {'repo_id': repo_id, 'profile_hash': profile_hash}
-        if RepoProfileApplicability.get_collection().find(query_params, fields=['_id']):
+        if RepoProfileApplicability.get_collection().find_one(query_params, fields=['_id']):
             return True
         return False
 
