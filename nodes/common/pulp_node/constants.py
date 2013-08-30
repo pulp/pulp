@@ -52,6 +52,7 @@ STORAGE_PATH = 'storage_path'
 RELATIVE_PATH = 'relative_path'
 FILE_SIZE = 'size'
 TARBALL_PATH = 'tgz_path'
+LAST_UPDATED = 'last_updated'
 
 
 # --- consumer notes ---------------------------------------------------------
