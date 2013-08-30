@@ -273,7 +273,7 @@ class ImporterStrategy(object):
     def _update_units(self, request, unit_inventory):
         """
         Update units that have been updated on the parent since
-        added or last updated on the child inventory.
+        added or last updated in the child inventory.
         :param request: A synchronization request.
         :type request: SyncRequest
         :param unit_inventory: The inventory of both parent and child content units.
