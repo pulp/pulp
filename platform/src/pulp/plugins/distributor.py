@@ -44,7 +44,7 @@ class Distributor(object):
 
     # -- repo lifecycle -------------------------------------------------------
 
-    def validate_config(self, repo, config, related_repos):
+    def validate_config(self, repo, config, config_conduit):
         """
         Allows the distributor to check the contents of a potential configuration
         for the given repository. This call is made both for the addition of
@@ -63,21 +63,19 @@ class Distributor(object):
         have a configured distributor of this type. The distributor configurations
         is found in each repository in the "plugin_configs" field.
 
-        @param repo: metadata describing the repository to which the
+        :param repo: metadata describing the repository to which the
                      configuration applies
-        @type  repo: pulp.plugins.model.Repository
+        :type  repo: pulp.plugins.model.Repository
 
-        @param config: plugin configuration instance; the proposed repo
+        :param config: plugin configuration instance; the proposed repo
                        configuration is found within
-        @type  config: pulp.plugins.config.PluginCallConfiguration
+        :type  config: pulp.plugins.config.PluginCallConfiguration
 
-        @param related_repos: list of other repositories using this distributor
-               type; empty list if there are none; entries are of type
-               pulp.plugins.model.RelatedRepository
-        @type  related_repos: list
+        :param config_conduit: Configuration Conduit;
+        :type  config_conduit: pulp.plugins.conduits.repo_config.RepoConfigConduit
 
-        @return: tuple of (bool, str) to describe the result
-        @rtype:  tuple
+        :return: tuple of (bool, str) to describe the result
+        :rtype:  tuple
         """
         raise NotImplementedError()
 
@@ -222,7 +220,7 @@ class GroupDistributor(object):
 
     # -- repo group lifecycle -------------------------------------------------
 
-    def validate_config(self, repo_group, config, related_repo_groups):
+    def validate_config(self, repo_group, config):
         """
         Allows the distributor to check the contents of a potential configuration
         for the given repository group. This call is made both for the addition of
@@ -248,11 +246,6 @@ class GroupDistributor(object):
         @param config: plugin configuration instance; the proposed repo
                        configuration is found within
         @type  config: pulp.plugins.config.PluginCallConfiguration
-
-        @param related_repo_groups: list of other repository groups using this
-               distributor type; empty list if there are none; entries are of type
-               pulp.plugins.model.RelatedRepositoryGroup
-        @type  related_repo_groups: list
 
         @return: tuple of (bool, str) to describe the result
         @rtype:  tuple

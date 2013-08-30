@@ -175,28 +175,6 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
         except PulpDataException, e:
             self.assertEqual(e.args[0][0], 'foo')
 
-    def test_add_distributor_with_related(self):
-        # Setup
-        self.group_manager.create_repo_group('group-a')
-        self.group_manager.create_repo_group('group-b')
-
-        self.distributor_manager.add_distributor('group-a', 'mock-group-distributor', {'1':1}, distributor_id='a1')
-        self.distributor_manager.add_distributor('group-a', 'mock-group-distributor', {'2':2}, distributor_id='a2')
-        self.distributor_manager.add_distributor('group-b', 'mock-group-distributor-2', {})
-
-        # Test
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {})
-
-        # Verify
-        validate_args = mock_plugins.MOCK_GROUP_DISTRIBUTOR.validate_config.call_args[0]
-        related_groups = validate_args[2]
-
-        self.assertEqual(1, len(related_groups))
-        self.assertEqual(related_groups[0].id, 'group-a')
-        self.assertEqual(2, len(related_groups[0].plugin_configs))
-        self.assertTrue({'1':1} in related_groups[0].plugin_configs)
-        self.assertTrue({'2':2} in related_groups[0].plugin_configs)
-
     # -- remove ---------------------------------------------------------------
 
     def test_remove_distributor(self):

@@ -18,6 +18,7 @@ import uuid
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.exceptions import InvalidValue, MissingResource, PulpDataException, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
@@ -152,12 +153,12 @@ class RepoGroupDistributorManager(object):
         transfer_group = common_utils.to_transfer_repo_group(group)
         transfer_group.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_group_id)
 
-        # Load the related groups which is needed for the validation
-        transfer_related_groups = related_groups(distributor_type_id)
+        config_conduit = RepoConfigConduit(distributor_type_id)
 
         # Request the plugin validate the configuration
         try:
-            is_valid, message = distributor_instance.validate_config(transfer_group, call_config, transfer_related_groups)
+            is_valid, message = distributor_instance.validate_config(transfer_group, call_config,
+                                                                     config_conduit)
 
             if not is_valid:
                 raise PulpDataException(message)
@@ -266,11 +267,12 @@ class RepoGroupDistributorManager(object):
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_group = common_utils.to_transfer_repo_group(group)
         transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id, repo_group_id)
-        transfer_related_groups = related_groups(distributor_type_id, omit_group_id=repo_group_id)
+        config_conduit = RepoConfigConduit(distributor_type_id)
 
         # Request the plugin validate the configuration
         try:
-            is_valid, message = distributor_instance.validate_config(transfer_group, call_config, transfer_related_groups)
+            is_valid, message = distributor_instance.validate_config(transfer_group, call_config,
+                                                                     config_conduit)
 
             if not is_valid:
                 raise PulpDataException(message)
@@ -348,33 +350,6 @@ def process_update_config(current_config, supplied_config):
     merged_config.update(supplied_config)
 
     return merged_config
-
-def related_groups(distributor_type_id, omit_group_id=None):
-    """
-    Loads and converts into plugin transfer objects all groups that have a
-    distributor of the given ID.
-
-    @param omit_group_id: if specified, the given group won't be included, used
-           when retrieving related groups in an update call
-    @type  omit_group_id: str
-
-    @return: list of transfer objects to pass to the plugin
-    @rtype:  list
-    """
-
-    query_manager = manager_factory.repo_group_query_manager()
-    related_groups = query_manager.find_with_distributor_type(distributor_type_id)
-
-    transfer_groups = []
-    for g in related_groups:
-        if omit_group_id and g['id'] == omit_group_id:
-            continue
-
-        all_configs = [d['config'] for d in g['distributors']]
-        trg = common_utils.to_related_repo_group(g, all_configs)
-        transfer_groups.append(trg)
-
-    return transfer_groups
 
 def is_distributor_id_valid(distributor_id):
     """
