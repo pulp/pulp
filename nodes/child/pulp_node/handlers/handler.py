@@ -33,6 +33,7 @@ def parent_bindings(options):
     """
     Get the parent API bindings based on handler options.
     :param options: Update options.
+    :type options: dict
     :return: A configured parent API bindings.
     :rtype: pulp.bindings.bindings.Bindings
     """

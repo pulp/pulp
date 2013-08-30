@@ -64,7 +64,7 @@ certificate that has been signed by the Pulp CA.
 
 During installation of the *Nodes* packages, an x.509 certificate is generated and signed
 using the Pulp CA (specified in server.conf) and stored in ``/etc/pkp/pulp/nodes/node.crt``.
-The certificate is generated using ``/usr/bin/pulp-gen-nodes-certificate`` which is provided
+The certificate is generated using ``/usr/bin/pulp-gen-nodes-certificate``, which is provided
 by the *Nodes* packages.
 
 The node private key and certificate are sent to the *child* node at the beginning of each
@@ -93,9 +93,9 @@ To install *Nodes* parent support, follow the instructions below.
 
   $ sudo yum install pulp-nodes-parent
 
-2. The communication between the child and parent nodes is secured using OAuth.  The parent node
-   must have OAuth enabled and configured.  Oauth is enabled and configured with a unique, generated
-   *key* and *secret* during installation.  Edit the ``/etc/pulp/server.conf`` and ensure proper
+2. The communication between the child and parent nodes is secured using OAuth. The parent node
+   must have OAuth enabled and configured. Oauth is enabled and configured with a unique, generated
+   *key* and *secret* during installation. Edit the ``/etc/pulp/server.conf`` and ensure proper
    configuration.
 
 ::
@@ -135,7 +135,7 @@ To install *Nodes* child support, follow the instructions below.
  oauth_key: 3KIEJD78
  oauth_secret: L7JSUWJ9
 
-3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match  values found in
+3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
    ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match a
    user with administration privileges on the parent node.
 
@@ -445,7 +445,7 @@ On the Pulp server to be used as the child node:
  $ sudo service httpd restart && service pulp-agent restart
 
 
-5. Register as a consumer.  This command will prompt for a password.
+5. Register as a consumer. This command will prompt for a password.
 
 ::
 

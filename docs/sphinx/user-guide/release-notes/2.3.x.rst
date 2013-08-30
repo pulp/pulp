@@ -19,7 +19,7 @@ New Features
 
 #. OAuth authentication is enabled by default using generated credentials.
 
-#. The authentication method used by *Nodes* has been changed to OAuth.  Uses upgrading Pulp
+#. The authentication method used by *Nodes* has been changed to OAuth. Uses upgrading Pulp
    servers that are functioning as child *Nodes* will need to update a new *Nodes* configuration
    file as specified in :doc:`../nodes` section of the user guide.
 

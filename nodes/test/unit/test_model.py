@@ -54,6 +54,7 @@ class TestModel(WebTest):
         repository.run_synchronization(progress, cancelled, options)
         binding = mocks[1]
         expected_conf = {
+            importer_constants.KEY_SSL_VALIDATION: False,
             importer_constants.KEY_MAX_DOWNLOADS: MAX_CONCURRENCY,
             importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH,
             importer_constants.KEY_SSL_CLIENT_CERT: SSL_CERT,

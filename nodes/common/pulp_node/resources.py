@@ -62,6 +62,10 @@ def node_configuration(path=NODE_CONFIGURATION_PATH):
 def parent_bindings(host, port=443):
     """
     Get a pulp bindings object for the parent node.
+    :param host: The hostname of IP of the parent server.
+    :type host: str
+    :param port: The TCP port number.
+    :type port: int
     :return: A pulp bindings object.
     :rtype: Bindings
     """
