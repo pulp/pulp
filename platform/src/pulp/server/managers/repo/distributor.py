@@ -17,10 +17,10 @@ import sys
 import uuid
 
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
-from pulp.server.managers import factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
 # -- constants ----------------------------------------------------------------
@@ -163,18 +163,10 @@ class RepoDistributorManager(object):
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
-
-        query_manager = manager_factory.repo_query_manager()
-        related_repos = query_manager.find_with_distributor_type(distributor_type_id)
-
-        transfer_related_repos = []
-        for r in related_repos:
-            all_configs = [d['config'] for d in r['distributors']]
-            trr = common_utils.to_related_repo(r, all_configs)
-            transfer_related_repos.append(trr)
+        config_conduit = RepoConfigConduit(distributor_type_id)
 
         try:
-            result = distributor_instance.validate_config(transfer_repo, call_config, transfer_related_repos)
+            result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
 
             # For backward compatibility with plugins that don't yet return the tuple
             if isinstance(result, bool):
@@ -309,23 +301,10 @@ class RepoDistributorManager(object):
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
-
-        query_manager = manager_factory.repo_query_manager()
-        related_repos = query_manager.find_with_distributor_type(distributor_type_id)
-
-        transfer_related_repos = []
-        for r in related_repos:
-
-            # Don't include the repo being updated in this list
-            if r['id'] == repo_id:
-                continue
-
-            all_configs = [d['config'] for d in r['distributors']]
-            trr = common_utils.to_related_repo(r, all_configs)
-            transfer_related_repos.append(trr)
+        config_conduit = RepoConfigConduit(distributor_type_id)
 
         try:
-            result = distributor_instance.validate_config(transfer_repo, call_config, transfer_related_repos)
+            result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
 
             # For backward compatibility with plugins that don't yet return the tuple
             if isinstance(result, bool):
