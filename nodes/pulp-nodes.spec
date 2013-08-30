@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.6.alpha%{?dist}
+Release: 0.7.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -243,6 +243,9 @@ fi
 
 
 %changelog
+* Fri Aug 30 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.7.alpha
+- Pulp rebuild
+
 * Thu Aug 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.6.alpha
 - nodes support updated content units. (jortel@redhat.com)
 
