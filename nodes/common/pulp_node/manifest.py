@@ -17,7 +17,6 @@ json encoded file.  For performance reasons, the unit files are compressed.
 """
 
 import os
-import json
 import gzip
 import errno
 
@@ -25,6 +24,8 @@ from logging import getLogger
 
 from nectar.request import DownloadRequest
 from nectar.listener import AggregatingEventListener
+
+from pulp.server.compat import json
 
 from pulp_node import pathlib
 from pulp_node.error import ManifestDownloadError

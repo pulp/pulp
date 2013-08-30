@@ -13,7 +13,6 @@ import os
 import tarfile
 
 from uuid import uuid4
-from shutil import rmtree
 from tempfile import mkdtemp
 from logging import getLogger
 
@@ -163,7 +162,7 @@ class FilePublisher(Publisher):
             # nothing to commit
             return
         dir_path = pathlib.join(self.publish_dir, self.repo_id)
-        rmtree(dir_path, ignore_errors=True)
+        os.system('rm -rf %s' % dir_path)
         os.rename(self.tmp_dir, dir_path)
         self.staged = False
 
@@ -171,7 +170,7 @@ class FilePublisher(Publisher):
         """
         Un-stage publishing.
         """
-        rmtree(self.tmp_dir, ignore_errors=True)
+        os.system('rm -rf %s' % self.tmp_dir)
         self.staged = False
 
     def __enter__(self):

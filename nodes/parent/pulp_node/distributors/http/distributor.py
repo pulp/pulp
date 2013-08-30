@@ -11,14 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import json
-
 from gettext import gettext as _
 from logging import getLogger
 
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
+from pulp.server.compat import json
 
 from pulp_node import constants
 from pulp_node import pathlib

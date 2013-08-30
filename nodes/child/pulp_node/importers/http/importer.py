@@ -11,13 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import json
-
 from logging import getLogger
 from gettext import gettext as _
 
 from nectar.downloaders.curl import HTTPSCurlDownloader
 
+from pulp.server.compat import json
 from pulp.plugins.importer import Importer
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 
