@@ -81,40 +81,18 @@ DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 DIR_PLUGINS = '/usr/lib/pulp/plugins'
 
 LINKS = (
-
-    # Builtin Admin Extensions
-    ('builtins/extensions/admin/pulp_admin_auth', DIR_ADMIN_EXTENSIONS + 'pulp_admin_auth'),
-    ('builtins/extensions/admin/pulp_admin_consumer', DIR_ADMIN_EXTENSIONS + 'pulp_admin_consumer'),
-    ('builtins/extensions/admin/pulp_auth', DIR_ADMIN_EXTENSIONS + 'pulp_auth'),
-    ('builtins/extensions/admin/pulp_event', DIR_ADMIN_EXTENSIONS + 'pulp_event'),
-    ('builtins/extensions/admin/pulp_orphan', DIR_ADMIN_EXTENSIONS + 'pulp_orphan'),
-    ('builtins/extensions/admin/pulp_repo', DIR_ADMIN_EXTENSIONS + 'pulp_repo'),
-    ('builtins/extensions/admin/pulp_server_info', DIR_ADMIN_EXTENSIONS + 'pulp_server_info'),
-    ('builtins/extensions/admin/pulp_tasks', DIR_ADMIN_EXTENSIONS + 'pulp_tasks'),
-    ('builtins/extensions/admin/pulp_binding', DIR_ADMIN_EXTENSIONS + 'pulp_binding'),
-
-    # Builtin Consumer Extensions
-    ('builtins/extensions/consumer/pulp_consumer', DIR_CONSUMER_EXTENSIONS + 'pulp_consumer'),
-
-    # Executables
-    ('platform/bin/pulp-admin', '/usr/bin/pulp-admin'),
-    ('platform/bin/pulp-consumer', '/usr/bin/pulp-consumer'),
-    ('platform/bin/pulp-manage-db', '/usr/bin/pulp-manage-db'),
-    ('platform/bin/pulp-monthly', '/usr/bin/pulp-monthly'),
-
     # Server Configuration
-    ('platform/etc/bash_completion.d/pulp-admin', '/etc/bash_completion.d/pulp-admin'),
-    ('platform/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
-    ('platform/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
-    ('platform/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
-    ('platform/etc/pulp/server.conf', '/etc/pulp/server.conf'),
-    ('platform/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
-    ('platform/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
-    ('platform/etc/pulp/logging', '/etc/pulp/logging'),
+    ('agent/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
+    ('server/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
+    ('server/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
+    ('server/etc/pulp/server.conf', '/etc/pulp/server.conf'),
+    ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
+    ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
+    ('server/etc/pulp/logging', '/etc/pulp/logging'),
 
     # Server Web Configuration
-    ('platform/src/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
-    ('platform/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+    ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
+    ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
     # Pulp Nodes
     ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
@@ -187,8 +165,8 @@ def getlinks():
         links.append((src, dst))
     
     # Get links for httpd conf files according to distro
-    pre_f18_apache_conf = ('platform/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf')
-    f18_apache_conf = ('platform/etc/httpd/conf.d/pulp_f18.conf', '/etc/httpd/conf.d/pulp.conf')
+    pre_f18_apache_conf = ('server/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf')
+    f18_apache_conf = ('server/etc/httpd/conf.d/pulp_f18.conf', '/etc/httpd/conf.d/pulp.conf')
     s, n, r, v, m = os.uname()
     if 'fc18' in r:
         src, dst = f18_apache_conf

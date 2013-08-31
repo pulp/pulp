@@ -43,16 +43,9 @@ This method of installation links the git repositories as the locally deployed l
 Any changes made in the working copy will be immediately deployed in the site-packages libraries
 and installed scripts. Setup scripts can be found in the following locations:
 
-* ``<pulp root>/platform/src``
-* ``<pulp root>/pulp_devel``
-* ``<pulp_rpm root>/pulp_rpm/src``
-* ``<pulp_rpm root>/plugins``
-* ``<pulp_puppet root>/pulp_puppet_common``
-* ``<pulp_puppet root>/pulp_puppet_extensions_admin``
-* ``<pulp_puppet root>/pulp_puppet_handlers``
-* ``<pulp_puppet root>/pulp_puppet_plugins``
+In the root of the repository, run::
 
-In each of those directories, run ``sudo python ./setup.py develop``.
+  sudo ./manage_setup_pys.sh develop
 
 .. note::
   Not all Pulp projects need to be installed in this fashion. When working on a new plugin,
@@ -77,11 +70,11 @@ into the local source directory. It is run using the ``-U`` flag:
 
  $ sudo python ./pulp-dev.py -U
 
-Each ``setup.py`` installed above must be removed using the command:
+Each python package installed above must be removed by its package name.
 
 ::
 
-  $ sudo pip uninstall
+  $ sudo pip uninstall <package name>
 
 Permissions
 ^^^^^^^^^^^
