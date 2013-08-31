@@ -11,6 +11,7 @@
 
 
 from unittest import TestCase
+
 from mock import patch
 
 from pulp.server.webservices.serialization import content
@@ -29,4 +30,4 @@ class TestSerialization(TestCase):
         serialized = content.content_unit_obj(unit)
         mock.assert_called_once_with(unit)
         self.assertTrue(LAST_UPDATED in serialized)
-        self.assertEqual(serialized[LAST_UPDATED], '2012-10-24T00:00:00')
+        self.assertEqual(serialized[LAST_UPDATED], '2012-10-24T05:00:00Z')

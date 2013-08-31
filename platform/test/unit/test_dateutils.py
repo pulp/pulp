@@ -163,7 +163,7 @@ class TestFormatting(unittest.TestCase):
         dt = datetime.datetime(2012, 10, 24, tzinfo=None)
         ts = time.mktime(dt.timetuple())
         formatted = dateutils.format_iso8601_timestamp(ts)
-        self.assertEqual(formatted, '2012-10-24T00:00:00')
+        self.assertEqual(formatted, '2012-10-24T04:00:00Z')
 
 
 # datetime math tests ----------------------------------------------------------
