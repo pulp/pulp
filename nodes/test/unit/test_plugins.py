@@ -509,7 +509,7 @@ class ImporterTest(PluginTestBase):
         repo = plugin_model.Repository(self.REPO_ID)
         _class, conf = imp_entry_point()
         plugin = _class()
-        plugin.validate_config(repo, conf, [])
+        plugin.validate_config(repo, conf)
 
     def test_metadata(self):
         # Test
@@ -523,7 +523,7 @@ class ImporterTest(PluginTestBase):
         # Test
         importer = NodesHttpImporter()
         repo = plugin_model.Repository(self.REPO_ID)
-        report = importer.validate_config(repo, self.VALID_CONFIGURATION, [])
+        report = importer.validate_config(repo, self.VALID_CONFIGURATION)
         # Verify
         self.assertTrue(isinstance(report, tuple))
         self.assertTrue(len(report), 2)
@@ -535,7 +535,7 @@ class ImporterTest(PluginTestBase):
         # Test
         importer = NodesHttpImporter()
         repo = plugin_model.Repository(self.REPO_ID)
-        report = importer.validate_config(repo, {}, [])
+        report = importer.validate_config(repo, {})
         # Verify
         self.assertTrue(isinstance(report, tuple))
         self.assertTrue(len(report), 2)
@@ -549,7 +549,7 @@ class ImporterTest(PluginTestBase):
         conf[constants.STRATEGY_KEYWORD] = '---',
         importer = NodesHttpImporter()
         repo = plugin_model.Repository(self.REPO_ID)
-        report = importer.validate_config(repo, conf, [])
+        report = importer.validate_config(repo, conf)
         # Verify
         self.assertTrue(isinstance(report, tuple))
         self.assertTrue(len(report), 2)
