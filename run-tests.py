@@ -25,14 +25,23 @@ PACKAGES = [
     'pulp_admin_auth',
     'pulp_admin_consumer',
     'pulp_consumer',
+    'pulp_node',
     'pulp_repo',
     'pulp_server_info',
     'pulp_tasks',
 ]
 
-TESTS = 'platform/test/unit'
-BUILTIN_TESTS = 'builtins/test/unit'
-DEVEL_TESTS = 'pulp_devel/test/unit'
+TESTS = [
+    'server/test/unit',
+    'agent/test/unit',
+    'bindings/test/unit',
+    'client_admin/test/unit',
+    'client_consumer/test/unit',
+    'client_lib/test/unit',
+    'common/test/unit',
+    'devel/test/unit',
+    'nodes/test/unit',
+]
 
 args = [
     'nosetests',
@@ -41,10 +50,8 @@ args = [
     '--cover-erase',
     '--cover-package',
     ','.join(PACKAGES),
-    TESTS,
-    BUILTIN_TESTS,
-    DEVEL_TESTS,
 ]
+args.extend(TESTS)
 
 # don't run the server tests in RHEL5.
 if sys.version_info < (2, 6):

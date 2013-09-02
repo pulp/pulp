@@ -105,7 +105,7 @@ class Manifest(object):
         :return: An iterator used to read downloaded content units.
         :rtype: iterable
         :raise IOError: on I/O errors.
--       :raise ValueError: json decoding errors
+        :raise ValueError: json decoding errors
         """
         if self.total_units:
             path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
@@ -194,7 +194,7 @@ class RemoteManifest(Manifest):
         Fetch the manifest file using the specified URL.
         :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
--       :raise ValueError: on json decoding errors
+        :raise ValueError: on json decoding errors
         """
         listener = AggregatingEventListener()
         request = DownloadRequest(self.url, self.destination)
@@ -210,7 +210,7 @@ class RemoteManifest(Manifest):
         Fetch the units file referenced in the manifest.
         :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
--       :raise ValueError: on json decoding errors
+        :raise ValueError: on json decoding errors
         """
         base_url = self.url.rsplit('/', 1)[0]
         url = pathlib.join(base_url, UNITS_FILE_NAME)
@@ -259,7 +259,7 @@ class UnitWriter(object):
         :param unit: A content unit.
         :type unit: dict
         :raise IOError: on I/O errors.
--       :raise ValueError: json encoding errors
+        :raise ValueError: json encoding errors
         """
         self.total_units += 1
         json_unit = json.dumps(unit)
@@ -364,7 +364,7 @@ class UnitRef(object):
         :return: The json decoded unit.
         :rtype: dict
         :raise IOError: on I/O errors.
--       :raise ValueError: json decoding errors
+        :raise ValueError: json decoding errors
         """
         fp = gzip.open(self.path)
         try:
