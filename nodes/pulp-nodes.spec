@@ -175,7 +175,7 @@ Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
 Requires: gofer >= 0.74
-Requires: python-nectar >= 1.1.0
+Requires: python-nectar >= 1.1.1
 
 %description child
 Pulp child nodes support.
