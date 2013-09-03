@@ -18,7 +18,6 @@ Test Cases for the Repo Config Conduit
 
 import base
 import mock_plugins
-import time
 
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.server.db.model.repository import Repo, RepoDistributor
