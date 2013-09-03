@@ -203,6 +203,13 @@ class UnitWriter(object):
 
     @property
     def closed(self):
+        """
+        Determines if the file is closed or not. This exists because the file
+        object's API changed drastically from python 2.6 to 2.7.
+
+        :return:    True iff the file is closed, else False
+        :rtype:     bool
+        """
         try:
             # python 2.7
             return self.fp.closed
