@@ -18,6 +18,7 @@ Test Cases for the Repo Config Conduit
 
 import base
 import mock_plugins
+import time
 
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -45,6 +46,12 @@ class RepoConfigConduitTests(base.PulpServerTests):
         self.distributor_manager.add_distributor('repo-2', 'mock-distributor', {"relative_url": "/a/bc/e"},
                                                  True, distributor_id='dist-3')
 
+        self.repo_manager.create_repo('repo-3')
+        self.distributor_manager.add_distributor('repo-3', 'mock-distributor', {},
+                                                 True, distributor_id='dist-4')
+        self.repo_manager.create_repo('repo-4')
+        self.distributor_manager.add_distributor('repo-4', 'mock-distributor', {"relative_url": "/repo-5"},
+                                                 True, distributor_id='dist-5')
         self.conduit = RepoConfigConduit('rpm')
 
     def clean(self):
@@ -82,4 +89,12 @@ class RepoConfigConduitTests(base.PulpServerTests):
         Test for distributors with urls that would override the proposed relative url
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/a/bc/d/e")
+        self.assertEquals(len(matches), 1)
+
+    def test_get_distributors_with_no_relative_url(self):
+        """
+        Test for distributors where no relative url is specified, the distributor id is used
+        in it's place
+        """
+        matches = self.conduit.get_repo_distributors_by_relative_url("/repo-3")
         self.assertEquals(len(matches), 1)
