@@ -25,7 +25,6 @@ _LOG = logging.getLogger(__name__)
 
 
 class RepoConfigConduit(object):
-
     def __init__(self, distributor_type):
         self.distributor_type = distributor_type
 
@@ -36,8 +35,9 @@ class RepoConfigConduit(object):
         :param rel_url: a relative URL for a distributor config
         :type  rel_url: str
 
-        :return: a list of repository configurations whose configuration conflicts with rel_url
-        :rtype:  list
+        :return: a cursor to iterate over the list of repository configurations whose configuration conflicts
+                 with rel_url
+        :rtype:  pymongo.cursor.Cursor
         """
         # build a list of all the sub urls that could conflict with the provided URL
         current_url_pieces = [x for x in rel_url.split("/") if x]
@@ -48,9 +48,15 @@ class RepoConfigConduit(object):
             matching_url_list.append(workingUrl)
             workingUrl += "/"
 
+        # calculate the base field of the URL, this is used for tests where the repo id
+        # is used as a substitute for the relative url: /repo-id/
+        repo_id_url = current_url_pieces[0]
+
         #search for all the sub url as well as any url that would fall within the specified url
         spec = {'$or': [{'config.relative_url': {'$regex': '^' + workingUrl + '.*'}},
-                        {'config.relative_url': {'$in': matching_url_list}}]}
+                        {'config.relative_url': {'$in': matching_url_list}},
+                        {'$and': [{'config.relative_url': {'$exists': False}},
+                                  {'repo_id': repo_id_url}]}
+                        ]}
         projection = {'repo_id': 1, 'config': 1}
-        items = list(RepoDistributor.get_collection().find(spec, projection))
-        return items
+        return RepoDistributor.get_collection().find(spec, projection)
