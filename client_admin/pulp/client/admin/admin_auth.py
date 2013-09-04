@@ -14,6 +14,7 @@
 from gettext import gettext as _
 from M2Crypto import X509
 import os
+import stat
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
@@ -69,10 +70,13 @@ class LoginCommand(PulpCliCommand):
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
 
         #Create the certificate file with user access only permissions 0600
-        f = os.fdopen(os.open(cert_filename, os.O_WRONLY | os.O_CREAT, 600), 'w')
+        mode = stat.S_IRUSR | stat.S_IWUSR
+        umask_original = os.umask(0)
+        f = os.fdopen(os.open(cert_filename, os.O_WRONLY | os.O_CREAT, mode), 'w')
         try:
             f.write(key_cert)
         finally:
+            os.umask(umask_original)
             f.close()
 
         # Parse the certificate to extract the expiration date
