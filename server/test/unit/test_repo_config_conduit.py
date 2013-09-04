@@ -17,6 +17,8 @@ Test Cases for the Repo Config Conduit
 """
 
 import base
+from operator import itemgetter
+
 from pulp.devel import mock_plugins
 
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
@@ -67,28 +69,36 @@ class RepoConfigConduitTests(base.PulpServerTests):
         Test for distributors with an identical relative url
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/a/bc/d")
-        self.assertEquals(len(matches), 1)
+
+        self.assertEquals(matches.count(), 1)
+        self.assertEquals(next(matches)['repo_id'], 'repo-1')
 
     def test_get_distributors_by_relative_url_with_different_url(self):
         """
         Test for distributors with no matching relative url
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/d")
-        self.assertEquals(len(matches), 0)
+        self.assertEquals(matches.count(), 0)
 
     def test_get_distributors_by_relative_url_with_superset_url(self):
         """
         Test for distributors with urls that be overridden by the proposed relative url
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/a/bc")
-        self.assertEquals(len(matches), 2)
+        self.assertEquals(matches.count(), 2)
+        #verify that the correct 2 repositories were found
+        matches = sorted(list(matches), key=itemgetter('repo_id'))
+        self.assertEquals(matches[0]['repo_id'], 'repo-1')
+        self.assertEquals(matches[1]['repo_id'], 'repo-2')
+
 
     def test_get_distributors_by_relative_url_with_subset_url(self):
         """
         Test for distributors with urls that would override the proposed relative url
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/a/bc/d/e")
-        self.assertEquals(len(matches), 1)
+        self.assertEquals(matches.count(), 1)
+        self.assertEquals(next(matches)['repo_id'], 'repo-1')
 
     def test_get_distributors_with_no_relative_url(self):
         """
@@ -96,4 +106,5 @@ class RepoConfigConduitTests(base.PulpServerTests):
         in it's place
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/repo-3")
-        self.assertEquals(len(matches), 1)
+        self.assertEquals(matches.count(), 1)
+        self.assertEquals(next(matches)['repo_id'], 'repo-3')
