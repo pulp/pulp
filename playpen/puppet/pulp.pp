@@ -65,6 +65,7 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'python-pymongo',
     'python-qpid',
     'python-rhsm', # >= 1.8.0
+    'python-semantic_version',
     'python-setuptools',
     'python-webpy',
     'selinux-policy-targeted',
