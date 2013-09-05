@@ -41,3 +41,6 @@ SemVer scheme.
 
 
 %changelog
+* Thu Sep 05 2013 Michael Hrivnak <mhrivnak@redhat.com> 2.2.0-1.pulp
+- new package built with tito
+
