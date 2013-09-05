@@ -119,7 +119,7 @@ def importer_working_dir(importer_type_id, repo_id, mkdir=True):
 
 def distributor_working_dir(distributor_type_id, repo_id, mkdir=True):
     """
-    Determines the working directory for an distributor to use for a repository.
+    Determines the working directory for a distributor to use for a repository.
     If the mkdir argument is set to true, the directory will be created as
     part of this call.
 

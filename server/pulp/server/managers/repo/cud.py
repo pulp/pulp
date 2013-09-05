@@ -208,7 +208,7 @@ class RepoManager(object):
         # will have to look at the server logs for more information.
         error_tuples = [] # tuple of failed step and exception arguments
 
-        # Remove and scheduled activities
+        # Remove any scheduled activities
         scheduler = dispatch_factory.scheduler()
 
         importer_manager = manager_factory.repo_importer_manager()
