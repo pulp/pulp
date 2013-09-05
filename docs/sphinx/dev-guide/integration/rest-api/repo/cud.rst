@@ -4,10 +4,13 @@ Creation, Deletion, and Configuration
 Create a Repository
 -------------------
 
-Creates a new repository in Pulp. This call only creates the repository in Pulp;
-the real functionality of a repository isn't defined until importers and
-distributors are added. Repository IDs must be unique across all repositories
-in the server.
+Creates a new repository in Pulp. This call accepts optional parameters 
+for importer and distributor configuration. More detailed description of 
+these parameters can be found below in the documentation of APIs to associate an importer 
+or a distributor to an already existing repository. If these parameters are not passed, 
+the call will only create the repository in Pulp. The real functionality 
+of a repository isn't defined until importers and distributors are added. 
+Repository IDs must be unique across all repositories in the server.
 
 | :method:`post`
 | :path:`/v2/repositories/`
@@ -18,12 +21,16 @@ in the server.
 * :param:`?display_name,string,user-friendly name for the repository`
 * :param:`?description,string,user-friendly text describing the repository's contents`
 * :param:`?notes,object,key-value pairs to programmatically tag the repository`
+* :param:`?importer_type_id,string,type id of importer being associated with the repository`
+* :param:`?importer_config,object,configuration the repository will use to drive the behavior of the importer`
+* :param:`?distributors,list,list of dictionaries containing values of distributor_type_id, repo_plugin_config, auto_publish, and distributor_id`
 
 | :response_list:`_`
 
 * :response_code:`201,the repository was successfully created`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`409,if there is already a repository with the given ID`
+* :response_code:`500,if the importer or distributor raises an error during initialization`
 
 | :return:`database representation of the created repository`
 
@@ -31,20 +38,38 @@ in the server.
 
  {
   "display_name": "Harness Repository: harness_repo_1",
-  "id": "harness_repo_1"
+  "id": "harness_repo_1",
+  "importer_type_id": "harness_importer",
+  "importer_config": {
+    "num_units": "5",
+    "write_files": "true"
+  },
+  "distributors": [{
+  		"distributor_id": "dist_1",
+  		"distributor_type_id": "harness_distributor",
+  		"distributor_config": {
+    		"publish_dir": "/tmp/harness-publish",
+    		"write_files": "true"
+  		},
+  		"auto_publish": false
+  	}],
  }
 
 
 :sample_response:`201` ::
 
  {
+  "scratchpad": {},
   "display_name": "Harness Repository: harness_repo_1",
   "description": null,
-  "_ns": "gc_repositories",
+  "_ns": "repos",
   "notes": {},
-  "content_unit_count": 0,
-  "_id": "harness_repo_1",
-  "id": "harness_repo_1"
+  "content_unit_counts": {},
+  "_id": {
+    "$oid": "52280416e5e71041ad000066"
+  }, 
+  "id": "harness_repo_1",
+  "_href": "/pulp/api/v2/repositories/harness_repo_1/"
  }
 
 Update a Repository
@@ -87,9 +112,9 @@ is centered around updating only that metadata.
  {
   "display_name": "Updated",
   "description": null,
-  "_ns": "gc_repositories",
+  "_ns": "repos",
   "notes": {},
-  "content_unit_count": 0,
+  "content_unit_counts": {},
   "_id": "harness_repo_1",
   "id": "harness_repo_1"
  }
