@@ -33,7 +33,7 @@ class Repository(object):
 
     @ivar notes: arbitrary key-value pairs set and used by users to
                  programmatically describe the repository
-    @type notes: str or None
+    @type notes: dict or None
 
     @ivar working_dir: local (to the Pulp server) directory the plugin may use
           to store any temporary data required by the plugin; this directory
