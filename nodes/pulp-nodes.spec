@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.7.alpha%{?dist}
+Release: 0.8.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -243,6 +243,11 @@ fi
 
 
 %changelog
+* Fri Sep 06 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.8.alpha
+- 915330 - Fix performance degradation of importer and distributor
+  configuration validation as the number of repositories increased
+  (bcourt@redhat.com)
+
 * Fri Aug 30 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.7.alpha
 - Pulp rebuild
 
