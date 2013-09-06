@@ -5,6 +5,8 @@ Pulp 2.2 Release Notes
 Pulp 2.2.0
 ==========
 
+This release adds support for Fedora 19 and drops support for Fedora 17.
+
 New Features
 ------------
 
@@ -12,9 +14,6 @@ New Features
   information can be found in the :doc:`../nodes` section of the user guide.
 * Some consumer operations can now be canceled.
 * Orphan removal performs much better.
-
-Client Changes
---------------
 
 Noteworthy Bugs Fixed
 ---------------------
