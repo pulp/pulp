@@ -73,6 +73,13 @@ class RepoConfigConduitTests(base.PulpServerTests):
         self.assertEquals(matches.count(), 1)
         self.assertEquals(next(matches)['repo_id'], 'repo-1')
 
+    def test_get_distributors_by_relative_url_with_with_excluded_repository_id(self):
+        """
+        Test for distributors with a matching url but excluded because of the repo_id
+        """
+        matches = self.conduit.get_repo_distributors_by_relative_url("/a/bc/d", 'repo-1')
+        self.assertEquals(matches.count(), 0)
+
     def test_get_distributors_by_relative_url_with_different_url(self):
         """
         Test for distributors with no matching relative url

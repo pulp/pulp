@@ -28,12 +28,16 @@ class RepoConfigConduit(object):
     def __init__(self, distributor_type):
         self.distributor_type = distributor_type
 
-    def get_repo_distributors_by_relative_url(self, rel_url):
+    def get_repo_distributors_by_relative_url(self, rel_url, repo_id=None):
         """
         Get the config repo_id and config objects matching a given relative URL
 
         :param rel_url: a relative URL for a distributor config
         :type  rel_url: str
+
+        :param repo_id: the id of a repo to skip, If not specified all repositories will be included in the
+                        search
+        :type  repo_id: str
 
         :return: a cursor to iterate over the list of repository configurations whose configuration conflicts
                  with rel_url
@@ -58,5 +62,9 @@ class RepoConfigConduit(object):
                         {'$and': [{'config.relative_url': {'$exists': False}},
                                   {'repo_id': repo_id_url}]}
                         ]}
+
+        if repo_id is not None:
+            spec = {'$and': [{'repo_id': {'$ne': repo_id}}, spec]}
+
         projection = {'repo_id': 1, 'config': 1}
         return RepoDistributor.get_collection().find(spec, projection)
