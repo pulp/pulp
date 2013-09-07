@@ -78,26 +78,27 @@ class ScheduledCall(Model):
     def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
         super(ScheduledCall, self).__init__()
 
+        # add custom scheduled call tag to call request
         schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
         call_request.tags.append(schedule_tag)
-        interval, start, runs = dateutils.parse_iso8601_interval(schedule)
-        now = datetime.utcnow()
-        zero = timedelta(seconds=0)
-        start = start and dateutils.to_naive_utc_datetime(start)
 
         self.serialized_call_request = call_request.serialize()
+
         self.schedule = schedule
+        self.enabled = enabled
+
         self.failure_threshold = failure_threshold
         self.consecutive_failures = 0
-        self.first_run = start or now
-        # NOTE using != because ordering comparison with a Duration is not allowed
-        while interval != zero and self.first_run <= now:
-            # try to schedule the first run in the future
-            self.first_run = dateutils.add_interval_to_datetime(interval, self.first_run)
+
+        # scheduling fields
+        self.first_run = None # will be calculated and set by the scheduler
         self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
-        self.next_run = None # will calculated and set by the scheduler
-        self.remaining_runs = runs
-        self.enabled = enabled
+        self.next_run = None # will be calculated and set by the scheduler
+        self.remaining_runs = dateutils.parse_iso8601_interval(schedule)[2]
+
+        # run-time call group metadata for tracking success or failure
+        self.call_count = 0
+        self.call_exit_states = []
 
 
 class ArchivedCall(Model):
