@@ -38,5 +38,8 @@ SemVer scheme.
 
 
 %changelog
+* Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-1
+- new package built with tito
+
 
 
