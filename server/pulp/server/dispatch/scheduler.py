@@ -45,8 +45,19 @@ _LOG = logging.getLogger(__name__)
 # -- scheduler class -----------------------------------------------------------
 
 class Scheduler(object):
+    """
+    Scheduler class that schedules and runs itinerary call requests.
+
+    :ivar dispatch_interval: time, in seconds, between polls to look for
+                             scheduled calls that are due to run
+    """
 
     def __init__(self, dispatch_interval=DEFAULT_DISPATCH_INTERVAL):
+        """
+        :param dispatch_interval: scheduler dispatch interval
+        :type  dispatch_interval: int
+        """
+        assert dispatch_interval > 0
 
         self.dispatch_interval = dispatch_interval
         self.scheduled_call_collection = ScheduledCall.get_collection()
@@ -59,6 +70,12 @@ class Scheduler(object):
     # -- dispatch thread methods -----------------------------------------------
 
     def __dispatch(self):
+        """
+        Periodically check for, and run, scheduled calls
+
+        This is the target method of the dispatch thread, and should not be
+        called directly.
+        """
 
         self.__lock.acquire()
 
@@ -77,6 +94,9 @@ class Scheduler(object):
                 _LOG.exception(e)
 
     def _run_scheduled_calls(self):
+        """
+        Run the scheduled calls that are due.
+        """
 
         coordinator = dispatch_factory.coordinator()
 
@@ -91,6 +111,9 @@ class Scheduler(object):
                           (str(call_request), call_report.response, pformat(call_report.reasons)))
 
     def _get_call_request_groups_for_scheduled_itineraries(self):
+        """
+        Get the call request groups that implement scheduled calls
+        """
 
         coordinator = dispatch_factory.coordinator()
 
@@ -128,6 +151,15 @@ class Scheduler(object):
             yield call_request_group
 
     def _execute_itinerary(self, scheduled_call):
+        """
+        Execute the scheduled itinerary call request to get the call requests
+        that implement the scheduled call
+
+        :param scheduled_call: the scheduled call
+        :type  scheduled_call: bson.BSON
+        :return: call requests for the scheduled itinerary call
+        :rtype:  list of pulp.server.dispatch.call.CallRequest
+        """
 
         coordinator = dispatch_factory.coordinator()
 
@@ -153,6 +185,15 @@ class Scheduler(object):
     # -- dispatch thread utility methods ---------------------------------------
 
     def _reset_call_group_metadata(self, scheduled_call, call_request_group):
+        """
+        Reset the metadata used to track the execution of the scheduled call's
+        call request group
+
+        :param scheduled_call: the scheduled call
+        :type scheduled_call: bson.BSON
+        :param call_request_group: call request group for the scheduled call
+        :type  call_request_group: list of pulp.server.dispatch.call.CallRequest
+        """
 
         # record the total number of call requests in this call group and
         # reset the exit state of the call
@@ -161,6 +202,15 @@ class Scheduler(object):
         self.scheduled_call_collection.update({'_id': scheduled_call['_id']}, {'$set': update}, safe=True)
 
     def _set_call_group_scheduler_hooks(self, scheduled_call, call_request_group):
+        """
+        Set schedule metadata and scheduler callbacks on the call requests in
+        the call request group
+
+        :param scheduled_call: the scheduled call
+        :type scheduled_call: bson.BSON
+        :param call_request_group: call request group for the scheduled call
+        :type  call_request_group: list of pulp.server.dispatch.call.CallRequest
+        """
 
         # set the schedule_id on the call requests and add scheduler-specific life cycle callbacks
         for call_request in call_request_group:
@@ -171,6 +221,9 @@ class Scheduler(object):
     # -- dispatch thread lifecycle methods -------------------------------------
 
     def start(self):
+        """
+        Start the dispatch thread
+        """
         assert self.__dispatch_thread is None
 
         with self.__lock:
@@ -182,6 +235,11 @@ class Scheduler(object):
             self.__dispatch_thread.start()
 
     def stop(self):
+        """
+        Stop, and wait for, the dispatch thread
+
+        NOTE: this is not used in production, but is useful for testing
+        """
         assert self.__dispatch_thread is not None
 
         with self.__lock:
@@ -196,12 +254,25 @@ class Scheduler(object):
 
     @staticmethod
     def calculate_first_run(schedule):
+        """
+        Given a schedule in ISO8601 interval format, calculate the first time
+        the schedule should be run.
+
+        This method make a best effort to calculate a time in the future.
+
+        :param schedule: ISO8601 interval schedule
+        :type  schedule: str
+        :return: when the schedule should be run for the first time
+        :rtype:  datetime.datetime
+        """
 
         now = datetime.datetime.utcnow()
         interval, start = dateutils.parse_iso8601_interval(schedule)[0:2]
 
         first_run = start or now
 
+        # the "zero time" handles the really off case where the schedule is a
+        # start time and a single run instead of something recurring
         while interval != ZERO_TIME and first_run <= now:
             first_run = dateutils.add_interval_to_datetime(interval, first_run)
 
@@ -209,6 +280,14 @@ class Scheduler(object):
 
     @staticmethod
     def calculate_next_run(scheduled_call):
+        """
+        Given a schedule call, calculate when it should be run next.
+
+        :param scheduled_call: scheduled call
+        :type  scheduled_call: bson.BSON or pulp.server.db.model.dispatch.ScheduledCall
+        :return: when the scheduled call should be run next
+        :rtype:  datetime.datetime
+        """
 
         if scheduled_call['remaining_runs'] == 0:
             return None
@@ -229,6 +308,12 @@ class Scheduler(object):
         return next_run
 
     def update_last_run(self, scheduled_call):
+        """
+        Set the time the scheduled call was last run
+
+        :param scheduled_call: scheduled call
+        :type  scheduled_call: bson.BSON
+        """
 
         # use the old next_run as the last_run to prevent schedule drift
         update = {'$set': {'last_run': scheduled_call['next_run']}}
@@ -240,6 +325,15 @@ class Scheduler(object):
         self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def update_next_run(self, scheduled_call):
+        """
+        Calculate and set the time of the scheduled call's next run.
+
+        If there are no more remaining runs for the scheduled call, the scheduled
+        call is removed.
+
+        :param scheduled_call: scheduled call
+        :type  scheduled_call: bson.BSON
+        """
 
         schedule_id = scheduled_call['_id']
         next_run = self.calculate_next_run(scheduled_call)
@@ -252,6 +346,13 @@ class Scheduler(object):
             self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
 
     def update_consecutive_failures_and_runs(self, scheduled_call):
+        """
+        Using the metadata to track the scheduled call's progress, update the
+        consecutive failures and remaining runs for the scheduled call.
+
+        :param scheduled_call: scheduled call
+        :type  scheduled_call: bson.BSON
+        """
 
         update = {}
 
@@ -285,6 +386,25 @@ class Scheduler(object):
     # -- schedule management methods -------------------------------------------
 
     def add(self, itinerary_call_request, schedule, **schedule_options):
+        """
+        Add a new scheduled call.
+
+        Supported initial schedule options:
+
+         * failure_threshold: integer number of times to allow consecutive fails before disabling
+         * last_run: datetime instance representing the last run of the scheduled call
+         * enabled: boolean flag enabling or disabling the scheduled call
+
+        :param itinerary_call_request: call request that generate the call group for the scheduled call
+        :type  itinerary_call_request: pulp.server.dispatch.call.CallRequest
+        :param schedule: ISO8601 interval representing the schedule to repeat the call on
+        :type  schedule: str
+        :param schedule_options: options for this scheduled call
+        :return: the schedule id if the add was successful, None otherwise
+        :rtype:  str or None
+        :raises: pulp.server.exceptions.UnsupportedValue if unsupported schedule options are passed in
+        :raises: pulp.server.exceptions.InvalidValue if the scheduled or any of the options are invalid
+        """
 
         validate_initial_schedule_options(schedule, schedule_options)
 
@@ -293,6 +413,7 @@ class Scheduler(object):
         scheduled_call['first_run'] = self.calculate_first_run(schedule)
         scheduled_call['next_run'] = self.calculate_next_run(scheduled_call)
 
+        # schedule was "valid", but results in the scheduled call never being run
         if scheduled_call['next_run'] is None:
             return None
 
@@ -301,6 +422,24 @@ class Scheduler(object):
         return str(scheduled_call['_id'])
 
     def update(self, schedule_id, **updated_schedule_options):
+        """
+        Update and existing scheduled call.
+
+        Supported update schedule options:
+
+         * call_request: new itinerary call request instance
+         * schedule: new ISO8601 interval string
+         * failure_threshold: new failure threshold integer
+         * remaining_runs: new remaining runs count integer
+         * enabled: new enabled flag boolean
+
+        :param schedule_id: unique identifier of the scheduled call
+        :type  schedule_id: str or pulp.server.compat.ObjectID
+        :param updated_schedule_options: updated options for this scheduled call
+        :raises: pulp.server.exceptions.MissingResource if the corresponding scheduled call does not exist
+        :raises: pulp.server.exceptions.UnsupportedValue if unsupported schedule options are passed in
+        :raises: pulp.server.exceptions.InvalidValue if any of the options are invalid
+        """
 
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
@@ -325,6 +464,14 @@ class Scheduler(object):
         self.scheduled_call_collection.update({'_id': schedule_id}, {'$set': updated_schedule_options}, safe=True)
 
     def remove(self, schedule_id):
+        """
+        Remove an existing scheduled call.
+
+        :param schedule_id: unique identifier of the scheduled call
+        :type  schedule_id: str or pulp.server.compat.ObjectID
+        :raises: pulp.server.exceptions.MissingResource if the corresponding scheduled call does not exist
+        """
+
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
 
@@ -336,6 +483,29 @@ class Scheduler(object):
     # -- schedule query methods ------------------------------------------------
 
     def get(self, schedule_id):
+        """
+        Get a scheduled call report that represents the scheduled call for the
+        given schedule id.
+
+        The scheduled call report is a dictionary with the following fields:
+
+         * _id: unique identifier of the schedule as a string
+         * call_request: itinerary pulp.server.dispatch.call.CallRequest instance
+         * scheduled: ISO8601 interval string
+         * consecutive_failures: integer
+         * failure_threshold: integer or None
+         * first_run: datetime instance
+         * last_run: datetime instance
+         * next_run: datetime instance
+         * remaining_runs: integer or None
+         * enabled: boolean
+
+        :param schedule_id: unique identifier of a scheduled call
+        :type  schedule_id: str or pulp.server.compat.ObjectID
+        :return: scheduled call report
+        :rtype: dict
+        :raises pulp.server.exceptions.MissingResource: if the schedule id does not correspond to a scheduled call
+        """
 
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
@@ -348,6 +518,17 @@ class Scheduler(object):
         return scheduled_call_to_report_dict(scheduled_call)
 
     def find(self, *tags):
+        """
+        Find scheduled calls for the corresponding itinerary call request tags
+        and return their corresponding scheduled call reports.
+
+        See Scheduler.get for a description of the scheduled call report dictionaries
+
+        :param tags: itinerary call request tags
+        :type  tags: list of str
+        :return: (possibly empty) list of scheduled call reports
+        :rtype: list of dict
+        """
 
         query = {'serialized_call_request.tags': {'$all': tags}}
         scheduled_calls = self.scheduled_call_collection.find(query)
@@ -357,10 +538,20 @@ class Scheduler(object):
     # -- scheduled call completion ---------------------------------------------
 
     def call_group_call_completed(self, schedule_id, state):
+        """
+        Method call to indicate a call request from a call group from a
+        scheduled itinerary call completed
+
+        :param schedule_id: unique identifier of the scheduled call
+        :type  schedule_id: str or pulp.server.compat.ObjectID
+        :param state: exit state of the completed call
+        :type  state: str
+        """
 
         if isinstance(schedule_id, basestring):
             schedule_id = ObjectId(schedule_id)
 
+        # decrement the running call count and record the exit state
         update = {'$inc': {'call_count': -1},
                   '$push': {'call_exit_states': state}}
 
@@ -372,6 +563,7 @@ class Scheduler(object):
         if scheduled_call is None:
             return
 
+        # if we're not finished, we're finished ;)
         if scheduled_call['call_count'] > 0:
             return
 
@@ -380,6 +572,15 @@ class Scheduler(object):
 # -- scheduler call request lifecycle callbacks --------------------------------
 
 def scheduler_complete_callback(call_request, call_report):
+    """
+    Pulp dispatch call complete lifecycle callback used to report the call's
+    completion and exit state to the scheduler.
+
+    :param call_request: call request for the scheduled call
+    :type  call_request: pulp.server.dispatch.call.CallRequest
+    :param call_report: call report for the scheduled call
+    :type  call_report: pulp.server.dispatch.call.CallReport
+    """
 
     scheduler = dispatch_factory.scheduler()
     scheduler.call_group_call_completed(call_request.schedule_id, call_report.state)
@@ -387,6 +588,16 @@ def scheduler_complete_callback(call_request, call_report):
 # -- schedule validation methods -----------------------------------------------
 
 def validate_initial_schedule_options(schedule, options):
+    """
+    Validate the initial schedule and schedule options.
+
+    :param schedule: ISO8601 interval schedule
+    :type  schedule: str
+    :param options: options for the schedule
+    :type  options: dict
+    :raises: pulp.server.exceptions.UnsupportedValue if unsupported schedule options are passed in
+    :raises: pulp.server.exceptions.InvalidValue if any of the options are invalid
+    """
 
     unknown_options = _find_unknown_options(options, SCHEDULE_OPTIONS_FIELDS)
 
@@ -411,6 +622,14 @@ def validate_initial_schedule_options(schedule, options):
 
 
 def validate_updated_schedule_options(options):
+    """
+    Validate updated schedule options.
+
+    :param options: updated options for a scheduled call
+    :type  options: dict
+    :raises: pulp.server.exceptions.UnsupportedValue if unsupported schedule options are passed in
+    :raises: pulp.server.exceptions.InvalidValue if any of the options are invalid
+    """
 
     unknown_options = _find_unknown_options(options, SCHEDULE_MUTABLE_FIELDS)
 
@@ -438,11 +657,29 @@ def validate_updated_schedule_options(options):
 
 
 def _find_unknown_options(options, known_options):
+    """
+    Search a dictionary of options for unknown keys using a list of known keys.
+
+    :param options: options to search
+    :type  options: dict
+    :param known_options: list of known options
+    :type known_options: iterable of str
+    :return: (possibly empty) list of unknown keys from the options dictionary
+    :rtype:  list of str
+    """
 
     return [o for o in options if o not in known_options]
 
 
 def _is_valid_schedule(schedule):
+    """
+    Test that a schedule string is in the ISO8601 interval format
+
+    :param schedule: schedule string
+    :type schedule: str
+    :return: True if the schedule is in the ISO8601 format, False otherwise
+    :rtype:  bool
+    """
 
     if not isinstance(schedule, basestring):
         return False
@@ -457,6 +694,14 @@ def _is_valid_schedule(schedule):
 
 
 def _is_valid_failure_threshold(failure_threshold):
+    """
+    Test that a failure threshold is either None or a positive integer.
+
+    :param failure_threshold: failure threshold to test
+    :type  failure_threshold: int or None
+    :return: True if the failure_threshold is valid, False otherwise
+    :rtype:  bool
+    """
 
     if failure_threshold is None:
         return True
@@ -468,6 +713,14 @@ def _is_valid_failure_threshold(failure_threshold):
 
 
 def _is_valid_remaining_runs(remaining_runs):
+    """
+    Test that the remaining runs is either None or a positive integer.
+
+    :param remaining_runs: remaining runs to test
+    :type  remaining_runs: int or None
+    :return: True if the remaining_runs is valid, False otherwise
+    :rtype:  bool
+    """
 
     if remaining_runs is None:
         return True
@@ -479,12 +732,27 @@ def _is_valid_remaining_runs(remaining_runs):
 
 
 def _is_valid_enabled_flag(enabled_flag):
+    """
+    Test that the enabled flag is a boolean.
+
+    :param enabled_flag: enabled flag to test
+    :return: True if the enabled flag is a boolean, False otherwise
+    :rtype:  bool
+    """
 
     return isinstance(enabled_flag, bool)
 
 # -- schedule reporting utility methods ----------------------------------------
 
 def scheduled_call_to_report_dict(scheduled_call):
+    """
+    Translate a scheduled call to a scheduled call report dictionary.
+
+    :param scheduled_call: scheduled call to translate
+    :type  scheduled_call: bson.BSON
+    :return: scheduled call report dictionary
+    :rtype:  dict
+    """
 
     report = subdict(scheduled_call, SCHEDULE_REPORT_FIELDS)
     report['_id'] = str(scheduled_call['_id'])
