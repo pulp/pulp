@@ -1,18 +1,15 @@
-%define name semantic_version
-%define version 2.2.0
-%define unmangled_version 2.2.0
-%define release 1.pulp
-
-Name: python-%{name}
-Version: %{version}
-Release: %{release}
+Name: python-semantic-version
+Version: 2.2.0
+Release: 1%{?dist}
 Summary: A library implementing the 'SemVer' scheme.
 
 License: BSD
 URL: http://github.com/rbarrois/python-semanticversion
-Source0: v%{version}.tar.gz
+Source0: %{name}-%{version}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: python2-devel
+
 BuildArch: noarch
 
 %description
@@ -21,7 +18,7 @@ This small python library provides a few tools to handle SemVer
 SemVer scheme.
 
 %prep
-%setup -q -n python-semanticversion-%{unmangled_version}
+%setup -q -n python-semanticversion-%{version}
 
 %check
 %{__python} setup.py test
@@ -41,6 +38,8 @@ SemVer scheme.
 
 
 %changelog
-* Thu Sep 05 2013 Michael Hrivnak <mhrivnak@redhat.com> 2.2.0-1.pulp
+* Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-1
 - new package built with tito
+
+
 
