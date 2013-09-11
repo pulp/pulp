@@ -41,6 +41,9 @@ SemVer scheme.
 
 
 %changelog
+* Wed Sep 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-2
+- add buildrequires: python-unittest2. (jortel@redhat.com)
+
 * Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-1
 - new package built with tito
 
