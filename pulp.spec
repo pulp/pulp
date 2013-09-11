@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.8.alpha%{?dist}
+Release: 0.9.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -468,6 +468,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.9.alpha
+- Pulp rebuild
+
 * Fri Sep 06 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.8.alpha
 - 1004897 - Fix bug where distributor validate_config is finding relative path
   conflicts with the repository that is being updated (bcourt@redhat.com)
