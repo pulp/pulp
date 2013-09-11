@@ -1,6 +1,6 @@
 Name: python-semantic-version
 Version: 2.2.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A library implementing the 'SemVer' scheme.
 
 License: BSD
@@ -10,7 +10,10 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 
 BuildRequires: python2-devel
+
+%if 0%{?rhel} == 6
 BuildRequires: python-unittest2
+%endif
 
 %description
 This small python library provides a few tools to handle SemVer
