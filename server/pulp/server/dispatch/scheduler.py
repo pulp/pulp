@@ -333,22 +333,6 @@ class Scheduler(object):
 
         self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
 
-    def enable(self, schedule_id):
-
-        if isinstance(schedule_id, basestring):
-            schedule_id = ObjectId(schedule_id)
-
-        update = {'$set': {'enabled': True}}
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
-
-    def disable(self, schedule_id):
-
-        if isinstance(schedule_id, basestring):
-            schedule_id = ObjectId(schedule_id)
-
-        update = {'$set': {'enabled': False}}
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
-
     # -- schedule query methods ------------------------------------------------
 
     def get(self, schedule_id):
