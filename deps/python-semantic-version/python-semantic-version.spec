@@ -37,6 +37,10 @@ SemVer scheme.
 
 
 %changelog
+* Wed Sep 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-3
+- comment out the unit tests in python-semantic-version. too much of a pain to
+  add the dep in brew.  We can uncomment later. (jortel@redhat.com)
+
 * Wed Sep 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-2
 - add buildrequires: python-unittest2. (jortel@redhat.com)
 
