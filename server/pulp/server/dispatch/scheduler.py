@@ -264,7 +264,7 @@ class Scheduler(object):
             consecutive_failures = scheduled_call['consecutive_failures'] + 1
 
             # disable the schedule if the consecutive failures surpasses the failure threshold
-            if failure_threshold and failure_threshold <= consecutive_failures:
+            if failure_threshold is not None and failure_threshold <= consecutive_failures:
                 delta = update.setdefault('$set', {})
                 delta['enabled'] = False
                 msg = 'Schedule [%s] disabled after %d consecutive failures'
