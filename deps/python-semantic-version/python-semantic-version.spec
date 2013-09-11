@@ -7,10 +7,10 @@ License: BSD
 URL: http://github.com/rbarrois/python-semanticversion
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch: noarch
 
 BuildRequires: python2-devel
-
-BuildArch: noarch
+BuildRequires: python-unittest2
 
 %description
 This small python library provides a few tools to handle SemVer
