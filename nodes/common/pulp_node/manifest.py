@@ -253,6 +253,21 @@ class UnitWriter(object):
         self.total_units = 0
         self.bytes_written = 0
 
+    @property
+    def closed(self):
+        """
+        Determines if the file is closed or not. This exists because
+        the gzip API changed drastically from python 2.6 to 2.7.
+        :return: True if the file is closed.
+        :rtype: bool
+        """
+        try:
+            # python 2.7
+            return self.fp.closed
+        except AttributeError:
+            # python 2.6
+            return self.fp.fileobj.closed
+
     def add(self, unit):
         """
         Add (write) the specified unit to the file as a json encoded string.
@@ -272,7 +287,7 @@ class UnitWriter(object):
         :return: The number of units written.
         :rtype: int
         """
-        if not self.fp.closed:
+        if not self.closed:
             self.fp.close()
             self.bytes_written = os.path.getsize(self.path)
         return self.total_units
