@@ -125,6 +125,7 @@ Summary: Pulp nodes common modules
 Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
+Requires: python-pulp-bindings = %{pulp_version}
 
 %description common
 Pulp nodes common modules.
@@ -139,6 +140,16 @@ Pulp nodes common modules.
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
 %doc
+
+%post common
+# Generate the certificate used to access the local server.
+pulp-gen-nodes-certificate
+
+%postun common
+# clean up the nodes certificate.
+if [ $1 -eq 0 ]; then
+  rm -rf /etc/pki/pulp/nodes
+fi
 
 
 # ---- Parent Nodes ----------------------------------------------------------
@@ -224,18 +235,6 @@ Pulp nodes consumer client extensions.
 %{python_sitelib}/pulp_node_consumer_extensions*.egg-info
 %doc
 
-
-# ----------------------------------------------------------------------------
-
-%post common
-# Generate the certificate used to access the local server.
-pulp-gen-nodes-certificate
-
-%postun
-# clean up the nodes certificate.
-if [ $1 -eq 0 ]; then
-  rm -rf /etc/pki/pulp/nodes
-fi
 
 # ----------------------------------------------------------------------------
 
