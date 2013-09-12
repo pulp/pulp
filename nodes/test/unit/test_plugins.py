@@ -39,6 +39,7 @@ from pulp.server.db import connection
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
+from pulp.server.db.model.content import ContentType
 from pulp.plugins import model as plugin_model
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
@@ -178,16 +179,13 @@ class PluginTestBase(WebTest):
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         plugin_api._create_manager()
         imp_conf = dict(strategy=constants.MIRROR_STRATEGY)
         plugin_api._MANAGER.importers.add_plugin(constants.HTTP_IMPORTER, NodesHttpImporter, imp_conf)
         plugin_api._MANAGER.distributors.add_plugin(constants.HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
         plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
         plugin_api._MANAGER.profilers.add_plugin(constants.PROFILER_ID, NodeProfiler, {})
-        unit_db.type_definition = \
-            Mock(return_value=dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY))
-        unit_db.type_units_unit_key = \
-            Mock(return_value=['A', 'B', 'N'])
 
     def tearDown(self):
         WebTest.tearDown(self)
@@ -200,6 +198,10 @@ class PluginTestBase(WebTest):
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+
+    def define_plugins(self):
+        collection = ContentType.get_collection()
+        collection.save(dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY.keys()), safe=True)
 
     def populate(self):
         # make content/ dir.
@@ -581,6 +583,7 @@ class ImporterTest(PluginTestBase):
         RepoDistributor.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
@@ -626,6 +629,7 @@ class ImporterTest(PluginTestBase):
         RepoDistributor.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         publisher = dist.publisher(repo, configuration)
         manifest_path = publisher.manifest_path()
         units_path = os.path.join(os.path.dirname(manifest_path), UNITS_FILE_NAME)
@@ -673,6 +677,7 @@ class ImporterTest(PluginTestBase):
         RepoDistributor.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         publisher = dist.publisher(repo, configuration)
         manifest_path = publisher.manifest_path()
         manifest = Manifest(manifest_path)
@@ -714,6 +719,7 @@ class ImporterTest(PluginTestBase):
         RepoDistributor.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         publisher = dist.publisher(repo, configuration)
         manifest_path = publisher.manifest_path()
         manifest = Manifest(manifest_path)
@@ -759,6 +765,7 @@ class ImporterTest(PluginTestBase):
         RepoDistributor.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         parent_content = os.path.join(self.parentfs, 'content')
         child_content = os.path.join(self.childfs, 'content')
         shutil.copytree(parent_content, child_content)
@@ -806,6 +813,7 @@ class ImporterTest(PluginTestBase):
         RepoDistributor.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+        self.define_plugins()
         parent_content = os.path.join(self.parentfs, 'content')
         child_content = os.path.join(self.childfs, 'content')
         shutil.copytree(parent_content, child_content)
@@ -980,6 +988,7 @@ class TestEndToEnd(PluginTestBase):
         if units:
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
+            self.define_plugins()
         # add extra content units
         if extra_units:
             self.add_units(self.NUM_UNITS, self.NUM_UNITS + extra_units)

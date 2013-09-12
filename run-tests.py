@@ -32,6 +32,7 @@ PACKAGES = [
 ]
 
 TESTS = [
+    'nodes/test/unit',
     'server/test/unit',
     'agent/test/unit',
     'bindings/test/unit',
@@ -40,7 +41,6 @@ TESTS = [
     'client_lib/test/unit',
     'common/test/unit',
     'devel/test/unit',
-    'nodes/test/unit',
 ]
 
 args = [
