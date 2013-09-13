@@ -9,11 +9,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
+from datetime import datetime
 from unittest import TestCase
 
 from mock import patch
 
+from pulp.common import dateutils
 from pulp.server.webservices.serialization import content
 from pulp.server.webservices.serialization import db
 
@@ -25,7 +26,8 @@ class TestSerialization(TestCase):
     @patch('pulp.server.webservices.serialization.db.scrub_mongo_fields',
            wraps=db.scrub_mongo_fields)
     def test_serialization(self, mock):
-        last_updated = 1351092000.0
+        dt = datetime(2012, 10, 24, 10, 20, tzinfo=dateutils.utc_tz())
+        last_updated = dateutils.datetime_to_utc_timestamp(dt)
         unit = {'_last_updated': last_updated}
         serialized = content.content_unit_obj(unit)
         mock.assert_called_once_with(unit)
